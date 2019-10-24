@@ -26,6 +26,11 @@
  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
+<!--
+    Changes from Qualcomm Technologies, Inc. are provided under the following license:
+    Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+    SPDX-License-Identifier: BSD-3-Clause-Clear
+ -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     android:key="screen">
     <PreferenceCategory
@@ -891,6 +896,15 @@
             android:title="@string/pref_camera2_ai_denoiser_mode_title"
             android:entries="@array/pref_camera2_ai_denoiser_mode_entries"
             android:entryValues="@array/pref_camera2_ai_denoiser_mode_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
+            android:key="pref_camera2_multi_cameras_key"
+            android:defaultValue="@string/pref_camera2_multi_cameras_default"
+            android:title="@string/pref_camera2_multi_cameras_title"
+            android:entries="@array/pref_camera2_multi_cameras_entries"
+            android:entryValues="@array/pref_camera2_multi_cameras_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
 

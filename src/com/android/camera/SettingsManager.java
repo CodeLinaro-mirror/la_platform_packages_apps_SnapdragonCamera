@@ -31,7 +31,6 @@
   * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
   * SPDX-License-Identifier: BSD-3-Clause-Clear
   */
-
 package com.android.camera;
 
 import android.content.Context;
@@ -214,6 +213,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_SHARPNESS_CONTROL_MODE = "pref_camera2_sharpness_control_key";
     public static final String KEY_AF_MODE = "pref_camera2_afmode_key";
     public static final String KEY_EXPOSURE_METERING_MODE = "pref_camera2_exposure_metering_key";
+    public static final String KEY_MULTI_CAMERAS_MODE = "pref_camera2_multi_cameras_key";
+
 
     //manual 3A keys and parameter strings
     public static final String KEY_MANUAL_EXPOSURE = "pref_camera2_manual_exp_key";
@@ -1246,6 +1247,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference stats_visualizer = mPreferenceGroup.findPreference(KEY_STATS_VISUALIZER_VALUE);
         ListPreference hdr = mPreferenceGroup.findPreference(KEY_HDR);
         ListPreference zoom = mPreferenceGroup.findPreference(KEY_ZOOM);
+        ListPreference concurrent_session_camera = mPreferenceGroup.findPreference(KEY_MULTI_CAMERAS_MODE);
         ListPreference qcfa = mPreferenceGroup.findPreference(KEY_QCFA);
         ListPreference fd_smile = mPreferenceGroup.findPreference(KEY_FD_SMILE);
         ListPreference fd_gaze = mPreferenceGroup.findPreference(KEY_FD_GAZE);
@@ -1498,6 +1500,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (filterUnsupportedOptions(zoom,
                     getSupportedZoomLevel(cameraId))) {
                 mFilteredKeys.add(zoom.getKey());
+            }
+        }
+
+        if (concurrent_session_camera != null) {
+            if (!PersistUtil.isConcurrentSessionEnabled()) {
+                mFilteredKeys.add(concurrent_session_camera.getKey());
             }
         }
 

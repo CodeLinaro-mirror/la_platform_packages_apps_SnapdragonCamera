@@ -26,6 +26,12 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.camera.util;
 
 import android.graphics.Point;
@@ -429,6 +435,10 @@ public class PersistUtil {
     }
 
     public static boolean isMultiCameraEnabled() {return  PERSIST_MULTI_CAMERA_ENABLED;}
+
+    public static boolean isConcurrentSessionEnabled() {
+        return getBoolean("persist.sys.cameraapp.concurrentsession", false);
+    }
 
     public static boolean isFDRENDERINGSUPPORTED() {return PERSIST_FD_RENDERING_SUPPORTED; }
 
