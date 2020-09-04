@@ -3240,6 +3240,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void createSessions() {
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSessions1");
         if (mPaused || !mCamerasOpened || mTempHoldVideoInVideoIntent) return;
         final int cameraId = getMainCameraId();
         Log.i(TAG,"Current SceneMode is " + mCurrentSceneMode.mode + ", current cameraId is " + cameraId);
@@ -3259,6 +3260,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             default:
                 createSession(cameraId);
         }
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private CaptureRequest.Builder getRequestBuilder(int id) throws CameraAccessException {
@@ -3273,17 +3275,20 @@ public class CaptureModule implements CameraModule, PhotoController,
             templateType = CameraDevice.TEMPLATE_PREVIEW;
         }
         CaptureRequest.Builder builder;
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession -- createCaptureRequest");
+
         if (mSettingsManager.getPhysicalCameraId()!= null){
             Set<String> physical_ids = mSettingsManager.getPhysicalCameraId();
             builder = mCameraDevice[id].createCaptureRequest(templateType,physical_ids);
         } else {
             builder = mCameraDevice[id].createCaptureRequest(templateType);
         }
-
+        if (TRACE_DEBUG) Trace.endSection();
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession -- applySessionParameters");
         if (builder != null){
             applySessionParameters(builder);
         }
-
+        if (TRACE_DEBUG) Trace.endSection();
         return builder;
     }
 
@@ -3446,6 +3451,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void createSession(final int id) {
         Log.d(TAG, "createSession,id: " + id + ",mPaused:" + mPaused + ",mCameraOpened:"
                 + mCameraOpened[id] + ",mCameraDevice:"+ mCameraDevice[id] + ", mChosenImageFormat :" + mChosenImageFormat);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession");
         if (mPaused || !mCameraOpened[id] || (mCameraDevice[id] == null)) return;
         List<Surface> list = new LinkedList<Surface>();
         mState[id] = STATE_PREVIEW;
@@ -3574,6 +3580,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     };
 
             Surface surface = null;
+            if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createsession--getsurface");
             if(needWaitSurface()) {
                 try {
                     waitForPreviewSurfaceReady();
@@ -3592,7 +3599,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mFrameProcessor.setOutputSurface(surface);
                 mFrameProcessor.setVideoOutputSurface(null);
             }
-
+            if (TRACE_DEBUG) Trace.endSection();
             if(isClearSightOn()) {
                 if (surface != null) {
                     mPreviewRequestBuilder[id].addTarget(surface);
@@ -3614,6 +3621,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
 
                 List<OutputConfiguration> outputConfigurations = new ArrayList<OutputConfiguration>();
+                if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createsession--getalllist");
                 if (mSettingsManager.getPhysicalCameraId() != null) {
                     mUI.buildPhysicalSurfaces();
                     List<OutputConfiguration> physicalOutput = getPhysicalOutputConfiguration();
@@ -3892,6 +3900,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                     }
                 }
+                if (TRACE_DEBUG) Trace.endSection();
+                if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createsession--createsession");
                 if(mChosenImageFormat == ImageFormat.YUV_420_888 || mChosenImageFormat == ImageFormat.PRIVATE) {
                     if (mPostProcessor.isZSLEnabled()) {
                         if (isMultiResolutionImageReaderEnabled()) {
@@ -3964,6 +3974,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mCameraDevice[id].createCaptureSession(list, captureSessionCallback, mCameraHandler);
                     }
                 }
+                if (TRACE_DEBUG) Trace.endSection();
             } else {
                 if (surface != null) {
                     mPreviewRequestBuilder[id].addTarget(surface);
@@ -3976,6 +3987,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         } catch (CameraAccessException | NullPointerException | IllegalStateException |IllegalArgumentException e) {
            Log.e(TAG,"createSession exception = "+ e);
         }
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private int addPhysicalCaptureTarget(CaptureRequest.Builder builder) {
@@ -4261,6 +4273,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void createSessionForVideo(final int cameraId) {
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSessionForVideo");
         try {
             setCameraModeSwitcherAllowed(false);
             mStopRecPending = false;
@@ -4401,6 +4414,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
         mCurrentSessionClosed = false;
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private int getSensorTableHFRRange() {
@@ -7628,7 +7642,9 @@ private boolean isDevOptionSetting(){
                         try {
                             if (isAbortCapturesEnable() && mCaptureSession[i] != null) {
                                 mFlushLatency = System.currentTimeMillis();
+                                if (TRACE_DEBUG) Trace.beginSection("SnapCamera,abortCaptures");
                                 mCaptureSession[i].abortCaptures();
+                                if (TRACE_DEBUG) Trace.endSection();
                                 mFlushLatency = System.currentTimeMillis() - mFlushLatency;
                                 Log.d(TAG, "Closing camera call abortCaptures ");
                                 if (mActivity.getPerformenceTest() ) {
@@ -7648,7 +7664,9 @@ private boolean isDevOptionSetting(){
                     if (mActivity.getPerformenceTest() && mStartedTime != 0) {
                         mHasMapTimes.put("switchTrigger->closeCamera", mCloseCameraLatency - mStartedTime);
                     }
+                    if (TRACE_DEBUG) Trace.beginSection("SnapCamera,camera close");
                     mCameraDevice[i].close();
+                    if (TRACE_DEBUG) Trace.endSection();
                     mCameraDevice[i] = null;
                     mCameraOpened[i] = false;
                     mCaptureSession[i] = null;
@@ -8176,6 +8194,7 @@ private boolean isDevOptionSetting(){
             return;
         }
         Log.i(TAG, "openCamera " + id);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,openCamera");
         CameraManager manager;
         try {
             manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
@@ -8196,6 +8215,7 @@ private boolean isDevOptionSetting(){
         } catch (CameraAccessException | InterruptedException e) {
             Log.e(TAG,e);
         }
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     @Override
@@ -8222,6 +8242,7 @@ private boolean isDevOptionSetting(){
         mActivity.mColdOpenCameraTime = 0;
         mPerformanceGapData.clear();
         isflashRequired = false;
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,onPauseBeforeSuper");
         cancelTouchFocus();
         mActivity.runOnUiThread(() -> mUI.clearFocus());
         mPaused = true;
@@ -8247,6 +8268,7 @@ private boolean isDevOptionSetting(){
                 public void run() {
                     if (mCurrentSession != null) {
                         try {
+                            if (TRACE_DEBUG) Trace.beginSection("SnapCamera,flush");
                             mFlushLatency = System.currentTimeMillis();
                             mCurrentSession.abortCaptures();
                             mFlushLatency = System.currentTimeMillis() - mFlushLatency;
@@ -8255,6 +8277,7 @@ private boolean isDevOptionSetting(){
                                 closePreviewSession();
                             }
                             mLockNums.incrementAndGet(1);
+                            if (TRACE_DEBUG) Trace.endSection();
                         } catch (CameraAccessException|IllegalStateException e) {
                             Log.e(TAG,e);
                             mLockNums.incrementAndGet(1);
@@ -8287,7 +8310,7 @@ private boolean isDevOptionSetting(){
         }
         resetScreenOn();
         mActivity.runOnUiThread(() -> mUI.stopSelfieFlash());
-
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     @Override
@@ -8297,6 +8320,7 @@ private boolean isDevOptionSetting(){
 
     private void onPauseAfterSuper(boolean isExitCamera) {
         Log.i(TAG, "onPause " + (isExitCamera ? "exit camera" : "") + ",mIsCloseCamera=" + mIsCloseCamera);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,onPauseAfterSuper");
         if (isExitCamera) {
             if (mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE) {
                 mLockAFAE = LOCK_AF_AE_STATE_NONE;
@@ -8349,6 +8373,7 @@ private boolean isDevOptionSetting(){
             //mActivity.setResultEx(Activity.RESULT_CANCELED, new Intent());
             mActivity.finish();
         }
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     @Override
@@ -8366,6 +8391,7 @@ private boolean isDevOptionSetting(){
             mIsCloseCamera = true;
         }
         mSettingsManager.createCaptureModule(this);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,onResumeBeforeSuper");
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         String action = mActivity.getIntent().getAction();
@@ -8412,6 +8438,7 @@ private boolean isDevOptionSetting(){
         if(!resumeFromRestartAll && !mUI.isPreviewSurfaceValid()) {
             updatePreviewSurfaceReadyState(false);
         }
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private void cancelTouchFocus() {
@@ -8806,6 +8833,8 @@ private boolean isDevOptionSetting(){
     }
 
     private void onResumeAfterSuper(boolean resumeFromRestartAll) {
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,onResumeAfterSuper");
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,onResumeAfterSuper  -- init");
         Log.i(TAG, "onResume " + (mCurrentSceneMode != null ? mCurrentSceneMode.mode : "null")
                 + (resumeFromRestartAll ? " isResumeFromRestartAll" : "")+",mIsCloseCamera="+mIsCloseCamera);
         if(mCurrentSceneMode.mode == CameraMode.VIDEO || mCurrentSceneMode.mode == CameraMode.HFR){
@@ -8842,6 +8871,8 @@ private boolean isDevOptionSetting(){
         updateSaveStorageState();
         setDisplayOrientation();
         startBackgroundThread();
+        if (TRACE_DEBUG) Trace.endSection();
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,onResumeAfterSuper  -- init2");
         openProcessors();
         loadSoundPoolResource();
         if (mDeepPortraitMode) {
@@ -8878,6 +8909,7 @@ private boolean isDevOptionSetting(){
                 mActivity.updateStorageSpaceAndHint();
             }
         });
+        if (TRACE_DEBUG) Trace.endSection();
         if(mIsCloseCamera && !PersistUtil.isTorchMode()) {
             mOpenCameraTimes = 3;
             openCamera(getMainCameraId());
@@ -8913,6 +8945,7 @@ private boolean isDevOptionSetting(){
                 }
             });
         }
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private void checkRTBCameraId() {
@@ -11172,7 +11205,9 @@ private boolean isDevOptionSetting(){
             boolean isSessionSupported = checkSessionSupported(sessionConfig);
             if(isSessionSupported) {
                 mCreateSessionLatency = System.currentTimeMillis();
+                if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession -- call createCaptureSession");
                 mCameraDevice[cameraId].createCaptureSession(sessionConfig);
+                if (TRACE_DEBUG) Trace.endSection();
             }
         } catch (Exception e) {
             Log.e(TAG,e);
@@ -11222,13 +11257,17 @@ private boolean isDevOptionSetting(){
         setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession -- set capture session param");
         sessionConfig.setSessionParameters(initialRequest.build());
+        if (TRACE_DEBUG) Trace.endSection();
         String colorSpace = mSettingsManager.getValue(SettingsManager.KEY_COLOR_SPACE);
         if (colorSpace != null && !colorSpace.equals("0")) {
             sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
         }
         if (inputConfig != null) {
+            if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession -- setInputConfiguration");
             sessionConfig.setInputConfiguration(inputConfig);
+            if (TRACE_DEBUG) Trace.endSection();
         }
 
       boolean sessionSupported = checkSessionSupported(sessionConfig);
@@ -11263,7 +11302,9 @@ private boolean isDevOptionSetting(){
         String errorTitle = "isSessionConfigurationSupported False";
         try {
             CameraDeviceSetup cameraDeviceSetup = manager.getCameraDeviceSetup(cameraId);
+            if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession -- isSessionConfigurationSupported");
             session_supported = cameraDeviceSetup.isSessionConfigurationSupported(sessionConfig);
+            if (TRACE_DEBUG) Trace.endSection();
             Log.i(TAG, " isSessionConfigurationSupported :" + session_supported + ",cameraid is " + cameraId);
         } catch (CameraAccessException | IllegalArgumentException e) {
             Log.w(TAG, " check isSessionConfigurationSupported exception =" + e);
@@ -11678,6 +11719,7 @@ private boolean isDevOptionSetting(){
     }
 
     private void releasePhysicalRecorder() throws RuntimeException{
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,releaseMediaRecorder");
         if (mSettingsManager.getPhysicalFeatureEnableId
                 (SettingsManager.KEY_PHYSICAL_CAMCORDER) != null) {
             Log.d(TAG,"releasePhysicalRecorder");
@@ -11689,6 +11731,7 @@ private boolean isDevOptionSetting(){
                 }
             }
         }
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private void updateTimeLapseSetting() {
@@ -12439,9 +12482,11 @@ private boolean isDevOptionSetting(){
 
     private void exitVideoModule(){
         Log.i(TAG, "exitVideoModule ");
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,exitVideoModule");
         if (mVideoEncoder != null && mIsRecordingVideo) {
             mVideoEncoder.signalEndOfInputStream();
         }
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,exitVideoModule--1");
         mFrameProcessor.setVideoOutputSurface(null);
         mFrameProcessor.onClose();
         mIsRecordingVideo = false;
@@ -12449,6 +12494,7 @@ private boolean isDevOptionSetting(){
         mRecordingStoped = true;
         mHighSpeedCaptureRate = 0;
         // release media recorder
+        if (TRACE_DEBUG) Trace.endSection();
         if (PersistUtil.enableMediaRecorder()) {
             releaseMediaRecorder();
         } else {
@@ -12457,10 +12503,12 @@ private boolean isDevOptionSetting(){
         }
         releaseAudioFocus();
         mIsPreviewingVideo = false;
+         if (TRACE_DEBUG) Trace.endSection();
     }
 
     private void stopRecordingVideo(int cameraId) {
         Log.i(TAG, "stopRecordingVideo " + cameraId);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,stopRecordingVideo");
         mStopRecordingTime = System.currentTimeMillis();
         if (isSSMEnabled()) {
             updateProgressBar(false);
@@ -12490,6 +12538,8 @@ private boolean isDevOptionSetting(){
             mHasMapTimes.put("buttonClick->stopRecorder",stopMediaRecorder - mStartedTime);
         }
         // Stop recording
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,media recorder stop");
+
         if (PersistUtil.enableMediaRecorder()) {
             try {
                 if (mMediaRecorder != null){
@@ -12602,6 +12652,8 @@ private boolean isDevOptionSetting(){
             saveVideo();
         }
         keepScreenOnAwhile();
+        if (TRACE_DEBUG) Trace.endSection();
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,media recorder release");
         // release media recorder
         if (PersistUtil.enableMediaRecorder()) {
             releaseMediaRecorder();
@@ -12628,6 +12680,8 @@ private boolean isDevOptionSetting(){
         if(mFrameProcessor != null) {
             mFrameProcessor.onOpen(getFrameProcFilterId(), mPreviewSize);
         }
+             if (TRACE_DEBUG) Trace.endSection();
+
         if (mIntentMode != INTENT_MODE_VIDEO && !mPaused) {
             if (!PersistUtil.enableMediaRecorder()) {
                 releaseAudioFocus();
@@ -12649,6 +12703,7 @@ private boolean isDevOptionSetting(){
         }
         if(mPostProcessor.isJniAPISupported() && mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE).equals("HEVCProfileMain10HDR10Plus"))
             mPostProcessor.nativePerfLockRelease(2);
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private void setVideoFlashOff() {
@@ -13840,6 +13895,7 @@ private boolean isDevOptionSetting(){
         boolean hfr = mHighSpeedCapture && !mHighSpeedRecordingMode;
 
         AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,configurateAudio -- setDefaultHDRParameters");
         setDefaultHDRParameters(am);
         if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
             am.setParameters("hdr_record_on=true");
@@ -13855,7 +13911,10 @@ private boolean isDevOptionSetting(){
             am.setParameters((mOrientation == 90 || mOrientation == 270)
                     ? "orientation=landscape" : "orientation=portrait");
         }
+        if (TRACE_DEBUG) Trace.endSection();
 
+
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,configurateAudio -- mMediaRecorder set source");
         if (!mCaptureTimeLapse && !hfr && !mSuperSlomoCapture && (-1 != audioEncoder)) {
             // Set audio source as unprocessed if HDR
             if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
@@ -13868,7 +13927,7 @@ private boolean isDevOptionSetting(){
                 mProfile.fileFormat = MediaRecorder.OutputFormat.THREE_GPP;
             }
         }
-
+        if (TRACE_DEBUG) Trace.endSection();
         if (mSettingsManager.getValue(SettingsManager.KEY_AUDIO_BLE).equals("On")) {
             if (mBleInputDevice != null) {
                 boolean result = mMediaRecorder.setPreferredDevice(mBleInputDevice);
@@ -13996,6 +14055,7 @@ private boolean isDevOptionSetting(){
 
     private boolean prepareMediaRecorder() {
         try {
+            if (TRACE_DEBUG) Trace.beginSection("SnapCamera,prepareMediaRecorder");
             long startime = System.currentTimeMillis();
             mMediaRecorder.prepare();
             if(mActivity.getPerformenceTest()) {
@@ -14010,6 +14070,7 @@ private boolean isDevOptionSetting(){
                     Log.i(TAG, "BLE On, Active microphone info " + microphoneInfo.getType());
                 }
             }
+            if (TRACE_DEBUG) Trace.endSection();
             return true;
         } catch (IOException e) {
             Log.e(TAG, "prepare failed for " + mVideoFilename + e);
@@ -17234,12 +17295,21 @@ private boolean isDevOptionSetting(){
         Log.i(TAG, "Releasing media recorder mMediaRecorder="+mMediaRecorder);
         long releaseMedia = System.currentTimeMillis();
         deleteInvalidUri();
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,releaseMediaRecorder");
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,releaseMediaRecorder -- clean");
         cleanupEmptyFile();
+        if (TRACE_DEBUG) Trace.endSection();
         if (mMediaRecorder != null) {
             try{
+                if (TRACE_DEBUG) Trace.beginSection("SnapCamera,releaseMediaRecorder -- reset");
                 mMediaRecorder.reset();
+                if (TRACE_DEBUG) Trace.endSection();
+                if (TRACE_DEBUG) Trace.beginSection("SnapCamera,releaseMediaRecorder-- release");
                 mMediaRecorder.release();
+                if (TRACE_DEBUG) Trace.endSection();
+                if (TRACE_DEBUG) Trace.beginSection("SnapCamera,releaseMediaRecorder-- releasePhysical");
                 releasePhysicalRecorder();
+                if (TRACE_DEBUG) Trace.endSection();
             }catch (RuntimeException e) {
                 Log.e(TAG,e.toString());
             }
@@ -17257,9 +17327,11 @@ private boolean isDevOptionSetting(){
         if (PersistUtil.needAudioEncoder()) {
             AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
             // Set default values for HDR settings
+            if (TRACE_DEBUG) Trace.beginSection("SnapCamera,releaseMediaRecorder -- setDefaultHDRParameters");
             setDefaultHDRParameters(am);
+            if (TRACE_DEBUG) Trace.endSection();
         }
-
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private void cleanupEmptyFile() {
@@ -17320,11 +17392,13 @@ private boolean isDevOptionSetting(){
 
     private void releaseAudioFocus() {
         if (!PersistUtil.needAudioEncoder()) return;
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,releaseAudioFocus");
         AudioManager am = (AudioManager)mActivity.getSystemService(Context.AUDIO_SERVICE);
         int result = am.abandonAudioFocus(null);
         if (result == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
             Log.v(TAG, "Audio focus release failed");
         }
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private boolean isVideoCaptureIntent() {
