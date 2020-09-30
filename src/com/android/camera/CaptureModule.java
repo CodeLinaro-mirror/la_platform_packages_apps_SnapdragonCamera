@@ -7548,18 +7548,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mLiveShotInitHeifWriter != null) {
             mLiveShotInitHeifWriter.close();
         }
-        if (isEISDisable() && isAbortCapturesEnable() && mCurrentSession != null) {
-            try {
-                mCurrentSession.abortCaptures();
-                Log.d(TAG, "stopRecordingVideo call abortCaptures ");
-            } catch (CameraAccessException | IllegalStateException e) {
-                e.printStackTrace();
-            }
-        }
-        if (!mPaused && !isAbortCapturesEnable()) {
-            setVideoFlashOff();
-            closePreviewSession();
-        }
         mRecordingStarted = false;
 
         if (PersistUtil.enableMediaRecorder()) {
@@ -7592,6 +7580,20 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             shouldAddToMediaStoreNow = true;
         }
+
+        if (isEISDisable() && isAbortCapturesEnable() && mCurrentSession != null) {
+            try {
+                mCurrentSession.abortCaptures();
+                Log.d(TAG, "stopRecordingVideo call abortCaptures ");
+            } catch (CameraAccessException | IllegalStateException e) {
+                e.printStackTrace();
+            }
+        }
+        if (!mPaused && !isAbortCapturesEnable()) {
+            setVideoFlashOff();
+            closePreviewSession();
+        }
+
         Log.d(TAG, "stopRecordingVideo done. Time=" +
                 (System.currentTimeMillis() - mStopRecordingTime) + "ms");
         AccessibilityUtils.makeAnnouncement(mUI.getVideoButton(),
