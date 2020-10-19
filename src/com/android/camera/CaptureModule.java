@@ -3249,6 +3249,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     || !checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id])) {
                 enableShutterAndVideoOnUiThread(id);
                 mLongshotActive = false;
+                mTakingPicture[id] = false;
+                if (mCurrentSceneMode.mode != CameraMode.PRO_MODE)
+                    mUI.enableZoomSeekBar(true);
                 warningToast("Camera is not ready yet to take a picture.");
                 return;
             }
