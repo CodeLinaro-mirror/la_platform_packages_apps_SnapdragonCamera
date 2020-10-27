@@ -543,7 +543,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMCXMasterCb", Integer.class);
     public static final CaptureRequest.Key<Integer> extendedMaxZoom =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.ExtendedMaxZoom", Integer.class);
-
+    public static final CaptureRequest.Key<Byte> shading_correction =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableShadingCorrection", byte.class);
     public static final CaptureRequest.Key<Integer> mcxRawCbInfo =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.McxRawCallbackInfo", Integer.class);
     public static final CaptureRequest.Key<Byte> mctf =
@@ -552,6 +553,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableStatsVisualizer", byte.class);
     // Session Parameters vendorTag END
 
+    public static final CameraCharacteristics.Key<Byte> enable_shading_correction =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.shadingCorrection.enableShadingCorrection", byte.class);
     private static final CaptureResult.Key<Byte> is_depth_focus =
             new CaptureResult.Key<>("org.quic.camera.isDepthFocus.isDepthFocus", byte.class);
     private static final CaptureRequest.Key<Byte> capture_burst_fps =
@@ -4965,6 +4968,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyMctf(builder);
         applyQLL(builder);
         applyEnableStatsVisualizer(builder);
+        applyShadingCorrection(builder);
     }
 
     private void applyMctf(CaptureRequest.Builder builder){
@@ -9491,12 +9495,28 @@ public class CaptureModule implements CameraModule, PhotoController,
             String enable = mSettingsManager.getValue(
                     SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
             Log.v(TAG, " applyEnableStatsVisualizer enable :" + enable);
-            if ("1".equals(enable)){
+            if ("1".equals(enable)) {
                 value = 1;
             }
             request.set(enable_statsvisualizer, value);
         } catch (IllegalArgumentException e) {
             Log.v(TAG, " there is no vendorTag enable_statsvisualizer");
+
+        }
+    }
+
+    private void applyShadingCorrection(CaptureRequest.Builder request) {
+        if (!mSettingsManager.isShadingCorrectionSupported())
+            return;
+        try {
+            byte value = 1;
+            String shadingCorrection = mSettingsManager.getValue(
+                    SettingsManager.KEY_SHADING_CORRECTION);
+            if ("0".equals(shadingCorrection)){
+                value = 0;
+            }
+            request.set(CaptureModule.shading_correction, value);
+        } catch (IllegalArgumentException e) {
         }
     }
 
