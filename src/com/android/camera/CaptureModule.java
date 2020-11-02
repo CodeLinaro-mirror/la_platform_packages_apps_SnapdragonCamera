@@ -7323,6 +7323,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyVideoHDR(builder);
         applyTouchTrackFocus(builder);
         applyToneMapping(builder);
+        applyStatsNNControl(builder);
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
