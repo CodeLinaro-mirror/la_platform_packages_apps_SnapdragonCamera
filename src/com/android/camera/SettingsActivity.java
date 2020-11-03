@@ -234,6 +234,7 @@ public class SettingsActivity extends PreferenceActivity {
                    pref.getKey().equals(SettingsManager.KEY_SELECT_MODE)){
                     updateEISPreference();
                     updateVideoVariableFpsPreference();
+                    updateVideoHfrFpsPreference();
                 }
 
                 if (pref.getKey().equals(SettingsManager.KEY_MFHDR) ||
@@ -1342,6 +1343,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePhysicalPreferences();
         updateLongShotPreference();
         updateStatsVisualizer();
+        updateVideoHfrFpsPreference();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
@@ -1507,6 +1509,21 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
             flipPref.setEnabled(enabled);
+        }
+    }
+
+    private void updateVideoHfrFpsPreference() {
+        ListPreference pref = (ListPreference)findPreference(
+                SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        if (pref != null) {
+            pref.setEnabled(true);
+        }
+        mSettingsManager.filterHFROptions();
+        updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        if (pref != null) {
+            if (pref.getEntries() != null && pref.getEntries().length == 1){
+                pref.setEnabled(false);
+            }
         }
     }
 
