@@ -3746,6 +3746,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (mUI.getCurrentProMode() != ProMode.MANUAL_MODE) {
                         unlockFocus(id);
                     } else {
+                        mTakingPicture[id] = false;
                         enableShutterAndVideoOnUiThread(id);
                     }
                     Log.d(TAG,"onShutterButtonRelease");
