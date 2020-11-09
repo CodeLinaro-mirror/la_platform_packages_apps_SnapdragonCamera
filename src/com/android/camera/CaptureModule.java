@@ -5827,6 +5827,21 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    public void updateZoomSmooth(float from, float to, int frame) {
+        float delta = (to - from) / frame;
+        for (int i = 0; i < frame; i++) {
+            float zoom = mZoomValue + delta;
+            if (from > to && zoom <= to) {
+                mZoomValue = to;
+            } else if (from < to && zoom >= to){
+                mZoomValue = to;
+            } else {
+                mZoomValue = zoom;
+            }
+            applyZoomAndUpdate(getMainCameraId(),true);
+        }
+    }
+
     private boolean isInMode(int cameraId) {
         if (isBackCamera()) {
             switch (getCameraMode()) {
@@ -6643,7 +6658,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyZoomAndUpdate() {
-        applyZoomAndUpdate(getMainCameraId());
+        applyZoomAndUpdate(getMainCameraId(),false);
         mUI.updateFaceViewCameraBound(mCropRegion[getMainCameraId()]);
         mUI.updateT2TCameraBound(mCropRegion[getMainCameraId()]);
         mUI.updateStatsNNCameraBound(mCropRegion[getMainCameraId()]);
@@ -9897,7 +9912,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         return updatePreview;
     }
 
-    private void applyZoomAndUpdate(int id) {
+    private void applyZoomAndUpdate(int id, boolean instant) {
         CaptureRequest.Builder captureRequest = mPreviewRequestBuilder[id];
         Log.i(TAG,"applyZoomAndUpdate, mRecordingPausing:" + mRecordingPausing);
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
@@ -9939,8 +9954,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (session instanceof CameraConstrainedHighSpeedCaptureSession) {
                     List list = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
                             .createHighSpeedRequestList(captureRequest.build());
-                    ((CameraConstrainedHighSpeedCaptureSession) session).setRepeatingBurst(list
-                            , mCaptureCallback, mCameraHandler);
+                    if(!instant) {
+                        ((CameraConstrainedHighSpeedCaptureSession) session).captureBurst(list
+                                , mCaptureCallback, mCameraHandler);
+                    } else {
+                        ((CameraConstrainedHighSpeedCaptureSession) session).setRepeatingBurst(list
+                                , mCaptureCallback, mCameraHandler);
+                    }
                 } else if (isSSMEnabled()) {
                     session.setRepeatingBurst(createSSMBatchRequest(captureRequest),
                             mCaptureCallback, mCameraHandler);
@@ -9949,23 +9969,26 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mSettingsManager.getVideoFPS());
                     if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                         if (mUI.getZoomFixedSupport()) {
-                           applyZoomRatio(mVideoRecordRequestBuilder, mZoomValue, id);
+                            applyZoomRatio(mVideoRecordRequestBuilder, mZoomValue, id);
                         } else {
-                           applyZoom(mVideoRecordRequestBuilder, id);
+                            applyZoom(mVideoRecordRequestBuilder, id);
                         }
-                        if (PersistUtil.enableMediaRecorder() && mIsPreviewingVideo)  {
+                        if (PersistUtil.enableMediaRecorder() && mIsPreviewingVideo) {
                             mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                         }
                         limitPreviewFPS();
-                        if (PersistUtil.enableMediaRecorder() && mIsPreviewingVideo)  {
+                        if (PersistUtil.enableMediaRecorder() && mIsPreviewingVideo) {
                             mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
                         }
+                    }
+                    if (instant) {
+                        session.capture(captureRequest
+                                .build(), mCaptureCallback, mCameraHandler);
                     } else {
                         session.setRepeatingRequest(captureRequest
                                 .build(), mCaptureCallback, mCameraHandler);
                     }
                 }
-
             }
         } catch (CameraAccessException | IllegalStateException e) {
             e.printStackTrace();
