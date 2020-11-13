@@ -11623,6 +11623,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mUI.hideZoomSeekBar();
         } else {
             mUI.showZoomSeekBar();
+            mUI.enableZoomSeekBar(true);
         }
     }
 
