@@ -10647,6 +10647,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         // inverse of matrix2 will translate from (-1000 to 1000) to camera 2 coordinates
         Matrix matrix2 = new Matrix();
         boolean postZoomFov = mUI.getZoomFixedSupport() && PersistUtil.isCameraPostZoomFOV();
+        if (postZoomFov) {
+            cropRegion = mOriginalCropRegion[id];
+        }
+
         matrix2.preTranslate(-mOriginalCropRegion[id].width() / 2f,
                 -mOriginalCropRegion[id].height() / 2f);
         matrix2.postScale(2000f / mOriginalCropRegion[id].width(),
@@ -10666,14 +10670,17 @@ public class CaptureModule implements CameraModule, PhotoController,
             meteringRegionF.bottom = meteringRegionF.bottom * cropRegion.height()
                     / mOriginalCropRegion[id].height() + cropRegion.top;
         }
-
         Rect meteringRegion = new Rect((int) meteringRegionF.left, (int) meteringRegionF.top,
                 (int) meteringRegionF.right, (int) meteringRegionF.bottom);
         if (DEBUG) {
             Log.v(TAG, " meteringRegion left :" + meteringRegion.left + ", top:" +
                     meteringRegion.top + " right :" + meteringRegion.right +
                     ", bottom :" + meteringRegion.bottom);
+            Log.v(TAG, " cropRegion left :" + cropRegion.left + ", top:" +
+                    cropRegion.top + " right :" + cropRegion.right +
+                    ", bottom :" + cropRegion.bottom);
         }
+
         meteringRegion.left = CameraUtil.clamp(meteringRegion.left, cropRegion.left,
                 cropRegion.right);
         meteringRegion.top = CameraUtil.clamp(meteringRegion.top, cropRegion.top,
