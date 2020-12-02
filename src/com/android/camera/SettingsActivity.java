@@ -172,18 +172,12 @@ public class SettingsActivity extends PreferenceActivity {
             // if diable KEY_BURST_LIMIT, enable KEY_CAPTURE_MFNR_VALUE, KEY_LONGSHOT is diable
             if (key.equals(SettingsManager.KEY_BURST_LIMIT) ||
                     key.equals(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
-                SwitchPreference longShot = (SwitchPreference) findPreference(
-                        SettingsManager.KEY_LONGSHOT);
-                if(isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)){
-                    longShot.setEnabled(true);
-                } else {
-                    if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
-                        mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
-                        longShot.setEnabled(false);
-                    } else {
-                        longShot.setEnabled(true);
-                    }
-                }
+                updateLongShotPreference();
+            }
+
+            if (key.equals(SettingsManager.KEY_STATS_VISUALIZER_ENABLE)) {
+                value = ((ListPreference) p).getValue();
+                updateStatsVisualizer(value);
             }
         }
     };
@@ -1346,6 +1340,7 @@ public class SettingsActivity extends PreferenceActivity {
         initializePhysicalPreferences();
         updatePhysicalPreferences();
         updateLongShotPreference();
+        updateStatsVisualizer();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
@@ -1564,12 +1559,33 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateLongShotPreference() {
         SwitchPreference longShot = (SwitchPreference) findPreference(
                 SettingsManager.KEY_LONGSHOT);
-        if(isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)){
-            longShot.setEnabled(true);
-        } else {
-            if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
-                mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
-                longShot.setEnabled(false);
+        if (longShot != null) {
+            if(isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)){
+                longShot.setEnabled(true);
+            } else {
+                if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
+                    mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
+                    longShot.setEnabled(false);
+                } else {
+                    longShot.setEnabled(true);
+                }
+            }
+        }
+    }
+
+    private void updateStatsVisualizer() {
+        String values = mSettingsManager.getValue(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
+        updateStatsVisualizer(values);
+    }
+
+    private void updateStatsVisualizer(String enable) {
+        MultiSelectListPreference pref = (MultiSelectListPreference) findPreference(
+                SettingsManager.KEY_STATS_VISUALIZER_VALUE);
+        if (pref != null) {
+            if (enable.equals("0")) {
+                pref.setEnabled(false);
+            } else {
+                pref.setEnabled(true);
             }
         }
     }

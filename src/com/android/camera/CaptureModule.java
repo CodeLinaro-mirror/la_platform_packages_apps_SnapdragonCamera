@@ -529,7 +529,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static final CaptureRequest.Key<Byte> recording_end_stream =
             new CaptureRequest.Key<>("org.quic.camera.recording.endOfStream", byte.class);
 
-    // Session Parameters vendorTag
+    // Session Parameters vendorTag START
     public static final CaptureRequest.Key<Integer> earlyPCR =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.numPCRsBeforeStreamOn", Integer.class);
     public static final CaptureRequest.Key<Integer> mcxMasterCb =
@@ -541,6 +541,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.McxRawCallbackInfo", Integer.class);
     public static final CaptureRequest.Key<Byte> mctf =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMCTFwithReferenceFrame", byte.class);
+    public static final CaptureRequest.Key<Byte> enable_statsvisualizer =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableStatsVisualizer", byte.class);
+    // Session Parameters vendorTag END
+
     private static final CaptureResult.Key<Byte> is_depth_focus =
             new CaptureResult.Key<>("org.quic.camera.isDepthFocus.isDepthFocus", byte.class);
     private static final CaptureRequest.Key<Byte> capture_burst_fps =
@@ -835,6 +839,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean mInTAF = false;
 
+    private String mStatsVisualEnable;
+    private String mStatsVisualizer;
+
     // BG stats
     private static int BGSTATS_DATA = 64*48;
     public static int BGSTATS_WIDTH = 480;
@@ -1103,9 +1110,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateAECGainAndExposure(result);
                 Face[] faces = result.get(CaptureResult.STATISTICS_FACES);
                 if (FD_DEBUG)
-                    Log.d(FD_TAG,"onCaptureCompleted Detected Face size = " + Integer.toString(faces == null? 0 : faces.length));
-                if (faces != null && mSettingsManager.isFDRenderingAtPreview()){
-                    if (isBsgcDetecionOn() || isFacialContourOn() || isFacePointOn()){
+                    Log.d(FD_TAG, "onCaptureCompleted Detected Face size = " + Integer.toString(faces == null ? 0 : faces.length));
+                if (faces != null && mSettingsManager.isFDRenderingAtPreview()) {
+                    if (isBsgcDetecionOn() || isFacialContourOn() || isFacePointOn()) {
                         updateFaceView(faces, getBsgcInfo(result, faces.length));
                     } else {
                         updateFaceView(faces, null);
@@ -1119,8 +1126,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             mPostProcessor.onMetaAvailable(result);
             String stats_visualizer = mSettingsManager.getValue(
                     SettingsManager.KEY_STATS_VISUALIZER_VALUE);
-            if (stats_visualizer != null) {
-                updateStatsView(stats_visualizer,result);
+            if (mStatsVisualizer != null && mStatsVisualEnable.equals("1")) {
+                updateStatsView(stats_visualizer, result);
             } else {
                 mUI.updateAWBInfoVisibility(View.GONE);
                 mUI.updateAECInfoVisibility(View.GONE);
@@ -4807,6 +4814,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyFaceContourVersion(builder);
         applyExtendMaxZoom(builder);
         applyMctf(builder);
+        applyEnableStatsVisualizer(builder);
     }
 
     private void applyMctf(CaptureRequest.Builder builder){
@@ -5027,6 +5035,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
         }
         mPaused = false;
+        mStatsVisualEnable = mSettingsManager.getValue(
+                SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
+        mStatsVisualizer = mSettingsManager.getValue(
+                SettingsManager.KEY_STATS_VISUALIZER_VALUE);
         for (int i = 0; i < MAX_NUM_CAM; i++) {
             if(mIsCloseCamera) {
                 mCameraOpened[i] = false;
@@ -9136,6 +9148,21 @@ public class CaptureModule implements CameraModule, PhotoController,
         try {
             request.set(CaptureModule.earlyPCR, 1);
         } catch (IllegalArgumentException e) {
+        }
+    }
+
+    private void applyEnableStatsVisualizer(CaptureRequest.Builder request) {
+        try {
+            byte value = 0;
+            String enable = mSettingsManager.getValue(
+                    SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
+            Log.v(TAG, " applyEnableStatsVisualizer enable :" + enable);
+            if ("1".equals(enable)){
+                value = 1;
+            }
+            request.set(enable_statsvisualizer, value);
+        } catch (IllegalArgumentException e) {
+            Log.v(TAG, " there is no vendorTag enable_statsvisualizer");
         }
     }
 
