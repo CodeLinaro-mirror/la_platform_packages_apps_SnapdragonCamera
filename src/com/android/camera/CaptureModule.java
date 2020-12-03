@@ -9907,6 +9907,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 isUseVideoPreview = false;
             }
         }
+        if (mCurrentSceneMode.mode == CameraMode.VIDEO ) {
+            isUseVideoPreview = false;
+        }
         if (mRecordingPausing && isUseVideoPreview) {
             captureRequest = mVideoPreviewRequestBuilder;
             String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
