@@ -669,6 +669,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 int frame = Math.abs((int)range * ZOOM_SMOOTH_FRAME);
                 if(frame == 0)
                     frame = ZOOM_SMOOTH_FRAME;
+                else if(frame > ZOOM_SMOOTH_FRAME_MAX)
+                    frame = ZOOM_SMOOTH_FRAME_MAX;
                 module.updateZoomSmooth(from,to,frame);
                 if(mModule.onZoomChanged(to)) {
                     mZoomSwitch.setText(entries[mZoomIndex]);
