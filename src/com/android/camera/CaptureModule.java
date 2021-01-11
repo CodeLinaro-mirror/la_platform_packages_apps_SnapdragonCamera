@@ -4950,7 +4950,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyFaceDetection(builder);
         applyColorEffect(builder);
         applyVideoFlash(builder, id);
-        applyVideoStabilization(builder);
         applyVideoEIS(builder);
     }
 
@@ -7307,7 +7306,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyAERegions(mVideoRecordRequestBuilder, cameraId);
             applySettingsForLockExposure(mVideoRecordRequestBuilder, cameraId);
             applyAntiBandingLevel(mVideoRecordRequestBuilder);
-            applyVideoStabilization(mVideoRecordRequestBuilder);
             applyNoiseReduction(mVideoRecordRequestBuilder);
             applyColorEffect(mVideoRecordRequestBuilder);
             applyVideoFlash(mVideoRecordRequestBuilder, cameraId);
@@ -7387,7 +7385,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             lockAfAeForRequestBuilder(builder, cameraId);
         }
         applyAntiBandingLevel(builder);
-        applyVideoStabilization(builder);
         applyNoiseReduction(builder);
         applyColorEffect(builder);
         applyVideoFlash(builder, cameraId);
@@ -7582,15 +7579,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         builder.set(CaptureRequest.NOISE_REDUCTION_MODE, noiseReduction);
     }
 
-    private void applyVideoStabilization(CaptureRequest.Builder builder) {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_DIS);
-        if (value == null) return;
-        if (value.equals("on")) {
-            builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CaptureRequest
-                    .CONTROL_VIDEO_STABILIZATION_MODE_ON);
-        } else {
+    private void applyVideoStabilization(CaptureRequest.Builder builder, boolean isDisabled) {
+        if (isDisabled) {
             builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CaptureRequest
                     .CONTROL_VIDEO_STABILIZATION_MODE_OFF);
+        } else {
+            builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CaptureRequest
+                    .CONTROL_VIDEO_STABILIZATION_MODE_ON);
         }
     }
 
@@ -9527,6 +9522,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             byte byteValue = (byte) (value.equals("disable") ? 0x00 : 0x01);
             try {
+                applyVideoStabilization(request, value.equals("disable"));
                 request.set(CaptureModule.eis_mode, byteValue);
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
