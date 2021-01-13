@@ -411,6 +411,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.quic.camera.AutoHDRSupport.isAutoHDRSupported", Byte.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_qll =
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.isQLLSupported", Integer.class);
+    public static CameraCharacteristics.Key<Integer> support_insensor_zoom =
+            new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.inSensorZoomCapability", Integer.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
 
@@ -598,6 +600,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMCTFwithReferenceFrame", byte.class);
     public static final CaptureRequest.Key<Byte> enable_statsvisualizer =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableStatsVisualizer", byte.class);
+    public static final CaptureRequest.Key<Integer> insensor_zoom_feature =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableInsensorZoom", Integer.class);
     //HDRVideo MODE
     public static final CaptureRequest.Key<Integer> hdr_video_mode = new CaptureRequest.Key<>(
             "org.codeaurora.qcamera3.sessionParameters.HDRVideoMode", Integer.class);
@@ -5090,6 +5094,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyExtendMaxZoom(builder);
         applyMctf(builder);
         applyQLL(builder);
+        applyInSensorZoom(builder);
         applyEnableStatsVisualizer(builder);
         applyShadingCorrection(builder);
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
@@ -10036,6 +10041,26 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (value.equals("1")) {
                 VendorTagUtil.setQLLMode(request, 1);
             }
+        }
+    }
+
+    private void applyInSensorZoom(CaptureRequest.Builder request) {
+        Log.v(TAG, " applyInSensorZoom supported :" + !mSettingsManager.isInSensorZoomSupported());
+        if (!mSettingsManager.isInSensorZoomSupported())
+            return;
+        try {
+            int value = 0;
+            String inSensorZoom = mSettingsManager.getValue(
+                    SettingsManager.KEY_INSENSOR_ZOOM);
+            Log.v(TAG, " applyInSensorZoom inSensorZoom :" + inSensorZoom);
+            if ("0".equals(inSensorZoom)){
+                request.set(CaptureModule.insensor_zoom_feature, value);
+            } else {
+                value = 1;
+                request.set(CaptureModule.insensor_zoom_feature, value);
+            }
+        } catch (IllegalArgumentException e) {
+            Log.v(TAG, " applyInSensorZoom didn`t exist vendorTag :" + insensor_zoom_feature);
         }
     }
 

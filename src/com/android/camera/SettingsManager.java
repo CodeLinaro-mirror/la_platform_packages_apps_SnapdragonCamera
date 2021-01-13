@@ -267,6 +267,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_PDNET_TOGGLE = "pref_camera2_pdnet_toggle_key";
     public static final String KEY_RAW_CB_INFO = "pref_camera2_raw_cb_info_key";
     public static final String KEY_QLL = "pref_camera2_qll_key";
+    public static final String KEY_INSENSOR_ZOOM = "pref_camera2_insensor_zoom_key";
     public static final String KEY_VSR = "pref_camera2_vsr_key";
 
     public static final String KEY_RAW_REPROCESS_TYPE = "pref_camera2_raw_reprocess_key";
@@ -1237,6 +1238,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference qll = mPreferenceGroup.findPreference(KEY_QLL);
         ListPreference vsr = mPreferenceGroup.findPreference(KEY_VSR);
         ListPreference shadingCorrection = mPreferenceGroup.findPreference(KEY_SHADING_CORRECTION);
+        ListPreference inSensorZoom = mPreferenceGroup.findPreference(KEY_INSENSOR_ZOOM);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -1480,8 +1482,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
 
+        if (inSensorZoom != null) {
+            if (!isInSensorZoomSupported()) {
+                removePreference(mPreferenceGroup, KEY_INSENSOR_ZOOM);
+            }
+        }
+
         if (vsr != null) {
-            if(!isVSRSupported()) {
+            if (!isVSRSupported()) {
                 removePreference(mPreferenceGroup, KEY_VSR);
             }
         }
@@ -2191,6 +2199,20 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return result > 1;
         }
         return (result > 0);
+    }
+
+    public boolean isInSensorZoomSupported() {
+        int result = 0;
+        try {
+            result = mCharacteristics.get(getCurrentCameraId()).get(
+                    CaptureModule.support_insensor_zoom);
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "cannot find vendor tag: " +
+                    CaptureModule.support_insensor_zoom.toString());
+        }
+        Log.v(TAG, " isInSensorZoomSupported result :" + result);
+        //return (result == 1);
+        return true;
     }
 
     public boolean isAutoExposureRegionSupported(int id) {
