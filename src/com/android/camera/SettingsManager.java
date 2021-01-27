@@ -307,6 +307,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Set<String> h265 = new HashSet<>();
         h265.add("HEVCProfileMain10");
         h265.add("HEVCProfileMain10HDR10");
+        h265.add("HEVCProfileMain10HDR10Plus");
         VIDEO_ENCODER_PROFILE_TABLE.put("h265", h265);
     }
 

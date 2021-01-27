@@ -7591,6 +7591,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             mode = 2;
         } else if (profile.equals("HEVCProfileMain10")) {
             mode = 1;
+        } else if (profile.equals("HEVCProfileMain10HDR10Plus")) {
+            mode = 3;
         }
         Log.d(TAG, "setHDRVideoMode: " + mode);
         VendorTagUtil.setHDRVideoMode(builder, (byte)mode);
