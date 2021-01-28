@@ -1123,6 +1123,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_VIDEO_HDR_VALUE);
                 add(SettingsManager.KEY_VIDEO_FLIP);
                 add(SettingsManager.KEY_PHYSICAL_CAMCORDER);
+                add(SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
                 for (String key: SettingsManager.KEY_PHYSICAL_VIDEO_SIZE)
                     add(key);
             }

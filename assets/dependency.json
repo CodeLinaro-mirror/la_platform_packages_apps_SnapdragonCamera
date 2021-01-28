@@ -190,7 +190,7 @@
     "1":{"pref_camera2_hdr_key":"disable"},
     "0":{}
   },
-  "pref_camera2_mfhdr_key":
+  "pref_camera2_manualhdr_key":
   {
     "1": {"pref_camera2_zsl_key":"hal-zsl",
              "pref_camera2_coloreffect_key":"0",

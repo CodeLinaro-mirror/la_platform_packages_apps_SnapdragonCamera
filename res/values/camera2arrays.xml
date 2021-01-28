@@ -1139,6 +1139,16 @@ for time lapse recording -->
         <item>3.0</item>
     </string-array>
 
+    <string-array name="camera2_offline_dump_trigger_entries" translatable="false">
+        <item>trigger start</item>
+        <item>trigger stop</item>
+    </string-array>
+
+    <string-array name="camera2_offline_dump_trigger_entryvalues" translatable="false">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+
     <string-array name="pref_camera2_face_detection_entryvalues" translatable="false">
         <item>@string/pref_camera2_face_detection_entry_value_simple</item>
         <item>@string/pref_camera2_face_detection_entry_value_full</item>
@@ -1418,6 +1428,16 @@ for time lapse recording -->
         <item>@string/pref_camera2_manualhdr_entry_value_none</item>
         <item>@string/pref_camera2_manualhdr_entry_value_auto</item>
         <item>@string/pref_camera2_manualhdr_entry_value_manual</item>
+    </string-array>
+
+    <string-array name="pref_camera2_offline_dump_trigger_entries" translatable="false">
+        <item>@string/pref_camera2_offline_dump_trigger_entry_enable</item>
+        <item>@string/pref_camera2_offline_dump_trigger_entry_disable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_offline_dump_trigger_entryvalues" translatable="false">
+        <item>@string/pref_camera2_offline_dump_trigger_entry_value_enable</item>
+        <item>@string/pref_camera2_offline_dump_trigger_entry_value_disable</item>
     </string-array>
 
     <string-array name="pref_camera2_shading_correction_entries" translatable="false">

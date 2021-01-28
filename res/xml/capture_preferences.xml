@@ -682,6 +682,13 @@
         camera:entryValues="@array/pref_camera2_manualhdr_entryvalues" />
 
     <ListPreference
+        camera:key="pref_camera2_offline_dump_trigger_key"
+        camera:defaultValue="@string/pref_camera2_offline_dump_trigger_default"
+        camera:title="@string/pref_camera2_offline_dump_trigger_title"
+        camera:entries="@array/pref_camera2_offline_dump_trigger_entries"
+        camera:entryValues="@array/pref_camera2_offline_dump_trigger_entryvalues" />
+
+    <ListPreference
         camera:key="pref_camera2_shading_correction_key"
         camera:defaultValue="@string/pref_camera2_shading_correction_default"
         camera:title="@string/pref_camera2_shading_correction_title"

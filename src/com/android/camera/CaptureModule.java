@@ -261,6 +261,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private AtomicInteger mNumFramesArrived = new AtomicInteger(0);
     private final int MAX_IMAGEREADERS = 10;
 
+    private long mVideoFrameNumber = 0;
+
     private boolean mIsRTBCameraId = false;
 
     /** For temporary save warmstart gains and cct value*/
@@ -570,6 +572,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableStatsVisualizer", byte.class);
     // Session Parameters vendorTag END
 
+    public static final CaptureRequest.Key<Integer> offline_dump_trigger_enabled =
+            new CaptureRequest.Key<>("org.quic.camera.offlinedump.isEnabled", Integer.class);
     public static final CameraCharacteristics.Key<Byte> enable_shading_correction =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.shadingCorrection.enableShadingCorrection", byte.class);
     private static final CaptureResult.Key<Byte> is_depth_focus =
@@ -583,6 +587,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             "org.quic.camera2.VideoConfigurations.info.VideoConfigurationsTable",int[].class);
     public static final CameraCharacteristics.Key<Byte> is_camera_fd_supported = new CameraCharacteristics.Key<>(
             "org.quic.camera.FDRendering.isFDRenderingInCameraUISupported",byte.class);
+
+    // offline dump trigger
+    public static final CaptureRequest.Key<Integer> offline_dump_trigger_trigger =
+            new CaptureRequest.Key<>("org.quic.camera.offlinedump.OfflineDumpTrigger", Integer.class);
+    public static final CaptureRequest.Key<Long> offline_dump_trigger_framenum =
+            new CaptureRequest.Key<>("org.quic.camera.offlinedump.frameNum", Long.class);
 
     // extended max zoom
     public static CameraCharacteristics.Key<Float> extended_max_zoom =
@@ -1150,6 +1160,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 return;
             }
             int id = (int) result.getRequest().getTag();
+            mVideoFrameNumber = result.getFrameNumber();
 
             if (id == getMainCameraId()) {
                 updateFocusStateChange(result);
@@ -5005,6 +5016,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyQLL(builder);
         applyEnableStatsVisualizer(builder);
         applyShadingCorrection(builder);
+        if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
+                mCurrentSceneMode.mode == CameraMode.HFR) {
+            applyOfflineDumpTrigger(builder);
+        }
     }
 
     private void applyMctf(CaptureRequest.Builder builder){
@@ -5865,6 +5880,36 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mZoomValue = zoom;
             }
             applyZoomAndUpdate(getMainCameraId(),true);
+        }
+    }
+
+    public void updateOfflineDumpTriggerStatus(int trigger) {
+        Log.v(TAG, "updateOfflineDumpTriggerStatus trigger :" + trigger
+                + ", mVideoFrameNumber :" + mVideoFrameNumber);
+        try {
+            mVideoRecordRequestBuilder.set(offline_dump_trigger_trigger, trigger);
+            mVideoRecordRequestBuilder.set(offline_dump_trigger_framenum, mVideoFrameNumber + 1);
+        } catch (IllegalArgumentException e) {
+            Log.v(TAG, "updateOfflineDumpTriggerStatus no vendorTag :" +
+                    offline_dump_trigger_trigger);
+            Log.v(TAG, "updateOfflineDumpTriggerStatus no vendorTag :" +
+                    offline_dump_trigger_framenum);
+        }
+        try {
+            if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
+                List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
+                        .createHighSpeedRequestList(
+                                mVideoRecordRequestBuilder.build());
+                mCurrentSession.captureBurst(requestList, mCaptureCallback, mCameraHandler);
+            } else if (isSSMEnabled()) {
+                mCurrentSession.captureBurst(createSSMBatchRequest(mVideoRecordRequestBuilder),
+                        mCaptureCallback, mCameraHandler);
+            } else {
+                mCurrentSession.capture(mVideoRecordRequestBuilder.build(), mCaptureCallback,
+                        mCameraHandler);
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
         }
     }
 
@@ -9592,6 +9637,21 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             request.set(CaptureModule.shading_correction, value);
         } catch (IllegalArgumentException e) {
+            Log.v(TAG, " applyShadingCorrection no vendorTag: " + shading_correction);
+        }
+    }
+
+    private void applyOfflineDumpTrigger(CaptureRequest.Builder request) {
+        try {
+            int value = 1;
+            String offlineDumpTrigger = mSettingsManager.getValue(
+                    SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
+            if ("0".equals(offlineDumpTrigger)){
+                value = 0;
+            }
+            request.set(offline_dump_trigger_enabled, value);
+        } catch (IllegalArgumentException e) {
+            Log.v(TAG, "applyOfflineDumpTrigger no vendorTag: " + offline_dump_trigger_enabled);
         }
     }
 

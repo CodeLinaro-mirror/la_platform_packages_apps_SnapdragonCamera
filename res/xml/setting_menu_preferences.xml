@@ -770,6 +770,15 @@
             android:summary="%s"/>
 
         <ListPreference
+            android:key="pref_camera2_offline_dump_trigger_key"
+            android:defaultValue="@string/pref_camera2_offline_dump_trigger_default"
+            android:title="@string/pref_camera2_offline_dump_trigger_title"
+            android:entries="@array/pref_camera2_offline_dump_trigger_entries"
+            android:entryValues="@array/pref_camera2_offline_dump_trigger_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
             android:key="pref_camera2_shading_correction_key"
             android:defaultValue="@string/pref_camera2_shading_correction_default"
             android:title="@string/pref_camera2_shading_correction_title"

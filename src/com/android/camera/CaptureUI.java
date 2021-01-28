@@ -302,6 +302,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     private TextView mZoomSwitch;
     private int mZoomIndex = 0;
+    private TextView mOfflineDumpTrigger;
+    private int mOfflineDumpTriIndex = 0;
 
     private boolean[] mSurfaceReady = {false,false,false,false};
     private SurfaceView[] mPhysicalViews = new SurfaceView[CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
@@ -649,6 +651,24 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
 
+        mOfflineDumpTrigger = (TextView)mRootView.findViewById(R.id.offline_dump_trigger);
+        updateOfflineDumpTrigger(View.GONE);
+        mOfflineDumpTrigger.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String[] entries = mActivity.getResources().getStringArray(
+                        R.array.camera2_offline_dump_trigger_entries);
+                String[] values = mActivity.getResources().getStringArray(
+                        R.array.camera2_offline_dump_trigger_entryvalues);
+                mOfflineDumpTriIndex = mOfflineDumpTriIndex + 1;
+                if (mOfflineDumpTriIndex > values.length -1)
+                    mOfflineDumpTriIndex = 0;
+                int trigger = Integer.valueOf(values[mOfflineDumpTriIndex]);
+                module.updateOfflineDumpTriggerStatus(trigger);
+                mOfflineDumpTrigger.setText(entries[mOfflineDumpTriIndex]);
+            }
+        });
+
         mCancelButton = (ImageView) mRootView.findViewById(R.id.cancel_button);
         final int intentMode = mModule.getCurrentIntentMode();
         if (intentMode != CaptureModule.INTENT_MODE_NORMAL) {
@@ -853,6 +873,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             return true;
         }
         return false;
+    }
+
+    public void updateOfflineDumpTrigger(int status) {
+        if (mOfflineDumpTrigger != null) {
+            String offlineDumpTrigger = mSettingsManager.getValue(
+                    SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
+            if ("1".equals(offlineDumpTrigger)){
+                mOfflineDumpTrigger.setVisibility(status);
+            } else {
+                mOfflineDumpTrigger.setVisibility(View.GONE);
+            }
+        }
     }
 
     public void hideZoomSwitch(){
@@ -1394,6 +1426,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoButton.setImageResource(R.drawable.video_stop);
             mRecordingTimeView.setText("00:00");
             mRecordingTimeRect.setVisibility(View.VISIBLE);
+            updateOfflineDumpTrigger(View.VISIBLE);
             mMuteButton.setVisibility((mModule.isHSRMode() || mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO) ? View.VISIBLE : View.INVISIBLE);
             setMuteButtonResource(!mModule.isAudioMute());
         } else {
@@ -1407,6 +1440,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoButton.setImageResource(R.drawable.video_capture);
             mRecordingTimeRect.setVisibility(View.GONE);
             mMuteButton.setVisibility(View.INVISIBLE);
+            updateOfflineDumpTrigger(View.GONE);
         }
     }
 
