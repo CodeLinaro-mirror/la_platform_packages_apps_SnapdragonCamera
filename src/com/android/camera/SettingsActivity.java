@@ -74,6 +74,7 @@ import android.widget.Toast;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.EditText;
+import android.widget.CheckBox;
 import android.text.InputType;
 
 import org.codeaurora.snapcam.R;
@@ -84,6 +85,7 @@ import com.android.camera.util.PersistUtil;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -179,6 +181,13 @@ public class SettingsActivity extends PreferenceActivity {
                 value = ((ListPreference) p).getValue();
                 updateStatsVisualizer(value);
             }
+
+            if (key.equals(SettingsManager.KEY_MANUAL_HDR)) {
+                value = ((ListPreference) p).getValue();
+                if (value.equals("manual")) {
+                    UpdateManualHDRSetting();
+                }
+            }
         }
     };
 
@@ -237,7 +246,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updateVideoHfrFpsPreference();
                 }
 
-                if (pref.getKey().equals(SettingsManager.KEY_MFHDR) ||
+                if (pref.getKey().equals(SettingsManager.KEY_MANUAL_HDR) ||
                         pref.getKey().equals(SettingsManager.KEY_SELECT_MODE)) {
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
@@ -919,6 +928,69 @@ public class SettingsActivity extends PreferenceActivity {
         });
         alert.show();
     }
+
+    private void UpdateManualHDRSetting() {
+        //dismiss all popups first, because we need to show edit dialog
+        int cameraId = mSettingsManager.getCurrentCameraId();
+        SharedPreferences.Editor editor = mLocalSharedPref.edit();
+
+        int[] modes = mSettingsManager.isManualHDRSupported();
+
+        boolean isMfHDRChecked = mLocalSharedPref.getBoolean(
+                SettingsManager.KEY_MANUAL_MFHDR, false);
+        boolean isSHDRChecked = mLocalSharedPref.getBoolean(
+                SettingsManager.KEY_MANUAL_SHDR, false);
+        boolean isQHDRChecked = mLocalSharedPref.getBoolean(
+                SettingsManager.KEY_MANUAL_QHDR, false);
+
+        final CheckBox mfHDRChb = new CheckBox(SettingsActivity.this);
+        final CheckBox sHDRChb = new CheckBox(SettingsActivity.this);
+        final CheckBox qHDRChb = new CheckBox(SettingsActivity.this);
+        sHDRChb.setText("SHDR");
+        mfHDRChb.setText("MFHDR");
+        qHDRChb.setText("QHDR");
+        sHDRChb.setChecked(isSHDRChecked);
+        mfHDRChb.setChecked(isMfHDRChecked);
+        qHDRChb.setChecked(isQHDRChecked);
+        Log.v(TAG, " isMfHDRChecked :" + isMfHDRChecked + ", isSHDRChecked :" +
+                isSHDRChecked + ", isQHDRChecked :" + isQHDRChecked);
+        LinearLayout linear = new LinearLayout(SettingsActivity.this);
+        linear.setOrientation(1);
+        linear.setPadding(50, 10, 0, 0);
+        for (int i = 0; i < modes.length; i++) {
+            if (modes[i] == 1) {
+                linear.addView(sHDRChb);
+            } else if (modes[i] == 2) {
+                linear.addView(mfHDRChb);
+            } else if (modes[i] == 3) {
+                linear.addView(qHDRChb);
+            }
+        }
+
+        final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
+        alert.setTitle("MANUAL HDR Settings");
+        alert.setView(linear);
+        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                boolean shdrChecked = sHDRChb.isChecked();
+                boolean mfhdrChecked = mfHDRChb.isChecked();
+                boolean qhdrChecked = qHDRChb.isChecked();
+                Log.v(TAG, "onClick shdrChecked :" + shdrChecked + ", mfhdrChecked :" +
+                        mfhdrChecked + ", qhdrChecked :" + qhdrChecked);
+                editor.putBoolean(SettingsManager.KEY_MANUAL_MFHDR, mfhdrChecked);
+                editor.putBoolean(SettingsManager.KEY_MANUAL_SHDR, shdrChecked);
+                editor.putBoolean(SettingsManager.KEY_MANUAL_QHDR, qhdrChecked);
+                editor.apply();
+            }
+        });
+        alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,int id) {
+                dialog.cancel();
+            }
+        });
+        alert.show();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -983,6 +1055,13 @@ public class SettingsActivity extends PreferenceActivity {
 
                         if ( preference.getKey().equals(SettingsManager.KEY_RESTORE_DEFAULT) ) {
                             onRestoreDefaultSettingsClick();
+                        }
+
+                        if (preference.getKey().equals(SettingsManager.KEY_MANUAL_HDR)) {
+                            String value = ((ListPreference) preference).getValue();
+                            if (value.equals("manual")) {
+                                UpdateManualHDRSetting();
+                            }
                         }
                         return false;
                     }
@@ -1135,7 +1214,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                         videoAddList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                         videoAddList.add(SettingsManager.KEY_PHYSICAL_CAMERA);
-                        videoAddList.add(SettingsManager.KEY_MFHDR);
+                        videoAddList.add(SettingsManager.KEY_MANUAL_HDR);
                         if (PersistUtil.enableMediaRecorder()) {
                             videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         }
@@ -1499,16 +1578,16 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void updateVideoMFHDRPreference() {
-        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_MFHDR);
+        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
         if (pref == null) {
             return;
         }
-        int[] modes = mSettingsManager.isMFHDRSupported();
+        int[] modes = mSettingsManager.isManualHDRSupported();
         pref.setEnabled(false);
         if (modes != null && modes.length >= 1) {
             pref.setEnabled(true);
-            mSettingsManager.filterVideoMFHDRModes(modes);
-            updatePreference(SettingsManager.KEY_MFHDR);
+            mSettingsManager.filterVideoMaunalHDRModes(modes);
+            updatePreference(SettingsManager.KEY_MANUAL_HDR);
         } else {
             pref.setEnabled(false);
         }

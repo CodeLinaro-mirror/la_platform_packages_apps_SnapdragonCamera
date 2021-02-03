@@ -1408,16 +1408,16 @@ for time lapse recording -->
         <item>@string/pref_camera2_select_mode_entry_value_single_rear</item>
     </string-array>
 
-    <string-array name="pref_camera2_mfhdr_entries" translatable="false">
-        <item>@string/pref_camera2_mfhdr_entry_off</item>
-        <item>@string/pref_camera2_mfhdr_entry_shdr</item>
-        <item>@string/pref_camera2_mfhdr_entry_mfhdr</item>
+    <string-array name="pref_camera2_mannualhdr_entries" translatable="false">
+        <item>@string/pref_camera2_manualhdr_entry_none</item>
+        <item>@string/pref_camera2_manualhdr_entry_auto</item>
+        <item>@string/pref_camera2_manualhdr_entry_manual</item>
     </string-array>
 
-    <string-array name="pref_camera2_mfhdr_entryvalues" translatable="false">
-        <item>@string/pref_camera2_mfhdr_entry_value_off</item>
-        <item>@string/pref_camera2_mfhdr_entry_value_shdr</item>
-        <item>@string/pref_camera2_mfhdr_entry_value_mfhdr</item>
+    <string-array name="pref_camera2_manualhdr_entryvalues" translatable="false">
+        <item>@string/pref_camera2_manualhdr_entry_value_none</item>
+        <item>@string/pref_camera2_manualhdr_entry_value_auto</item>
+        <item>@string/pref_camera2_manualhdr_entry_value_manual</item>
     </string-array>
 
     <string-array name="pref_camera2_shading_correction_entries" translatable="false">

@@ -72,10 +72,14 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.tmcusercontrol.fourth_tone_anchor", Float.class);
 
     // Session Parameters
+    private static final CaptureRequest.Key<Integer> autohdr_enable =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableAutoHDR", Integer.class);
     private static final CaptureRequest.Key<Integer> shdr_enable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableSHDR", Integer.class);
     private static final CaptureRequest.Key<Integer> mfhdr_enable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMFHDR", Integer.class);
+    private static final CaptureRequest.Key<Integer> qhdr_enable =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableQHDR", Integer.class);
     private static final CaptureRequest.Key<Integer> qll_enable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableQLL", Integer.class);
 
@@ -242,6 +246,12 @@ public class VendorTagUtil {
         }
     }
 
+    public static void setAudoHDRMode(CaptureRequest.Builder builder, int enable) {
+        if (isSupported(builder, autohdr_enable)) {
+            builder.set(autohdr_enable, enable);
+        }
+    }
+
     public static void setSHDRMode(CaptureRequest.Builder builder, int enable) {
         if (isSupported(builder, shdr_enable)) {
             builder.set(shdr_enable, enable);
@@ -251,6 +261,12 @@ public class VendorTagUtil {
     public static void setMFHDRMode(CaptureRequest.Builder builder, int enable) {
         if (isSupported(builder, mfhdr_enable)) {
             builder.set(mfhdr_enable, enable);
+        }
+    }
+
+    public static void setQHDRMode(CaptureRequest.Builder builder, int enable) {
+        if (isSupported(builder, qhdr_enable)) {
+            builder.set(qhdr_enable, enable);
         }
     }
 

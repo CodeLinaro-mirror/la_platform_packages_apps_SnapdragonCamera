@@ -195,7 +195,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_CAPTURE_MFNR_VALUE = "pref_camera2_capture_mfnr_key";
     public static final String KEY_SENSOR_MODE_FS2_VALUE = "pref_camera2_fs2_key";
     public static final String KEY_ABORT_CAPTURES = "pref_camera2_abort_captures_key";
-    public static final String KEY_MFHDR = "pref_camera2_mfhdr_key";
+    public static final String KEY_MANUAL_HDR = "pref_camera2_manualhdr_key";
     public static final String KEY_SHADING_CORRECTION = "pref_camera2_shading_correction_key";
     public static final String KEY_EXTENDED_MAX_ZOOM = "pref_camera2_extended_max_zoom_key";
     public static final String KEY_SAVERAW = "pref_camera2_saveraw_key";
@@ -209,6 +209,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MANUAL_ISO_VALUE = "pref_camera2_manual_iso_key";
     public static final String KEY_MANUAL_GAINS_VALUE = "pref_camera2_manual_gains_key";
     public static final String KEY_MANUAL_EXPOSURE_VALUE = "pref_camera2_manual_exposure_key";
+
+    //manual hdr keys
+    public static final String KEY_MANUAL_MFHDR = "pref_camera2_manual_mfhdr";
+    public static final String KEY_MANUAL_SHDR = "pref_camera2_manual_shdr";
+    public static final String KEY_MANUAL_QHDR = "pref_camera2_manual_qhdr";
 
     //tone mapping
     public static final String KEY_TONE_MAPPING = "pref_camera2_tone_mapping_key";
@@ -1224,7 +1229,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference faceDetectionMode = mPreferenceGroup.findPreference(KEY_FACE_DETECTION_MODE);
         ListPreference fsMode = mPreferenceGroup.findPreference(KEY_SENSOR_MODE_FS2_VALUE);
         ListPreference physicalCamera = mPreferenceGroup.findPreference(KEY_PHYSICAL_CAMERA);
-        ListPreference mfhdr = mPreferenceGroup.findPreference(KEY_MFHDR);
+        ListPreference manualHDR = mPreferenceGroup.findPreference(KEY_MANUAL_HDR);
         ListPreference extendedMaxZoom = mPreferenceGroup.findPreference(KEY_EXTENDED_MAX_ZOOM);
         ListPreference qll = mPreferenceGroup.findPreference(KEY_QLL);
         ListPreference shadingCorrection = mPreferenceGroup.findPreference(KEY_SHADING_CORRECTION);
@@ -1451,10 +1456,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
 
-        if (mfhdr != null) {
-            int[] modes = isMFHDRSupported();
-            if (!(modes != null && modes.length > 0) || isFacingFront(mCameraId)) {
-                removePreference(mPreferenceGroup, KEY_MFHDR);
+        if (manualHDR != null) {
+            if (filterUnsupportedOptions(manualHDR, getSupportedManualHDR(cameraId))) {
+                mFilteredKeys.add(manualHDR.getKey());
             }
         }
 
@@ -2098,9 +2102,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             modes = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_video_hdr_modes);
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG, "cannot find vendor tag: " +
-                    CaptureModule.support_video_hdr_modes.toString());
+        } catch (Exception e) {
         }
         return modes != null && modes.length > 1;
     }
@@ -2110,23 +2112,29 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             ret = 1 == mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.enable_shading_correction);
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG, "cannot find vendor tag: " +
-                    CaptureModule.enable_shading_correction.toString());
+        } catch (Exception e) {
         }
         return ret;
     }
 
-    public int[] isMFHDRSupported() {
+    public int[] isManualHDRSupported() {
         int modes[] = null;
         try {
             modes = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_video_mfhdr_modes);
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG, "cannot find vendor tag: " +
-                    CaptureModule.support_video_hdr_modes.toString());
+        } catch (Exception e) {
         }
         return modes;
+    }
+
+    private boolean isAutoHDRSupported() {
+        byte isAutoHdrSupported = 0;
+        try {
+            isAutoHdrSupported = mCharacteristics.get(getCurrentCameraId()).get(
+                    CaptureModule.support_auto_hdr_modes);
+        } catch (Exception e) {
+        }
+        return isAutoHdrSupported == 1 ? true : false;
     }
 
     private boolean isQLLSupported() {
@@ -2134,9 +2142,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             result = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_swcapability_qll);
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG, "cannot find vendor tag: " +
-                    CaptureModule.support_swcapability_qll.toString());
+        } catch (Exception e) {
         }
         return (result == 1);
     }
@@ -2449,8 +2455,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (CameraSettings.VIDEO_QUALITY_TABLE.containsKey(sizes[i].toString())) {
                 Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(sizes[i].toString());
                 if (profile != null && CamcorderProfile.hasProfile(cameraId, profile)) {
-                    if (getValue(SettingsManager.KEY_MFHDR) != null &&
-                            getValue(SettingsManager.KEY_MFHDR).equals("2") &&
+                    if (getValue(KEY_MANUAL_HDR) != null &&
+                            getValue(KEY_MANUAL_HDR).equals("manual") &&
                             sizes[i].toString().equals("3840x2160") &&
                             getValue(SettingsManager.KEY_SELECT_MODE) != null &&
                             !getValue(SettingsManager.KEY_SELECT_MODE).equals(
@@ -2968,6 +2974,28 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return ret;
     }
 
+    public List<String> getSupportedManualHDR(int cameraId) {
+        ArrayList<String> ret = new ArrayList<String>();
+        ret.add("none");
+        int modes[] = isManualHDRSupported();
+        Log.v(TAG, "getSupportedManualHDR modes :" + modes);
+        if (modes != null) {
+            for (int mode : modes) {
+                Log.v(TAG, "getSupportedManualHDR mode :" + mode);
+            }
+        }
+        if (isAutoHDRSupported()){
+            ret.add("auto");
+        }
+        if ((modes != null && modes.length > 0) && !isFacingFront(mCameraId)) {
+            ret.add("manual");
+        }
+        if (ret.size() == 1) {
+            ret = null;
+        }
+        return ret;
+    }
+
     public boolean isZSLInHALEnabled(){
         String value = getValue(KEY_ZSL);
         String halZSLValue = mContext.getString(R.string.pref_camera2_zsl_entryvalue_hal_zsl);
@@ -3004,11 +3032,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
     }
 
-    public void filterVideoMFHDRModes(int[] modes) {
-        ListPreference videoMFHdr = mPreferenceGroup.findPreference(KEY_MFHDR);
-        videoMFHdr.reloadInitialEntriesAndEntryValues();
-        if (filterUnsupportedOptions(videoMFHdr, getSupportedVideoMFHDR(modes))) {
-            mFilteredKeys.add(videoMFHdr.getKey());
+    public void filterVideoMaunalHDRModes(int[] modes) {
+        ListPreference videoMaunalHdr = mPreferenceGroup.findPreference(KEY_MANUAL_HDR);
+        videoMaunalHdr.reloadInitialEntriesAndEntryValues();
+        if (filterUnsupportedOptions(videoMaunalHdr, getSupportedManualHDR(getCurrentCameraId()))) {
+            mFilteredKeys.add(videoMaunalHdr.getKey());
         }
     }
 

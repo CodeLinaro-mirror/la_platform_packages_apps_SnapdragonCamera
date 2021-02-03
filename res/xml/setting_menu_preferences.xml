@@ -426,7 +426,6 @@
             android:entryValues="@array/pref_camera2_physical_camera_entryvalues"
             android:title="@string/pref_camera2_physical_raw_title"/>
 
-
         <MultiSelectListPreference
             android:defaultValue="@array/pref_camera2_physical_camera_default"
             android:key="pref_camera2_physical_hdr_key"
@@ -762,11 +761,11 @@
             android:summary="%s"/>
 
         <ListPreference
-            android:key="pref_camera2_mfhdr_key"
-            android:defaultValue="@string/pref_camera2_mfhdr_default"
-            android:title="@string/pref_camera2_mfhdr_title"
-            android:entries="@array/pref_camera2_mfhdr_entries"
-            android:entryValues="@array/pref_camera2_mfhdr_entryvalues"
+            android:key="pref_camera2_manualhdr_key"
+            android:defaultValue="@string/pref_camera2_manualhdr_default"
+            android:title="@string/pref_camera2_manualhdr_title"
+            android:entries="@array/pref_camera2_mannualhdr_entries"
+            android:entryValues="@array/pref_camera2_manualhdr_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
 
@@ -814,5 +813,6 @@
             android:entryValues="@array/pref_camera2_qll_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
+
     </PreferenceCategory>
 </PreferenceScreen>

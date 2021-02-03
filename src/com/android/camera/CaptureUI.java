@@ -1655,8 +1655,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mFilterModeSwitcher.setVisibility(View.INVISIBLE);
             mSettingsManager.setValue(SettingsManager.KEY_COLOR_EFFECT,"0");
         }
-        String mfHDR = mSettingsManager.getValue(SettingsManager.KEY_MFHDR);
-        if (mfHDR != null && (mfHDR.equals("1") || mfHDR.equals("2"))) {
+        String maunalHDR = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_HDR);
+        if (maunalHDR != null && (maunalHDR.equals("manual"))) {
             mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         }
     }

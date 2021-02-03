@@ -399,6 +399,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.available_video_hdr_modes.video_hdr_modes", int[].class);
     public static CameraCharacteristics.Key<int[]> support_video_mfhdr_modes =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedHDRmodes.HDRModes", int[].class);
+    public static CameraCharacteristics.Key<Byte> support_auto_hdr_modes =
+            new CameraCharacteristics.Key<>("org.quic.camera.AutoHDRSupport.isAutoHDRSupported", Byte.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_qll =
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.isQLLSupported", Integer.class);
 
@@ -4989,7 +4991,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(selectMode != null && selectMode.equals("rtb")){
             builder.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE, CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS);
         }
-        applySHDR(builder);
+        applyManualHDR(builder);
         if(MCXMODE){
             applyMcxMasterCb(builder);
         }
@@ -9767,14 +9769,30 @@ public class CaptureModule implements CameraModule, PhotoController,
         Log.i(TAG,"applyToneMapping, mode:" + mode + ",currentDarkBoostValue:" + currentDarkBoostValue + ",currentFourthToneValue:" + currentFourthToneValue);
     }
 
-    private void applySHDR(CaptureRequest.Builder request) {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_MFHDR);
+    private void applyManualHDR(CaptureRequest.Builder request) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_HDR);
         if (value != null ) {
-            Log.v(TAG, " applySHDR value :" + value);
-            if (value.equals("1")) {
-                VendorTagUtil.setSHDRMode(request, 1);
-            } else if (value.equals("2")) {
-                VendorTagUtil.setMFHDRMode(request, 1);
+            Log.v(TAG, " applyManualHDR value :" + value);
+            if (value.equals("auto")) {
+                VendorTagUtil.setAudoHDRMode(request, 1);
+            } else if (value.equals("manual")) {
+                final SharedPreferences pref = mActivity.getSharedPreferences(
+                        ComboPreferences.getLocalSharedPreferencesName(mActivity,
+                                mSettingsManager.getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+                boolean isSHDRChecked = pref.getBoolean(SettingsManager.KEY_MANUAL_SHDR, false);
+                boolean isMfHDRChecked = pref.getBoolean(SettingsManager.KEY_MANUAL_MFHDR, false);
+                boolean isQHDRChecked = pref.getBoolean(SettingsManager.KEY_MANUAL_QHDR, false);
+                Log.v(TAG, " applyManualHDR isSHDRChecked :" + isSHDRChecked + ", isMfHDRChecked :"
+                        + isMfHDRChecked + ", isQHDRChecked :" + isQHDRChecked);
+                if (isSHDRChecked) {
+                    VendorTagUtil.setSHDRMode(request, 1);
+                }
+                if (isMfHDRChecked) {
+                    VendorTagUtil.setMFHDRMode(request, 1);
+                }
+                if (isQHDRChecked) {
+                    VendorTagUtil.setQHDRMode(request, 1);
+                }
             }
         }
     }
