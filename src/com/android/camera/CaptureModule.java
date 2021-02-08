@@ -6174,22 +6174,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (contourEnable || facePointEnable) {
                 String contourMode = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
                 int[] contourPoints = null;
-                String contourVersion = null;
                 if ("0".equals(contourMode)) {
-                    contourVersion = "V0";
                     contourPoints = captureResult.get(CaptureModule.contourPoints);
-                } else if ("1".equals(contourMode)) {
-                    contourVersion = "V1";
+                } else if ("1".equals(contourMode) || "2".equals(contourMode) || "3".equals(contourMode)) {
                     contourPoints = captureResult.get(CaptureModule.contourPointsExtend);
-                    contourVersion = "V1";
                     int[] contour_all = captureResult.get(CaptureModule.contourPointsExtend);
                     contourPoints = Arrays.copyOfRange(contour_all,6,contour_all.length);
                 }
 
                 if (FD_DEBUG)
-                    Log.d(FD_TAG,"version="+ contourVersion +
-                            " contourPoints="+Arrays.toString(contourPoints));
-                //int[] landmarkPoints = captureResult.get(CaptureResult.STATISTICS_FACE_LANDMARKS);
+                    Log.d(FD_TAG,"Version=V"+ contourMode + ",contourPoints="+Arrays.toString(contourPoints));
                 Face[] faces = captureResult.get(CaptureResult.STATISTICS_FACES);
                 int[] landmarkPoints = new int[6 * faces.length];
                 for (int i = 0 ; i < faces.length; i++){
@@ -10397,6 +10391,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         byte facialContour_version = 0;
         if ("1".equals(facialContour)) {
             facialContour_version = 1;
+        } else if ("2".equals(facialContour)) {
+            facialContour_version = 2;
+        } else if ("3".equals(facialContour)) {
+            facialContour_version = 3;
         }
         try {
             request.set(CaptureModule.facialContourVersion, facialContour_version);
@@ -10443,7 +10441,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (facialContour != null) {
                     final byte facialContour_enable;
                     if (FdEnable) {
-                        if ("0".equals(facialContour) || "1".equals(facialContour)) {
+                        if ("0".equals(facialContour) || "1".equals(facialContour) || "2".equals(facialContour)
+                                || "3".equals(facialContour)) {
                             facialContour_enable = 1;
                             request.set(CaptureModule.facialContourEnable, facialContour_enable);
                             request.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE,
