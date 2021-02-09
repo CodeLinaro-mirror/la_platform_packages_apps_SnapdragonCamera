@@ -276,6 +276,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private float mAECLuxIndex = -1.0f;
     private float mAdrcGain = -1.0f;
     private float mDarkBoostGain = -1.0f;
+    private int mExposureCount = -1;
 
     private long[] mAecFramecontrolExosureTime = new long[3];
     private float[] mAecFramecontrolLinearGain = new float[3];
@@ -498,6 +499,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECCompenDarkBoostGain", Float.class);
     private static final CaptureResult.Key<Float> aecFrame_adrc_gain =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECCompenADRCGain", Float.class);
+    private static final CaptureResult.Key<Integer> exposure_count =
+            new CaptureResult.Key<>("com.qti.stats_control.ExposureCount", Integer.class);
 
     private static final CaptureRequest.Key<Float[]> awbWarmStart_gain =
             new CaptureRequest.Key<>("org.quic.camera2.statsconfigs.AWBWarmstartGain", Float[].class);
@@ -581,6 +584,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMCXMasterCb", Integer.class);
     public static final CaptureRequest.Key<Integer> extendedMaxZoom =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.ExtendedMaxZoom", Integer.class);
+    public static final CaptureRequest.Key<Integer> numHDRexposure =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.numHDRexposure", Integer.class);
     public static final CaptureRequest.Key<Byte> shading_correction =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableShadingCorrection", byte.class);
     public static final CaptureRequest.Key<Integer> mcxRawCbInfo =
@@ -753,6 +758,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mExistAECWarmTag = true;
     private boolean mExistAECFrameControlTag = true;
     private boolean mExistAECDarkGainTag = true;
+    private boolean mExposureCountTag = true;
 
     private static final long SDCARD_SIZE_LIMIT = 4000 * 1024 * 1024L;
     private static final String sTempCropFilename = "crop-temp";
@@ -5053,6 +5059,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mCurrentSceneMode.mode == CameraMode.DEFAULT) {
             applyVSR(builder);
         }
+        applyNumHDRExposure(builder);
     }
 
     private void applyMctf(CaptureRequest.Builder builder){
@@ -9746,6 +9753,29 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void applyNumHDRExposure(CaptureRequest.Builder request) {
+        if(CURRENT_MODE != CameraMode.DEFAULT)
+            return;
+
+        try {
+            int value = -1;
+            String autoHDR = mSettingsManager.getValue(SettingsManager.KEY_AUTO_HDR);
+            Log.v(TAG, " applyNumHDRExposure value :" + value + ", autoHDR :" + autoHDR);
+            if ("enable".equals(autoHDR)){
+                final SharedPreferences pref = mActivity.getSharedPreferences(
+                        ComboPreferences.getGlobalSharedPreferencesName(mActivity),
+                        Context.MODE_PRIVATE);
+                value = pref.getInt(SettingsManager.KEY_WARM_START_EXPOSURE_COUNT, -1);
+                Log.v(TAG, " applyNumHDRExposure value :" + value);
+                if (value != -1) {
+                    request.set(numHDRexposure, value);
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "applyNumHDRExposure hal no vendorTag : " + numHDRexposure);
+        }
+    }
+
     private void applyMcxMasterCb(CaptureRequest.Builder request) {
         try {
             request.set(CaptureModule.mcxMasterCb, 1);
@@ -10491,6 +10521,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mExistAECWarmTag = false;
                 e.printStackTrace();
             }
+
+            try {
+                if (mExposureCountTag) {
+                    mExposureCount = captureResult.get(CaptureModule.exposure_count);
+                }
+            } catch (IllegalArgumentException | NullPointerException e) {
+                mExposureCountTag = false;
+                e.printStackTrace();
+            }
+
             try {
                 if (mExistAECDarkGainTag) {
                     mDarkBoostGain = captureResult.get(aecFrame_dark_boost_gain);
@@ -10533,6 +10573,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         editor.putFloat(SettingsManager.KEY_AWB_CCT_VALUE, mCctAWB);
         editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_0, mAWBDecisionAfterTC[0]);
         editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_1, mAWBDecisionAfterTC[1]);
+        editor.putInt(SettingsManager.KEY_WARM_START_EXPOSURE_COUNT, mExposureCount);
+
         if (mAECSensitivity.length == 3) {
             editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_0, mAECSensitivity[0]);
             editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_1, mAECSensitivity[1]);

@@ -240,6 +240,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AWB_CCT_VALUE = "pref_camera2_awb_cct_key";
     public static final String KEY_AWB_DECISION_AFTER_TC_0 = "pref_camera2_awb_decision_after_tc_0";
     public static final String KEY_AWB_DECISION_AFTER_TC_1 = "pref_camera2_awb_decision_after_tc_1";
+    public static final String KEY_WARM_START_EXPOSURE_COUNT = "pref_camera2_warm_start_exposure_count";
     public static final String KEY_AEC_SENSITIVITY_0 = "pref_camera2_aec_sensitivity_0";
     public static final String KEY_AEC_SENSITIVITY_1 = "pref_camera2_aec_sensitivity_1";
     public static final String KEY_AEC_SENSITIVITY_2 = "pref_camera2_aec_sensitivity_2";
