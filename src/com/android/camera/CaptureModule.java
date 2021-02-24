@@ -272,6 +272,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private float mCctAWB = -1.0f;
     private float[] mAWBDecisionAfterTC = new float[2];
     private float[] mAECSensitivity = new float[3];
+    private float mAECLuxIndex = -1.0f;
+    private float mAdrcGain = -1.0f;
+    private float mDarkBoostGain = -1.0f;
 
     private long[] mAecFramecontrolExosureTime = new long[3];
     private float[] mAecFramecontrolLinearGain = new float[3];
@@ -490,6 +493,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AWBFrameControlCCT", Integer.class);
     private static final CaptureResult.Key<float[]> awbFrame_decision_after_tc =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AWBDecisionAfterTC", float[].class);
+    private static final CaptureResult.Key<Float> aecFrame_dark_boost_gain =
+            new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECCompenDarkBoostGain", Float.class);
+    private static final CaptureResult.Key<Float> aecFrame_adrc_gain =
+            new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECCompenADRCGain", Float.class);
 
     private static final CaptureRequest.Key<Float[]> awbWarmStart_gain =
             new CaptureRequest.Key<>("org.quic.camera2.statsconfigs.AWBWarmstartGain", Float[].class);
@@ -497,13 +504,21 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera2.statsconfigs.AWBWarmstartCCT", Float.class);
     private static final CaptureRequest.Key<Float[]> awbWarmStart_decision_after_tc =
             new CaptureRequest.Key<>("org.quic.camera2.statsconfigs.AWBDecisionAfterTC", Float[].class);
+    private static final CaptureRequest.Key<Float> awbWarmStart_dark_boost_gain =
+            new CaptureRequest.Key<>("org.quic.camera2.statsconfigs.AECWarmstartCompenDBGain", Float.class);
+    private static final CaptureRequest.Key<Float> awbWarmStart_adrc_gain =
+            new CaptureRequest.Key<>("org.quic.camera2.statsconfigs.AECWarmstartCompenADRCGain", Float.class);
 
     //AEC warm start
     private static final CaptureResult.Key<float[]> aec_sensitivity =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECSensitivity", float[].class);
+    private static final CaptureResult.Key<Float> aec_start_up_luxindex_result =
+            new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECLuxIndex", Float.class);
 
     private static final CaptureRequest.Key<Float[]> aec_start_up_sensitivity =
             new CaptureRequest.Key<>("org.quic.camera2.statsconfigs.AECStartUpSensitivity", Float[].class);
+    private static final CaptureRequest.Key<Float> aec_start_up_luxindex_request =
+            new CaptureRequest.Key<>("org.quic.camera2.statsconfigs.AECLuxIndex", Float.class);
     private static final CaptureResult.Key<long[]> aec_frame_control_exposure_time =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECExposureTime", long[].class);
     private static final CaptureResult.Key<float[]> aec_frame_control_linear_gain =
@@ -512,6 +527,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECSensitivity", float[].class);
     private static final CaptureResult.Key<Float> aec_frame_control_lux_index =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECLuxIndex", Float.class);
+
 
     private static final CaptureResult.Key<Float> ratio_long_to_short =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.ratioLongtoShort", Float.class);
@@ -735,6 +751,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mExistAWBVendorTag = true;
     private boolean mExistAECWarmTag = true;
     private boolean mExistAECFrameControlTag = true;
+    private boolean mExistAECDarkGainTag = true;
 
     private static final long SDCARD_SIZE_LIMIT = 4000 * 1024 * 1024L;
     private static final String sTempCropFilename = "crop-temp";
@@ -10321,6 +10338,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         float aec0 = pref.getFloat(SettingsManager.KEY_AEC_SENSITIVITY_0, awbDefault);
         float aec1 = pref.getFloat(SettingsManager.KEY_AEC_SENSITIVITY_1, awbDefault);
         float aec2 = pref.getFloat(SettingsManager.KEY_AEC_SENSITIVITY_2, awbDefault);
+        float luxIndex = pref.getFloat(SettingsManager.KEY_AEC_LUX_INDEX, awbDefault);
+        float adrcGain = pref.getFloat(SettingsManager.KEY_AEC_ADRC_GAIN, awbDefault);
+        float darkBoostGain = pref.getFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, awbDefault);
         if (rGain != awbDefault && gGain != awbDefault && gGain != bGain) {
             Float[] awbGains = {rGain, gGain, bGain};
             Float[] tcs = {tc0, tc1};
@@ -10346,11 +10366,36 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             Log.v(TAG, " applyAWBCCTAndAgain aec0 :" + aec0 + " " + aec1 + " " + aec2);
         }
+        if (luxIndex != awbDefault) {
+            try {
+                request.set(CaptureModule.aec_start_up_luxindex_request, luxIndex);
+                result = true;
+            } catch (IllegalArgumentException e) {
+                Log.v(TAG, " applyAWBCCTAndAgain there is no vendorTag :" +
+                        aec_start_up_luxindex_request);
+            }
+        }
+        if (adrcGain != awbDefault) {
+            try {
+                request.set(awbWarmStart_adrc_gain, adrcGain);
+                result = true;
+            } catch (IllegalArgumentException e) {
+                Log.v(TAG, "applyAWBCCTAndAgain there is no vendorTag :" + awbWarmStart_adrc_gain);
+            }
+        }
+        if (darkBoostGain != awbDefault) {
+            try {
+                request.set(awbWarmStart_dark_boost_gain, darkBoostGain);
+                result = true;
+            } catch (IllegalArgumentException e) {
+                Log.v(TAG, "applyAWBCCTAndAgain there is no vendorTag :" +
+                        awbWarmStart_dark_boost_gain);
+            }
+        }
         return result;
     }
 
     private boolean updateAWBCCTAndgains(CaptureResult captureResult) {
-        boolean result = false;
         if (captureResult != null) {
             try {
                 if (mExistAWBVendorTag) {
@@ -10360,18 +10405,30 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mCctAWB = captureResult.get(CaptureModule.awbFrame_control_cct);
                     mAWBDecisionAfterTC = captureResult.get(CaptureModule.awbFrame_decision_after_tc);
                 }
+            } catch (IllegalArgumentException | NullPointerException e) {
+                mExistAWBVendorTag = false;
+                e.printStackTrace();
+            }
+            try {
                 if (mExistAECWarmTag) {
                     mAECSensitivity = captureResult.get(CaptureModule.aec_sensitivity);
+                    mAECLuxIndex = captureResult.get(aec_start_up_luxindex_result);
                 }
-                result = true;
-            } catch (IllegalArgumentException e) {
-                mExistAWBVendorTag = false;
+            } catch (IllegalArgumentException | NullPointerException e) {
                 mExistAECWarmTag = false;
                 e.printStackTrace();
-            } catch(NullPointerException e) {
+            }
+            try {
+                if (mExistAECDarkGainTag) {
+                    mDarkBoostGain = captureResult.get(aecFrame_dark_boost_gain);
+                    mAdrcGain = captureResult.get(aecFrame_adrc_gain);
+                }
+            } catch (IllegalArgumentException | NullPointerException e) {
+                mExistAECDarkGainTag = false;
+                e.printStackTrace();
             }
         }
-        return result;
+        return mExistAWBVendorTag && mExistAECWarmTag && mExistAECDarkGainTag;
     }
 
     private boolean updateAECGainAndExposure(CaptureResult captureResult) {
@@ -10407,6 +10464,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_0, mAECSensitivity[0]);
             editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_1, mAECSensitivity[1]);
             editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_2, mAECSensitivity[2]);
+        }
+        if (mAECLuxIndex != -1.0f) {
+            editor.putFloat(SettingsManager.KEY_AEC_LUX_INDEX, mAECLuxIndex);
+        }
+        if (mAdrcGain != -1.0f) {
+            editor.putFloat(SettingsManager.KEY_AEC_ADRC_GAIN, mAdrcGain);
+        }
+        if (mDarkBoostGain != -1.0f) {
+            editor.putFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, mDarkBoostGain);
         }
         editor.apply();
     }
