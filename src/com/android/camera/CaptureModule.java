@@ -405,6 +405,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.quic.camera.AutoHDRSupport.isAutoHDRSupported", Byte.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_qll =
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.isQLLSupported", Integer.class);
+    public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
 
     public static CameraCharacteristics.Key<Byte> logical_camera_type =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.logicalCameraType.logical_camera_type", Byte.class);
@@ -5019,6 +5021,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.HFR) {
             applyOfflineDumpTrigger(builder);
+        }
+        if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
+                mCurrentSceneMode.mode == CameraMode.DEFAULT) {
+            applyVSR(builder);
         }
     }
 
@@ -9863,6 +9869,17 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.v(TAG, " applyQLL value :" + value);
             if (value.equals("1")) {
                 VendorTagUtil.setQLLMode(request, 1);
+            }
+        }
+    }
+
+    private void applyVSR(CaptureRequest.Builder request) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_VSR);
+        if (value != null ) {
+            int mode = Integer.parseInt(value);
+            Log.v(TAG, " applyVSR mode :" + mode);
+            if (mode != 0) {
+                VendorTagUtil.setVSRMode(request, mode);
             }
         }
     }

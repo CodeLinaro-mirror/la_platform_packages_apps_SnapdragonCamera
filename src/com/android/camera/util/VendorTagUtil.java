@@ -82,6 +82,8 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableQHDR", Integer.class);
     private static final CaptureRequest.Key<Integer> qll_enable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableQLL", Integer.class);
+    private static final CaptureRequest.Key<Integer> vsr_enable =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVSR", Integer.class);
 
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
@@ -273,6 +275,12 @@ public class VendorTagUtil {
     public static void setQLLMode(CaptureRequest.Builder builder, int enable) {
         if (isSupported(builder, qll_enable)) {
             builder.set(qll_enable, enable);
+        }
+    }
+
+    public static void setVSRMode(CaptureRequest.Builder builder, int enable) {
+        if (isSupported(builder, vsr_enable)) {
+            builder.set(vsr_enable, enable);
         }
     }
 }

@@ -1513,6 +1513,14 @@
     <string name="pref_camera2_qll_entry_value_disable" translatable="false">0</string>
     <string name="pref_camera2_qll_entry_value_enable" translatable="false">1</string>
 
+    <!-- VSR 2.0 value-->
+    <string name="pref_camera2_vsr_title" translatable="true">VSR 2.0</string>
+    <string name="pref_camera2_vsr_default" translatable="false">0</string>
+    <string name="pref_camera2_vsr_entry_disable" translatable="true">Disable</string>
+    <string name="pref_camera2_vsr_entry_enable" translatable="true">Enable</string>
+    <string name="pref_camera2_vsr_entry_value_disable" translatable="false">0</string>
+    <string name="pref_camera2_vsr_entry_value_enable" translatable="false">1</string>
+
     <!-- raw reprocess type-->
     <string name="pref_camera2_raw_reprocess_default">0</string>
     <string name="pref_camera2_raw_reprocess_title">Raw Reprocess Callback Type</string>

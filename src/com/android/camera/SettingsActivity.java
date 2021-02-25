@@ -1216,6 +1216,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                         videoAddList.add(SettingsManager.KEY_PHYSICAL_CAMERA);
                         videoAddList.add(SettingsManager.KEY_MANUAL_HDR);
+                        videoAddList.add(SettingsManager.KEY_VSR);
                         if (PersistUtil.enableMediaRecorder()) {
                             videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         }

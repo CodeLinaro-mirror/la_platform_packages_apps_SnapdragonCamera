@@ -261,6 +261,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_STATSNN_CONTROL = "pref_camera2_statsnn_control_key";
     public static final String KEY_RAW_CB_INFO = "pref_camera2_raw_cb_info_key";
     public static final String KEY_QLL = "pref_camera2_qll_key";
+    public static final String KEY_VSR = "pref_camera2_vsr_key";
 
     public static final String KEY_RAW_REPROCESS_TYPE = "pref_camera2_raw_reprocess_key";
     public static final String KEY_RAWINFO_TYPE = "pref_camera2_rawinfo_type_key";
@@ -1234,6 +1235,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference manualHDR = mPreferenceGroup.findPreference(KEY_MANUAL_HDR);
         ListPreference extendedMaxZoom = mPreferenceGroup.findPreference(KEY_EXTENDED_MAX_ZOOM);
         ListPreference qll = mPreferenceGroup.findPreference(KEY_QLL);
+        ListPreference vsr = mPreferenceGroup.findPreference(KEY_VSR);
         ListPreference shadingCorrection = mPreferenceGroup.findPreference(KEY_SHADING_CORRECTION);
 
         if (forceAUX != null && !mHasMultiCamera) {
@@ -1475,6 +1477,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (qll != null) {
             if (!isQLLSupported() || !devLevelAll) {
                 removePreference(mPreferenceGroup, KEY_QLL);
+            }
+        }
+
+        if (vsr != null) {
+            if(!isVSRSupported()) {
+                removePreference(mPreferenceGroup, KEY_VSR);
             }
         }
 
@@ -2149,6 +2157,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return (result == 1);
     }
 
+    // 0 -> no option in app
+    // 1 -> display enable option only when switched to video mode
+    // 2 -> display enable option in video and preview
+    private boolean isVSRSupported() {
+        int result = 0;
+        try {
+            result = mCharacteristics.get(getCurrentCameraId())
+                    .get(CaptureModule.support_swcapability_vsr);
+        } catch (Exception e) {
+            Log.w(TAG, "cannot find vendor tag: " +
+                    CaptureModule.support_swcapability_vsr.toString());
+        }
+        if (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEFAULT) {
+            return result > 1;
+        }
+        return (result > 0);
+    }
+
     public boolean isAutoExposureRegionSupported(int id) {
         Integer maxAERegions = mCharacteristics.get(id).get(
                 CameraCharacteristics.CONTROL_MAX_REGIONS_AE);
@@ -2470,6 +2496,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         continue;
                     }
                     res.add(sizes[i].toString());
+                    if (getValue(SettingsManager.KEY_VSR) != null &&
+                            getValue(SettingsManager.KEY_VSR).equals("1") &&
+                            sizes[i].toString().equals("7680x4320")) {
+                        continue;
+                    }
                 }
             }
         }
