@@ -285,7 +285,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private boolean mIsMonoCameraPresent = false;
     private boolean mIsFrontCameraPresent = false;
     private boolean mHasMultiCamera = false;
-    private boolean mIsHFRSupported = false;
+    private boolean mIsHFRSupported = true;
     private JSONObject mDependency;
     private int mCameraId;
     private int mBackCamId = -1;
@@ -1192,12 +1192,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     private void filterPreferences(int cameraId) {
-        if (CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO) {
-            ListPreference hfrPref = mPreferenceGroup.findPreference(KEY_VIDEO_HIGH_FRAME_RATE);
-            if (hfrPref != null) {
-                hfrPref.setValue("off");
-            }
-        }
         // filter unsupported preferences
         ListPreference savePath = mPreferenceGroup.findPreference(KEY_CAMERA_SAVEPATH);
         ListPreference forceAUX = mPreferenceGroup.findPreference(KEY_FORCE_AUX);
@@ -1815,11 +1809,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public void filterHFROptions() {
         ListPreference hfrPref = mPreferenceGroup.findPreference(KEY_VIDEO_HIGH_FRAME_RATE);
         if (hfrPref != null) {
-            hfrPref.reloadInitialEntriesAndEntryValues();
-            mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
-                    getSupportedHighFrameRate());
-            if (!mIsHFRSupported) {
-                mFilteredKeys.add(hfrPref.getKey());
+            CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
+            if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO){
+                hfrPref.reloadInitialEntriesAndEntryValues();
+                mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
+                        getSupportedHighFrameRate());
+                if (!mIsHFRSupported) {
+                    mFilteredKeys.add(hfrPref.getKey());
+                }
             }
         }
     }
@@ -1965,7 +1962,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         ArrayList<String> supported = new ArrayList<String>();
-        supported.add("off");
+        if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO) {
+            supported.add("off");
+        }
         ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
         ListPreference videoEncoder = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
         if (videoQuality == null || videoEncoder == null) return supported;
@@ -2009,6 +2008,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR && (selectMode != null && selectMode.equals("sat"))){
                                     break;
                                 }
+                                if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR &&
+                                        (int)r.getUpper() < 120){
+                                    break;
+                                }
+                                if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO &&
+                                        (int)r.getUpper() >= 120){
+                                    break;
+                                }
                                 rate = String.valueOf(r.getUpper());
                                 supported.add("hfr" + rate);
                                 supported.add("hsr" + rate);
@@ -2032,6 +2039,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         if (videoCapabilities != null) {
                             if (videoCapabilities.areSizeAndRateSupported(
                                     videoSize.getWidth(), videoSize.getHeight(), mExtendedHFRSize[i + 2])) {
+                                if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR &&
+                                        mExtendedHFRSize[i + 2] <=60){
+                                    break;
+                                }
+                                if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO &&
+                                        mExtendedHFRSize[i + 2] > 60){
+                                    break;
+                                }
                                 supported.add(item);
                                 supported.add("hsr" + mExtendedHFRSize[i + 2]);
                                 if (PersistUtil.isSSMEnabled() && !above1080p) {
@@ -3014,12 +3029,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public List<String> getSupportedManualHDR(int cameraId) {
         ArrayList<String> ret = new ArrayList<String>();
-        ret.add("none");
+        ret.add("off");
         int modes[] = isManualHDRSupported();
         Log.v(TAG, "getSupportedManualHDR modes :" + modes);
         if (modes != null) {
             for (int mode : modes) {
-                Log.v(TAG, "getSupportedManualHDR mode :" + mode);
+                Log.v(TAG, "getSupportedManualHDR support mode :" + mode);
             }
         }
         if (isAutoHDRSupported()){

@@ -1418,12 +1418,12 @@
     <string name="pref_camera2_abort_captures_entry_value_enable" translatable="false">1</string>
     <string name="pref_camera2_abort_captures_entry_value_disable" translatable="false">0</string>
 
-    <string name="pref_camera2_manualhdr_title" translatable="true">Maunal HDR Feature</string>
+    <string name="pref_camera2_manualhdr_title" translatable="true">Mixed HDR</string>
     <string name="pref_camera2_manualhdr_default" translatable="false">none</string>
-    <string name="pref_camera2_manualhdr_entry_none" translatable="true">None</string>
+    <string name="pref_camera2_manualhdr_entry_none" translatable="true">OFF</string>
     <string name="pref_camera2_manualhdr_entry_auto" translatable="true">Auto HDR</string>
     <string name="pref_camera2_manualhdr_entry_manual" translatable="true">Manual HDR</string>
-    <string name="pref_camera2_manualhdr_entry_value_none" translatable="false">none</string>
+    <string name="pref_camera2_manualhdr_entry_value_none" translatable="false">off</string>
     <string name="pref_camera2_manualhdr_entry_value_auto" translatable="false">auto</string>
     <string name="pref_camera2_manualhdr_entry_value_manual" translatable="false">manual</string>
 

@@ -7390,6 +7390,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         return mHighSpeedRecordingMode && !mSuperSlomoCapture;
     }
 
+    public int getHighSpeedCaptureRate() {
+        return mHighSpeedCaptureRate;
+    }
+
     private void updateProgressBar(boolean show) {
         mActivity.runOnUiThread(new Runnable() {
             @Override

@@ -1445,7 +1445,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mRecordingTimeView.setText("00:00");
             mRecordingTimeRect.setVisibility(View.VISIBLE);
             updateOfflineDumpTrigger(View.VISIBLE);
-            mMuteButton.setVisibility((mModule.isHSRMode() || mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO) ? View.VISIBLE : View.INVISIBLE);
+            mMuteButton.setVisibility((mModule.isHSRMode() ||
+                    mModule.getHighSpeedCaptureRate() < 60) ? View.VISIBLE : View.INVISIBLE);
             setMuteButtonResource(!mModule.isAudioMute());
         } else {
             mFlashButton.setVisibility(View.VISIBLE);

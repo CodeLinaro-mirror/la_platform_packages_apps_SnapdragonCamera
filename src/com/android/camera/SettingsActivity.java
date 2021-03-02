@@ -1227,9 +1227,9 @@ public class SettingsActivity extends PreferenceActivity {
                     videoAddList.add(SettingsManager.KEY_STATSNN_CONTROL);
                     addDeveloperOptions(developer, videoAddList);
                 }
-                removePreference(mode == VIDEO ?
-                        SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE :
-                        SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
+                if (mode != VIDEO) {
+                    removePreference(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
+                }
                 break;
             case RTB:
                 removePreferenceGroup("video", parentPre);
@@ -1626,6 +1626,12 @@ public class SettingsActivity extends PreferenceActivity {
                 SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         if (pref != null) {
             pref.setEnabled(true);
+        }
+        CaptureModule.CameraMode mode = (CaptureModule.CameraMode)getIntent().getSerializableExtra(
+                CAMERA_MODULE);
+        if (mode == CaptureModule.CameraMode.VIDEO) {
+            pref.setDialogTitle("Video FrameRate");
+            pref.setTitle("Video FrameRate");
         }
         mSettingsManager.filterHFROptions();
         updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
