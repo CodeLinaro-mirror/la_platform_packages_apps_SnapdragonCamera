@@ -1173,6 +1173,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         }
         mZoomIndex = 0;
+        mZoomIncrease = true;
         mZoomSwitch.setText("1x");
         if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
                 isRTBModeInSelectMode()) {
