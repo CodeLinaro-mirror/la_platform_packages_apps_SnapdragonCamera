@@ -5068,6 +5068,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyIso(builder);
         applyColorEffect(builder);
         applySceneMode(builder);
+        Log.v(TAG, " applyCommonSettings ZoomFixedSupport: " + mUI.getZoomFixedSupport() + ", mZoomValue :" + mZoomValue);
         if (mUI.getZoomFixedSupport()) {
             applyZoomRatio(builder, mZoomValue, id);
         } else {
@@ -11876,12 +11877,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mUI.hideZoomSeekBar();
                     return;
                 } else if (zoomRatioRange != null && zoomRatioRange[0] != zoomRatioRange[1]) {
-                    mZoomValue = zoomRatioRange[0];
+                    if (mZoomValue < zoomRatioRange[0]) {
+                        mZoomValue = zoomRatioRange[0];
+                    }
                     mUI.showZoomSeekBar();
                     if (zoomRatioRange[0] > 1){
                         mUI.hideZoomSwitch();
                     }
-                    Log.v(TAG, "updateZoomSeekBarVisible showZoomSeekBar");
+                    Log.v(TAG, "updateZoomSeekBarVisible showZoomSeekBar mZoomValue :" + mZoomValue);
                     return;
                 }
             }
