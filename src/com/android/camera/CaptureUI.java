@@ -1310,6 +1310,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         removeFilterMenu(false);
         Intent intent = new Intent(mActivity, SettingsActivity.class);
         intent.putExtra(SettingsActivity.CAMERA_MODULE, mModule.getCurrenCameraMode());
+        intent.putExtra(SettingsActivity.IS_SIGNGLE_CAMERA_MODULE, mModule.isSingleCameraMode());
         mActivity.startActivity(intent);
     }
 

@@ -718,6 +718,13 @@
         camera:entryValues="@array/pref_camera2_statsnn_control_entryvalues" />
 
     <ListPreference
+        camera:key="pref_camera2_pdnet_toggle_key"
+        camera:defaultValue="@string/pref_camera2_pdnet_toggle_default"
+        camera:title="@string/pref_camera2_pdnet_toggle_title"
+        camera:entries="@array/pref_camera2_common_disable_enable_entries"
+        camera:entryValues="@array/pref_camera2_common_disable_enable_entryvalues" />
+
+    <ListPreference
         camera:key="pref_camera2_raw_cb_info_key"
         camera:defaultValue="@string/pref_camera2_raw_cb_info_default"
         camera:title="@string/pref_camera2_raw_cb_info_title"

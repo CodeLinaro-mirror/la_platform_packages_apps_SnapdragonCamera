@@ -245,6 +245,12 @@
   },
   "pref_camera2_stats_visualizer_enable_key":
   {
-    "0":{"pref_camera2_stats_visualizer_key":""}
+    "0": {"pref_camera2_stats_visualizer_key": ""}
+  },
+  "pref_camera2_select_mode_key":
+  {
+    "sat": {"pref_camera2_pdnet_toggle_key": "0"},
+    "rtb": {"pref_camera2_pdnet_toggle_key": "0"},
+    "single_rear_cameraid" : {}
   }
 }

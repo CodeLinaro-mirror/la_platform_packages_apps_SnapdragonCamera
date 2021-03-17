@@ -101,12 +101,14 @@ public class SettingsActivity extends PreferenceActivity {
     private static final boolean DEV_LEVEL_ALL =
             PersistUtil.getDevOptionLevel() == PersistUtil.CAMERA2_DEV_OPTION_ALL;
     public static final String CAMERA_MODULE = "camera_module";
+    public static final String IS_SIGNGLE_CAMERA_MODULE = "is_single_camera_mode";
     private SettingsManager mSettingsManager;
     private SharedPreferences mSharedPreferences;
     private SharedPreferences mLocalSharedPref;
     private boolean mDeveloperMenuEnabled;
     private int privateCounter = 0;
     private final int DEVELOPER_MENU_TOUCH_COUNT = 10;
+    private boolean mIsSingleCameraMode = false;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
@@ -157,6 +159,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updateSwitchIDInModePreference(true);
                 }
                 updateEISPreference();
+                updatePdnetTogglePreference();
             }
             List<String> list = mSettingsManager.getDependentKeys(key);
             if (list != null) {
@@ -1002,6 +1005,7 @@ public class SettingsActivity extends PreferenceActivity {
         if (isSecureCamera) {
             setShowInLockScreen();
         }
+        mIsSingleCameraMode = getIntent().getBooleanExtra(IS_SIGNGLE_CAMERA_MODULE, false);
         mSettingsManager = SettingsManager.getInstance();
         if (mSettingsManager == null) {
             finish();
@@ -1225,6 +1229,7 @@ public class SettingsActivity extends PreferenceActivity {
                     videoAddList.add(SettingsManager.KEY_TONE_MAPPING);
                     videoAddList.add(SettingsManager.KEY_SELECT_MODE);
                     videoAddList.add(SettingsManager.KEY_STATSNN_CONTROL);
+                    videoAddList.add(SettingsManager.KEY_PDNET_TOGGLE);
                     addDeveloperOptions(developer, videoAddList);
                 }
                 if (mode != VIDEO) {
@@ -1247,6 +1252,7 @@ public class SettingsActivity extends PreferenceActivity {
                     ArrayList<String> SATList = new ArrayList<>(multiCameraSettingList);
                     SATList.add(SettingsManager.KEY_HDR);
                     SATList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
+                    SATList.add(SettingsManager.KEY_PDNET_TOGGLE);
                     addDeveloperOptions(developer, SATList);
                 }
                 break;
@@ -1487,6 +1493,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoVariableFpsPreference();
         updateAudioEncoderPreference();
         updateVideoFlipPreference();
+        updatePdnetTogglePreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1639,6 +1646,21 @@ public class SettingsActivity extends PreferenceActivity {
             if (pref.getEntries() != null && pref.getEntries().length == 1){
                 pref.setEnabled(false);
             }
+        }
+    }
+
+    private void updatePdnetTogglePreference() {
+        ListPreference pref = (ListPreference)findPreference(
+                SettingsManager.KEY_PDNET_TOGGLE);
+        boolean isSingleRear = false;
+        ListPreference selectModePref = (ListPreference) findPreference(SettingsManager.KEY_SELECT_MODE);
+        if (selectModePref != null) {
+            if (selectModePref.getValue().equals("single_rear_cameraid")) {
+                isSingleRear = true;
+            }
+        }
+        if (pref != null) {
+            pref.setEnabled(mIsSingleCameraMode || isSingleRear);
         }
     }
 

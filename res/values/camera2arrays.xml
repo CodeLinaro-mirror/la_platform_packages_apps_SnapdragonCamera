@@ -1508,6 +1508,16 @@ for time lapse recording -->
         <item>@string/pref_camera2_statsnn_control_entry_value_enable</item>
     </string-array>
 
+    <string-array name="pref_camera2_common_disable_enable_entries" translatable="false">
+        <item>@string/pref_camera2_common_entry_disable</item>
+        <item>@string/pref_camera2_common_entry_enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_common_disable_enable_entryvalues" translatable="false">
+        <item>@string/pref_camera2_common_entry_value_disable</item>
+        <item>@string/pref_camera2_common_entry_value_enable</item>
+    </string-array>
+
     <string-array name="pref_camera2_qll_entries" translatable="false">
         <item>@string/pref_camera2_qll_entry_disable</item>
         <item>@string/pref_camera2_qll_entry_enable</item>

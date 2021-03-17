@@ -569,6 +569,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final CaptureResult.Key<Integer> stats_nn_result_roiweight =
             new CaptureResult.Key<>("org.quic.camera2.statsNNSaliNetResults.statsNNSaliencyROIWeight", Integer.class);
 
+    private static final CaptureRequest.Key<Byte> pdnet_control =
+            new CaptureRequest.Key<>("org.quic.camera2.PDNetControl.Enable", Byte.class);
+
     public static final CaptureRequest.Key<Integer> sharpness_control = new CaptureRequest.Key<>(
             "org.codeaurora.qcamera3.sharpness.strength", Integer.class);
     public static final CaptureRequest.Key<Integer> exposure_metering = new CaptureRequest.Key<>(
@@ -5142,6 +5145,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyToneMapping(builder);
         applyLivePreview(builder);
         applyStatsNNControl(builder);
+        applyPdnetToggle(builder);
     }
 
     /**
@@ -6245,11 +6249,12 @@ public class CaptureModule implements CameraModule, PhotoController,
     public boolean isSingleCameraMode(){
         if(CaptureModule.FRONT_ID==mCurrentSceneMode.getCurrentId())
             return true;
+
         String selectMode=mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-        if(selectMode!=null&&selectMode.equals("single_rear_cameraid")
-                &&mSingleRearId!=-1){
+        if (selectMode!=null && selectMode.equals("single_rear_cameraid")
+                || mSingleRearId == getMainCameraId()) {
             return true;
-        }else{
+        } else {
             return false;
         }
     }
@@ -7519,6 +7524,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyHistogram(builder);
         applyBGStats(builder);
         applyBEStats(builder);
+        applyPdnetToggle(builder);
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
@@ -7623,6 +7629,20 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     }
+
+    private void applyPdnetToggle(CaptureRequest.Builder builder) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_PDNET_TOGGLE);
+        Log.v(TAG, "applyPdnet control :" + value );
+        if (value != null) {
+            byte pdnet = (byte)(Integer.parseInt(value) == 1 ? 0x01 : 0x00);
+            try {
+                builder.set(pdnet_control, pdnet);
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "cannot find vendor tag: " + livePreview.toString());
+            }
+        }
+    }
+
     private void applyCaptureBurstFps(CaptureRequest.Builder builder) {
         try {
             Log.v(TAG, " applyCaptureBurstFps burst fps mLongshotActive :" + mLongshotActive +
