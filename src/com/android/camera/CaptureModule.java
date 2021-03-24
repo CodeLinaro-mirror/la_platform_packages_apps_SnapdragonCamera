@@ -5276,6 +5276,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void onResumeBeforeSuper() {
+        reinit();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         if (facingOfIntentExtras != -1) {
@@ -5648,7 +5649,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void onResumeAfterSuper(boolean resumeFromRestartAll) {
-        reinit();
         Log.d(TAG, "onResume " + (mCurrentSceneMode != null ? mCurrentSceneMode.mode : "null")
                 + (resumeFromRestartAll ? " isResumeFromRestartAll" : ""));
         if(mCurrentSceneMode.mode == CameraMode.VIDEO){
