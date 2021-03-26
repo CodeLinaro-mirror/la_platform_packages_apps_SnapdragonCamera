@@ -859,8 +859,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 if (mZoomRenderer != null) {
                     mZoomRenderer.setZoom(zoomValue);
                 }
+                int zoomSig = Math.round((seekBar.getProgress() + mZoomFixedValue * 100)) / 100;
+                int zoomFraction = Math.round(seekBar.getProgress() + mZoomFixedValue * 100) % 100;
+                String txt = "";
+                if (zoomFraction < 10) {
+                    txt = zoomSig + "." + "0" + zoomFraction + "x";
+                } else {
+                    txt = zoomSig + "." + zoomFraction + "x";
+                }
                 if (mZoomValueText != null) {
-                    mZoomValueText.setText(zoomValue + "x");
+                    mZoomValueText.setText(txt);
                 }
             }
         });

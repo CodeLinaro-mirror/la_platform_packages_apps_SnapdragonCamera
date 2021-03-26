@@ -11190,8 +11190,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void restartAll() {
         mResumed = false;
         int nextCameraId = getNextScreneModeId(mNextModeIndex);
-        Exception e = new Exception();
-        Log.d(TAG, "restart all CURRENT_ID :" + CURRENT_ID + " nextCameraId :" + nextCameraId +",mLockAFAE" +  mLockAFAE,e);
+        Log.d(TAG, "restart all CURRENT_ID :" + CURRENT_ID + " nextCameraId :" + nextCameraId +",mLockAFAE" +  mLockAFAE);
         if(mLockAFAE != LOCK_AF_AE_STATE_NONE) {
             mLockAFAE = LOCK_AF_AE_STATE_NONE;
             applyIsAfLock(false);
