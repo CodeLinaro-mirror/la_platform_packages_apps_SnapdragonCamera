@@ -6652,17 +6652,37 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mRawSize[0] = rawSize[0];
             }
         }
+
         Size[] rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
                     ImageFormat.RAW10);
         if (rawSize == null || rawSize.length == 0) {
             mSupportedRawPictureSize = null;
             mSaveRaw = false;
         } else {
-            mSupportedRawPictureSize = rawSize[0];
+            mSupportedRawPictureSize = getMaxRawSize() != null ? getMaxRawSize() : rawSize[0];
         }
+        Log.i(TAG,"rawsize:" + rawSize[0].toString() + ",maxSIze:" + mSupportedRawPictureSize.toString());
         mPreviewSize = getOptimalPreviewSize(mPictureSize, prevSizes);
         Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(getMainCameraId());
         mPictureThumbSize = getOptimalPreviewSize(mPictureSize, thumbSizes); // get largest thumb size
+    }
+
+    private Size getMaxRawSize(){
+        Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
+        List<Size> allRawSize = new ArrayList<>();
+        if(physical_ids != null && physical_ids.size() != 0) {
+            for (String physicalId : physical_ids){
+                Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(physicalId), ImageFormat.RAW10);
+                if (rawSize != null || rawSize.length != 0) {
+                    allRawSize.add(rawSize[0]);
+                }
+            }
+            allRawSize.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
+            if(allRawSize.size() != 0){
+                return allRawSize.get(0);
+            }
+        }
+        return null;
     }
 
     public Size getThumbSize() {
