@@ -1151,6 +1151,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_FACIAL_CONTOUR);
                 add(SettingsManager.KEY_ZSL);
                 add(SettingsManager.KEY_TONE_MAPPING);
+                add(SettingsManager.KEY_ONCAPTUREBUFFERLOST_HINT);
                 add(SettingsManager.KEY_BURST_LIMIT);
             }
         };
@@ -1217,6 +1218,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_PHYSICAL_CAMERA);
                         videoAddList.add(SettingsManager.KEY_MANUAL_HDR);
                         videoAddList.add(SettingsManager.KEY_VSR);
+                        videoAddList.add(SettingsManager.KEY_ONCAPTUREBUFFERLOST_HINT);
                         if (PersistUtil.enableMediaRecorder()) {
                             videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         }

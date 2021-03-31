@@ -1347,6 +1347,13 @@
     <string name="pref_camera2_force_aux_entry_value_on" translatable="false">on</string>
     <string name="pref_camera2_force_aux_entry_value_off" translatable="false">off</string>
 
+    <string name="pref_camera2_oncapturebufferlost_title" translatable="false">onCaptureBufferLost hint</string>
+    <string name="pref_camera2_oncapturebufferlost_default" translatable="false">off</string>
+    <string name="pref_camera2_oncapturebufferlost_entry_on" translatable="false">on</string>
+    <string name="pref_camera2_oncapturebufferlost_entry_off" translatable="false">off</string>
+    <string name="pref_camera2_oncapturebufferlost_entry_value_on" translatable="false">on</string>
+    <string name="pref_camera2_oncapturebufferlost_entry_value_off" translatable="false">off</string>
+
     <string name="pref_camera2_stats_visualizer_enable_title" translatable="false">Stats Visualizer Enable</string>
     <string name="pref_camera2_stats_visualizer_enable_default" translatable="false">0</string>
     <string name="pref_camera2_stats_visualizer_entry_enable" translatable="false">enable</string>

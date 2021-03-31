@@ -3620,6 +3620,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     updateT2tTrackerView(result);
                     return;
                 }
+                if (mNumFramesArrived.get() >= mShotNum) {
+                    mLongshotActive = false;
+                }
                 Log.d(TAG, "captureStillPictureForLongshot onCaptureCompleted: " + mNumFramesArrived.get() + " " + mShotNum);
 
                 if (mLongshotActive) {
@@ -3673,9 +3676,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mLastLongshotTimestamp = timestamp;
                 }
                 Log.d(TAG, "captureStillPictureForLongshot onCaptureStarted: " + mNumFramesArrived.get());
-                if (mNumFramesArrived.get() >= mShotNum) {
-                    mLongshotActive = false;
-                }
+            }
+
+            @Override
+            public void onCaptureBufferLost(CameraCaptureSession session,
+                   CaptureRequest request, Surface target, long frameNumber) {
+                mNumFramesArrived.decrementAndGet();
+                Log.d(TAG, "captureStillPictureForLongShot onCaptureBufferLost: frameNumber is "
+                        + frameNumber);
+
             }
 
             @Override
@@ -3822,6 +3831,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
 
                 @Override
+                public void onCaptureBufferLost(CameraCaptureSession session,
+                                                CaptureRequest request, Surface target,
+                                                long frameNumber) {
+                    Log.d(TAG, "captureStillPictureForCommon onCaptureBufferLost: frameNumber is "
+                            + frameNumber);
+                    if (!mPaused && isOnCaptureBufferLostHintOn()) {
+                        showToast("Capture failed: buffer lost!");
+                    }
+                }
+
+                @Override
                 public void onCaptureSequenceCompleted(CameraCaptureSession session, int
                         sequenceId, long frameNumber) {
                     Log.d(TAG, "captureStillPictureForCommon onCaptureSequenceCompleted: " + id);
@@ -3958,6 +3978,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                     CaptureRequest request,
                                                     CaptureFailure result) {
                             Log.d(TAG, "captureVideoSnapshot onCaptureFailed: " + id);
+                        }
+
+                        @Override
+                        public void onCaptureBufferLost(CameraCaptureSession session,
+                                                        CaptureRequest request, Surface target,
+                                                        long frameNumber) {
+                            Log.d(TAG, "captureVideoshot onCaptureBufferLost: frameNumber is "
+                                    + frameNumber);
+                            if (!mPaused && isOnCaptureBufferLostHintOn()) {
+                                showToast("Capture failed: buffer lost!");
+                            }
                         }
 
                         @Override
@@ -12094,6 +12125,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             this.swithCameraId = swithCameraId;
         }
 
+    }
+
+    private boolean isOnCaptureBufferLostHintOn() {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_ONCAPTUREBUFFERLOST_HINT);
+        return value != null && value.equals("on");
     }
 
     private boolean isForceAUXOn(CameraMode mode) {
