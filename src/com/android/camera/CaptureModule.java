@@ -8914,6 +8914,59 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void configureDefaultEncoder(String encoder) throws IOException {
+        mAudioFormat.setInteger(MediaFormat.KEY_BIT_RATE, mProfile.audioBitRate);
+        //mAudioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 4096);
+        mAudioEncoder = MediaCodec.createEncoderByType(encoder);
+        mAudioEncoder.configure(mAudioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+    }
+
+    private void configureAACAudioEncoder(String encoder) throws IOException {
+        int aacProfileLevel = mAudioFormat.getInteger(MediaFormat.KEY_AAC_PROFILE);
+
+        switch(aacProfileLevel) {
+            case MediaCodecInfo.CodecProfileLevel.AACObjectLC:
+            {
+                int numCodecs = MediaCodecList.getCodecCount();
+                boolean isVendorHwAACEncoderFound = false;
+                for (int i = 0; i < numCodecs; i++) {
+                    MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
+                    if (!info.isEncoder() || !info.isVendor()) {
+                         continue;
+                    }
+                    Log.d("QCAAC", "inifo name is " + info.getName());
+                    for(String type : info.getSupportedTypes()) {
+                        Log.d("QCAAC", "type:" + type + ", ishwAcc:" + info.isHardwareAccelerated());
+                        if (type.equalsIgnoreCase(MediaFormat.MIMETYPE_AUDIO_AAC) &&
+                               info.isHardwareAccelerated()) {
+                           Log.d("QCAAC", "found qc aac.");
+                           mAudioEncoder = MediaCodec.createByCodecName(info.getName());
+                           mAudioFormat.setInteger(MediaFormat.KEY_BIT_RATE, mProfile.audioBitRate);
+                           mAudioEncoder.configure(mAudioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+                           isVendorHwAACEncoderFound = true;
+                           break;
+                        }
+                    }
+                    if(isVendorHwAACEncoderFound)
+                        break;
+                }
+                if(!isVendorHwAACEncoderFound){
+                        Log.d("QCAAC", "QC HW AAC Encoder not found.");
+                        Log.d("QCAAC", "Fallback to default encoder");
+                        configureDefaultEncoder(encoder);
+                }
+                break;
+            }
+            case MediaCodecInfo.CodecProfileLevel.AACObjectHE:
+            case MediaCodecInfo.CodecProfileLevel.AACObjectELD:
+            default:
+            {
+                configureDefaultEncoder(encoder);
+                break;
+            }
+        }
+    }
+
     private void setupMediaCodecAudio() throws IOException {
         String encoderSelected = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER);
         mProfile.audioCodec  = SettingTranslation.getAudioEncoder(encoderSelected);
@@ -8935,10 +8988,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mAudioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE,
                     MediaCodecInfo.CodecProfileLevel.AACObjectLC);
         }
-        mAudioFormat.setInteger(MediaFormat.KEY_BIT_RATE, mProfile.audioBitRate);
-        //mAudioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 4096);
-        mAudioEncoder = MediaCodec.createEncoderByType(encoder);
-        mAudioEncoder.configure(mAudioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+        configureAACAudioEncoder(encoder);
         mAudioEncoder.start();
     }
 
