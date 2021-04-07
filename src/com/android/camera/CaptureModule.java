@@ -2209,6 +2209,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 mCurrentSession = cameraCaptureSession;
                             }
                             initializePreviewConfiguration(id);
+                            //APP could  check if  afState is anything other than INACTIVE , it should change the focus circle and skip the passive transient state.
+                            if (mLastResultAFState != CaptureResult.CONTROL_AF_STATE_INACTIVE && mFocusStateListener != null) {
+                                mActivity.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mFocusStateListener.onFocusStatusUpdate(CaptureResult.CONTROL_AF_STATE_INACTIVE);
+                                    }
+                                });
+                            }
                             setDisplayOrientation();
                             updateFaceDetection();
                             mActivity.runOnUiThread(new Runnable() {
