@@ -2550,7 +2550,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         System.arraycopy(outRes,0,sizes,highRes.length,outRes.length);
         boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
         String eisValue = getValue(SettingsManager.KEY_EIS_VALUE);
-        boolean isEISV3Enabled = "V3".equals(eisValue) ||"V3SetWhenPause".equals(eisValue);
+        boolean isEISV3Enabled = "V3".equals(eisValue);
         VideoCapabilities heifCap = null;
         if (isHeifEnabled) {
             MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);

@@ -313,6 +313,10 @@ public class PersistUtil {
         return PERSIST_CAMERA_PREVIEW_RESTART_ENABLED;
     }
 
+    public static boolean needEndOfStream() {
+        return getBoolean("persist.sys.camera.endofstream", true);
+    }
+
     public static boolean isCaptureAnimationEnabled(){
         return PERSIST_CAPTURE_ANIMATION_ENABLED;
     }

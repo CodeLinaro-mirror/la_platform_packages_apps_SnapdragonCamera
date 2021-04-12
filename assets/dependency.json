@@ -209,8 +209,7 @@
   {
     "disable": {},
     "V2": {},
-    "V3": {"pref_camera2_video_duration_key":"0"},
-    "V3SetWhenPause": {"pref_camera2_video_duration_key":"0"}
+    "V3": {"pref_camera2_video_duration_key":"0"}
   },
   "pref_camera2_multi_camera_mode_key":
   {
