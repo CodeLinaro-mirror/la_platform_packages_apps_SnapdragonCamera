@@ -54,6 +54,7 @@ import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.DialogInterface.OnDismissListener;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
@@ -70,11 +71,19 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.util.Log;
 import android.util.Size;
-import android.widget.Toast;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.BaseAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.EditText;
-import android.widget.CheckBox;
+import android.widget.Toast;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.text.InputType;
 
 import org.codeaurora.snapcam.R;
@@ -82,14 +91,18 @@ import com.android.camera.util.CameraUtil;
 import com.android.camera.CaptureModule.CameraMode;
 import com.android.camera.ui.RotateTextToast;
 import com.android.camera.util.PersistUtil;
+import com.android.camera.DragonListView;
 
+import org.codeaurora.snapcam.R;
+
+import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Arrays;
 
 import static com.android.camera.CaptureModule.CameraMode.DEFAULT;
 import static com.android.camera.CaptureModule.CameraMode.RTB;
@@ -949,62 +962,62 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void UpdateManualHDRSetting() {
-        //dismiss all popups first, because we need to show edit dialog
-        int cameraId = mSettingsManager.getCurrentCameraId();
-        SharedPreferences.Editor editor = mLocalSharedPref.edit();
-
+        List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
-
-        boolean isMfHDRChecked = mLocalSharedPref.getBoolean(
-                SettingsManager.KEY_MANUAL_MFHDR, false);
-        boolean isSHDRChecked = mLocalSharedPref.getBoolean(
-                SettingsManager.KEY_MANUAL_SHDR, false);
-        boolean isQHDRChecked = mLocalSharedPref.getBoolean(
-                SettingsManager.KEY_MANUAL_QHDR, false);
-
-        final CheckBox mfHDRChb = new CheckBox(SettingsActivity.this);
-        final CheckBox sHDRChb = new CheckBox(SettingsActivity.this);
-        final CheckBox qHDRChb = new CheckBox(SettingsActivity.this);
-        sHDRChb.setText("SHDR");
-        mfHDRChb.setText("MFHDR");
-        qHDRChb.setText("QHDR");
-        sHDRChb.setChecked(isSHDRChecked);
-        mfHDRChb.setChecked(isMfHDRChecked);
-        qHDRChb.setChecked(isQHDRChecked);
-        Log.v(TAG, " isMfHDRChecked :" + isMfHDRChecked + ", isSHDRChecked :" +
-                isSHDRChecked + ", isQHDRChecked :" + isQHDRChecked);
-        LinearLayout linear = new LinearLayout(SettingsActivity.this);
-        linear.setOrientation(1);
-        linear.setPadding(50, 10, 0, 0);
         for (int i = 0; i < modes.length; i++) {
             if (modes[i] == 1) {
-                linear.addView(sHDRChb);
+                listData.add(SettingsManager.KEY_MANUAL_SHDR);
             } else if (modes[i] == 2) {
-                linear.addView(mfHDRChb);
+                listData.add(SettingsManager.KEY_MANUAL_MFHDR);
             } else if (modes[i] == 3) {
-                linear.addView(qHDRChb);
+                listData.add(SettingsManager.KEY_MANUAL_QHDR);
             }
         }
+        final SharedPreferences.Editor editor = mLocalSharedPref.edit();
+        String orderLists = mLocalSharedPref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
+        Log.v(TAG, " UpdateManualHDRSetting orderLists:" + orderLists);
+        if (orderLists != null) {
+            listData.clear();
+            for (String title : orderLists.split("#")) {
+                listData.add(title);
+            }
+        }
+        final DragonListView listView = new DragonListView(SettingsActivity.this);
+        DragListViewAdapter adapter = new DragListViewAdapter(this, listData);
+        listView.setAdapter(adapter);
+        adapter.setChecked(new CheckBoxChanged() {
+            @Override
+            public void onCheckedChanged(int position, String title, boolean isChecked) {
+                Log.v(TAG, " save title :" + title + ", isChecked :" + isChecked + ", position :" + position);
+                editor.putBoolean(title, isChecked);
+                editor.commit();
+            }
+        });
 
         final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
         alert.setTitle("MANUAL HDR Settings");
-        alert.setView(linear);
+        alert.setView(listView);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                boolean shdrChecked = sHDRChb.isChecked();
-                boolean mfhdrChecked = mfHDRChb.isChecked();
-                boolean qhdrChecked = qHDRChb.isChecked();
-                Log.v(TAG, "onClick shdrChecked :" + shdrChecked + ", mfhdrChecked :" +
-                        mfhdrChecked + ", qhdrChecked :" + qhdrChecked);
-                editor.putBoolean(SettingsManager.KEY_MANUAL_MFHDR, mfhdrChecked);
-                editor.putBoolean(SettingsManager.KEY_MANUAL_SHDR, shdrChecked);
-                editor.putBoolean(SettingsManager.KEY_MANUAL_QHDR, qhdrChecked);
-                editor.apply();
             }
         });
         alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog,int id) {
                 dialog.cancel();
+            }
+        });
+        alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                List<String> listData = adapter.getmDragDatas();
+                StringBuilder mixedHDROrder = new StringBuilder();
+                for (String item : listData) {
+                    mixedHDROrder.append(item);
+                    mixedHDROrder.append("#");
+                }
+                Log.v(TAG, " onDismiss mixedHDROrder:" + mixedHDROrder.toString());
+                editor.putString(SettingsManager.KEY_MIXED_HDR_ORDER, mixedHDROrder.toString());
+                editor.apply();
             }
         });
         alert.show();
@@ -1896,5 +1909,83 @@ public class SettingsActivity extends PreferenceActivity {
         mSettingsManager.restoreSettings();
         filterPreferences();
         initializePreferences();
+    }
+
+    public class DragListViewAdapter extends BaseAdapter {
+        private Context mContext;
+        private List<String> mDragDatas;
+        private CheckBoxChanged mCheckBoxChanged;
+
+        public DragListViewAdapter(Context context, List<String> dataList) {
+            mContext = context;
+            mDragDatas = dataList;
+        }
+
+        @Override
+        public int getCount() {
+            return mDragDatas == null ? 0 : mDragDatas.size();
+        }
+
+        @Override
+        public String getItem(int position) {
+            return mDragDatas.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewHolder viewHolder;
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getApplicationContext()).inflate(
+                        R.layout.drag_list_view_item, parent, false);
+                viewHolder = new ViewHolder();
+                viewHolder.checkBox = (CheckBox) convertView.findViewById(R.id.check_box);
+                viewHolder.title = (TextView) convertView.findViewById(R.id.title);
+                convertView.setTag(viewHolder);
+            }else{
+                viewHolder = (ViewHolder) convertView.getTag();
+            }
+            viewHolder.title.setText(mDragDatas.get(position));
+            viewHolder.checkBox.setTag(mDragDatas.get(position));
+            viewHolder.checkBox.setChecked(mLocalSharedPref.getBoolean(mDragDatas.get(position), false));
+            viewHolder.checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    String title = String.valueOf(buttonView.getTag());
+                    if (mCheckBoxChanged != null){
+                        mCheckBoxChanged.onCheckedChanged(position, title, isChecked);
+                    }
+                }
+            });
+            return convertView;
+        }
+
+        public void setChecked(CheckBoxChanged checked) {
+            this.mCheckBoxChanged = checked;
+        }
+
+        public void swapData(int from, int to){
+            Collections.swap(mDragDatas, from, to);
+            notifyDataSetChanged();
+        }
+
+        public List<String> getmDragDatas() {
+            return mDragDatas;
+        }
+
+        class ViewHolder{
+            CheckBox checkBox;
+            TextView title;
+        }
+
+    }
+
+    public static interface CheckBoxChanged {
+        public void onCheckedChanged(int position, String title, boolean isChecked);
+
     }
 }

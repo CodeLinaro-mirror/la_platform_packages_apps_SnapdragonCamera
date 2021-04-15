@@ -199,6 +199,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_SENSOR_MODE_FS2_VALUE = "pref_camera2_fs2_key";
     public static final String KEY_ABORT_CAPTURES = "pref_camera2_abort_captures_key";
     public static final String KEY_MANUAL_HDR = "pref_camera2_manualhdr_key";
+    public static final String KEY_MIXED_HDR_ORDER = "pref_camera2_mixed_hdr_order";
     public static final String KEY_OFFLINE_DUMP_TRIGGER = "pref_camera2_offline_dump_trigger_key";
     public static final String KEY_SHADING_CORRECTION = "pref_camera2_shading_correction_key";
     public static final String KEY_EXTENDED_MAX_ZOOM = "pref_camera2_extended_max_zoom_key";
@@ -217,9 +218,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MANUAL_EXPOSURE_VALUE = "pref_camera2_manual_exposure_key";
 
     //manual hdr keys
-    public static final String KEY_MANUAL_MFHDR = "pref_camera2_manual_mfhdr";
-    public static final String KEY_MANUAL_SHDR = "pref_camera2_manual_shdr";
-    public static final String KEY_MANUAL_QHDR = "pref_camera2_manual_qhdr";
+    public static final String KEY_MANUAL_MFHDR = "MFHDR";
+    public static final String KEY_MANUAL_SHDR = "SHDR";
+    public static final String KEY_MANUAL_QHDR = "QHDR";
+    public static final HashMap<String, Integer> KEY_HDR_MODES_ORDER = new HashMap<String, Integer>();
 
     //tone mapping
     public static final String KEY_TONE_MAPPING = "pref_camera2_tone_mapping_key";
@@ -333,6 +335,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         h265.add("HEVCProfileMain10HDR10");
         h265.add("HEVCProfileMain10HDR10Plus");
         VIDEO_ENCODER_PROFILE_TABLE.put("h265", h265);
+        KEY_HDR_MODES_ORDER.put("SHDR", 1);
+        KEY_HDR_MODES_ORDER.put("MFHDR", 2);
+        KEY_HDR_MODES_ORDER.put("QHDR", 3);
     }
 
     private SettingsManager(Context context) {

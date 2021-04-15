@@ -10287,19 +10287,31 @@ public class CaptureModule implements CameraModule, PhotoController,
                 final SharedPreferences pref = mActivity.getSharedPreferences(
                         ComboPreferences.getLocalSharedPreferencesName(mActivity,
                                 mSettingsManager.getCurrentPrepNameKey()), Context.MODE_PRIVATE);
-                boolean isSHDRChecked = pref.getBoolean(SettingsManager.KEY_MANUAL_SHDR, false);
-                boolean isMfHDRChecked = pref.getBoolean(SettingsManager.KEY_MANUAL_MFHDR, false);
-                boolean isQHDRChecked = pref.getBoolean(SettingsManager.KEY_MANUAL_QHDR, false);
-                Log.v(TAG, " applyManualHDR isSHDRChecked :" + isSHDRChecked + ", isMfHDRChecked :"
-                        + isMfHDRChecked + ", isQHDRChecked :" + isQHDRChecked);
-                if (isSHDRChecked) {
-                    VendorTagUtil.setSHDRMode(request, 1);
-                }
-                if (isMfHDRChecked) {
-                    VendorTagUtil.setMFHDRMode(request, 1);
-                }
-                if (isQHDRChecked) {
-                    VendorTagUtil.setQHDRMode(request, 1);
+
+                String orderList = pref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
+                Log.v(TAG, " applyManualHDR orderLists:" + orderList +
+                        ", mHighSpeedCaptureRate :" + mHighSpeedCaptureRate);
+                if (orderList != null) {
+                    int[] modes = new int [3];
+                    String[] orderLists = orderList.split("#");
+                    //for (String title : orderList.split("#")) {
+                    for (int i = 0; i < orderLists.length; i ++) {
+                        String title = orderLists[i];
+                        boolean isChecked = pref.getBoolean(title, false);
+                        Log.v(TAG, " applyManualHDR title:" + title + ", isChecked :" + isChecked);
+                        if (isChecked) {
+                            modes[i] = SettingsManager.KEY_HDR_MODES_ORDER.get(title);
+                            Log.v(TAG, " applyManualHDR modes[i]:" + modes[i]);
+                            if(title.equals("MFHDR")) {
+                                VendorTagUtil.setMFHDRMode(request, 1);
+                            } else if (title.equals("SHDR")) {
+                                VendorTagUtil.setSHDRMode(request, 1);
+                            } else if (title.equals("QHDR")) {
+                                VendorTagUtil.setQHDRMode(request, 1);
+                            }
+                        }
+                    }
+                    VendorTagUtil.setHDRModes(request, modes);
                 }
             }
         }
