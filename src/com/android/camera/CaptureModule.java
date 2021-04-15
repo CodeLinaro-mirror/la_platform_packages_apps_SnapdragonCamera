@@ -595,6 +595,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMCTFwithReferenceFrame", byte.class);
     public static final CaptureRequest.Key<Byte> enable_statsvisualizer =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableStatsVisualizer", byte.class);
+    //HDRVideo MODE
+    public static final CaptureRequest.Key<Integer> hdr_video_mode = new CaptureRequest.Key<>(
+            "org.codeaurora.qcamera3.sessionParameters.HDRVideoMode", Integer.class);
     // Session Parameters vendorTag END
 
     public static final CaptureRequest.Key<Integer> offline_dump_trigger_enabled =
@@ -5089,6 +5092,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.HFR) {
             applyOfflineDumpTrigger(builder);
+            applyVideoEncoderProfile(builder);
         }
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.DEFAULT) {
@@ -7421,7 +7425,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyVideoFlash(mVideoRecordRequestBuilder, cameraId);
             applyFaceDetection(mVideoRecordRequestBuilder);
             applyZoom(mVideoRecordRequestBuilder, cameraId);
-            applyVideoEncoderProfile(mVideoRecordRequestBuilder);
             applyVideoEIS(mVideoRecordRequestBuilder);
             applyVideoHDR(mVideoRecordRequestBuilder);
             applyTouchTrackFocus(mVideoRecordRequestBuilder);
@@ -7504,7 +7507,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             applyZoom(builder, cameraId);
         }
-        applyVideoEncoderProfile(builder);
         applyVideoEIS(builder);
         applyVideoHDR(builder);
         applyTouchTrackFocus(builder);
@@ -7707,10 +7709,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         int mode = 0;
         if (profile.equals("HEVCProfileMain10HDR10")) {
             mode = 2;
+            builder.set(hdr_video_mode, 1);
         } else if (profile.equals("HEVCProfileMain10")) {
             mode = 1;
+            builder.set(hdr_video_mode, 0);
         } else if (profile.equals("HEVCProfileMain10HDR10Plus")) {
             mode = 3;
+            builder.set(hdr_video_mode, 1);
         }
         Log.d(TAG, "setHDRVideoMode: " + mode);
         VendorTagUtil.setHDRVideoMode(builder, (byte)mode);
