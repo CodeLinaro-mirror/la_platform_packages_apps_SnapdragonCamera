@@ -8745,6 +8745,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             mVideoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
         }
+        //It's mandated to set this key for any video session since S
+        mVideoFormat.setInteger(MediaFormat.KEY_PRIORITY, 0 /* realtime priority */);
         applyVideoFlip();
         applyVideoSettings();
         mVideoEncoder = MediaCodec.createEncoderByType(encoder);
