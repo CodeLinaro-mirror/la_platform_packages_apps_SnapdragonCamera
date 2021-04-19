@@ -177,11 +177,6 @@ public class SettingsActivity extends PreferenceActivity {
                 updateLongShotPreference();
             }
 
-            if (key.equals(SettingsManager.KEY_STATS_VISUALIZER_ENABLE)) {
-                value = ((ListPreference) p).getValue();
-                updateStatsVisualizer(value);
-            }
-
             if (key.equals(SettingsManager.KEY_MANUAL_HDR)) {
                 value = ((ListPreference) p).getValue();
                 if (value.equals("manual")) {
@@ -1427,7 +1422,6 @@ public class SettingsActivity extends PreferenceActivity {
         initializePhysicalPreferences();
         updatePhysicalPreferences();
         updateLongShotPreference();
-        updateStatsVisualizer();
         updateVideoHfrFpsPreference();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
@@ -1718,23 +1712,6 @@ public class SettingsActivity extends PreferenceActivity {
                 } else {
                     longShot.setEnabled(true);
                 }
-            }
-        }
-    }
-
-    private void updateStatsVisualizer() {
-        String values = mSettingsManager.getValue(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
-        updateStatsVisualizer(values);
-    }
-
-    private void updateStatsVisualizer(String enable) {
-        MultiSelectListPreference pref = (MultiSelectListPreference) findPreference(
-                SettingsManager.KEY_STATS_VISUALIZER_VALUE);
-        if (pref != null) {
-            if (enable.equals("0")) {
-                pref.setEnabled(false);
-            } else {
-                pref.setEnabled(true);
             }
         }
     }

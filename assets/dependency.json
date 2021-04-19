@@ -242,5 +242,9 @@
     "3": {},
     "4": {},
     "5": {}
+  },
+  "pref_camera2_stats_visualizer_enable_key":
+  {
+    "0":{"pref_camera2_stats_visualizer_key":""}
   }
 }
