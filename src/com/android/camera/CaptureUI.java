@@ -639,10 +639,17 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
                 mZoomIndex = mZoomIncrease? mZoomIndex+1 : mZoomIndex -1;
 
-                if (mZoomIndex == 0)
+
+                if (mZoomIndex <= 0){
+                    mZoomIndex = 0;
                     mZoomIncrease = true;
-                if (mZoomIndex == values.length - 1)
+                }
+
+                if (mZoomIndex >= values.length - 1){
+                    mZoomIndex = values.length - 1;
                     mZoomIncrease = false;
+                }
+
 
                 float from  = mModule.getZoomValue();
                 float to = Float.valueOf(values[mZoomIndex]);
