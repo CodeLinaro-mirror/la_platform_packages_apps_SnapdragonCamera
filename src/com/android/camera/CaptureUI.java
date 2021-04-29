@@ -27,6 +27,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -203,6 +205,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         public void surfaceCreated(SurfaceHolder holder) {
             Log.v(TAG, "surfaceCreated");
             mSurfaceHolder = holder;
+            if (mSettingsManager.isMultiCameraEnabled()){
+                Canvas canvas = holder.lockCanvas();
+                canvas.drawColor(Color.BLACK);
+                holder.unlockCanvasAndPost(canvas);
+            }
             previewUIReady();
             if(mTrackingFocusRenderer != null && mTrackingFocusRenderer.isVisible()) {
                 mTrackingFocusRenderer.setSurfaceDim(mSurfaceView.getLeft(), mSurfaceView.getTop(), mSurfaceView.getRight(), mSurfaceView.getBottom());
