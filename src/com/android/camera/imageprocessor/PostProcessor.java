@@ -1283,8 +1283,14 @@ public class PostProcessor{
                         int size = image.getPlanes()[0].getBuffer().remaining();
                         byte[] bytes = new byte[size];
                         image.getPlanes()[0].getBuffer().get(bytes, 0, size);
-                        ExifInterface exif = Exif.getExif(bytes);
-                        int orientation = Exif.getOrientation(exif);
+                        ExifInterface exif = null;
+                        int orientation = 0;
+                        if (image.getFormat() != ImageFormat.HEIC) {
+                            exif = Exif.getExif(bytes);
+                            orientation = Exif.getOrientation(exif);
+                        } else {
+                            orientation = CameraUtil.getJpegRotation(mController.getMainCameraId(),mOrientation);
+                        }
                         if (mController.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
                             mController.setJpegImageData(bytes);
                             if (mController.isQuickCapture()) {
@@ -1293,11 +1299,13 @@ public class PostProcessor{
                                 mController.showCapturedReview(bytes, orientation);
                             }
                         } else {
-                            String saveFormat = mController.mRawReprocessType == 3? "heic" : "jpeg";
+                            String saveFormat = image.getFormat() == ImageFormat.HEIC ? "heic" : "jpeg";
                             mActivity.getMediaSaveService().addImage(
                                     bytes, title, date, null, image.getCropRect().width(), image.getCropRect().height(),
                                     orientation, exif, mController.getMediaSavedListener(), mActivity.getContentResolver(), saveFormat);
-                            mController.updateThumbnailJpegData(bytes);
+                            if (image.getFormat() != ImageFormat.HEIC){
+                                mController.updateThumbnailJpegData(bytes);
+                            }
                             image.close();
                         }
                     }else{

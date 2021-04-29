@@ -271,6 +271,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_VSR = "pref_camera2_vsr_key";
 
     public static final String KEY_RAW_REPROCESS_TYPE = "pref_camera2_raw_reprocess_key";
+    public static final String KEY_PHYSICAL_RAW_REPROCESS = "pref_camera2_physical_raw_reprocess_key";
     public static final String KEY_RAWINFO_TYPE = "pref_camera2_rawinfo_type_key";
     public static final String KEY_RAW_FORMAT_TYPE = "pref_camera2_raw_format_key";
     private static final String TAG = "SnapCam_SettingsManager";
@@ -972,6 +973,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return new HashSet<>(Arrays.asList(physical_ids));
     }
 
+    public String getRawReprocessPhysicalId(){
+        String id  = getValue(KEY_PHYSICAL_RAW_REPROCESS);
+        if (id == null || "".equals(id))
+            return null;
+        String physical_id = id.trim();
+        Log.i(TAG,"getRawReprocessPhysicalId: " + physical_id);
+        return physical_id;
+    }
+
     public boolean isLogicalEnable(){
         String ids  = getValue(KEY_PHYSICAL_CAMERA);
         if (ids == null || "".equals(ids) || " ".equals(ids)){
@@ -1493,6 +1503,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 removePreference(mPreferenceGroup, KEY_VSR);
             }
         }
+        ListPreference physicalRawReprocessPref = (ListPreference)mPreferenceGroup.findPreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
+        boolean ret = buildPhysicalCamera(cameraId, physicalRawReprocessPref);
 
         if (physicalCamera != null) {
             if (!buildPhysicalCamera(cameraId, physicalCamera) ||

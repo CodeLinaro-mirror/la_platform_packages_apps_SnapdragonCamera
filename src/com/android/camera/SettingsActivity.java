@@ -186,6 +186,11 @@ public class SettingsActivity extends PreferenceActivity {
                     UpdateManualHDRSetting();
                 }
             }
+            if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
+                updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
+                updatePreference(SettingsManager.KEY_RAWINFO_TYPE);
+                updatePreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+            }
         }
     };
 
@@ -248,6 +253,11 @@ public class SettingsActivity extends PreferenceActivity {
                         pref.getKey().equals(SettingsManager.KEY_SELECT_MODE)) {
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
+                }
+                if (pref.getKey().equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
+                    updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
+                    updatePreference(SettingsManager.KEY_RAWINFO_TYPE);
+                    updatePreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
                 }
             }
         }
@@ -1175,6 +1185,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
         if(!PersistUtil.isRawReprocessEnable() && developer != null){
             removePreference(SettingsManager.KEY_RAW_REPROCESS_TYPE, developer);
+            removePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS, developer);
             removePreference(SettingsManager.KEY_RAWINFO_TYPE, developer);
             removePreference(SettingsManager.KEY_RAW_FORMAT_TYPE, developer);
         }
@@ -1420,6 +1431,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_SWITCH_CAMERA);
         updatePreference(SettingsManager.KEY_TONE_MAPPING);
         updatePreference(SettingsManager.KEY_LIVE_PREVIEW);
+        updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
         updateMultiPreference(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
         updatePictureSizePreferenceButton();
         updateVideoHDRPreference();
@@ -1478,7 +1490,13 @@ public class SettingsActivity extends PreferenceActivity {
                 p.setEnabled(false);
             }
         }
-
+        String reprocessType = mSettingsManager.getValue(SettingsManager.KEY_RAW_REPROCESS_TYPE);
+        if (reprocessType == null || reprocessType.equals("disable") || reprocessType.equals("off") || Integer.valueOf(reprocessType) == 0) {
+            Preference p = findPreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
+            if (p != null) {
+                p.setEnabled(false);
+            }
+        }
         try {
             String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
             int index = versionName.indexOf(' ');

@@ -1564,18 +1564,18 @@ for time lapse recording -->
         <item>@string/pref_camera2_raw_reprocess_entry_off</item>
         <item>@string/pref_camera2_raw_reprocess_entry_yuv</item>
         <item>@string/pref_camera2_raw_reprocess_entry_jpeg</item>
-        <item>@string/pref_camera2_raw_reprocess_entry_heic</item>
+        <!--string/pref_camera2_raw_reprocess_entry_heic</item>
         <item>@string/pref_camera2_raw_reprocess_entry_all_yuv</item>
-        <item>@string/pref_camera2_raw_reprocess_entry_all_jpeg</item>
+        <item>@string/pref_camera2_raw_reprocess_entry_all_jpeg-->
     </string-array>
 
     <string-array name="pref_camera2_raw_reprocess_entryvalues" translatable="false">
         <item>@string/pref_camera2_raw_reprocess_entry_value_off</item>
         <item>@string/pref_camera2_raw_reprocess_entry_value_yuv</item>
         <item>@string/pref_camera2_raw_reprocess_entry_value_jpeg</item>
-        <item>@string/pref_camera2_raw_reprocess_entry_value_heic</item>
+        <!--string/pref_camera2_raw_reprocess_entry_value_heic</item>
         <item>@string/pref_camera2_raw_reprocess_entry_value_all_yuv</item>
-        <item>@string/pref_camera2_raw_reprocess_entry_value_all_jpeg</item>
+        <item>@string/pref_camera2_raw_reprocess_entry_value_all_jpeg-->
     </string-array>
 
     <string-array name="pref_camera2_raw_format_entries" translatable="false">
