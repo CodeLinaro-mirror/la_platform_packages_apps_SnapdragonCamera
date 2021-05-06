@@ -2006,9 +2006,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         if (videoCapabilities != null) {
                             if (videoCapabilities.areSizeAndRateSupported(
                                     videoSize.getWidth(), videoSize.getHeight(), (int) r.getUpper())) {
-                                if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR && (selectMode != null && selectMode.equals("sat"))){
-                                    break;
-                                }
                                 if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR &&
                                         (int)r.getUpper() < 120){
                                     break;
