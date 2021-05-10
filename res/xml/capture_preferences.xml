@@ -271,7 +271,7 @@
         camera:title="@string/pref_video_time_lapse_frame_interval_title"/>
 
     <IconListPreference
-        camera:defaultValue="@string/setting_off_value"
+        camera:defaultValue="@string/setting_on_value"
         camera:entries="@array/pref_camera2_facedetection_entries"
         camera:entryValues="@array/pref_camera2_facedetection_entryvalues"
         camera:key="pref_camera2_facedetection_key"
