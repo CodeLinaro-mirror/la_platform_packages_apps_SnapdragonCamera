@@ -1822,7 +1822,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO){
                 hfrPref.reloadInitialEntriesAndEntryValues();
                 mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
-                        getSupportedHighFrameRate());
+                        getSupportedHighFrameRate(mCameraId));
                 if (!mIsHFRSupported) {
                     mFilteredKeys.add(hfrPref.getKey());
                 }
@@ -1832,6 +1832,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isHFRSupported() {
         return mIsHFRSupported;
+    }
+
+    public boolean isFrontIDHFRSupported() {
+        boolean result = true;
+        ListPreference hfrPref = mPreferenceGroup.findPreference(KEY_VIDEO_HIGH_FRAME_RATE);
+        if (hfrPref != null) {
+            result = !filterUnsupportedOptions(hfrPref,
+                    getSupportedHighFrameRate(CaptureModule.FRONT_ID));
+        }
+        Log.v(TAG, " isFrontIDHFRSupported result :" + result);
+        return result;
     }
 
     private void filterVideoEncoderProfileOptions() {
@@ -1961,8 +1972,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return supported;
     }
 
-    private List<String> getSupportedHighFrameRate() {
-        int cameraId = mCameraId;
+    private List<String> getSupportedHighFrameRate(int id) {
+        int cameraId = id;
         String selectMode = getValue(KEY_SELECT_MODE);
         if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR &&
                 (selectMode != null && selectMode.equals("sat"))){

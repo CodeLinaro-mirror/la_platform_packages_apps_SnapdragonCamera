@@ -12034,7 +12034,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (value != null && value.equals("front") &&
                 (nextSceneMode.mode == CameraMode.RTB ||
                  nextSceneMode.mode == CameraMode.SAT ||
-                 nextSceneMode.mode == CameraMode.PRO_MODE)) {
+                 nextSceneMode.mode == CameraMode.PRO_MODE ||
+                 (nextSceneMode.mode == CameraMode.HFR &&
+                         !mSettingsManager.isFrontIDHFRSupported()))) {
             mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         } else {
             restartAll();

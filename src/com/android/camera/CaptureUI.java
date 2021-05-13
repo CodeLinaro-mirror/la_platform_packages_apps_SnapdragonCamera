@@ -1212,6 +1212,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mZoomSwitch.setVisibility(View.VISIBLE);
         }
         mFaceView.initMode();
+        hideFrontBackSwither();
     }
 
     public void initializeProMode(boolean promode) {
@@ -1351,7 +1352,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (value == null)
             return;
 
-        mFrontBackSwitcher.setVisibility(View.VISIBLE);
+        hideFrontBackSwither();
         mFrontBackSwitcher.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1678,6 +1679,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void showUIafterRecording() {
         mCameraControls.setVideoMode(false);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
+        hideFrontBackSwither();
         mSettingsIcon.setVisibility(View.VISIBLE);
         mIsVideoUI = false;
         mPauseButton.setVisibility(View.INVISIBLE);
@@ -1697,6 +1699,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         //common settings
         mShutterButton.setVisibility(View.VISIBLE);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
+        hideFrontBackSwither();
         mMakeupButton.setVisibility(View.INVISIBLE);
         mSceneModeSwitcher.setVisibility(View.INVISIBLE);
         //settings for each mode
@@ -2098,6 +2101,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void onOrientationChanged() {
+    }
+
+    private void hideFrontBackSwither() {
+        if (mFrontBackSwitcher != null &&
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
+                !mSettingsManager.isFrontIDHFRSupported()) {
+            mFrontBackSwitcher.setVisibility(View.INVISIBLE);
+        }
     }
 
     /**
