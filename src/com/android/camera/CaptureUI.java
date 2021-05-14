@@ -1352,6 +1352,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (value == null)
             return;
 
+        mFrontBackSwitcher.setVisibility(View.VISIBLE);
         hideFrontBackSwither();
         mFrontBackSwitcher.setOnClickListener(new View.OnClickListener() {
             @Override
