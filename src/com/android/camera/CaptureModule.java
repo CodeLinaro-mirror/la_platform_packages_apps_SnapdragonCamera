@@ -5291,8 +5291,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateLockAFAEVisibility();
                 mUI.initFlashButton();
             }
-            writeXMLForWarmAwb();
         }
+        writeXMLForWarmAwb();
         if (mLocationManager != null) mLocationManager.recordLocation(false);
         if(isClearSightOn()) {
             ClearSightImageProcessor.getInstance().close();
@@ -7545,6 +7545,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyBGStats(builder);
         applyBEStats(builder);
         applyPdnetToggle(builder);
+        applyAWBCCTAndAgain(builder);
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
