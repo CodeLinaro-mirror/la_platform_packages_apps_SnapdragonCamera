@@ -1221,8 +1221,8 @@ public class SettingsActivity extends PreferenceActivity {
                         if (PersistUtil.enableMediaRecorder()) {
                             videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         }
-                        videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
                     } else {
+                        videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                     }
                     videoAddList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);

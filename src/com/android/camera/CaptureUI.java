@@ -981,12 +981,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void updateZoomSeekBar(float zoomValue) {
         int zoomSig = Math.round(zoomValue * 100) / 100;
         int zoomFraction = Math.round(zoomValue * 100) % 100;
+        int fixSig = Math.round(mZoomFixedValue * 100) / 100;
+        int fixFraction = Math.round(mZoomFixedValue * 100) % 100;
         String txt = zoomSig + "." + zoomFraction + "x";
         if (mZoomValueText != null) {
             mZoomValueText.setText(txt);
         }
         if (mZoomSeekBar != null) {
-            mZoomSeekBar.setProgress(zoomSig * 100 + zoomFraction - ((int)(100 * mZoomFixedValue)));
+            mZoomSeekBar.setProgress(zoomSig * 100 + zoomFraction - (fixSig * 100 + fixFraction));
         }
     }
 
