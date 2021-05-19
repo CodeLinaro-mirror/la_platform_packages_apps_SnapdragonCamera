@@ -8139,6 +8139,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             releaseMediaCodec();
         }
+        resetAudioMute();
         releaseAudioFocus();
         mHandler.post(new Runnable() {
             @Override
