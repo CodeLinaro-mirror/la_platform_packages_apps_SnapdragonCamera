@@ -205,11 +205,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         public void surfaceCreated(SurfaceHolder holder) {
             Log.v(TAG, "surfaceCreated");
             mSurfaceHolder = holder;
-            if (mSettingsManager.isMultiCameraEnabled()){
-                Canvas canvas = holder.lockCanvas();
-                canvas.drawColor(Color.BLACK);
-                holder.unlockCanvasAndPost(canvas);
-            }
             previewUIReady();
             if(mTrackingFocusRenderer != null && mTrackingFocusRenderer.isVisible()) {
                 mTrackingFocusRenderer.setSurfaceDim(mSurfaceView.getLeft(), mSurfaceView.getTop(), mSurfaceView.getRight(), mSurfaceView.getBottom());
