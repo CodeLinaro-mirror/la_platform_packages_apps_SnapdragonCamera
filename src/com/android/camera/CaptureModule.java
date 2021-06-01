@@ -4308,7 +4308,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if (!mSettingsManager.isMultiCameraEnabled()) {
                 if (!(mIsSupportedQcfa || isDeepZoom() || (fs2Value ==1) ||
-                        mSettingsManager.getQuadBayerSensorPrefEnabled())) {
+                        mSettingsManager.getQuadBayerSensorPrefEnabled()) && mSettingsManager.getSinglePhysicalCamera() == null) {
                     addPreviewSurface(captureBuilder, null, id);
                 }
             }
