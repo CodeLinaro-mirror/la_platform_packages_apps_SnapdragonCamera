@@ -291,6 +291,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int mStreamConfigOptMode = 0;
     private static final int STREAM_CONFIG_MODE_QTIEIS_REALTIME = 0xF004;
     private static final int STREAM_CONFIG_MODE_QTIEIS_LOOKAHEAD = 0xF008;
+    private static final int STREAM_CONFIG_MODE_QTIEIS_DYNAMIC_MARGIN = 0xF100;
     private static final int STREAM_CONFIG_MODE_FOVC = 0xF010;
     private static final int STREAM_CONFIG_MODE_ZZHDR  = 0xF002;
     private static final int STREAM_CONFIG_MODE_FS2    =  0xF040;
@@ -5196,6 +5197,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyLivePreview(builder);
         applyStatsNNControl(builder);
         applyPdnetToggle(builder);
+        applyPhotoEIS(builder);
     }
 
     /**
@@ -9806,6 +9808,28 @@ public class CaptureModule implements CameraModule, PhotoController,
             try {
                 applyVideoStabilization(request, value.equals("disable"));
                 request.set(CaptureModule.eis_mode, byteValue);
+            } catch (IllegalArgumentException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void applyPhotoEIS(CaptureRequest.Builder request) {
+        if (!mSettingsManager.isDeveloperEnabled()) {
+            return;//don't apply if not in dev mode
+        }
+        String value = mSettingsManager.getValue(SettingsManager.KEY_PHOTO_EIS_VALUE);
+
+        Log.d(TAG, "applyPhotoEIS EISV select: " + value);
+        mStreamConfigOptMode = 0;
+        if (value != null) {
+            if (value.equals("V2")) {
+                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
+            } else if (value.equals("dynamic")) {
+                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_DYNAMIC_MARGIN ;
+            }
+            try {
+                applyVideoStabilization(request, value.equals("disable"));
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
             }
