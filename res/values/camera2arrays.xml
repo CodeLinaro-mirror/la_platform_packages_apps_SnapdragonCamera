@@ -828,14 +828,24 @@
         <item>@string/setting_on_value</item>
     </string-array>
 
-    <string-array name="pref_camera2_qcfa_entries" translatable="false">
-        <item>@string/pref_camera_qcfa_value_disable</item>
-        <item>@string/pref_camera_qcfa_value_enable</item>
+    <string-array name="pref_camera2_quad_bayer_sensor_entries" translatable="false">
+        <item>@string/pref_camera_quad_bayer_sensor_value_disable</item>
+        <item>@string/pref_camera_quad_bayer_sensor_value_enable</item>
     </string-array>
 
-    <string-array name="pref_camera2_qcfa_entryvalues"  translatable="false">
-        <item>@string/pref_camera_qcfa_value_disable</item>
-        <item>@string/pref_camera_qcfa_value_enable</item>
+    <string-array name="pref_camera2_quad_bayer_sensor_entryvalues"  translatable="false">
+        <item>@string/pref_camera_quad_bayer_sensor_value_disable</item>
+        <item>@string/pref_camera_quad_bayer_sensor_value_enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_remosaic_reprocessing_entries" translatable="false">
+        <item>@string/pref_camera_remosaic_reprocessing_value_disable</item>
+        <item>@string/pref_camera_remosaic_reprocessing_value_enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_remosaic_reprocessing_entryvalues"  translatable="false">
+        <item>@string/pref_camera_remosaic_reprocessing_value_disable</item>
+        <item>@string/pref_camera_remosaic_reprocessing_value_enable</item>
     </string-array>
 
     <string-array name="pref_camera2_noise_reduction_entries" translatable="false">
