@@ -10100,14 +10100,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 boolean isMfHDRChecked = pref.getBoolean(SettingsManager.KEY_MANUAL_MFHDR, false);
                 boolean isQHDRChecked = pref.getBoolean(SettingsManager.KEY_MANUAL_QHDR, false);
                 Log.v(TAG, " applyManualHDR isSHDRChecked :" + isSHDRChecked + ", isMfHDRChecked :"
-                        + isMfHDRChecked + ", isQHDRChecked :" + isQHDRChecked +
-                        ", mHighSpeedCaptureRate :" + mHighSpeedCaptureRate);
+                        + isMfHDRChecked + ", isQHDRChecked :" + isQHDRChecked);
                 if (isSHDRChecked) {
-                    if (mHighSpeedCaptureRate == 60 && isSingleCameraMode()) {
-                        VendorTagUtil.setSHDRMode(request, 2);
-                    } else {
-                        VendorTagUtil.setSHDRMode(request, 1);
-                    }
+                    VendorTagUtil.setSHDRMode(request, 1);
                 }
                 if (isMfHDRChecked) {
                     VendorTagUtil.setMFHDRMode(request, 1);
