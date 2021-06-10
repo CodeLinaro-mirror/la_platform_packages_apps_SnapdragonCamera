@@ -4257,7 +4257,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                 e.printStackTrace();
                                             }
                                             Log.i(TAG, "start reprocess");
-                                            mPostProcessor.reprocessImage(image, mRawInputMeta);
+                                            if(mSettingsManager.getRawReprocessPhysicalId() != null) {
+                                                String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+                                                TotalCaptureResult physicalMetaData = mRawInputMeta.getPhysicalCameraTotalResults().get(physicalId);
+                                                Log.i(TAG,"logical metadata: " + mRawInputMeta + ",physical metadata:" + physicalMetaData);
+                                                mPostProcessor.reprocessImage(image, physicalMetaData);
+                                            }else {
+                                                mPostProcessor.reprocessImage(image, mRawInputMeta);
+                                            }
                                         }
                                         image.close();
                                     } else if (image.getFormat() == ImageFormat.YUV_420_888) {
