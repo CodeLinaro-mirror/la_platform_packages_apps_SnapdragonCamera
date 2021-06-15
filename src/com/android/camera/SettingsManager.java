@@ -41,6 +41,7 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.params.Capability;
+import android.hardware.camera2.params.MultiResolutionStreamConfigurationMap;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
@@ -272,6 +273,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_QLL = "pref_camera2_qll_key";
     public static final String KEY_INSENSOR_ZOOM = "pref_camera2_insensor_zoom_key";
     public static final String KEY_VSR = "pref_camera2_vsr_key";
+
+    public static final String KEY_MULTIRESIMAGEREADER = "pref_camera2_multiresimagereader_key";
 
     public static final String KEY_RAW_REPROCESS_TYPE = "pref_camera2_raw_reprocess_key";
     public static final String KEY_PHYSICAL_RAW_REPROCESS = "pref_camera2_physical_raw_reprocess_key";
@@ -939,6 +942,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return null;
     }
 
+    public boolean isMultiResolutionSupported() {
+        MultiResolutionStreamConfigurationMap multiResolutionMap =
+                mCharacteristics.get(mCameraId)
+                .get(CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP);
+        if (multiResolutionMap != null) {
+            Log.d(TAG, "Cam " + mCameraId + " support multi-resolution capture.");
+            return true;
+        } else {
+            Log.d(TAG, "Cam " + mCameraId + " doesn't support multi-resolution capture.");
+            return false;
+        }
+    }
 
     public Set<String> getPhysicalCameraId() {
         if (!isMultiCameraEnabled())
@@ -1982,12 +1997,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                     videoSize.getWidth(), videoSize.getHeight(), (int) r.getUpper())) {
                                 supported.add("hfr" + String.valueOf(r.getUpper()));
                                 supported.add("hsr" + String.valueOf(r.getUpper()));
+                            } else {
+                                Log.d(TAG, "The " + videoSize.getWidth() + "x" + videoSize.getHeight()
+                                        + "@fps" + r.getUpper() + " is not supported.");
                             }
                         }
                     }
                 }
             } catch (IllegalArgumentException ex) {
-                Log.w(TAG, "HFR is not supported for this resolution " + ex);
+                Log.w(TAG, "HFR is not supported for " + ex);
             }
             if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 3) {
                 for (int i = 0; i < mExtendedHFRSize.length; i += 3) {
@@ -2077,12 +2095,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                     supported.add("2x_" + rate);
                                     supported.add("4x_" + rate);
                                 }
+                            } else {
+                                Log.d(TAG, "The " + videoSize.getWidth() + "x" + videoSize.getHeight()
+                                        + "@fps" + r.getUpper() + " is not supported.");
                             }
                         }
                     }
                 }
             } catch (IllegalArgumentException ex) {
-                Log.w(TAG, "HFR is not supported for this resolution " + ex);
+                Log.w(TAG, "HFR is not supported for " + ex);
             }
             if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 3) {
                 for (int i = 0; i < mExtendedHFRSize.length; i += 3) {
