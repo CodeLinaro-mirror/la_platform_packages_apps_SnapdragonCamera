@@ -86,6 +86,8 @@ public class PersistUtil {
             getInt("persist.sys.camera.debug", 0);
     private static final boolean PERSIST_CAMERA_FD_DEBUG =
             getBoolean("persist.sys.camera.fd.debug", false);
+    private static final boolean PERSIST_CAMERA_TRACE_DEBUG =
+            getBoolean("persist.sys.camera.trace.debug", false);
     private static final int PERSIST_CAMERA_DEV_DEBUG_OPTION =
             getInt("persist.sys.camera.devoption.debug", 0);
     // StillMore filter start
@@ -146,6 +148,8 @@ public class PersistUtil {
             getBoolean("persist.sys.camera.raw_reprocess_enable", false);
     private static final boolean PERSIST_RAW_REPROCESS_QCFA =
             getBoolean("persist.sys.camera.raw_reprocess_qcfa", false);
+    private static final int PERSIST_ZOOM_FRAME_VALUE =
+            getInt("persist.sys.camera.zoom.frame", 10);
     private static final boolean PERSIST_RAW_CB_INFO_SUPPORTED =
             getBoolean("persist.sys.camera.rawcbinfo", false);
     private static final int PERSIST_LIVE_SHOT_NUMBERS =
@@ -241,6 +245,8 @@ public class PersistUtil {
         }
     }
 
+    public static int getZoomFrameValue() {return  PERSIST_ZOOM_FRAME_VALUE; }
+
     public static boolean getCamera2Mode() {
         return PERSIST_CAMERA_CAMERA2;
     }
@@ -255,6 +261,10 @@ public class PersistUtil {
 
     public static boolean getFdDebug(){
         return PERSIST_CAMERA_FD_DEBUG;
+    }
+
+    public static boolean getTraceDebug(){
+        return PERSIST_CAMERA_TRACE_DEBUG;
     }
 
     public static int getDevOptionLevel() {
