@@ -1870,11 +1870,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isFrontIDHFRSupported() {
         boolean result = true;
-        ListPreference hfrPref = mPreferenceGroup.findPreference(KEY_VIDEO_HIGH_FRAME_RATE);
-        if (hfrPref != null) {
-            result = !filterUnsupportedOptions(hfrPref,
-                    getSupportedHighFrameRate(CaptureModule.FRONT_ID));
-        }
+        result = getSupportedHighFrameRate(CaptureModule.FRONT_ID).size() != 0;
         Log.v(TAG, " isFrontIDHFRSupported result :" + result);
         return result;
     }
