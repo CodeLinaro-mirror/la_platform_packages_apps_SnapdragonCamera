@@ -8153,6 +8153,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.w(TAG, "stopRecordingVideo: " + e);
             }
         }
+        applyZoomAndUpdate();
 
         if (!mPaused) {
             if (isHighSpeedRateCapture() || (!PersistUtil.enableMediaRecorder())) {
@@ -10319,6 +10320,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             // app use preview + video buffers when select EIS V3 usecase
             if (noNeedEndofStreamWhenPause) {
                 captureRequest = mVideoRecordRequestBuilder;
+            }
+            if (mUI.getZoomFixedSupport()) {
+                applyZoomRatio(captureRequest, mZoomValue, id);
+            } else {
+                applyZoom(captureRequest, id);
             }
         }
         if (!checkSessionAndBuilder(mCaptureSession[id], captureRequest)) {
