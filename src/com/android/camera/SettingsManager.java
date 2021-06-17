@@ -1857,7 +1857,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO){
                 hfrPref.reloadInitialEntriesAndEntryValues();
                 mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
-                        getSupportedHighFrameRate(mCameraId));
+                        getSupportedHighFrameRate(mode, mCameraId));
                 if (!mIsHFRSupported) {
                     mFilteredKeys.add(hfrPref.getKey());
                 }
@@ -1871,7 +1871,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isFrontIDHFRSupported() {
         boolean result = true;
-        result = getSupportedHighFrameRate(CaptureModule.FRONT_ID).size() != 0;
+        result = getSupportedHighFrameRate(CaptureModule.CameraMode.HFR, CaptureModule.FRONT_ID)
+                .size() != 0;
         Log.v(TAG, " isFrontIDHFRSupported result :" + result);
         return result;
     }
@@ -2003,17 +2004,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return supported;
     }
 
-    private List<String> getSupportedHighFrameRate(int id) {
+    private List<String> getSupportedHighFrameRate(CaptureModule.CameraMode mode, int id) {
         int cameraId = id;
         String selectMode = getValue(KEY_SELECT_MODE);
-        if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR &&
+        if(mode == CaptureModule.CameraMode.HFR &&
                 (selectMode != null && selectMode.equals("sat"))){
             if (CaptureModule.LOGICAL_ID != -1){
                 cameraId = CaptureModule.LOGICAL_ID;
             }
         }
         ArrayList<String> supported = new ArrayList<String>();
-        if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO) {
+        if(mode == CaptureModule.CameraMode.VIDEO) {
             supported.add("off");
         }
         ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
@@ -2056,11 +2057,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         if (videoCapabilities != null) {
                             if (videoCapabilities.areSizeAndRateSupported(
                                     videoSize.getWidth(), videoSize.getHeight(), (int) r.getUpper())) {
-                                if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR &&
-                                        (int)r.getUpper() < 120){
+                                if(mode == CaptureModule.CameraMode.HFR && (int)r.getUpper() < 120){
                                     break;
                                 }
-                                if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO &&
+                                if(mode == CaptureModule.CameraMode.VIDEO &&
                                         (int)r.getUpper() >= 120){
                                     break;
                                 }
@@ -2087,15 +2087,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         if (videoCapabilities != null) {
                             if (videoCapabilities.areSizeAndRateSupported(
                                     videoSize.getWidth(), videoSize.getHeight(), mExtendedHFRSize[i + 2])) {
-                                if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR &&
-                                        mExtendedHFRSize[i + 2] <=60){
+                                if(mode == CaptureModule.CameraMode.HFR &&
+                                        mExtendedHFRSize[i + 2] < 120){
                                     break;
                                 }
-                                if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO &&
-                                        mExtendedHFRSize[i + 2] > 60){
+                                if(mode == CaptureModule.CameraMode.VIDEO &&
+                                        mExtendedHFRSize[i + 2] >= 120){
                                     break;
                                 }
-                                if (CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO &&
+                                if (mode == CaptureModule.CameraMode.VIDEO &&
                                         mCameraId == CaptureModule.FRONT_ID &&
                                         mExtendedHFRSize[i + 2] >= 60) {
                                     break;
