@@ -3033,20 +3033,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         out.setPhysicalCameraId(physical_id);
                                     outputConfigurations.add(out);
                                     mUI.buildPhysicalSurfaces();
-                                    List<Surface> physicalSurfaces = mUI.getPhysicalSurfaces();
-                                    Set<String> allPhysicalIds =
-                                            mSettingsManager.getAllPhysicalCameraId();
-                                    int i = 1;
-                                    for (String physical : allPhysicalIds) {
-                                        if (!physical_id.equals(physical)) {
-                                            OutputConfiguration o = new OutputConfiguration(
-                                                    physicalSurfaces.get(i));
-                                            o.setPhysicalCameraId(physical);
-                                            outputConfigurations.add(o);
-                                            mPreviewRequestBuilder[id].addTarget(physicalSurfaces.get(i));
-                                            i++;
-                                        }
-                                    }
                                 } else {
                                     if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                                         out.addSensorPixelModeUsed(
