@@ -5395,6 +5395,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void onResumeBeforeSuper() {
+        mSettingsManager.createCaptureModule(this);
         reinit();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);

@@ -410,7 +410,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public void createCaptureModule(CaptureModule captureModule){
-        mCaptureModule = captureModule;
+        if(mCaptureModule == null) {
+            mCaptureModule = captureModule;
+        }
     }
 
     public void destroyCaptureModule(){
