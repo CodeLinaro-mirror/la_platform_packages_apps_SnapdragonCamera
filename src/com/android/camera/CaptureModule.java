@@ -7228,8 +7228,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                 opMode |= STREAM_CONFIG_MODE_FS2;
             }
         }
-        Log.v(TAG, " createCameraSessionWithSessionConfiguration opMode: " + opMode);
-        createCaptureSessionWithSessionConfiguration(mCameraDevice[cameraId], opMode, outConfigurations, inputConfig, listener, handler, initialRequest);
+        String value = mSettingsManager.getValue(SettingsManager.KEY_PHOTO_EIS_VALUE);
+
+        mStreamConfigOptMode = 0;
+        if (value != null) {
+            if (value.equals("V2")) {
+                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
+            } else if (value.equals("dynamic")) {
+                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_DYNAMIC_MARGIN ;
+            }
+        }
+        Log.v(TAG, " createCameraSessionWithSessionConfiguration opMode: " + opMode + ",mStreamConfigOptMode: " + mStreamConfigOptMode);
+        createCaptureSessionWithSessionConfiguration(mCameraDevice[cameraId], opMode | mStreamConfigOptMode, outConfigurations, inputConfig, listener, handler, initialRequest);
     }
 
     private void getOptMode() {
@@ -10021,6 +10031,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             try {
                 applyVideoStabilization(request, value.equals("disable"));
+                request.set(CaptureModule.eis_mode, (byte)0x00); //set EISV3Enable 0 at photo mode
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
             }
