@@ -96,6 +96,36 @@
     <string name="pref_camera_video_duration_entry_144">144 minutes</string>
     <string name="pref_camera_video_duration_entry_nolimit">no limit</string>
 
+    <!-- Settings screen, Default audio recording mode setting -->
+    <string name="pref_camera_audiorecordingmode_default">default</string>
+
+    <!-- Settings screen, Audio recording mode title -->
+    <string name="pref_camera_audiorecordingmode_title">Audio Recording Mode</string>
+
+    <!-- Settings screen, Audio recording mode dialog radio button choices -->
+    <string name="pref_camera_audiorecordingmode_entry_0">Default</string>
+    <string name="pref_camera_audiorecordingmode_entry_1">HDR</string>
+
+    <!-- Settings screen, Default HDR WNR mode setting -->
+    <string name="pref_camera_hdrwnr_default">off</string>
+
+    <!-- Settings screen, HDR WNR mode title -->
+    <string name="pref_camera_hdrwnr_title">HDR WNR Mode</string>
+
+    <!-- Settings screen, HDR WNR mode dialog radio button choices -->
+    <string name="pref_camera_hdrwnr_off">Off</string>
+    <string name="pref_camera_hdrwnr_on">On</string>
+
+    <!-- Settings screen, Default HDR ANS mode setting -->
+    <string name="pref_camera_hdrans_default">off</string>
+
+    <!-- Settings screen, HDR ANS mode title -->
+    <string name="pref_camera_hdrans_title">HDR ANS Mode</string>
+
+    <!-- Settings screen, HDR ANS mode dialog radio button choices -->
+    <string name="pref_camera_hdrans_off">Off</string>
+    <string name="pref_camera_hdrans_on">On</string>
+
     <!-- Default Skin Tone Enhancement setting. Do not translate. -->
     <string name="pref_camera_skinToneEnhancement_default">disable</string>
 

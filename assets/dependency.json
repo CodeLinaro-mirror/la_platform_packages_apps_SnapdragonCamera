@@ -169,6 +169,17 @@
     "h264":{"pref_camera2_videoencoderprofile_key":"off"},
     "h265":{}
   },
+  "pref_camera2_audioencoder_key":
+  {
+    "amr-nb":{"pref_camera2_audiorecordingmode_key":"default"},
+    "aac":{}
+  },
+  "pref_camera2_audiorecordingmode_key":
+  {
+    "default":{"pref_camera2_hdrwnr_key":"off",
+               "pref_camera2_hdrans_key":"off"},
+    "hdr":{}
+  },
   "pref_camera2_capture_mfnr_key":
   {
     "1":{"pref_camera2_manual_exp_key":"off",

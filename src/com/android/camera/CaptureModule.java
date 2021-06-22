@@ -9525,6 +9525,19 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
     //------------------------------------------end-----------------------------------------
+
+    private void setDefaultHDRParameters(AudioManager am) {
+        // Set default values for HDR/3D Audio settings
+        am.setParameters("hdr_record_on=false");
+        am.setParameters("wnr_on=false");
+        am.setParameters("ans_on=false");
+        am.setParameters("orientation=landscape");
+        am.setParameters("inverted=false");
+        am.setParameters("facing=front");
+        am.setParameters("hdr_audio_channel_count=0");
+        am.setParameters("hdr_audio_sampling_rate=0");
+    }
+
     private void setUpMediaRecorder(int cameraId) throws IOException {
         if (mSettingsManager.isMultiCameraEnabled() && !mSettingsManager.isLogicalEnable()){
             mMediaRecorder = null;
@@ -9534,6 +9547,39 @@ public class CaptureModule implements CameraModule, PhotoController,
         Bundle myExtras = mActivity.getIntent().getExtras();
         if (mMediaRecorder == null) mMediaRecorder = new MediaRecorder();
         mMediaRecorder.reset();
+
+        // Get audio recording mode from SettingTranslation. 0 default, 1 hdr
+        int audioRecordingMode = SettingTranslation
+                .getAudioRecordingMode(mSettingsManager.getValue(SettingsManager.KEY_AUDIO_RECORDING_MODE));
+
+        // Get HDR WNR mode. (0 off, 1 on)
+        int hdrWnr = SettingTranslation
+                .getHdrWnrMode(mSettingsManager.getValue(SettingsManager.KEY_HDR_WNR_MODE));
+
+        // Get HDR ANS mode. (0 off, 1 on)
+        int hdrAns = SettingTranslation
+                .getHdrAnsMode(mSettingsManager.getValue(SettingsManager.KEY_HDR_ANS_MODE));
+
+        AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
+        setDefaultHDRParameters(am);
+
+        if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
+            Log.d(TAG, "Enable HDR");
+            am.setParameters("hdr_record_on=true");
+            am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
+            am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
+            am.setParameters("hdr_audio_channel_count=4");
+            am.setParameters("hdr_audio_sampling_rate=48000");
+        }
+
+        if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
+            Log.d(TAG, "cameraId " + mSettingsManager.isFacingFront(cameraId) + " mOrientation " + mOrientation);
+            am.setParameters(mSettingsManager.isFacingFront(cameraId) ? "facing=front" : "facing=back");
+            am.setParameters((mOrientation == 90 || mOrientation == 180)
+                                ? "inverted=true" : "inverted=false");
+            am.setParameters((mOrientation == 90 || mOrientation == 270)
+                                ? "orientation=landscape" : "orientation=portrait");
+        }
 
         //updateHFRSetting();
         boolean hfr = mHighSpeedCapture && !mHighSpeedRecordingMode;
@@ -9552,7 +9598,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mProfile.videoCodec = videoEncoder;
         if (!mCaptureTimeLapse && !hfr && !mSuperSlomoCapture && (-1 != audioEncoder)) {
-            mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            // Set audio source as unprocessed if HDR
+            if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
+                mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.UNPROCESSED);
+            } else {
+                mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            }
             mProfile.audioCodec = audioEncoder;
             if (mProfile.audioCodec == MediaRecorder.AudioEncoder.AMR_NB) {
                 mProfile.fileFormat = MediaRecorder.OutputFormat.THREE_GPP;
@@ -12132,6 +12183,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mPhysicalMediaRecorders[i] = null;
             }
         }
+
+        AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
+        // Set default values for HDR settings
+        setDefaultHDRParameters(am);
     }
 
     private void cleanupEmptyFile() {

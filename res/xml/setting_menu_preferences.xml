@@ -912,5 +912,32 @@
             android:entryValues="@array/pref_camera2_insensor_zoom_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
+
+        <ListPreference
+            android:defaultValue="@string/pref_camera_audiorecordingmode_default"
+            android:entries="@array/pref_camera2_audiorecordingmode_entries"
+            android:entryValues="@array/pref_camera2_audiorecordingmode_entryvalues"
+            android:key="pref_camera2_audiorecordingmode_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera_audiorecordingmode_title" />
+
+        <ListPreference
+            android:defaultValue="@string/pref_camera_hdrwnr_default"
+            android:entries="@array/pref_camera2_hdrwnr_entries"
+            android:entryValues="@array/pref_camera2_hdrwnr_entryvalues"
+            android:key="pref_camera2_hdrwnr_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera_hdrwnr_title" />
+
+        <ListPreference
+            android:defaultValue="@string/pref_camera_hdrans_default"
+            android:entries="@array/pref_camera2_hdrans_entries"
+            android:entryValues="@array/pref_camera2_hdrans_entryvalues"
+            android:key="pref_camera2_hdrans_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera_hdrans_title" />
     </PreferenceCategory>
 </PreferenceScreen>

@@ -1159,6 +1159,9 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
                 for (String key: SettingsManager.KEY_PHYSICAL_VIDEO_SIZE)
                     add(key);
+                add(SettingsManager.KEY_AUDIO_RECORDING_MODE);
+                add(SettingsManager.KEY_HDR_WNR_MODE);
+                add(SettingsManager.KEY_HDR_ANS_MODE);
             }
         };
         final ArrayList<String> multiCameraSettingList = new ArrayList<String>() {
