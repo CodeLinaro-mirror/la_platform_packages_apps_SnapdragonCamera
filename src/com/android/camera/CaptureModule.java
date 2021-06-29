@@ -8038,6 +8038,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             setEndOfStream(false, false);
         }
+        applyZoomAndUpdate();
     }
 
     private void resumeVideoRecording() {
