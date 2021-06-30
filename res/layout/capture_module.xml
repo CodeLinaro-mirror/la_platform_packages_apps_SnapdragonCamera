@@ -218,6 +218,11 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone"/>
+        <com.android.camera.ui.AFView
+            android:id="@+id/af_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
         <com.android.camera.ui.TouchTrackFocusRenderer
             android:id="@+id/touch_track_focus"
             android:layout_width="match_parent"
@@ -233,47 +238,22 @@
             android:visibility="gone"
             android:layout_width="100dip"
             android:layout_height="100dip"
-            android:layout_marginTop="520dip"
+            android:layout_marginTop="68dip"
             android:layout_marginLeft="10dip" />
         <com.android.camera.Camera2GraphView
             android:id="@+id/graph_view_gb"
             android:visibility="gone"
             android:layout_width="100dip"
             android:layout_height="100dip"
-            android:layout_marginTop="520dip"
+            android:layout_marginTop="68dip"
             android:layout_marginLeft="120dip" />
         <com.android.camera.Camera2GraphView
             android:id="@+id/graph_view_b"
             android:visibility="gone"
             android:layout_width="100dip"
             android:layout_height="100dip"
-            android:layout_marginTop="520dip"
+            android:layout_marginTop="68dip"
             android:layout_marginLeft="230dip" />
-        <TextView
-            android:id="@+id/bg_stats_graph_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="68dip"
-            android:layout_marginLeft="16dip"
-            android:textSize="15sp"
-            android:visibility="gone"
-            android:text="@string/stats_visualizer_bg_label"/>
-        <com.android.camera.Camera2BGBitMap
-            android:id="@+id/bg_stats_graph"
-            android:visibility="gone"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="88dip"
-            android:layout_marginLeft="16dip" />
-        <TextView
-            android:id="@+id/be_stats_graph_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="68dip"
-            android:layout_marginLeft="260dip"
-            android:textSize="15sp"
-            android:visibility="gone"
-            android:text="@string/stats_visualizer_be_label"/>
         <TextView
             android:id="@+id/lock_af_ae_label"
             android:layout_width="wrap_content"
@@ -283,60 +263,140 @@
             android:textSize="15sp"
             android:visibility="gone"
             android:text="@string/lock_af_ae_label"/>
+
+        <TextView
+            android:id="@+id/rs_stats_graph_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="200dip"
+            android:layout_marginLeft="250dip"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:text="@string/stats_visualizer_rs_label"/>
+        <com.android.camera.Camera2RSBitMap
+            android:id="@+id/rs_stats_graph"
+            android:visibility="gone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="220dip"
+            android:layout_marginLeft="250dip" />
+        <TextView
+            android:id="@+id/bg_stats_graph_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="340dip"
+            android:layout_marginLeft="250dip"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:text="@string/stats_visualizer_bg_label"/>
+        <com.android.camera.Camera2BGBitMap
+            android:id="@+id/bg_stats_graph"
+            android:visibility="gone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="360dip"
+            android:layout_marginLeft="250dip" />
+        <TextView
+            android:id="@+id/be_stats_graph_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="480dip"
+            android:layout_marginLeft="250dip"
+            android:textSize="15sp"
+            android:visibility="gone"
+            android:text="@string/stats_visualizer_be_label"/>
         <com.android.camera.Camera2BEBitMap
             android:id="@+id/be_stats_graph"
             android:visibility="gone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="88dip"
-            android:layout_marginLeft="200dip" />
-        <LinearLayout
-            android:id="@+id/stats_awb_info"
-            android:layout_marginTop="68dip"
-            android:layout_marginLeft="150dip"
-            android:orientation="vertical"
-            android:visibility="gone"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-            <TextView
-                android:id="@+id/stats_awb_text"
-                android:textSize="15sp"
-                android:padding="10dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/stats_aec_info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="16dip"
-            android:layout_marginTop="272dip"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/stats_aec_text"
-                android:layout_width="wrap_content"
+            android:layout_marginTop="500dip"
+            android:layout_marginLeft="250dip" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="160dip">
+            <LinearLayout
+                android:orientation="vertical" android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="15sp" />
-        </LinearLayout>
+                android:layout_alignParentBottom="true" >
 
-        <LinearLayout
-            android:id="@+id/stats_aec_info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="16dip"
-            android:layout_marginTop="272dip"
-            android:orientation="vertical"
-            android:visibility="gone">
+                <LinearLayout
+                    android:id="@+id/stats_aec_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+                    <TextView
+                        android:id="@+id/stats_aec_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#ffff00"
+                        android:background="#60000000"
+                        android:textSize="13sp" />
+                </LinearLayout>
 
-            <TextView
-                android:id="@+id/stats_aec_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="15sp" />
-        </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/stats_awb_info"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                    <TextView
+                        android:id="@+id/stats_awb_text"
+                        android:textSize="13sp"
+                        android:textColor="#ffff00"
+                        android:background="#60000000"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/stats_afd_info"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                    <TextView
+                        android:id="@+id/stats_afd_text"
+                        android:textSize="13sp"
+                        android:textColor="#ffff00"
+                        android:background="#60000000"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/stats_af_info"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                    <TextView
+                        android:id="@+id/stats_af_text"
+                        android:textSize="13sp"
+                        android:textColor="#ffff00"
+                        android:background="#60000000"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/stats_camera_id_info"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                    <TextView
+                        android:id="@+id/stats_camera_id_text"
+                        android:textSize="13sp"
+                        android:textColor="#ffff00"
+                        android:background="#60000000"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </LinearLayout>
+        </RelativeLayout>
 
         <LinearLayout
             android:id="@+id/stats_nn_result_info"

@@ -90,6 +90,7 @@ import com.android.camera.ui.TrackingFocusRenderer;
 import com.android.camera.ui.ZoomRenderer;
 import com.android.camera.ui.TouchTrackFocusRenderer;
 import com.android.camera.ui.StateNNTrackFocusRenderer;
+import com.android.camera.ui.AFView;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.deepportrait.GLCameraPreview;
 import com.android.camera.util.PersistUtil;
@@ -122,6 +123,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private static final int ZOOM_SMOOTH_FRAME_MAX = 2 * ZOOM_SMOOTH_FRAME;
     private static final String[] AWB_INFO_TITLE = {" R gain "," G gain "," B gain "," CCT "};
     private static final String[] AEC_INFO_TITLE = {" Lux "," Gain "," Sensitivity "," Exp Time "};
+    private static final String[] AFD_INFO_TITLE = {" HNum "," VNum "," Visible bands "," RS time "," Antibanding mode "," Lines/Frame "," Avg Conf "," Avg Energy "};
+    private static final String[] AF_INFO_TITLE = {" PD Enable "," PD Type "," Sparse HW "," DualPD HW "," LCR HW "," LCR SW "," Lens Pos "};
+    private static final String[] AEC_IDS_INFO_TITLE = {" Request id "," Camera id "};
     private static final String[] STATS_EXTENSION_TITLE = {" RatioLongtoShort "," RatioLongtoSafe ",
             " RatioSafetoShort "," CompenADRCGain "," CompenDarkBoostGain "};
     private static final String[] STATS_NN_RESULT_TITLE = {" Width "," Height "," MapData "," NumROI "," ROIData "," ROIWeight "};
@@ -149,6 +153,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private float mScreenBrightness = 0.0f;
     private ProgressBar mProgressBar;
     private boolean mZoomRatioSupport = false;
+    private AFView mAFViewRender;
 
     private SurfaceHolder.Callback callbackMono = new SurfaceHolder.Callback() {
         // SurfaceHolder callbacks
@@ -215,6 +220,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
             if(mStatsNNFocusRenderer != null && mStatsNNFocusRenderer.isShown()) {
                 mStatsNNFocusRenderer.setSurfaceDim(mSurfaceView.getLeft(), mSurfaceView.getTop(),
+                        mSurfaceView.getRight(), mSurfaceView.getBottom());
+            }
+            if(mAFViewRender != null && mAFViewRender.isShown()) {
+                mAFViewRender.setSurfaceDim(mSurfaceView.getLeft(), mSurfaceView.getTop(),
                         mSurfaceView.getRight(), mSurfaceView.getBottom());
             }
         }
@@ -299,6 +308,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     private View mStatsAecInfo;
     private TextView mStatsAecText;
+
+    private View mStatsAfdInfo;
+    private TextView mStatsAfdText;
+
+    private View mStatsAfInfo;
+    private TextView mStatsAfText;
+
+    private View mStatsAecIdsInfo;
+    private TextView mStatsAecIdsText;
 
     private View mStatsNNResult;
     private TextView mStatsNNResultText;
@@ -404,6 +422,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mStatsNNFocusRenderer.setZoom(zoomValue);
     }
 
+    public AFView getAFRenderer() {
+        return mAFViewRender;
+    }
+
+    public void updateAFBound(Rect cameraBound) {
+        float zoomValue = mModule.getZoomValue();
+        if(getZoomFixedSupport() && PersistUtil.isCameraPostZoomFOV()) {
+            zoomValue = 1.0f;
+        }
+        mAFViewRender.setZoom(zoomValue);
+    }
+
     public Point getDisplaySize() {
         return mDisplaySize;
     }
@@ -436,6 +466,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 }
                 if (mT2TFocusRenderer != null) {
                     mT2TFocusRenderer.onSurfaceTextureSizeChanged(width, height);
+                }
+                if (mAFViewRender != null) {
+                    mAFViewRender.onSurfaceTextureSizeChanged(width, height);
                 }
             }
         });
@@ -569,6 +602,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mStatsAecInfo = mRootView.findViewById(R.id.stats_aec_info);
         mStatsAecText = mRootView.findViewById(R.id.stats_aec_text);
 
+        mStatsAfdInfo = mRootView.findViewById(R.id.stats_afd_info);
+        mStatsAfdText = mRootView.findViewById(R.id.stats_afd_text);
+
+        mStatsAfInfo = mRootView.findViewById(R.id.stats_af_info);
+        mStatsAfText = mRootView.findViewById(R.id.stats_af_text);
+
+        mStatsAecIdsInfo = mRootView.findViewById(R.id.stats_camera_id_info);
+        mStatsAecIdsText = mRootView.findViewById(R.id.stats_camera_id_text);
+
         mStatsNNResult = mRootView.findViewById(R.id.stats_nn_result_info);
         mStatsNNResultText= mRootView.findViewById(R.id.stats_nn_result_text);
 
@@ -634,6 +676,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mStatsNNFocusRenderer.setVisible(true);
         } else {
             mStatsNNFocusRenderer.setVisible(false);
+        }
+        mAFViewRender = (AFView) mRootView.findViewById(R.id.af_view);
+        mAFViewRender.init(mActivity, mModule, this);
+        if (mModule.isSateAFSettingOn()) {
+            mAFViewRender.setVisible(true);
+        } else {
+            mAFViewRender.setVisible(false);
         }
         mZoomSwitch = (TextView)mRootView.findViewById(R.id.zoom_switch);
         mZoomSwitch.setOnClickListener(new View.OnClickListener() {
@@ -1071,7 +1120,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             return;
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(AWB_INFO_TITLE[0]+info[0]).append("\r\n")
-                .append(AWB_INFO_TITLE[1]+info[1]).append("\r\n")
                 .append(AWB_INFO_TITLE[2]+info[2]).append("\r\n")
                 .append(AWB_INFO_TITLE[3]+info[3]);
         mStatsAwbText.setText(stringBuilder.toString());
@@ -1085,7 +1133,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 .append(AEC_INFO_TITLE[1]+info[1]+" "+info[2]+" "+info[3]).append("\r\n")
                 .append(AEC_INFO_TITLE[2]+info[4]+" "+info[5]+" "+info[6]).append("\r\n")
                 .append(AEC_INFO_TITLE[3]+info[7]+" "+info[8]+" "+info[9]).append("\r\n")
-                .append("\r\n")
                 .append(STATS_EXTENSION_TITLE[0]+" "+info[10]).append("\r\n")
                 .append(STATS_EXTENSION_TITLE[1]+" "+info[11]).append("\r\n")
                 .append(STATS_EXTENSION_TITLE[2]+" "+info[12]).append("\r\n")
@@ -1105,11 +1152,79 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                                  STATS_NN_RESULT_TITLE[5]+String.valueOf(statsNNRoiWeight));
     }
 
+    public void updateAfdInfoText(String[] info) {
+        if (info == null || info.length <16)
+            return;
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(AFD_INFO_TITLE[0]+info[0]).append("\r\n")
+                .append(AFD_INFO_TITLE[1]+info[1]).append("\r\n")
+                .append(AFD_INFO_TITLE[2]+info[2]).append("\r\n")
+                .append(AFD_INFO_TITLE[3]+info[3]+" "+info[4]+" "+info[5]+" "+info[6]).append("\r\n")
+                .append(AFD_INFO_TITLE[4]+info[7]).append("\r\n")
+                .append(AFD_INFO_TITLE[5]+info[8]+" "+info[9]+" "+info[10]+" "+info[11]).append("\r\n")
+                .append(AFD_INFO_TITLE[6]+info[12]+" "+info[13]).append("\r\n")
+                .append(AFD_INFO_TITLE[7]+info[14]+" "+info[15]);
+        mStatsAfdText.setText(stringBuilder.toString());
+    }
+
+    public void updateAfInfoText(String[] info) {
+        if (info == null || info.length <7)
+            return;
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(AF_INFO_TITLE[0]+info[0]).append("\r\n")
+                .append(AF_INFO_TITLE[1]+info[1]).append("\r\n")
+                .append(AF_INFO_TITLE[2]+info[2]).append("\r\n")
+                .append(AF_INFO_TITLE[3]+info[3]).append("\r\n")
+                .append(AF_INFO_TITLE[4]+info[4]).append("\r\n")
+                .append(AF_INFO_TITLE[5]+info[5]).append("\r\n")
+                .append(AF_INFO_TITLE[6]+info[6]);
+        mStatsAfText.setText(stringBuilder.toString());
+    }
+
+    public void updateAecIdsInfoText(String[] info) {
+        if (info == null || info.length <2)
+            return;
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(AEC_IDS_INFO_TITLE[0]+info[0]).append("\r\n")
+                .append(AEC_IDS_INFO_TITLE[1]+info[1]);
+        mStatsAecIdsText.setText(stringBuilder.toString());
+    }
+
     public void updateAWBInfoVisibility(int visibility) {
         mActivity.runOnUiThread(new Runnable() {
             public void run() {
                 if(mStatsAwbInfo != null) {
                     mStatsAwbInfo.setVisibility(visibility);
+                }
+            }
+        });
+    }
+
+    public void updateAFDInfoVisibility(int visibility) {
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(mStatsAfdInfo != null) {
+                    mStatsAfdInfo.setVisibility(visibility);
+                }
+            }
+        });
+    }
+
+    public void updateAFInfoVisibility(int visibility) {
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(mStatsAfInfo != null) {
+                    mStatsAfInfo.setVisibility(visibility);
+                }
+            }
+        });
+    }
+
+    public void updateAECIdInfoVisibility(int visibility) {
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(mStatsAecIdsInfo != null) {
+                    mStatsAecIdsInfo.setVisibility(visibility);
                 }
             }
         });
@@ -1236,6 +1351,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mStatsNNFocusRenderer.setVisible(false);
         }
 
+        if (mModule.isSateAFSettingOn()) {
+            mAFViewRender.setVisible(false);
+            mAFViewRender.setVisible(true);
+        } else {
+            mAFViewRender.setVisible(false);
+        }
         if (mSurfaceViewMono != null) {
             if (mSettingsManager != null && mSettingsManager.getValue(SettingsManager.KEY_MONO_PREVIEW) != null
                     && mSettingsManager.getValue(SettingsManager.KEY_MONO_PREVIEW).equalsIgnoreCase("on")) {
@@ -1699,6 +1820,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mModule.isT2TFocusSettingOn()) {
             mStatsNNFocusRenderer.setVisible(false);
             mStatsNNFocusRenderer.setVisible(true);
+        }
+    }
+
+    public void resetAFRender() {
+        if (mModule.isSateAFSettingOn()) {
+            mAFViewRender.setVisible(false);
+            mAFViewRender.setVisible(true);
         }
     }
 
@@ -2401,6 +2529,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mStatsNNFocusRenderer != null) {
             mStatsNNFocusRenderer.setVisible(false);
         }
+        if (mAFViewRender != null) {
+            mAFViewRender.setVisible(false);
+        }
         if (mMonoDummyAllocation != null && mIsMonoDummyAllocationEverUsed) {
             mMonoDummyAllocation.setOnBufferAvailableListener(null);
             mMonoDummyAllocation.destroy();
@@ -2443,6 +2574,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mPieRenderer.clear();
             }
             return mStatsNNFocusRenderer;
+        }
+        if (mModule.isSateAFSettingOn()) {
+            if (mPieRenderer != null) {
+                mPieRenderer.clear();
+            }
+            return mAFViewRender;
         }
         FocusIndicator focusIndicator;
         if (mFaceView != null && mFaceView.faceExists() && !mIsTouchAF) {

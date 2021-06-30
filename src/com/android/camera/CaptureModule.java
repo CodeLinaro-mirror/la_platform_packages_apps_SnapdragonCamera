@@ -137,6 +137,7 @@ import com.android.camera.ui.TrackingFocusRenderer;
 import com.android.camera.ui.TouchTrackFocusRenderer;
 import com.android.camera.ui.StateNNTrackFocusRenderer;
 import com.android.camera.util.AccessibilityUtils;
+import com.android.camera.ui.AFView;
 import com.android.camera.util.ApiHelper;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
@@ -541,6 +542,59 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final CaptureResult.Key<Float> aec_frame_control_lux_index =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECLuxIndex", Float.class);
 
+    public static CaptureRequest.Key<Integer> statsVisualizerOptionMask =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.statsVisualizerOptionMask", Integer.class);
+    //AFD infos
+    private static final CaptureResult.Key<Integer> afd_hnum =
+            new CaptureResult.Key<>("org.quic.camera.afdData.HNum", Integer.class);
+    private static final CaptureResult.Key<Integer> afd_vnum =
+            new CaptureResult.Key<>("org.quic.camera.afdData.VNum", Integer.class);
+    private static final CaptureResult.Key<Float> afd_visible_bands =
+            new CaptureResult.Key<>("org.quic.camera.afdData.NumberOfVisibleBands", Float.class);
+    private static final CaptureResult.Key<float[]> afd_rs_time =
+            new CaptureResult.Key<>("org.quic.camera.afdData.RowSumTime", float[].class);
+    private static final CaptureResult.Key<Integer> afd_anti_banding_mode =
+            new CaptureResult.Key<>("org.quic.camera.afdData.AntiBandingMode", Integer.class);
+    private static final CaptureResult.Key<int[]> afd_lines_frame =
+            new CaptureResult.Key<>("org.quic.camera.afdData.NumberOfLinesPerFrame", int[].class);
+    private static final CaptureResult.Key<Float> avg_rolling_energy =
+            new CaptureResult.Key<>("org.quic.camera.afdData.AvgRollingEnergyRatio", Float.class);
+    private static final CaptureResult.Key<Float> avg_rolling_conf =
+            new CaptureResult.Key<>("org.quic.camera.afdData.AvgRollingConfidenceScore", Float.class);
+    private static final CaptureResult.Key<Float> avg_static_energy =
+            new CaptureResult.Key<>("org.quic.camera.afdData.AvgStaticEnergyRatio", Float.class);
+    private static final CaptureResult.Key<Float> avg_static_conf =
+            new CaptureResult.Key<>("org.quic.camera.afdData.AvgStaticConfidenceScore", Float.class);
+    //AF infos
+    private static final CaptureResult.Key<Byte> isPDENABLE =
+            new CaptureResult.Key<>("org.quic.camera.afData.isPDENABLE", Byte.class);
+    private static final CaptureResult.Key<Integer> pd_type =
+            new CaptureResult.Key<>("org.quic.camera.afData.PDTYPE", Integer.class);
+    private static final CaptureResult.Key<Byte> isSparseHW =
+            new CaptureResult.Key<>("org.quic.camera.afData.isSparseHW", Byte.class);
+    private static final CaptureResult.Key<Byte> isDualPDHW =
+            new CaptureResult.Key<>("org.quic.camera.afData.isDualPDHW", Byte.class);
+    private static final CaptureResult.Key<Byte> isLCRHW =
+            new CaptureResult.Key<>("org.quic.camera.afData.isLCRHW", Byte.class);
+    private static final CaptureResult.Key<Byte> isLCRSW =
+            new CaptureResult.Key<>("org.quic.camera.afData.isLCRSW", Byte.class);
+    private static final CaptureResult.Key<Integer> lenspos =
+            new CaptureResult.Key<>("org.quic.camera.afData.lenspos", Integer.class);
+    private static final CaptureResult.Key<Integer> roix_start =
+            new CaptureResult.Key<>("org.quic.camera.afData.roix_start", Integer.class);
+    private static final CaptureResult.Key<Integer> roiy_start =
+            new CaptureResult.Key<>("org.quic.camera.afData.roiy_start", Integer.class);
+    private static final CaptureResult.Key<Integer> roix_end =
+            new CaptureResult.Key<>("org.quic.camera.afData.roix_end", Integer.class);
+    private static final CaptureResult.Key<Integer> roiy_end =
+            new CaptureResult.Key<>("org.quic.camera.afData.roiy_end", Integer.class);
+    private static final CaptureResult.Key<int[]> rsStats =
+            new CaptureResult.Key<>("org.quic.camera.afData.rsStats", int[].class);
+    //camera id && request id
+    private static final CaptureResult.Key<Long> stats_visualizer_request_id =
+            new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECRequestID", Long.class);
+    private static final CaptureResult.Key<Integer> stats_visualizer_camera_id =
+            new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECCameraID", Integer.class);
 
     private static final CaptureResult.Key<Float> ratio_long_to_short =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.ratioLongtoShort", Float.class);
@@ -682,6 +736,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private TouchTrackFocusRenderer mT2TFocusRenderer;
     private StateNNTrackFocusRenderer mStateNNFocusRenderer;
+    private AFView mAFRenderer;
     private boolean mIsDepthFocus = false;
     private boolean[] mTakingPicture = new boolean[MAX_NUM_CAM];
     private int mControlAFMode = CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
@@ -697,8 +752,10 @@ public class CaptureModule implements CameraModule, PhotoController,
     private Camera2GraphView mGraphViewR,mGraphViewGB,mGraphViewB;
     private Camera2BGBitMap    bgstats_view;
     private Camera2BEBitMap    bestats_view;
+    private Camera2RSBitMap    rsstats_view;
     private TextView mBgStatsLabel;
     private TextView mBeStatsLabel;
+    private TextView mRsStatsLabel;
     private DrawAutoHDR2 mDrawAutoHDR2;
     public boolean mAutoHdrEnable;
     private MFNRDrawer mMFNRDrawer;
@@ -708,6 +765,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     boolean mHiston    = false;
     boolean mBGStatson = false;
     boolean mBEStatson = false;
+    boolean mRSStatson = false;
     private boolean mFirstTimeInitialized;
     private boolean mCamerasOpened = false;
     private boolean mIsLinked = false;
@@ -940,30 +998,47 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     // BG stats
     private static int BGSTATS_DATA = 64*48;
-    public static int BGSTATS_WIDTH = 480;
-    public static int BGSTATS_HEIGHT = 640;
-    public static int bg_statsdata[]   = new int[BGSTATS_DATA*10*10];
+    public static int BGSTATS_WIDTH = 240;
+    public static int BGSTATS_HEIGHT = 320;
+    public static int STATS_LENGTH = 5;
+    public static int bg_statsdata[]   = new int[BGSTATS_DATA*STATS_LENGTH*STATS_LENGTH];
     public static int bg_r_statsdata[] = new int[BGSTATS_DATA];
     public static int bg_g_statsdata[] = new int[BGSTATS_DATA];
     public static int bg_b_statsdata[] = new int[BGSTATS_DATA];
     public static String bgstatsdata_string = new String();
-    private static int STATS_DATA_BIT_SHIFT = 6;
-    public static final int SCALE_STATS = 10;
+    private static int STATS_DATA_BIT_SHIFT = 10;
+    public static final int SCALE_STATS = 5;
     // BE stats
     private static int BESTATS_DATA = 64*48;
-    public static int BESTATS_WIDTH = 480;
-    public static int BESTATS_HEIGHT = 640;
-    public static int be_statsdata[]   = new int[BESTATS_DATA*10*10];
+    public static int BESTATS_WIDTH = 240;
+    public static int BESTATS_HEIGHT = 320;
+    public static int be_statsdata[]   = new int[BESTATS_DATA*STATS_LENGTH*STATS_LENGTH];
     public static int be_r_statsdata[] = new int[BESTATS_DATA];
     public static int be_g_statsdata[] = new int[BESTATS_DATA];
     public static int be_b_statsdata[] = new int[BESTATS_DATA];
     private static int statsParametersUpdated = 0;
     public static final int STATS_PARAMETER_UPDATE = 5;
 
+    // RS stats
+    private static int RSSTATS_DATA = 32*32;
+    public static int RSSTATS_WIDTH = 160;
+    public static int RSSTATS_HEIGHT = 160;
+    public static int rs_statsdata[]   = new int[RSSTATS_DATA*STATS_LENGTH*STATS_LENGTH];
+    public static int rs_r_statsdata[] = new int[RSSTATS_DATA];
+    public static int rs_g_statsdata[] = new int[RSSTATS_DATA];
+    public static int rs_b_statsdata[] = new int[RSSTATS_DATA];
+
     // AWB Info
     private static String[] awbinfo_data = new String[4];
     // AEC Info
     private static String[] aecinfo_data = new String[15];
+    // AFD Info
+    private static String[] afdinfo_data = new String[16];
+    // AF Info
+    private static String[] afinfo_data = new String[7];
+    private int[] mAFRoi = new int[4];
+    // stats camera  Info
+    private static String[] camerainfo_data = new String[2];
 
     private static final int SELFIE_FLASH_DURATION = 680;
     private static final int SESSION_CONFIGURE_TIMEOUT_MS = 3000;
@@ -1098,6 +1173,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mUI.updateFaceViewCameraBound(mCropRegion[id]);
                     mUI.updateT2TCameraBound(mCropRegion[id]);
                     mUI.updateStatsNNCameraBound(mCropRegion[id]);
+                    mUI.updateAFBound(mCropRegion[id]);
                     break;
 
                 case MSG_UPDATE_ZOOM_INSTANT:
@@ -1288,6 +1364,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateBGStatsVisibility(View.GONE);
                 updateBEStatsVisibility(View.GONE);
                 updateGraghViewVisibility(View.GONE);
+                mUI.updateAFDInfoVisibility(View.GONE);
+                mUI.updateAFInfoVisibility(View.GONE);
+                mRSStatson = false;
+                updateRSStatsVisibility(View.GONE);
+            }
+            if(mStatsVisualEnable.equals("1")){
+                updateStatsAecIdsView(result);
+            } else {
+                mUI.updateAECIdInfoVisibility(View.GONE);
             }
             if (isSateNNFocusSettingOn()) {
                 updateStatsNNView(result);
@@ -1313,6 +1398,15 @@ public class CaptureModule implements CameraModule, PhotoController,
         mStateNNFocusRenderer.setDisplayOrientation(mDisplayOrientation);
         mStateNNFocusRenderer.setCameraBound(mCropRegion[getMainCameraId()]);
         mStateNNFocusRenderer.setZoomRationSupported(mUI.getZoomFixedSupport());
+    }
+
+    private void updateAFracking() {
+        mAFRenderer.setOriginalCameraBound(
+                mSettingsManager.getSensorActiveArraySize(getMainCameraId()));
+        mAFRenderer.setMirror(mSettingsManager.isFacingFront(getMainCameraId()));
+        mAFRenderer.setDisplayOrientation(mDisplayOrientation);
+        mAFRenderer.setCameraBound(mCropRegion[getMainCameraId()]);
+        mAFRenderer.setZoomRationSupported(mUI.getZoomFixedSupport());
     }
 
     private void updateTouchFocusState(int t2tTrigger) {
@@ -1418,6 +1512,26 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     }
+    private void updateStatsAecIdsView(CaptureResult result){
+        //camera id && request id info
+        for (int i = 0; i < camerainfo_data.length;i++)
+            camerainfo_data[i] = "";
+        try{
+            camerainfo_data[0] = Long.toString(result.get(stats_visualizer_request_id));
+            camerainfo_data[1] = Integer.toString(result.get(stats_visualizer_camera_id));;
+        } catch (IllegalArgumentException | NullPointerException e) {
+            e.printStackTrace();
+        }
+        synchronized (camerainfo_data) {
+            mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mUI.updateAECIdInfoVisibility(View.VISIBLE);
+                    mUI.updateAecIdsInfoText(camerainfo_data);
+                }
+            });
+        }
+    }
 
     private void updateStatsView(String stats_visualizer,CaptureResult result) {
         int r, g, b, index;
@@ -1445,14 +1559,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
             }
+            Log.i(TAG,"BG, bgRStats:" + bgRStats + ",bgGStats:" + bgGStats + ",bgBStats:" + bgBStats + ",mBGStatson:" + mBGStatson);
             if (bgRStats != null && bgGStats != null && bgBStats != null && mBGStatson) {
                 synchronized (bg_r_statsdata) {
                     System.arraycopy(bgRStats, 0, bg_r_statsdata, 0, bgRStats.length);
                     System.arraycopy(bgGStats, 0, bg_g_statsdata, 0, bgGStats.length);
                     System.arraycopy(bgBStats, 0, bg_b_statsdata, 0, bgBStats.length);
 
-                    int width = BGSTATS_WIDTH / 10;
-                    int height = BGSTATS_HEIGHT / 10;
+                    int width = BGSTATS_WIDTH / STATS_LENGTH;
+                    int height = BGSTATS_HEIGHT / STATS_LENGTH;
                     for (int el = 0; el < BGSTATS_DATA; el++) {
                         r = bg_r_statsdata[el] >> STATS_DATA_BIT_SHIFT;
                         g = bg_g_statsdata[el] >> STATS_DATA_BIT_SHIFT;
@@ -1491,6 +1606,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "there is no vendor roiBeX/roiBeY/roiBeWidth/roiBeHeight");
             }
+            Log.i(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
 
             if (beRStats != null && beGStats != null && beBStats != null && mBEStatson) {
                 synchronized (be_r_statsdata) {
@@ -1498,8 +1614,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     System.arraycopy(beGStats, 0, be_g_statsdata, 0, beRStats.length);
                     System.arraycopy(beBStats, 0, be_b_statsdata, 0, beRStats.length);
 
-                    int width = BESTATS_WIDTH / 10;
-                    int height = BESTATS_HEIGHT / 10;
+                    int width = BESTATS_WIDTH / STATS_LENGTH;
+                    int height = BESTATS_HEIGHT / STATS_LENGTH;
                     int roi_x = (int)(norm_roi_x * height);
                     int roi_y = (int)(norm_roi_y * width);
                     int roi_w = (int)((norm_roi_x + norm_roi_dx) * height);
@@ -1530,11 +1646,48 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
 
-        // AWB Info display
+        // RS stats display
         if (stats_visualizer.contains("3")) {
+            mRSStatson = true;
+            int[] rsRStats = null;
+            int[] rsGStats = null;
+            int[] rsBStats = null;
+            try {
+                rsRStats = result.get(CaptureModule.rsStats);
+                rsGStats = result.get(CaptureModule.rsStats);
+                rsBStats = result.get(CaptureModule.rsStats);
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG, "there is no vendor for rs");
+            }
+
+            if (rsRStats != null && rsGStats != null && beBStats != null && mRSStatson) {
+                synchronized (rs_r_statsdata) {
+                    System.arraycopy(rsRStats, 0, rs_r_statsdata, 0, rsRStats.length);
+                    System.arraycopy(rsGStats, 0, rs_g_statsdata, 0, rsGStats.length);
+                    System.arraycopy(rsBStats, 0, rs_b_statsdata, 0, rsBStats.length);
+                    int width = RSSTATS_WIDTH / STATS_LENGTH;
+                    int height = RSSTATS_HEIGHT / STATS_LENGTH;
+                    for (int el = 0; el < RSSTATS_DATA; el++) {
+                        r = rs_r_statsdata[el];
+                        g = rs_g_statsdata[el];
+                        b = rs_b_statsdata[el];
+                        for (int hi = 0; hi < SCALE_STATS; hi++) {
+                            for (int wi = 0; wi < SCALE_STATS; wi++) {
+                                index = SCALE_STATS * (int) (el / height) + width * SCALE_STATS * hi + width * SCALE_STATS * SCALE_STATS * (el % height) + wi;
+                                rs_statsdata[index] = Color.argb(255, r, g, b);
+                            }
+                        }
+                    }
+                }
+                updateRSStatsVisibility(View.VISIBLE);
+                updateRSStatsView();
+            }
+        }
+
+        // AWB Info display
+        if (stats_visualizer.contains("5")) {
             try{
                 awbinfo_data[0] = Float.toString(mRGain);
-                awbinfo_data[1] = Float.toString(mGGain);
                 awbinfo_data[2] = Float.toString(mBGain);
                 awbinfo_data[3] = Float.toString(mCctAWB);
                 synchronized (awbinfo_data) {
@@ -1576,10 +1729,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 aecinfo_data[10] = Float.toString(result.get(ratio_long_to_short));
                 aecinfo_data[11] = Float.toString(result.get(ratio_long_to_safe));
                 aecinfo_data[12] = Float.toString(result.get(ratio_safe_to_short));
-                aecinfo_data[13] = Float.toString(result.get(adrc_gain));
-                aecinfo_data[14] = Float.toString(result.get(dark_boost_gain));
+                aecinfo_data[13] = Float.toString(result.get(aecFrame_adrc_gain));
+                aecinfo_data[14] = Float.toString(result.get(aecFrame_dark_boost_gain));
             }catch (NullPointerException|IllegalArgumentException e){
-
+                e.printStackTrace();
             }
 
             synchronized (aecinfo_data) {
@@ -1594,8 +1747,93 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             mUI.updateAECInfoVisibility(View.GONE);
         }
+        // AFD Info display
+        if (stats_visualizer.contains("6")) {
+            for (int i = 0; i < afdinfo_data.length;i++)
+                afdinfo_data[i] = "";
+            try {
+                float[] afdRSTime = result.get(afd_rs_time);
+                int[] afdLinesFrame = result.get(afd_lines_frame);
+                afdinfo_data[0] = Integer.toString(result.get(afd_hnum));
+                afdinfo_data[1] = Integer.toString(result.get(afd_vnum));
+                afdinfo_data[2] = Float.toString(result.get(afd_visible_bands));
+                afdinfo_data[3] = String.format("%.5f", afdRSTime[0]);
+                afdinfo_data[4] = String.format("%.5f", afdRSTime[1]);
+                afdinfo_data[5] = String.format("%.5f", afdRSTime[2]);
+                afdinfo_data[6] = String.format("%.5f", afdRSTime[3]);
+                afdinfo_data[7] = Integer.toString(result.get(afd_anti_banding_mode));
+                afdinfo_data[8] = Integer.toString(afdLinesFrame[0]);
+                afdinfo_data[9] = Integer.toString(afdLinesFrame[1]);
+                afdinfo_data[10] = Integer.toString(afdLinesFrame[2]);
+                afdinfo_data[11] = Integer.toString(afdLinesFrame[3]);
+                afdinfo_data[12] = Float.toString(result.get(avg_rolling_conf));
+                afdinfo_data[13] = Float.toString(result.get(avg_static_conf));
+                afdinfo_data[14] = Float.toString(result.get(avg_rolling_energy));
+                afdinfo_data[15] = Float.toString(result.get(avg_static_energy));
+            }catch (NullPointerException|IllegalArgumentException e){
+
+            }
+            synchronized (afdinfo_data) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mUI.updateAFDInfoVisibility(View.VISIBLE);
+                        mUI.updateAfdInfoText(afdinfo_data);
+                    }
+                });
+            }
+        } else {
+            mUI.updateAFDInfoVisibility(View.GONE);
+        }
+        // AF Info display
+        if (stats_visualizer.contains("7")) {
+            for (int i = 0; i < afinfo_data.length;i++)
+                afinfo_data[i] = "";
+            try {
+                afinfo_data[0] = Byte.toString(result.get(isPDENABLE));
+                afinfo_data[1] = Integer.toString(result.get(pd_type));
+                afinfo_data[2] = Byte.toString(result.get(isSparseHW));
+                afinfo_data[3] = Byte.toString(result.get(isDualPDHW));
+                afinfo_data[4] = Byte.toString(result.get(isLCRHW));
+                afinfo_data[5] = Byte.toString(result.get(isLCRSW));
+                afinfo_data[6] = Integer.toString(result.get(lenspos));
+                mAFRoi[0] = result.get(roix_start);
+                mAFRoi[1] = result.get(roiy_start);
+                mAFRoi[2] = result.get(roix_end);
+                mAFRoi[3] = result.get(roiy_end);
+                Log.i(TAG,"mAFRoi[0]:" + mAFRoi[0] +"mAFRoi[1]:" + mAFRoi[1] +"mAFRoi[2]:" + mAFRoi[2] + "mAFRoi[3]:" + mAFRoi[3]);
+            }catch (NullPointerException|IllegalArgumentException e){
+                e.printStackTrace();
+            }
+            synchronized (afinfo_data) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mUI.updateAFInfoVisibility(View.VISIBLE);
+                        mUI.updateAfInfoText(afinfo_data);
+                    }
+                });
+            }
+            if (mAFRenderer == null) {
+                mAFRenderer = mUI.getAFRenderer();
+                updateAFracking();
+            }
+            if (mAFRenderer.isShown()) {
+                updateAFracking();
+                mAFRenderer.updateTrackerRect(mAFRoi);
+            }
+        } else {
+            mUI.updateAFInfoVisibility(View.GONE);
+        }
     }
 
+    public boolean isSateAFSettingOn(){
+        String stats_visualizer = mSettingsManager.getValue(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
+        if(stats_visualizer != null && stats_visualizer.contains("7")){
+            return true;
+        }
+        return false;
+    }
 
     private final CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
 
@@ -2136,8 +2374,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         mGraphViewB = (Camera2GraphView) mRootView.findViewById(R.id.graph_view_b);
         bgstats_view = (Camera2BGBitMap) mRootView.findViewById(R.id.bg_stats_graph);
         bestats_view = (Camera2BEBitMap) mRootView.findViewById(R.id.be_stats_graph);
+        rsstats_view = (Camera2RSBitMap) mRootView.findViewById(R.id.rs_stats_graph);
         mBgStatsLabel = (TextView) mRootView.findViewById(R.id.bg_stats_graph_label);
         mBeStatsLabel = (TextView) mRootView.findViewById(R.id.be_stats_graph_label);
+        mRsStatsLabel = (TextView) mRootView.findViewById(R.id.rs_stats_graph_label);
         mDrawAutoHDR2 = (DrawAutoHDR2 )mRootView.findViewById(R.id.autohdr_view);
         mMFNRDrawer = (MFNRDrawer )mRootView.findViewById(R.id.mfnr_view);
         mLockAFAEText = (TextView ) mRootView.findViewById(R.id.lock_af_ae_label);
@@ -2158,6 +2398,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         if (bestats_view != null){
             bestats_view.setCaptureModuleObject(this);
+        }
+        if (rsstats_view != null){
+            rsstats_view.setCaptureModuleObject(this);
         }
         if (mDrawAutoHDR2 != null) {
             mDrawAutoHDR2.setCaptureModuleObject(this);
@@ -3457,6 +3700,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateBEStatsVisibility(View.INVISIBLE);
             }
 
+            if(mRSStatson) {
+                updateRSStatsVisibility(View.INVISIBLE);
+            }
         } catch (CameraAccessException | IllegalStateException e) {
             e.printStackTrace();
         }
@@ -3528,6 +3774,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             if (mBEStatson) {
                 updateBEStatsVisibility(View.INVISIBLE);
+            }
+
+            if (mRSStatson) {
+                updateRSStatsVisibility(View.INVISIBLE);
             }
         } catch (CameraAccessException | IllegalStateException e) {
             e.printStackTrace();
@@ -5309,6 +5559,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyVSR(builder);
         }
         applyNumHDRExposure(builder);
+        applyStatsVisualizerOptionMask(builder);
     }
 
     private void applyMctf(CaptureRequest.Builder builder){
@@ -5544,6 +5795,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void onResumeBeforeSuper() {
+        statsParametersUpdated = 0;//need to reload bg/be width&height
         mSettingsManager.createCaptureModule(this);
         reinit();
         initModeByIntent();
@@ -5692,12 +5944,13 @@ public class CaptureModule implements CameraModule, PhotoController,
             int be_width = info[2];
             int be_height = info[3];
             int depth = info[4];
+            Log.i(TAG,"updateStatsParameters, bg_width:" + bg_width + "bg_height:" + bg_height + "be_width:" +be_width + "be_height:" +be_height + "depth:" +depth);
             if (bg_width != -1 && bg_height != -1){
                 BGSTATS_DATA = bg_width*bg_height;
-                BGSTATS_WIDTH = bg_width*10;
-                BGSTATS_HEIGHT = bg_height*10;
+                BGSTATS_WIDTH = bg_width*STATS_LENGTH;
+                BGSTATS_HEIGHT = bg_height*STATS_LENGTH;
 
-                bg_statsdata = new int[BGSTATS_DATA*10*10];
+                bg_statsdata = new int[BGSTATS_DATA*STATS_LENGTH*STATS_LENGTH];
                 bg_r_statsdata = new int[BGSTATS_DATA];
                 bg_g_statsdata = new int[BGSTATS_DATA];
                 bg_b_statsdata = new int[BGSTATS_DATA];
@@ -5705,15 +5958,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if(be_width != -1 && be_height != -1) {
                 BESTATS_DATA = be_width*be_height;
-                BESTATS_WIDTH = be_width*10;
-                BESTATS_HEIGHT = be_height*10;
-                be_statsdata   = new int[BESTATS_DATA*10*10];
+                BESTATS_WIDTH = be_width*STATS_LENGTH;
+                BESTATS_HEIGHT = be_height*STATS_LENGTH;
+                be_statsdata   = new int[BESTATS_DATA*STATS_LENGTH*STATS_LENGTH];
                 be_r_statsdata = new int[BESTATS_DATA];
                 be_g_statsdata = new int[BESTATS_DATA];
                 be_b_statsdata = new int[BESTATS_DATA];
                 bestats_view.updateViewSize();
             }
-
 
             if (depth != -1) {
                 STATS_DATA_BIT_SHIFT = depth - 8;
@@ -6745,6 +6997,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mGraphViewB  = (Camera2GraphView) mRootView.findViewById(R.id.graph_view_b);
         bgstats_view = (Camera2BGBitMap) mRootView.findViewById(R.id.bg_stats_graph);
         bestats_view = (Camera2BEBitMap) mRootView.findViewById(R.id.be_stats_graph);
+        rsstats_view = (Camera2RSBitMap) mRootView.findViewById(R.id.rs_stats_graph);
         mGraphViewR.setDataSection(0,256);
         mGraphViewGB.setDataSection(256,512);
         mGraphViewB.setDataSection(512,768);
@@ -6772,6 +7025,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             bestats_view.setAlpha(1.0f);
             bestats_view.setCaptureModuleObject(this);
             bestats_view.PreviewChanged();
+        }
+        if(rsstats_view != null){
+            rsstats_view.setAlpha(1.0f);
+            rsstats_view.setCaptureModuleObject(this);
+            rsstats_view.PreviewChanged();
         }
     }
 
@@ -10507,6 +10765,28 @@ public class CaptureModule implements CameraModule, PhotoController,
         });
     }
 
+    //RS stats
+    private void updateRSStatsVisibility(final int visibility) {
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(rsstats_view != null) {
+                    rsstats_view.setVisibility(visibility);
+                    mRsStatsLabel.setVisibility(visibility);
+                }
+            }
+        });
+    }
+
+    private void updateRSStatsView(){
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(rsstats_view != null) {
+                    rsstats_view.PreviewChanged();
+                }
+            }
+        });
+    }
+
     private boolean applyPreferenceToPreview(int cameraId, String key, String value) {
         if (!checkSessionAndBuilder(mCaptureSession[cameraId], mPreviewRequestBuilder[cameraId])) {
             return false;
@@ -11128,6 +11408,25 @@ public class CaptureModule implements CameraModule, PhotoController,
             request.set(CaptureModule.facialContourVersion, facialContour_version);
         } catch (IllegalArgumentException e) {
             Log.e(TAG, "hal no vendorTag : " + facialContour_version);
+        }
+    }
+
+    private void applyStatsVisualizerOptionMask(CaptureRequest.Builder request) {
+        String stats_visualizer = mSettingsManager.getValue(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
+        int optionMask = 0;
+        if(stats_visualizer != null){
+            String[] strArray = stats_visualizer.split(";");
+            for (String value : strArray) {
+                if(value != null && !value.equals("")) {
+                    optionMask |= 1<< Integer.parseInt(value);
+                }
+            }
+        }
+        Log.i(TAG, "optionMask: " + optionMask);
+        try {
+            request.set(CaptureModule.statsVisualizerOptionMask, optionMask);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "hal no vendorTag : " + statsVisualizerOptionMask);
         }
     }
 
@@ -11788,6 +12087,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         if (isSateNNFocusSettingOn()) {
             mUI.resetStatsNNTrackingFocus();
+        }
+        if (isSateAFSettingOn()) {
+            mUI.resetAFRender();
         }
         resetStateMachine();
     }
@@ -12787,6 +13089,70 @@ class Camera2BEBitMap extends View {
     public void updateViewSize(){
         mWidth = CaptureModule.BESTATS_WIDTH;
         mHeight = CaptureModule.BESTATS_HEIGHT;
+        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+        mCanvas.setBitmap(mBitmap);
+    }
+}
+
+class Camera2RSBitMap extends View {
+    private Bitmap  mBitmap;
+    private Paint   mPaint = new Paint();
+    private Paint   mPaintRect = new Paint();
+    private Canvas  mCanvas = new Canvas();
+    private int  mWidth;
+    private int  mHeight;
+    private CaptureModule mCaptureModule;
+    private static final String TAG = "RS GraphView";
+
+
+    public Camera2RSBitMap(Context context, AttributeSet attrs) {
+        super(context,attrs);
+        mWidth = CaptureModule.RSSTATS_WIDTH;
+        mHeight = CaptureModule.RSSTATS_HEIGHT;
+        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+        mCanvas.setBitmap(mBitmap);
+        mPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+        mPaintRect.setColor(0xFFFFFFFF);
+        mPaintRect.setStyle(Paint.Style.FILL);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams)getLayoutParams();
+        params.width = mWidth;
+        params.height = mHeight;
+        setLayoutParams(params);
+        super.onSizeChanged(w, h, oldw, oldh);
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if(mCaptureModule == null && !mCaptureModule.mRSStatson) {
+            Log.e(TAG, "returning as RS stats is off");
+            return;
+        }
+
+        if (mBitmap != null) {
+            final Canvas cavas = mCanvas;
+            cavas.drawColor(0xFFAAAAAA);
+            synchronized(CaptureModule.rs_statsdata){
+            mBitmap.setPixels(CaptureModule.rs_statsdata, 0, CaptureModule.RSSTATS_WIDTH,
+                    0, 0, CaptureModule.RSSTATS_WIDTH, CaptureModule.RSSTATS_HEIGHT);
+            }
+            canvas.drawBitmap(mBitmap, 0, 0, null);
+        }
+    }
+    public void PreviewChanged() {
+        invalidate();
+    }
+
+    public void setCaptureModuleObject(CaptureModule captureModule) {
+        mCaptureModule = captureModule;
+    }
+
+    public void updateViewSize(){
+        mWidth = CaptureModule.RSSTATS_WIDTH;
+        mHeight = CaptureModule.RSSTATS_HEIGHT;
         mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
         mCanvas.setBitmap(mBitmap);
     }
