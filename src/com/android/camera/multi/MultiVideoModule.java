@@ -239,12 +239,11 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 stopRecordingVideo(cameraId);
             }
         }
-
+        closeCamera();
         if (mCameraIDList != null) {
             mCameraIDList.clear();
         }
         mCameraListIndex = 0;
-        closeCamera();
         stopBackgroundThread();
     }
 
@@ -312,6 +311,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 if (null != mImageReaders[i]) {
                     mImageReaders[i].close();
                     mImageReaders[i] = null;
+                }
+                if (mConcurrentConfigurations != null) {
+                    mConcurrentConfigurations.clear();
                 }
             }
         } catch (InterruptedException e) {
@@ -589,11 +591,13 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         }
                         boolean supported =
                                 mMultiCameraModule.checkConcurrentSessionConfigurationSupported(mConcurrentConfigurations);
+                        Log.v(TAG, " CREATE_SESSION createSession :" + createSession + " supported :" + supported);
                         if (createSession && supported) {
                             try{
                                 for (String cameraId : mCameraIDList){
                                     mCameraDevices[Integer.valueOf(cameraId)].createCaptureSession(
                                             mConcurrentConfigurations.get(cameraId));
+                                    Log.v(TAG, " CREATE_SESSION call createCaptureSession cameraId :" + cameraId);
                                 }
                             } catch (CameraAccessException e){
                                 e.printStackTrace();
@@ -1226,7 +1230,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     }
 
     private void updateRecordingTime(int id) {
-        if (!mIsRecordingVideos[id] || id == 0) {
+        if (!mIsRecordingVideos[id]) {
             return;
         }
 
