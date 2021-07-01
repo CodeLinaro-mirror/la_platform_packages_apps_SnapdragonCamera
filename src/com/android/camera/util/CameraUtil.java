@@ -37,11 +37,16 @@ import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.MultiResolutionImageReader;
+import android.hardware.camera2.params.MultiResolutionStreamInfo;
 import android.location.Location;
+import android.media.Image;
+import android.media.ImageReader;
 import android.media.MediaMuxer;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.ConditionVariable;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.telephony.TelephonyManager;
@@ -87,6 +92,7 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.hardware.camera2.CaptureRequest;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -662,6 +668,21 @@ public class CameraUtil {
 
         int optimalPickIndex = getOptimalVideoPreviewSize(currentActivity, points, targetSize);
         return (optimalPickIndex == -1) ? null : sizes.get(optimalPickIndex);
+    }
+
+    /**
+     * Returns true if the given {@code array} contains the given element.
+     *
+     * @param array {@code array} to check for {@code elem}
+     * @param elem {@code elem} to test for
+     * @return {@code true} if the given element is contained
+     */
+    public static boolean contains(int[] array, int elem) {
+        if (array == null) return false;
+        for (int i = 0; i < array.length; i++) {
+            if (elem == array[i]) return true;
+        }
+        return false;
     }
 
     public static int getOptimalVideoPreviewSize(Activity currentActivity,
@@ -1513,5 +1534,61 @@ public class CameraUtil {
             ex.printStackTrace();
         }
         return null;
+    }
+
+    public static class ImageAndMultiResStreamInfo {
+        public final Image image;
+        public final MultiResolutionStreamInfo streamInfo;
+
+        public ImageAndMultiResStreamInfo(Image image, MultiResolutionStreamInfo streamInfo) {
+            this.image = image;
+            this.streamInfo = streamInfo;
+        }
+    }
+
+    public static class SimpleMultiResolutionImageReaderListener
+            implements ImageReader.OnImageAvailableListener {
+        public SimpleMultiResolutionImageReaderListener(MultiResolutionImageReader owner,
+        int maxBuffers) {
+            mOwner = owner;
+            mMaxBuffers = maxBuffers;
+        }
+
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+            Log.v(TAG, "new image available");
+
+            if (mQueue.size() < mMaxBuffers) {
+                Image image = reader.acquireNextImage();
+                MultiResolutionStreamInfo multiResStreamInfo =
+                mOwner.getStreamInfoForImageReader(reader);
+                mQueue.offer(new ImageAndMultiResStreamInfo(image, multiResStreamInfo));
+            }
+        }
+
+        public ImageAndMultiResStreamInfo getAnyImageAndInfoAvailable(long timeoutMs)
+                throws Exception {
+            ImageAndMultiResStreamInfo imageAndInfo = mQueue.poll(timeoutMs,
+                    java.util.concurrent.TimeUnit.MILLISECONDS);
+            if (imageAndInfo == null) {
+                Log.e(TAG, "wait for image available timed out after " + timeoutMs + "ms");
+            }
+            return imageAndInfo;
+        }
+
+        public void reset() {
+            while (!mQueue.isEmpty()) {
+                ImageAndMultiResStreamInfo imageAndInfo = mQueue.poll();
+                if (imageAndInfo.image != null) {
+                    imageAndInfo.image.close();
+                }
+            }
+            mImageAvailable.close();
+        }
+        private LinkedBlockingQueue<ImageAndMultiResStreamInfo> mQueue =
+        new LinkedBlockingQueue<ImageAndMultiResStreamInfo>();
+        private final MultiResolutionImageReader mOwner;
+        private final int mMaxBuffers;
+        private ConditionVariable mImageAvailable = new ConditionVariable();
     }
 }

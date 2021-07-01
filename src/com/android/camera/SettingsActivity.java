@@ -160,6 +160,13 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 updateEISPreference();
                 updatePdnetTogglePreference();
+            } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
+                //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
+                value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
+                if (PersistUtil.isMultiResolutionImageReaderEnabled() && value != null && "1".equals(value)) {
+                    Preference picSize = findPreference(SettingsManager.KEY_PICTURE_SIZE);
+                    picSize.setEnabled(false);
+                }
             }
             List<String> list = mSettingsManager.getDependentKeys(key);
             if (list != null) {
@@ -1203,6 +1210,12 @@ public class SettingsActivity extends PreferenceActivity {
                     for (String removeKey : videoOnlyList) {
                         removePreference(removeKey, developer);
                     }
+                    if (!PersistUtil.isMultiResolutionImageReaderEnabled() ||
+                            !mSettingsManager.isMultiResolutionSupported()) {
+                        removePreference(SettingsManager.KEY_MULTIRESIMAGEREADER, developer);
+                    } else {
+                        updateMultiResolutionRealted();
+                    }
                 }
                 break;
             case VIDEO:
@@ -1326,6 +1339,21 @@ public class SettingsActivity extends PreferenceActivity {
         developer.removeAll();
         for (Preference addItem : addList) {
             developer.addPreference(addItem);
+        }
+    }
+
+    private void updateMultiResolutionRealted() {
+        PreferenceGroup developer = (PreferenceGroup) findPreference("developer");
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        final ArrayList<String> multiResList = new ArrayList<String>() {
+            {
+                add(SettingsManager.KEY_MULTIRESIMAGEREADER);
+                add(SettingsManager.KEY_ZSL);
+            }
+        };
+        if(mode == DEFAULT){
+            addDeveloperOptions(developer, multiResList);
         }
     }
 

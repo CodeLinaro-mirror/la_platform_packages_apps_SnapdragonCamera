@@ -44,6 +44,8 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.MultiResolutionImageReader;
+import android.hardware.camera2.params.MultiResolutionStreamInfo;
 import android.hardware.camera2.TotalCaptureResult;
 import android.location.Location;
 import android.media.Image;
@@ -83,8 +85,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import android.util.Size;
 import java.util.TimeZone;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 
 import com.android.camera.imageprocessor.filter.ImageFilter;
@@ -139,6 +143,8 @@ public class PostProcessor{
     private CameraCaptureSession mCaptureSession;
     private ImageReader mImageReader;
     private ImageReader mZSLReprocessImageReader;
+    private MultiResolutionImageReader mMultiOutputImageReader = null;
+    private MultiResolutionStreamInfo mMultiStreamInfo;
     private boolean mUseZSL = true;
     private boolean mSaveRaw = false;
     private Handler mZSLHandler;
@@ -152,11 +158,10 @@ public class PostProcessor{
     private TotalCaptureResult mLatestResultForLongShot = null;
     private LinkedList<ZSLQueue.ImageItem> mFallOffImages = new LinkedList<ZSLQueue.ImageItem>();
     private int mPendingContinuousRequestCount = 0;
-    public int mMaxRequiredImageNum;
     private boolean mIsDeepPortrait = false;
 
     public int getMaxRequiredImageNum() {
-        return mMaxRequiredImageNum;
+        return MAX_REQUIRED_IMAGE_NUM;
     }
 
     public boolean isZSLEnabled() {
@@ -167,9 +172,8 @@ public class PostProcessor{
         mTotalCaptureResultList.clear();
     }
 
-    public ImageReader getZSLReprocessImageReader() {
-        return mZSLReprocessImageReader;
-    }
+    public ImageReader getZSLReprocessImageReader() { return mZSLReprocessImageReader; }
+    public MultiResolutionImageReader getZSLReprocessMultiImageReader() { return mMultiOutputImageReader; }
 
     public ImageHandlerTask getImageHandler() {
         return mImageHandlerTask;
@@ -340,6 +344,9 @@ public class PostProcessor{
                     if (mZSLHandler != null) {
                         mZSLHandler.post(this);
                     }
+                    if (mController.isMultiResolutionImageReaderEnabled()) {
+                        mMultiStreamInfo = mMultiOutputImageReader.getStreamInfoForImageReader(reader);
+                    }
                 } else { //Non ZSL case
                     Image image = reader.acquireNextImage();
                     Image rawImage = null;
@@ -435,19 +442,27 @@ public class PostProcessor{
         mCameraDevice = cameraDevice;
         mCaptureSession = captureSession;
         if(mUseZSL || mController.isRawReprocess()) {
-            mImageWriter = ImageWriter.newInstance(captureSession.getInputSurface(), mMaxRequiredImageNum);
+            mImageWriter = ImageWriter.newInstance(captureSession.getInputSurface(), MAX_REQUIRED_IMAGE_NUM);
+        }
+    }
+
+    public void onMultiImageReaderReady() {
+        if (mUseZSL) {
+            mMultiOutputImageReader = mController.initOutputMultiImageReader(ImageFormat.JPEG);
+            mMultiOutputImageReader.setOnImageAvailableListener(mListener, new HandlerExecutor(mHandler));
         }
     }
 
     public void onImageReaderReady(ImageReader imageReader, Size maxSize, Size pictureSize) {
         mImageReader = imageReader;
         if(mUseZSL) {
-            mZSLReprocessImageReader = ImageReader.newInstance(pictureSize.getWidth(), pictureSize.getHeight(), ImageFormat.JPEG, mMaxRequiredImageNum);
-            mZSLReprocessImageReader.setOnImageAvailableListener(processedImageAvailableListener, mHandler);
+            mZSLReprocessImageReader = ImageReader.newInstance(pictureSize.getWidth(),
+                    pictureSize.getHeight(), ImageFormat.JPEG, MAX_REQUIRED_IMAGE_NUM);
+            mZSLReprocessImageReader.setOnImageAvailableListener(mListener, mHandler);
         }
         if(mController.isRawReprocess()){
             mZSLReprocessImageReader = mImageReader;
-            mZSLReprocessImageReader.setOnImageAvailableListener(processedImageAvailableListener, mHandler);
+            mZSLReprocessImageReader.setOnImageAvailableListener(mListener, mHandler);
         }
         if (mIsDeepPortrait) {
             ImageFilter imageFilter = mController.getFrameFilters().get(0);
@@ -530,18 +545,30 @@ public class PostProcessor{
         }
         synchronized (lock) {
             if(mCameraDevice == null || mCaptureSession == null || mImageReader == null) {
-                Log.e(TAG, "Reprocess request is called even before taking picture,device:" + mCameraDevice + ",session:" + mCaptureSession + ",reader:" + mImageReader);
+                Log.e(TAG, "Reprocess request is called even before taking picture,device:" +
+                        mCameraDevice + ",session:" + mCaptureSession + ",reader:" + mImageReader);
                 image.close();
                 return;
             }
-            if (mZSLReprocessImageReader == null) {
-                image.close();
-                return;
+            TotalCaptureResult inputSettings = metadata;
+            if (mController.isMultiResolutionImageReaderEnabled()) {
+                if (mMultiOutputImageReader == null) {
+                    image.close();
+                    return;
+                }
+                Map<String, TotalCaptureResult> physicalResults = metadata.getPhysicalCameraTotalResults();
+                inputSettings = physicalResults.get(mMultiStreamInfo.getPhysicalCameraId());
+            } else {
+                if (mZSLReprocessImageReader == null) {
+                    image.close();
+                    return;
+                }
             }
             if (DEBUG_ZSL) Log.d(TAG, "reprocess Image request " + image.getTimestamp());
+
             CaptureRequest.Builder builder = null;
             try {
-                builder = mCameraDevice.createReprocessCaptureRequest(metadata);
+                builder = mCameraDevice.createReprocessCaptureRequest(inputSettings);
                 builder.set(CaptureRequest.JPEG_ORIENTATION,
                             CameraUtil.getJpegRotation(mController.getMainCameraId(), mController.getDisplayOrientation()));
                 builder.set(CaptureRequest.JPEG_THUMBNAIL_SIZE, mController.getThumbSize());
@@ -559,22 +586,6 @@ public class PostProcessor{
                 }
                 VendorTagUtil.setCdsMode(builder, 2); // CDS 0-OFF, 1-ON, 2-AUTO
                 VendorTagUtil.setJpegCropEnable(builder, (byte)1);
-                Rect cropRect = image.getCropRect();
-                if(cropRect == null ||
-                        cropRect.isEmpty()) {
-                    cropRect = new Rect(0, 0, image.getWidth(), image.getHeight());
-                }
-
-                int targetWidth = mZSLReprocessImageReader.getWidth();
-                int targetHeight = mZSLReprocessImageReader.getHeight();
-                float targetRatio = (float)targetWidth / (float)targetHeight;
-                cropRect = CameraUtil.getFinalCropRect(cropRect, targetRatio);
-                // has crop rect. apply to jpeg request
-                VendorTagUtil.setJpegCropRect(builder,
-                        new int[] {cropRect.left, cropRect.top, cropRect.width(), cropRect.height()});
-                VendorTagUtil.setJpegRoiRect(builder,
-                        new int[] {0, 0, targetWidth, targetHeight});
-
                 Location location = mController.getLocationManager().getCurrentLocation();
                 if(location != null) {
                     location = new Location(location);
@@ -583,8 +594,24 @@ public class PostProcessor{
                     location.setTime(location.getTime()/1000);
                     builder.set(CaptureRequest.JPEG_GPS_LOCATION, location);
                 }
+                if (mController.isMultiResolutionImageReaderEnabled()) {
+                    builder.addTarget(mMultiOutputImageReader.getSurface());
+                } else {
+                    Rect cropRect = image.getCropRect();
+                    if (cropRect == null || cropRect.isEmpty()) {
+                        cropRect = new Rect(0, 0, image.getWidth(), image.getHeight());
+                    }
 
-                builder.addTarget(mZSLReprocessImageReader.getSurface());
+                    int targetWidth = mZSLReprocessImageReader.getWidth();
+                    int targetHeight = mZSLReprocessImageReader.getHeight();
+                    float targetRatio = (float) targetWidth / (float) targetHeight;
+                    cropRect = CameraUtil.getFinalCropRect(cropRect, targetRatio);
+                    // has crop rect. apply to jpeg request
+                    VendorTagUtil.setJpegCropRect(builder,
+                            new int[]{cropRect.left, cropRect.top, cropRect.width(), cropRect.height()});
+                    VendorTagUtil.setJpegRoiRect(builder, new int[]{0, 0, targetWidth, targetHeight});
+                    builder.addTarget(mZSLReprocessImageReader.getSurface());
+                }
                 try {
                     mImageWriter.queueInputImage(image);
                 } catch (IllegalStateException e) {
@@ -743,7 +770,6 @@ public class PostProcessor{
         if(mUseZSL) {
             mZSLQueue = new ZSLQueue(mController);
         }
-        mMaxRequiredImageNum = MAX_REQUIRED_IMAGE_NUM;
         mPendingContinuousRequestCount = 0;
     }
 
@@ -771,6 +797,10 @@ public class PostProcessor{
         if(mZSLReprocessImageReader != null) {
             mZSLReprocessImageReader.close();
             mZSLReprocessImageReader = null;
+        }
+        if(mMultiOutputImageReader != null) {
+            mMultiOutputImageReader.close();
+            mMultiOutputImageReader = null;
         }
         mCameraDevice = null;
         mCaptureSession = null;
@@ -1266,7 +1296,7 @@ public class PostProcessor{
         return mTotalCaptureResultList.get(0);
     }
 
-    ImageReader.OnImageAvailableListener processedImageAvailableListener = new ImageReader.OnImageAvailableListener() {
+    ImageReader.OnImageAvailableListener mListener = new ImageReader.OnImageAvailableListener() {
         @Override
         public void onImageAvailable(ImageReader reader) {
             final Image image = reader.acquireNextImage();
@@ -1370,6 +1400,19 @@ public class PostProcessor{
 
         public byte[] getArray() {
             return buf;
+        }
+    }
+
+    private class HandlerExecutor implements Executor {
+        private final Handler ihandler;
+
+        public HandlerExecutor(Handler handler) {
+            ihandler = handler;
+        }
+
+        @Override
+        public void execute(Runnable runCmd) {
+            ihandler.post(runCmd);
         }
     }
 

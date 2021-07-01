@@ -1083,6 +1083,15 @@
     <string name="pref_camera2_touch_track_focus_off" translatable="true">Disable</string>
     <string name="pref_camera2_touch_track_focus_title" translatable="true">Touch Track Focus</string>
 
+    <string name="pref_camera2_multi_cameras_default" translatable="true">off</string>
+    <string name="pref_camera2_multi_cameras_value_on" translatable="true">on</string>
+    <string name="pref_camera2_multi_cameras_value_off" translatable="true">off</string>
+
+    <string name="pref_camera2_multi_cameras_entry_on" translatable="true">Enable</string>
+    <string name="pref_camera2_multi_cameras_entry_off" translatable="true">Disable</string>
+    <string name="pref_camera2_multi_cameras_title" translatable="true">Multi Cameras</string>
+
+
     <string name="pref_camera2_timer_entry_off" translatable="true">Off</string>
     <string name="pref_camera2_timer_entry_2sec" translatable="true">2 seconds</string>
     <string name="pref_camera2_timer_entry_5sec" translatable="true">5 seconds</string>
@@ -1371,6 +1380,13 @@
     <string name="pref_camera2_stats_visualizer_entry_value_enable" translatable="false">1</string>
     <string name="pref_camera2_stats_visualizer_entry_value_disable" translatable="false">0</string>
 
+    <string name="pref_camera2_multiresimagereader_title" translatable="false">MultiResolutionImageReader</string>
+    <string name="pref_camera2_multiresimagereader_default" translatable="false">0</string>
+    <string name="pref_camera2_multiresimagereader_entry_enable" translatable="false">enable</string>
+    <string name="pref_camera2_multiresimagereader_entry_disable" translatable="false">disable</string>
+    <string name="pref_camera2_multiresimagereader_entry_value_enable" translatable="false">1</string>
+    <string name="pref_camera2_multiresimagereader_entry_value_disable" translatable="false">0</string>
+
     <string name="pref_camera2_stats_visualizer_title" translatable="true">Stats Visualizer</string>
     <string name="pref_camera2_stats_visualizer_default" translatable="false"></string>
     <string name="pref_camera2_stats_visualizer_entry_bg_stats" translatable="false">BG Stats</string>
@@ -1465,14 +1481,19 @@
     <string name="pref_camera2_burst_limit_entry_value_enable" translatable="false">1</string>
     <string name="pref_camera2_burst_limit_entry_value_disable" translatable="false">0</string>
 
+    <string name="pref_camera2_concurrent_camera_entries_defualt"  translatable="false">Disable</string>
+    <string name="pref_camera2_concurrent_camera_entry_value_defualt"  translatable="false">-1</string>
+    <string name="pref_camera2_concurrent_camera_title" translatable="true">Enable concurrent camera</string>
+    <string name="pref_camera2_concurrent_camera_not_support" translatable="true">Unsupported concurrent ids!</string>
+    <string name="pref_camera2_concurrent_session_not_support" translatable="true">Unsupported concurrent session configurations!</string>
 
     <!-- tone mapping -->
     <string name="pref_camera_tone_mapping_default">off</string>
-	<string name="pref_camera_tone_mapping_title">Tone Mapping</string>
+    <string name="pref_camera_tone_mapping_title">Tone Mapping</string>
     <!-- tone mapping entry-->
     <string name="pref_camera_tone_mapping_entry_dark_boost_offset">Dark boost offset</string>
     <string name="pref_camera_tone_mapping_entry_fourth_tone_anchor">Fourth tone anchor</string>
-	<string name="pref_camera_tone_mapping_entry_user_setting">User setting</string>
+    <string name="pref_camera_tone_mapping_entry_user_setting">User setting</string>
     <string name="pref_camera_tone_mapping_entry_off">Off</string>
     <!-- tone mapping entry value-->
     <string name="pref_camera_tone_mapping_value_dark_boost_offset">dark_boost_offset</string>
@@ -1580,6 +1601,13 @@
     <string name="pref_camera2_raw_format_entry_16">Raw16</string>
     <string name="pref_camera2_raw_format_entry_value_10">10</string>
     <string name="pref_camera2_raw_format_entry_value_16">16</string>
+
+    <!-- Multi camera value -->
+    <string name="pref_multi_camera_picturesize_default" translatable="false">1920x1080</string>
+    <string name="pref_multi_camera_video_quality_default" translatable="false">1920x1080</string>
+
+    <string name="pref_multi_camera_hal_zsl_title">HAL ZSL</string>
+    <string name="pref_multi_camera_picturesize_title">"Picture size"</string>
 
     <!-- rawinfo type-->
     <string name="pref_camera2_rawinfo_type_default">0</string>

@@ -371,6 +371,10 @@ public class PersistUtil {
         return getBoolean("persist.sys.cameraapp.mediarecorder", true);
     }
 
+    public static boolean isMultiResolutionImageReaderEnabled() {
+        return getBoolean("persist.sys.cameraapp.multiresimagereader", false);
+    }
+
     public static boolean isPersistVideoLiveshot(){
         return PERSIST_VIDEO_LIVESHOT;
     }

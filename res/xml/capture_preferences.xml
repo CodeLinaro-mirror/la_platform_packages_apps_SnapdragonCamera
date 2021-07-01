@@ -754,6 +754,13 @@
         camera:entryValues="@array/pref_camera2_raw_cb_info_entryvalues" />
 
     <ListPreference
+        camera:key="pref_camera2_multiresimagereader_key"
+        camera:defaultValue="@string/pref_camera2_multiresimagereader_default"
+        camera:title="@string/pref_camera2_multiresimagereader_title"
+        camera:entries="@array/pref_camera2_multiresimagereader_entries"
+        camera:entryValues="@array/pref_camera2_multiresimagereader_entryvalues" />
+
+    <ListPreference
         camera:key="pref_camera2_qll_key"
         camera:defaultValue="@string/pref_camera2_qll_default"
         camera:title="@string/pref_camera2_qll_title"
@@ -773,4 +780,12 @@
         camera:title="@string/pref_camera2_vsr_title"
         camera:entries="@array/pref_camera2_vsr_entries"
         camera:entryValues="@array/pref_camera2_vsr_entryvalues" />
+
+    <ListPreference
+        camera:defaultValue="@string/pref_camera2_multi_cameras_default"
+        camera:entries="@array/pref_camera2_multi_cameras_entries"
+        camera:entryValues="@array/pref_camera2_multi_cameras_entryvalues"
+        camera:key="pref_camera2_multi_cameras_key"
+        camera:title="@string/pref_camera2_multi_cameras_title" />
+
 </PreferenceGroup>
