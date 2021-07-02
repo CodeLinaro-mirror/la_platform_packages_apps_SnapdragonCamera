@@ -1510,7 +1510,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
 
         if (quad_bayer_sensor != null) {
-            if (!getSupportedQuadBayerSensor(cameraId) || !PersistUtil.isQuadBayerSensorEnabled()) {
+            if (!CaptureModule.QUADBYAERSENSOR || !PersistUtil.isQuadBayerSensorEnabled()) {
                 mFilteredKeys.add(quad_bayer_sensor.getKey());
             }
         }
@@ -2965,21 +2965,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
             supported.add(String.valueOf(zoomLevel));
         }
         return supported;
-    }
-
-    private boolean getSupportedQuadBayerSensor(int cameraId) {
-        int[] capabilities = mCharacteristics.get(cameraId).get(CameraCharacteristics
-                .REQUEST_AVAILABLE_CAPABILITIES);
-        boolean foundQuadBayerSensor = false;
-        for (int capability : capabilities) {
-            if (capability == CameraCharacteristics.
-                    REQUEST_AVAILABLE_CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR) {
-                Log.d(TAG, "Found quad bayer sensor with cameraid " + cameraId);
-                foundQuadBayerSensor = true;
-            }
-        }
-        Log.d(TAG, "getSupportedQuadBayerSensor foundQuadBayerSensor :" + foundQuadBayerSensor);
-        return foundQuadBayerSensor;
     }
 
     private boolean getSupportedRemosaicReprocessing(int cameraId) {
