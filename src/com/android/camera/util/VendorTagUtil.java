@@ -80,6 +80,8 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMFHDR", Integer.class);
     private static final CaptureRequest.Key<Integer> qhdr_enable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableQHDR", Integer.class);
+    private static final CaptureRequest.Key<int[]> hdr_modes =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.HDRModePreference", int[].class);
     private static final CaptureRequest.Key<Integer> qll_enable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableQLL", Integer.class);
     private static final CaptureRequest.Key<Integer> vsr_enable =
@@ -269,6 +271,12 @@ public class VendorTagUtil {
     public static void setQHDRMode(CaptureRequest.Builder builder, int enable) {
         if (isSupported(builder, qhdr_enable)) {
             builder.set(qhdr_enable, enable);
+        }
+    }
+
+    public static void setHDRModes(CaptureRequest.Builder builder, int[] modes) {
+        if (isSupported(builder, hdr_modes)) {
+            builder.set(hdr_modes, modes);
         }
     }
 
