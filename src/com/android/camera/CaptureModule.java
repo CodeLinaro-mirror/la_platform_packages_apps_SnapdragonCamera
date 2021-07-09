@@ -49,8 +49,11 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.MultiResolutionImageReader;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.Capability;
 import android.hardware.camera2.params.Face;
 import android.hardware.camera2.params.InputConfiguration;
+import android.hardware.camera2.params.MandatoryStreamCombination;
+import android.hardware.camera2.params.MandatoryStreamCombination.MandatoryStreamInformation;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.MultiResolutionStreamConfigurationMap;
 import android.hardware.camera2.params.MultiResolutionStreamInfo;
@@ -59,6 +62,7 @@ import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.Capability;
 import android.hardware.camera2.params.SessionConfiguration;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.location.Location;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -403,10 +407,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public static CaptureResult.Key<Byte> isHdr =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.is_hdr_scene", Byte.class);
-    public static CameraCharacteristics.Key<Byte> IS_SUPPORT_QCFA_SENSOR =
-            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.quadra_cfa.is_qcfa_sensor", Byte.class);
-    public static CameraCharacteristics.Key<int[]> QCFA_SUPPORT_DIMENSION =
-            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.quadra_cfa.qcfa_dimension", int[].class);
     public static CameraCharacteristics.Key<int[]> support_video_hdr_modes =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.available_video_hdr_modes.video_hdr_modes", int[].class);
     public static CameraCharacteristics.Key<int[]> support_video_mfhdr_modes =
@@ -712,7 +712,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mCaptureStartTime;
     private boolean mPaused = true;
     private boolean mResumed = true;
-    private boolean mIsSupportedQcfa = false;
     private Semaphore mSurfaceReadyLock = new Semaphore(1);
     private final Object mVideoStateLock = new Object();
     private VideoState mVideoState;
@@ -726,6 +725,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private int mLogicalId = -1;
     private int mSingleRearId = -1;
+    private int mQuadBayerId = -1;
     private SceneModule mCurrentSceneMode;
     private int mNextModeIndex = 1;
     private int mCurrentModeIndex = 1;
@@ -2457,6 +2457,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     });
                 }
+
                 List<OutputConfiguration> outputConfigurations = null;
                 outputConfigurations = new ArrayList<OutputConfiguration>();
                 if (mSettingsManager.getPhysicalCameraId() != null) {
@@ -3089,6 +3090,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                         Log.d(TAG, "set MCXMode true since no vendorTag logical_camera_type for " + cameraId);
                     }
                 }
+                if (capability == CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR) {
+                    Log.d(TAG, "Found ULTER High Resolution sensor is " + cameraId);
+                    mQuadBayerId = Integer.parseInt(cameraId);
+                }
             }
             if(foundDepth) {
                 mCameraId[i] = "-1";
@@ -3607,6 +3612,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else {
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, false);
             }
+            if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                Log.v(TAG, "captureStillPicture set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION " );
+                captureBuilder.set(CaptureRequest.SENSOR_PIXEL_MODE,
+                        CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
+            }
 
             String rawcbinfoVaule = mSettingsManager.getValue(SettingsManager.KEY_RAWINFO_TYPE);
             if(rawcbinfoVaule != null && !rawcbinfoVaule.equals("disable") && !rawcbinfoVaule.equals("off")) {
@@ -3637,7 +3647,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 fs2Value = Integer.parseInt(valueFS2);
             }
             if (!mSettingsManager.isMultiCameraEnabled()) {
-                if (!(mIsSupportedQcfa || isDeepZoom() || (fs2Value ==1))) {
+                if (!(isDeepZoom() || (fs2Value ==1))) {
                     addPreviewSurface(captureBuilder, null, id);
                 }
             }
@@ -4246,9 +4256,17 @@ public class CaptureModule implements CameraModule, PhotoController,
         Log.d(TAG, "setUpCameraOutputs");
         CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
         try {
+            //init heifWriter and get input surface
             initHEIFWriter();
             String[] cameraIdList = manager.getCameraIdList();
-            //inti heifWriter and get input surface
+
+            if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                Size qcfaMaxSize = getSupportedMaxPictureSize();
+                Log.v(TAG, "setUpCameraOutputs qcfaMaxSize :" + qcfaMaxSize);
+                if (qcfaMaxSize != null) {
+                    mPictureSize = qcfaMaxSize;
+                }
+            }
             for (int i = 0; i < cameraIdList.length; i++) {
                 String cameraId = cameraIdList[i];
                 CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
@@ -4444,6 +4462,63 @@ public class CaptureModule implements CameraModule, PhotoController,
             e.printStackTrace();
         }
     }
+
+    private Size getSupportedMaxPictureSize() {
+        Size maxSize = null;
+        Size lastSize = null;
+        CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
+        CameraCharacteristics characteristics;
+        MandatoryStreamCombination[] combinations;
+        try {
+            characteristics = manager.getCameraCharacteristics(String.valueOf(mQuadBayerId));
+            Log.v(TAG, "getSupportedMaxPictureSize SCALER_MANDATORY_MAXIMUM_RESOLUTION_STREAM_COMBINATIONS :" + CameraCharacteristics.SCALER_MANDATORY_MAXIMUM_RESOLUTION_STREAM_COMBINATIONS);
+            combinations = characteristics.get(
+                    CameraCharacteristics.SCALER_MANDATORY_MAXIMUM_RESOLUTION_STREAM_COMBINATIONS);
+            Log.v(TAG, "getSupportedMaxPictureSize combinations :" + combinations);
+            if (combinations == null) return null;
+            for (MandatoryStreamCombination combination : combinations) {
+                List<MandatoryStreamInformation> streamInfoList = combination.getStreamsInformation();
+                for (MandatoryStreamInformation streamInfo : streamInfoList) {
+                    List<Size> inputSizes = streamInfo.getAvailableSizes();
+                    Size[] availableSizes = new Size[inputSizes.size()];
+                    availableSizes = inputSizes.toArray(availableSizes);
+                    maxSize = getMaxSize(availableSizes);
+                    if (lastSize == null) {
+                        lastSize = maxSize;
+                    }
+                    Log.v(TAG, "getSupportedMaxPictureSize lastSize :" + lastSize + ", maxSize :" + maxSize);
+                    if (maxSize.getWidth() * maxSize.getHeight() >
+                            lastSize.getWidth() * lastSize.getHeight()) {
+                        lastSize = maxSize;
+                    }
+                    Log.v(TAG, "getSupportedMaxPictureSize lastSize :" + lastSize);
+                }
+            }
+            Log.v(TAG, "getSupportedMaxPictureSize lastSize :" + lastSize);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+        return lastSize;
+    }
+
+    private Size getMaxSize(Size... sizes) {
+        if (sizes == null || sizes.length == 0) {
+            return null;
+        }
+
+        Size sz = sizes[0];
+        for (Size size : sizes) {
+            if (size.getWidth() * size.getHeight() > sz.getWidth() * sz.getHeight()) {
+                sz = size;
+             }
+        }
+
+        return sz;
+     }
 
     private List<OutputConfiguration> getPhysicalPreviewOutput(){
         List<OutputConfiguration> ret = new ArrayList<>();
@@ -4918,7 +4993,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private boolean captureWaitImageReceive() {
-        return mIsSupportedQcfa || isMFNREnabled() || isHDREnable();
+        return isMFNREnabled() || isHDREnable();
     }
 
     private Size parsePictureSize(String value) {
@@ -5795,16 +5870,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void openProcessors() {
         String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
-        mIsSupportedQcfa = mSettingsManager.getQcfaPrefEnabled() &&
-                mSettingsManager.getIsSupportedQcfa(getMainCameraId());
-        // add the judgement condition for special qcfa
-        if (mIsSupportedQcfa) {
-            Size qcfaSize = mSettingsManager.getQcfaSupportSize();
-            if (mPictureSize.getWidth() <= qcfaSize.getWidth() / 2 &&
-                    mPictureSize.getHeight() <= qcfaSize.getHeight() / 2) {
-                mIsSupportedQcfa = false;
-            }
-        }
         boolean isFlashOn = false;
         boolean isMakeupOn = false;
         boolean isSelfieMirrorOn = false;
@@ -5836,7 +5901,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mPostProcessor.onOpen(filterMode, isFlashOn, isTrackingFocusSettingOn(),
                     isT2TFocusSettingOn(), isMakeupOn, isSelfieMirrorOn,mSaveRaw,
-                    mIsSupportedQcfa, mDeepPortraitMode);
+                    mDeepPortraitMode);
         }
         if(mFrameProcessor != null) {
             mFrameProcessor.onOpen(getFrameProcFilterId(), mPreviewSize);
@@ -5896,9 +5961,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             mUI.initPhysicalSurfaces(mLogicalPreviewSize,mPhysicalPreviewSizes);
         }
-
-
-
 
         // Set up sound playback for shutter button, video record and video stop
         if (mSoundPlayer == null) {
@@ -6399,6 +6461,10 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public int getMainCameraId() {
+        if (mQuadBayerId != -1) {
+            return mQuadBayerId;
+        }
+
         if (CaptureModule.FRONT_ID != mCurrentSceneMode.getCurrentId()) {
             String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
             if (selectMode != null && selectMode.equals("single_rear_cameraid") && mSingleRearId != -1) {
@@ -6809,7 +6875,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(mSettingsManager.getRawReprocessPhysicalId()), format);
             if(PersistUtil.isRawReprocessQcfa()){
-                //Size qcfaSize = mSettingsManager.getQcfaSupportSize();
                 mRawSize[0] = new Size(8000,6000);
             }else{
                 mRawSize[0] = rawSize[0];
@@ -6823,8 +6888,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             mSaveRaw = false;
         } else {
             mSupportedRawPictureSize = getMaxRawSize() != null ? getMaxRawSize() : rawSize[0];
+            Log.i(TAG, "rawsize:" + rawSize[0].toString());
         }
-        Log.i(TAG,"rawsize:" + rawSize[0].toString() + ",maxSIze:" + mSupportedRawPictureSize.toString());
+
+        if (mSupportedRawPictureSize != null) {
+            Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
+        }
         mPreviewSize = getOptimalPreviewSize(mPictureSize, prevSizes);
         Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(getMainCameraId());
         mPictureThumbSize = getOptimalPreviewSize(mPictureSize, thumbSizes); // get largest thumb size
@@ -7233,7 +7302,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
-        try {
+        try{
+            boolean supported = camera.isSessionConfigurationSupported(sessionConfig);
+            Log.v(TAG, " createCaptureSessionWithSessionConfiguration result :" + supported);
+        } catch (CameraAccessException e) {
+            Log.d(TAG, "createCaptureSessionWithSessionConfiguration SessionConfiguration error");
+            e.printStackTrace();
+        }
+        try{
             camera.createCaptureSession(sessionConfig);
         } catch (CameraAccessException e) {
             Log.d(TAG, "createCaptureSessionWithSessionConfiguration error");
@@ -9792,6 +9868,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 .CONTROL_AF_TRIGGER_IDLE);
         applyFlash(mPreviewRequestBuilder[id], id);
         applyCommonSettings(mPreviewRequestBuilder[id], id);
+        if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+            Log.v(TAG, "initializePreviewConfiguration set SENSOR_PIXEL_MODE as default " );
+            mPreviewRequestBuilder[id].set(CaptureRequest.SENSOR_PIXEL_MODE,
+                    CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
+        }
     }
 
     public float getZoomValue() {

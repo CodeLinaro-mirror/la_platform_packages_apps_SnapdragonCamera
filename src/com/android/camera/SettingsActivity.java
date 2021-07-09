@@ -193,10 +193,15 @@ public class SettingsActivity extends PreferenceActivity {
                     UpdateManualHDRSetting();
                 }
             }
+
             if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
                 updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
                 updatePreference(SettingsManager.KEY_RAWINFO_TYPE);
                 updatePreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+            }
+
+            if (key.equals(SettingsManager.KEY_REMOSAIC_REPROCESSING)) {
+                updateRawFormatPref();
             }
         }
     };
@@ -218,8 +223,7 @@ public class SettingsActivity extends PreferenceActivity {
                     UpdateManualExposureSettings();
                 }
 
-                if (pref.getKey().equals(SettingsManager.KEY_QCFA) ||
-                        pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT) ||
+                if (pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT) ||
                         pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
@@ -1159,7 +1163,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_MANUAL_WB);
                 add(SettingsManager.KEY_AF_MODE);
                 add(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
-                add(SettingsManager.KEY_QCFA);
+                add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
                 add(SettingsManager.KEY_FACE_DETECTION_MODE);
                 add(SettingsManager.KEY_FD_SMILE);
                 add(SettingsManager.KEY_FD_GAZE);
@@ -1543,6 +1547,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateAudioEncoderPreference();
         updateVideoFlipPreference();
         updatePdnetTogglePreference();
+        updateRawFormatPref();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1772,6 +1777,28 @@ public class SettingsActivity extends PreferenceActivity {
                 if (selectModePref.getValue().equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
                     eisPref.setEnabled(false);
                 }
+            }
+        }
+    }
+
+    private void updateRawFormatPref() {
+        ListPreference rawPref = (ListPreference)findPreference(
+                SettingsManager.KEY_SAVERAW);
+        ListPreference remosaicPref = (ListPreference)findPreference(
+                SettingsManager.KEY_REMOSAIC_REPROCESSING);
+        if (remosaicPref != null && remosaicPref.getValue().equals("enable")) {
+            if (rawPref != null) {
+                rawPref.setEnabled(true);
+                return;
+            }
+        }
+        ListPreference zslPref = (ListPreference)findPreference(
+                SettingsManager.KEY_ZSL);
+        if (zslPref != null && zslPref.getValue().equals("app-zsl")) {
+            if (rawPref != null) {
+                rawPref.setValue("disable");
+                rawPref.setEnabled(false);
+                mSettingsManager.setValue(SettingsManager.KEY_SAVERAW, "disable");
             }
         }
     }

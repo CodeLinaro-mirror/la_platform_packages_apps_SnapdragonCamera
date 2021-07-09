@@ -159,8 +159,8 @@
   {
     "app-zsl": {"pref_camera2_saveraw_key": "disable",
                 "pref_camera2_multi_camera_mode_key": "0"},
-    "hal-zsl": {},
-    "disable": {}
+    "hal-zsl": {"pref_camera2_remosaic_reprocessing_key": "disable"},
+    "disable": {"pref_camera2_remosaic_reprocessing_key": "disable"}
   },
   "pref_camera2_videoencoder_key":
   {

@@ -235,7 +235,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MANUAL_WB_G_GAIN = "pref_camera2_manual_wb_g_gain";
     public static final String KEY_MANUAL_WB_B_GAIN = "pref_camera2_manual_wb_b_gain";
 
-    public static final String KEY_QCFA = "pref_camera2_qcfa_key";
+    public static final String KEY_QUAD_BAYER_SENSOR = "pref_camera2_quad_bayer_sensor_key";
+    public static final String KEY_REMOSAIC_REPROCESSING = "pref_camera2_remosaic_reprocessing_key";
     public static final String KEY_EIS_VALUE = "pref_camera2_eis_key";
     public static final String KEY_PHOTO_EIS_VALUE = "pref_camera2_photo_eis_key";
     public static final String KEY_FOVC_VALUE = "pref_camera2_fovc_key";
@@ -1265,7 +1266,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference stats_visualizer = mPreferenceGroup.findPreference(KEY_STATS_VISUALIZER_VALUE);
         ListPreference hdr = mPreferenceGroup.findPreference(KEY_HDR);
         ListPreference zoom = mPreferenceGroup.findPreference(KEY_ZOOM);
-        ListPreference qcfa = mPreferenceGroup.findPreference(KEY_QCFA);
+        ListPreference quad_bayer_sensor = mPreferenceGroup.findPreference(KEY_QUAD_BAYER_SENSOR);
+        ListPreference remosaic_reprocessing = mPreferenceGroup.findPreference(KEY_REMOSAIC_REPROCESSING);
         ListPreference fd_smile = mPreferenceGroup.findPreference(KEY_FD_SMILE);
         ListPreference fd_gaze = mPreferenceGroup.findPreference(KEY_FD_GAZE);
         ListPreference fd_blink = mPreferenceGroup.findPreference(KEY_FD_BLINK);
@@ -1382,7 +1384,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
             removePreference(mPreferenceGroup, KEY_FRONT_REAR_SWITCHER_VALUE);
         }
         if (pictureSize != null) {
-
             if (filterUnsupportedOptions(pictureSize, getSupportedPictureSize(cameraId))) {
                 mFilteredKeys.add(pictureSize.getKey());
             } else {
@@ -1486,6 +1487,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (filterUnsupportedOptions(zoom,
                     getSupportedZoomLevel(cameraId))) {
                 mFilteredKeys.add(zoom.getKey());
+            }
+        }
+
+        if (quad_bayer_sensor != null) {
+            if (!getSupportedQuadBayerSensor(cameraId)) {
+                mFilteredKeys.add(quad_bayer_sensor.getKey());
+            }
+        }
+
+        if (remosaic_reprocessing != null) {
+            if (!getSupportedRemosaicReprocessing(cameraId)) {
+                mFilteredKeys.add(remosaic_reprocessing.getKey());
             }
         }
 
@@ -2427,10 +2440,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         boolean isDeepportrait = getDeepportraitEnabled();
         boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
 
-        if (getQcfaPrefEnabled() && getIsSupportedQcfa(cameraId)) {
-            res.add(getSupportedQcfaDimension(cameraId));
-        }
-
         VideoCapabilities heifCap = null;
         if (isHeifEnabled) {
             MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
@@ -2875,7 +2884,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
-    private  List<String> getSupportedZoomLevel(int cameraId) {
+    private List<String> getSupportedZoomLevel(int cameraId) {
         float maxZoom = mCharacteristics.get(cameraId).get(CameraCharacteristics
                 .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
         ArrayList<String> supported = new ArrayList<String>();
@@ -2884,6 +2893,37 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return supported;
     }
+
+    private boolean getSupportedQuadBayerSensor(int cameraId) {
+        int[] capabilities = mCharacteristics.get(cameraId).get(CameraCharacteristics
+                .REQUEST_AVAILABLE_CAPABILITIES);
+        boolean foundQuadBayerSensor = false;
+        for (int capability : capabilities) {
+            if (capability == CameraCharacteristics.
+                    REQUEST_AVAILABLE_CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR) {
+                Log.d(TAG, "Found quad bayer sensor with cameraid " + cameraId);
+                foundQuadBayerSensor = true;
+            }
+        }
+        Log.d(TAG, "getSupportedQuadBayerSensor foundQuadBayerSensor :" + foundQuadBayerSensor);
+        return foundQuadBayerSensor;
+    }
+
+    private boolean getSupportedRemosaicReprocessing(int cameraId) {
+        int[] capabilities = mCharacteristics.get(cameraId).get(CameraCharacteristics
+                .REQUEST_AVAILABLE_CAPABILITIES);
+        boolean isSupported = false;
+        for (int capability : capabilities) {
+            if (capability == CameraCharacteristics.
+                    REQUEST_AVAILABLE_CAPABILITIES_REMOSAIC_REPROCESSING) {
+                Log.d(TAG, "Supported Remosaic Reprocessing with cameraid " + cameraId);
+                isSupported = true;
+            }
+        }
+        Log.d(TAG, "getSupportedRemosaicReprocessing isSupported :" + isSupported);
+        return isSupported;
+    }
+
 
     public float[] getSupportedRatioZoomRange(int cameraId) {
         Range<Float> range = null;
@@ -2993,10 +3033,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return  modes;
     }
 
-    public boolean getQcfaPrefEnabled() {
-        ListPreference qcfaPref = mPreferenceGroup.findPreference(KEY_QCFA);
-        String qcfa = qcfaPref.getValue();
-        if(qcfa != null && qcfa.equals("enable")) {
+    public boolean getQuadBayerSensorPrefEnabled() {
+        ListPreference quadBayerPref = mPreferenceGroup.findPreference(KEY_QUAD_BAYER_SENSOR);
+        String value = quadBayerPref.getValue();
+        if(value != null && value.equals("enable")) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean getRemosaicReprocPrefEnabled() {
+        ListPreference remosaicRepro = mPreferenceGroup.findPreference(KEY_REMOSAIC_REPROCESSING);
+        String value = remosaicRepro.getValue();
+        if(value != null && value.equals("enable")) {
             return true;
         }
         return false;
@@ -3010,47 +3059,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return false;
     }
 
-    public boolean getIsSupportedQcfa (int cameraId) {
-        byte isSupportQcfa = 0;
-        try {
-            isSupportQcfa = mCharacteristics.get(cameraId).get(
-                    CaptureModule.IS_SUPPORT_QCFA_SENSOR);
-        }catch(Exception e) {
-        }
-        return isSupportQcfa == 1 ? true : false;
-    }
-
-    public String getSupportedQcfaDimension(int cameraId) {
-        int[] qcfaDimension = mCharacteristics.get(cameraId).get(
-                CaptureModule.QCFA_SUPPORT_DIMENSION);
-        if (qcfaDimension == null) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < qcfaDimension.length; i ++) {
-            sb.append(qcfaDimension[i]);
-            if (i == 0) {
-                sb.append("x");
-            }
-        }
-        return  sb.toString();
-    }
-
-    public Size getQcfaSupportSize() {
-        String qcfaSize = getSupportedQcfaDimension(mCameraId);
-        if (qcfaSize != null) {
-            return parseSize(getSupportedQcfaDimension(mCameraId));
-        }
-        return new Size(0, 0);
-    }
-
     public List<String> getSupportedSaturationLevelAvailableModes(int cameraId) {
         int[] saturationLevelAvailableModes = {0,1,2,3,4,5,6,7,8,9,10};
         List<String> modes = new ArrayList<>();
         for (int i : saturationLevelAvailableModes) {
             modes.add(""+i);
         }
-        return  modes;
+        return modes;
     }
 
     public List<String> getSupportedAntiBandingLevelAvailableModes(int cameraId) {
@@ -3080,8 +3095,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return profile;
     }
-
-
 
     public boolean isCamera2HDRSupport(){
         String value = getValue(KEY_HDR);
