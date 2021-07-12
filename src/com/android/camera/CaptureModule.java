@@ -8338,12 +8338,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.w(TAG, "stopRecordingVideo: " + e);
             }
         }
-        applyZoomAndUpdate();
 
         if (!mPaused) {
             if (isHighSpeedRateCapture() || (!PersistUtil.enableMediaRecorder())) {
                 setVideoFlashOff();
                 closePreviewSession();
+            } else {
+                applyZoomAndUpdate();
             }
         }
 
