@@ -3948,6 +3948,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.i(TAG,"calculateMaxFps,maxFps:" + maxFps);
             }
             maxFps = maxFps > 30 ? 30 : maxFps;
+            maxFps = PersistUtil.getMaxBurstShotFPS() > 0 ? PersistUtil.getMaxBurstShotFPS() : maxFps;
+            Log.i(TAG, "maxFps:" + maxFps);
         }
         return maxFps;
     }
@@ -3956,22 +3958,27 @@ public class CaptureModule implements CameraModule, PhotoController,
         mBurstLimit = "1".equals(mSettingsManager.getValue(SettingsManager.KEY_BURST_LIMIT));
         if (!mBurstLimit) {
             List<CaptureRequest> burstList = new ArrayList<>();
-            int burstShotFpsNums = 0;
+            float burstShotFpsNums = 0.0f;
             if(calculateMaxFps() > 0){
-                burstShotFpsNums = (int)(30/calculateMaxFps()) - 1;
+                burstShotFpsNums = 30/calculateMaxFps() - 1;
             }
-            burstShotFpsNums = PersistUtil.isBurstShotFpsNums() > 1 ? PersistUtil.isBurstShotFpsNums() : burstShotFpsNums;
-            int totalNums = (int)(PersistUtil.getLongshotShotLimit()/(burstShotFpsNums + 1));
-            if(totalNums < 60) totalNums = totalNums *2;
-            if (DEBUG) Log.i(TAG,"burstShotFpsNums:" + burstShotFpsNums + ",totalNums:" + totalNums);
-            for (int i = 0; i < totalNums; i++) {
-                for (int j = 0; j < burstShotFpsNums; j++) {
+            Log.i(TAG, "burstShotFpsNums:" + burstShotFpsNums);
+
+            mPreviewRequestBuilder[id].setTag("preview");
+            burstList.add(mPreviewRequestBuilder[id].build());
+            float previewNum = 1.0f;
+            for (int i = 0; i < PersistUtil.getLongshotShotLimit() - 1; i++) {
+                if ((previewNum - burstShotFpsNums) >= 0.0) {
+                    captureBuilder.setTag("capture");
+                    burstList.add(captureBuilder.build());
+                    previewNum -= burstShotFpsNums;
+                } else {
                     mPreviewRequestBuilder[id].setTag("preview");
                     burstList.add(mPreviewRequestBuilder[id].build());
+                    previewNum ++ ;
                 }
-                captureBuilder.setTag("capture");
-                burstList.add(captureBuilder.build());
             }
+
             mCaptureSession[id].captureBurst(burstList, mLongshotCallBack, mCaptureCallbackHandler);
         } else {
             captureBuilder.setTag("capture-limit");
@@ -5911,7 +5918,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mChosenImageFormat = ImageFormat.PRIVATE;
         } else if(mPostProcessor.isFilterOn() || getFrameFilters().size() != 0 || mPostProcessor.isSelfieMirrorOn()) {
             mChosenImageFormat = ImageFormat.YUV_420_888;
-        } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {//jiao
+        } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {
             mChosenImageFormat = ImageFormat.HEIC;
         } else {
             mChosenImageFormat = ImageFormat.JPEG;
@@ -8324,7 +8331,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mStopRecPending = true;
         mRecordingPausing = false;
         mIsRecordingVideo = false;
-        mIsPreviewingVideo = false;
+        mIsPreviewingVideo = true;
         mRecordingStarted = false;
         boolean shouldAddToMediaStoreNow = false;
         // Stop recording
