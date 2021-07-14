@@ -747,7 +747,7 @@ public class PostProcessor{
 
     public void onOpen(int postFilterId, boolean isFlashModeOn, boolean isTrackingFocusOn,
                        boolean isT2TFocusOn, boolean isMakeupOn, boolean isSelfieMirrorOn,
-                       boolean isSaveRaw, boolean isDeepPortrait) {
+                       boolean isSaveRaw, boolean isSupportedQcfa, boolean isDeepPortrait) {
         mImageHandlerTask = new ImageHandlerTask();
         mSaveRaw = isSaveRaw;
         mIsDeepPortrait = isDeepPortrait;
@@ -760,7 +760,7 @@ public class PostProcessor{
                 || "18".equals(SettingsManager.getInstance().getValue(
                                   SettingsManager.KEY_SCENE_MODE))
                 || mController.getCameraMode() == CaptureModule.DUAL_MODE
-                || isDeepPortrait) {
+                || isSupportedQcfa || isDeepPortrait) {
             mUseZSL = false;
         } else {
             mUseZSL = true;

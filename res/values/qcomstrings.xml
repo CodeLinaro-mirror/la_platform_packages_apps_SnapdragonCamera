@@ -1331,6 +1331,13 @@
     <string name="pref_camera2_single_physical_camera_default" translatable="false"></string>
     <string name="pref_camera2_single_physical_camera_title" translatable="true">Enable single physical camera</string>
 
+    <!-- QCFA Title -->
+    <string name="pref_camera2_qcfa_title" translatable="true">QCFA</string>
+    <string name="pref_camera2_qcfa_default" translatable="false">disable</string>
+    <!-- QCFA choices -->
+    <string name="pref_camera_qcfa_value_disable">disable</string>
+    <string name="pref_camera_qcfa_value_enable">enable</string>
+
     <!-- Quad Bayer Sensor Title -->
     <string name="pref_camera2_quad_bayer_sensor_title" translatable="true">Quad Bayer Sensor</string>
     <string name="pref_camera2_quad_bayer_sensor_default" translatable="false">disable</string>

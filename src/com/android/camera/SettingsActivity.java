@@ -236,7 +236,8 @@ public class SettingsActivity extends PreferenceActivity {
                     UpdateManualExposureSettings();
                 }
 
-                if (pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT) ||
+                if (pref.getKey().equals(SettingsManager.KEY_QCFA) ||
+                        pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT) ||
                         pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
@@ -1144,7 +1145,7 @@ public class SettingsActivity extends PreferenceActivity {
 
                 for (int i = 0; i < categories.length; i++) {
                     PreferenceGroup group = (PreferenceGroup) findPreference(categories[i]);
-                    if (group.removePreference(p)) break;
+                    if (group != null && group.removePreference(p)) break;
                 }
             }
         }
@@ -1180,6 +1181,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_MANUAL_WB);
                 add(SettingsManager.KEY_AF_MODE);
                 add(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+                add(SettingsManager.KEY_QCFA);
                 add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
                 add(SettingsManager.KEY_FACE_DETECTION_MODE);
                 add(SettingsManager.KEY_FD_SMILE);
