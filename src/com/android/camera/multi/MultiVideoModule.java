@@ -257,11 +257,11 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         }
         if (concurrentIds != null && concurrentIds.size() > 0){
             for (String id : concurrentIds){
-                Log.d(TAG, "add id="+id);
+                Log.d(TAG, " openCamera id="+id);
                 mCameraIDList.add(id);
             }
         } else {
-            Log.d(TAG, "default 0");
+            Log.d(TAG, " openCamera default 0");
             mCameraIDList.add("0");
         }
         Message msg = Message.obtain();
@@ -555,7 +555,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                     if (surface.isValid()) {
                         SessionConfiguration sessionConfiguration =
                                 prepareCaptureSessions(id,surface);
-                        Log.d(TAG,"prepareCaptureSessions id="+id);
+                        Log.d(TAG, "prepareCaptureSessions id= "+id);
                         mConcurrentConfigurations.put(String.valueOf(id),sessionConfiguration);
                         Message message = Message.obtain();
                         message.what = OPEN_CAMERA;
@@ -571,7 +571,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         Message message = Message.obtain();
                         message.what = CREATE_SESSION;
                         sendMessage(message);
-                        Log.d(TAG,"CREATE_SESSION");
+                        Log.d(TAG, "CREATE_SESSION");
                     } else {
                         String cameraId = mCameraIDList.get(mCameraListIndex);
                         openCameraInSequence(cameraId);
@@ -591,7 +591,8 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         }
                         boolean supported =
                                 mMultiCameraModule.checkConcurrentSessionConfigurationSupported(mConcurrentConfigurations);
-                        Log.v(TAG, " CREATE_SESSION createSession :" + createSession + " supported :" + supported);
+                        Log.v(TAG, " CREATE_SESSION createSession :" + createSession +
+                                " supported :" + supported + ", mCameraIDList :" + mCameraIDList);
                         if (createSession && supported) {
                             try{
                                 for (String cameraId : mCameraIDList){
@@ -632,6 +633,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
 
         @Override
         public void onOpened(CameraDevice cameraDevice) {
+            if (mPaused) {
+                return;
+            }
             int id = Integer.parseInt(cameraDevice.getId());
             mCameraDevices[id] = cameraDevice;
             Log.d(TAG, "onOpened " + id);
@@ -743,7 +747,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     private void createCameraPreviewSession(int id) {
         // This is the output Surface we need to start preview.
         int index = mCameraIDList.indexOf(String.valueOf(id));
-        Log.v(TAG, "createCameraPreviewSession id :" + id + ", index :" + index);
+        Log.v(TAG, "createCameraPreviewSession id :" + id + ", index :" + index + ", mCameraIDList :" + mCameraIDList);
         Surface surface = mMultiCameraUI.getSurfaceViewList().get(index).getHolder().getSurface();
 
         if (surface.isValid()) {
@@ -782,7 +786,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                             if (null == mCameraDevices[id]) {
                                 return;
                             }
-                            Log.v(TAG, " CameraCaptureSession onConfigured id :" + id);
+                            Log.v(TAG, " mPreviewRequestBuilders onConfigured id :" + id);
                             // When the session is ready, we start displaying the preview.
                             mCameraPreviewSessions[id] = cameraCaptureSession;
                             try {
@@ -795,14 +799,6 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                                         mCaptureCallback, mMultiCameraModule.getMyCameraHandler());
                             } catch (CameraAccessException e) {
                                 e.printStackTrace();
-                            }
-
-                            if (mCameraDevices[mCameraListIndex] == null) {
-                                Message msg = Message.obtain();
-                                msg.what = OPEN_CAMERA;
-                                if (mCameraHandler != null) {
-                                    mCameraHandler.sendMessage(msg);
-                                }
                             }
                         }
 
@@ -831,73 +827,6 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             e.printStackTrace();
         }
         return sessionConfiguration;
-    }
-
-    private void createCaptureSessions(int id, Surface surface) {
-        try {
-            // We set up a CaptureRequest.Builder with the output Surface.
-            mPreviewRequestBuilders[id]
-                    = mCameraDevices[id].createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            mPreviewRequestBuilders[id].addTarget(surface);
-            mPreviewRequestBuilders[id].setTag(id);
-
-            CameraCaptureSession.StateCallback stateCallback =
-                    new CameraCaptureSession.StateCallback() {
-                        @Override
-                        public void onConfigured(CameraCaptureSession cameraCaptureSession) {
-                            // The camera is already closed
-                            if (null == mCameraDevices[id]) {
-                                return;
-                            }
-                            Log.v(TAG, " CameraCaptureSession onConfigured id :" + id);
-                            // When the session is ready, we start displaying the preview.
-                            mCameraPreviewSessions[id] = cameraCaptureSession;
-                            try {
-                                // Auto focus should be continuous for camera preview.
-                                mPreviewRequestBuilders[id].set(CaptureRequest.CONTROL_AF_MODE,
-                                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                                // Finally, we start displaying the camera preview.
-                                mCameraPreviewSessions[id].setRepeatingRequest(
-                                        mPreviewRequestBuilders[id].build(),
-                                        mCaptureCallback, mMultiCameraModule.getMyCameraHandler());
-                            } catch (CameraAccessException e) {
-                                e.printStackTrace();
-                            }
-
-                            if (mCameraDevices[mCameraListIndex] == null) {
-                                Message msg = Message.obtain();
-                                msg.what = OPEN_CAMERA;
-                                if (mCameraHandler != null) {
-                                    mCameraHandler.sendMessage(msg);
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
-                            showToast("onConfigureFailed");
-                        }
-                    };
-
-            try {
-                final byte enable = 1;
-                mPreviewRequestBuilders[id].set(override_resource_cost_validation, enable);
-                Log.v(TAG, " set" + override_resource_cost_validation + " is 1");
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            }
-
-            List<OutputConfiguration> outConfigurations = new ArrayList<>(1);
-            outConfigurations.add(new OutputConfiguration(surface));
-
-            SessionConfiguration sessionConfiguration = new SessionConfiguration(
-                    SessionConfiguration.SESSION_REGULAR, outConfigurations,
-                    new HandlerExecutor(mCameraHandler), stateCallback);
-            sessionConfiguration.setSessionParameters(mPreviewRequestBuilders[id].build());
-            mCameraDevices[id].createCaptureSession(sessionConfiguration);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
     }
 
     private class HandlerExecutor implements Executor {

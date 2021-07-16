@@ -233,41 +233,44 @@ public class MultiSettingsActivity extends PreferenceActivity {
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
             String[] cameraIdList = manager.getCameraIdList();
+            mConcurrentCameraIdCombinations = manager.getConcurrentCameraIds();
+            Log.d(TAG,"mConcurrentCameraIdCombinations="+mConcurrentCameraIdCombinations.toString());
             mCameraIds = cameraIdList;
             boolean isFirstBackCameraId = true;
             boolean isRearCameraPresent = false;
-            mConcurrentEntries = new CharSequence[cameraIdList.length];
-            mConcurrentEntryValues = new CharSequence[cameraIdList.length];
-            Log.d(TAG, "cameraIdList size =" + cameraIdList.length);
+            int index = 0;
+            int size = 0;
+            for (int i = 0; i < cameraIdList.length; i++) {
+                String cameraId = cameraIdList[i];
+                for (Set<String> set: mConcurrentCameraIdCombinations) {
+                    if(set.contains(cameraId)) {
+                        size ++;
+                        break;
+                    }
+                }
+            }
+            mConcurrentEntries = new CharSequence[size];
+            mConcurrentEntryValues = new CharSequence[size];
+            Log.d(TAG, "cameraIdList size =" + cameraIdList.length + ", size :" + size);
             for (int i = 0; i < cameraIdList.length; i++) {
                 String cameraId = cameraIdList[i];
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
-                Log.d(TAG, " cameraId :" + cameraId + ", i :" + i);
-                mCharacteristics.add(i, characteristics);
-                mConcurrentEntries[i] = "cameraId: "+cameraId+" facing:"+(
-                        characteristics.get(CameraCharacteristics.LENS_FACING) ==
-                                CameraCharacteristics.LENS_FACING_FRONT ? "front" : "back");
-                mConcurrentEntryValues[i] = cameraId;
+                Log.d(TAG, " cameraId :" + cameraId + ", i :" + i + ", index :" + index);
+                for (Set<String> set: mConcurrentCameraIdCombinations) {
+                    if(set.contains(cameraId)) {
+                        mCharacteristics.add(index, characteristics);
+                        mConcurrentEntries[index] = "cameraId: "+cameraId+" facing:"+(
+                                characteristics.get(CameraCharacteristics.LENS_FACING) ==
+                                        CameraCharacteristics.LENS_FACING_FRONT ? "front" : "back");
+                        mConcurrentEntryValues[index] = cameraId;
+                        Log.d(TAG, " add cameraId :" + cameraId + ", index :" + index);
+                        index ++;
+                        break;
+                    }
+                }
             }
-            mConcurrentCameraIdCombinations = manager.getConcurrentCameraIds();
-//            Set<String> id1 = new ArraySet<>();
-//            id1.add("0");
-//            id1.add("1");
-//            Set<String> id2 = new ArraySet<>();
-//            id2.add("0");
-//            id2.add("1");
-//            id2.add("2");
-//            Set<String> id3 = new ArraySet<>();
-//            id3.add("0");
-//            id3.add("1");
-//            id3.add("2");
-//            id3.add("3");
-//            mConcurrentCameraIdCombinations = new ArraySet<>();
-//            mConcurrentCameraIdCombinations.add(id1);
-//            mConcurrentCameraIdCombinations.add(id2);
-//            mConcurrentCameraIdCombinations.add(id3);
-            Log.d(TAG,"mConcurrentCameraIdCombinations="+mConcurrentCameraIdCombinations.toString());
+
             for (Set<String> set: mConcurrentCameraIdCombinations){
                 Log.d(TAG,"set="+set.toString());
             }
@@ -363,6 +366,12 @@ public class MultiSettingsActivity extends PreferenceActivity {
                 concurrentCameraIds.setValues(cameraIds);
                 mConcurrentIds = new String[cameraIds.size()];
                 mConcurrentIds = cameraIds.toArray(mConcurrentIds);
+            } else {
+                if (cameraIds == null) {
+                    cameraIds = new ArraySet<>();
+                }
+                cameraIds.add("0");
+                concurrentCameraIds.setValues(cameraIds);
             }
         }
     }

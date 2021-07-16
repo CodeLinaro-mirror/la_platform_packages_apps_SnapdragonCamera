@@ -7076,7 +7076,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyZoomAndUpdate() {
         long current = System.currentTimeMillis();
-        if(current - mZoomTime > 24){
+        if(current - mZoomTime > 24 && mZoomHandler != null){
             mZoomHandler.sendEmptyMessage(ZoomHandler.MSG_UPDATE_ZOOM_INSTANT);
             mZoomTime = current;
         }

@@ -89,6 +89,7 @@ public class MultiCaptureModule implements MultiCamera {
     private CameraDevice[] mCameraDevices = new CameraDevice[MAX_NUM_CAM];
     private SharedPreferences mLocalSharedPref;
     private ArrayList<CameraCharacteristics> mCharacteristics;
+    private boolean mPaused = true;
 
     private ArrayList<String> mCameraIDList = new ArrayList<>();
     private CameraCaptureSession[] mCameraCaptureSessions = new CameraCaptureSession[MAX_NUM_CAM];
@@ -144,6 +145,7 @@ public class MultiCaptureModule implements MultiCamera {
 
     @Override
     public void onResume() {
+        mPaused = false;
         // Set up sound playback for shutter button, video record and video stop
         if (mSoundPlayer == null) {
             mSoundPlayer = SoundClips.getPlayer(mActivity);
@@ -153,6 +155,7 @@ public class MultiCaptureModule implements MultiCamera {
 
     @Override
     public void onPause() {
+        mPaused = true;
         if (mSoundPlayer != null) {
             mSoundPlayer.release();
             mSoundPlayer = null;
@@ -175,11 +178,11 @@ public class MultiCaptureModule implements MultiCamera {
         }
         if (concurrentIds != null && concurrentIds.size() > 0){
             for (String id : concurrentIds){
-                Log.d(TAG,"add id="+id);
+                Log.d(TAG, "openCamera add id="+id);
                 mCameraIDList.add(id);
             }
         } else {
-            Log.d(TAG,"default 0");
+            Log.d(TAG, "openCamera default 0");
             mCameraIDList.add("0");
         }
 
@@ -310,7 +313,6 @@ public class MultiCaptureModule implements MultiCamera {
                     Surface surface = mMultiCameraUI.getSurfaceViewList().get(index)
                             .getHolder().getSurface();
                     if (surface.isValid()) {
-                        //createCaptureSessions(id, surface);
                         SessionConfiguration sessionConfiguration =
                                 prepareSessionConfiguration(id,surface);
                         mConcurrentConfigurations.put(String.valueOf(id),sessionConfiguration);
@@ -379,6 +381,9 @@ public class MultiCaptureModule implements MultiCamera {
 
         @Override
         public void onOpened(CameraDevice cameraDevice) {
+            if (mPaused) {
+                return;
+            }
             int id = Integer.parseInt(cameraDevice.getId());
             mCameraDevices[id] = cameraDevice;
             Log.d(TAG, "onOpened " + id);
@@ -516,71 +521,6 @@ public class MultiCaptureModule implements MultiCamera {
         return sessionConfiguration;
     }
 
-    private void createCaptureSessions(final int id, Surface surface) {
-        try {
-            // We set up a CaptureRequest.Builder with the output Surface.
-            mPreviewRequestBuilders[id]
-                    = mCameraDevices[id].createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            mPreviewRequestBuilders[id].addTarget(surface);
-            mPreviewRequestBuilders[id].setTag(id);
-            CameraCaptureSession.StateCallback stateCallback =
-                    new CameraCaptureSession.StateCallback() {
-                        @Override
-                        public void onConfigured(CameraCaptureSession cameraCaptureSession) {
-                            // The camera is already closed
-                            if (null == mCameraDevices[id]) {
-                                return;
-                            }
-                            Log.v(TAG, " CameraCaptureSession onConfigured id :" + id);
-                            // When the session is ready, we start displaying the preview.
-                            mCameraCaptureSessions[id] = cameraCaptureSession;
-                            try {
-                                // Auto focus should be continuous for camera preview.
-                                mPreviewRequestBuilders[id].set(CaptureRequest.CONTROL_AF_MODE,
-                                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                                // Finally, we start displaying the camera preview.
-                                mCameraCaptureSessions[id].setRepeatingRequest(
-                                        mPreviewRequestBuilders[id].build(),
-                                        mCaptureCallback, mMultiCameraModule.getMyCameraHandler());
-                            } catch (CameraAccessException e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        @Override
-                        public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
-                            showToast("onConfigureFailed");
-                        }
-                    };
-
-            try {
-                final byte enable = 1;
-                mPreviewRequestBuilders[id].set(override_resource_cost_validation, enable);
-                Log.v(TAG, " set" + override_resource_cost_validation + " is 1");
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            }
-
-            List<OutputConfiguration> outConfigurations = new ArrayList<>(2);
-            outConfigurations.add(new OutputConfiguration(surface));
-            outConfigurations.add(new OutputConfiguration(mImageReaders[id].getSurface()));
-
-            SessionConfiguration sessionConfiguration = new SessionConfiguration(
-                    SessionConfiguration.SESSION_REGULAR, outConfigurations,
-                    new HandlerExecutor(mCameraHandler), stateCallback);
-            sessionConfiguration.setSessionParameters(mPreviewRequestBuilders[id].build());
-            mCameraDevices[id].createCaptureSession(sessionConfiguration);
-            try {
-                CaptureRequest captureRequest = sessionConfiguration.getSessionParameters();
-                Log.v(TAG, " override_resource_cost_validation result: " +
-                        captureRequest.get(override_resource_cost_validation));
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            }
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
 
     private class HandlerExecutor implements Executor {
         private final Handler ihandler;
