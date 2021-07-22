@@ -6452,10 +6452,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         Log.d(TAG, "onLongPress " + x + " " + y);
         mClickPosition[0] = x;
         mClickPosition[1] = y;
-        mUI.hideFlashButton();
         int[] newXY = {x, y};
         if (mUI.isOverControlRegion(newXY)) return;
         if (!mUI.isOverSurfaceView(newXY)) return;
+        mUI.hideFlashButton();
         if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE){
             Log.i(TAG,"set af lock start");
             applyIsAfLock(false);
