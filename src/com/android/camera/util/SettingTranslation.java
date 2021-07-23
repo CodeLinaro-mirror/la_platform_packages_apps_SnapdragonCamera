@@ -40,10 +40,22 @@ public class SettingTranslation {
     public static final int NOT_FOUND = -1;
     private static final TwoWayMap VIDEO_ENCODER_TABLE = new TwoWayMap();
     private static final TwoWayMap AUDIO_ENCODER_TABLE = new TwoWayMap();
+    private static final TwoWayMap AUDIO_RECORDING_MODE_TABLE = new TwoWayMap();
+    private static final TwoWayMap HDR_WNR_MODE_TABLE = new TwoWayMap();
+    private static final TwoWayMap HDR_ANS_MODE_TABLE = new TwoWayMap();
     private static final TwoWayMap NOISE_REDUCTION_TABLE = new TwoWayMap();
     private static final TwoWayMap VIDEO_ENCODER_PROFILE_TABLE = new TwoWayMap();
     private static final TwoWayMap VIDEO_ENCODER_TYPE_TABLE =
             new TwoWayMap();
+
+    public static final int AudioRecordingModeDefault = 0;
+    public static final int AudioRecordingModeHDR = 1;
+
+    public static final int HdrWnrModeOff = 0;
+    public static final int HdrWnrModeOn  = 1;
+
+    public static final int HdrAnsModeOff = 0;
+    public static final int HdrAnsModeOn  = 1;
 
     static {
         VIDEO_ENCODER_TABLE.put("default", MediaRecorder.VideoEncoder.DEFAULT);
@@ -66,6 +78,15 @@ public class SettingTranslation {
         AUDIO_ENCODER_TABLE.put("default", MediaRecorder.AudioEncoder.DEFAULT);
         AUDIO_ENCODER_TABLE.put("he-aac", MediaRecorder.AudioEncoder.HE_AAC);
         AUDIO_ENCODER_TABLE.put("vorbis", MediaRecorder.AudioEncoder.VORBIS);
+
+        AUDIO_RECORDING_MODE_TABLE.put("default", AudioRecordingModeDefault);
+        AUDIO_RECORDING_MODE_TABLE.put("hdr", AudioRecordingModeHDR);
+
+        HDR_WNR_MODE_TABLE.put("off", HdrWnrModeOff);
+        HDR_WNR_MODE_TABLE.put("on", HdrWnrModeOn);
+
+        HDR_ANS_MODE_TABLE.put("off", HdrAnsModeOff);
+        HDR_ANS_MODE_TABLE.put("on", HdrAnsModeOn);
 
         NOISE_REDUCTION_TABLE.put("off", CameraMetadata.NOISE_REDUCTION_MODE_OFF);
         NOISE_REDUCTION_TABLE.put("fast", CameraMetadata.NOISE_REDUCTION_MODE_FAST);
@@ -105,6 +126,30 @@ public class SettingTranslation {
 
     public static String getVideoEncoder(int key) {
         return VIDEO_ENCODER_TABLE.get(key);
+    }
+
+    public static String getAudioRecordingMode(int key) {
+        return AUDIO_RECORDING_MODE_TABLE.get(key);
+    }
+
+    public static int getAudioRecordingMode(String key) {
+        return AUDIO_RECORDING_MODE_TABLE.get(key);
+    }
+
+    public static String getHdrWnrMode(int key) {
+        return HDR_WNR_MODE_TABLE.get(key);
+    }
+
+    public static int getHdrWnrMode(String key) {
+        return HDR_WNR_MODE_TABLE.get(key);
+    }
+
+    public static String getHdrAnsMode(int key) {
+        return HDR_ANS_MODE_TABLE.get(key);
+    }
+
+    public static int getHdrAnsMode(String key) {
+        return HDR_ANS_MODE_TABLE.get(key);
     }
 
     public static int getAudioEncoder(String key) {

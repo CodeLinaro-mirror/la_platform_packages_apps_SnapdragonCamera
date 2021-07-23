@@ -173,6 +173,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_VIDEO_QUALITY = "pref_camera2_video_quality_key";
     public static final String KEY_VIDEO_ENCODER = "pref_camera2_videoencoder_key";
     public static final String KEY_AUDIO_ENCODER = "pref_camera2_audioencoder_key";
+    public static final String KEY_AUDIO_RECORDING_MODE = "pref_camera2_audiorecordingmode_key";
+    public static final String KEY_HDR_WNR_MODE = "pref_camera2_hdrwnr_key";
+    public static final String KEY_HDR_ANS_MODE = "pref_camera2_hdrans_key";
     public static final String KEY_DIS = "pref_camera2_dis_key";
     public static final String KEY_NOISE_REDUCTION = "pref_camera2_noise_reduction_key";
     public static final String KEY_VIDEO_FLASH_MODE = "pref_camera2_video_flashmode_key";
@@ -1263,6 +1266,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
         ListPreference videoDuration = mPreferenceGroup.findPreference(KEY_VIDEO_DURATION);
         ListPreference audioEncoder = mPreferenceGroup.findPreference(KEY_AUDIO_ENCODER);
+        ListPreference audioRecordingMode = mPreferenceGroup.findPreference(KEY_AUDIO_RECORDING_MODE);
+        ListPreference hdrWnrMode = mPreferenceGroup.findPreference(KEY_HDR_WNR_MODE);
+        ListPreference hdrAnsMode = mPreferenceGroup.findPreference(KEY_HDR_ANS_MODE);
         ListPreference noiseReduction = mPreferenceGroup.findPreference(KEY_NOISE_REDUCTION);
         ListPreference faceDetection = mPreferenceGroup.findPreference(KEY_FACE_DETECTION);
         ListPreference instantAec = mPreferenceGroup.findPreference(KEY_INSTANT_AEC);
@@ -1537,6 +1543,27 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (qll != null) {
             if (!isQLLSupported() || !devLevelAll) {
                 removePreference(mPreferenceGroup, KEY_QLL);
+            }
+        }
+
+        if (audioRecordingMode != null) {
+            if(filterUnsupportedOptions(audioRecordingMode,
+                    getSupportedAudioRecordingModes(audioRecordingMode.getEntryValues()))) {
+                mFilteredKeys.add(audioRecordingMode.getKey());
+            }
+        }
+
+        if (hdrWnrMode != null){
+            if (filterUnsupportedOptions(hdrWnrMode,
+                    getSupportedHdrWnrModes(hdrWnrMode.getEntryValues()))) {
+                mFilteredKeys.add(hdrWnrMode.getKey());
+            }
+        }
+
+        if (hdrAnsMode != null) {
+            if (filterUnsupportedOptions(hdrAnsMode,
+                    getSupportedHdrAnsModes(hdrAnsMode.getEntryValues()))) {
+                mFilteredKeys.add(hdrAnsMode.getKey());
             }
         }
 
@@ -2872,6 +2899,40 @@ public class SettingsManager implements ListMenu.SettingsListener {
             String s = cs.toString();
             int value = SettingTranslation.getAudioEncoder(s);
             if (value != SettingTranslation.NOT_FOUND) supported.add(s);
+        }
+        return supported;
+    }
+
+    private static List<String> getSupportedAudioRecordingModes(CharSequence[] strings) {
+        ArrayList<String> supported = new ArrayList<>();
+        for(CharSequence cs: strings) {
+            String s = cs.toString();
+            int value = SettingTranslation.getAudioRecordingMode(s);
+            if(value != SettingTranslation.NOT_FOUND) supported.add(s);
+        }
+        return supported;
+    }
+
+    private static List<String> getSupportedHdrWnrModes(CharSequence[] strings) {
+        ArrayList<String> supported = new ArrayList<>();
+        for(CharSequence cs: strings) {
+            String s = cs.toString();
+            int value = SettingTranslation.getHdrWnrMode(s);
+            if (value != SettingTranslation.NOT_FOUND) {
+                supported.add(s);
+            }
+        }
+        return supported;
+    }
+
+    private static List<String> getSupportedHdrAnsModes(CharSequence[] strings) {
+        ArrayList<String> supported = new ArrayList<>();
+        for(CharSequence cs: strings) {
+            String s = cs.toString();
+            int value = SettingTranslation.getHdrAnsMode(s);
+            if (value != SettingTranslation.NOT_FOUND) {
+                supported.add(s);
+            }
         }
         return supported;
     }

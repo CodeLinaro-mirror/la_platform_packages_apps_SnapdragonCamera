@@ -818,6 +818,36 @@
         <item>off</item>
     </string-array>
 
+    <string-array name="pref_camera2_audiorecordingmode_entries" translatable="false">
+        <item>@string/pref_camera_audiorecordingmode_entry_0</item>
+        <item>@string/pref_camera_audiorecordingmode_entry_1</item>
+    </string-array>
+
+    <string-array name="pref_camera2_audiorecordingmode_entryvalues" translatable="false">
+        <item>default</item>
+        <item>hdr</item>
+    </string-array>
+
+    <string-array name="pref_camera2_hdrwnr_entries" translatable="false">
+        <item>@string/pref_camera_hdrwnr_off</item>
+        <item>@string/pref_camera_hdrwnr_on</item>
+    </string-array>
+
+    <string-array name="pref_camera2_hdrwnr_entryvalues" translatable="false">
+        <item>off</item>
+        <item>on</item>
+    </string-array>
+
+    <string-array name="pref_camera2_hdrans_entries" translatable="false">
+        <item>@string/pref_camera_hdrans_off</item>
+        <item>@string/pref_camera_hdrans_on</item>
+    </string-array>
+
+    <string-array name="pref_camera2_hdrans_entryvalues" translatable="false">
+        <item>off</item>
+        <item>on</item>
+    </string-array>
+
     <string-array name="pref_camera2_dis_entries" translatable="false">
         <item>@string/pref_camera_dis_entry_off</item>
         <item>@string/pref_camera_dis_entry_on</item>
