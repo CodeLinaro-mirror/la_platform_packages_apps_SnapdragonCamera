@@ -226,6 +226,9 @@ public class MultiCaptureModule implements MultiCamera {
                     mImageReaders[i].close();
                     mImageReaders[i] = null;
                 }
+                if (mConcurrentConfigurations != null) {
+                    mConcurrentConfigurations.clear();
+                }
             }
         } catch (InterruptedException e) {
             mCameraOpenCloseLock.release();

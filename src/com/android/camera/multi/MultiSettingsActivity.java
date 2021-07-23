@@ -731,6 +731,7 @@ public class MultiSettingsActivity extends PreferenceActivity {
             StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             Size[] sizes = map.getOutputSizes(MediaRecorder.class);
+            if (sizes == null) return res;
             for (int i = 0; i < sizes.length; i++) {
                 if (CameraSettings.VIDEO_QUALITY_TABLE.containsKey(sizes[i].toString())) {
                     Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(sizes[i].toString());

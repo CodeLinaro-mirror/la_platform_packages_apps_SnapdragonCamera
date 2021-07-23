@@ -246,6 +246,7 @@ public class MultiCameraModule implements CameraModule, PhotoController {
                 Context.CAMERA_SERVICE);
         if (manager != null){
             try{
+                Log.v(TAG, " checkConcurrentSessionConfigurationSupported ids :" + configs.keySet().toString());
                 ret = manager.isConcurrentSessionConfigurationSupported(configs);
                 Log.v(TAG, " checkConcurrentSessionConfigurationSupported ret :" + ret);
             }catch (CameraAccessException|IllegalArgumentException e){
