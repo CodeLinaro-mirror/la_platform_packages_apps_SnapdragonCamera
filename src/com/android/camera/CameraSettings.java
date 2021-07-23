@@ -427,6 +427,9 @@ public class CameraSettings {
        if ( CamcorderProfileWrapper.QUALITY_4KDCI != -1 ) {
            VIDEO_QUALITY_TO_TIMELAPSE.put(CamcorderProfileWrapper.QUALITY_4KDCI, CamcorderProfileWrapper.QUALITY_TIME_LAPSE_4KDCI);
        }
+       if ( CamcorderProfileWrapper.QUALITY_8KUHD != -1 ) {
+           VIDEO_QUALITY_TO_TIMELAPSE.put(CamcorderProfileWrapper.QUALITY_8KUHD, CamcorderProfileWrapper.QUALITY_TIME_LAPSE_8KUHD);
+       }
    }
 
    public static int getTimeLapseQualityFor(int quality) {
