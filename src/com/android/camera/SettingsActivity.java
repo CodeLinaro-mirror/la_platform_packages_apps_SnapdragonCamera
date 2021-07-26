@@ -1154,7 +1154,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_EIS_VALUE);
                 add(SettingsManager.KEY_FOVC_VALUE);
                 add(SettingsManager.KEY_VARIABLE_FPS);
-                add(SettingsManager.KEY_VIDEO_HDR_VALUE);
+                //add(SettingsManager.KEY_VIDEO_HDR_VALUE);
                 add(SettingsManager.KEY_VIDEO_FLIP);
                 add(SettingsManager.KEY_PHYSICAL_CAMCORDER);
                 add(SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
