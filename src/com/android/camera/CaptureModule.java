@@ -7307,7 +7307,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 outConfigurations.add(new OutputConfiguration(
                         mVideoSnapshotImageReader.getSurface()));
             }
-            outConfigurations.add(new OutputConfiguration(mVideoRecordingSurface));
+            if (mVideoRecordingSurface != null) {
+                outConfigurations.add(new OutputConfiguration(mVideoRecordingSurface));
+            }
             outConfigurations.add(new OutputConfiguration(mVideoPreviewSurface));
         }
         getOptMode();
@@ -8354,7 +8356,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             setEndOfStream(false, true);
         }
 
-        if (isHighSpeedRateCapture() || (!PersistUtil.enableMediaRecorder())) {
+        if (isHighSpeedRateCapture() || (!PersistUtil.enableMediaRecorder())
+                || (mSettingsManager.getPhysicalCameraId() != null)) {
             mFrameProcessor.setVideoOutputSurface(null);
             mFrameProcessor.onClose();
             if (mLiveShotInitHeifWriter != null) {
@@ -8372,7 +8375,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         if (!mPaused) {
-            if (isHighSpeedRateCapture() || (!PersistUtil.enableMediaRecorder())) {
+            if (isHighSpeedRateCapture() || (!PersistUtil.enableMediaRecorder())
+                    || (mSettingsManager.getPhysicalCameraId() != null)) {
                 setVideoFlashOff();
                 closePreviewSession();
             } else {
@@ -8446,7 +8450,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             mFrameProcessor.onOpen(getFrameProcFilterId(), mPreviewSize);
         }
         if (mIntentMode != INTENT_MODE_VIDEO && !mPaused) {
-            if (isHighSpeedRateCapture() || (!PersistUtil.enableMediaRecorder())) {
+            if (isHighSpeedRateCapture() || (!PersistUtil.enableMediaRecorder())
+                    || (mSettingsManager.getPhysicalCameraId() != null)) {
                 releaseAudioFocus();
                 createSessions();
             }
