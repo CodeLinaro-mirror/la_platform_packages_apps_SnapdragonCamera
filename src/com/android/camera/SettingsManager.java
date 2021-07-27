@@ -2167,11 +2167,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                         mExtendedHFRSize[i + 2] >= 120){
                                     break;
                                 }
-                                if (mode == CaptureModule.CameraMode.VIDEO &&
-                                        mCameraId == CaptureModule.FRONT_ID &&
-                                        mExtendedHFRSize[i + 2] >= 60) {
-                                    break;
-                                }
                                 supported.add(item);
                                 supported.add("hsr" + mExtendedHFRSize[i + 2]);
                                 if (PersistUtil.isSSMEnabled() && !above1080p) {
