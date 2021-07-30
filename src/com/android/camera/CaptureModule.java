@@ -2512,11 +2512,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mPreviewRequestBuilder[id].addTarget(surface);
 
                     if (!mSettingsManager.isHeifWriterEncoding() && mRawReprocessType != 1) {
-                        if (isMultiResolutionImageReaderEnabled()) {
-                            Log.d(TAG, "Add multi image reader surface.");
-                            list.add(mMultiResImageReader.getSurface());
-                        } else {
-                            list.add(mImageReader[id].getSurface());
+                        if (!isMultiResolutionImageReaderEnabled()) {
+                           list.add(mImageReader[id].getSurface());
                         }
                     }
 
@@ -2621,6 +2618,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                             createCameraSessionWithSessionConfiguration(id, outputConfigurations, inputConfig,
                                     captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         }else {
+                            if (isMultiResolutionImageReaderEnabled()) {
+                                Collection<OutputConfiguration> outConfigs = OutputConfiguration
+                                        .createInstancesForMultiResolutionOutput(mMultiResImageReader);
+                                outputConfigurations.addAll(outConfigs);
+                            }
                             createCameraSessionWithSessionConfiguration(id, outputConfigurations, null,
                                     captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         }
