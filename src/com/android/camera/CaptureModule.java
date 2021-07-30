@@ -6927,7 +6927,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(physical_ids != null && physical_ids.size() != 0) {
             for (String physicalId : physical_ids){
                 Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(physicalId), ImageFormat.RAW10);
-                if (rawSize != null || rawSize.length != 0) {
+                if (rawSize != null && rawSize.length != 0) {
                     allRawSize.add(rawSize[0]);
                 }
             }
