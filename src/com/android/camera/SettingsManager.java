@@ -3561,7 +3561,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if(config != null){
             return config.isEISSupported();
         }
-        return true;
+        return false;
     }
 
     public int getVideoFPS(){
