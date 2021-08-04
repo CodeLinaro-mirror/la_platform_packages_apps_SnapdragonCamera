@@ -2611,6 +2611,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (cameraId > mCharacteristics.size())return null;
         List<String> res = new ArrayList<>();
         if (cameraId == -1) return res;
+        CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
         StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
                 CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         Size[] outRes = map.getOutputSizes(MediaRecorder.class);
@@ -2653,6 +2654,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     }
                     if (isEISV3Enabled && Math.min(sizes[i].getWidth(),sizes[i].getHeight()) < 720) {
                         //video size should't be larger than 720p when EIS V3 is enabled
+                        continue;
+                    }
+                    if (mode == CaptureModule.CameraMode.HFR &&
+                            Math.min(sizes[i].getWidth(), sizes[i].getHeight()) < 480) {
+                        //Video size should`t be larger than VGA(640x480) in HFR mode
                         continue;
                     }
                     res.add(sizes[i].toString());
