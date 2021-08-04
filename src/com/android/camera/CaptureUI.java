@@ -1255,6 +1255,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         mFaceView.initMode();
         hideFrontBackSwither();
+        if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
+            mModeSelectLayout.setVisibility(View.GONE);
+        }
     }
 
     public void initializeProMode(boolean promode) {
