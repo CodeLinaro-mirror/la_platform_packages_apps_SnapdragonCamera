@@ -190,6 +190,14 @@ public class ZSLQueue {
         return null;
     }
 
+    public ImageItem getItemByIndex(int index) {
+        synchronized (mLock) {
+            if (index > mBuffer.length - 1) index = mBuffer.length - 1;
+            ImageItem item = mBuffer[index];
+            return item;
+        }
+    }
+
     public void onClose() {
         synchronized (mLock) {
             for (int i = 0; i < mBuffer.length; i++) {
