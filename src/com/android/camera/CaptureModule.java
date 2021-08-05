@@ -6507,7 +6507,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public int getMainCameraId() {
-        if (mQuadBayerId != -1) {
+        if (mQuadBayerId != -1 && mSettingsManager.getQuadBayerSensorPrefEnabled()) {
             return mQuadBayerId;
         }
 
