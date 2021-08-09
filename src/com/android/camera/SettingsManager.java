@@ -1736,6 +1736,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
             filterVideoEncoderProfileOptions();
         } else if (pref.getKey().equals(KEY_PICTURE_FORMAT)) {
             filterHeifSizeOptions();
+        } else if ((pref.getKey().equals(KEY_EIS_VALUE))) {
+            String value = getValue(KEY_VIDEO_HIGH_FRAME_RATE);
+            if (!value.equals("off")) {
+                int fpsRate = Integer.parseInt(value.substring(3));
+                if (fpsRate == 480) {
+                    filterVideoDurationFor480fps();
+                } else {
+                    filterVideoDuration();
+                }
+            } else {
+                filterVideoDuration();
+            }
+            updatePictureAndVideoSize();
         }
     }
 
@@ -2733,12 +2746,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         //Video size should`t be larger than VGA(640x480) in HFR mode
                         continue;
                     }
-                    res.add(sizes[i].toString());
                     if (getValue(SettingsManager.KEY_VSR) != null &&
                             getValue(SettingsManager.KEY_VSR).equals("1") &&
                             sizes[i].toString().equals("7680x4320")) {
                         continue;
                     }
+
+                    res.add(sizes[i].toString());
                 }
             }
         }

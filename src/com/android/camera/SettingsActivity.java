@@ -1488,12 +1488,10 @@ public class SettingsActivity extends PreferenceActivity {
     private void initializePreferences() {
         updatePreference(SettingsManager.KEY_PICTURE_SIZE);
         updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
-        updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         updatePreference(SettingsManager.KEY_EXPOSURE);
         updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         updatePreference(SettingsManager.KEY_VIDEO_ENCODER);
         updatePreference(SettingsManager.KEY_ZOOM);
-        updatePreference(SettingsManager.KEY_VIDEO_DURATION);
         updatePreference(SettingsManager.KEY_SWITCH_CAMERA);
         updatePreference(SettingsManager.KEY_TONE_MAPPING);
         updatePreference(SettingsManager.KEY_LIVE_PREVIEW);
@@ -1507,6 +1505,9 @@ public class SettingsActivity extends PreferenceActivity {
         updatePhysicalPreferences();
         updateLongShotPreference();
         updateVideoHfrFpsPreference();
+        updateEISPreference();
+        updatePreference(SettingsManager.KEY_VIDEO_DURATION);
+        updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
@@ -1525,7 +1526,10 @@ public class SettingsActivity extends PreferenceActivity {
                 ((SwitchPreference) p).setEnabled(true);
             } else if (p instanceof ListPreference) {
                 ListPreference pref = (ListPreference) p;
-                pref.setEnabled(true);
+                boolean enable = p.isEnabled();
+                if (enable) {
+                    pref.setEnabled(true);
+                }
                 pref.setValue(value);
                 if (pref.getEntryValues().length == 1) {
                     pref.setEnabled(false);
@@ -1572,7 +1576,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateZslPreference();
         updateVideoEncoderProfile();
         updateSwitchIDInModePreference(true);
-        updateEISPreference();
         updateTimeLapsePreference();
         updateVideoVariableFpsPreference();
         updateAudioEncoderPreference();
@@ -1799,18 +1802,23 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateEISPreference() {
         ListPreference eisPref = (ListPreference)findPreference(
                 SettingsManager.KEY_EIS_VALUE);
-        if (eisPref != null) {
-            if (!mSettingsManager.isEISSupported(mSettingsManager.getVideoSize(),
-                    mSettingsManager.getVideoFPS())){
+        if (!mSettingsManager.isEISSupported(mSettingsManager.getVideoSize(),
+                mSettingsManager.getVideoFPS())) {
+            if (eisPref != null) {
                 eisPref.setValue("disable");
                 eisPref.setEnabled(false);
-            } else {
+            }
+            mSettingsManager.setValue(SettingsManager.KEY_EIS_VALUE, "disable");
+        } else {
+            if (eisPref != null) {
                 eisPref.setEnabled(true);
             }
-            CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-            ListPreference selectModePref = (ListPreference) findPreference(SettingsManager.KEY_SELECT_MODE);
-            if (selectModePref != null) {
-                if (selectModePref.getValue().equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
+        }
+        CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        ListPreference selectModePref = (ListPreference) findPreference(SettingsManager.KEY_SELECT_MODE);
+        if (selectModePref != null) {
+            if (selectModePref.getValue().equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
+                if (eisPref != null) {
                     eisPref.setEnabled(false);
                 }
             }
