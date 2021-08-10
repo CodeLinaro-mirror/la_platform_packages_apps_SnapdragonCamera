@@ -8375,7 +8375,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         mStopRecPending = true;
         mRecordingPausing = false;
         mIsRecordingVideo = false;
-        mIsPreviewingVideo = true;
+        if (PersistUtil.enableMediaRecorder()) {
+            mIsPreviewingVideo = true;
+        } else {
+            mIsPreviewingVideo = false;
+        }
         mRecordingStarted = false;
         boolean shouldAddToMediaStoreNow = false;
         // Stop recording
