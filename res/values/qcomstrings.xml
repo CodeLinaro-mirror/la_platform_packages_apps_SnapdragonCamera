@@ -1119,7 +1119,7 @@
 
     <string name="pref_camera2_multi_cameras_entry_on" translatable="true">Enable</string>
     <string name="pref_camera2_multi_cameras_entry_off" translatable="true">Disable</string>
-    <string name="pref_camera2_multi_cameras_title" translatable="true">Multi Cameras</string>
+    <string name="pref_camera2_multi_cameras_title" translatable="true">Concurrent sessions</string>
 
 
     <string name="pref_camera2_timer_entry_off" translatable="true">Off</string>

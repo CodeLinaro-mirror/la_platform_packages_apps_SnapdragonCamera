@@ -46,6 +46,8 @@ public class CamcorderProfileWrapper extends Wrapper{
             getField(CamcorderProfile.class, "QUALITY_TIME_LAPSE_VGA"), -1);
     public static final int QUALITY_TIME_LAPSE_4KDCI = getFieldValue(
             getField(CamcorderProfile.class, "QUALITY_TIME_LAPSE_4KDCI"), -1);
+    public static final int QUALITY_TIME_LAPSE_8KUHD = getFieldValue(
+            getField(CamcorderProfile.class, "QUALITY_TIME_LAPSE_8KUHD"), -1);
     public final static int QUALITY_HIGH_SPEED_CIF = getFieldValue(
             getField(CamcorderProfile.class, "QUALITY_HIGH_SPEED_CIF"), -1);
         public static final int QUALITY_HIGH_SPEED_VGA = getFieldValue(

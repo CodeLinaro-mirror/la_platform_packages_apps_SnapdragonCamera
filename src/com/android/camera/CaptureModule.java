@@ -2512,11 +2512,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mPreviewRequestBuilder[id].addTarget(surface);
 
                     if (!mSettingsManager.isHeifWriterEncoding() && mRawReprocessType != 1) {
-                        if (isMultiResolutionImageReaderEnabled()) {
-                            Log.d(TAG, "Add multi image reader surface.");
-                            list.add(mMultiResImageReader.getSurface());
-                        } else {
-                            list.add(mImageReader[id].getSurface());
+                        if (!isMultiResolutionImageReaderEnabled()) {
+                           list.add(mImageReader[id].getSurface());
                         }
                     }
 
@@ -2621,6 +2618,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                             createCameraSessionWithSessionConfiguration(id, outputConfigurations, inputConfig,
                                     captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         }else {
+                            if (isMultiResolutionImageReaderEnabled()) {
+                                Collection<OutputConfiguration> outConfigs = OutputConfiguration
+                                        .createInstancesForMultiResolutionOutput(mMultiResImageReader);
+                                outputConfigurations.addAll(outConfigs);
+                            }
                             createCameraSessionWithSessionConfiguration(id, outputConfigurations, null,
                                     captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         }
@@ -5039,8 +5041,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (null != mCaptureSession[i]) {
                 if (mCamerasOpened) {
                     try {
-                        mCaptureSession[i].capture(mPreviewRequestBuilder[i].build(), null,
-                                mCameraHandler);
+                        if (!(mCurrentSceneMode.mode == CameraMode.HFR && isHighSpeedRateCapture())) {
+                            mCaptureSession[i].capture(mPreviewRequestBuilder[i].build(), null, mCameraHandler);
+                        }
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     } catch (IllegalStateException e) {
@@ -6452,10 +6455,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         Log.d(TAG, "onLongPress " + x + " " + y);
         mClickPosition[0] = x;
         mClickPosition[1] = y;
-        mUI.hideFlashButton();
         int[] newXY = {x, y};
         if (mUI.isOverControlRegion(newXY)) return;
         if (!mUI.isOverSurfaceView(newXY)) return;
+        mUI.hideFlashButton();
         if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE){
             Log.i(TAG,"set af lock start");
             applyIsAfLock(false);
@@ -7445,7 +7448,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 } else {
                     if (PersistUtil.enableMediaRecorder()) {
-                        setUpMediaRecorder(getMainCameraId());
+                        if(mCurrentSceneMode.mode == CameraMode.VIDEO){
+                            cleanupEmptyFile();
+                            setUpMediaRecorder(getMainCameraId());
+                        }
                         mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                     }
                 }
@@ -7516,7 +7522,7 @@ public class CaptureModule implements CameraModule, PhotoController,
              public void run() {
                  mUI.showUIafterRecording();
                  mFrameProcessor.setVideoOutputSurface(null);
-                 restartSession(true);
+                 restartSession(false);
              }
         });
     }
@@ -10069,9 +10075,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyVideoEIS(CaptureRequest.Builder request) {
-        if (!mSettingsManager.isDeveloperEnabled()) {
-            return;//don't apply if not in dev mode
-        }
         String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
 
         if (DEBUG) {

@@ -1290,7 +1290,6 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> RTBList = new ArrayList<>(multiCameraSettingList);
                     RTBList.add(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
-                    RTBList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     RTBList.add(SettingsManager.KEY_INSENSOR_ZOOM);
                     addDeveloperOptions(developer, RTBList);
                 }

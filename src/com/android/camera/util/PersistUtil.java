@@ -376,6 +376,14 @@ public class PersistUtil {
         return getBoolean("persist.sys.cameraapp.mediarecorder", true);
     }
 
+    public static boolean isQuadBayerSensorEnabled() {
+        return getBoolean("persist.sys.cameraapp.quadbayersensor", false);
+    }
+
+    public static boolean isConcurrentSessionEnabled() {
+        return getBoolean("persist.sys.cameraapp.concurrentsession", false);
+    }
+
     public static boolean isMultiResolutionImageReaderEnabled() {
         return getBoolean("persist.sys.cameraapp.multiresimagereader", false);
     }

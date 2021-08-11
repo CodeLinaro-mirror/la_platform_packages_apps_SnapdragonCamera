@@ -174,7 +174,15 @@ public class Camera2FaceView extends FaceView {
                 if (rw == rh || (rh * 288 == rw * 352)) {
                     rh = rw * mCameraBound.width() / mCameraBound.height();
                 } else {
-                    rw = rh * mCameraBound.height() / mCameraBound.width();
+                    //rw = rh * mCameraBound.height() / mCameraBound.width();
+                    int tmp_w = rh * mCameraBound.height() / mCameraBound.width();
+                    int tmp_h = rw * mCameraBound.width() / mCameraBound.height();
+                    if(tmp_w > rw) {
+                        rw = tmp_w;
+                    }
+                    if(tmp_h > rh){
+                        rh = tmp_h;
+                    }
                 }
             }
             CameraUtil.prepareMatrix(mMatrix, mMirror, mDisplayOrientation, rw, rh);

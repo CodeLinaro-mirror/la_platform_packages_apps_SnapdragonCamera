@@ -1278,8 +1278,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference stats_visualizer = mPreferenceGroup.findPreference(KEY_STATS_VISUALIZER_VALUE);
         ListPreference hdr = mPreferenceGroup.findPreference(KEY_HDR);
         ListPreference zoom = mPreferenceGroup.findPreference(KEY_ZOOM);
-        ListPreference qcfa = mPreferenceGroup.findPreference(KEY_QCFA);
         ListPreference quad_bayer_sensor = mPreferenceGroup.findPreference(KEY_QUAD_BAYER_SENSOR);
+        ListPreference concurrent_session_camera = mPreferenceGroup.findPreference(KEY_MULTI_CAMERAS_MODE);
         ListPreference remosaic_reprocessing = mPreferenceGroup.findPreference(KEY_REMOSAIC_REPROCESSING);
         ListPreference fd_smile = mPreferenceGroup.findPreference(KEY_FD_SMILE);
         ListPreference fd_gaze = mPreferenceGroup.findPreference(KEY_FD_GAZE);
@@ -1503,8 +1503,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
 
+        if (concurrent_session_camera != null) {
+            if (!PersistUtil.isConcurrentSessionEnabled()) {
+                mFilteredKeys.add(concurrent_session_camera.getKey());
+            }
+        }
+
         if (quad_bayer_sensor != null) {
-            if (!getSupportedQuadBayerSensor(cameraId)) {
+            if (!getSupportedQuadBayerSensor(cameraId) || !PersistUtil.isQuadBayerSensorEnabled()) {
                 mFilteredKeys.add(quad_bayer_sensor.getKey());
             }
         }
@@ -2988,7 +2994,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         Log.d(TAG, "getSupportedRemosaicReprocessing isSupported :" + isSupported);
-        return isSupported;
+        return isSupported && false;
     }
 
 
@@ -3555,7 +3561,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if(config != null){
             return config.isEISSupported();
         }
-        return true;
+        return false;
     }
 
     public int getVideoFPS(){
