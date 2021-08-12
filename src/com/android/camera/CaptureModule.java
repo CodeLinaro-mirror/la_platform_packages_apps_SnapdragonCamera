@@ -12106,7 +12106,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     @Override
     public void onError(MediaRecorder mr, int what, int extra) {
         Log.e(TAG, "MediaRecorder error. what=" + what + ". extra=" + extra);
-        stopRecordingVideo(getMainCameraId());
+        if (mRecordingStarted) {
+            stopRecordingVideo(getMainCameraId());
+        }
         if (what == MediaRecorder.MEDIA_RECORDER_ERROR_UNKNOWN) {
             // We may have run out of space on the sdcard.
             mActivity.updateStorageSpaceAndHint();
