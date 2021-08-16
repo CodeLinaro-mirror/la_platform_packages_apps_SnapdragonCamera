@@ -351,14 +351,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             } else {
                 checkSurfaceReady();
             }
-
             if ((mIsVideoUI || mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL)
-                    && mThumbnail != null){
+                    && mThumbnail != null && mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA){
                 mThumbnail.setVisibility(View.INVISIBLE);
                 mThumbnail = null;
                 mActivity.updateThumbnail(mThumbnail);
-            } else if (!mIsVideoUI &&
-                    mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL){
+            } else if (!mIsVideoUI &&(mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL || mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA)){
                 if (mThumbnail == null)
                     mThumbnail = (ImageView) mRootView.findViewById(R.id.preview_thumb);
                 mActivity.updateThumbnail(mThumbnail);
