@@ -935,7 +935,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      */
     private MultiResolutionImageReader mMultiResImageReader = null;
     // Max number of images can be accessed simultaneously from ImageReader.
-    private static final int MAX_MULTIIMAGES = 5;
+    private static final int MAX_MULTIIMAGES = 8;
     private InputConfiguration mInputConfig = null;
     private Collection<OutputConfiguration> mOutConfigs = null;
 
@@ -1681,7 +1681,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         return new MultiResolutionImageReader(multiResolutionStreams, format, MAX_MULTIIMAGES);
     }
 
-    private void initInputMultiImageReader(int format) {
+    private void initReprocessMultiImageReader(int format) {
         MultiResolutionStreamConfigurationMap multiResolutionMap = mMainCameraCharacteristics.get(
                 CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP);
         int[] formats = multiResolutionMap.getInputFormats();
@@ -1692,14 +1692,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         Collection<MultiResolutionStreamInfo> multiResolutionStreams =
                 multiResolutionMap.getInputInfo(format);
-        if (mMultiResImageReader == null) {
-            mMultiResImageReader = new MultiResolutionImageReader(
-                    multiResolutionStreams, format, MAX_MULTIIMAGES);
-        }
         mInputConfig = new InputConfiguration(multiResolutionStreams, format);
+        mMultiResImageReader = new MultiResolutionImageReader(multiResolutionStreams, format, MAX_IMAGEREADERS);
         mMultiResImageReader.setOnImageAvailableListener(mPostProcessor.getImageHandler(),
                 new HandlerExecutor(mImageAvailableHandler));
-        mPostProcessor.onMultiImageReaderReady();
+        mPostProcessor.onMultiImageReaderReady(mMultiResImageReader);
     }
 
     private void initRepocessImageReader(int format) {
@@ -2348,7 +2345,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     cameraCaptureSession == null) {
                                 return;
                             }
-                            Log.i(TAG, "cameracapturesession - onConfigured "+ id);
+                            Log.i(TAG, "capturesession - onConfigured "+ id);
                             setCameraModeSwitcherAllowed(true);
                             // When the session is ready, we start displaying the preview.
                             mCaptureSession[id] = cameraCaptureSession;
@@ -2463,11 +2460,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     });
                 }
 
-                List<OutputConfiguration> outputConfigurations = null;
-                outputConfigurations = new ArrayList<OutputConfiguration>();
+                List<OutputConfiguration> outputConfigurations = new ArrayList<OutputConfiguration>();
                 if (mSettingsManager.getPhysicalCameraId() != null) {
-                    List<OutputConfiguration> physicalOutput =
-                            getPhysicalOutputConfiguration();
+                    List<OutputConfiguration> physicalOutput = getPhysicalOutputConfiguration();
                     outputConfigurations.addAll(physicalOutput);
                     List<Surface> previewSurfaces = mUI.getPhysicalSurfaces();
                     if(previewSurfaces != null){
@@ -2513,7 +2508,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                     if (!mSettingsManager.isHeifWriterEncoding() && mRawReprocessType != 1) {
                         if (!isMultiResolutionImageReaderEnabled()) {
-                           list.add(mImageReader[id].getSurface());
+                            list.add(mImageReader[id].getSurface());
                         }
                     }
 
@@ -2582,11 +2577,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if(mChosenImageFormat == ImageFormat.YUV_420_888 || mChosenImageFormat == ImageFormat.PRIVATE) {
                     if (mPostProcessor.isZSLEnabled()) {
                         if (isMultiResolutionImageReaderEnabled()) {
+                            Log.d(TAG, "Add input multiresImageReader surface");
                             mPreviewRequestBuilder[id].addTarget(mMultiResImageReader.getSurface());
-                            Collection<OutputConfiguration> outConfigs =
+                            Collection<OutputConfiguration> outputConfigs =
                                     OutputConfiguration.createInstancesForMultiResolutionOutput(
                                             mPostProcessor.getZSLReprocessMultiImageReader());
-                            outputConfigurations.addAll(outConfigs);
+                            outputConfigurations.addAll(outputConfigs);
+                            Collection<OutputConfiguration> inputConfigs =
+                                    OutputConfiguration.createInstancesForMultiResolutionOutput(
+                                            mMultiResImageReader);
+                            outputConfigurations.addAll(inputConfigs);
                             createCameraSessionWithSessionConfiguration(id, outputConfigurations, mInputConfig,
                                     captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         } else {
@@ -2619,8 +2619,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         }else {
                             if (isMultiResolutionImageReaderEnabled()) {
-                                Collection<OutputConfiguration> outConfigs = OutputConfiguration
-                                        .createInstancesForMultiResolutionOutput(mMultiResImageReader);
+                                Collection<OutputConfiguration> outConfigs = OutputConfiguration.
+                                        createInstancesForMultiResolutionOutput(mMultiResImageReader);
                                 outputConfigurations.addAll(outConfigs);
                             }
                             createCameraSessionWithSessionConfiguration(id, outputConfigurations, null,
@@ -4321,7 +4321,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if ((imageFormat == ImageFormat.YUV_420_888 || imageFormat == ImageFormat.PRIVATE)
                             && i == getMainCameraId()) {
                         if (isMultiResolutionImageReaderEnabled()) {
-                            initInputMultiImageReader(imageFormat);
+                            initReprocessMultiImageReader(imageFormat);
                         } else {
                             initRepocessImageReader(imageFormat);
                         }
@@ -5587,6 +5587,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onResumeBeforeSuper() {
         mSettingsManager.createCaptureModule(this);
         reinit();
+        initModeByIntent();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         if (facingOfIntentExtras != -1) {

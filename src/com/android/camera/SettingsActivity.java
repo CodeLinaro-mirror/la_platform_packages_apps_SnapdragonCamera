@@ -216,6 +216,9 @@ public class SettingsActivity extends PreferenceActivity {
             if (key.equals(SettingsManager.KEY_REMOSAIC_REPROCESSING)) {
                 updateRawFormatPref();
             }
+            if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
+                updateRawInfoPref();
+            }
         }
     };
 
@@ -283,6 +286,9 @@ public class SettingsActivity extends PreferenceActivity {
                     updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
                     updatePreference(SettingsManager.KEY_RAWINFO_TYPE);
                     updatePreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+                }
+                if (pref.getKey().equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
+                    updateRawInfoPref();
                 }
             }
         }
@@ -1817,6 +1823,22 @@ public class SettingsActivity extends PreferenceActivity {
                 rawPref.setValue("disable");
                 rawPref.setEnabled(false);
                 mSettingsManager.setValue(SettingsManager.KEY_SAVERAW, "disable");
+            }
+        }
+    }
+
+    private void updateRawInfoPref(){
+        ListPreference rawInfoPref = (ListPreference)findPreference(SettingsManager.KEY_RAWINFO_TYPE);
+        String rawFormat = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
+        if(rawFormatType == 10){
+            if (rawInfoPref != null) {
+                rawInfoPref.setValue("0");
+                rawInfoPref.setEnabled(false);
+            }
+        } else if(rawFormatType == 16){
+            if (rawInfoPref != null) {
+                rawInfoPref.setEnabled(true);
             }
         }
     }

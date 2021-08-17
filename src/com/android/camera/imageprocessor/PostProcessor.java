@@ -144,6 +144,7 @@ public class PostProcessor{
     private ImageReader mImageReader;
     private ImageReader mZSLReprocessImageReader;
     private MultiResolutionImageReader mMultiOutputImageReader = null;
+    private MultiResolutionImageReader mMultiInputImageReader = null;
     private MultiResolutionStreamInfo mMultiStreamInfo;
     private boolean mUseZSL = true;
     private boolean mSaveRaw = false;
@@ -345,7 +346,7 @@ public class PostProcessor{
                         mZSLHandler.post(this);
                     }
                     if (mController.isMultiResolutionImageReaderEnabled()) {
-                        mMultiStreamInfo = mMultiOutputImageReader.getStreamInfoForImageReader(reader);
+                        mMultiStreamInfo = mMultiInputImageReader.getStreamInfoForImageReader(reader);
                     }
                 } else { //Non ZSL case
                     Image image = reader.acquireNextImage();
@@ -395,6 +396,7 @@ public class PostProcessor{
 
     public void onMetaAvailable(TotalCaptureResult metadata) {
         if(mUseZSL && mZSLQueue != null) {
+            Log.d(TAG, "zsl queue add metadata: " + metadata.get(CaptureResult.SENSOR_TIMESTAMP));
             mZSLQueue.add(metadata);
         }
         mLatestResultForLongShot = metadata;
@@ -446,7 +448,8 @@ public class PostProcessor{
         }
     }
 
-    public void onMultiImageReaderReady() {
+    public void onMultiImageReaderReady(MultiResolutionImageReader multiresImageReader) {
+        mMultiInputImageReader = multiresImageReader;
         if (mUseZSL) {
             mMultiOutputImageReader = mController.initOutputMultiImageReader(ImageFormat.JPEG);
             mMultiOutputImageReader.setOnImageAvailableListener(mListener, new HandlerExecutor(mHandler));
@@ -544,9 +547,9 @@ public class PostProcessor{
             mController.checkAndPlayShutterSound(mController.getMainCameraId());
         }
         synchronized (lock) {
-            if(mCameraDevice == null || mCaptureSession == null || mImageReader == null) {
+            if(mCameraDevice == null || mCaptureSession == null) {
                 Log.e(TAG, "Reprocess request is called even before taking picture,device:" +
-                        mCameraDevice + ",session:" + mCaptureSession + ",reader:" + mImageReader);
+                        mCameraDevice + ",session:" + mCaptureSession);
                 image.close();
                 return;
             }
@@ -805,6 +808,7 @@ public class PostProcessor{
         mCameraDevice = null;
         mCaptureSession = null;
         mImageReader = null;
+        mMultiInputImageReader = null;
         mPendingContinuousRequestCount = 0;
     }
 
