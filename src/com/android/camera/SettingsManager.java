@@ -1014,16 +1014,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isMultiResolutionSupported() {
-        MultiResolutionStreamConfigurationMap multiResolutionMap =
-                mCharacteristics.get(mCameraId)
-                .get(CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP);
-        if (multiResolutionMap != null) {
-            Log.d(TAG, "Cam " + mCameraId + " support multi-resolution capture.");
-            return true;
-        } else {
-            Log.d(TAG, "Cam " + mCameraId + " doesn't support multi-resolution capture.");
-            return false;
+        boolean supported = false;
+        Set<String> physicalIds = getAllPhysicalCameraId();
+        if (physicalIds != null && physicalIds.size() != 0) {
+            MultiResolutionStreamConfigurationMap multiResolutionMap =
+                    mCharacteristics.get(mCameraId)
+                            .get(CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP);
+            if (multiResolutionMap != null) {
+                Log.d(TAG, "Cam " + mCameraId + " support multi-resolution capture.");
+                supported = true;
+            }
         }
+        return supported;
     }
 
     public Set<String> getPhysicalCameraId() {
