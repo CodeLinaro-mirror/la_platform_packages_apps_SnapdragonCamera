@@ -2247,6 +2247,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                         mExtendedHFRSize[i + 2] >= 120){
                                     break;
                                 }
+                                if(getVideoHdrMode() != null && (getVideoHdrMode().toLowerCase().contains("mfhdr")
+                                || getVideoHdrMode().toLowerCase().contains("qhdr")) && mExtendedHFRSize[i + 2] >= 60){
+                                    break;
+                                }
                                 supported.add(item);
                                 supported.add("hsr" + mExtendedHFRSize[i + 2]);
                                 if (PersistUtil.isSSMEnabled() && !above1080p) {
@@ -2259,6 +2263,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
             }
         }
+        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported+",mCaptureModule.getVideoHdrMode()="+getVideoHdrMode());
         return supported;
     }
 
@@ -3648,6 +3653,37 @@ public class SettingsManager implements ListMenu.SettingsListener {
             fpsRate = Integer.parseInt(fpsStr.substring(3));
         }
         return fpsRate;
+    }
+    public String getVideoHdrMode(){
+        String value = getValue(SettingsManager.KEY_MANUAL_HDR);
+        Log.v(TAG, "getVideoHdrMode value :" + value);
+        if (value != null ) {
+            if (value.equals("manual")) {
+                final SharedPreferences pref = mContext.getSharedPreferences(
+                        ComboPreferences.getLocalSharedPreferencesName(mContext,
+                                getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+                String orderList = pref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
+                Log.v(TAG, "getVideoHdrMode orderLists:" + orderList);
+                if (orderList != null) {
+                    int[] modes = new int [3];
+                    StringBuilder hdrmode = new StringBuilder();
+                    String[] orderLists = orderList.split("#");
+                    for (int i = 0; i < orderLists.length; i ++) {
+                        String title = orderLists[i];
+                        boolean isChecked = pref.getBoolean(title, false);
+                        Log.v(TAG, " getVideoHdrMode title:" + title + ", isChecked :" + isChecked);
+                        if (isChecked) {
+                            hdrmode.append(title).append("#");
+                        }
+                    }
+                    Log.v(TAG, " getVideoHdrMode hdrmode:" + hdrmode.toString());
+                    return hdrmode.toString();
+                }
+            }else{
+                return value;
+            }
+        }
+        return "off";
     }
 
     public static class VideoEisConfig{

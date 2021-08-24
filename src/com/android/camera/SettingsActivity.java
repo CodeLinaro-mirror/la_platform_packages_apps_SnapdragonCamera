@@ -211,6 +211,10 @@ public class SettingsActivity extends PreferenceActivity {
                 if (value.equals("manual")) {
                     UpdateManualHDRSetting();
                 }
+                mSettingsManager.filterHFROptions();
+                updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+                updateVideoVariableFpsPreference();
+                updateVideoHfrFpsPreference();
             }
 
             if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
@@ -980,13 +984,17 @@ public class SettingsActivity extends PreferenceActivity {
     private void UpdateManualHDRSetting() {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
+        StringBuilder defaultHDROrder = new StringBuilder();
         for (int i = 0; i < modes.length; i++) {
             if (modes[i] == 1) {
                 listData.add(SettingsManager.KEY_MANUAL_SHDR);
-            } else if (modes[i] == 2) {
+                defaultHDROrder.append(SettingsManager.KEY_MANUAL_SHDR).append("#");
+            } else if (modes[i] == 2 ) {
                 listData.add(SettingsManager.KEY_MANUAL_MFHDR);
+                defaultHDROrder.append(SettingsManager.KEY_MANUAL_MFHDR).append("#");
             } else if (modes[i] == 3) {
                 listData.add(SettingsManager.KEY_MANUAL_QHDR);
+                defaultHDROrder.append(SettingsManager.KEY_MANUAL_QHDR);
             }
         }
         final SharedPreferences.Editor editor = mLocalSharedPref.edit();
@@ -997,6 +1005,9 @@ public class SettingsActivity extends PreferenceActivity {
             for (String title : orderLists.split("#")) {
                 listData.add(title);
             }
+        }else{
+            editor.putString(SettingsManager.KEY_MIXED_HDR_ORDER, defaultHDROrder.toString());
+            editor.apply();
         }
         final DragonListView listView = new DragonListView(SettingsActivity.this);
         DragListViewAdapter adapter = new DragListViewAdapter(this, listData);
@@ -1007,6 +1018,10 @@ public class SettingsActivity extends PreferenceActivity {
                 Log.v(TAG, " save title :" + title + ", isChecked :" + isChecked + ", position :" + position);
                 editor.putBoolean(title, isChecked);
                 editor.commit();
+                mSettingsManager.filterHFROptions();
+                updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+                updateVideoVariableFpsPreference();
+                updateVideoHfrFpsPreference();
             }
         });
 
@@ -2003,6 +2018,13 @@ public class SettingsActivity extends PreferenceActivity {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     String title = String.valueOf(buttonView.getTag());
+                    if((title.equalsIgnoreCase("mfhdr") || title.equalsIgnoreCase("qhdr")) && mSettingsManager.getVideoFPS() >= 60 && isChecked){
+                        viewHolder.checkBox.setSelected(false);
+                        viewHolder.checkBox.setChecked(false);
+                        Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60",
+                                    Toast.LENGTH_SHORT).show();
+                        isChecked=false;
+                    }
                     if (mCheckBoxChanged != null){
                         mCheckBoxChanged.onCheckedChanged(position, title, isChecked);
                     }

@@ -10592,42 +10592,28 @@ public class CaptureModule implements CameraModule, PhotoController,
         Log.i(TAG,"applyToneMapping, mode:" + mode + ",currentDarkBoostValue:" + currentDarkBoostValue + ",currentFourthToneValue:" + currentFourthToneValue);
     }
 
-    private void applyManualHDR(CaptureRequest.Builder request) {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_HDR);
-        if (value != null ) {
-            Log.v(TAG, " applyManualHDR value :" + value);
-            if (value.equals("auto")) {
-                VendorTagUtil.setAudoHDRMode(request, 1);
-            } else if (value.equals("manual")) {
-                final SharedPreferences pref = mActivity.getSharedPreferences(
-                        ComboPreferences.getLocalSharedPreferencesName(mActivity,
-                                mSettingsManager.getCurrentPrepNameKey()), Context.MODE_PRIVATE);
 
-                String orderList = pref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
-                Log.v(TAG, " applyManualHDR orderLists:" + orderList +
-                        ", mHighSpeedCaptureRate :" + mHighSpeedCaptureRate);
-                if (orderList != null) {
-                    int[] modes = new int [3];
-                    String[] orderLists = orderList.split("#");
-                    //for (String title : orderList.split("#")) {
-                    for (int i = 0; i < orderLists.length; i ++) {
-                        String title = orderLists[i];
-                        boolean isChecked = pref.getBoolean(title, false);
-                        Log.v(TAG, " applyManualHDR title:" + title + ", isChecked :" + isChecked);
-                        if (isChecked) {
-                            modes[i] = SettingsManager.KEY_HDR_MODES_ORDER.get(title);
-                            Log.v(TAG, " applyManualHDR modes[i]:" + modes[i]);
-                            if(title.equals("MFHDR")) {
-                                VendorTagUtil.setMFHDRMode(request, 1);
-                            } else if (title.equals("SHDR")) {
-                                VendorTagUtil.setSHDRMode(request, 1);
-                            } else if (title.equals("QHDR")) {
-                                VendorTagUtil.setQHDRMode(request, 1);
-                            }
-                        }
+    private void applyManualHDR(CaptureRequest.Builder request) {
+        String hdrmode = mSettingsManager.getVideoHdrMode();
+        if (hdrmode != null ) {
+            Log.v(TAG, " applyManualHDR hdrmode :" + hdrmode);
+            if (hdrmode.equals("auto")) {
+                VendorTagUtil.setAudoHDRMode(request, 1);
+            } else if(!hdrmode.equals("off")){
+                String[] modeLists = hdrmode.split("#");
+                int[] modes = new int [3];
+                for (int i = 0; i < modeLists.length; i ++) {
+                    modes[i] = SettingsManager.KEY_HDR_MODES_ORDER.get(modeLists[i]);
+                    Log.d(TAG,"applyManualHDR-modeLists[i]="+modeLists[i]+",modes[i]="+modes[i]);
+                    if(modeLists[i].equals("MFHDR")) {
+                        VendorTagUtil.setMFHDRMode(request, 1);
+                    } else if (modeLists[i].equals("SHDR")) {
+                        VendorTagUtil.setSHDRMode(request, 1);
+                    } else if (modeLists[i].equals("QHDR")) {
+                        VendorTagUtil.setQHDRMode(request, 1);
                     }
-                    VendorTagUtil.setHDRModes(request, modes);
                 }
+                VendorTagUtil.setHDRModes(request, modes);
             }
         }
     }
