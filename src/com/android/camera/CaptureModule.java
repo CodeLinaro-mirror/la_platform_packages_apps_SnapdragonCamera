@@ -5768,7 +5768,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     e.printStackTrace();
                 }
             }
-            mActivity.finish();
         } else if (mIsRecordingVideo) {
             stopRecordingVideo(getMainCameraId());
         } else if (!mIsCloseCamera){
