@@ -129,6 +129,7 @@ public class SettingsActivity extends PreferenceActivity {
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                               String key) {
             Preference p = findPreference(key);
+            Log.i(TAG, "onSharedPreferenceChanged key:" + key);
             if (p == null) return;
             String value;
             if (p instanceof SwitchPreference) {
@@ -191,6 +192,7 @@ public class SettingsActivity extends PreferenceActivity {
             List<String> list = mSettingsManager.getDependentKeys(key);
             if (list != null) {
                 for (String dependentKey : list) {
+                    Log.i(TAG, "onSharedPreferenceChanged dependentKey:" + dependentKey);
                     updatePreferenceButton(dependentKey);
                 }
             }
@@ -251,7 +253,7 @@ public class SettingsActivity extends PreferenceActivity {
                     UpdateManualExposureSettings();
                 }
 
-                if (pref.getKey().equals(SettingsManager.KEY_QCFA) ||
+                if (pref.getKey().equals(SettingsManager.KEY_QCFA)  ||
                         pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT) ||
                         pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
                     mSettingsManager.updatePictureAndVideoSize();
@@ -263,13 +265,15 @@ public class SettingsActivity extends PreferenceActivity {
                     updateManualWBSettings();
                 }
 
-                if ((pref.getKey().equals(SettingsManager.KEY_ZSL) ||
-                        pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT)) ||
-                        pref.getKey().equals(SettingsManager.KEY_SELFIEMIRROR)) {
-                    updateFormatPreference();
+                if(pref.getKey().equals(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
+                    updateZslPreference();
                 }
 
-                if(pref.getKey().equals(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
+                if(pref.getKey().equals(SettingsManager.KEY_QUAD_BAYER_SENSOR)) {
+                    mSettingsManager.updatePictureAndVideoSize();
+                    mSettingsManager.updateHDRSceneMode();
+                    updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+                    updatePreference(SettingsManager.KEY_SCENE_MODE);
                     updateZslPreference();
                 }
 
@@ -327,7 +331,9 @@ public class SettingsActivity extends PreferenceActivity {
         List<String> value_zsl = new ArrayList<String>(Arrays.asList( "disable", "hal-zsl"));
 
         if (ZSLPref != null) {
-            if (!isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) && !isInSATOrRTBMode) {
+            if (!isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) &&
+                    !isPrefEnabled(SettingsManager.KEY_QUAD_BAYER_SENSOR) &&
+                    !isInSATOrRTBMode) {
                 key_zsl.add("APP-ZSL");
                 value_zsl.add("app-zsl");
             }
@@ -338,42 +344,6 @@ public class SettingsActivity extends PreferenceActivity {
                 idx = 0;
             }
             ZSLPref.setValueIndex(idx);
-        }
-    }
-
-    private void updateFormatPreference() {
-        ListPreference formatPref = (ListPreference)findPreference(SettingsManager.KEY_PICTURE_FORMAT);
-        ListPreference ZSLPref = (ListPreference) findPreference(SettingsManager.KEY_ZSL);
-        ListPreference mfnrPref = (ListPreference) findPreference(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
-        SwitchPreference selfiePref = (SwitchPreference) findPreference(SettingsManager.KEY_SELFIEMIRROR);
-
-        if (formatPref == null)
-            return;
-        String sceneMode = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
-        String multiResEnabled = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
-        if((ZSLPref != null && "app-zsl".equals(ZSLPref.getValue())) ||
-                !mSettingsManager.isHeicSupported() ||
-                (sceneMode != null && Integer.valueOf(sceneMode) == SettingsManager.SCENE_MODE_HDR_INT) ||
-                (selfiePref != null && selfiePref.isChecked())
-                || (PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
-                && "1".equals(multiResEnabled)) ) {
-            formatPref.setValue("0");
-            formatPref.setEnabled(false);
-        } else {
-            formatPref.setEnabled(true);
-        }
-
-        if (ZSLPref ==null)
-                return;
-        if("app-zsl".equals(ZSLPref.getValue()) ||
-                (selfiePref != null && selfiePref.isChecked())){
-            if (mfnrPref != null) {
-                mfnrPref.setEnabled(false);
-            }
-        } else {
-            if (mfnrPref != null) {
-                mfnrPref.setEnabled(true);
-            }
         }
     }
 
@@ -1609,7 +1579,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateRawFormatPref();
         updateRawInfoPref();
         updatePictureSizePreferenceButton();
-        updateFormatPreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1801,7 +1770,7 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void updatePreferenceButton(String key) {
-        Preference pref =  findPreference(key);
+        Preference pref = findPreference(key);
         if (pref != null ) {
             pref.setEnabled(false);
             if( pref instanceof ListPreference) {

@@ -511,6 +511,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
     }
 
+    public void updateHDRSceneMode() {
+        IconListPreference sceneMode = (IconListPreference)mPreferenceGroup.findPreference(KEY_SCENE_MODE);
+        if (sceneMode != null) {
+            sceneMode.setEntries(mContext.getResources().getStringArray(
+                    R.array.pref_camera2_scenemode_entries));
+            sceneMode.setEntryValues(mContext.getResources().getStringArray(
+                    R.array.pref_camera2_scenemode_entryvalues));
+            sceneMode.setThumbnailIds(mContext.getResources().getIntArray(
+                    R.array.pref_camera2_scenemode_thumbnails));
+            filterUnsupportedOptions(sceneMode, getSupportedSceneModes(getCurrentCameraId()));
+        }
+    }
+
     public void init() {
         Log.d(TAG, "SettingsManager init : " + CaptureModule.CURRENT_ID);
         final int cameraId = getInitialCameraId();
@@ -2558,14 +2571,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
             res.add(getSupportedQcfaDimension(cameraId));
         }
 
-        if (getQuadBayerSensorPrefEnabled() && getIsSupportedQcfa(cameraId)) {
-            res.add(getSupportedQcfaDimension(cameraId));
-        }
-
         if (getQuadBayerSensorPrefEnabled()) {
             Size qcfaMaxSize = getSupportedQCFAMaxPictureSize();
             if (qcfaMaxSize != null) {
                 res.add(qcfaMaxSize.toString());
+                return res;
             }
         }
 
@@ -2875,8 +2885,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (DeepZoomFilter.isSupportedStatic()) modes.add(SCENE_MODE_DEEPZOOM_INT + "");
         if (DeepPortraitFilter.isSupportedStatic()) modes.add(SCENE_MODE_DEEPPORTRAIT_INT+"");
         for (int mode : sceneModes) {
-            //remove scene mode like "Sunset", "Night" such as, only keep "HDR" mode 	1889
-            if (mode == SCENE_MODE_HDR_INT) {
+            //remove scene mode like "Sunset", "Night" such as, only keep "HDR" mode
+            // QuadBayerSensor didn`t support HDR
+            if (mode == SCENE_MODE_HDR_INT && !getQuadBayerSensorPrefEnabled()) {
                 modes.add("" + mode);
             }
         }
@@ -3159,7 +3170,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private boolean filterSimilarPictureSize(PreferenceGroup group,
                                                     ListPreference pref) {
         pref.filterDuplicated();
-        if (pref.getEntries().length <= 1) {
+        if (pref.getEntries().length < 1) {
             removePreference(group, pref.getKey());
             return true;
         }
@@ -3200,7 +3211,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean getQuadBayerSensorPrefEnabled() {
         ListPreference quadBayerPref = mPreferenceGroup.findPreference(KEY_QUAD_BAYER_SENSOR);
         String value = quadBayerPref.getValue();
-        if(value != null && value.equals("enable")) {
+        if(value != null && value.equals("1")) {
             return true;
         }
         return false;

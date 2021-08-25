@@ -1340,10 +1340,12 @@
 
     <!-- Quad Bayer Sensor Title -->
     <string name="pref_camera2_quad_bayer_sensor_title" translatable="true">Quad Bayer Sensor</string>
-    <string name="pref_camera2_quad_bayer_sensor_default" translatable="false">disable</string>
+    <string name="pref_camera2_quad_bayer_sensor_default" translatable="false">0</string>
     <!-- Quad Bayer Sensor choices -->
-    <string name="pref_camera_quad_bayer_sensor_value_disable">disable</string>
-    <string name="pref_camera_quad_bayer_sensor_value_enable">enable</string>
+    <string name="pref_camera_quad_bayer_sensor_disable">disable</string>
+    <string name="pref_camera_quad_bayer_sensor_enable">enable</string>
+    <string name="pref_camera_quad_bayer_sensor_value_disable">0</string>
+    <string name="pref_camera_quad_bayer_sensor_value_enable">1</string>
 
     <!-- Remosaic Reprocessing Title -->
     <string name="pref_camera2_remosaic_reprocessing_title" translatable="true">Remosaic Reprocessing</string>
