@@ -727,6 +727,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private String[] mSelectableModes = {"Video", "HFR", "Photo", "Bokeh", "SAT", "ProMode"};
     private ArrayList<SceneModule> mSceneCameraIds = new ArrayList<>();
     public static boolean MCXMODE = false;
+    public static boolean QUADBYAERSENSOR = false;
 
     private int mLogicalId = -1;
     private int mSingleRearId = -1;
@@ -935,7 +936,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      */
     private MultiResolutionImageReader mMultiResImageReader = null;
     // Max number of images can be accessed simultaneously from ImageReader.
-    private static final int MAX_MULTIIMAGES = 5;
+    private static final int MAX_MULTIIMAGES = 8;
     private InputConfiguration mInputConfig = null;
     private Collection<OutputConfiguration> mOutConfigs = null;
 
@@ -1681,7 +1682,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         return new MultiResolutionImageReader(multiResolutionStreams, format, MAX_MULTIIMAGES);
     }
 
-    private void initInputMultiImageReader(int format) {
+    private void initReprocessMultiImageReader(int format) {
         MultiResolutionStreamConfigurationMap multiResolutionMap = mMainCameraCharacteristics.get(
                 CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP);
         int[] formats = multiResolutionMap.getInputFormats();
@@ -1692,19 +1693,23 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         Collection<MultiResolutionStreamInfo> multiResolutionStreams =
                 multiResolutionMap.getInputInfo(format);
-        if (mMultiResImageReader == null) {
-            mMultiResImageReader = new MultiResolutionImageReader(
-                    multiResolutionStreams, format, MAX_MULTIIMAGES);
-        }
         mInputConfig = new InputConfiguration(multiResolutionStreams, format);
+        mMultiResImageReader = new MultiResolutionImageReader(multiResolutionStreams, format, MAX_IMAGEREADERS);
         mMultiResImageReader.setOnImageAvailableListener(mPostProcessor.getImageHandler(),
                 new HandlerExecutor(mImageAvailableHandler));
-        mPostProcessor.onMultiImageReaderReady();
+        mPostProcessor.onMultiImageReaderReady(mMultiResImageReader);
     }
 
     private void initRepocessImageReader(int format) {
         int i = getMainCameraId();
         if (mPostProcessor.isZSLEnabled()) {
+            if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                Size qcfaMaxSize = getSupportedMaxPictureSize();
+                Log.v(TAG, "ZSL initRepocessImageReader qcfaMaxSize :" + qcfaMaxSize);
+                if (qcfaMaxSize != null) {
+                    mSupportedMaxPictureSize = qcfaMaxSize;
+                }
+            }
             mImageReader[i] = ImageReader.newInstance(mSupportedMaxPictureSize.getWidth(),
                     mSupportedMaxPictureSize.getHeight(), format, MAX_IMAGEREADERS + 2);
         } else {
@@ -2329,7 +2334,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
     private void createSession(final int id) {
         Log.d(TAG, "createSession,id: " + id + ",mPaused:" + mPaused + ",mCameraOpened:"
-                + mCameraOpened[id] + ",mCameraDevice:"+ mCameraDevice[id]);
+                + mCameraOpened[id] + ",mCameraDevice:"+ mCameraDevice[id] + ", mChosenImageFormat :" + mChosenImageFormat);
         if (mPaused || !mCameraOpened[id] || (mCameraDevice[id] == null)) return;
         List<Surface> list = new LinkedList<Surface>();
         mState[id] = STATE_PREVIEW;
@@ -2348,7 +2353,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     cameraCaptureSession == null) {
                                 return;
                             }
-                            Log.i(TAG, "cameracapturesession - onConfigured "+ id);
+                            Log.i(TAG, "capturesession - onConfigured "+ id);
                             setCameraModeSwitcherAllowed(true);
                             // When the session is ready, we start displaying the preview.
                             mCaptureSession[id] = cameraCaptureSession;
@@ -2463,11 +2468,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     });
                 }
 
-                List<OutputConfiguration> outputConfigurations = null;
-                outputConfigurations = new ArrayList<OutputConfiguration>();
+                List<OutputConfiguration> outputConfigurations = new ArrayList<OutputConfiguration>();
                 if (mSettingsManager.getPhysicalCameraId() != null) {
-                    List<OutputConfiguration> physicalOutput =
-                            getPhysicalOutputConfiguration();
+                    List<OutputConfiguration> physicalOutput = getPhysicalOutputConfiguration();
                     outputConfigurations.addAll(physicalOutput);
                     List<Surface> previewSurfaces = mUI.getPhysicalSurfaces();
                     if(previewSurfaces != null){
@@ -2513,7 +2516,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                     if (!mSettingsManager.isHeifWriterEncoding() && mRawReprocessType != 1) {
                         if (!isMultiResolutionImageReaderEnabled()) {
-                           list.add(mImageReader[id].getSurface());
+                            list.add(mImageReader[id].getSurface());
                         }
                     }
 
@@ -2551,10 +2554,21 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     }
                                 }
                             } else {
+                                if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                                    out.addSensorPixelModeUsed(
+                                            CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
+                                    Log.v(TAG, "OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT");
+                                }
                                 outputConfigurations.add(out);
                             }
                         } else {
-                            outputConfigurations.add(new OutputConfiguration(s));
+                            OutputConfiguration outputConfiguration = new OutputConfiguration(s);
+                            if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                                outputConfiguration.addSensorPixelModeUsed(
+                                        CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
+                                Log.v(TAG, "OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+                            }
+                            outputConfigurations.add(outputConfiguration);
                         }
                     }
 
@@ -2582,11 +2596,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if(mChosenImageFormat == ImageFormat.YUV_420_888 || mChosenImageFormat == ImageFormat.PRIVATE) {
                     if (mPostProcessor.isZSLEnabled()) {
                         if (isMultiResolutionImageReaderEnabled()) {
+                            Log.d(TAG, "Add input multiresImageReader surface");
                             mPreviewRequestBuilder[id].addTarget(mMultiResImageReader.getSurface());
-                            Collection<OutputConfiguration> outConfigs =
+                            Collection<OutputConfiguration> outputConfigs =
                                     OutputConfiguration.createInstancesForMultiResolutionOutput(
                                             mPostProcessor.getZSLReprocessMultiImageReader());
-                            outputConfigurations.addAll(outConfigs);
+                            outputConfigurations.addAll(outputConfigs);
+                            Collection<OutputConfiguration> inputConfigs =
+                                    OutputConfiguration.createInstancesForMultiResolutionOutput(
+                                            mMultiResImageReader);
+                            outputConfigurations.addAll(inputConfigs);
                             createCameraSessionWithSessionConfiguration(id, outputConfigurations, mInputConfig,
                                     captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         } else {
@@ -2619,8 +2638,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         }else {
                             if (isMultiResolutionImageReaderEnabled()) {
-                                Collection<OutputConfiguration> outConfigs = OutputConfiguration
-                                        .createInstancesForMultiResolutionOutput(mMultiResImageReader);
+                                Collection<OutputConfiguration> outConfigs = OutputConfiguration.
+                                        createInstancesForMultiResolutionOutput(mMultiResImageReader);
                                 outputConfigurations.addAll(outConfigs);
                             }
                             createCameraSessionWithSessionConfiguration(id, outputConfigurations, null,
@@ -3098,8 +3117,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 }
                 if (capability == CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR) {
-                    Log.d(TAG, "Found ULTER High Resolution sensor is " + cameraId);
+                    QUADBYAERSENSOR = true;
                     mQuadBayerId = Integer.parseInt(cameraId);
+                    Log.d(TAG, "Found ULTRA_HIGH_RESOLUTION_SENSOR is " + cameraId);
                 }
             }
             if(foundDepth) {
@@ -4321,7 +4341,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if ((imageFormat == ImageFormat.YUV_420_888 || imageFormat == ImageFormat.PRIVATE)
                             && i == getMainCameraId()) {
                         if (isMultiResolutionImageReaderEnabled()) {
-                            initInputMultiImageReader(imageFormat);
+                            initReprocessMultiImageReader(imageFormat);
                         } else {
                             initRepocessImageReader(imageFormat);
                         }
@@ -5587,6 +5607,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onResumeBeforeSuper() {
         mSettingsManager.createCaptureModule(this);
         reinit();
+        initModeByIntent();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         if (facingOfIntentExtras != -1) {
@@ -6486,7 +6507,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public int getMainCameraId() {
-        if (mQuadBayerId != -1) {
+        if (mQuadBayerId != -1 && mSettingsManager.getQuadBayerSensorPrefEnabled()) {
             return mQuadBayerId;
         }
 
@@ -7342,14 +7363,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         try{
             boolean supported = camera.isSessionConfigurationSupported(sessionConfig);
             Log.v(TAG, " createCaptureSessionWithSessionConfiguration result :" + supported);
-        } catch (CameraAccessException e) {
-            Log.d(TAG, "createCaptureSessionWithSessionConfiguration SessionConfiguration error");
+        } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
+            Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error");
             e.printStackTrace();
         }
         try{
             camera.createCaptureSession(sessionConfig);
         } catch (CameraAccessException e) {
-            Log.d(TAG, "createCaptureSessionWithSessionConfiguration error");
+            Log.e(TAG, "createCaptureSessionWithSessionConfiguration error");
             e.printStackTrace();
         }
     }
