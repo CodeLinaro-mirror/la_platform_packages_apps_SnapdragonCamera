@@ -91,6 +91,7 @@ import com.android.camera.SoundClips;
 import com.android.camera.Storage;
 import com.android.camera.Thumbnail;
 import com.android.camera.util.CameraUtil;
+import com.android.camera.util.PersistUtil;
 import com.android.camera.util.SettingTranslation;
 import com.android.camera.ui.RotateTextToast;
 
@@ -100,6 +101,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         MediaRecorder.OnErrorListener, MediaRecorder.OnInfoListener {
 
     private static final String TAG = "SnapCam_MultiVideoModule";
+    public static final boolean DEBUG =
+            (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_LOG) ||
+                    (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_ALL);
 
     private static final int SENSOR_ORIENTATION_DEFAULT_DEGREES = 90;
     private static final int SENSOR_ORIENTATION_INVERSE_DEGREES = 270;
@@ -186,6 +190,11 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
      * {@link CaptureRequest.Builder} for the camera preview
      */
     private CaptureRequest.Builder[] mPreviewRequestBuilders = new CaptureRequest.Builder[MAX_NUM_CAM];
+
+    /**
+     * {@link CaptureRequest.Builder} for the camera recording
+     */
+    private CaptureRequest.Builder[] mRecordRequestBuilders = new CaptureRequest.Builder[MAX_NUM_CAM];
 
     private Handler mCameraHandler;
     private HandlerThread mCameraThread;
@@ -556,7 +565,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         SessionConfiguration sessionConfiguration =
                                 prepareCaptureSessions(id,surface);
                         Log.d(TAG, "prepareCaptureSessions id= "+id);
-                        mConcurrentConfigurations.put(String.valueOf(id),sessionConfiguration);
+                        if (sessionConfiguration != null) {
+                            mConcurrentConfigurations.put(String.valueOf(id),sessionConfiguration);
+                        }
                         Message message = Message.obtain();
                         message.what = OPEN_CAMERA;
                         sendMessage(message);
@@ -641,7 +652,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             Log.d(TAG, "onOpened " + id);
             updateVideoSize(id);
             mCameraOpenCloseLock.release();
-            createCameraPreviewSession(id);
+            createCameraPreviewSession(id, false);
             mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -744,33 +755,41 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     /**
      * Creates a new {@link CameraCaptureSession} for camera preview.
      */
-    private void createCameraPreviewSession(int id) {
+    private void createCameraPreviewSession(int id, boolean stopRecording) {
         // This is the output Surface we need to start preview.
         int index = mCameraIDList.indexOf(String.valueOf(id));
         Log.v(TAG, "createCameraPreviewSession id :" + id + ", index :" + index + ", mCameraIDList :" + mCameraIDList);
-        Surface surface = mMultiCameraUI.getSurfaceViewList().get(index).getHolder().getSurface();
-
-        if (surface.isValid()) {
-            SessionConfiguration sessionConfiguration =
-                    prepareCaptureSessions(id,surface);
-            mConcurrentConfigurations.put(String.valueOf(id),sessionConfiguration);
-            Message message = Message.obtain();
-            message.what = OPEN_CAMERA;
-            if (mCameraHandler != null) {
-                mCameraHandler.sendMessage(message);
-            }
+        Message message = Message.obtain();
+        if (stopRecording) {
+            // no need open camera again after stop recording
+            message.what = CREATE_SESSION;
         } else {
-            Message msg = Message.obtain();
-            msg.what = WAIT_SURFACE;
-            msg.arg1 = id;
-            mCameraHandler.sendMessageDelayed(msg, 200);
-            Log.v(TAG, "Surface is invalid, wait 200ms surfaceCreated");
+            Surface surface = mMultiCameraUI.getSurfaceViewList().get(index).getHolder().getSurface();
+            if (surface.isValid()) {
+                SessionConfiguration sessionConfiguration = prepareCaptureSessions(id, surface);
+                if (sessionConfiguration != null) {
+                    mConcurrentConfigurations.put(String.valueOf(id), sessionConfiguration);
+                }
+                message.what = OPEN_CAMERA;
+            } else {
+                message.what = WAIT_SURFACE;
+                message.arg1 = id;
+            }
         }
 
+        if (mCameraHandler != null) {
+            if (message.what == WAIT_SURFACE) {
+                Log.v(TAG, "Surface is invalid, wait surfaceCreated 200ms");
+                mCameraHandler.sendMessageDelayed(message, 200);
+            } else {
+                mCameraHandler.sendMessage(message);
+            }
+        }
     }
 
     private SessionConfiguration prepareCaptureSessions(int id, Surface surface) {
         SessionConfiguration sessionConfiguration = null;
+        Log.v(TAG, "prepareCaptureSessions id :" + id + " mCameraDevices[id] :" + mCameraDevices[id]);
         try {
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilders[id]
@@ -797,7 +816,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                                 mCameraPreviewSessions[id].setRepeatingRequest(
                                         mPreviewRequestBuilders[id].build(),
                                         mCaptureCallback, mMultiCameraModule.getMyCameraHandler());
-                            } catch (CameraAccessException e) {
+                            } catch (CameraAccessException | IllegalStateException e) {
                                 e.printStackTrace();
                             }
                         }
@@ -819,10 +838,10 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             List<OutputConfiguration> outConfigurations = new ArrayList<>(1);
             outConfigurations.add(new OutputConfiguration(surface));
 
-             sessionConfiguration = new SessionConfiguration(
+            sessionConfiguration = new SessionConfiguration(
                     SessionConfiguration.SESSION_REGULAR, outConfigurations,
                     new HandlerExecutor(mCameraHandler), stateCallback);
-             sessionConfiguration.setSessionParameters(mPreviewRequestBuilders[id].build());
+            sessionConfiguration.setSessionParameters(mPreviewRequestBuilders[id].build());
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -851,7 +870,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         private void process(CaptureResult result) {
             Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
             Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-            Log.v(TAG, "process afState :" + afState + ", aeState :" + aeState);
+            if (DEBUG) {
+                Log.v(TAG, "process afState :" + afState + ", aeState :" + aeState);
+            }
         }
 
         @Override
@@ -935,13 +956,13 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             closePreviewSession(id);
             setUpMediaRecorder(id);
             createVideoSnapshotImageReader(id);
-            mPreviewRequestBuilders[id] = mCameraDevices[id].createCaptureRequest(
+            mRecordRequestBuilders[id] = mCameraDevices[id].createCaptureRequest(
                     CameraDevice.TEMPLATE_RECORD);
             if (true) {
-                mPreviewRequestBuilders[id].set(CaptureRequest.NOISE_REDUCTION_MODE,
+                mRecordRequestBuilders[id].set(CaptureRequest.NOISE_REDUCTION_MODE,
                         CaptureRequest.NOISE_REDUCTION_MODE_FAST);
             } else {
-                mPreviewRequestBuilders[id].set(CaptureRequest.NOISE_REDUCTION_MODE,
+                mRecordRequestBuilders[id].set(CaptureRequest.NOISE_REDUCTION_MODE,
                         CaptureRequest.NOISE_REDUCTION_MODE_HIGH_QUALITY);
             }
             List<Surface> surfaces = new ArrayList<>();
@@ -950,12 +971,12 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             Surface previewSurface = mMultiCameraUI.getSurfaceViewList().get(index).getHolder()
                     .getSurface();
             surfaces.add(previewSurface);
-            mPreviewRequestBuilders[id].addTarget(previewSurface);
+            mRecordRequestBuilders[id].addTarget(previewSurface);
 
             // Set up Surface for the MediaRecorder
             Surface recorderSurface = mMediaRecorders[id].getSurface();
             surfaces.add(recorderSurface);
-            mPreviewRequestBuilders[id].addTarget(recorderSurface);
+            mRecordRequestBuilders[id].addTarget(recorderSurface);
             surfaces.add(mImageReaders[id].getSurface());
 
             // Start a capture session
@@ -965,7 +986,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 @Override
                 public void onConfigured(CameraCaptureSession cameraCaptureSession) {
                     mCameraPreviewSessions[id] = cameraCaptureSession;
-                    updatePreview(id);
+                    updateRecordingPreview(id);
                     mActivity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -997,8 +1018,8 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     }
 
     public void stopRecordingVideo(int id) {
-        Log.v(TAG, " stopRecordingVideo " + id);
         mIsRecordingVideos[id] = false;
+        Log.v(TAG, " stopRecordingVideo " + id);
         try {
             mMediaRecorders[id].setOnErrorListener(null);
             mMediaRecorders[id].setOnInfoListener(null);
@@ -1022,8 +1043,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             Log.d(TAG, "Video saved: " + mNextVideoAbsolutePaths[id]);
         }
         mNextVideoAbsolutePaths[id] = null;
-        if(!mPaused) {
-            createCameraPreviewSession(id);
+        int lastCameraId = Integer.parseInt(mCameraIDList.get(mCameraIDList.size() - 1));
+        if(!mPaused && id == lastCameraId) {
+            createCameraPreviewSession(id, true);
         }
     }
 
@@ -1222,14 +1244,14 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     /**
      * Update the camera preview. {@link #startPreview()} needs to be called in advance.
      */
-    private void updatePreview(int id) {
+    private void updateRecordingPreview(int id) {
         if (null == mCameraDevices[id]) {
             return;
         }
         try {
-            setUpCaptureRequestBuilder(mPreviewRequestBuilders[id]);
-            mCameraPreviewSessions[id].setRepeatingRequest(mPreviewRequestBuilders[id].build(),
-                    null, mMultiCameraModule.getMyCameraHandler());
+            setUpCaptureRequestBuilder(mRecordRequestBuilders[id]);
+            mCameraPreviewSessions[id].setRepeatingRequest(mRecordRequestBuilders[id].build(),
+                    mCaptureCallback, mMultiCameraModule.getMyCameraHandler());
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }

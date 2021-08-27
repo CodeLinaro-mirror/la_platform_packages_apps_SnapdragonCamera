@@ -176,9 +176,11 @@ public class SettingsActivity extends PreferenceActivity {
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
                 value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
+                Preference picSize = findPreference(SettingsManager.KEY_PICTURE_SIZE);
                 if (PersistUtil.isMultiResolutionImageReaderEnabled() && value != null && "1".equals(value)) {
-                    Preference picSize = findPreference(SettingsManager.KEY_PICTURE_SIZE);
                     picSize.setEnabled(false);
+                } else {
+                    picSize.setEnabled(true);
                 }
             }
             List<String> list = mSettingsManager.getDependentKeys(key);
@@ -1490,7 +1492,6 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_LIVE_PREVIEW);
         updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
         updateMultiPreference(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
-        updatePictureSizePreferenceButton();
         updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
         updateVideoMFHDRPreference();
@@ -1572,6 +1573,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoFlipPreference();
         updatePdnetTogglePreference();
         updateRawFormatPref();
+        updatePictureSizePreferenceButton();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1777,10 +1779,13 @@ public class SettingsActivity extends PreferenceActivity {
 
     private void updatePictureSizePreferenceButton() {
         Preference picturePref =  findPreference(SettingsManager.KEY_PICTURE_SIZE);
-        String sceneMode = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
-        if ( sceneMode != null && picturePref != null ){
-            int sceneModeInt = Integer.parseInt(sceneMode);
-            picturePref.setEnabled(sceneModeInt != SettingsManager.SCENE_MODE_DUAL_INT);
+        if (picturePref == null) return;
+        String multiResEnabled = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
+        if (PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
+                && "1".equals(multiResEnabled)) {
+            picturePref.setEnabled(false);
+        } else {
+            picturePref.setEnabled(true);
         }
     }
 

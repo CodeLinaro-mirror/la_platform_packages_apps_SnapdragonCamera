@@ -52,8 +52,6 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.Capability;
 import android.hardware.camera2.params.Face;
 import android.hardware.camera2.params.InputConfiguration;
-import android.hardware.camera2.params.MandatoryStreamCombination;
-import android.hardware.camera2.params.MandatoryStreamCombination.MandatoryStreamInformation;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.MultiResolutionStreamConfigurationMap;
 import android.hardware.camera2.params.MultiResolutionStreamInfo;
@@ -1704,7 +1702,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         int i = getMainCameraId();
         if (mPostProcessor.isZSLEnabled()) {
             if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
-                Size qcfaMaxSize = getSupportedMaxPictureSize();
+                Size qcfaMaxSize = mSettingsManager.getSupportedQCFAMaxPictureSize();
                 Log.v(TAG, "ZSL initRepocessImageReader qcfaMaxSize :" + qcfaMaxSize);
                 if (qcfaMaxSize != null) {
                     mSupportedMaxPictureSize = qcfaMaxSize;
@@ -3009,8 +3007,12 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void reinit() {
-        CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
-        CURRENT_MODE = mCurrentSceneMode.mode;
+        if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+            CURRENT_ID = mQuadBayerId;
+        } else {
+            CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
+            CURRENT_MODE = mCurrentSceneMode.mode;
+        }
         Log.d(TAG,"reinit: CURRENT_ID camera id " + CURRENT_ID);
         mSettingsManager.init();
     }
@@ -3674,7 +3676,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 fs2Value = Integer.parseInt(valueFS2);
             }
             if (!mSettingsManager.isMultiCameraEnabled()) {
-                if (!(mIsSupportedQcfa || isDeepZoom() || (fs2Value ==1))) {
+                if (!(mIsSupportedQcfa || isDeepZoom() || (fs2Value ==1) ||
+                        mSettingsManager.getQuadBayerSensorPrefEnabled())) {
                     addPreviewSurface(captureBuilder, null, id);
                 }
             }
@@ -4294,13 +4297,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             initHEIFWriter();
             String[] cameraIdList = manager.getCameraIdList();
 
-            if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
-                Size qcfaMaxSize = getSupportedMaxPictureSize();
-                Log.v(TAG, "setUpCameraOutputs qcfaMaxSize :" + qcfaMaxSize);
-                if (qcfaMaxSize != null) {
-                    mPictureSize = qcfaMaxSize;
-                }
-            }
             for (int i = 0; i < cameraIdList.length; i++) {
                 String cameraId = cameraIdList[i];
                 CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
@@ -4496,63 +4492,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             e.printStackTrace();
         }
     }
-
-    private Size getSupportedMaxPictureSize() {
-        Size maxSize = null;
-        Size lastSize = null;
-        CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
-        CameraCharacteristics characteristics;
-        MandatoryStreamCombination[] combinations;
-        try {
-            characteristics = manager.getCameraCharacteristics(String.valueOf(mQuadBayerId));
-            Log.v(TAG, "getSupportedMaxPictureSize SCALER_MANDATORY_MAXIMUM_RESOLUTION_STREAM_COMBINATIONS :" + CameraCharacteristics.SCALER_MANDATORY_MAXIMUM_RESOLUTION_STREAM_COMBINATIONS);
-            combinations = characteristics.get(
-                    CameraCharacteristics.SCALER_MANDATORY_MAXIMUM_RESOLUTION_STREAM_COMBINATIONS);
-            Log.v(TAG, "getSupportedMaxPictureSize combinations :" + combinations);
-            if (combinations == null) return null;
-            for (MandatoryStreamCombination combination : combinations) {
-                List<MandatoryStreamInformation> streamInfoList = combination.getStreamsInformation();
-                for (MandatoryStreamInformation streamInfo : streamInfoList) {
-                    List<Size> inputSizes = streamInfo.getAvailableSizes();
-                    Size[] availableSizes = new Size[inputSizes.size()];
-                    availableSizes = inputSizes.toArray(availableSizes);
-                    maxSize = getMaxSize(availableSizes);
-                    if (lastSize == null) {
-                        lastSize = maxSize;
-                    }
-                    Log.v(TAG, "getSupportedMaxPictureSize lastSize :" + lastSize + ", maxSize :" + maxSize);
-                    if (maxSize.getWidth() * maxSize.getHeight() >
-                            lastSize.getWidth() * lastSize.getHeight()) {
-                        lastSize = maxSize;
-                    }
-                    Log.v(TAG, "getSupportedMaxPictureSize lastSize :" + lastSize);
-                }
-            }
-            Log.v(TAG, "getSupportedMaxPictureSize lastSize :" + lastSize);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-        }
-        return lastSize;
-    }
-
-    private Size getMaxSize(Size... sizes) {
-        if (sizes == null || sizes.length == 0) {
-            return null;
-        }
-
-        Size sz = sizes[0];
-        for (Size size : sizes) {
-            if (size.getWidth() * size.getHeight() > sz.getWidth() * sz.getHeight()) {
-                sz = size;
-             }
-        }
-
-        return sz;
-     }
 
     private List<OutputConfiguration> getPhysicalPreviewOutput(){
         List<OutputConfiguration> ret = new ArrayList<>();
@@ -8375,7 +8314,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         mStopRecPending = true;
         mRecordingPausing = false;
         mIsRecordingVideo = false;
-        mIsPreviewingVideo = true;
+        if (PersistUtil.enableMediaRecorder()) {
+            mIsPreviewingVideo = true;
+        } else {
+            mIsPreviewingVideo = false;
+        }
         mRecordingStarted = false;
         boolean shouldAddToMediaStoreNow = false;
         // Stop recording
@@ -12106,7 +12049,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     @Override
     public void onError(MediaRecorder mr, int what, int extra) {
         Log.e(TAG, "MediaRecorder error. what=" + what + ". extra=" + extra);
-        stopRecordingVideo(getMainCameraId());
+        if (mRecordingStarted) {
+            stopRecordingVideo(getMainCameraId());
+        }
         if (what == MediaRecorder.MEDIA_RECORDER_ERROR_UNKNOWN) {
             // We may have run out of space on the sdcard.
             mActivity.updateStorageSpaceAndHint();

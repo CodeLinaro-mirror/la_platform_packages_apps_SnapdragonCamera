@@ -41,6 +41,8 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.params.Capability;
+import android.hardware.camera2.params.MandatoryStreamCombination;
+import android.hardware.camera2.params.MandatoryStreamCombination.MandatoryStreamInformation;
 import android.hardware.camera2.params.MultiResolutionStreamConfigurationMap;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaCodecInfo;
@@ -510,7 +512,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public void init() {
-        Log.d(TAG, "SettingsManager init" + CaptureModule.CURRENT_ID);
+        Log.d(TAG, "SettingsManager init : " + CaptureModule.CURRENT_ID);
         final int cameraId = getInitialCameraId();
         reloadCharacteristics(cameraId);
         setLocalIdAndInitialize(cameraId);
@@ -521,6 +523,63 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Log.d(TAG, "SettingsManager reinit " + cameraId);
         setLocalIdAndInitialize(cameraId);
     }
+
+    public Size getSupportedQCFAMaxPictureSize() {
+        Size maxSize = null;
+        Size lastSize = null;
+        CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
+        CameraCharacteristics characteristics;
+        MandatoryStreamCombination[] combinations;
+        try {
+            characteristics = manager.getCameraCharacteristics(String.valueOf(getInitialCameraId()));
+            combinations = characteristics.get(
+                    CameraCharacteristics.SCALER_MANDATORY_MAXIMUM_RESOLUTION_STREAM_COMBINATIONS);
+            Log.v(TAG, "getSupportedQCFAMaxPictureSize combinations :" + combinations);
+            if (combinations == null) return null;
+            for (MandatoryStreamCombination combination : combinations) {
+                List<MandatoryStreamInformation> streamInfoList = combination.getStreamsInformation();
+                for (MandatoryStreamInformation streamInfo : streamInfoList) {
+                    List<Size> inputSizes = streamInfo.getAvailableSizes();
+                    Size[] availableSizes = new Size[inputSizes.size()];
+                    availableSizes = inputSizes.toArray(availableSizes);
+                    maxSize = getMaxSize(availableSizes);
+                    if (lastSize == null) {
+                        lastSize = maxSize;
+                    }
+                    Log.v(TAG, "getSupportedQCFAMaxPictureSize lastSize :" + lastSize + ", maxSize :" + maxSize);
+                    if (maxSize.getWidth() * maxSize.getHeight() >
+                            lastSize.getWidth() * lastSize.getHeight()) {
+                        lastSize = maxSize;
+                    }
+                    Log.v(TAG, "getSupportedQCFAMaxPictureSize lastSize :" + lastSize);
+                }
+            }
+            Log.v(TAG, "getSupportedQCFAMaxPictureSize lastSize :" + lastSize);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+        return lastSize;
+    }
+
+    private Size getMaxSize(Size... sizes) {
+        if (sizes == null || sizes.length == 0) {
+            return null;
+        }
+
+        Size sz = sizes[0];
+        for (Size size : sizes) {
+            if (size.getWidth() * size.getHeight() > sz.getWidth() * sz.getHeight()) {
+                sz = size;
+            }
+        }
+
+        return sz;
+    }
+
 
     private void autoTestBroadcast(int cameraId) {
         final SharedPreferences pref = mContext.getSharedPreferences(
@@ -2479,6 +2538,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
             res.add(getSupportedQcfaDimension(cameraId));
         }
 
+        if (getQuadBayerSensorPrefEnabled() && getIsSupportedQcfa(cameraId)) {
+            res.add(getSupportedQcfaDimension(cameraId));
+        }
+
+        if (getQuadBayerSensorPrefEnabled()) {
+            Size qcfaMaxSize = getSupportedQCFAMaxPictureSize();
+            if (qcfaMaxSize != null) {
+                res.add(qcfaMaxSize.toString());
+            }
+        }
+
         VideoCapabilities heifCap = null;
         if (isHeifEnabled) {
             MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
@@ -3155,7 +3225,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 sb.append("x");
             }
         }
-        return  sb.toString();
+        return sb.toString();
     }
 
     public Size getQcfaSupportSize() {
