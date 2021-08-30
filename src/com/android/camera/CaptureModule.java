@@ -7666,7 +7666,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 } else {
                     if (PersistUtil.enableMediaRecorder()) {
-                        if(mCurrentSceneMode.mode == CameraMode.VIDEO){
+                        if(mCurrentSceneMode.mode == CameraMode.VIDEO || !isHighSpeedRateCapture()){
                             cleanupEmptyFile();
                             setUpMediaRecorder(getMainCameraId());
                         }
