@@ -608,6 +608,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                                         mConcurrentConfigurations.containsKey(cameraId);
                             }
                         }
+                        if (mPaused) {
+                            return;
+                        }
                         boolean supported =
                                 mMultiCameraModule.checkConcurrentSessionConfigurationSupported(mConcurrentConfigurations);
                         Log.v(TAG, " CREATE_SESSION createSession :" + createSession +
@@ -619,7 +622,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                                             mConcurrentConfigurations.get(cameraId));
                                     Log.v(TAG, " CREATE_SESSION call createCaptureSession cameraId :" + cameraId);
                                 }
-                            } catch (CameraAccessException e){
+                            } catch (CameraAccessException | IllegalArgumentException e){
                                 e.printStackTrace();
                             }
                         } else {
