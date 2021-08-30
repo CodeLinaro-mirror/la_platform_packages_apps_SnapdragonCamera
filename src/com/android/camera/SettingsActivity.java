@@ -1248,6 +1248,7 @@ public class SettingsActivity extends PreferenceActivity {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
+        updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
     }
 
     private void updateStoragePreference() {
