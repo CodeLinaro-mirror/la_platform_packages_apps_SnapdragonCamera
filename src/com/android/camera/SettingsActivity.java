@@ -177,10 +177,14 @@ public class SettingsActivity extends PreferenceActivity {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
                 value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
                 Preference picSize = findPreference(SettingsManager.KEY_PICTURE_SIZE);
+                ListPreference picFormat = (ListPreference)findPreference(SettingsManager.KEY_PICTURE_FORMAT);
                 if (PersistUtil.isMultiResolutionImageReaderEnabled() && value != null && "1".equals(value)) {
                     picSize.setEnabled(false);
+                    picFormat.setValue("0");
+                    picFormat.setEnabled(false);
                 } else {
                     picSize.setEnabled(true);
+                    picFormat.setEnabled(true);
                 }
             }
             List<String> list = mSettingsManager.getDependentKeys(key);
@@ -340,10 +344,13 @@ public class SettingsActivity extends PreferenceActivity {
         if (formatPref == null)
             return;
         String sceneMode = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
+        String multiResEnabled = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
         if((ZSLPref != null && "app-zsl".equals(ZSLPref.getValue())) ||
                 !mSettingsManager.isHeicSupported() ||
                 (sceneMode != null && Integer.valueOf(sceneMode) == SettingsManager.SCENE_MODE_HDR_INT) ||
-                (selfiePref != null && selfiePref.isChecked())) {
+                (selfiePref != null && selfiePref.isChecked())
+                || (PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
+                && "1".equals(multiResEnabled)) ) {
             formatPref.setValue("0");
             formatPref.setEnabled(false);
         } else {
@@ -1495,7 +1502,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
         updateVideoMFHDRPreference();
-        updateFormatPreference();
         updateStoragePreference();
         initializePhysicalPreferences();
         updatePhysicalPreferences();
@@ -1574,6 +1580,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePdnetTogglePreference();
         updateRawFormatPref();
         updatePictureSizePreferenceButton();
+        updateFormatPreference();
     }
 
     private void updateAudioEncoderPreference() {
