@@ -1323,7 +1323,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         if (mMediaRecorders[id] == null) {
             mMediaRecorders[id] = new MediaRecorder();
         }
-        mMediaRecorders[id].setAudioSource(MediaRecorder.AudioSource.MIC);
+        if (mAudioEncoder != -1) {
+            mMediaRecorders[id].setAudioSource(MediaRecorder.AudioSource.MIC);
+        }
         mMediaRecorders[id].setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorders[id].setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         if (mNextVideoAbsolutePaths[id] == null || mNextVideoAbsolutePaths[id].isEmpty()) {
@@ -1336,7 +1338,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         mMediaRecorders[id].setVideoFrameRate(30);
         mMediaRecorders[id].setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
         mMediaRecorders[id].setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        mMediaRecorders[id].setAudioEncoder(mAudioEncoder);
+        if (mAudioEncoder != -1) {
+            mMediaRecorders[id].setAudioEncoder(mAudioEncoder);
+        }
         int rotation = CameraUtil.getJpegRotation(id, mOrientation);
         if (mVideoRotation != null) {
             rotation += Integer.parseInt(mVideoRotation);
