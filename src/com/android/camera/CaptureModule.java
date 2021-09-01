@@ -10600,7 +10600,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (hdrmode.equals("auto")) {
                 VendorTagUtil.setAudoHDRMode(request, 1);
             } else if(!hdrmode.equals("off")){
-                String[] modeLists = hdrmode.split("#");
+                String[] modeLists = hdrmode.split(" ");
                 int[] modes = new int [3];
                 for (int i = 0; i < modeLists.length; i ++) {
                     modes[i] = SettingsManager.KEY_HDR_MODES_ORDER.get(modeLists[i]);

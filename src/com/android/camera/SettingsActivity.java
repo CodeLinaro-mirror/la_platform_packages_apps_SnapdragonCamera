@@ -163,6 +163,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 updateVideoVariableFpsPreference();
                 updatePreference(SettingsManager.KEY_VIDEO_DURATION);
+                updateVideoMFHDRPreference();
             } else if (key.equals(SettingsManager.KEY_SELECT_MODE)) {
                 value = ((ListPreference) p).getValue();
                 CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
@@ -211,10 +212,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if (value.equals("manual")) {
                     UpdateManualHDRSetting();
                 }
-                mSettingsManager.filterHFROptions();
-                updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-                updateVideoVariableFpsPreference();
-                updateVideoHfrFpsPreference();
+                updateHdrRefOp();
             }
 
             if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
@@ -229,6 +227,10 @@ public class SettingsActivity extends PreferenceActivity {
             if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
                 updateRawInfoPref();
             }
+            if (key.equals(SettingsManager.KEY_SAVERAW)){
+                updateVideoMFHDRPreference();
+            }
+
         }
     };
 
@@ -1018,10 +1020,7 @@ public class SettingsActivity extends PreferenceActivity {
                 Log.v(TAG, " save title :" + title + ", isChecked :" + isChecked + ", position :" + position);
                 editor.putBoolean(title, isChecked);
                 editor.commit();
-                mSettingsManager.filterHFROptions();
-                updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-                updateVideoVariableFpsPreference();
-                updateVideoHfrFpsPreference();
+                updateHdrRefOp();
             }
         });
 
@@ -1052,6 +1051,18 @@ public class SettingsActivity extends PreferenceActivity {
             }
         });
         alert.show();
+    }
+    private void updateHdrRefOp(){
+        CaptureModule.CameraMode mode =
+                    (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        if (mode == CaptureModule.CameraMode.VIDEO){
+            mSettingsManager.filterHFROptions();
+            updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+            updateVideoVariableFpsPreference();
+            updateVideoHfrFpsPreference();
+        }else if (mode == CaptureModule.CameraMode.DEFAULT){
+            updateRawFormatPref();
+        }
     }
 
     @Override
@@ -1843,23 +1854,18 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateRawFormatPref() {
         ListPreference rawPref = (ListPreference)findPreference(
                 SettingsManager.KEY_SAVERAW);
-        ListPreference remosaicPref = (ListPreference)findPreference(
-                SettingsManager.KEY_REMOSAIC_REPROCESSING);
-        if (remosaicPref != null && remosaicPref.getValue().equals("enable")) {
-            if (rawPref != null) {
-                rawPref.setEnabled(true);
-                return;
-            }
-        }
         ListPreference zslPref = (ListPreference)findPreference(
                 SettingsManager.KEY_ZSL);
-        if (zslPref != null && zslPref.getValue().equals("app-zsl")) {
+        if ((zslPref != null && zslPref.getValue().equals("app-zsl")) || mSettingsManager.isLimitedHDR()) {
             if (rawPref != null) {
                 rawPref.setValue("disable");
                 rawPref.setEnabled(false);
                 mSettingsManager.setValue(SettingsManager.KEY_SAVERAW, "disable");
             }
-        }
+        }else{
+            if(rawPref != null)
+                rawPref.setEnabled(true);
+            }
     }
 
     private void updateRawInfoPref(){
@@ -2018,11 +2024,13 @@ public class SettingsActivity extends PreferenceActivity {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     String title = String.valueOf(buttonView.getTag());
-                    if((title.equalsIgnoreCase("mfhdr") || title.equalsIgnoreCase("qhdr")) && mSettingsManager.getVideoFPS() >= 60 && isChecked){
+                    if((title.equalsIgnoreCase("mfhdr") || title.equalsIgnoreCase("qhdr")) && isChecked
+                        && (mSettingsManager.getVideoFPS() >= 60 || (mSettingsManager.getValue(SettingsManager.KEY_SAVERAW) != null &&
+                        mSettingsManager.getValue(SettingsManager.KEY_SAVERAW).equals("enable")))){
                         viewHolder.checkBox.setSelected(false);
                         viewHolder.checkBox.setChecked(false);
-                        Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60",
-                                    Toast.LENGTH_SHORT).show();
+                        Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60 or enabled SaveRaw",
+                            Toast.LENGTH_SHORT).show();
                         isChecked=false;
                     }
                     if (mCheckBoxChanged != null){

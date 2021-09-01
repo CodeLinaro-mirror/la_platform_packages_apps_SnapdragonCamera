@@ -2247,8 +2247,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                         mExtendedHFRSize[i + 2] >= 120){
                                     break;
                                 }
-                                if(getVideoHdrMode() != null && (getVideoHdrMode().toLowerCase().contains("mfhdr")
-                                || getVideoHdrMode().toLowerCase().contains("qhdr")) && mExtendedHFRSize[i + 2] >= 60){
+                                if(isLimitedHDR() && mExtendedHFRSize[i + 2] >= 60){
                                     break;
                                 }
                                 supported.add(item);
@@ -3340,8 +3339,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Log.v(TAG, "getSupportedManualHDR support mode :" + mode);
             }
         }
-        if (isAutoHDRSupported()){
-            ret.add("auto");
+        if (isAutoHDRSupported() && getVideoFPS() <= 30){
+            if((getValue(SettingsManager.KEY_SAVERAW) != null && !getValue(SettingsManager.KEY_SAVERAW).equals("enable"))||
+            getValue(SettingsManager.KEY_SAVERAW) == null){
+                ret.add("auto");
+            }
         }
         if ((modes != null && modes.length > 0) && !isFacingFront(mCameraId)) {
             ret.add("manual");
@@ -3673,7 +3675,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         boolean isChecked = pref.getBoolean(title, false);
                         Log.v(TAG, " getVideoHdrMode title:" + title + ", isChecked :" + isChecked);
                         if (isChecked) {
-                            hdrmode.append(title).append("#");
+                            hdrmode.append(title).append(" ");
                         }
                     }
                     Log.v(TAG, " getVideoHdrMode hdrmode:" + hdrmode.toString());
@@ -3685,7 +3687,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return "off";
     }
-
+    public boolean isLimitedHDR(){
+        String value = getVideoHdrMode();
+        if (value == null)
+            return false;
+        else if (value.equals("auto"))
+            return true;
+        else{
+            if(value.toLowerCase().contains("mfhdr")|| value.toLowerCase().contains("qhdr"))
+                return true;
+        }
+        return false;
+    }
     public static class VideoEisConfig{
         private Size mVideoSize;
         private int mVideoFPS;
