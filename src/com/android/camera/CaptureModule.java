@@ -3869,6 +3869,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         mJpegImageData = null;
         mIsRefocus = false;
         if (isDeepZoom()) mSupportZoomCapture = false;
+        if (mPaused) {
+            return;
+        }
         try {
             if (null == mActivity || null == mCameraDevice[id]
                     || !checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id])) {
@@ -4089,6 +4092,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             public void onCaptureCompleted(CameraCaptureSession session,
                                            CaptureRequest request,
                                            TotalCaptureResult result) {
+                if (mPaused) {
+                    return;
+                }
                 String requestTag = String.valueOf(request.getTag());
                 if (requestTag.equals("preview")) {
                     updateT2tTrackerView(result);
@@ -4140,6 +4146,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             @Override
             public void onCaptureStarted(CameraCaptureSession session, CaptureRequest request,
                     long timestamp, long frameNumber) {
+                if (mPaused) {
+                    return;
+                }
                 String requestTag = String.valueOf(request.getTag());
                 if (requestTag.equals("preview")) {
                     return;
@@ -4180,6 +4189,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             public void onCaptureSequenceCompleted(CameraCaptureSession session, int
                             sequenceId, long frameNumber) {
                 Log.i(TAG,"onCaptureSequenceCompleted, " + mNumFramesArrived.get());
+                if (mPaused) {
+                    return;
+                }
                 if (mSettingsManager.isHeifWriterEncoding()) {
                     mLongshotActive = false;
                     if (mHeifImage != null) {
@@ -4206,7 +4218,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                 }
 
-                if (mNumFramesArrived.get() < mShotNum && mLongshotActive && !mBurstLimit) {
+                if (mNumFramesArrived.get() < mShotNum && mLongshotActive && !mBurstLimit && !mPaused) {
                     captureStillPicture(CURRENT_ID);
                 }else {
                     mLongshoting = false;
