@@ -2279,8 +2279,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     private void hideFrontBackSwither() {
         if (mFrontBackSwitcher != null &&
-                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
-                !mSettingsManager.isFrontIDHFRSupported()) {
+                ((mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
+                !mSettingsManager.isFrontIDHFRSupported()) ||
+                        mSettingsManager.getQuadBayerSensorPrefEnabled())) {
             mFrontBackSwitcher.setVisibility(View.INVISIBLE);
         }
     }

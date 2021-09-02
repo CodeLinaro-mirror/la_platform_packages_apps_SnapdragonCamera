@@ -1571,7 +1571,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
 
         if (quad_bayer_sensor != null) {
-            if (!CaptureModule.QUADBYAERSENSOR || !PersistUtil.isQuadBayerSensorEnabled()) {
+            if (!CaptureModule.QUADBYAERSENSOR || !PersistUtil.isQuadBayerSensorEnabled() ||
+                    isFacingFront(mCameraId)) {
                 mFilteredKeys.add(quad_bayer_sensor.getKey());
             }
         }
