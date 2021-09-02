@@ -1607,6 +1607,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoFlipPreference();
         updatePdnetTogglePreference();
         updateRawFormatPref();
+        updateRawInfoPref();
         updatePictureSizePreferenceButton();
         updateFormatPreference();
     }
