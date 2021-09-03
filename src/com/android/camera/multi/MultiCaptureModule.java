@@ -622,7 +622,7 @@ public class MultiCaptureModule implements MultiCamera {
                     mActivity.updateThumbnail(bytes);
                 }
                 image.close();
-                mMultiCameraModule.updateTakingPicture(false);
+                mMultiCameraModule.updateTakingPicture();
             }
         }
 

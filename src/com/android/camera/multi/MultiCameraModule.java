@@ -201,7 +201,7 @@ public class MultiCameraModule implements CameraModule, PhotoController {
         return mMultiCamera.isRecordingVideo();
     }
 
-    public void updateTakingPicture(boolean update) {
+    public void updateTakingPicture() {
         for (int i = 0; i < mTakingPicture.length; i++) {
             mTakingPicture[i] = false;
         }

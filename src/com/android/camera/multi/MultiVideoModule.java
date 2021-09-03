@@ -122,6 +122,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     private static final int MAX_NUM_CAM = 16;
 
     private int mCameraListIndex = 0;
+    private int mLastCameraId;
 
     private static final CaptureRequest.Key<Byte> override_resource_cost_validation =
             new CaptureRequest.Key<>(
@@ -269,6 +270,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 Log.d(TAG, " openCamera id="+id);
                 mCameraIDList.add(id);
             }
+            mLastCameraId = Integer.parseInt(mCameraIDList.get(mCameraIDList.size() -1));
         } else {
             Log.d(TAG, " openCamera default 0");
             mCameraIDList.add("0");
@@ -344,7 +346,13 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                     (mIsRecordingVideos[cameraId] ? "STOPED" : "START"));
             if (mIsRecordingVideos[cameraId]) {
                 stopRecordingVideo(cameraId);
+                if (cameraId == mLastCameraId) {
+                    mMultiCameraUI.showModeSelectLayout(true);
+                    mMultiCameraModule.setCameraModeSwitcherAllowed(true);
+                }
             } else {
+                mMultiCameraUI.showModeSelectLayout(false);
+                mMultiCameraModule.setCameraModeSwitcherAllowed(false);
                 startRecordingVideo(cameraId);
             }
         }
@@ -915,6 +923,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                     mOnMediaSavedListener, mContentResolver, saveFormat);
             mActivity.updateThumbnail(bytes);
             image.close();
+            mMultiCameraModule.updateTakingPicture();
         }
     };
 
