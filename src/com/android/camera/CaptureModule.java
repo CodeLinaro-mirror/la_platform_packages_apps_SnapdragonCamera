@@ -5082,7 +5082,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void unlockFocus(int id) {
         Log.d(TAG, "unlockFocus " + id);
         isFlashRequiredInDriver = false;
-        if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id])) {
+        if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id]) || mCurrentSceneMode.mode == CameraMode.VIDEO) {
             return;
         }
         try {
