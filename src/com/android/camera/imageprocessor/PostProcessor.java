@@ -345,7 +345,8 @@ public class PostProcessor{
                     if (mZSLHandler != null) {
                         mZSLHandler.post(this);
                     }
-                    if (mController.isMultiResolutionImageReaderEnabled()) {
+                    if (mController.isMultiResolutionImageReaderEnabled() &&
+                            mMultiInputImageReader!= null) {
                         mMultiStreamInfo = mMultiInputImageReader.getStreamInfoForImageReader(reader);
                     }
                 } else { //Non ZSL case
