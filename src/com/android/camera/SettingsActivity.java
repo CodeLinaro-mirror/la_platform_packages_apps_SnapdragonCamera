@@ -1258,7 +1258,6 @@ public class SettingsActivity extends PreferenceActivity {
             removePreference(SettingsManager.KEY_RAW_REPROCESS_TYPE, developer);
             removePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS, developer);
             removePreference(SettingsManager.KEY_RAWINFO_TYPE, developer);
-            removePreference(SettingsManager.KEY_RAW_FORMAT_TYPE, developer);
         }
 
         if(!PersistUtil.isRawCbInfoSupported()&& developer != null){
@@ -1577,7 +1576,7 @@ public class SettingsActivity extends PreferenceActivity {
         // when get RAW10 size is null, disable the KEY_SAVERAW
         int cameraId = mSettingsManager.getCurrentCameraId();
         Size[] rawSize = mSettingsManager.getSupportedOutputSize(cameraId,
-                ImageFormat.RAW10);
+                mSettingsManager.getRawFormat());
         if (rawSize == null) {
             Preference p = findPreference(SettingsManager.KEY_SAVERAW);
             if (p != null) {

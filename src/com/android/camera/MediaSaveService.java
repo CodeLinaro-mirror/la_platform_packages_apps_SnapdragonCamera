@@ -53,6 +53,10 @@ import com.adobe.xmp.XMPException;
 import com.adobe.xmp.XMPMeta;
 
 import androidx.heifwriter.HeifWriter;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.TotalCaptureResult;
+import android.media.Image;
+import java.nio.ByteBuffer;
 
 
 /*
@@ -72,6 +76,9 @@ public class MediaSaveService extends Service {
     private Listener mListener;
     // Memory used by the total queued save request, in bytes.
     private long mMemoryUse;
+    private TotalCaptureResult mCaptureResult;
+    private CameraCharacteristics mCharacteristics;
+    private boolean mIsCloseImg;
 
     public interface Listener {
         public void onQueueStatus(boolean full);
@@ -152,7 +159,6 @@ public class MediaSaveService extends Service {
         }
         t.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
-
     public void addRawImage(final byte[] data, String title, String pictureFormat) {
         if (isQueueFull()) {
             Log.e(TAG, "Cannot add image when the queue is full");
@@ -161,6 +167,19 @@ public class MediaSaveService extends Service {
         RawImageSaveTask t = new RawImageSaveTask(data, title, pictureFormat);
 
         mMemoryUse += data.length;
+        if (isQueueFull()) {
+            onQueueFull();
+        }
+        t.execute();
+    }
+
+    public void addRawDng( final Image image, long length, String title, String pictureFormat) {
+        if (isQueueFull()) {
+            Log.e(TAG, "Cannot add image when the queue is full");
+            return;
+        }
+        RawDngSaveTask t = new RawDngSaveTask(image, title, pictureFormat);
+        mMemoryUse += length;
         if (isQueueFull()) {
             onQueueFull();
         }
@@ -234,6 +253,25 @@ public class MediaSaveService extends Service {
 
     private void onQueueAvailable() {
         if (mListener != null) mListener.onQueueStatus(false);
+    }
+    public synchronized void setResult(final TotalCaptureResult result) {
+        if (result == null) throw new NullPointerException();
+        mCaptureResult = result;
+    }
+    public synchronized TotalCaptureResult getResult() {
+        return mCaptureResult;
+    }
+    public void setCharacteristics(
+        final CameraCharacteristics characteristics)
+        throws NullPointerException {
+        if (characteristics == null) {
+            Log.e(TAG,"characteristics is null");
+            throw new NullPointerException();
+        }
+        mCharacteristics = characteristics;
+    }
+    public void setIsCloseimg( boolean iscloseimg){
+        mIsCloseImg  = iscloseimg;
     }
 
     private class MpoSaveTask extends AsyncTask<Void, Void, Uri> {
@@ -342,6 +380,41 @@ public class MediaSaveService extends Service {
         protected void onPostExecute(Long l) {
             boolean previouslyFull = isQueueFull();
             mMemoryUse -= data.length;
+            if (isQueueFull() != previouslyFull) onQueueAvailable();
+        }
+    }
+
+
+    private class RawDngSaveTask extends AsyncTask<Void, Void, Long> {
+        private byte[] data;
+        private String title;
+        private String pictureFormat;
+        private Image image;
+        private long length;
+
+        public RawDngSaveTask(Image image, String title, String pictureFormat) {
+            this.title = title;
+            this.pictureFormat = pictureFormat;
+            this.image = image;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Long doInBackground(Void... params) {
+            if(pictureFormat.equalsIgnoreCase("dng")){
+                length =Storage.addDngImage(title, image, pictureFormat, mCharacteristics, mCaptureResult,mIsCloseImg);
+            }
+            return new Long(length);
+        }
+
+        @Override
+        protected void onPostExecute(Long l) {
+            boolean previouslyFull = isQueueFull();
+            mMemoryUse -= length;
             if (isQueueFull() != previouslyFull) onQueueAvailable();
         }
     }

@@ -3304,7 +3304,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (value == null) return 0;
         return Integer.valueOf(value);
     }
-
+    public int getRawFormat(){
+        int format = ImageFormat.RAW10;
+        String rawFormat = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
+        if(rawFormatType == 16){
+            format = ImageFormat.RAW_SENSOR;
+        }
+        return format;
+    }
     public boolean isHeifWriterEncoding() {
         //disable on android P
         return false;

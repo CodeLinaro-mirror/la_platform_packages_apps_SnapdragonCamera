@@ -250,7 +250,6 @@
   "pref_camera2_raw_reprocess_key":
   {
     "0":{"pref_camera2_rawinfo_type_key":"off",
-         "pref_camera2_raw_format_key":"off",
          "pref_camera2_physical_raw_reprocess_key":"off"},
     "1": {},
     "2": {},
