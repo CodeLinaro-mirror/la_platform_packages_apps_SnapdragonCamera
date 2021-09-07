@@ -580,9 +580,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.afdData.AvgStaticConfidenceScore", Float.class);
     //AF infos
     private static final CaptureResult.Key<Byte> isPDENABLE =
-            new CaptureResult.Key<>("org.quic.camera.afData.isPDENABLE", Byte.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.isPDEnable", Byte.class);
     private static final CaptureResult.Key<Integer> pd_type =
-            new CaptureResult.Key<>("org.quic.camera.afData.PDTYPE", Integer.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.PDType", Integer.class);
     private static final CaptureResult.Key<Byte> isSparseHW =
             new CaptureResult.Key<>("org.quic.camera.afData.isSparseHW", Byte.class);
     private static final CaptureResult.Key<Byte> isDualPDHW =
@@ -594,13 +594,13 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final CaptureResult.Key<Integer> lenspos =
             new CaptureResult.Key<>("org.quic.camera.afData.lenspos", Integer.class);
     private static final CaptureResult.Key<Integer> roix_start =
-            new CaptureResult.Key<>("org.quic.camera.afData.roix_start", Integer.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.roixstart", Integer.class);
     private static final CaptureResult.Key<Integer> roiy_start =
-            new CaptureResult.Key<>("org.quic.camera.afData.roiy_start", Integer.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.roiystart", Integer.class);
     private static final CaptureResult.Key<Integer> roix_end =
-            new CaptureResult.Key<>("org.quic.camera.afData.roix_end", Integer.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.roixend", Integer.class);
     private static final CaptureResult.Key<Integer> roiy_end =
-            new CaptureResult.Key<>("org.quic.camera.afData.roiy_end", Integer.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.roiyend", Integer.class);
     private static final CaptureResult.Key<int[]> rsStats =
             new CaptureResult.Key<>("org.quic.camera.afData.rsStats", int[].class);
     //camera id && request id
