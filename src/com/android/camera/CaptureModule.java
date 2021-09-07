@@ -4220,10 +4220,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                 }
 
+                mLongshoting = false;
                 if (mNumFramesArrived.get() < mShotNum && mLongshotActive && !mBurstLimit && !mPaused) {
                     captureStillPicture(CURRENT_ID);
                 }else {
-                    mLongshoting = false;
                     unlockFocus(getMainCameraId());
                 }
             }
