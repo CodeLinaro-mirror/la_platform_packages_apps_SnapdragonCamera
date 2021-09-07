@@ -72,6 +72,13 @@ public class MultiSettingsActivity extends PreferenceActivity {
 
     public static final String CAMERA_MODULE = "camera_module";
 
+    // Preview Size settings
+    public static final int PREVIEW_WIDTH = 540;
+    public static final int PREVIEW_WIDTH_16_9 = 405;
+    public static final int PREVIEW_HIEGHT_1_1 = 540;
+    public static final int PREVIEW_HIEGHT_4_3 = 720;
+    public static final int PREVIEW_HIEGHT_16_9 = 720;
+
     // capture settings
     public static final String KEY_HAL_ZAL = "pref_multi_camera_hal_zsl_key";
     public static final String KEY_PICTURE_SIZE_1 = "pref_multi_camera_picturesize1_key";
