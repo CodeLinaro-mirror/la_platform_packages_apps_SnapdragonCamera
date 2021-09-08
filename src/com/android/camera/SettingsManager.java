@@ -2021,6 +2021,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if (!mIsHFRSupported) {
                     mFilteredKeys.add(hfrPref.getKey());
                 }
+            }else {
+                mIsHFRSupported = true;//init this value for other mode
             }
         }
     }
