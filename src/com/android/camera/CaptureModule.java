@@ -10051,7 +10051,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void onVideoButtonClick() {
-        if (!isRecorderReady() || getCameraMode() == DUAL_MODE) return;
+        if (!isRecorderReady() || getCameraMode() == DUAL_MODE ||
+        (getCurrenCameraMode() != CameraMode.VIDEO && getCurrenCameraMode() != CameraMode.HFR)) return;
 
         if (!mIsRecordingVideo) {
             if (!triggerVideoRecording(getMainCameraId())) {
@@ -12740,7 +12741,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public int selectCameraMode(int mode) {
-        if (mCurrentSceneMode.mode == mSceneCameraIds.get(mode).mode) {
+        if (mCurrentSceneMode.mode == mSceneCameraIds.get(mode).mode || mRecordingStarted) {
             return -1;
         }
         setCameraModeSwitcherAllowed(false);
