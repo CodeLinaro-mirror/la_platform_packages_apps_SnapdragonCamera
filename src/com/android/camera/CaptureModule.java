@@ -2733,6 +2733,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         int i=1;
                         for (String physical : mSettingsManager.getPhysicalCameraId()){
                             Log.d(TAG,"add surface physical id="+physical);
+                            mUI.hideSurfaceView();
                             OutputConfiguration outputConfiguration =
                                     new OutputConfiguration(previewSurfaces.get(i));
                             outputConfiguration.setPhysicalCameraId(physical);
@@ -12735,6 +12736,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!getCameraModeSwitcherAllowed()) {
                     return -1;
                 }
+                mUI.smoothSelectedPosition(mode);
                 return selectCameraMode(mode);
             }
         };

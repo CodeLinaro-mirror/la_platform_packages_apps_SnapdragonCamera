@@ -2360,7 +2360,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
-
     public List<Surface> getPhysicalSurfaces(){
         List<Surface> previewSurfaces = new ArrayList<>();
         for (int i = 0; i< mPreviewCount; i++){
@@ -3070,6 +3069,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mCameraModeAdapter.setSelectedPosition(mode);
         mModeSelectLayout.smoothScrollToPosition(mode);
         mModule.selectCameraMode(mode);
+    }
+
+    public void smoothSelectedPosition(int mode ) {
+        mModeSelectLayout.smoothScrollToPosition(mode);
     }
 
     public void switchToPhotoModeDueToError(boolean switchCamera) {
