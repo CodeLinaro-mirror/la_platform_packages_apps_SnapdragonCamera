@@ -1326,7 +1326,8 @@ public class PostProcessor{
                         } else {
                             orientation = CameraUtil.getJpegRotation(mController.getMainCameraId(),mOrientation);
                         }
-                        if (mController.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
+                        if (mController.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL &&
+                            mController.getCurrentIntentMode() != CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA) {
                             mController.setJpegImageData(bytes);
                             if (mController.isQuickCapture()) {
                                 mController.onCaptureDone();
