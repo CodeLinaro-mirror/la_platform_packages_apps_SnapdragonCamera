@@ -249,6 +249,8 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             mCameraIDList.add("0");
         }
 
+        mMultiCameraUI.hideSurfaceView();
+
         for (String cameraId : mCameraIDList){
             int id = Integer.valueOf(cameraId);
             updateVideoSize(id);

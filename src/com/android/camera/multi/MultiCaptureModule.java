@@ -174,6 +174,7 @@ public class MultiCaptureModule implements MultiCamera {
             mCameraIDList.add("0");
         }
 
+        mMultiCameraUI.hideSurfaceView();
         for (String cameraId : mCameraIDList) {
             int id = Integer.valueOf(cameraId);
             createImageReader(id);

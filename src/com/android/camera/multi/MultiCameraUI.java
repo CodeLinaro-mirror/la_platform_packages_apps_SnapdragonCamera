@@ -138,22 +138,28 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
     }
 
     private void showSurfaceView(int index) {
-        Log.d(TAG, "showSurfaceView index :" + index + ", " + mPreviewWidths[index] +
-                " " + mPreviewHeights[index]);
         mSurfaceViewList.get(index).getHolder().setFixedSize(
                 mPreviewWidths[index], mPreviewHeights[index]);
         mSurfaceViewList.get(index).setVisibility(View.VISIBLE);
     }
 
-    public boolean setPreviewSize(int index, int width, int height) {
-        boolean changed = (width != mPreviewWidths[index]) || (height != mPreviewHeights[index]);
-        Log.d(TAG, "setPreviewSize " + width + " " + height + ", changed :" + changed);
+    public void setPreviewSize(int index, int width, int height) {
+        Log.d(TAG, "setPreviewSize index :" + index + ", w*h = " + width + " " + height);
         mPreviewWidths[index] = width;
         mPreviewHeights[index] = height;
-        if (changed) {
+        if (mSurfaceViewList.get(index).getVisibility() == View.INVISIBLE) {
             showSurfaceView(index);
         }
-        return changed;
+    }
+
+    public void hideSurfaceView() {
+        if (mSurfaceViewList.size() > 0) {
+            for (SurfaceView surfaceView : mSurfaceViewList) {
+                if (surfaceView.getVisibility() == View.VISIBLE) {
+                    surfaceView.setVisibility(View.INVISIBLE);
+                }
+            }
+        }
     }
 
     private void initPreviewSurface() {
