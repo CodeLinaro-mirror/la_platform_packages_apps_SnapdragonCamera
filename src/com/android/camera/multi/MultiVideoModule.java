@@ -771,11 +771,11 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
 
     private void updateVideoSize(int id) {
         String defaultSize = mActivity.getString(R.string.pref_multi_camera_video_quality_default);
-        int index = mCameraIDList.indexOf(String.valueOf(id));
         String videoSize = mLocalSharedPref.getString(
-                MultiSettingsActivity.KEY_VIDEO_SIZES.get(index), defaultSize);
+                MultiSettingsActivity.KEY_VIDEO_SIZE_ + id, defaultSize);
         mVideoSize[id] = parsePictureSize(videoSize);
-        Log.v(TAG, " updateVideoSize size :" + mVideoSize[id].getWidth() + "x" + mVideoSize[id].getHeight());
+        Log.v(TAG, " updateVideoSize id :" + id + ", size :" + mVideoSize[id].getWidth() +
+                "x" + mVideoSize[id].getHeight());
         mPreviewSizes[id] = getOptimalVideoPreviewSize(id, mVideoSize[id]);
     }
 

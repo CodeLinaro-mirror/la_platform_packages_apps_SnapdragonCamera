@@ -587,11 +587,11 @@ public class MultiCaptureModule implements MultiCamera {
 
     private void createImageReader(int id) {
         String defaultSize = mActivity.getString(R.string.pref_multi_camera_picturesize_default);
-        int index = mCameraIDList.indexOf(String.valueOf(id));
         String pictureSize = mLocalSharedPref.getString(
-                MultiSettingsActivity.KEY_PICTURE_SIZES.get(index), defaultSize);
+                MultiSettingsActivity.KEY_PICTURE_SIZE_ + id, defaultSize);
         Size size = parsePictureSize(pictureSize);
-        Log.v(TAG, " createImageReader size :" + size.getWidth() + "x" + size.getHeight());
+        Log.v(TAG, " createImageReader id " + id + ", size :" + size.getWidth() +
+                "x" + size.getHeight());
         mImageReaders[id] = ImageReader.newInstance(size.getWidth(), size.getHeight(),
                 ImageFormat.JPEG, /*maxImages*/2);
         mImageReaders[id].setOnImageAvailableListener(
