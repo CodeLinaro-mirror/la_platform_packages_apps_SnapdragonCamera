@@ -1531,7 +1531,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mIsVideoUI || !mModule.getCameraModeSwitcherAllowed()
                 || !isSupportFrontCamera(mModule.getCurrenCameraMode())
                 || (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
-                    !mSettingsManager.isFrontIDHFRSupported())) {
+                    !mSettingsManager.isFrontIDHFRSupported())
+                || mSettingsManager.getQuadBayerSensorPrefEnabled()) {
             return;
         }
         mModule.setCameraModeSwitcherAllowed(false);
