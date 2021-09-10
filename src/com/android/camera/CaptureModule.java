@@ -618,6 +618,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     //Stats NN Result
     private static final CaptureRequest.Key<Byte> statsNNControl =
             new CaptureRequest.Key<>("org.quic.camera2.statsNNControl.Enable", Byte.class);
+    private static final CaptureRequest.Key<Byte> qcam3NNControl =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableSalinet", Byte.class);
     private static final CaptureResult.Key<Byte> stats_nn_result_width =
             new CaptureResult.Key<>("org.quic.camera2.statsNNSaliNetResults.statsNNSaliencyWidth", Byte.class);
     private static final CaptureResult.Key<Byte> stats_nn_result_height =
@@ -5620,6 +5622,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         applyNumHDRExposure(builder);
         applyStatsVisualizerOptionMask(builder);
+        applyStatsNNControl(builder);
     }
 
     private void applyMctf(CaptureRequest.Builder builder){
@@ -5662,7 +5665,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyWbColorTemperature(builder);
         applyToneMapping(builder);
         applyLivePreview(builder);
-        applyStatsNNControl(builder);
         applyPdnetToggle(builder);
         applyPhotoEIS(builder);
     }
@@ -8105,7 +8107,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyVideoHDR(builder);
         applyTouchTrackFocus(builder);
         applyToneMapping(builder);
-        applyStatsNNControl(builder);
         applyHistogram(builder);
         applyBGStats(builder);
         applyBEStats(builder);
@@ -8209,9 +8210,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (value != null) {
             byte statsnn = (byte)(Integer.parseInt(value) == 1 ? 0x01 : 0x00);
             try {
-                builder.set(CaptureModule.statsNNControl, statsnn);
+                builder.set(CaptureModule.qcam3NNControl, statsnn);
             } catch (IllegalArgumentException e) {
-                Log.w(TAG, "cannot find vendor tag: " + livePreview.toString());
+                Log.w(TAG, "cannot find vendor tag: " + CaptureModule.qcam3NNControl);
+                try{
+                    builder.set(CaptureModule.statsNNControl, statsnn);
+                }catch (IllegalArgumentException ex) {
+                    Log.w(TAG, "cannot find vendor tag: " + CaptureModule.statsNNControl);
+                }
             }
         }
     }
