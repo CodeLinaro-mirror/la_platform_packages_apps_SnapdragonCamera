@@ -335,12 +335,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private SurfaceView[] mPhysicalViews = new SurfaceView[CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private SurfaceHolder[] mPhysicalHolders = new SurfaceHolder[CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private int mPreviewCount = 0;
-
     int mPreviewWidth;
     int mPreviewHeight;
     private boolean mIsVideoUI = false;
     private boolean mIsSceneModeLabelClose = false;
     private LinearLayout mGridLineView;
+    private boolean mIsZoomKeyChanged = false;
 
 
     private void previewUIReady() {
@@ -926,9 +926,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 } else {
                     txt = zoomSig + "." + zoomFraction + "x";
                 }
-                if (mZoomValueText != null) {
+                if (mZoomValueText != null && !mIsZoomKeyChanged) {
                     mZoomValueText.setText(txt);
                 }
+                mIsZoomKeyChanged = false;
             }
 
             @Override
@@ -1068,13 +1069,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             hideZoomSeekBar();
         }
     }
-
     public void updateZoomSeekBar(float zoomValue) {
         int zoomSig = Math.round(zoomValue * 100) / 100;
         int zoomFraction = Math.round(zoomValue * 100) % 100;
         String txt = zoomSig + "." + zoomFraction + "x";
         if (mZoomValueText != null) {
             mZoomValueText.setText(txt);
+            mIsZoomKeyChanged =true;
         }
         if (mZoomSeekBar != null) {
             setZoomBarProgress(zoomValue, mZoomSeekBar);
