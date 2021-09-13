@@ -1583,6 +1583,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoVariableFpsPreference();
         updateAudioEncoderPreference();
         updateVideoFlipPreference();
+        updateAIDEPreference();
         updatePdnetTogglePreference();
         updateRawFormatPref();
         updateRawInfoPref();
@@ -1676,6 +1677,23 @@ public class SettingsActivity extends PreferenceActivity {
         pref.setEnabled(mSettingsManager.isZZHDRSupported());
     }
 
+    public boolean isHwMfnrDisabled(){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+        if(value != null &&  !value.equals("disable")&& Integer.parseInt(value) == 0 && mSettingsManager.isHWMFNRSupport()){
+            return true;
+        }
+        return false;
+    }
+
+    private void updateAIDEPreference() {
+        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_AI_DENOISER);
+        if (pref == null) {
+            return;
+        }
+        if(isHwMfnrDisabled() || (mSettingsManager.isHWMFNRSupport() && !isHwMfnrDisabled() && !mSettingsManager.isAIDE2Supported())){
+            pref.setEnabled(false);
+        }
+    }
     private void updateVideoMFHDRPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
         if (pref == null) {

@@ -87,6 +87,8 @@ public class PersistUtil {
             getInt("persist.sys.camera.debug", 0);
     private static final boolean PERSIST_CAMERA_FD_DEBUG =
             getBoolean("persist.sys.camera.fd.debug", false);
+    private static final boolean PERSIST_CAMERA_TRACE_DEBUG =
+            getBoolean("persist.sys.camera.trace.debug", false);
     private static final int PERSIST_CAMERA_DEV_DEBUG_OPTION =
             getInt("persist.sys.camera.devoption.debug", 0);
     // StillMore filter start
@@ -160,6 +162,8 @@ public class PersistUtil {
             getInt("persist.sys.camera.audio_source", MediaRecorder.AudioSource.CAMCORDER);
     private static final int PERSIST_FACE_CONTOUR_VALUE =
             getInt("persist.sys.camera.face_contour_value", 18);
+    private static final String PERSIST_CAMERA_LUX_IDX_THREADHOLD =
+            get("persist.sys.camera.lux_idx_threadhold", "320");
 
     public static String getHFRRate() {
         return PERSIST_HFR_LIMIT;
@@ -273,6 +277,9 @@ public class PersistUtil {
         return PERSIST_CAMERA_FD_DEBUG;
     }
 
+    public static boolean getTraceDebug(){
+        return PERSIST_CAMERA_TRACE_DEBUG;
+    }
     public static int getDevOptionLevel() {
         return PERSIST_CAMERA_DEV_DEBUG_OPTION;
     }
@@ -447,4 +454,8 @@ public class PersistUtil {
     public static boolean isRawCbInfoSupported() {return PERSIST_RAW_CB_INFO_SUPPORTED; }
 
     public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }
+
+    public static float getLuxIdxThreadhold(){
+        return Float.parseFloat(PERSIST_CAMERA_LUX_IDX_THREADHOLD);
+    }
 }
