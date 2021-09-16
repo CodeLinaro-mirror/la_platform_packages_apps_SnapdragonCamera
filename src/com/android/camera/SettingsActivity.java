@@ -1233,6 +1233,7 @@ public class SettingsActivity extends PreferenceActivity {
         if(!PersistUtil.isRawCbInfoSupported()&& developer != null){
             removePreference(SettingsManager.KEY_RAW_CB_INFO, developer);
         }
+        removePreference(SettingsManager.KEY_VIDEO_HDR_VALUE, developer);
         switch (mode) {
             case DEFAULT:
                 removePreferenceGroup("video", parentPre);
