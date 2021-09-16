@@ -42,6 +42,13 @@ import com.android.camera.util.ApiHelper;
 import androidx.heifwriter.HeifWriter;
 import android.graphics.ImageFormat;
 
+import android.media.Image;
+import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.DngCreator;
+import java.io.OutputStream;
+
+
 public class Storage {
     private static final String TAG = "CameraStorage";
 
@@ -71,6 +78,7 @@ public class Storage {
     public static void setSaveSDCard(boolean saveSDCard) {
         sSaveSDCard = saveSDCard;
     }
+
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private static void setImageSize(ContentValues values, int width, int height) {
@@ -204,6 +212,53 @@ public class Storage {
 
         return insertImage(resolver, values);
     }
+    public static long addDngImage(String title,Image image,
+        String mimeType,CameraCharacteristics mCharacteristics,TotalCaptureResult mCaptureResult,boolean closeimg) {
+        String path = generateFilepath(title, mimeType);
+        int size = 0;
+        FileOutputStream output = null;
+        try {
+            DngCreator dngCreator = new DngCreator(mCharacteristics, mCaptureResult);
+            File dir = new File(RAW_DIRECTORY);
+            dir.mkdirs();
+            output = new FileOutputStream(path);
+            try{
+                dngCreator.writeImage(output, image);
+            } catch (AssertionError ae) {
+            Log.d(TAG,"writeImage error-ae="+ae);
+            }
+            dngCreator.close();
+        }catch (IOException e) {
+            Log.e(TAG, "IO Exception while saving RAW image to a file", e);
+            return 0;
+        } catch (Exception e) {
+            Log.e(TAG, "Misc Exception while saving RAW image to a file", e);
+            return 0;
+        } catch (AssertionError e) {
+            Log.e(TAG, "Misc Assertion while saving RAW image to a file", e);
+            return 0;
+        } finally {
+            if(closeimg){
+               image.close();
+            }
+            closeOutput(output);
+        }
+        // Try to get the real image size after add exif.
+        File f = new File(path);
+        if (f.exists() && f.isFile()) {
+            size = (int) f.length();
+        }
+        return size;
+    }
+    private static void closeOutput(OutputStream outputStream) {
+        if (null != outputStream) {
+            try {
+                outputStream.close();
+            } catch (IOException e) {
+                Log.e(TAG, "IOException at outputStream close ", e);
+            }
+        }
+    }
 
     public static long addRawImage(String title, byte[] data,
                                   String mimeType) {
@@ -216,7 +271,6 @@ public class Storage {
         }
         return size;
     }
-
     public static Uri addHeifImage(ContentResolver resolver, String title, long date,
                                    Location location, int orientation, ExifInterface exif, String path, int width,
                                    int height, int quality, String mimeType) {
@@ -294,7 +348,9 @@ public class Storage {
             } else {
                 return DIRECTORY + '/' + title + suffix;
             }
-        } else {
+        }  else if(pictureFormat.equalsIgnoreCase("dng")) {
+            return RAW_DIRECTORY + '/' + title + ".dng";
+        }else{
             return RAW_DIRECTORY + '/' + title + ".raw";
         }
     }

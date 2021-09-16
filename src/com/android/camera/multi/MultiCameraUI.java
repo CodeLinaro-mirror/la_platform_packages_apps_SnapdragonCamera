@@ -352,6 +352,12 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
         }
     }
 
+    public void showModeSelectLayout(boolean enable) {
+        if (mModeSelectLayout != null) {
+            mModeSelectLayout.setVisibility(enable ? View.VISIBLE : View.GONE);
+        }
+    }
+
     /**
      * Enables or disables the shutter button.
      */

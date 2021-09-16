@@ -122,6 +122,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     private static final int MAX_NUM_CAM = 16;
 
     private int mCameraListIndex = 0;
+    private int mLastCameraId;
 
     private static final CaptureRequest.Key<Byte> override_resource_cost_validation =
             new CaptureRequest.Key<>(
@@ -269,6 +270,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 Log.d(TAG, " openCamera id="+id);
                 mCameraIDList.add(id);
             }
+            mLastCameraId = Integer.parseInt(mCameraIDList.get(mCameraIDList.size() -1));
         } else {
             Log.d(TAG, " openCamera default 0");
             mCameraIDList.add("0");
@@ -344,7 +346,13 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                     (mIsRecordingVideos[cameraId] ? "STOPED" : "START"));
             if (mIsRecordingVideos[cameraId]) {
                 stopRecordingVideo(cameraId);
+                if (cameraId == mLastCameraId) {
+                    mMultiCameraUI.showModeSelectLayout(true);
+                    mMultiCameraModule.setCameraModeSwitcherAllowed(true);
+                }
             } else {
+                mMultiCameraUI.showModeSelectLayout(false);
+                mMultiCameraModule.setCameraModeSwitcherAllowed(false);
                 startRecordingVideo(cameraId);
             }
         }
@@ -600,6 +608,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                                         mConcurrentConfigurations.containsKey(cameraId);
                             }
                         }
+                        if (mPaused) {
+                            return;
+                        }
                         boolean supported =
                                 mMultiCameraModule.checkConcurrentSessionConfigurationSupported(mConcurrentConfigurations);
                         Log.v(TAG, " CREATE_SESSION createSession :" + createSession +
@@ -611,7 +622,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                                             mConcurrentConfigurations.get(cameraId));
                                     Log.v(TAG, " CREATE_SESSION call createCaptureSession cameraId :" + cameraId);
                                 }
-                            } catch (CameraAccessException e){
+                            } catch (CameraAccessException | IllegalArgumentException e){
                                 e.printStackTrace();
                             }
                         } else {
@@ -915,6 +926,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                     mOnMediaSavedListener, mContentResolver, saveFormat);
             mActivity.updateThumbnail(bytes);
             image.close();
+            mMultiCameraModule.updateTakingPicture();
         }
     };
 
@@ -1314,7 +1326,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         if (mMediaRecorders[id] == null) {
             mMediaRecorders[id] = new MediaRecorder();
         }
-        mMediaRecorders[id].setAudioSource(MediaRecorder.AudioSource.MIC);
+        if (mAudioEncoder != -1) {
+            mMediaRecorders[id].setAudioSource(MediaRecorder.AudioSource.MIC);
+        }
         mMediaRecorders[id].setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorders[id].setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         if (mNextVideoAbsolutePaths[id] == null || mNextVideoAbsolutePaths[id].isEmpty()) {
@@ -1327,7 +1341,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         mMediaRecorders[id].setVideoFrameRate(30);
         mMediaRecorders[id].setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
         mMediaRecorders[id].setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        mMediaRecorders[id].setAudioEncoder(mAudioEncoder);
+        if (mAudioEncoder != -1) {
+            mMediaRecorders[id].setAudioEncoder(mAudioEncoder);
+        }
         int rotation = CameraUtil.getJpegRotation(id, mOrientation);
         if (mVideoRotation != null) {
             rotation += Integer.parseInt(mVideoRotation);

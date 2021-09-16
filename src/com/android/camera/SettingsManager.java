@@ -511,6 +511,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
     }
 
+    public void updateHDRSceneMode() {
+        IconListPreference sceneMode = (IconListPreference)mPreferenceGroup.findPreference(KEY_SCENE_MODE);
+        if (sceneMode != null) {
+            sceneMode.setEntries(mContext.getResources().getStringArray(
+                    R.array.pref_camera2_scenemode_entries));
+            sceneMode.setEntryValues(mContext.getResources().getStringArray(
+                    R.array.pref_camera2_scenemode_entryvalues));
+            sceneMode.setThumbnailIds(mContext.getResources().getIntArray(
+                    R.array.pref_camera2_scenemode_thumbnails));
+            filterUnsupportedOptions(sceneMode, getSupportedSceneModes(getCurrentCameraId()));
+        }
+    }
+
     public void init() {
         Log.d(TAG, "SettingsManager init : " + CaptureModule.CURRENT_ID);
         final int cameraId = getInitialCameraId();
@@ -1014,16 +1027,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isMultiResolutionSupported() {
-        MultiResolutionStreamConfigurationMap multiResolutionMap =
-                mCharacteristics.get(mCameraId)
-                .get(CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP);
-        if (multiResolutionMap != null) {
-            Log.d(TAG, "Cam " + mCameraId + " support multi-resolution capture.");
-            return true;
-        } else {
-            Log.d(TAG, "Cam " + mCameraId + " doesn't support multi-resolution capture.");
-            return false;
+        boolean supported = false;
+        Set<String> physicalIds = getAllPhysicalCameraId();
+        if (physicalIds != null && physicalIds.size() != 0) {
+            MultiResolutionStreamConfigurationMap multiResolutionMap =
+                    mCharacteristics.get(mCameraId)
+                            .get(CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP);
+            if (multiResolutionMap != null) {
+                Log.d(TAG, "Cam " + mCameraId + " support multi-resolution capture.");
+                supported = true;
+            }
         }
+        return supported;
     }
 
     public Set<String> getPhysicalCameraId() {
@@ -1569,7 +1584,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
 
         if (quad_bayer_sensor != null) {
-            if (!CaptureModule.QUADBYAERSENSOR || !PersistUtil.isQuadBayerSensorEnabled()) {
+            if (!CaptureModule.QUADBYAERSENSOR || !PersistUtil.isQuadBayerSensorEnabled() ||
+                    isFacingFront(mCameraId)) {
                 mFilteredKeys.add(quad_bayer_sensor.getKey());
             }
         }
@@ -1734,6 +1750,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
             filterVideoEncoderProfileOptions();
         } else if (pref.getKey().equals(KEY_PICTURE_FORMAT)) {
             filterHeifSizeOptions();
+        } else if ((pref.getKey().equals(KEY_EIS_VALUE))) {
+            String value = getValue(KEY_VIDEO_HIGH_FRAME_RATE);
+            if (!value.equals("off")) {
+                int fpsRate = Integer.parseInt(value.substring(3));
+                if (fpsRate == 480) {
+                    filterVideoDurationFor480fps();
+                } else {
+                    filterVideoDuration();
+                }
+            } else {
+                filterVideoDuration();
+            }
+            updatePictureAndVideoSize();
         }
     }
 
@@ -2232,6 +2261,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                         mExtendedHFRSize[i + 2] >= 120){
                                     break;
                                 }
+                                if(isLimitedHDR() && mExtendedHFRSize[i + 2] >= 60){
+                                    break;
+                                }
                                 supported.add(item);
                                 supported.add("hsr" + mExtendedHFRSize[i + 2]);
                                 if (PersistUtil.isSSMEnabled() && !above1080p) {
@@ -2244,6 +2276,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
             }
         }
+        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported+",mCaptureModule.getVideoHdrMode()="+getVideoHdrMode());
         return supported;
     }
 
@@ -2538,14 +2571,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
             res.add(getSupportedQcfaDimension(cameraId));
         }
 
-        if (getQuadBayerSensorPrefEnabled() && getIsSupportedQcfa(cameraId)) {
-            res.add(getSupportedQcfaDimension(cameraId));
-        }
-
         if (getQuadBayerSensorPrefEnabled()) {
             Size qcfaMaxSize = getSupportedQCFAMaxPictureSize();
             if (qcfaMaxSize != null) {
                 res.add(qcfaMaxSize.toString());
+                return res;
             }
         }
 
@@ -2731,12 +2761,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         //Video size should`t be larger than VGA(640x480) in HFR mode
                         continue;
                     }
-                    res.add(sizes[i].toString());
                     if (getValue(SettingsManager.KEY_VSR) != null &&
                             getValue(SettingsManager.KEY_VSR).equals("1") &&
                             sizes[i].toString().equals("7680x4320")) {
                         continue;
                     }
+
+                    res.add(sizes[i].toString());
                 }
             }
         }
@@ -2854,8 +2885,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (DeepZoomFilter.isSupportedStatic()) modes.add(SCENE_MODE_DEEPZOOM_INT + "");
         if (DeepPortraitFilter.isSupportedStatic()) modes.add(SCENE_MODE_DEEPPORTRAIT_INT+"");
         for (int mode : sceneModes) {
-            //remove scene mode like "Sunset", "Night" such as, only keep "HDR" mode 	1889
-            if (mode == SCENE_MODE_HDR_INT) {
+            //remove scene mode like "Sunset", "Night" such as, only keep "HDR" mode
+            // QuadBayerSensor didn`t support HDR
+            if (mode == SCENE_MODE_HDR_INT && !getQuadBayerSensorPrefEnabled()) {
                 modes.add("" + mode);
             }
         }
@@ -3138,7 +3170,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private boolean filterSimilarPictureSize(PreferenceGroup group,
                                                     ListPreference pref) {
         pref.filterDuplicated();
-        if (pref.getEntries().length <= 1) {
+        if (pref.getEntries().length < 1) {
             removePreference(group, pref.getKey());
             return true;
         }
@@ -3179,7 +3211,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean getQuadBayerSensorPrefEnabled() {
         ListPreference quadBayerPref = mPreferenceGroup.findPreference(KEY_QUAD_BAYER_SENSOR);
         String value = quadBayerPref.getValue();
-        if(value != null && value.equals("enable")) {
+        if(value != null && value.equals("1")) {
             return true;
         }
         return false;
@@ -3283,7 +3315,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (value == null) return 0;
         return Integer.valueOf(value);
     }
-
+    public int getRawFormat(){
+        int format = ImageFormat.RAW10;
+        String rawFormat = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
+        if(rawFormatType == 16){
+            format = ImageFormat.RAW_SENSOR;
+        }
+        return format;
+    }
     public boolean isHeifWriterEncoding() {
         //disable on android P
         return false;
@@ -3319,8 +3359,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Log.v(TAG, "getSupportedManualHDR support mode :" + mode);
             }
         }
-        if (isAutoHDRSupported()){
-            ret.add("auto");
+        if (isAutoHDRSupported() && getVideoFPS() <= 30){
+            if((getValue(SettingsManager.KEY_SAVERAW) != null && !getValue(SettingsManager.KEY_SAVERAW).equals("enable"))||
+            getValue(SettingsManager.KEY_SAVERAW) == null){
+                ret.add("auto");
+            }
         }
         if ((modes != null && modes.length > 0) && !isFacingFront(mCameraId)) {
             ret.add("manual");
@@ -3633,7 +3676,49 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return fpsRate;
     }
-
+    public String getVideoHdrMode(){
+        String value = getValue(SettingsManager.KEY_MANUAL_HDR);
+        Log.v(TAG, "getVideoHdrMode value :" + value);
+        if (value != null ) {
+            if (value.equals("manual")) {
+                final SharedPreferences pref = mContext.getSharedPreferences(
+                        ComboPreferences.getLocalSharedPreferencesName(mContext,
+                                getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+                String orderList = pref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
+                Log.v(TAG, "getVideoHdrMode orderLists:" + orderList);
+                if (orderList != null) {
+                    int[] modes = new int [3];
+                    StringBuilder hdrmode = new StringBuilder();
+                    String[] orderLists = orderList.split("#");
+                    for (int i = 0; i < orderLists.length; i ++) {
+                        String title = orderLists[i];
+                        boolean isChecked = pref.getBoolean(title, false);
+                        Log.v(TAG, " getVideoHdrMode title:" + title + ", isChecked :" + isChecked);
+                        if (isChecked) {
+                            hdrmode.append(title).append(" ");
+                        }
+                    }
+                    Log.v(TAG, " getVideoHdrMode hdrmode:" + hdrmode.toString());
+                    return hdrmode.toString();
+                }
+            }else{
+                return value;
+            }
+        }
+        return "off";
+    }
+    public boolean isLimitedHDR(){
+        String value = getVideoHdrMode();
+        if (value == null)
+            return false;
+        else if (value.equals("auto"))
+            return true;
+        else{
+            if(value.toLowerCase().contains("mfhdr")|| value.toLowerCase().contains("qhdr"))
+                return true;
+        }
+        return false;
+    }
     public static class VideoEisConfig{
         private Size mVideoSize;
         private int mVideoFPS;

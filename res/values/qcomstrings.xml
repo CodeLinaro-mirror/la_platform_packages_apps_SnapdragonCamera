@@ -1340,10 +1340,12 @@
 
     <!-- Quad Bayer Sensor Title -->
     <string name="pref_camera2_quad_bayer_sensor_title" translatable="true">Quad Bayer Sensor</string>
-    <string name="pref_camera2_quad_bayer_sensor_default" translatable="false">disable</string>
+    <string name="pref_camera2_quad_bayer_sensor_default" translatable="false">0</string>
     <!-- Quad Bayer Sensor choices -->
-    <string name="pref_camera_quad_bayer_sensor_value_disable">disable</string>
-    <string name="pref_camera_quad_bayer_sensor_value_enable">enable</string>
+    <string name="pref_camera_quad_bayer_sensor_disable">disable</string>
+    <string name="pref_camera_quad_bayer_sensor_enable">enable</string>
+    <string name="pref_camera_quad_bayer_sensor_value_disable">0</string>
+    <string name="pref_camera_quad_bayer_sensor_value_enable">1</string>
 
     <!-- Remosaic Reprocessing Title -->
     <string name="pref_camera2_remosaic_reprocessing_title" translatable="true">Remosaic Reprocessing</string>
@@ -1435,16 +1437,23 @@
     <string name="pref_camera2_stats_visualizer_default" translatable="false"></string>
     <string name="pref_camera2_stats_visualizer_entry_bg_stats" translatable="false">BG Stats</string>
     <string name="pref_camera2_stats_visualizer_entry_be_stats" translatable="false">BE Stats</string>
+    <string name="pref_camera2_stats_visualizer_entry_rs_stats" translatable="false">RS Stats</string>
     <string name="pref_camera2_stats_visualizer_entry_hist_stats" translatable="false">Hist Stats</string>
     <string name="pref_camera2_stats_visualizer_entry_awb_info" translatable="false">AWB Info</string>
     <string name="pref_camera2_stats_visualizer_entry_aec_info" translatable="false">AEC Info</string>
+    <string name="pref_camera2_stats_visualizer_entry_afd_info" translatable="false">AFD Info</string>
+    <string name="pref_camera2_stats_visualizer_entry_af_info" translatable="false">AF Info</string>
     <string name="pref_camera2_stats_visualizer_entry_value_enable_bg" translatable="false">0</string>
     <string name="pref_camera2_stats_visualizer_entry_value_enable_be" translatable="false">1</string>
     <string name="pref_camera2_stats_visualizer_entry_value_enable_hist" translatable="false">2</string>
-    <string name="pref_camera2_stats_visualizer_entry_value_enable_awb" translatable="false">3</string>
+    <string name="pref_camera2_stats_visualizer_entry_value_enable_rs" translatable="false">3</string>
     <string name="pref_camera2_stats_visualizer_entry_value_enable_aec" translatable="false">4</string>
+    <string name="pref_camera2_stats_visualizer_entry_value_enable_awb" translatable="false">5</string>
+    <string name="pref_camera2_stats_visualizer_entry_value_enable_afd" translatable="false">6</string>
+    <string name="pref_camera2_stats_visualizer_entry_value_enable_af" translatable="false">7</string>
     <string name="stats_visualizer_bg_label">BG GraphView</string>
     <string name="stats_visualizer_be_label">BE GraphView</string>
+    <string name="stats_visualizer_rs_label">RS GraphView</string>
 
     <string name="pref_camera2_variable_fps_title" translatable="true">DYNAMIC FPS</string>
     <string name="pref_camera2_variable_fps_default" translatable="false">0</string>
