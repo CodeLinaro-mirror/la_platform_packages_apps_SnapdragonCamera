@@ -217,13 +217,14 @@
   },
   "pref_camera2_manualhdr_key":
   {
-    "1": {"pref_camera2_zsl_key":"hal-zsl",
+    "off": {"pref_camera2_torch_hdr_key":"0"},
+    "auto": {"pref_camera2_zsl_key":"hal-zsl",
              "pref_camera2_coloreffect_key":"0",
              "pref_camera2_saveraw_key": "disable",
              "pref_camera2_manual_exp_key": "off",
              "pref_camera2_video_hdr_key": "0",
              "pref_camera2_manual_wb_key": "0"},
-    "2": {"pref_camera2_zsl_key":"hal-zsl",
+    "manual": {"pref_camera2_zsl_key":"hal-zsl",
               "pref_camera2_coloreffect_key":"0",
               "pref_camera2_saveraw_key": "disable",
               "pref_camera2_manual_exp_key": "off",
