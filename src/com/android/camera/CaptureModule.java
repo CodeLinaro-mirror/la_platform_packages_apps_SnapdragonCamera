@@ -6869,17 +6869,24 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if (contourEnable || facePointEnable) {
                 String contourMode = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
+                int[] contour_all = null;
                 int[] contourPoints = null;
                 if ("0".equals(contourMode)) {
                     contourPoints = captureResult.get(CaptureModule.contourPoints);
                 } else if ("1".equals(contourMode) || "2".equals(contourMode) || "3".equals(contourMode)) {
                     contourPoints = captureResult.get(CaptureModule.contourPointsExtend);
-                    int[] contour_all = captureResult.get(CaptureModule.contourPointsExtend);
-                    contourPoints = Arrays.copyOfRange(contour_all,6,contour_all.length);
+                    contour_all = captureResult.get(CaptureModule.contourPointsExtend);
+                    int faceContour = PersistUtil.getPersistFaceContourHeaderSize();
+                    if (FD_DEBUG) {
+                        Log.d(FD_TAG, "FaceContour result header size is "+ faceContour);
+                    }
+                    contourPoints = Arrays.copyOfRange(contour_all,faceContour,contour_all.length);
                 }
 
-                if (FD_DEBUG)
-                    Log.d(FD_TAG,"Version=V"+ contourMode + ",contourPoints="+Arrays.toString(contourPoints));
+                if (FD_DEBUG) {
+                    Log.d(FD_TAG,"Version=V"+ contourMode + ", contour_results = " +
+                            Arrays.toString(contour_all));
+                }
                 Face[] faces = captureResult.get(CaptureResult.STATISTICS_FACES);
                 int[] landmarkPoints = new int[6 * faces.length];
                 for (int i = 0 ; i < faces.length; i++){
@@ -11526,8 +11533,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 || "3".equals(facialContour)) {
                             facialContour_enable = 1;
                             request.set(CaptureModule.facialContourEnable, facialContour_enable);
-                            request.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE,
-                                    CaptureRequest.STATISTICS_FACE_DETECT_MODE_FULL);
                         } else {
                             facialContour_enable = 0;
                             request.set(CaptureModule.facialContourEnable, facialContour_enable);

@@ -158,6 +158,8 @@ public class PersistUtil {
     // MediaRecorder.AudioSource.DEFAULT = 0; Default audio source *;
     private static final int PERSIST_AUDIO_SOURCE =
             getInt("persist.sys.camera.audio_source", MediaRecorder.AudioSource.CAMCORDER);
+    private static final int PERSIST_FACE_CONTOUR_VALUE =
+            getInt("persist.sys.camera.face_contour_value", 18);
 
     public static String getHFRRate() {
         return PERSIST_HFR_LIMIT;
@@ -250,6 +252,10 @@ public class PersistUtil {
     }
 
     public static int getZoomFrameValue() {return  PERSIST_ZOOM_FRAME_VALUE; }
+
+    public static int getPersistFaceContourHeaderSize() {
+        return  PERSIST_FACE_CONTOUR_VALUE;
+    }
 
     public static boolean getCamera2Mode() {
         return PERSIST_CAMERA_CAMERA2;
