@@ -6240,9 +6240,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(mCurrentSceneMode.mode == CameraMode.VIDEO){
             enableVideoButton(false);//disable the video button before media recorder is ready
         }
-	    if (mCurrentSceneMode.mode != CameraMode.HFR){
-            mHighSpeedCapture = false;
-        }
+        mHighSpeedCapture = false;
         if(!MCXMODE) {
             checkRTBCameraId();
         }
