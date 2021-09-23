@@ -274,8 +274,14 @@
   },
   "pref_camera2_quad_bayer_sensor_key":
   {
-    "1":{"pref_camera2_picture_format_key":"0"},
+    "1":{"pref_camera2_picture_format_key":"0",
+         "pref_camera2_longshot_key":"off"},
     "0": {}
+  },
+  "pref_camera2_qcfa_key":
+  {
+    "enable":{"pref_camera2_longshot_key":"off"},
+    "disable": {}
   },
   "pref_camera2_multiresimagereader_key":
   {
