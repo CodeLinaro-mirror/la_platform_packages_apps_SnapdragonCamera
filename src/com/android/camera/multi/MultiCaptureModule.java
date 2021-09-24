@@ -710,10 +710,18 @@ public class MultiCaptureModule implements MultiCamera {
                 int index = mCameraIDList.indexOf(String.valueOf(cameraId));
                 captureBuilder.addTarget(mMultiCameraUI.getSurfaceViewList().get(
                         index).getHolder().getSurface());
+                try {
+                    final byte enable = 1;
+                    captureBuilder.set(override_resource_cost_validation, enable);
+                    Log.v(TAG, " capture set" + override_resource_cost_validation + " is 1");
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                }
                 applySettingsForCapture(captureBuilder, cameraId);
                 // Use the same AE and AF modes as the preview.
                 captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+
                 if (halZSLCheck) {
                     captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, true);
                 } else {
