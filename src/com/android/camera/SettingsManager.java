@@ -98,6 +98,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.lang.StringBuilder;
+import com.android.camera.util.PersistUtil;
+
 
 public class SettingsManager implements ListMenu.SettingsListener {
     public static final int RESOURCE_TYPE_THUMBNAIL = 0;
@@ -127,6 +129,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 	public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
     public static final int JPEG_FORMAT = 0;
     public static final int HEIF_FORMAT = 1;
+    public static final int DNG_FORMAT = 2;
     public static final String LOGICAL_AND_PHYSICAL = "99";
     public static final String SCENE_MODE_DUAL_STRING = "100";
     public static final String SCENE_MODE_SUNSET_STRING = "10";
@@ -1595,7 +1598,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 mFilteredKeys.add(remosaic_reprocessing.getKey());
             }
         }
-
         if (pictureFormat != null){
             if (filterUnsupportedOptions(pictureFormat,
                     getSupportedPictureFormat(cameraId))){
@@ -3336,6 +3338,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return getSavePictureFormat() == HEIF_FORMAT;
     }
 
+    public boolean isDNGCreator(){
+        return getSavePictureFormat() == DNG_FORMAT;
+    }
+    public boolean isRawReprocess(){
+        String reprocessType = getValue(KEY_RAW_REPROCESS_TYPE);
+        int mRawReprocessType = 0;
+         if(reprocessType != null && !reprocessType.equals("disable") && !reprocessType.equals("off")) mRawReprocessType = Integer.valueOf(reprocessType);
+         if (mRawReprocessType > 0) return true;
+         return false;
+    }
     public List<String> getSupportedPictureFormat(int cameraId){
         byte supportHeic = 1;
         try{
@@ -3347,6 +3359,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ret.add(String.valueOf(SettingsManager.JPEG_FORMAT));
         if (supportHeic == 1){
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
+        }
+        Size[] dngSize = getSupportedOutputSize(cameraId,ImageFormat.RAW_SENSOR);
+        if(dngSize != null && dngSize.length > 0 && (getValue(SettingsManager.KEY_SAVERAW) == null ||
+        (getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("disable"))) && !isRawReprocess()){
+        ret.add(String.valueOf(SettingsManager.DNG_FORMAT));
         }
         return ret;
     }
@@ -3430,13 +3447,23 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if (formats != null && formats[0] != null){
                     avaliableFormat.add(formats[0]);
                     if (filterUnsupportedOptions(pictureFormat,
-                            avaliableFormat)) {
+                            avaliableFormat)){
                         mFilteredKeys.add(pictureFormat.getKey());
                     }
                 }
             }
         }
     }
+    public void filterPicturFormat(){
+           ListPreference pictureFormat = mPreferenceGroup.findPreference(KEY_PICTURE_FORMAT);
+           pictureFormat.reloadInitialEntriesAndEntryValues();
+           if (pictureFormat != null){
+            if (filterUnsupportedOptions(pictureFormat,
+                       getSupportedPictureFormat(getCurrentCameraId()))){
+                   mFilteredKeys.add(pictureFormat.getKey());
+               }
+           }
+       }
 
     private boolean filterUnsupportedOptions(ListPreference pref, List<String> supported) {
         // Remove the preference if the parameter is not supported

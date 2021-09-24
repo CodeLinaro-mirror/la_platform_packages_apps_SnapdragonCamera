@@ -4657,14 +4657,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     String title = (name == null) ? null : name.title;
                                     long date = (name == null) ? -1 : name.date;
                                     byte[] bytes = getJpegData(image);
-                                    Log.i(TAG, " image format:" + image.getFormat() + ",mRawReprocessType:" + mRawReprocessType);
+                                    int orientation = 0;
+                                    ExifInterface exif = null;
+                                    orientation = CameraUtil.getJpegRotation(getMainCameraId(),mOrientation);
+                                    exif =  Exif.getExif(bytes);
                                     long imglen=bytes.length;
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         Log.d(TAG,"setupcameraoutput-onImageAvailable width="+image.getWidth()+",height="+image.getHeight()+",stride="+image.getPlanes()[0].getRowStride());
-                                        if(image.getFormat() == ImageFormat.RAW_SENSOR){
+                                        if(image.getFormat() == ImageFormat.RAW_SENSOR && mSettingsManager.isDNGCreator() && mRawReprocessType == 0){
                                             int setsucess = setInfoForDng();
                                             if(setsucess == 0){
-                                                mActivity.getMediaSaveService().addRawDng(image,imglen, title, "dng");
+                                                mActivity.getMediaSaveService().addDng(image,imglen, title,date,null, image.getWidth(), image.getHeight(), orientation, exif,
+                                                                                                    mOnMediaSavedListener, mContentResolver,"dng");
                                             }else if(mRawReprocessType == 0){
                                                 image.close();
                                             }
@@ -4695,15 +4699,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         Log.d(TAG,"YUV buffer received from camera id =" + mCameraId);
                                         image.close();
                                     } else {
-                                        int orientation = 0;
-                                        ExifInterface exif = null;
                                         if (image.getFormat() != ImageFormat.HEIC) {
                                             exif = Exif.getExif(bytes);
                                             orientation = Exif.getOrientation(exif);
-                                        } else {
-                                            orientation = CameraUtil.getJpegRotation(getMainCameraId(),mOrientation);
                                         }
-
                                         if (mIntentMode != CaptureModule.INTENT_MODE_NORMAL &&
                                                 mIntentMode != INTENT_MODE_STILL_IMAGE_CAMERA) {
                                             mJpegImageData = bytes;
@@ -6217,6 +6216,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             mChosenImageFormat = ImageFormat.YUV_420_888;
         } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {
             mChosenImageFormat = ImageFormat.HEIC;
+        } else if(mSettingsManager.isDNGCreator()){
+            mChosenImageFormat = ImageFormat.RAW_SENSOR;
         } else {
             mChosenImageFormat = ImageFormat.JPEG;
         }
@@ -7194,7 +7195,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         if (mSupportedRawPictureSize != null) {
-            Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
+         Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
+        }
+        if(mSettingsManager.isDNGCreator()){
+            mPictureSize = mSupportedRawPictureSize;
+
         }
         mPreviewSize = getOptimalPreviewSize(mPictureSize, prevSizes);
         Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(getMainCameraId());

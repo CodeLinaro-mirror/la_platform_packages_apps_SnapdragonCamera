@@ -540,11 +540,13 @@
     <string-array name="pref_camera2_picture_format_entries" translatable="false">
         <item>@string/pref_camera2_picture_format_entry_0</item>
         <item>@string/pref_camera2_picture_format_entry_1</item>
+        <item>@string/pref_camera2_picture_format_entry_2</item>
     </string-array>
 
     <string-array name="pref_camera2_picture_format_entryvalues" translatable="false">
         <item>0</item>
         <item>1</item>
+        <item>2</item>
     </string-array>
 
     <!-- Camera Preferences focus mode dialog box entries -->

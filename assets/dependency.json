@@ -256,6 +256,7 @@
   "pref_camera2_raw_reprocess_key":
   {
     "0":{"pref_camera2_rawinfo_type_key":"off",
+         "pref_camera2_raw_format_key":"off",
          "pref_camera2_physical_raw_reprocess_key":"off"},
     "1": {},
     "2": {},
@@ -282,6 +283,14 @@
   {
     "enable":{"pref_camera2_longshot_key":"off"},
     "disable": {}
+  },
+    "pref_camera2_picture_format_key":
+  {
+    "2":{"pref_camera2_saveraw_key": "disable",
+         "pref_camera2_raw_reprocess_key" : "0",
+         "pref_camera2_picturesize_key":"3264x2448"},
+    "0": {},
+    "1": {}
   },
   "pref_camera2_multiresimagereader_key":
   {
