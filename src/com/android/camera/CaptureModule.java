@@ -4678,11 +4678,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             }
                                         }
                                         if (mRawReprocessType != 0 ) {
-                                            try {
-                                                Thread.sleep(500);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
+                                            waitForRawMetaData();
                                             Log.i(TAG, "start reprocess-image");
                                             if(mSettingsManager.getRawReprocessPhysicalId() != null) {
                                                 String physicalId = mSettingsManager.getRawReprocessPhysicalId();
