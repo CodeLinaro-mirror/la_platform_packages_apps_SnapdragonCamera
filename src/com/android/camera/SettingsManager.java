@@ -46,6 +46,7 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.media.CamcorderProfile;
+import android.media.MediaCodecInfo.CodecProfileLevel;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -720,6 +721,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             String value = getValue(dependentKey);
             JSONObject dependencyList = getDependencyList(dependentKey, value);
 
+            if(dependencyList == null) continue;
             String newValue = null;
             try {
                 newValue = dependencyList.getString(keyToProcess);
@@ -2460,12 +2462,33 @@ public class SettingsManager implements ListMenu.SettingsListener {
         List<String> profile = new ArrayList<>();
         profile.add("off");
         if ( VIDEO_ENCODER_PROFILE_TABLE.containsKey(videoEncoder) ) {
-            profile.addAll(VIDEO_ENCODER_PROFILE_TABLE.get(videoEncoder));
+            if(supports(CodecProfileLevel.HEVCProfileMain10)){
+                profile.addAll(VIDEO_ENCODER_PROFILE_TABLE.get(videoEncoder));
+            }
         }
         return profile;
     }
 
-
+    private boolean supports(int profile) {
+        String sVideoEncoder = getValue(SettingsManager.KEY_VIDEO_ENCODER);
+        MediaCodecList allCodecs = new MediaCodecList(MediaCodecList.ALL_CODECS);
+        for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
+            if (!info.isEncoder() || info.getName().contains("google")) continue;
+            for (String type : info.getSupportedTypes()) {
+                if(type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)){
+                    CodecCapabilities caps = info.getCapabilitiesForType(type);
+                    for (CodecProfileLevel pl : caps.profileLevels) {
+                        if (pl.profile != profile) {
+                            continue;
+                        }else {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     public boolean isCamera2HDRSupport(){
         String value = getValue(KEY_HDR);
