@@ -39,6 +39,8 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
@@ -2732,6 +2734,27 @@ public class SettingsManager implements ListMenu.SettingsListener {
             mfnrEnable = mfnrValue.equals("1");
         }
         return mfnrEnable;
+    }
+
+    public int[] getStatsInfo(CaptureResult result) {
+        int[] ret = {-1,-1,-1,-1,-1};
+        try {
+            ret[0] = result.get(CaptureModule.bgWidth);
+            ret[1] = result.get(CaptureModule.bgHeight);
+            ret[2] = result.get(CaptureModule.beWidth);
+            ret[3] = result.get(CaptureModule.beHeight);
+            Log.i(TAG,"stats info, bgWidth: "+ret[0] + ",bgHeight:" + ret[1] + ",beWidth:" + ret[2] +",beHeight:" + ret[3] );
+        } catch (Exception e){
+            Log.d(TAG, "getStatsInfo no stats vendor tag");
+        }
+        try {
+            int depth = result.get(CaptureModule.stats_bitdepth);
+            ret[4] = depth;
+            Log.i(TAG,"depth: " + depth);
+        }catch (Exception e){
+            Log.d(TAG, "getStatsInfo no stats bitdepth vendor tag");
+        }
+        return ret;
     }
 
     private void clearPerCameraPreferences() {
