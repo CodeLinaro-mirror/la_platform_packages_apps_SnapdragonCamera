@@ -72,7 +72,6 @@ import android.media.ImageReader;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
-import android.media.MediaRecorder;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
@@ -8981,7 +8980,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (profile != null) {
                     MediaRecorder recorder = new MediaRecorder();
                     recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-                    recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                    recorder.setAudioSource(PersistUtil.getAudioSource());
                     recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
                     String fileName = generatePhysicalVideoFilename(
                             MediaRecorder.OutputFormat.MPEG_4, Integer.valueOf((String) idsArray[i]));
@@ -9750,7 +9749,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         .setSampleRate(mProfile.audioSampleRate)
                         .setEncoding(mAudioFormatNumber)
                         .build())
-                .setAudioSource(MediaRecorder.AudioSource.MIC)
+                .setAudioSource(PersistUtil.getAudioSource())
                 .setBufferSizeInBytes(mAudioBufferSize*2)
                 .build();
         mAudioRecord.startRecording();
@@ -9926,7 +9925,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
                 mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.UNPROCESSED);
             } else {
-                mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                mMediaRecorder.setAudioSource(PersistUtil.getAudioSource());
             }
             mProfile.audioCodec = audioEncoder;
             if (mProfile.audioCodec == MediaRecorder.AudioEncoder.AMR_NB) {

@@ -29,6 +29,7 @@
 package com.android.camera.util;
 
 import android.graphics.Point;
+import android.media.MediaRecorder;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -152,6 +153,11 @@ public class PersistUtil {
             getBoolean("persist.sys.camera.rawcbinfo", false);
     private static final String PERSIST_CAMERA_MAX_BURST_SHOT_FPS =
             get("persist.sys.camera.maxBurstShotFPS", "0");
+    // MediaRecorder.AudioSource.CAMCORDER = 5；Microphone audio source tuned for video recording.
+    // MediaRecorder.AudioSource.MIC = 1; Microphone audio source ;
+    // MediaRecorder.AudioSource.DEFAULT = 0; Default audio source *;
+    private static final int PERSIST_AUDIO_SOURCE =
+            getInt("persist.sys.camera.audio_source", MediaRecorder.AudioSource.CAMCORDER);
 
     public static String getHFRRate() {
         return PERSIST_HFR_LIMIT;
@@ -433,4 +439,6 @@ public class PersistUtil {
     }
 
     public static boolean isRawCbInfoSupported() {return PERSIST_RAW_CB_INFO_SUPPORTED; }
+
+    public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }
 }
