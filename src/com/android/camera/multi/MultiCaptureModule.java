@@ -99,6 +99,8 @@ public class MultiCaptureModule implements MultiCamera {
     private CameraCaptureSession[] mCameraCaptureSessions = new CameraCaptureSession[MAX_NUM_CAM];
     private ImageReader[] mImageReaders = new ImageReader[MAX_NUM_CAM];
 
+    private Size mPreviewSizes[] = new Size[MAX_NUM_CAM];
+
     private Map<String,SessionConfiguration> mConcurrentConfigurations = new HashMap<>();
 
     private Handler mCameraHandler;
@@ -150,11 +152,42 @@ public class MultiCaptureModule implements MultiCamera {
     @Override
     public void onResume() {
         mPaused = false;
+        Set<String> concurrentIds = null;
         // Set up sound playback for shutter button, video record and video stop
         if (mSoundPlayer == null) {
             mSoundPlayer = SoundClips.getPlayer(mActivity);
         }
         startBackgroundThread();
+
+        if (mLocalSharedPref != null){
+            Log.d(TAG, " mLocalSharedPref");
+            concurrentIds =
+                    mLocalSharedPref.getStringSet(MultiSettingsActivity.KEY_CONCURRENT_CAMERA,null);
+        }
+        if (concurrentIds != null && concurrentIds.size() > 0){
+            for (String id : concurrentIds){
+                Log.d(TAG, " add camera id= "+id);
+                mCameraIDList.add(id);
+            }
+        } else {
+            Log.d(TAG, "default 0");
+            mCameraIDList.add("0");
+        }
+
+        mMultiCameraUI.hideSurfaceView();
+        for (String cameraId : mCameraIDList) {
+            int id = Integer.valueOf(cameraId);
+            createImageReader(id);
+            int index = mCameraIDList.indexOf(cameraId);
+            Log.d(TAG, "onResume index :" + index);
+            if (index != -1) {
+                mMultiCameraUI.setPreviewSize(index, mPreviewSizes[id].getWidth(),
+                        mPreviewSizes[id].getHeight());
+            } else {
+                mMultiCameraUI.setPreviewSize(0, mPreviewSizes[0].getWidth(),
+                        mPreviewSizes[0].getHeight());
+            }
+        }
     }
 
     @Override
@@ -174,22 +207,6 @@ public class MultiCaptureModule implements MultiCamera {
 
     @Override
     public boolean openCamera() {
-        Set<String> concurrentIds = null;
-        if (mLocalSharedPref != null){
-            Log.d(TAG,"capture mLocalSharedPref");
-            concurrentIds =
-                    mLocalSharedPref.getStringSet(MultiSettingsActivity.KEY_CONCURRENT_CAMERA,null);
-        }
-        if (concurrentIds != null && concurrentIds.size() > 0){
-            for (String id : concurrentIds){
-                Log.d(TAG, "openCamera add id="+id);
-                mCameraIDList.add(id);
-            }
-        } else {
-            Log.d(TAG, "openCamera default 0");
-            mCameraIDList.add("0");
-        }
-
         Message msg = Message.obtain();
         msg.what = OPEN_CAMERA;
         if (mCameraHandler != null) {
@@ -324,7 +341,10 @@ public class MultiCaptureModule implements MultiCamera {
                         message.what = OPEN_CAMERA;
                         sendMessage(message);
                     } else {
-                        mCameraHandler.sendMessageDelayed(msg, 200);
+                        Message message = new Message();
+                        message.what = WAIT_SURFACE;
+                        message.arg1 = id;
+                        mCameraHandler.sendMessageDelayed(message, 200);
                         Log.v(TAG, "Surface is invalid, wait more 200ms surfaceCreated");
                     }
                     break;
@@ -392,7 +412,6 @@ public class MultiCaptureModule implements MultiCamera {
             mCameraDevices[id] = cameraDevice;
             Log.d(TAG, "onOpened " + id);
             mCameraOpenCloseLock.release();
-            createImageReader(id);
             createCameraPreviewSession(id);
             mActivity.runOnUiThread(new Runnable() {
                 @Override
@@ -569,15 +588,41 @@ public class MultiCaptureModule implements MultiCamera {
 
     private void createImageReader(int id) {
         String defaultSize = mActivity.getString(R.string.pref_multi_camera_picturesize_default);
-        int index = mCameraIDList.indexOf(String.valueOf(id));
         String pictureSize = mLocalSharedPref.getString(
-                MultiSettingsActivity.KEY_PICTURE_SIZES.get(index), defaultSize);
+                MultiSettingsActivity.KEY_PICTURE_SIZE_ + id, defaultSize);
         Size size = parsePictureSize(pictureSize);
-        Log.v(TAG, " createImageReader size :" + size.getWidth() + "x" + size.getHeight());
+        Log.v(TAG, " createImageReader id " + id + ", size :" + size.getWidth() +
+                "x" + size.getHeight());
         mImageReaders[id] = ImageReader.newInstance(size.getWidth(), size.getHeight(),
                 ImageFormat.JPEG, /*maxImages*/2);
         mImageReaders[id].setOnImageAvailableListener(
                 mOnImageAvailableListener, mMultiCameraModule.getMyCameraHandler());
+        mPreviewSizes[id] = getOptimalPreviewSize(id, size);
+    }
+
+    private Size getOptimalPreviewSize(int id, Size pictureSize) {
+        double targetRatio = (double) pictureSize.getWidth() / pictureSize.getHeight();
+        final double ratio_1_1 = (double)1/1;
+        final double ratio_4_3 = (double)4/3;
+        final double ratio_16_9 = (double)16/9;
+        Size previewSize = null;
+        Log.v(TAG, "getOptimalPreviewSize (targetRatio == ratio_1_1) " + (targetRatio == ratio_1_1) +
+                " , (targetRatio == ratio_4_3): " + (targetRatio == ratio_4_3) + ", (targetRatio == ratio_16_9) :" + (targetRatio == ratio_16_9));
+        if (targetRatio == ratio_1_1) {
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
+                    MultiSettingsActivity.PREVIEW_HIEGHT_1_1);
+        } else if (targetRatio == ratio_4_3) {
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
+                    MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
+        } else if (targetRatio == ratio_16_9) {
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH_16_9,
+                    MultiSettingsActivity.PREVIEW_HIEGHT_16_9);
+        } else {
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
+                    MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
+        }
+        Log.v(TAG, "getOptimalPreviewSize previewSize " + previewSize.getWidth() + " x " + previewSize.getHeight());
+        return previewSize;
     }
 
     private final ImageReader.OnImageAvailableListener mOnImageAvailableListener
@@ -665,10 +710,18 @@ public class MultiCaptureModule implements MultiCamera {
                 int index = mCameraIDList.indexOf(String.valueOf(cameraId));
                 captureBuilder.addTarget(mMultiCameraUI.getSurfaceViewList().get(
                         index).getHolder().getSurface());
+                try {
+                    final byte enable = 1;
+                    captureBuilder.set(override_resource_cost_validation, enable);
+                    Log.v(TAG, " capture set" + override_resource_cost_validation + " is 1");
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                }
                 applySettingsForCapture(captureBuilder, cameraId);
                 // Use the same AE and AF modes as the preview.
                 captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+
                 if (halZSLCheck) {
                     captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, true);
                 } else {

@@ -1752,7 +1752,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             filterHeifSizeOptions();
         } else if ((pref.getKey().equals(KEY_EIS_VALUE))) {
             String value = getValue(KEY_VIDEO_HIGH_FRAME_RATE);
-            if (!value.equals("off")) {
+            if (value != null && !value.equals("off")) {
                 int fpsRate = Integer.parseInt(value.substring(3));
                 if (fpsRate == 480) {
                     filterVideoDurationFor480fps();
@@ -2021,6 +2021,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if (!mIsHFRSupported) {
                     mFilteredKeys.add(hfrPref.getKey());
                 }
+            }else {
+                mIsHFRSupported = true;//init this value for other mode
             }
         }
     }

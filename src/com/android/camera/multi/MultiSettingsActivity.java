@@ -72,16 +72,26 @@ public class MultiSettingsActivity extends PreferenceActivity {
 
     public static final String CAMERA_MODULE = "camera_module";
 
+    // Preview Size settings
+    public static final int PREVIEW_WIDTH = 540;
+    public static final int PREVIEW_WIDTH_16_9 = 405;
+    public static final int PREVIEW_HIEGHT_1_1 = 540;
+    public static final int PREVIEW_HIEGHT_4_3 = 720;
+    public static final int PREVIEW_HIEGHT_16_9 = 720;
+
     // capture settings
     public static final String KEY_HAL_ZAL = "pref_multi_camera_hal_zsl_key";
+    public static final String KEY_PICTURE_SIZE_ = "Picture_size_of_camera_";
     public static final String KEY_PICTURE_SIZE_1 = "pref_multi_camera_picturesize1_key";
     public static final String KEY_PICTURE_SIZE_2 = "pref_multi_camera_picturesize2_key";
     public static final String KEY_PICTURE_SIZE_3 = "pref_multi_camera_picturesize3_key";
     public static final String KEY_PICTURE_SIZE_4 = "pref_multi_camera_picturesize4_key";
     public static final String KEY_PICTURE_QUALITY = "pref_multi_camera_jpegquality_key";
     public static final String KEY_SHUTTER_SOUND = "pref_multi_camera_shutter_sound_key";
+    public static final String KEY_CAPTURE_MFNR_VALUE = "pref_multi_camera_capture_mfnr_key";
 
-    // capture settings
+    // video settings
+    public static final String KEY_VIDEO_SIZE_ = "Video_size_of_camera_";
     public static final String KEY_VIDEO_SIZE_1 = "pref_multi_camera_video_quality1_key";
     public static final String KEY_VIDEO_SIZE_2 = "pref_multi_camera_video_quality2_key";
     public static final String KEY_VIDEO_SIZE_3 = "pref_multi_camera_video_quality3_key";
@@ -110,19 +120,6 @@ public class MultiSettingsActivity extends PreferenceActivity {
     public String[] mCameraIds;
     public String[] mConcurrentIds;
 
-
-    static {
-        KEY_PICTURE_SIZES.put(0, KEY_PICTURE_SIZE_1);
-        KEY_PICTURE_SIZES.put(1, KEY_PICTURE_SIZE_2);
-        KEY_PICTURE_SIZES.put(2, KEY_PICTURE_SIZE_3);
-        KEY_PICTURE_SIZES.put(3, KEY_PICTURE_SIZE_4);
-
-        KEY_VIDEO_SIZES.put(0, KEY_VIDEO_SIZE_1);
-        KEY_VIDEO_SIZES.put(1, KEY_VIDEO_SIZE_2);
-        KEY_VIDEO_SIZES.put(2, KEY_VIDEO_SIZE_3);
-        KEY_VIDEO_SIZES.put(3, KEY_VIDEO_SIZE_4);
-    }
-
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
@@ -131,6 +128,7 @@ public class MultiSettingsActivity extends PreferenceActivity {
             Preference p = findPreference(key);
             if (p == null) return;
 
+            Log.v(TAG, " onSharedPreferenceChanged key :" + key );
             SharedPreferences.Editor editor = mLocalSharedPref.edit();
             String value;
             if (p instanceof SwitchPreference) {
@@ -139,7 +137,13 @@ public class MultiSettingsActivity extends PreferenceActivity {
                 editor.putBoolean(key, checked);
             } else if (p instanceof ListPreference){
                 value = ((ListPreference) p).getValue();
-                editor.putString(key, value);
+                String title = (String)((ListPreference) p).getTitle();
+                if (key.contains("pref_multi_camera_picturesize") ||
+                        key.contains("pref_multi_camera_video_quality")) {
+                    editor.putString(title, value);
+                } else {
+                    editor.putString(key, value);
+                }
             } else if (p instanceof MultiSelectListPreference) {
                 Set<String> valueSet = ((MultiSelectListPreference)p).getValues();
                 if (key.equals(KEY_CONCURRENT_CAMERA)){
@@ -168,8 +172,8 @@ public class MultiSettingsActivity extends PreferenceActivity {
                 }
 
             }
-
             editor.apply();
+
             if (key.equals(KEY_MULTI_CAMERAS_MODE)) {
                 String multiEnable = ((ListPreference) p).getValue();
                 String multiCamerasOff = MultiSettingsActivity.this.getResources().getString(
@@ -418,10 +422,10 @@ public class MultiSettingsActivity extends PreferenceActivity {
         filterUnsupported(KEY_PICTURE_SIZE_1, getSupportedPictureSize(Integer.valueOf(cameraId)));
 
         if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_1, size);
+            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_ + cameraId, size);
         }
         if (pictureSizePref != null) {
-            pictureSizePref.setTitle("Picture size of camera "+cameraId);
+            pictureSizePref.setTitle(KEY_PICTURE_SIZE_+cameraId);
             try {
                 if (size == null) {
                     pictureSizePref.setValue(defaultSize);
@@ -448,11 +452,11 @@ public class MultiSettingsActivity extends PreferenceActivity {
         filterUnsupported(KEY_PICTURE_SIZE_2, getSupportedPictureSize(Integer.valueOf(cameraId)));
 
         if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_2, size);
+            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_ + cameraId, size);
         }
         if (pictureSizePref != null) {
             pictureSizePref.setEnabled(true);
-            pictureSizePref.setTitle("Picture size of camera "+cameraId);
+            pictureSizePref.setTitle(KEY_PICTURE_SIZE_ + cameraId);
             try {
                 if (size == null) {
                     pictureSizePref.setValue(defaultSize);
@@ -478,11 +482,11 @@ public class MultiSettingsActivity extends PreferenceActivity {
         String defaultSize = this.getString(R.string.pref_multi_camera_picturesize_default);
         filterUnsupported(KEY_PICTURE_SIZE_3, getSupportedPictureSize(Integer.valueOf(cameraId)));
         if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_3, size);
+            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_ + cameraId, size);
         }
         if (pictureSizePref != null) {
             pictureSizePref.setEnabled(true);
-            pictureSizePref.setTitle("Picture size of camera "+cameraId);
+            pictureSizePref.setTitle(KEY_PICTURE_SIZE_ + cameraId);
             try {
                 if (size == null) {
                     pictureSizePref.setValue(defaultSize);
@@ -508,11 +512,11 @@ public class MultiSettingsActivity extends PreferenceActivity {
         String defaultSize = this.getString(R.string.pref_multi_camera_picturesize_default);
         filterUnsupported(KEY_PICTURE_SIZE_4, getSupportedPictureSize(Integer.valueOf(cameraId)));
         if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_4, size);
+            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_ + cameraId, size);
         }
         if (pictureSizePref != null) {
             pictureSizePref.setEnabled(true);
-            pictureSizePref.setTitle("Picture size of camera "+cameraId);
+            pictureSizePref.setTitle(KEY_PICTURE_SIZE_ + cameraId);
             try {
                 if (size == null) {
                     pictureSizePref.setValue(defaultSize);
@@ -545,10 +549,10 @@ public class MultiSettingsActivity extends PreferenceActivity {
         String defaultSize = this.getString(R.string.pref_multi_camera_video_quality_default);
         filterUnsupported(KEY_VIDEO_SIZE_1, getSupportedVideoSize(Integer.valueOf(cameraId)));
         if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_1, size);
+            size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_ + cameraId, size);
         }
         if (videoSizePref != null) {
-            videoSizePref.setTitle("Video size of camera "+cameraId);
+            videoSizePref.setTitle(KEY_VIDEO_SIZE_ + cameraId);
             try {
                 if (size == null) {
                     videoSizePref.setValue(defaultSize);
@@ -574,11 +578,11 @@ public class MultiSettingsActivity extends PreferenceActivity {
         String defaultSize = this.getString(R.string.pref_multi_camera_video_quality_default);
         filterUnsupported(KEY_VIDEO_SIZE_2, getSupportedVideoSize(Integer.valueOf(cameraId)));
         if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_2, size);
+            size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_ + cameraId, size);
         }
         if (videoSizePref != null) {
             videoSizePref.setEnabled(true);
-            videoSizePref.setTitle("Video size of camera "+cameraId);
+            videoSizePref.setTitle(KEY_VIDEO_SIZE_ + cameraId);
             try {
                 if (size == null) {
                     videoSizePref.setValue(defaultSize);
@@ -604,11 +608,11 @@ public class MultiSettingsActivity extends PreferenceActivity {
         String defaultSize = this.getString(R.string.pref_multi_camera_video_quality_default);
         filterUnsupported(KEY_VIDEO_SIZE_3, getSupportedVideoSize(Integer.valueOf(cameraId)));
         if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_3, size);
+            size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_ + cameraId, size);
         }
         if (videoSizePref != null) {
             videoSizePref.setEnabled(true);
-            videoSizePref.setTitle("Video size of camera "+cameraId);
+            videoSizePref.setTitle(KEY_VIDEO_SIZE_ + cameraId);
             try {
                 if (size == null) {
                     videoSizePref.setValue(defaultSize);
@@ -634,11 +638,11 @@ public class MultiSettingsActivity extends PreferenceActivity {
         String defaultSize = this.getString(R.string.pref_multi_camera_video_quality_default);
         filterUnsupported(KEY_VIDEO_SIZE_4, getSupportedVideoSize(Integer.valueOf(cameraId)));
         if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_4, size);
+            size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_ + cameraId, size);
         }
         if (videoSizePref != null) {
             videoSizePref.setEnabled(true);
-            videoSizePref.setTitle("Video size of camera "+cameraId);
+            videoSizePref.setTitle(KEY_VIDEO_SIZE_ + cameraId);
             try {
                 if (size == null) {
                     videoSizePref.setValue(defaultSize);

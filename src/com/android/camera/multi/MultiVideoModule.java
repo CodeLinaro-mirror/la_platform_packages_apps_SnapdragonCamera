@@ -153,7 +153,8 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     private LocationManager mLocationManager;
     private CamcorderProfile mProfile;
 
-    private Size mVideoSize;
+    private Size[] mVideoSize = new Size[MAX_NUM_CAM];
+    private Size mPreviewSizes[] = new Size[MAX_NUM_CAM];
 
     private boolean mCaptureTimeLapse = false;
     // Default 0. If it is larger than 0, the camcorder is in time lapse mode.
@@ -232,6 +233,36 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         mPaused = false;
         initializeValues();
         startBackgroundThread();
+        Set<String> concurrentIds = null;
+
+        if (mLocalSharedPref != null){
+            concurrentIds =
+                    mLocalSharedPref.getStringSet(MultiSettingsActivity.KEY_CONCURRENT_CAMERA,null);
+        }
+        if (concurrentIds != null && concurrentIds.size() > 0){
+            for (String id : concurrentIds){
+                Log.d(TAG, " onResume openCamera id="+id);
+                mCameraIDList.add(id);
+            }
+        } else {
+            Log.d(TAG, " onResume openCamera default 0");
+            mCameraIDList.add("0");
+        }
+
+        mMultiCameraUI.hideSurfaceView();
+
+        for (String cameraId : mCameraIDList){
+            int id = Integer.valueOf(cameraId);
+            updateVideoSize(id);
+            int index = mCameraIDList.indexOf(cameraId);
+            if (index != -1) {
+                mMultiCameraUI.setPreviewSize(index, mPreviewSizes[id].getWidth(),
+                        mPreviewSizes[id].getHeight());
+            } else {
+                mMultiCameraUI.setPreviewSize(index, mPreviewSizes[0].getWidth(),
+                        mPreviewSizes[0].getHeight());
+            }
+        }
     }
 
     @Override
@@ -259,22 +290,6 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
 
     @Override
     public boolean openCamera() {
-        Set<String> concurrentIds = null;
-        if (mLocalSharedPref != null){
-            Log.d(TAG, "video mLocalSharedPref");
-            concurrentIds =
-                    mLocalSharedPref.getStringSet(MultiSettingsActivity.KEY_CONCURRENT_CAMERA,null);
-        }
-        if (concurrentIds != null && concurrentIds.size() > 0){
-            for (String id : concurrentIds){
-                Log.d(TAG, " openCamera id="+id);
-                mCameraIDList.add(id);
-            }
-            mLastCameraId = Integer.parseInt(mCameraIDList.get(mCameraIDList.size() -1));
-        } else {
-            Log.d(TAG, " openCamera default 0");
-            mCameraIDList.add("0");
-        }
         Message msg = Message.obtain();
         msg.what = OPEN_CAMERA;
         if (mCameraHandler != null) {
@@ -580,7 +595,10 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         message.what = OPEN_CAMERA;
                         sendMessage(message);
                     } else {
-                        mCameraHandler.sendMessageDelayed(msg, 200);
+                        Message message = new Message();
+                        message.what = WAIT_SURFACE;
+                        message.arg1 = id;
+                        mCameraHandler.sendMessageDelayed(message, 200);
                         Log.v(TAG, "Surface is invalid, wait more 200ms surfaceCreated");
                     }
                     break;
@@ -661,7 +679,6 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             int id = Integer.parseInt(cameraDevice.getId());
             mCameraDevices[id] = cameraDevice;
             Log.d(TAG, "onOpened " + id);
-            updateVideoSize(id);
             mCameraOpenCloseLock.release();
             createCameraPreviewSession(id, false);
             mActivity.runOnUiThread(new Runnable() {
@@ -756,11 +773,37 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
 
     private void updateVideoSize(int id) {
         String defaultSize = mActivity.getString(R.string.pref_multi_camera_video_quality_default);
-        int index = mCameraIDList.indexOf(String.valueOf(id));
         String videoSize = mLocalSharedPref.getString(
-                MultiSettingsActivity.KEY_VIDEO_SIZES.get(index), defaultSize);
-        mVideoSize = parsePictureSize(videoSize);
-        Log.v(TAG, " updateVideoSize size :" + mVideoSize.getWidth() + "x" + mVideoSize.getHeight());
+                MultiSettingsActivity.KEY_VIDEO_SIZE_ + id, defaultSize);
+        mVideoSize[id] = parsePictureSize(videoSize);
+        Log.v(TAG, " updateVideoSize id :" + id + ", size :" + mVideoSize[id].getWidth() +
+                "x" + mVideoSize[id].getHeight());
+        mPreviewSizes[id] = getOptimalVideoPreviewSize(id, mVideoSize[id]);
+    }
+
+    private Size getOptimalVideoPreviewSize(int id, Size VideoSize) {
+        double targetRatio = (double) VideoSize.getWidth() / VideoSize.getHeight();
+        final double ratio_1_1 = (double)1/1;
+        final double ratio_4_3 = (double)4/3;
+        final double ratio_16_9 = (double)16/9;
+        Size previewSize = null;
+        Log.v(TAG, "getOptimalPreviewSize (targetRatio == ratio_1_1) " + (targetRatio == ratio_1_1) +
+                " , (targetRatio == ratio_4_3): " + (targetRatio == ratio_4_3) + ", (targetRatio == ratio_16_9) :" + (targetRatio == ratio_16_9));
+        if (targetRatio == ratio_1_1) {
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
+                    MultiSettingsActivity.PREVIEW_HIEGHT_1_1);
+        } else if (targetRatio == ratio_4_3) {
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
+                    MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
+        } else if (targetRatio == ratio_16_9) {
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH_16_9,
+                    MultiSettingsActivity.PREVIEW_HIEGHT_16_9);
+        } else {
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
+                    MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
+        }
+        Log.v(TAG, "getOptimalVideoPreviewSize previewSize " + previewSize.getWidth() + " x " + previewSize.getHeight());
+        return previewSize;
     }
 
     /**
@@ -1292,7 +1335,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         mCurrentVideoValues[id].put(MediaStore.Video.Media.MIME_TYPE, mime);
         mCurrentVideoValues[id].put(MediaStore.Video.Media.DATA, path);
         mCurrentVideoValues[id].put(MediaStore.Video.Media.RESOLUTION,
-                "" + mVideoSize.getWidth() + "x" + mVideoSize.getHeight());
+                "" + mVideoSize[id].getWidth() + "x" + mVideoSize[id].getHeight());
         Location loc = mLocationManager.getCurrentLocation();
         if (loc != null) {
             mCurrentVideoValues[id].put(MediaStore.Video.Media.LATITUDE, loc.getLatitude());
@@ -1314,8 +1357,8 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             return;
         }
         Log.v(TAG, " setUpMediaRecorder " + id);
-        int size = CameraSettings.VIDEO_QUALITY_TABLE.get(mVideoSize.getWidth() + "x"
-                + mVideoSize.getHeight());
+        int size = CameraSettings.VIDEO_QUALITY_TABLE.get(mVideoSize[id].getWidth() + "x"
+                + mVideoSize[id].getHeight());
         if (CamcorderProfile.hasProfile(id, size)) {
             mProfile = CamcorderProfile.get(id, size);
         } else {
@@ -1339,7 +1382,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         mMediaRecorders[id].setOutputFile(mNextVideoAbsolutePaths[id]);
         mMediaRecorders[id].setVideoEncodingBitRate(10000000);
         mMediaRecorders[id].setVideoFrameRate(30);
-        mMediaRecorders[id].setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+        mMediaRecorders[id].setVideoSize(mVideoSize[id].getWidth(), mVideoSize[id].getHeight());
         mMediaRecorders[id].setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         if (mAudioEncoder != -1) {
             mMediaRecorders[id].setAudioEncoder(mAudioEncoder);

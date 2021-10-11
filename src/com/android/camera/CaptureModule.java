@@ -618,6 +618,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     //Stats NN Result
     private static final CaptureRequest.Key<Byte> statsNNControl =
             new CaptureRequest.Key<>("org.quic.camera2.statsNNControl.Enable", Byte.class);
+    private static final CaptureRequest.Key<Byte> qcam3NNControl =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableSalinet", Byte.class);
     private static final CaptureResult.Key<Byte> stats_nn_result_width =
             new CaptureResult.Key<>("org.quic.camera2.statsNNSaliNetResults.statsNNSaliencyWidth", Byte.class);
     private static final CaptureResult.Key<Byte> stats_nn_result_height =
@@ -2731,6 +2733,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         int i=1;
                         for (String physical : mSettingsManager.getPhysicalCameraId()){
                             Log.d(TAG,"add surface physical id="+physical);
+                            mUI.hideSurfaceView();
                             OutputConfiguration outputConfiguration =
                                     new OutputConfiguration(previewSurfaces.get(i));
                             outputConfiguration.setPhysicalCameraId(physical);
@@ -3578,6 +3581,10 @@ public class CaptureModule implements CameraModule, PhotoController,
      */
     private void takePicture() {
         Log.d(TAG, "takePicture");
+        if(!getCameraModeSwitcherAllowed() || !mUI.isShutterEnabled()){
+            Log.d(TAG, "mode switch not finished or shutter button is not enabled, can not take snapshot");
+            return;
+        }
         mUI.enableShutter(false);
         if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) &&
                 !isFlashOn(getMainCameraId()) && (mPreviewCaptureResult != null &&
@@ -4102,6 +4109,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                 if (mNumFramesArrived.get() >= mShotNum) {
                     mLongshotActive = false;
+                    return;
+
                 }
                 Log.d(TAG, "captureStillPictureForLongshot onCaptureCompleted: " + mNumFramesArrived.get() + " " + mShotNum);
 
@@ -4218,10 +4227,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                 }
 
+                mLongshoting = false;
                 if (mNumFramesArrived.get() < mShotNum && mLongshotActive && !mBurstLimit && !mPaused) {
                     captureStillPicture(CURRENT_ID);
                 }else {
-                    mLongshoting = false;
                     unlockFocus(getMainCameraId());
                 }
             }
@@ -4259,7 +4268,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mPreviewRequestBuilder[id].setTag("preview");
             burstList.add(mPreviewRequestBuilder[id].build());
             float previewNum = 1.0f;
-            for (int i = 0; i < PersistUtil.getLongshotShotLimit() - 1; i++) {
+            for (int i = 0; i <= PersistUtil.getLongshotShotLimit() - 1; i++) {
                 if ((previewNum - burstShotFpsNums) >= 0.0) {
                     captureBuilder.setTag("capture");
                     burstList.add(captureBuilder.build());
@@ -5620,6 +5629,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         applyNumHDRExposure(builder);
         applyStatsVisualizerOptionMask(builder);
+        applyStatsNNControl(builder);
     }
 
     private void applyMctf(CaptureRequest.Builder builder){
@@ -5662,7 +5672,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyWbColorTemperature(builder);
         applyToneMapping(builder);
         applyLivePreview(builder);
-        applyStatsNNControl(builder);
         applyPdnetToggle(builder);
         applyPhotoEIS(builder);
     }
@@ -6234,9 +6243,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(mCurrentSceneMode.mode == CameraMode.VIDEO){
             enableVideoButton(false);//disable the video button before media recorder is ready
         }
-	    if (mCurrentSceneMode.mode != CameraMode.HFR){
-            mHighSpeedCapture = false;
-        }
+        mHighSpeedCapture = false;
         if(!MCXMODE) {
             checkRTBCameraId();
         }
@@ -8105,7 +8112,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyVideoHDR(builder);
         applyTouchTrackFocus(builder);
         applyToneMapping(builder);
-        applyStatsNNControl(builder);
         applyHistogram(builder);
         applyBGStats(builder);
         applyBEStats(builder);
@@ -8209,9 +8215,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (value != null) {
             byte statsnn = (byte)(Integer.parseInt(value) == 1 ? 0x01 : 0x00);
             try {
-                builder.set(CaptureModule.statsNNControl, statsnn);
+                builder.set(CaptureModule.qcam3NNControl, statsnn);
             } catch (IllegalArgumentException e) {
-                Log.w(TAG, "cannot find vendor tag: " + livePreview.toString());
+                Log.w(TAG, "cannot find vendor tag: " + CaptureModule.qcam3NNControl);
+                try{
+                    builder.set(CaptureModule.statsNNControl, statsnn);
+                }catch (IllegalArgumentException ex) {
+                    Log.w(TAG, "cannot find vendor tag: " + CaptureModule.statsNNControl);
+                }
             }
         }
     }
@@ -10041,7 +10052,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void onVideoButtonClick() {
-        if (!isRecorderReady() || getCameraMode() == DUAL_MODE) return;
+        if (!isRecorderReady() || getCameraMode() == DUAL_MODE ||
+        (getCurrenCameraMode() != CameraMode.VIDEO && getCurrenCameraMode() != CameraMode.HFR)) return;
 
         if (!mIsRecordingVideo) {
             if (!triggerVideoRecording(getMainCameraId())) {
@@ -12724,13 +12736,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!getCameraModeSwitcherAllowed()) {
                     return -1;
                 }
+                mUI.smoothSelectedPosition(mode);
                 return selectCameraMode(mode);
             }
         };
     }
 
     public int selectCameraMode(int mode) {
-        if (mCurrentSceneMode.mode == mSceneCameraIds.get(mode).mode) {
+        if (mCurrentSceneMode.mode == mSceneCameraIds.get(mode).mode || mRecordingStarted) {
             return -1;
         }
         setCameraModeSwitcherAllowed(false);
