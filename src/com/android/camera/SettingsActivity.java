@@ -270,6 +270,7 @@ public class SettingsActivity extends PreferenceActivity {
         if((ZSLPref != null &&"app-zsl".equals(ZSLPref.getValue())) ||
                 (selfiePref != null && selfiePref.isChecked())){
             if (mfnrPref != null) {
+                mfnrPref.setValue("0");
                 mfnrPref.setEnabled(false);
             }
         } else {
@@ -277,6 +278,7 @@ public class SettingsActivity extends PreferenceActivity {
                 mfnrPref.setEnabled(true);
             }
         }
+        updateMfnrPreference();
     }
 
     private void UpdateManualExposureSettings() {
@@ -1246,6 +1248,7 @@ public class SettingsActivity extends PreferenceActivity {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
+        updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
     }
 
     private void updateStoragePreference() {
@@ -1278,6 +1281,7 @@ public class SettingsActivity extends PreferenceActivity {
         if (mfnrPref != null && (flashValue != 0 && flashValue != -1) &&
             (mode != CaptureModule.CameraMode.RTB && mode != CaptureModule.CameraMode.SAT) &&
             mSettingsManager.isSWMFNRSupported()) {
+            mfnrPref.setValue("0");
             mfnrPref.setEnabled(false);
         }
     }
