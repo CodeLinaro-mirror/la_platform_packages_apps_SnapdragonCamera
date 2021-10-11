@@ -1335,7 +1335,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             processCaptureResult(result);
             mPostProcessor.onMetaAvailable(result);
             if (statsParametersUpdated <= STATS_PARAMETER_UPDATE) {
-                //updateStatsParameters(result);
+                updateStatsParameters(result);
             }
             String stats_visualizer = mSettingsManager.getValue(
                     SettingsManager.KEY_STATS_VISUALIZER_VALUE);
@@ -3782,7 +3782,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             //apply swmfnr and aide param
             try {
                 captureBuilder.set(CaptureModule.isSWMFEnabled, (byte)(isSwMfnrEnabled() ? 0x01 : 0x00));
-                captureBuilder.set(CaptureModule.isAIDEEnabled, (byte)(isAIDEEnabled() && mAideAECLuxIndex >= 320 ? 0x01 : 0x00));
+                captureBuilder.set(CaptureModule.isAIDEEnabled, (byte)(isAIDEEnabled() && mAideAECLuxIndex >= lux_index_threadhold ? 0x01 : 0x00));
             } catch (IllegalArgumentException e) {
                 Log.i(TAG,"can not read swmfnr enable or aide enable tag");
             }
@@ -4307,8 +4307,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             Rect cropRegion = cropRegionForAideV2Zoom();
             //getimagedata
             int[] inputFrameDim = {mAideFullImage.getWidth(), mAideFullImage.getHeight(), mAideFullImage.getPlanes()[0].getRowStride(), mAideFullImage.getPlanes()[2].getRowStride()};
+            Log.i(TAG,"full image width " + inputFrameDim[0] + ", height:" + inputFrameDim[1] + ",stride:" + inputFrameDim[2]);
             int[] downFrameDim = {mAideDownImage.getWidth(), mAideDownImage.getHeight(), mAideDownImage.getPlanes()[0].getRowStride(), mAideDownImage.getPlanes()[2].getRowStride()};
-            ByteBuffer inputY= mAideFullImage.getPlanes()[0].getBuffer();
+            Log.i(TAG,"ds image width " + downFrameDim[0] + ", height:" + downFrameDim[1] + ",stride:" + downFrameDim[2]);            ByteBuffer inputY= mAideFullImage.getPlanes()[0].getBuffer();
             ByteBuffer inputC = mAideFullImage.getPlanes()[2].getBuffer();
             inputY.rewind();
             inputC.rewind();
@@ -4374,10 +4375,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public Rect cropRegionForAideV2Zoom() {
-        if(mZoomValue == 1){
-            Rect cropRegion = new Rect(0,0, mAideFullImage.getWidth(),mAideFullImage.getHeight());
-            return cropRegion;
-        }
         Rect originalCropRegion = new Rect();
         Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
         if(physical_ids != null && physical_ids.size() != 0){
@@ -11729,7 +11726,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void cancelTouchFocus(int id) {
-        if(mPaused)
+        if(mPaused || isTakingPicture())
             return;
         if (DEBUG) {
             Log.v(TAG, "cancelTouchFocus " + id);
