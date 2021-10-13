@@ -5856,16 +5856,21 @@ public class CaptureModule implements CameraModule, PhotoController,
         mJpegImageData = null;
     }
 
+    @Override
     public void onResumeBeforeSuper() {
+        onResumeBeforeSuper(false);
+    }
+
+    public void onResumeBeforeSuper(boolean resumeFromRestartAll) {
         statsParametersUpdated = 0;//need to reload bg/be width&height
         mSettingsManager.createCaptureModule(this);
-        reinit();
         initModeByIntent();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
-        if (facingOfIntentExtras != -1) {
+        if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
         }
+        reinit();
         mPaused = false;
         mStatsVisualEnable = mSettingsManager.getValue(
                 SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
@@ -11904,8 +11909,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 case SettingsManager.KEY_CLEARSIGHT:
                 case SettingsManager.KEY_MONO_PREVIEW:
                 case SettingsManager.KEY_PHYSICAL_CAMERA:
-                case SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE:
                 case SettingsManager.KEY_FORCE_AUX:
+                    if (count == 0) restartAll();
+                    return;
+                case SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE:
+                    mCurrentSceneMode.setSwithCameraId(-1);
                     if (count == 0) restartAll();
                     return;
                 case SettingsManager.KEY_VIDEO_FLASH_MODE:
@@ -12101,7 +12109,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         onPauseAfterSuper(false);
         reinitSceneMode();
-        onResumeBeforeSuper();
+        onResumeBeforeSuper(true);
         onResumeAfterSuper(true);
         mResumed = true;
         setRefocusLastTaken(false);
@@ -12893,8 +12901,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         public void setSwithCameraId(int swithCameraId) {
             this.swithCameraId = swithCameraId;
+            if(swithCameraId == CaptureModule.FRONT_ID) {
+                mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "front");
+            }
         }
-
     }
 
     private boolean isOnCaptureBufferLostHintOn() {
