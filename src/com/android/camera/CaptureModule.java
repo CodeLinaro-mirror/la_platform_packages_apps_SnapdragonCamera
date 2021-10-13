@@ -3522,6 +3522,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     NamedEntity name = mNamedImages.getNextNameEntity();
                                     String title = (name == null) ? null : name.title;
                                     long date = (name == null) ? -1 : name.date;
+                                    if(image == null) return;
                                     byte[] bytes = getJpegData(image);
                                     Log.i(TAG, "image format:" + image.getFormat());
                                     if (image.getFormat() == ImageFormat.RAW10) {
