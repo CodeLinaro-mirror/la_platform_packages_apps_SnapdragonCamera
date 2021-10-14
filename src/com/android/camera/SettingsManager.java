@@ -39,6 +39,8 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
@@ -46,6 +48,7 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.media.CamcorderProfile;
+import android.media.MediaCodecInfo.CodecProfileLevel;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -2461,12 +2464,33 @@ public class SettingsManager implements ListMenu.SettingsListener {
         List<String> profile = new ArrayList<>();
         profile.add("off");
         if ( VIDEO_ENCODER_PROFILE_TABLE.containsKey(videoEncoder) ) {
-            profile.addAll(VIDEO_ENCODER_PROFILE_TABLE.get(videoEncoder));
+            if(supports(CodecProfileLevel.HEVCProfileMain10)){
+                profile.addAll(VIDEO_ENCODER_PROFILE_TABLE.get(videoEncoder));
+            }
         }
         return profile;
     }
 
-
+    private boolean supports(int profile) {
+        String sVideoEncoder = getValue(SettingsManager.KEY_VIDEO_ENCODER);
+        MediaCodecList allCodecs = new MediaCodecList(MediaCodecList.ALL_CODECS);
+        for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
+            if (!info.isEncoder() || info.getName().contains("google")) continue;
+            for (String type : info.getSupportedTypes()) {
+                if(type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)){
+                    CodecCapabilities caps = info.getCapabilitiesForType(type);
+                    for (CodecProfileLevel pl : caps.profileLevels) {
+                        if (pl.profile != profile) {
+                            continue;
+                        }else {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     public boolean isCamera2HDRSupport(){
         String value = getValue(KEY_HDR);
@@ -2710,6 +2734,27 @@ public class SettingsManager implements ListMenu.SettingsListener {
             mfnrEnable = mfnrValue.equals("1");
         }
         return mfnrEnable;
+    }
+
+    public int[] getStatsInfo(CaptureResult result) {
+        int[] ret = {-1,-1,-1,-1,-1};
+        try {
+            ret[0] = result.get(CaptureModule.bgWidth);
+            ret[1] = result.get(CaptureModule.bgHeight);
+            ret[2] = result.get(CaptureModule.beWidth);
+            ret[3] = result.get(CaptureModule.beHeight);
+            Log.i(TAG,"stats info, bgWidth: "+ret[0] + ",bgHeight:" + ret[1] + ",beWidth:" + ret[2] +",beHeight:" + ret[3] );
+        } catch (Exception e){
+            Log.d(TAG, "getStatsInfo no stats vendor tag");
+        }
+        try {
+            int depth = result.get(CaptureModule.stats_bitdepth);
+            ret[4] = depth;
+            Log.i(TAG,"depth: " + depth);
+        }catch (Exception e){
+            Log.d(TAG, "getStatsInfo no stats bitdepth vendor tag");
+        }
+        return ret;
     }
 
     private void clearPerCameraPreferences() {
