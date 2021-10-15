@@ -8660,6 +8660,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mRecordingStarted = false;
         boolean shouldAddToMediaStoreNow = false;
         // Stop recording
+        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
         if (PersistUtil.needEndOfStream()) {
             setEndOfStream(false, true);
         }
@@ -8674,7 +8675,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             //stop without config stream
             try {
-                mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
                 mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
                         mCaptureCallback, mCameraHandler);
             } catch (CameraAccessException e) {
