@@ -769,6 +769,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     float detail_enhancement = 0.0f;
     private Object mAideLock = new Object();
     float mAideAdrcGain = 100;
+    public static final CameraCharacteristics.Key<int[]> hdrMaxResolution =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.HDRMaxResolutionCap.HDRMaxResolution", int[].class);
+
     private TouchTrackFocusRenderer mT2TFocusRenderer;
     private StateNNTrackFocusRenderer mStateNNFocusRenderer;
     private AFView mAFRenderer;
@@ -12669,6 +12672,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (s.getWidth() > Math.max(point_max[0],point_max[1]))
                         continue;
                 } else if (size > max_size || size == 0) {
+                    continue;
+                } else if (s.getWidth() > point_max[0] ||  s.getHeight() > point_max[1]) {
                     continue;
                 }
             }

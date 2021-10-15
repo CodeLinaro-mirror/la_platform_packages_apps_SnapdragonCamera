@@ -796,7 +796,37 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch (IllegalArgumentException e) {
             Log.e(TAG, "getMaxPreviewSize no vendorTag max_preview_size:");
         }
+        int[] hdrMaxSize = getHdrMaxResolution();
+        if(isMfhdrEnabled() && hdrMaxSize != null){
+            if((maxPreviewSize != null && (maxPreviewSize[0]*maxPreviewSize[1] > hdrMaxSize[0]*hdrMaxSize[1])) ||
+                    maxPreviewSize == null){
+               maxPreviewSize = hdrMaxSize;
+            }
+        }
         return maxPreviewSize;
+    }
+
+    public int[] getHdrMaxResolution() {
+        int[] maxHdrSize = null;
+        try {
+            maxHdrSize = mCharacteristics.get(mCameraId).get(CaptureModule.hdrMaxResolution);
+        } catch(IllegalArgumentException | NullPointerException e) {
+            Log.w(TAG, "getHdrMaxResolution occurs exception");
+        }
+        return maxHdrSize;
+    }
+
+    public boolean isMfhdrEnabled() {
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            String[] modeLists = hdrmode.split(" ");
+            for (int i = 0; i < modeLists.length; i ++) {
+                if(modeLists[i].equals("MFHDR") || modeLists[i].equals("SHDR")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public boolean isLiveshotSizeSameAsVideoSize(){
