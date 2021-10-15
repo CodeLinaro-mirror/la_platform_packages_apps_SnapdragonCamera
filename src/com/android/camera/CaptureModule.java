@@ -12654,7 +12654,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      * if it is HFR or HSR recording and rate > 60
      * @return if it is high speed rate recording
      */
-    private boolean isHighSpeedRateCapture() {
+    public boolean isHighSpeedRateCapture() {
         return mHighSpeedCapture && (int)mHighSpeedFPSRange.getUpper() > NORMAL_SESSION_MAX_FPS;
     }
 
