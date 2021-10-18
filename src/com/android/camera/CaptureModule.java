@@ -2471,6 +2471,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         int templateType = CameraDevice.TEMPLATE_PREVIEW;
         if(mPostProcessor.isZSLEnabled() && id == getMainCameraId()) {
             templateType = CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG;
+        } else if ((mCurrentSceneMode.mode == CameraMode.VIDEO ||
+                mCurrentSceneMode.mode == CameraMode.HFR) && mIsRecordingVideo) {
+            templateType = CameraDevice.TEMPLATE_RECORD;
         } else {
             templateType = CameraDevice.TEMPLATE_PREVIEW;
         }
@@ -5541,8 +5544,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applySettingsForAutoFocus(CaptureRequest.Builder builder, int id) {
         builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest
                 .CONTROL_AF_TRIGGER_START);
-        if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
-                (mCurrentSceneMode.mode == CameraMode.HFR && !isVariableFPSEnabled())) {
+        if (mCurrentSceneMode.mode == CameraMode.HFR ||
+                (mCurrentSceneMode.mode == CameraMode.VIDEO && !isVariableFPSEnabled())) {
             Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(30, 30);
             builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
         }
@@ -8068,13 +8071,15 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
             mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
         }
-        if (mHighSpeedCapture && !isVariableFPSEnabled()) {
-            mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                    mHighSpeedFPSRange);
-        } else {
-            mHighSpeedFPSRange = new Range(30, 30);
-            mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                    mHighSpeedFPSRange);
+        if (!isVariableFPSEnabled()) {
+            if (mHighSpeedCapture && !isVariableFPSEnabled()) {
+                mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                        mHighSpeedFPSRange);
+            } else {
+                mHighSpeedFPSRange = new Range(30, 30);
+                mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                        mHighSpeedFPSRange);
+            }
         }
         if (!isHighSpeedRateCapture()) {
             applyVideoCommentSettings(mVideoPreviewRequestBuilder, cameraId);
