@@ -430,8 +430,7 @@ public class MultiCaptureModule implements MultiCamera {
     private void createCaptureSessions(final int id, Surface surface) {
         try {
             // We set up a CaptureRequest.Builder with the output Surface.
-            mPreviewRequestBuilders[id]
-                    = mCameraDevices[id].createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            mPreviewRequestBuilders[id] = getRequestBuilder(CameraDevice.TEMPLATE_PREVIEW, id);
             mPreviewRequestBuilders[id].addTarget(surface);
             mPreviewRequestBuilders[id].setTag(id);
             CameraCaptureSession.StateCallback stateCallback =
@@ -469,14 +468,6 @@ public class MultiCaptureModule implements MultiCamera {
                             showToast("onConfigureFailed");
                         }
                     };
-
-            try {
-                final byte enable = 1;
-                mPreviewRequestBuilders[id].set(override_resource_cost_validation, enable);
-                Log.v(TAG, " set" + override_resource_cost_validation + " is 1");
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            }
 
             List<OutputConfiguration> outConfigurations = new ArrayList<>(2);
             outConfigurations.add(new OutputConfiguration(surface));
@@ -627,6 +618,30 @@ public class MultiCaptureModule implements MultiCamera {
         return bytes;
     }
 
+    private CaptureRequest.Builder getRequestBuilder(int templateType,int id)
+            throws CameraAccessException{
+        CaptureRequest.Builder builder = null;
+        builder = mCameraDevices[id].createCaptureRequest(templateType);
+        if (builder != null){
+            applySessionParameters(builder);
+        }
+        return builder;
+    }
+
+    private void applySessionParameters(CaptureRequest.Builder builder){
+        applyValidation(builder);
+    }
+
+    private void applyValidation(CaptureRequest.Builder builder){
+        try {
+            final byte enable = 1;
+            builder.set(override_resource_cost_validation, enable);
+            Log.v(TAG, " set" + override_resource_cost_validation + " is 1");
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void onShutterButtonClick(String[] ids) {
         checkAndPlayShutterSound();
@@ -635,9 +650,7 @@ public class MultiCaptureModule implements MultiCamera {
         for (String id : ids) {
             try {
                 int cameraId = Integer.parseInt(id);
-                final CaptureRequest.Builder captureBuilder =
-                        mCameraDevices[cameraId].createCaptureRequest(
-                                CameraDevice.TEMPLATE_STILL_CAPTURE);
+                final CaptureRequest.Builder captureBuilder = getRequestBuilder(CameraDevice.TEMPLATE_STILL_CAPTURE, cameraId);
                 captureBuilder.addTarget(mImageReaders[cameraId].getSurface());
                 int index = mCameraIDList.indexOf(String.valueOf(cameraId));
                 captureBuilder.addTarget(mMultiCameraUI.getSurfaceViewList().get(
