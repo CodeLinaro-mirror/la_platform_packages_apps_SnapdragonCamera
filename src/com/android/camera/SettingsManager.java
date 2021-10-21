@@ -547,7 +547,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         CameraCharacteristics characteristics;
         MandatoryStreamCombination[] combinations;
         try {
-            characteristics = manager.getCameraCharacteristics(String.valueOf(getInitialCameraId()));
+            characteristics = manager.getCameraCharacteristics(String.valueOf(mCaptureModule.getMainCameraId()));
             combinations = characteristics.get(
                     CameraCharacteristics.SCALER_MANDATORY_MAXIMUM_RESOLUTION_STREAM_COMBINATIONS);
             Log.v(TAG, "getSupportedQCFAMaxPictureSize combinations :" + combinations);
