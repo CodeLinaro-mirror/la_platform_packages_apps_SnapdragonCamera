@@ -1809,8 +1809,8 @@ public class SettingsActivity extends PreferenceActivity {
         Preference picturePref =  findPreference(SettingsManager.KEY_PICTURE_SIZE);
         if (picturePref == null) return;
         String multiResEnabled = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
-        if (PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
-                && "1".equals(multiResEnabled)) {
+        if ((PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
+                && "1".equals(multiResEnabled)) || (mSettingsManager != null && mSettingsManager.isDNGCreator())) {
             picturePref.setEnabled(false);
         } else {
             picturePref.setEnabled(true);
