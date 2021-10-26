@@ -836,7 +836,7 @@ public class CameraActivity extends Activity
             if (path == null) {
                 return null;
             } else {
-                if (path.endsWith(Storage.HEIF_POSTFIX)) {
+                if (path.endsWith(Storage.HEIF_POSTFIX) || path.endsWith(Storage.DNG_POSTFIX)) {
                     mOrientation = getOrientationFromUri(uri);
                 }
                 if (img.isPhoto()) {
@@ -916,10 +916,13 @@ public class CameraActivity extends Activity
             }
             int st = sample * target;
             final Rect rect = new Rect((w - st) / 2, (h - st) / 2, (w + st) / 2, (h + st) / 2);
-
             opt.inJustDecodeBounds = false;
             opt.inSampleSize = sample;
             final BitmapRegionDecoder decoder;
+            Bitmap bitmap = null;
+            if(path != null && path.endsWith(Storage.DNG_POSTFIX)){
+            bitmap = BitmapFactory.decodeFile(path, opt);
+            }else{
             try {
                 if (mJpegData == null) {
                     decoder = BitmapRegionDecoder.newInstance(path, true);
@@ -929,15 +932,16 @@ public class CameraActivity extends Activity
             } catch (IOException e) {
                 return null;
             }
-            Bitmap bitmap = decoder.decodeRegion(rect, opt);
+             bitmap = decoder.decodeRegion(rect, opt);
+             if (decoder != null)
+                decoder.recycle();
+             }
             if (orientation != 0) {
                 Matrix matrix = new Matrix();
                 matrix.setRotate(orientation);
                 bitmap =  Bitmap.createBitmap(bitmap, 0, 0,
                         bitmap.getWidth(), bitmap.getHeight(), matrix, false);
             }
-            if (decoder != null)
-                decoder.recycle();
             return bitmap;
         }
     }

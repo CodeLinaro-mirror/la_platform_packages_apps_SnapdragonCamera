@@ -72,7 +72,6 @@ import android.media.ImageReader;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
-import android.media.MediaRecorder;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
@@ -4657,14 +4656,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     String title = (name == null) ? null : name.title;
                                     long date = (name == null) ? -1 : name.date;
                                     byte[] bytes = getJpegData(image);
-                                    Log.i(TAG, " image format:" + image.getFormat() + ",mRawReprocessType:" + mRawReprocessType);
+                                    int orientation = 0;
+                                    ExifInterface exif = null;
+                                    orientation = CameraUtil.getJpegRotation(getMainCameraId(),mOrientation);
+                                    exif =  Exif.getExif(bytes);
                                     long imglen=bytes.length;
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         Log.d(TAG,"setupcameraoutput-onImageAvailable width="+image.getWidth()+",height="+image.getHeight()+",stride="+image.getPlanes()[0].getRowStride());
-                                        if(image.getFormat() == ImageFormat.RAW_SENSOR){
+                                        if(image.getFormat() == ImageFormat.RAW_SENSOR && mSettingsManager.isDNGCreator() && mRawReprocessType == 0){
                                             int setsucess = setInfoForDng();
                                             if(setsucess == 0){
-                                                mActivity.getMediaSaveService().addRawDng(image,imglen, title, "dng");
+                                                mActivity.getMediaSaveService().addDng(image,imglen, title,date,null, image.getWidth(), image.getHeight(), orientation, exif,
+                                                                                                    mOnMediaSavedListener, mContentResolver,"dng");
                                             }else if(mRawReprocessType == 0){
                                                 image.close();
                                             }
@@ -4675,11 +4678,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             }
                                         }
                                         if (mRawReprocessType != 0 ) {
-                                            try {
-                                                Thread.sleep(500);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
+                                            waitForRawMetaData();
                                             Log.i(TAG, "start reprocess-image");
                                             if(mSettingsManager.getRawReprocessPhysicalId() != null) {
                                                 String physicalId = mSettingsManager.getRawReprocessPhysicalId();
@@ -4695,15 +4694,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         Log.d(TAG,"YUV buffer received from camera id =" + mCameraId);
                                         image.close();
                                     } else {
-                                        int orientation = 0;
-                                        ExifInterface exif = null;
                                         if (image.getFormat() != ImageFormat.HEIC) {
                                             exif = Exif.getExif(bytes);
                                             orientation = Exif.getOrientation(exif);
-                                        } else {
-                                            orientation = CameraUtil.getJpegRotation(getMainCameraId(),mOrientation);
                                         }
-
                                         if (mIntentMode != CaptureModule.INTENT_MODE_NORMAL &&
                                                 mIntentMode != INTENT_MODE_STILL_IMAGE_CAMERA) {
                                             mJpegImageData = bytes;
@@ -6217,6 +6211,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             mChosenImageFormat = ImageFormat.YUV_420_888;
         } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {
             mChosenImageFormat = ImageFormat.HEIC;
+        } else if(mSettingsManager.isDNGCreator()){
+            mChosenImageFormat = ImageFormat.RAW_SENSOR;
         } else {
             mChosenImageFormat = ImageFormat.JPEG;
         }
@@ -6869,17 +6865,24 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if (contourEnable || facePointEnable) {
                 String contourMode = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
+                int[] contour_all = null;
                 int[] contourPoints = null;
                 if ("0".equals(contourMode)) {
                     contourPoints = captureResult.get(CaptureModule.contourPoints);
                 } else if ("1".equals(contourMode) || "2".equals(contourMode) || "3".equals(contourMode)) {
                     contourPoints = captureResult.get(CaptureModule.contourPointsExtend);
-                    int[] contour_all = captureResult.get(CaptureModule.contourPointsExtend);
-                    contourPoints = Arrays.copyOfRange(contour_all,6,contour_all.length);
+                    contour_all = captureResult.get(CaptureModule.contourPointsExtend);
+                    int faceContour = PersistUtil.getPersistFaceContourHeaderSize();
+                    if (FD_DEBUG) {
+                        Log.d(FD_TAG, "FaceContour result header size is "+ faceContour);
+                    }
+                    contourPoints = Arrays.copyOfRange(contour_all,faceContour,contour_all.length);
                 }
 
-                if (FD_DEBUG)
-                    Log.d(FD_TAG,"Version=V"+ contourMode + ",contourPoints="+Arrays.toString(contourPoints));
+                if (FD_DEBUG) {
+                    Log.d(FD_TAG,"Version=V"+ contourMode + ", contour_results = " +
+                            Arrays.toString(contour_all));
+                }
                 Face[] faces = captureResult.get(CaptureResult.STATISTICS_FACES);
                 int[] landmarkPoints = new int[6 * faces.length];
                 for (int i = 0 ; i < faces.length; i++){
@@ -7194,7 +7197,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         if (mSupportedRawPictureSize != null) {
-            Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
+         Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
+        }
+        if(mSettingsManager.isDNGCreator()){
+            mPictureSize = mSupportedRawPictureSize;
+
         }
         mPreviewSize = getOptimalPreviewSize(mPictureSize, prevSizes);
         Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(getMainCameraId());
@@ -8976,7 +8983,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (profile != null) {
                     MediaRecorder recorder = new MediaRecorder();
                     recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-                    recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                    recorder.setAudioSource(PersistUtil.getAudioSource());
                     recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
                     String fileName = generatePhysicalVideoFilename(
                             MediaRecorder.OutputFormat.MPEG_4, Integer.valueOf((String) idsArray[i]));
@@ -9745,7 +9752,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         .setSampleRate(mProfile.audioSampleRate)
                         .setEncoding(mAudioFormatNumber)
                         .build())
-                .setAudioSource(MediaRecorder.AudioSource.MIC)
+                .setAudioSource(PersistUtil.getAudioSource())
                 .setBufferSizeInBytes(mAudioBufferSize*2)
                 .build();
         mAudioRecord.startRecording();
@@ -9921,7 +9928,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
                 mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.UNPROCESSED);
             } else {
-                mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                mMediaRecorder.setAudioSource(PersistUtil.getAudioSource());
             }
             mProfile.audioCodec = audioEncoder;
             if (mProfile.audioCodec == MediaRecorder.AudioEncoder.AMR_NB) {
@@ -11181,7 +11188,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         boolean result = false;
         final SharedPreferences pref = mActivity.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mActivity,
-                        String.valueOf(getMainCameraId())), Context.MODE_PRIVATE);
+                        String.valueOf(CURRENT_ID)), Context.MODE_PRIVATE);
         float awbDefault = -1f;
         float rGain = pref.getFloat(SettingsManager.KEY_AWB_RAGIN_VALUE, awbDefault);
         float gGain = pref.getFloat(SettingsManager.KEY_AWB_GAGIN_VALUE, awbDefault);
@@ -11317,7 +11324,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void writeXMLForWarmAwb() {
         final SharedPreferences pref = mActivity.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mActivity,
-                        String.valueOf(getMainCameraId())), Context.MODE_PRIVATE);
+                        String.valueOf(CURRENT_ID)), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = pref.edit();
         editor.putFloat(SettingsManager.KEY_AWB_RAGIN_VALUE, mRGain);
         editor.putFloat(SettingsManager.KEY_AWB_GAGIN_VALUE, mGGain);
@@ -11522,8 +11529,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 || "3".equals(facialContour)) {
                             facialContour_enable = 1;
                             request.set(CaptureModule.facialContourEnable, facialContour_enable);
-                            request.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE,
-                                    CaptureRequest.STATISTICS_FACE_DETECT_MODE_FULL);
                         } else {
                             facialContour_enable = 0;
                             request.set(CaptureModule.facialContourEnable, facialContour_enable);

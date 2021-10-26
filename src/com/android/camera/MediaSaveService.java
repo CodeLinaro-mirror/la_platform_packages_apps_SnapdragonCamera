@@ -57,7 +57,7 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.TotalCaptureResult;
 import android.media.Image;
 import java.nio.ByteBuffer;
-
+import com.android.camera.CameraActivity;
 
 /*
  * Service for saving images in the background thread.
@@ -79,6 +79,7 @@ public class MediaSaveService extends Service {
     private TotalCaptureResult mCaptureResult;
     private CameraCharacteristics mCharacteristics;
     private boolean mIsCloseImg;
+    private CameraActivity mActivity;
 
     public interface Listener {
         public void onQueueStatus(boolean full);
@@ -159,6 +160,24 @@ public class MediaSaveService extends Service {
         }
         t.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
+
+    public void addDng(final Image image, long length,String title, long date, Location loc,
+            int width, int height, int orientation, ExifInterface exif,
+            OnMediaSavedListener l, ContentResolver resolver, String pictureFormat) {
+        if (isQueueFull()) {
+            Log.e(TAG, "Cannot add image when the queue is full");
+            return;
+        }
+        DngSaveTask t = new DngSaveTask(image, length,title, date,
+                (loc == null) ? null : new Location(loc),
+                width, height, orientation, exif, resolver, l, pictureFormat);
+
+        mMemoryUse += length;
+        if (isQueueFull()) {
+            onQueueFull();
+        }
+        t.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
     public void addRawImage(final byte[] data, String title, String pictureFormat) {
         if (isQueueFull()) {
             Log.e(TAG, "Cannot add image when the queue is full");
@@ -167,19 +186,6 @@ public class MediaSaveService extends Service {
         RawImageSaveTask t = new RawImageSaveTask(data, title, pictureFormat);
 
         mMemoryUse += data.length;
-        if (isQueueFull()) {
-            onQueueFull();
-        }
-        t.execute();
-    }
-
-    public void addRawDng( final Image image, long length, String title, String pictureFormat) {
-        if (isQueueFull()) {
-            Log.e(TAG, "Cannot add image when the queue is full");
-            return;
-        }
-        RawDngSaveTask t = new RawDngSaveTask(image, title, pictureFormat);
-        mMemoryUse += length;
         if (isQueueFull()) {
             onQueueFull();
         }
@@ -273,7 +279,11 @@ public class MediaSaveService extends Service {
     public void setIsCloseimg( boolean iscloseimg){
         mIsCloseImg  = iscloseimg;
     }
+public void setCameraActivity(CameraActivity activity){
+    mActivity=activity;
 
+
+}
     private class MpoSaveTask extends AsyncTask<Void, Void, Uri> {
         private byte[] csImage;
         private byte[] bayerImage;
@@ -384,41 +394,6 @@ public class MediaSaveService extends Service {
         }
     }
 
-
-    private class RawDngSaveTask extends AsyncTask<Void, Void, Long> {
-        private byte[] data;
-        private String title;
-        private String pictureFormat;
-        private Image image;
-        private long length;
-
-        public RawDngSaveTask(Image image, String title, String pictureFormat) {
-            this.title = title;
-            this.pictureFormat = pictureFormat;
-            this.image = image;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected Long doInBackground(Void... params) {
-            if(pictureFormat.equalsIgnoreCase("dng")){
-                length =Storage.addDngImage(title, image, pictureFormat, mCharacteristics, mCaptureResult,mIsCloseImg);
-            }
-            return new Long(length);
-        }
-
-        @Override
-        protected void onPostExecute(Long l) {
-            boolean previouslyFull = isQueueFull();
-            mMemoryUse -= length;
-            if (isQueueFull() != previouslyFull) onQueueAvailable();
-        }
-    }
-
     private class HEIFImageSaveTask extends AsyncTask<Void, Void, Uri> {
         private String path;
         private String title;
@@ -523,6 +498,60 @@ public class MediaSaveService extends Service {
             if (isQueueFull() != previouslyFull) onQueueAvailable();
         }
     }
+    private class DngSaveTask extends AsyncTask <Void, Void, Uri> {
+         final Image image;
+         private String title;
+         private long date;
+         private Location loc;
+         private int width, height;
+         private int orientation;
+         private ExifInterface exif;
+         private ContentResolver resolver;
+         private OnMediaSavedListener listener;
+         private String pictureFormat;
+         private long length;
+         public DngSaveTask(final Image image, long length,String title, long date, Location loc,
+                              int width, int height, int orientation, ExifInterface exif,
+                              ContentResolver resolver, OnMediaSavedListener listener, String pictureFormat) {
+             this.image = image;
+             this.title = title;
+             this.date = date;
+             this.loc = loc;
+             this.width = width;
+             this.height = height;
+             this.orientation = orientation;
+             this.exif = exif;
+             this.resolver = resolver;
+             this.listener = listener;
+             this.pictureFormat = pictureFormat;
+             this.length = length;
+         }
+         @Override
+         protected void onPreExecute() {
+             // do nothing.
+         }
+         @Override
+         protected Uri doInBackground(Void... v) {
+                 // Decode bounds
+                 BitmapFactory.Options options = new BitmapFactory.Options();
+                 options.inJustDecodeBounds = true;
+                 String path = Storage.generateFilepath(title, pictureFormat);
+                 BitmapFactory.decodeFile(path, options);
+                 width = options.outWidth;
+                 height = options.outHeight;
+
+             return Storage.addDng(
+                     resolver, title, date, loc, orientation, exif, image, width, height, pictureFormat,path,mCharacteristics,mCaptureResult);
+         }
+         @Override
+         protected void onPostExecute(Uri uri) {
+             if (listener != null) listener.onMediaSaved(uri);
+             boolean previouslyFull = isQueueFull();
+             mMemoryUse -= length;
+             if (isQueueFull() != previouslyFull) onQueueAvailable();
+         }
+     }
+
 
     private class ClearsightImageSaveTask extends AsyncTask <Void, Void, Uri> {
         private byte[] clearsight;
