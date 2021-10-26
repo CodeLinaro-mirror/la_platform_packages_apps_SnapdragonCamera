@@ -8131,7 +8131,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private boolean triggerVideoRecording(final int cameraId) {
-        if (null == mCameraDevice[cameraId]) {
+        if (null == mCameraDevice[cameraId] || mCurrentSession == null || mCurrentSessionClosed) {
             return false;
         }
         mStartRecordingTime = System.currentTimeMillis();
