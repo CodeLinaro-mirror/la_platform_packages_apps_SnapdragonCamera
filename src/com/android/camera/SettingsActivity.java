@@ -234,6 +234,9 @@ public class SettingsActivity extends PreferenceActivity {
                 updateVideoMFHDRPreference();
                 updatePictureFormatPreference();
             }
+            if(key.equals(SettingsManager.KEY_INSENSOR_ZOOM)){
+                updateVideoMFHDRPreference();
+            }
         }
     };
 
@@ -1036,8 +1039,10 @@ public class SettingsActivity extends PreferenceActivity {
             updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
             updateVideoVariableFpsPreference();
             updateVideoHfrFpsPreference();
+            updateInSensorZoom();
         }else if (mode == CaptureModule.CameraMode.DEFAULT){
             updateRawFormatPref();
+            updateInSensorZoom();
         }
     }
 
@@ -1884,6 +1889,16 @@ public class SettingsActivity extends PreferenceActivity {
             reprocessPref.setEnabled(false);
         }
     }
+    private void updateInSensorZoom(){
+        ListPreference inSenorZoomPref = (ListPreference)findPreference(SettingsManager.KEY_INSENSOR_ZOOM);
+        if(inSenorZoomPref == null) return;
+        if(inSenorZoomPref != null && mSettingsManager.isLimitedHDR()){
+            inSenorZoomPref.setValue("0");
+            inSenorZoomPref.setEnabled(false);
+            return;
+        }
+        inSenorZoomPref.setEnabled(true);
+    }
 
     private void updateRawInfoPref(){
         ListPreference rawInfoPref = (ListPreference)findPreference(SettingsManager.KEY_RAWINFO_TYPE);
@@ -2049,11 +2064,10 @@ public class SettingsActivity extends PreferenceActivity {
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     String title = String.valueOf(buttonView.getTag());
                     if((title.equalsIgnoreCase("mfhdr") || title.equalsIgnoreCase("qhdr")) && isChecked
-                        && (mSettingsManager.getVideoFPS() >= 60 || (mSettingsManager.getValue(SettingsManager.KEY_SAVERAW) != null &&
-                        mSettingsManager.getValue(SettingsManager.KEY_SAVERAW).equals("enable")))){
+                        && !mSettingsManager.isSupportedHdr()){
                         viewHolder.checkBox.setSelected(false);
                         viewHolder.checkBox.setChecked(false);
-                        Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60 or enabled SaveRaw",
+                        Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60 or enabled SaveRaw or inSensor zoom",
                             Toast.LENGTH_SHORT).show();
                         isChecked=false;
                     }

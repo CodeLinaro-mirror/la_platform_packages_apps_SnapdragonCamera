@@ -3393,7 +3393,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return ret;
     }
-
+    public boolean isSupportedHdr(){
+        if(((getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("disable")) ||
+                getValue(SettingsManager.KEY_SAVERAW) == null) && (((getValue(SettingsManager.KEY_INSENSOR_ZOOM) != null &&
+                getValue(SettingsManager.KEY_INSENSOR_ZOOM).equals("0")) || getValue(SettingsManager.KEY_INSENSOR_ZOOM) == null)) &&
+                 getVideoFPS()<= 30){
+             return true;
+        }
+        return false;
+    }
     public List<String> getSupportedManualHDR(int cameraId) {
         ArrayList<String> ret = new ArrayList<String>();
         ret.add("off");
@@ -3404,9 +3412,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Log.v(TAG, "getSupportedManualHDR support mode :" + mode);
             }
         }
-        if (isAutoHDRSupported() && getVideoFPS() <= 30){
-            if((getValue(SettingsManager.KEY_SAVERAW) != null && !getValue(SettingsManager.KEY_SAVERAW).equals("enable"))||
-            getValue(SettingsManager.KEY_SAVERAW) == null){
+        if (isAutoHDRSupported()){
+            if(isSupportedHdr()){
                 ret.add("auto");
             }
         }
