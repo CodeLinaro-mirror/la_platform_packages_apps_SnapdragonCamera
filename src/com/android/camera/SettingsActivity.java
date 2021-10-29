@@ -1901,17 +1901,29 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void updateRawInfoPref(){
-        ListPreference rawInfoPref = (ListPreference)findPreference(SettingsManager.KEY_RAWINFO_TYPE);
-        String rawFormat = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
-        int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
-        if(rawFormatType == 10){
-            if (rawInfoPref != null) {
-                rawInfoPref.setValue("0");
-                rawInfoPref.setEnabled(false);
-            }
-        } else if(rawFormatType == 16){
-            if (rawInfoPref != null) {
-                rawInfoPref.setEnabled(true);
+        String reprocessType = mSettingsManager.getValue(SettingsManager.KEY_RAW_REPROCESS_TYPE);
+        if(reprocessType != null && !reprocessType.equals("disable") && !reprocessType.equals("off") && Integer.valueOf(reprocessType) != 0){
+            ListPreference rawInfoPref = (ListPreference)findPreference(SettingsManager.KEY_RAWINFO_TYPE);
+            String rawFormat = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+            int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
+            if(rawFormatType == 10){
+                if (rawInfoPref != null) {
+                    rawInfoPref.setValue("0");
+                    rawInfoPref.setEnabled(false);
+                }
+            } else if(rawFormatType == 16){
+                List<String> key = new ArrayList<String>(Arrays.asList("mipiraw", "BPS Ideal raw" ));
+                List<String> value = new ArrayList<String>(Arrays.asList( "0", "2"));
+                if (rawInfoPref != null) {
+                    rawInfoPref.setEntries(key.toArray(new CharSequence[key.size()]));
+                    rawInfoPref.setEntryValues(value.toArray(new CharSequence[value.size()]));
+                    int idx = rawInfoPref.findIndexOfValue(rawInfoPref.getValue());;
+                    if (idx < 0 ) {
+                        idx = 0;
+                    }
+                    rawInfoPref.setValueIndex(idx);
+                    rawInfoPref.setEnabled(true);
+                }
             }
         }
     }
