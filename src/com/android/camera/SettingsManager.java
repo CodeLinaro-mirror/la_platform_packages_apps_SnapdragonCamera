@@ -2068,8 +2068,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isFrontIDHFRSupported() {
         boolean result = true;
-        result = getSupportedHighFrameRate(CaptureModule.CameraMode.HFR, CaptureModule.FRONT_ID)
-                .size() != 0;
+        if (-1 == CaptureModule.FRONT_ID) {
+            result = false;
+        } else {
+            result = getSupportedHighFrameRate(CaptureModule.CameraMode.HFR,
+                    CaptureModule.FRONT_ID).size() != 0;
+        }
         Log.v(TAG, " isFrontIDHFRSupported result :" + result);
         return result;
     }
