@@ -148,6 +148,7 @@ public class SettingsActivity extends PreferenceActivity {
                 updatePreference(SettingsManager.KEY_VIDEO_ENCODER);
                 updateVideoMFHDRPreference();
                 updateVideoFlipPreference();
+                updateVsrPreference();
             } else if (key.equals(SettingsManager.KEY_VIDEO_ENCODER)) {
                 updateVideoEncoderProfile();
             } else if (key.equals(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE)) {
@@ -306,6 +307,10 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
                     updateRawInfoPref();
+                }
+                if(pref.getKey().equals(SettingsManager.KEY_VSR)){
+                    mSettingsManager.updatePictureAndVideoSize();
+                    updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                 }
             }
         }
@@ -1582,6 +1587,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateRawFormatPref();
         updateRawInfoPref();
         updatePictureSizePreferenceButton();
+        updateVsrPreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1771,6 +1777,20 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
     }
+    private void updateVsrPreference(){
+         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_VSR);
+         if(pref == null) return;
+         ListPreference Vieopref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_QUALITY);
+         if(Vieopref != null){
+             String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+             if(videoSize != null && videoSize.toString().equals("7680x4320")){
+                 pref.setValue("0");
+                 pref.setEnabled(false);
+                 return;
+             }
+         }
+         pref.setEnabled(true);
+    }
 
     private void updatePreferenceButton(String key) {
         Preference pref = findPreference(key);
@@ -1789,8 +1809,8 @@ public class SettingsActivity extends PreferenceActivity {
         Preference picturePref =  findPreference(SettingsManager.KEY_PICTURE_SIZE);
         if (picturePref == null) return;
         String multiResEnabled = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
-        if (PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
-                && "1".equals(multiResEnabled)) {
+        if ((PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
+                && "1".equals(multiResEnabled)) || (mSettingsManager != null && mSettingsManager.isDNGCreator())) {
             picturePref.setEnabled(false);
         } else {
             picturePref.setEnabled(true);
