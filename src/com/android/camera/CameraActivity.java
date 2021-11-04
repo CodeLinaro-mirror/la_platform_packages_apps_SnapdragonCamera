@@ -307,6 +307,21 @@ public class CameraActivity extends Activity
         }
     };
 
+    private AIDenoiserService mAIDenoiserService;
+    private ServiceConnection mAideConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder b) {
+            Log.i(TAG,"aide service connected");
+            mAIDenoiserService = ((AIDenoiserService.LocalBinder) b).getService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName className) {
+            if (mAIDenoiserService != null) {
+                mAIDenoiserService = null;
+            }
+        }
+    };
     private CameraOpenErrorCallback mCameraOpenErrorCallback =
             new CameraOpenErrorCallback() {
                 @Override
@@ -1294,6 +1309,9 @@ public class CameraActivity extends Activity
         return mMediaSaveService;
     }
 
+    public AIDenoiserService getAIDenoiserService() {
+        return mAIDenoiserService;
+    }
     public void notifyNewMedia(Uri uri) {
         ContentResolver cr = getContentResolver();
         String mimeType = cr.getType(uri);
@@ -1340,6 +1358,17 @@ public class CameraActivity extends Activity
         }
     }
 
+    private void bindAIDenoiserService() {
+        Log.i(TAG,"bindAIDenoiserService");
+        Intent intent = new Intent(this, AIDenoiserService.class);
+        this.bindService(intent, mAideConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void unbindAIDenoiserService() {
+        if (mAideConnection != null && mAIDenoiserService != null) {
+            unbindService(mAideConnection);
+        }
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu items for use in the action bar
@@ -1687,6 +1716,7 @@ public class CameraActivity extends Activity
         if (mAutoTestEnabled) {
             registerAutoTestReceiver();
         }
+        bindAIDenoiserService();
     }
 
     private void setRotationAnimation() {
@@ -1864,7 +1894,6 @@ public class CameraActivity extends Activity
         super.onResume();
         mPaused = false;
         mCurrentModule.onResumeAfterSuper();
-
         setSwipingEnabled(true);
 
         if (mResetToPreviewOnResume) {
@@ -1946,6 +1975,7 @@ public class CameraActivity extends Activity
         if(mCurrentModule != null){
             mCurrentModule.onDestroy();
         }
+        unbindAIDenoiserService();
         super.onDestroy();
     }
 
