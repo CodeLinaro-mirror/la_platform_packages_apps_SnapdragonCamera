@@ -7208,7 +7208,7 @@ public class CaptureModule implements CameraModule, PhotoController,
          Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
         }
         if(mSettingsManager.isDNGCreator()){
-            mPictureSize = mSupportedRawPictureSize;
+            mPictureSize = rawSize[0];
 
         }
         mPreviewSize = getOptimalPreviewSize(mPictureSize, prevSizes);

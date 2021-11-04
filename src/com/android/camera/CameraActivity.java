@@ -936,7 +936,7 @@ public class CameraActivity extends Activity
              if (decoder != null)
                 decoder.recycle();
              }
-            if (orientation != 0) {
+            if (orientation != 0 && bitmap != null) {
                 Matrix matrix = new Matrix();
                 matrix.setRotate(orientation);
                 bitmap =  Bitmap.createBitmap(bitmap, 0, 0,
