@@ -98,6 +98,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.lang.StringBuilder;
+import com.android.camera.util.PersistUtil;
+
 
 public class SettingsManager implements ListMenu.SettingsListener {
     public static final int RESOURCE_TYPE_THUMBNAIL = 0;
@@ -127,6 +129,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 	public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
     public static final int JPEG_FORMAT = 0;
     public static final int HEIF_FORMAT = 1;
+    public static final int DNG_FORMAT = 2;
     public static final String LOGICAL_AND_PHYSICAL = "99";
     public static final String SCENE_MODE_DUAL_STRING = "100";
     public static final String SCENE_MODE_SUNSET_STRING = "10";
@@ -282,6 +285,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_PDNET_TOGGLE = "pref_camera2_pdnet_toggle_key";
     public static final String KEY_RAW_CB_INFO = "pref_camera2_raw_cb_info_key";
     public static final String KEY_QLL = "pref_camera2_qll_key";
+    public static final String KEY_AI_DENOISER = "pref_camera2_ai_denoiser_key";
+    public static final String KEY_AI_DENOISER_FORMAT = "pref_camera2_ai_denoiser_format_key";
+    public static final String KEY_AI_DENOISER_MODE = "pref_camera2_ai_denoiser_mode_key";
     public static final String KEY_INSENSOR_ZOOM = "pref_camera2_insensor_zoom_key";
     public static final String KEY_VSR = "pref_camera2_vsr_key";
 
@@ -544,7 +550,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         CameraCharacteristics characteristics;
         MandatoryStreamCombination[] combinations;
         try {
-            characteristics = manager.getCameraCharacteristics(String.valueOf(getInitialCameraId()));
+            characteristics = manager.getCameraCharacteristics(String.valueOf(mCaptureModule.getMainCameraId()));
             combinations = characteristics.get(
                     CameraCharacteristics.SCALER_MANDATORY_MAXIMUM_RESOLUTION_STREAM_COMBINATIONS);
             Log.v(TAG, "getSupportedQCFAMaxPictureSize combinations :" + combinations);
@@ -1595,7 +1601,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 mFilteredKeys.add(remosaic_reprocessing.getKey());
             }
         }
-
         if (pictureFormat != null){
             if (filterUnsupportedOptions(pictureFormat,
                     getSupportedPictureFormat(cameraId))){
@@ -2323,6 +2328,29 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) > 1f;
     }
 
+    public boolean isAIDE2Supported() {
+        boolean isSupported = false;
+        try {
+            isSupported = (mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.isAIDE2Supported)) == 1;
+            Log.i(TAG,"isAIDE2Supported: " + isSupported);
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "cannot find vendor tag: " +
+                    CaptureModule.isAIDE2Supported.toString());
+        }
+        return isSupported;
+    }
+
+    public boolean isHWMFNRSupport() {
+        boolean isSupported = false;
+        try {
+            //set "CustomNoiseReduction" only if MFNRType is 1 i.e; for Lahaina, set "isSWMFEnabled" only if MFNRType is 2 i.e; for Mannar..
+            isSupported = (mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.MFNRType)) == 1;
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "cannot find vendor tag: " +
+                    CaptureModule.MFNRType.toString());
+        }
+        return isSupported;
+    }
     public boolean isAutoFocusRegionSupported(List<Integer> ids) {
         for (int id : ids) {
             if (!isAutoFocusRegionSupported(id))
@@ -3336,6 +3364,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return getSavePictureFormat() == HEIF_FORMAT;
     }
 
+    public boolean isDNGCreator(){
+        return getSavePictureFormat() == DNG_FORMAT;
+    }
+    public boolean isRawReprocess(){
+        String reprocessType = getValue(KEY_RAW_REPROCESS_TYPE);
+        int mRawReprocessType = 0;
+         if(reprocessType != null && !reprocessType.equals("disable") && !reprocessType.equals("off")) mRawReprocessType = Integer.valueOf(reprocessType);
+         if (mRawReprocessType > 0) return true;
+         return false;
+    }
     public List<String> getSupportedPictureFormat(int cameraId){
         byte supportHeic = 1;
         try{
@@ -3347,6 +3385,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ret.add(String.valueOf(SettingsManager.JPEG_FORMAT));
         if (supportHeic == 1){
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
+        }
+        Size[] dngSize = getSupportedOutputSize(cameraId,ImageFormat.RAW_SENSOR);
+        if(dngSize != null && dngSize.length > 0 && (getValue(SettingsManager.KEY_SAVERAW) == null ||
+        (getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("disable"))) && !isRawReprocess()){
+        ret.add(String.valueOf(SettingsManager.DNG_FORMAT));
         }
         return ret;
     }
@@ -3430,13 +3473,23 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if (formats != null && formats[0] != null){
                     avaliableFormat.add(formats[0]);
                     if (filterUnsupportedOptions(pictureFormat,
-                            avaliableFormat)) {
+                            avaliableFormat)){
                         mFilteredKeys.add(pictureFormat.getKey());
                     }
                 }
             }
         }
     }
+    public void filterPicturFormat(){
+           ListPreference pictureFormat = mPreferenceGroup.findPreference(KEY_PICTURE_FORMAT);
+           pictureFormat.reloadInitialEntriesAndEntryValues();
+           if (pictureFormat != null){
+            if (filterUnsupportedOptions(pictureFormat,
+                       getSupportedPictureFormat(getCurrentCameraId()))){
+                   mFilteredKeys.add(pictureFormat.getKey());
+               }
+           }
+       }
 
     private boolean filterUnsupportedOptions(ListPreference pref, List<String> supported) {
         // Remove the preference if the parameter is not supported

@@ -148,6 +148,7 @@ public class SettingsActivity extends PreferenceActivity {
                 updatePreference(SettingsManager.KEY_VIDEO_ENCODER);
                 updateVideoMFHDRPreference();
                 updateVideoFlipPreference();
+                updateVsrPreference();
             } else if (key.equals(SettingsManager.KEY_VIDEO_ENCODER)) {
                 updateVideoEncoderProfile();
             } else if (key.equals(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE)) {
@@ -221,8 +222,8 @@ public class SettingsActivity extends PreferenceActivity {
                 updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
                 updatePreference(SettingsManager.KEY_RAWINFO_TYPE);
                 updatePreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+                updatePictureFormatPreference();
             }
-
             if (key.equals(SettingsManager.KEY_REMOSAIC_REPROCESSING)) {
                 updateRawFormatPref();
             }
@@ -231,8 +232,8 @@ public class SettingsActivity extends PreferenceActivity {
             }
             if (key.equals(SettingsManager.KEY_SAVERAW)){
                 updateVideoMFHDRPreference();
+                updatePictureFormatPreference();
             }
-
         }
     };
 
@@ -302,9 +303,14 @@ public class SettingsActivity extends PreferenceActivity {
                     updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
                     updatePreference(SettingsManager.KEY_RAWINFO_TYPE);
                     updatePreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+                    updatePictureFormatPreference();
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
                     updateRawInfoPref();
+                }
+                if(pref.getKey().equals(SettingsManager.KEY_VSR)){
+                    mSettingsManager.updatePictureAndVideoSize();
+                    updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                 }
             }
         }
@@ -1228,6 +1234,7 @@ public class SettingsActivity extends PreferenceActivity {
             removePreference(SettingsManager.KEY_RAW_REPROCESS_TYPE, developer);
             removePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS, developer);
             removePreference(SettingsManager.KEY_RAWINFO_TYPE, developer);
+            removePreference(SettingsManager.KEY_RAW_FORMAT_TYPE, developer);
         }
 
         if(!PersistUtil.isRawCbInfoSupported()&& developer != null){
@@ -1504,6 +1511,8 @@ public class SettingsActivity extends PreferenceActivity {
         updateEISPreference();
         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
+        updatePictureFormatPreference();
+        updateRawReprocess();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
@@ -1533,7 +1542,6 @@ public class SettingsActivity extends PreferenceActivity {
             }
             if (disabled) p.setEnabled(false);
         }
-
         // when enable deepzoom, disable the KEY_PICTURE_SIZE
         String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
         if (scene != null) {
@@ -1543,7 +1551,6 @@ public class SettingsActivity extends PreferenceActivity {
                 p.setEnabled(false);
             }
         }
-
         // when get RAW10 size is null, disable the KEY_SAVERAW
         int cameraId = mSettingsManager.getCurrentCameraId();
         Size[] rawSize = mSettingsManager.getSupportedOutputSize(cameraId,
@@ -1555,7 +1562,7 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
         String reprocessType = mSettingsManager.getValue(SettingsManager.KEY_RAW_REPROCESS_TYPE);
-        if (reprocessType == null || reprocessType.equals("disable") || reprocessType.equals("off") || Integer.valueOf(reprocessType) == 0) {
+        if (reprocessType == null || reprocessType.equals("disable") || reprocessType.equals("off") || Integer.valueOf(reprocessType) == 0 ) {
             Preference p = findPreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
             if (p != null) {
                 p.setEnabled(false);
@@ -1576,10 +1583,12 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoVariableFpsPreference();
         updateAudioEncoderPreference();
         updateVideoFlipPreference();
+        updateAIDEPreference();
         updatePdnetTogglePreference();
         updateRawFormatPref();
         updateRawInfoPref();
         updatePictureSizePreferenceButton();
+        updateVsrPreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1668,6 +1677,23 @@ public class SettingsActivity extends PreferenceActivity {
         pref.setEnabled(mSettingsManager.isZZHDRSupported());
     }
 
+    public boolean isHwMfnrDisabled(){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+        if(value != null &&  !value.equals("disable")&& Integer.parseInt(value) == 0 && mSettingsManager.isHWMFNRSupport()){
+            return true;
+        }
+        return false;
+    }
+
+    private void updateAIDEPreference() {
+        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_AI_DENOISER);
+        if (pref == null) {
+            return;
+        }
+        if(isHwMfnrDisabled() || (mSettingsManager.isHWMFNRSupport() && !isHwMfnrDisabled() && !mSettingsManager.isAIDE2Supported())){
+            pref.setEnabled(false);
+        }
+    }
     private void updateVideoMFHDRPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
         if (pref == null) {
@@ -1769,6 +1795,20 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
     }
+    private void updateVsrPreference(){
+         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_VSR);
+         if(pref == null) return;
+         ListPreference Vieopref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_QUALITY);
+         if(Vieopref != null){
+             String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+             if(videoSize != null && videoSize.toString().equals("7680x4320")){
+                 pref.setValue("0");
+                 pref.setEnabled(false);
+                 return;
+             }
+         }
+         pref.setEnabled(true);
+    }
 
     private void updatePreferenceButton(String key) {
         Preference pref = findPreference(key);
@@ -1787,8 +1827,8 @@ public class SettingsActivity extends PreferenceActivity {
         Preference picturePref =  findPreference(SettingsManager.KEY_PICTURE_SIZE);
         if (picturePref == null) return;
         String multiResEnabled = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
-        if (PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
-                && "1".equals(multiResEnabled)) {
+        if ((PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
+                && "1".equals(multiResEnabled)) || (mSettingsManager != null && mSettingsManager.isDNGCreator())) {
             picturePref.setEnabled(false);
         } else {
             picturePref.setEnabled(true);
@@ -1826,7 +1866,7 @@ public class SettingsActivity extends PreferenceActivity {
                 SettingsManager.KEY_SAVERAW);
         ListPreference zslPref = (ListPreference)findPreference(
                 SettingsManager.KEY_ZSL);
-        if ((zslPref != null && zslPref.getValue().equals("app-zsl")) || mSettingsManager.isLimitedHDR()) {
+        if ((zslPref != null && zslPref.getValue().equals("app-zsl")) || mSettingsManager.isLimitedHDR() || mSettingsManager.isDNGCreator()) {
             if (rawPref != null) {
                 rawPref.setValue("disable");
                 rawPref.setEnabled(false);
@@ -1836,6 +1876,13 @@ public class SettingsActivity extends PreferenceActivity {
             if(rawPref != null)
                 rawPref.setEnabled(true);
             }
+    }
+    private void updateRawReprocess(){
+        ListPreference reprocessPref = (ListPreference)findPreference(SettingsManager.KEY_RAW_REPROCESS_TYPE);
+        if(reprocessPref != null && mSettingsManager.isDNGCreator()){
+            reprocessPref.setValue("0");
+            reprocessPref.setEnabled(false);
+        }
     }
 
     private void updateRawInfoPref(){
@@ -1869,6 +1916,13 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
+    }
+    private void updatePictureFormatPreference(){
+       ListPreference pictureFormatPref = (ListPreference)findPreference(SettingsManager.KEY_PICTURE_FORMAT);
+       if(pictureFormatPref != null){
+            mSettingsManager.filterPicturFormat();
+            updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
+       }
     }
 
     private void updatePreference(String key) {

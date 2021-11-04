@@ -47,6 +47,11 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.DngCreator;
 import java.io.OutputStream;
+import android.graphics.BitmapRegionDecoder;
+import android.graphics.Matrix;
+import android.graphics.Rect;
+import com.android.camera.CameraActivity;
+
 
 
 public class Storage {
@@ -59,6 +64,7 @@ public class Storage {
     public static final String RAW_DIRECTORY = DCIM + "/Camera/raw";
     public static final String JPEG_POSTFIX = ".jpg";
     public static final String HEIF_POSTFIX = ".heic";
+    public static final String DNG_POSTFIX = ".dng";
 
     // Match the code in MediaProvider.computeBucketValues().
     public static final String BUCKET_ID =
@@ -141,6 +147,21 @@ public class Storage {
                 size, path, width, height, mimeType);
     }
 
+     public static Uri addDng(ContentResolver resolver, String title, long date,
+            Location location, int orientation, ExifInterface exif, Image image, int width,
+            int height, String mimeType,String path,CameraCharacteristics mCharacteristics,TotalCaptureResult mCaptureResult) {
+
+        writeDngFile(image,path, mCharacteristics,mCaptureResult);
+        int size = 0;
+        // Try to get the real image size after add exif.
+        File f = new File(path);
+        if (f.exists() && f.isFile()) {
+            size = (int) f.length();
+        }
+        return addImage(resolver, title, date, location, orientation, exif,
+                size, path, width, height, mimeType);
+    }
+
     // Get a ContentValues object for the given photo data
     public static ContentValues getContentValuesForData(String title,
             long date, Location location, int orientation, ExifInterface exif, int jpegLength,
@@ -212,9 +233,32 @@ public class Storage {
 
         return insertImage(resolver, values);
     }
-    public static long addDngImage(String title,Image image,
-        String mimeType,CameraCharacteristics mCharacteristics,TotalCaptureResult mCaptureResult,boolean closeimg) {
-        String path = generateFilepath(title, mimeType);
+    private static Bitmap decodeDNGImage(final String path) {
+        final BitmapFactory.Options opt = new BitmapFactory.Options();
+        opt.inJustDecodeBounds = true;
+        Bitmap bitmap = BitmapFactory.decodeFile(path, opt);
+        int w = opt.outWidth;
+        int h = opt.outHeight;
+        int d = w > h ? h : w;
+        final int target =114;
+        int sample = 1;
+        if (d > target) {
+            while (d / sample / 2 > target) {
+                sample *= 2;
+            }
+        }
+        int st = sample * target;
+        final Rect rect = new Rect((w - st) / 2, (h - st) / 2, (w + st) / 2, (h + st) / 2);
+        opt.inJustDecodeBounds = false;
+        opt.inSampleSize = sample;
+        bitmap = BitmapFactory.decodeFile(path, opt);
+        Matrix matrix = new Matrix();
+        matrix.setRotate(90);
+        bitmap =  Bitmap.createBitmap(bitmap, 0, 0,bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+        return bitmap;
+     }
+
+    public static long writeDngFile(Image image,String path,CameraCharacteristics mCharacteristics,TotalCaptureResult mCaptureResult) {
         int size = 0;
         FileOutputStream output = null;
         try {
@@ -238,9 +282,7 @@ public class Storage {
             Log.e(TAG, "Misc Assertion while saving RAW image to a file", e);
             return 0;
         } finally {
-            if(closeimg){
-               image.close();
-            }
+            image.close();
             closeOutput(output);
         }
         // Try to get the real image size after add exif.
@@ -349,7 +391,7 @@ public class Storage {
                 return DIRECTORY + '/' + title + suffix;
             }
         }  else if(pictureFormat.equalsIgnoreCase("dng")) {
-            return RAW_DIRECTORY + '/' + title + ".dng";
+            return DIRECTORY + '/' + title + ".dng";
         }else{
             return RAW_DIRECTORY + '/' + title + ".raw";
         }
