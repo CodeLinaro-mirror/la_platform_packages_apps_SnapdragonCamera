@@ -1001,7 +1001,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public boolean getZoomFixedSupport() {
         return mZoomRatioSupport && CaptureModule.MCXMODE &&
-                mModule.getCurrenCameraMode() != CaptureModule.CameraMode.HFR;
+                (mModule.getCurrenCameraMode() != CaptureModule.CameraMode.HFR ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR && !mModule.isHighSpeedRateCapture());
     }
 
     private boolean isRTBModeInSelectMode() {
@@ -1522,7 +1523,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFrontBackSwitcher.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mModule.writeXMLForWarmAwb();
                 switchFrontBackCamera();
             }
         });
