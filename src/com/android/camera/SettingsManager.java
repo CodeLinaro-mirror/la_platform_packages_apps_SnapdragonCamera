@@ -2805,8 +2805,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(sizes[i].toString());
                 if (profile != null && CamcorderProfile.hasProfile(cameraId, profile)) {
                     if (getValue(KEY_MANUAL_HDR) != null &&
-                            getValue(KEY_MANUAL_HDR).equals("manual") &&
-                            sizes[i].toString().equals("3840x2160") &&
+                            (getValue(KEY_MANUAL_HDR).equals("manual") || getValue(KEY_MANUAL_HDR).equals("auto")) &&
+                            (sizes[i].toString().equals("3840x2160") || sizes[i].toString().equals("7680x4320"))&&
                             getValue(SettingsManager.KEY_SELECT_MODE) != null &&
                             !getValue(SettingsManager.KEY_SELECT_MODE).equals(
                                     "single_rear_cameraid")){
