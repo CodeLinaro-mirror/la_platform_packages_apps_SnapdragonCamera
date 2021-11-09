@@ -7385,6 +7385,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     @Override
     public void onCountDownFinished() {
+        mUI.enableShutter(true);
         checkSelfieFlashAndTakePicture();
         mUI.showUIAfterCountDown();
     }
