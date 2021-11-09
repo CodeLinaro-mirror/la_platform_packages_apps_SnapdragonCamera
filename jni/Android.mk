@@ -1,6 +1,5 @@
-ifeq (0,1)
 LOCAL_PATH:= $(call my-dir)
-
+ifeq (0,1)
 include $(CLEAR_VARS)
 
 LOCAL_C_INCLUDES := \
@@ -76,5 +75,20 @@ LOCAL_MODULE    := libjni_imageutil
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := image_util_jni.cpp
 LOCAL_CFLAGS    += -ffast-math -O3 -funroll-loops
+include $(BUILD_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_LDFLAGS   := -llog
+LOCAL_VENDOR_MODULE := true
+LOCAL_MODULE    := libjni_aidenoiserutilv2
+LOCAL_MODULE_TAGS := optional
+LOCAL_SRC_FILES := aidenoiserv2_util_jni.cpp
+LOCAL_ADDITIONAL_DEPENDENCIES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
+LOCAL_C_INCLUDES :=  aidenoiserv2/aidenoiserenginev2.h
+LOCAL_SHARED_LIBRARIES := libaidenoiserv2 liblog libcutils libm libGLESv3 libEGL
+LOCAL_HEADER_LIBRARIES := jni_headers vendor_common_inc
+LOCAL_CFLAGS    += -ffast-math -O3 -funroll-loops
+LOCAL_NOSANITIZE := cfi flag
+LOCAL_USE_VNDK := true
 include $(BUILD_SHARED_LIBRARY)
 endif

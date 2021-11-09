@@ -86,6 +86,8 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableQLL", Integer.class);
     private static final CaptureRequest.Key<Integer> vsr_enable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVSR", Integer.class);
+    public static final CaptureRequest.Key<Byte> enableMFNRAIDEMode =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMFNRAIDEMode", byte.class);
 
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
@@ -289,6 +291,13 @@ public class VendorTagUtil {
     public static void setVSRMode(CaptureRequest.Builder builder, int enable) {
         if (isSupported(builder, vsr_enable)) {
             builder.set(vsr_enable, enable);
+        }
+    }
+
+    public static void enableMFNRAIDEMode(CaptureRequest.Builder builder, byte enable) {
+        Log.i(TAG,"set enableMFNRAIDEMode: " + enable);
+        if (isSupported(builder, enableMFNRAIDEMode)) {
+            builder.set(enableMFNRAIDEMode, enable);
         }
     }
 }

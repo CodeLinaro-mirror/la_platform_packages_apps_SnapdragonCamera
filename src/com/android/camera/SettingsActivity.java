@@ -148,6 +148,7 @@ public class SettingsActivity extends PreferenceActivity {
                 updatePreference(SettingsManager.KEY_VIDEO_ENCODER);
                 updateVideoMFHDRPreference();
                 updateVideoFlipPreference();
+                updateVsrPreference();
             } else if (key.equals(SettingsManager.KEY_VIDEO_ENCODER)) {
                 updateVideoEncoderProfile();
             } else if (key.equals(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE)) {
@@ -306,6 +307,10 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
                     updateRawInfoPref();
+                }
+                if(pref.getKey().equals(SettingsManager.KEY_VSR)){
+                    mSettingsManager.updatePictureAndVideoSize();
+                    updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                 }
             }
         }
@@ -1578,10 +1583,12 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoVariableFpsPreference();
         updateAudioEncoderPreference();
         updateVideoFlipPreference();
+        updateAIDEPreference();
         updatePdnetTogglePreference();
         updateRawFormatPref();
         updateRawInfoPref();
         updatePictureSizePreferenceButton();
+        updateVsrPreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1670,6 +1677,23 @@ public class SettingsActivity extends PreferenceActivity {
         pref.setEnabled(mSettingsManager.isZZHDRSupported());
     }
 
+    public boolean isHwMfnrDisabled(){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+        if(value != null &&  !value.equals("disable")&& Integer.parseInt(value) == 0 && mSettingsManager.isHWMFNRSupport()){
+            return true;
+        }
+        return false;
+    }
+
+    private void updateAIDEPreference() {
+        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_AI_DENOISER);
+        if (pref == null) {
+            return;
+        }
+        if(isHwMfnrDisabled() || (mSettingsManager.isHWMFNRSupport() && !isHwMfnrDisabled() && !mSettingsManager.isAIDE2Supported())){
+            pref.setEnabled(false);
+        }
+    }
     private void updateVideoMFHDRPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
         if (pref == null) {
@@ -1771,6 +1795,20 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
     }
+    private void updateVsrPreference(){
+         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_VSR);
+         if(pref == null) return;
+         ListPreference Vieopref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_QUALITY);
+         if(Vieopref != null){
+             String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+             if(videoSize != null && videoSize.toString().equals("7680x4320")){
+                 pref.setValue("0");
+                 pref.setEnabled(false);
+                 return;
+             }
+         }
+         pref.setEnabled(true);
+    }
 
     private void updatePreferenceButton(String key) {
         Preference pref = findPreference(key);
@@ -1789,8 +1827,8 @@ public class SettingsActivity extends PreferenceActivity {
         Preference picturePref =  findPreference(SettingsManager.KEY_PICTURE_SIZE);
         if (picturePref == null) return;
         String multiResEnabled = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
-        if (PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
-                && "1".equals(multiResEnabled)) {
+        if ((PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
+                && "1".equals(multiResEnabled)) || (mSettingsManager != null && mSettingsManager.isDNGCreator())) {
             picturePref.setEnabled(false);
         } else {
             picturePref.setEnabled(true);
