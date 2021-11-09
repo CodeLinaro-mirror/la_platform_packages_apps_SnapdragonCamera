@@ -1719,4 +1719,37 @@ public class CameraUtil {
         }
 
     }
+    public static class IntegerLock {
+        private int value;
+
+
+        public IntegerLock(int value) {
+            this.value = value;
+        }
+
+        public synchronized int get(){
+            return value;
+        }
+
+        public synchronized int incrementAndGet(int incrBy) {
+            value += incrBy;
+            notifyAll();
+            return value;
+        }
+
+        public synchronized void set(int value) {
+            this.value = value;
+            notifyAll();
+        }
+
+        public synchronized void waitUntilIs(int targetValue) {
+            while (value != targetValue) {
+                try {
+                    wait(3000);
+                } catch(InterruptedException e) {
+                    // ignore
+                }
+            }
+        }
+    }
 }
