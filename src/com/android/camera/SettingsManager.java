@@ -3355,7 +3355,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public Size getQcfaSupportSize() {
         String qcfaSize = getSupportedQcfaDimension(mCameraId);
-        if (qcfaSize != null) {
+        if (qcfaSize != null && qcfaSize.indexOf('x') > 0 ) {
             return parseSize(getSupportedQcfaDimension(mCameraId));
         }
         return new Size(0, 0);
@@ -3450,8 +3450,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
         }
         Size[] dngSize = getSupportedOutputSize(cameraId,ImageFormat.RAW_SENSOR);
+        Size qcfaSize = getQcfaSupportSize();
         if(dngSize != null && dngSize.length > 0 && (getValue(SettingsManager.KEY_SAVERAW) == null ||
-        (getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("disable"))) && !isRawReprocess()){
+        (getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("disable")))
+                && !isRawReprocess() && CaptureModule.CameraMode.DEFAULT == CaptureModule.CURRENT_MODE &&
+                (dngSize[0].getWidth() < qcfaSize.getWidth() && dngSize[0].getHeight() < qcfaSize.getHeight() ||
+                        (qcfaSize.getWidth() == 0 && qcfaSize.getHeight() == 0 ))){
         ret.add(String.valueOf(SettingsManager.DNG_FORMAT));
         }
         return ret;
