@@ -3197,16 +3197,41 @@ public class CaptureModule implements CameraModule, PhotoController,
                 setUpMediaRecorder(cameraId);
             } else {
                 mOnlyVideoEncoder = true;
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Bundle myExtras = mActivity.getIntent().getExtras();
+                        mOutputFileInit = false;
+                        setVideoOutputFile(myExtras);
+                        setOrientationHint(cameraId);
+                        mOutputFileInit = true;
+                    }
+                }).start();
                 if (!mCaptureTimeLapse && (!mHighSpeedCapture || mHighSpeedRecordingMode)
                         && !mSuperSlomoCapture) {
                     mOnlyVideoEncoder = false;
-                    setupMediaCodecAudio();
-                    setupAudioRecorder();
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mAudioCodecInit = false;
+                            try {
+                                setupMediaCodecAudio();
+                            }catch (Exception e){
+                                e.printStackTrace();
+                            }
+                            mAudioCodecInit = true;
+                        }
+                    }).start();
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mAudioRecorderInit = false;
+                            setupAudioRecorder();
+                            mAudioRecorderInit = true;
+                        }
+                    }).start();
                 }
                 setupMediaCodecVideo(cameraId);
-                Bundle myExtras = mActivity.getIntent().getExtras();
-                setVideoOutputFile(myExtras);
-                setOrientationHint(cameraId);
             }
             mCameraHandler.removeMessages(CANCEL_TOUCH_FOCUS, mCameraId[cameraId]);
             mState[cameraId] = STATE_PREVIEW;
@@ -5240,6 +5265,21 @@ public class CaptureModule implements CameraModule, PhotoController,
         return dsxYuvSize;
     }
 
+    private boolean waitForAudioPrepare() {
+        int timeout = 10; //500ms
+        while(timeout > 0) {
+            if (mOutputFileInit && mAudioCodecInit && mAudioRecorderInit) {
+                return true;
+            }
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+            }
+            timeout--;
+        }
+        return false;
+    }
+
     private List<OutputConfiguration> getPhysicalPreviewOutput(){
         List<OutputConfiguration> ret = new ArrayList<>();
         int i=1;
@@ -6220,14 +6260,22 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (mIsPreviewingVideo && !mIsRecordingVideo) {
                 setVideoFlashOff();
             }
-            if (mCurrentSession != null) {
-                try {
-                    mCurrentSession.abortCaptures();
-                    mCurrentSession.stopRepeating();
-                } catch (CameraAccessException|IllegalStateException e) {
-                    e.printStackTrace();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mCurrentSession != null) {
+                        try {
+                            mCurrentSession.abortCaptures();
+                            mCurrentSession.stopRepeating();
+                            if (mIsPreviewingVideo && !mIsRecordingVideo) {
+                                closePreviewSession();
+                            }
+                        } catch (CameraAccessException|IllegalStateException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
-            }
+            }).start();
         }
         if (mIsPreviewingVideo && !mIsRecordingVideo) {
             exitVideoModule();
@@ -7946,6 +7994,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onConfigured(CameraCaptureSession cameraCaptureSession) {
             Log.d(TAG, "mSessionListener session onConfigured");
+            if(!PersistUtil.enableMediaRecorder() && !waitForAudioPrepare()){
+                enableVideoButton(true);
+                setCameraModeSwitcherAllowed(true);
+                Toast.makeText(mActivity, "Video Failed", Toast.LENGTH_SHORT).show();
+            }
             setCameraModeSwitcherAllowed(true);
             int cameraId = getMainCameraId();
             mCurrentSession = cameraCaptureSession;
@@ -8215,8 +8268,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                             cleanupEmptyFile();
                             setUpMediaRecorder(getMainCameraId());
                         }
-                        mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                     }
+                    mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                 }
                 int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
@@ -9093,7 +9146,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mFrameProcessor.setVideoOutputSurface(null);
         mFrameProcessor.onClose();
-        closePreviewSession();
         mIsRecordingVideo = false;
         mIsPreviewingVideo = false;
         mHighSpeedCaptureRate = 0;
@@ -9143,6 +9195,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             mFrameProcessor.onClose();
             if (mLiveShotInitHeifWriter != null) {
                 mLiveShotInitHeifWriter.close();
+            }
+            if(!PersistUtil.enableMediaRecorder()){
+                mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
             }
         } else {
             //stop without config stream
@@ -9638,6 +9693,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mMuxerVideoStop = false;
     private boolean mMuxerAudioStop = false;
     private boolean mOnlyVideoEncoder = false;
+    private boolean mOutputFileInit = false;
+    private boolean mAudioCodecInit = false;
+    private boolean mAudioRecorderInit = false;
     private Thread mVideoEncodeThread;
     private Thread mAudioEncodeThread;
     private Thread mAudioDecodeThread;
@@ -9934,6 +9992,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                 if (mOnlyVideoEncoder || (mNumTracksAdded == TOTAL_NUM_TRACKS))  {
                     enableVideoButton(true);
+                    mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
                 }
             } else if (encoderStatus < 0) {
                 if (DEBUG_MEDIACODEC_VIDEO || DEBUG_MEDIACODEC) {
