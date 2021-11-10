@@ -11131,7 +11131,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyManualHDR(CaptureRequest.Builder request) {
         String hdrmode = mSettingsManager.getVideoHdrMode();
-        if (hdrmode != null ) {
+        if (hdrmode != null && !hdrmode.equals("")) {
             Log.v(TAG, " applyManualHDR hdrmode :" + hdrmode);
             if (hdrmode.equals("auto")) {
                 VendorTagUtil.setAudoHDRMode(request, 1);
