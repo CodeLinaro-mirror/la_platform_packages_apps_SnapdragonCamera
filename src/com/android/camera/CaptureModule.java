@@ -9267,11 +9267,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         mRecordingStarted = false;
         boolean shouldAddToMediaStoreNow = false;
         // Stop recording
-        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+
         if (PersistUtil.needEndOfStream()) {
             setEndOfStream(false, true);
         }
-
+        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
         if (isHighSpeedRateCapture() || (!PersistUtil.enableMediaRecorder())
                 || (mSettingsManager.getPhysicalCameraId() != null)) {
             mFrameProcessor.setVideoOutputSurface(null);
