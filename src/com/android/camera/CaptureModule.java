@@ -3262,7 +3262,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 warningToast("Camera is not ready yet to take a video snapshot.");
                 return;
             }
-            checkAndPlayShutterSound(id);
             CaptureRequest.Builder captureBuilder = getRequestBuilder(
                     CameraDevice.TEMPLATE_VIDEO_SNAPSHOT,id);
 
@@ -5832,6 +5831,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     keepScreenOn();
                 }
             });
+            mUI.setSoundEffectsForRecording(false);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             quitRecordingWithError("IllegalArgumentException");
@@ -6424,6 +6424,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mStopRecPending = true;
         boolean shouldAddToMediaStoreNow = false;
         // Stop recording
+        mUI.setSoundEffectsForRecording(true);
         checkAndPlayRecordSound(cameraId, false);
         setEndOfStream(false, true);
         mFrameProcessor.setVideoOutputSurface(null);
