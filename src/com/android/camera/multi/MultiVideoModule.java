@@ -1224,10 +1224,10 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             retriever.setDataSource(mVideoFilenames[id]);
             duration = Long.valueOf(retriever.extractMetadata(
                     MediaMetadataRetriever.METADATA_KEY_DURATION));
-        } catch (IllegalArgumentException e) {
-            Log.e(TAG, "cannot access the file");
+            retriever.release();
+        } catch (Exception e) {
+            Log.e(TAG, "cannot access the file:" + e);
         }
-        retriever.release();
         mActivity.getMediaSaveService().addVideo(mVideoFilenames[id],
                 duration, mCurrentVideoValues[id],
                 mOnVideoSavedListener, mContentResolver);
