@@ -4350,7 +4350,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         Log.v(TAG, " onResumeBeforeSuper facingOfIntentExtras :" + facingOfIntentExtras +
                 ", FRONT_ID :" + FRONT_ID + ", mIntentMode :" + mIntentMode);
-        if (facingOfIntentExtras != -1 && (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA)) {
+        if (facingOfIntentExtras != -1 && (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA  || mIntentMode == INTENT_MODE_CAPTURE)) {
             if (facingOfIntentExtras == CameraUtil.FACING_FRONT) {
                 facingOfIntentExtras = FRONT_ID;
             }
