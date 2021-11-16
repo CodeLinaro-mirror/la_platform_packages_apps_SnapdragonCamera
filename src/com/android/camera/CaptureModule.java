@@ -2825,6 +2825,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     mUI.updateGridLine();
                                 }
                             });
+                            mFirstPreviewLoaded = false;
                             try {
                                 if (isBackCamera() && getCameraMode() == DUAL_MODE) {
                                     linkBayerMono(id);
@@ -6514,10 +6515,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mInitHeifWriter != null) {
             mInitHeifWriter.close();
         }
+        mUI.showPreviewCover();
         if(mIsCloseCamera) {
             closeCamera();
-            mUI.showPreviewCover();
-            mUI.hideSurfaceView();
         } else {
             closeProcessors();
         }
@@ -6527,12 +6527,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             mUI.getGLCameraPreview().onPause();
         }
 
-        mUI.hideSurfaceView();
+
         mUI.hidePhysicalSurfaces();
 
         mZoomValue = 1f;
         mUI.updateZoomSeekBar(1.0f);
-        mFirstPreviewLoaded = false;
         if (isExitCamera && mIsCloseCamera) {
             stopBackgroundThread();
             closeImageReader();
@@ -6580,7 +6579,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mState[i] = STATE_PREVIEW;
         }
         mLongshotActive = false;
-        if(mIsCloseCamera) {
+        if(!resumeFromRestartAll) {
             updatePreviewSurfaceReadyState(false);
         }
     }
@@ -8327,6 +8326,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mCurrentSession = cameraCaptureSession;
             mCaptureSession[cameraId] = cameraCaptureSession;
             updateFaceDetection();
+            mFirstPreviewLoaded = false;
             // Create slow motion request list
             List<CaptureRequest> slowMoRequests = null;
             try {
@@ -13218,9 +13218,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             mIsCloseCamera = true;
         }
         onPauseBeforeSuper();
-        if(!mIsCloseCamera){
-            mUI.showPreviewCover();
-        }
         onPauseAfterSuper(false);
         reinitSceneMode();
         onResumeBeforeSuper(true);
