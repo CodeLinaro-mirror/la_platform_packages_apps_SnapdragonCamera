@@ -11488,7 +11488,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
 
                 if (session instanceof CameraConstrainedHighSpeedCaptureSession) {
-                    List list = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
+                    List list = ((CameraConstrainedHighSpeedCaptureSession) session)
                             .createHighSpeedRequestList(captureRequest.build());
                     if(!instant) {
                         ((CameraConstrainedHighSpeedCaptureSession) session).setRepeatingBurst(list
