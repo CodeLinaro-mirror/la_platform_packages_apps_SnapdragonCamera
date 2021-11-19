@@ -246,9 +246,8 @@ public class SettingsActivity extends PreferenceActivity {
             if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
                 updateRawInfoPref();
             }
-            if (key.equals(SettingsManager.KEY_SAVERAW)){
+            if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)){
                 updateVideoMFHDRPreference();
-                updatePictureFormatPreference();
             }
             if(key.equals(SettingsManager.KEY_INSENSOR_ZOOM)){
                 updateVideoMFHDRPreference();
@@ -1303,7 +1302,7 @@ public class SettingsActivity extends PreferenceActivity {
             removePreference(SettingsManager.KEY_RAW_REPROCESS_TYPE, developer);
             removePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS, developer);
             removePreference(SettingsManager.KEY_RAWINFO_TYPE, developer);
-            removePreference(SettingsManager.KEY_RAW_FORMAT_TYPE, developer);
+            removePreference(SettingsManager.KEY_RAWINFO_TYPE, developer);
         }
 
         if(!PersistUtil.isRawCbInfoSupported()&& developer != null){
@@ -1650,8 +1649,8 @@ public class SettingsActivity extends PreferenceActivity {
         int cameraId = mSettingsManager.getCurrentCameraId();
         Size[] rawSize = mSettingsManager.getSupportedOutputSize(cameraId,
                 mSettingsManager.getRawFormat());
-        if (rawSize == null) {
-            Preference p = findPreference(SettingsManager.KEY_SAVERAW);
+        if (rawSize == null && mSettingsManager.getRawFormat() > 0 ) {
+            Preference p = findPreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
             if (p != null) {
                 p.setEnabled(false);
             }
@@ -1801,7 +1800,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
         int[] modes = mSettingsManager.isManualHDRSupported();
         pref.setEnabled(false);
-        if (modes != null && modes.length >= 1) {
+        if (modes != null && modes.length >= 1 && mSettingsManager.getRawFormat() == 0) {
             pref.setEnabled(true);
             mSettingsManager.filterVideoMaunalHDRModes(modes);
             updatePreference(SettingsManager.KEY_MANUAL_HDR);
@@ -1926,7 +1925,7 @@ public class SettingsActivity extends PreferenceActivity {
         if (picturePref == null) return;
         String multiResEnabled = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
         if ((PersistUtil.isMultiResolutionImageReaderEnabled() && multiResEnabled != null
-                && "1".equals(multiResEnabled)) || (mSettingsManager != null && mSettingsManager.isDNGCreator())) {
+                && "1".equals(multiResEnabled))) {
             picturePref.setEnabled(false);
         } else {
             picturePref.setEnabled(true);
@@ -1979,24 +1978,23 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void updateRawFormatPref() {
-        ListPreference rawPref = (ListPreference)findPreference(
-                SettingsManager.KEY_SAVERAW);
+        ListPreference rawFormatPref = (ListPreference)findPreference(
+                SettingsManager.KEY_RAW_FORMAT_TYPE);
         ListPreference zslPref = (ListPreference)findPreference(
                 SettingsManager.KEY_ZSL);
-        if ((zslPref != null && zslPref.getValue().equals("app-zsl")) || mSettingsManager.isLimitedHDR() || mSettingsManager.isDNGCreator()) {
-            if (rawPref != null) {
-                rawPref.setValue("0");
-                rawPref.setEnabled(false);
-                mSettingsManager.setValue(SettingsManager.KEY_SAVERAW, "0");
+        if ((zslPref != null && zslPref.getValue().equals("app-zsl")) || mSettingsManager.isLimitedHDR()) {
+            if (rawFormatPref != null) {
+                rawFormatPref.setValue("0");
+                rawFormatPref.setEnabled(false);;
             }
         }else{
-            if(rawPref != null)
-                rawPref.setEnabled(true);
+            if(rawFormatPref != null)
+                rawFormatPref.setEnabled(true);
             }
     }
     private void updateRawReprocess(){
         ListPreference reprocessPref = (ListPreference)findPreference(SettingsManager.KEY_RAW_REPROCESS_TYPE);
-        if(reprocessPref != null && mSettingsManager.isDNGCreator()){
+        if(reprocessPref != null && (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR)){
             reprocessPref.setValue("0");
             reprocessPref.setEnabled(false);
         }

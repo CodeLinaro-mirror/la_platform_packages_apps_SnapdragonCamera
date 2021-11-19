@@ -868,7 +868,7 @@ public class CameraActivity extends Activity
             if (path == null) {
                 return null;
             } else {
-                if (path.endsWith(Storage.HEIF_POSTFIX) || path.endsWith(Storage.DNG_POSTFIX)) {
+                if (path.endsWith(Storage.HEIF_POSTFIX)) {
                     mOrientation = getOrientationFromUri(uri);
                 }
                 if (img.isPhoto()) {
@@ -952,9 +952,6 @@ public class CameraActivity extends Activity
             opt.inSampleSize = sample;
             final BitmapRegionDecoder decoder;
             Bitmap bitmap = null;
-            if(path != null && path.endsWith(Storage.DNG_POSTFIX)){
-            bitmap = BitmapFactory.decodeFile(path, opt);
-            }else{
             try {
                 if (mJpegData == null) {
                     decoder = BitmapRegionDecoder.newInstance(path, true);
@@ -967,7 +964,7 @@ public class CameraActivity extends Activity
              bitmap = decoder.decodeRegion(rect, opt);
              if (decoder != null)
                 decoder.recycle();
-             }
+
             if (orientation != 0 && bitmap != null) {
                 Matrix matrix = new Matrix();
                 matrix.setRotate(orientation);

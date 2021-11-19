@@ -2443,9 +2443,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSaveRaw = false;
         mYUV10bit = false;
         mYUV10BitWithMetadata = false;
-        String value = mSettingsManager.getValue(SettingsManager.KEY_SAVERAW);
+        String value = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
         if (value == null) return;
-        if (value.equals("37")) {
+        if (value.equals("10") || value.equals("16")) {
             mSaveRaw = true;
         } else if (value.equals("54")) {
             mYUV10bit = true;
@@ -2984,7 +2984,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK)) {
                         list.remove(mImageReader[id].getSurface());
                     }
-                    if (mSaveRaw) {
+                    if (mSaveRaw && mRawReprocessType == 0) {
                         list.add(mRawImageReader[id].getSurface());
                     }
                     if (mYUV10bit || mYUV10BitWithMetadata) {
@@ -4253,7 +4253,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (IllegalArgumentException e) {
                 Log.i(TAG,"can not read hwmfnr enable or aide2 enable tag");
             }
-
             if (isDeepZoom()) mSupportZoomCapture = true;
             if(isClearSightOn()) {
                 captureStillPictureForClearSight(id);
@@ -4272,9 +4271,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                             return;
                         }
                     }
-                } else {
-                    if (mSaveRaw && mRawImageReader[id] != null) {
-                        captureBuilder.addTarget(mRawImageReader[id].getSurface());
+                }else {
+                    if (mSaveRaw && mRawImageReader[id] != null && mRawReprocessType == 0 ) {
+                          captureBuilder.addTarget(mRawImageReader[id].getSurface());
                     }
                     if ((mYUV10bit || mYUV10BitWithMetadata) && mYUV10bitImageReader[id] != null) {
                         captureBuilder.addTarget(mYUV10bitImageReader[id].getSurface());
@@ -4296,6 +4295,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         if (writer != null) {
                             mHeifImage = new HeifImage(writer, path, title, date, orientation, quality);
                             Surface input = writer.getInputSurface();
+                            Log.d(TAG, "Add HeifWriter image reader surface input=."+input);
                             mHeifOutput.addSurface(input);
                             try {
                                 mCaptureSession[id].updateOutputConfiguration(mHeifOutput);
@@ -4316,8 +4316,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 }
                             }
                         }
-                        if (mRawReprocessType != 0) {
-                            Log.i(TAG, "add raw image for first capture request");
+                        if(mRawReprocessType != 0){
+                            Log.i(TAG, "add raw image for first capture request- "+mRAWImageReader[0].getSurface());
                             captureBuilder.addTarget(mRAWImageReader[0].getSurface());
                         }
                         if (isAIDE2Enabled()) {
@@ -5240,7 +5240,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     long imglen=bytes.length;
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         Log.d(TAG,"setupcameraoutput-onImageAvailable width="+image.getWidth()+",height="+image.getHeight()+",stride="+image.getPlanes()[0].getRowStride());
-                                        if(image.getFormat() == ImageFormat.RAW_SENSOR && mSettingsManager.isDNGCreator() && mRawReprocessType == 0){
+                                        if(image.getFormat() == ImageFormat.RAW_SENSOR && mRawReprocessType == 0){
                                             int setsucess = setInfoForDng();
                                             if(setsucess == 0){
                                                 mActivity.getMediaSaveService().addDng(image,imglen, title,date,null, image.getWidth(), image.getHeight(), orientation, exif,
@@ -5421,11 +5421,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private int setInfoForDng(){
-        if(mRawReprocessType == 0){
-            mActivity.getMediaSaveService().setIsCloseimg(true);
-        }else{
-            mActivity.getMediaSaveService().setIsCloseimg(false);
-        }
         try{
             CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
             CameraCharacteristics characteristics= manager.getCameraCharacteristics(String.valueOf(getMainCameraId()));
@@ -6774,6 +6769,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         estimateJpegFileSize();
         updateMaxVideoDuration();
         mSettingsManager.filterPictureFormatByIntent(mIntentMode);
+        mSettingsManager.updatePrefByIntent(mIntentMode);
     }
 
     public void updateStatsParameters(CaptureResult result) {
@@ -6978,8 +6974,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             mChosenImageFormat = ImageFormat.YUV_420_888;
         } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {
             mChosenImageFormat = ImageFormat.HEIC;
-        } else if(mSettingsManager.isDNGCreator()){
-            mChosenImageFormat = ImageFormat.RAW_SENSOR;
         } else {
             mChosenImageFormat = ImageFormat.JPEG;
         }
@@ -8141,21 +8135,23 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         Size[] rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
-                    mSettingsManager.getRawFormat());
-        if (rawSize == null || rawSize.length == 0) {
-            mSupportedRawPictureSize = null;
+                mSettingsManager.getRawFormat());
+        if ((rawSize == null || rawSize.length == 0 || mSettingsManager.getRawFormat() == 0) && mSaveRaw) {
             mSaveRaw = false;
-        } else {
-            mSupportedRawPictureSize = getMaxRawSize() != null ? getMaxRawSize() : rawSize[0];
-            Log.i(TAG, "rawsize:" + rawSize[0].toString());
         }
+        Log.i(TAG, " rawsize:" + rawSize + ",mSaveRaw=" + mSaveRaw);
+        if (mSaveRaw) {
+            mSupportedRawPictureSize = getMaxRawSize() != null && (mSettingsManager.getRawFormat() == ImageFormat.RAW10 ||
+                    (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR && isRawReprocess())) ? getMaxRawSize() : rawSize[0];
+        } else {
+            rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.RAW10);
+            mSupportedRawPictureSize = getMaxRawSize() != null ? getMaxRawSize() : rawSize[0];
+            Log.i(TAG, " rawsize:" + rawSize[0].toString());
+        }
+        Log.i(TAG, "mSupportedRawPictureSize=" + mSupportedRawPictureSize);
 
         if (mSupportedRawPictureSize != null) {
          Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
-        }
-        if(mSettingsManager.isDNGCreator()){
-            mPictureSize = rawSize[0];
-
         }
         mPreviewSize = getOptimalPreviewSize(mPictureSize, prevSizes);
         Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(getMainCameraId());
@@ -13169,7 +13165,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     return;
                 case SettingsManager.KEY_ZSL:
                 case SettingsManager.KEY_AUTO_HDR:
-                case SettingsManager.KEY_SAVERAW:
+                case SettingsManager.KEY_RAW_FORMAT_TYPE:
                 case SettingsManager.KEY_HDR:
                     if (count == 0) restartSession(false);
                     return;

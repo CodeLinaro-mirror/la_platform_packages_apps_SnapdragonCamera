@@ -1131,17 +1131,6 @@
     <string name="pref_camera2_timer_value_2sec" translatable="false">2</string>
     <string name="pref_camera2_timer_value_5sec" translatable="false">5</string>
     <string name="pref_camera2_timer_value_10sec" translatable="false">10</string>
-    <string name="pref_camera2_saveformat_default">disable</string>
-    <string name="pref_camera2_saveformat_title">Save with YUV/RAW format</string>
-    <string name="pref_camera2_saveformat_entry_disable">disable</string>
-    <string name="pref_camera2_saveformat_entry_raw_enable">RAW Enable</string>
-    <string name="pref_camera2_saveformat_entry_yuv10bit">YUV10bit</string>
-    <string name="pref_camera2_saveformat_entry_yuv10bit_withmetedata">YUV10bit With MetaData</string>
-
-    <string name="pref_camera2_saveformat_value_disable" translatable="false">0</string>
-    <string name="pref_camera2_saveformat_value_raw_enable" translatable="false">37</string>
-    <string name="pref_camera2_saveformat_value_yuv10bit" translatable="false">54</string>
-    <string name="pref_camera2_saveformat_value_yuv10bit_withmetedata" translatable="false">99</string>
 
     <string name="panocapture_direction_is_not_determined" translatable="true">Move constantly in one direciton.</string>
     <string name="panocapture_intro" translatable="true">Press camera button to start.</string>
@@ -1692,13 +1681,21 @@
     <string name="pref_camera2_raw_reprocess_entry_value_all_jpeg">5</string>
     <string name="pref_camera2_physical_raw_reprocess_title">Enable physical RAW Reprocess</string>
 
-    <!-- raw reprocess type-->
-    <string name="pref_camera2_raw_format_default">10</string>
-    <string name="pref_camera2_raw_format_title">Raw Format Type</string>
+    <!-- raw format type-->
+    <string name="pref_camera2_raw_format_default">0</string>
+    <string name="pref_camera2_raw_format_title">Save with YUV/RAW format</string>
+    <string name="pref_camera2_raw_format_entry_off">Off</string>
     <string name="pref_camera2_raw_format_entry_10">Raw10</string>
-    <string name="pref_camera2_raw_format_entry_16">Raw16</string>
+    <string name="pref_camera2_raw_format_entry_16">Raw16(DNG)</string>
+    <string name="pref_camera2_saveformat_entry_yuv10bit">YUV10bit</string>
+    <string name="pref_camera2_saveformat_entry_yuv10bit_withmetedata">YUV10bit With MetaData</string>
+
+    <string name="pref_camera2_raw_format_entry_value_0">0</string>
     <string name="pref_camera2_raw_format_entry_value_10">10</string>
     <string name="pref_camera2_raw_format_entry_value_16">16</string>
+    <string name="pref_camera2_saveformat_value_yuv10bit" translatable="false">54</string>
+    <string name="pref_camera2_saveformat_value_yuv10bit_withmetedata" translatable="false">99</string>
+
 
     <!-- Multi camera value -->
     <string name="pref_multi_camera_picturesize_default" translatable="false">1920x1080</string>

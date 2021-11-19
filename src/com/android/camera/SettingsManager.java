@@ -214,7 +214,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_OFFLINE_DUMP_TRIGGER = "pref_camera2_offline_dump_trigger_key";
     public static final String KEY_SHADING_CORRECTION = "pref_camera2_shading_correction_key";
     public static final String KEY_EXTENDED_MAX_ZOOM = "pref_camera2_extended_max_zoom_key";
-    public static final String KEY_SAVERAW = "pref_camera2_saveraw_key";
     public static final String KEY_ZOOM = "pref_camera2_zoom_key";
     public static final String KEY_SHARPNESS_CONTROL_MODE = "pref_camera2_sharpness_control_key";
     public static final String KEY_AF_MODE = "pref_camera2_afmode_key";
@@ -3565,11 +3564,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return Integer.valueOf(value);
     }
     public int getRawFormat(){
-        int format = ImageFormat.RAW10;
+        int format = 0;
         String rawFormat = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
         int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
         if(rawFormatType == 16){
             format = ImageFormat.RAW_SENSOR;
+        }else if(rawFormatType == 10){
+            format = ImageFormat.RAW10;
         }
         return format;
     }
@@ -3581,10 +3582,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean isHeifHALEncoding() {
         //HAL encoding by default on Android Q
         return getSavePictureFormat() == HEIF_FORMAT;
-    }
-
-    public boolean isDNGCreator(){
-        return getSavePictureFormat() == DNG_FORMAT;
     }
     public boolean isRawReprocess(){
         String reprocessType = getValue(KEY_RAW_REPROCESS_TYPE);
@@ -3605,16 +3602,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (supportHeic == 1){
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
         }
-        Size[] dngSize = getSupportedOutputSize(cameraId,ImageFormat.RAW_SENSOR);
-        if(dngSize != null && dngSize.length > 0 && (getValue(SettingsManager.KEY_SAVERAW) == null ||
-        (getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("0"))) && !isRawReprocess()){
-        ret.add(String.valueOf(SettingsManager.DNG_FORMAT));
-        }
         return ret;
     }
     public boolean isSupportedHdr(){
-        if(((getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("0")) ||
-                getValue(SettingsManager.KEY_SAVERAW) == null) && (((getValue(SettingsManager.KEY_INSENSOR_ZOOM) != null &&
+        if(((getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) != null && getValue(SettingsManager.KEY_RAW_FORMAT_TYPE).equals("0")) ||
+                getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) == null) && (((getValue(SettingsManager.KEY_INSENSOR_ZOOM) != null &&
                 getValue(SettingsManager.KEY_INSENSOR_ZOOM).equals("0")) || getValue(SettingsManager.KEY_INSENSOR_ZOOM) == null)) &&
                  getVideoFPS()<= 30){
              return true;
@@ -3703,6 +3695,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
     }
 
+    public void updatePrefByIntent(int mIntend){
+        if(mIntend != CaptureModule.INTENT_MODE_NORMAL){
+            setValue(KEY_RAW_FORMAT_TYPE,"0");
+            removePreference(mPreferenceGroup, KEY_RAW_FORMAT_TYPE);
+        }
+    }
     public void filterPictureFormatByIntent(int captureMode){
         ListPreference pictureFormat = mPreferenceGroup.findPreference(KEY_PICTURE_FORMAT);
         if (pictureFormat != null){

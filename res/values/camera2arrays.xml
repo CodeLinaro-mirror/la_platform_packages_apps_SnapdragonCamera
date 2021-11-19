@@ -542,13 +542,11 @@
     <string-array name="pref_camera2_picture_format_entries" translatable="false">
         <item>@string/pref_camera2_picture_format_entry_0</item>
         <item>@string/pref_camera2_picture_format_entry_1</item>
-        <item>@string/pref_camera2_picture_format_entry_2</item>
     </string-array>
 
     <string-array name="pref_camera2_picture_format_entryvalues" translatable="false">
         <item>0</item>
         <item>1</item>
-        <item>2</item>
     </string-array>
 
     <!-- Camera Preferences focus mode dialog box entries -->
@@ -1168,20 +1166,6 @@ for time lapse recording -->
         <item>@string/pref_camera2_auto_hdr_entry_disable</item>
     </string-array>
 
-    <string-array name="pref_camera2_saveformat_entries" translatable="false">
-        <item>@string/pref_camera2_saveformat_entry_disable</item>
-        <item>@string/pref_camera2_saveformat_entry_raw_enable</item>
-        <item>@string/pref_camera2_saveformat_entry_yuv10bit</item>
-        <item>@string/pref_camera2_saveformat_entry_yuv10bit_withmetedata</item>
-    </string-array>
-
-    <string-array name="pref_camera2_saveformat_entryvalues" translatable="false">
-        <item>@string/pref_camera2_saveformat_value_disable</item>
-        <item>@string/pref_camera2_saveformat_value_raw_enable</item>
-        <item>@string/pref_camera2_saveformat_value_yuv10bit</item>
-        <item>@string/pref_camera2_saveformat_value_yuv10bit_withmetedata</item>
-    </string-array>
-
     <string-array name="pref_camera2_bsgc_entryvalues" translatable="false">
         <item>@string/pref_camera2_bsgc_entry_value_disable</item>
         <item>@string/pref_camera2_bsgc_entry_value_enable</item>
@@ -1763,13 +1747,19 @@ for time lapse recording -->
     </string-array>
 
     <string-array name="pref_camera2_raw_format_entries" translatable="false">
+        <item>@string/pref_camera2_raw_format_entry_off</item>
         <item>@string/pref_camera2_raw_format_entry_10</item>
         <item>@string/pref_camera2_raw_format_entry_16</item>
+        <item>@string/pref_camera2_saveformat_entry_yuv10bit</item>
+        <item>@string/pref_camera2_saveformat_entry_yuv10bit_withmetedata</item>
     </string-array>
 
     <string-array name="pref_camera2_raw_format_entryvalues" translatable="false">
+        <item>@string/pref_camera2_raw_format_entry_value_0</item>
         <item>@string/pref_camera2_raw_format_entry_value_10</item>
         <item>@string/pref_camera2_raw_format_entry_value_16</item>
+        <item>@string/pref_camera2_saveformat_value_yuv10bit</item>
+        <item>@string/pref_camera2_saveformat_value_yuv10bit_withmetedata</item>
     </string-array>
 
     <string-array name="pref_camera2_rawinfo_type_entries" translatable="false">
