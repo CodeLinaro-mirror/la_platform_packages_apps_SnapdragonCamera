@@ -78,7 +78,6 @@ public class MediaSaveService extends Service {
     private long mMemoryUse;
     private TotalCaptureResult mCaptureResult;
     private CameraCharacteristics mCharacteristics;
-    private boolean mIsCloseImg;
     private CameraActivity mActivity;
 
     public interface Listener {
@@ -275,9 +274,6 @@ public class MediaSaveService extends Service {
             throw new NullPointerException();
         }
         mCharacteristics = characteristics;
-    }
-    public void setIsCloseimg( boolean iscloseimg){
-        mIsCloseImg  = iscloseimg;
     }
 public void setCameraActivity(CameraActivity activity){
     mActivity=activity;

@@ -161,7 +161,7 @@
   },
   "pref_camera2_zsl_key":
   {
-    "app-zsl": {"pref_camera2_saveraw_key": "disable",
+    "app-zsl": {"pref_camera2_raw_format_key": "0",
                 "pref_camera2_capture_mfnr_key": "0",
                 "pref_camera2_multi_camera_mode_key": "0",
                 "pref_camera2_picture_format_key":"0"
@@ -196,14 +196,20 @@
   },
   "pref_camera2_ai_denoiser_key":
   {
-    "1":{"pref_camera2_saveraw_key": "disable"},
+    "1":{"pref_camera2_raw_format_key": "0"},
     "0":{"pref_camera2_ai_denoiser_mode_key":"1",
          "pref_camera2_ai_denoiser_format_key":"1"}
   },
-  "pref_camera2_saveraw_key":
+  "pref_camera2_raw_format_key":
   {
-    "enable":{"pref_camera2_longshot_key":"off"},
-    "disable":{}
+    "0":{},
+    "10":{"pref_camera2_longshot_key":"off",
+           "pref_camera2_manualhdr_key":"off",
+           "pref_camera2_zsl_key":"hal-zsl"},
+    "16":{"pref_camera2_longshot_key":"off",
+          "pref_camera2_manualhdr_key":"off",
+          "pref_camera2_raw_reprocess_key": "0",
+          "pref_camera2_zsl_key":"hal-zsl"}
   },
   "pref_camera2_hdr_key":
   {
@@ -220,13 +226,13 @@
     "off": {"pref_camera2_torch_hdr_key":"0"},
     "auto": {"pref_camera2_zsl_key":"hal-zsl",
              "pref_camera2_coloreffect_key":"0",
-             "pref_camera2_saveraw_key": "disable",
+             "pref_camera2_raw_format_key": "0",
              "pref_camera2_manual_exp_key": "off",
              "pref_camera2_video_hdr_key": "0",
              "pref_camera2_manual_wb_key": "0"},
     "manual": {"pref_camera2_zsl_key":"hal-zsl",
               "pref_camera2_coloreffect_key":"0",
-              "pref_camera2_saveraw_key": "disable",
+              "pref_camera2_raw_format_key": "0",
               "pref_camera2_manual_exp_key": "off",
               "pref_camera2_video_hdr_key": "0",
               "pref_camera2_manual_wb_key": "0"}
@@ -264,11 +270,10 @@
   "pref_camera2_raw_reprocess_key":
   {
     "0":{"pref_camera2_rawinfo_type_key":"off",
-         "pref_camera2_raw_format_key":"off",
          "pref_camera2_physical_raw_reprocess_key":"off"},
-    "1": {},
-    "2": {},
-    "3": {}
+    "1": {"pref_camera2_raw_format_key" : "10"},
+    "2": {"pref_camera2_raw_format_key" : "10"},
+    "3": {"pref_camera2_raw_format_key" : "10"}
   },
   "pref_camera2_stats_visualizer_enable_key":
   {
@@ -292,22 +297,7 @@
     "enable":{"pref_camera2_longshot_key":"off"},
     "disable": {}
   },
-    "pref_camera2_picture_format_key":
-  {
-    "2":{"pref_camera2_saveraw_key":"disable",
-         "pref_camera2_longshot_key":"off",
-         "pref_camera2_manualhdr_key":"off",
-         "pref_camera2_zsl_key":"hal-zsl",
-         "pref_camera2_jpegquality_key": "100",
-         "pref_camera2_zoom_key": "0",
-         "pref_camera2_ai_denoiser_key":"0",
-         "pref_camera2_raw_reprocess_key": "0",
-         "pref_camera2_insensor_zoom_key": "0",
-         "pref_camera2_extended_max_zoom_key": "0",
-         "pref_camera2_picturesize_key":"3264x2448"},
-    "0": {},
-    "1": {}
-  },
+
   "pref_camera2_multiresimagereader_key":
   {
     "1":{"pref_camera2_picture_format_key":"0"},

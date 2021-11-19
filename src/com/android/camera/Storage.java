@@ -391,7 +391,7 @@ public class Storage {
                 return DIRECTORY + '/' + title + suffix;
             }
         }  else if(pictureFormat.equalsIgnoreCase("dng")) {
-            return DIRECTORY + '/' + title + ".dng";
+            return RAW_DIRECTORY + '/' + title + ".dng";
         }else{
             return RAW_DIRECTORY + '/' + title + ".raw";
         }
