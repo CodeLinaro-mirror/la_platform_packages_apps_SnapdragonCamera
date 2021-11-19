@@ -1,5 +1,4 @@
 LOCAL_PATH:= $(call my-dir)
-ifeq (0,1)
 include $(CLEAR_VARS)
 
 LOCAL_C_INCLUDES := \
@@ -76,6 +75,8 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := image_util_jni.cpp
 LOCAL_CFLAGS    += -ffast-math -O3 -funroll-loops
 include $(BUILD_SHARED_LIBRARY)
+
+ifeq (0,1)
 
 include $(CLEAR_VARS)
 LOCAL_LDFLAGS   := -llog
