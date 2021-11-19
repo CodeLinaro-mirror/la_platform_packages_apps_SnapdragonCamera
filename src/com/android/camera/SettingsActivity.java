@@ -234,6 +234,9 @@ public class SettingsActivity extends PreferenceActivity {
                 updateVideoMFHDRPreference();
                 updatePictureFormatPreference();
             }
+            if(key.equals(SettingsManager.KEY_INSENSOR_ZOOM)){
+                updateVideoMFHDRPreference();
+            }
         }
     };
 
@@ -1036,8 +1039,10 @@ public class SettingsActivity extends PreferenceActivity {
             updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
             updateVideoVariableFpsPreference();
             updateVideoHfrFpsPreference();
+            updateInSensorZoom();
         }else if (mode == CaptureModule.CameraMode.DEFAULT){
             updateRawFormatPref();
+            updateInSensorZoom();
         }
     }
 
@@ -1711,7 +1716,7 @@ public class SettingsActivity extends PreferenceActivity {
         ListPreference videoPref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_QUALITY);
         ListPreference selectModePref = (ListPreference)findPreference(SettingsManager.KEY_SELECT_MODE);
         if (videoPref != null && videoPref.getValue() != null &&
-                videoPref.getValue().equals("3840x2160")) {
+                (videoPref.getValue().equals("3840x2160") || videoPref.getValue().equals("7680x4320"))) {
             if (selectModePref != null && selectModePref.getValue() != null &&
                     !selectModePref.getValue().equals("single_rear_cameraid")) {
                 pref.setEnabled(false);
@@ -1884,19 +1889,41 @@ public class SettingsActivity extends PreferenceActivity {
             reprocessPref.setEnabled(false);
         }
     }
+    private void updateInSensorZoom(){
+        ListPreference inSenorZoomPref = (ListPreference)findPreference(SettingsManager.KEY_INSENSOR_ZOOM);
+        if(inSenorZoomPref == null) return;
+        if(inSenorZoomPref != null && mSettingsManager.isLimitedHDR()){
+            inSenorZoomPref.setValue("0");
+            inSenorZoomPref.setEnabled(false);
+            return;
+        }
+        inSenorZoomPref.setEnabled(true);
+    }
 
     private void updateRawInfoPref(){
-        ListPreference rawInfoPref = (ListPreference)findPreference(SettingsManager.KEY_RAWINFO_TYPE);
-        String rawFormat = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
-        int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
-        if(rawFormatType == 10){
-            if (rawInfoPref != null) {
-                rawInfoPref.setValue("0");
-                rawInfoPref.setEnabled(false);
-            }
-        } else if(rawFormatType == 16){
-            if (rawInfoPref != null) {
-                rawInfoPref.setEnabled(true);
+        String reprocessType = mSettingsManager.getValue(SettingsManager.KEY_RAW_REPROCESS_TYPE);
+        if(reprocessType != null && !reprocessType.equals("disable") && !reprocessType.equals("off") && Integer.valueOf(reprocessType) != 0){
+            ListPreference rawInfoPref = (ListPreference)findPreference(SettingsManager.KEY_RAWINFO_TYPE);
+            String rawFormat = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+            int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
+            if(rawFormatType == 10){
+                if (rawInfoPref != null) {
+                    rawInfoPref.setValue("0");
+                    rawInfoPref.setEnabled(false);
+                }
+            } else if(rawFormatType == 16){
+                List<String> key = new ArrayList<String>(Arrays.asList("mipiraw", "BPS Ideal raw" ));
+                List<String> value = new ArrayList<String>(Arrays.asList( "0", "2"));
+                if (rawInfoPref != null) {
+                    rawInfoPref.setEntries(key.toArray(new CharSequence[key.size()]));
+                    rawInfoPref.setEntryValues(value.toArray(new CharSequence[value.size()]));
+                    int idx = rawInfoPref.findIndexOfValue(rawInfoPref.getValue());;
+                    if (idx < 0 ) {
+                        idx = 0;
+                    }
+                    rawInfoPref.setValueIndex(idx);
+                    rawInfoPref.setEnabled(true);
+                }
             }
         }
     }
@@ -2049,11 +2076,10 @@ public class SettingsActivity extends PreferenceActivity {
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     String title = String.valueOf(buttonView.getTag());
                     if((title.equalsIgnoreCase("mfhdr") || title.equalsIgnoreCase("qhdr")) && isChecked
-                        && (mSettingsManager.getVideoFPS() >= 60 || (mSettingsManager.getValue(SettingsManager.KEY_SAVERAW) != null &&
-                        mSettingsManager.getValue(SettingsManager.KEY_SAVERAW).equals("enable")))){
+                        && !mSettingsManager.isSupportedHdr()){
                         viewHolder.checkBox.setSelected(false);
                         viewHolder.checkBox.setChecked(false);
-                        Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60 or enabled SaveRaw",
+                        Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60 or enabled SaveRaw or inSensor zoom",
                             Toast.LENGTH_SHORT).show();
                         isChecked=false;
                     }
