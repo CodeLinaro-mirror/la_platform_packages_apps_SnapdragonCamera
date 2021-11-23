@@ -8605,6 +8605,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyBEStats(builder);
         applyPdnetToggle(builder);
         applyAWBCCTAndAgain(builder);
+        applyWbColorTemperature(builder);
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {

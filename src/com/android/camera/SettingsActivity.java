@@ -1291,6 +1291,7 @@ public class SettingsActivity extends PreferenceActivity {
                         if (PersistUtil.enableMediaRecorder()) {
                             videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         }
+                        videoAddList.add(SettingsManager.KEY_MANUAL_WB);
                     } else {
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
