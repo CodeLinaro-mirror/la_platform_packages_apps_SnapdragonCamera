@@ -3524,7 +3524,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
             mFilteredKeys.add(videoMaunalHdr.getKey());
         }
     }
-
+    public void updatePrefByIntent(int mIntend){
+        if(mIntend != CaptureModule.INTENT_MODE_NORMAL){
+            setValue(KEY_RAW_FORMAT_TYPE,"0");
+            removePreference(mPreferenceGroup, KEY_RAW_FORMAT_TYPE);
+        }
+    }
     public void filterPictureFormatByIntent(int captureMode){
         ListPreference pictureFormat = mPreferenceGroup.findPreference(KEY_PICTURE_FORMAT);
         if (pictureFormat != null){

@@ -6495,6 +6495,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         estimateJpegFileSize();
         updateMaxVideoDuration();
         mSettingsManager.filterPictureFormatByIntent(mIntentMode);
+        mSettingsManager.updatePrefByIntent(mIntentMode);
     }
 
     public void updateStatsParameters(CaptureResult result) {
