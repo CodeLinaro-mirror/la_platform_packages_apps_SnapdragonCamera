@@ -1645,7 +1645,7 @@
     <string name="pref_camera2_raw_format_title">Save with RAW format</string>
     <string name="pref_camera2_raw_format_entry_off">Off</string>
     <string name="pref_camera2_raw_format_entry_10">Raw10</string>
-    <string name="pref_camera2_raw_format_entry_16">Raw16(DNG)</string>
+    <string name="pref_camera2_raw_format_entry_16">Raw16/DNG</string>
     <string name="pref_camera2_raw_format_entry_value_0">0</string>
     <string name="pref_camera2_raw_format_entry_value_10">10</string>
     <string name="pref_camera2_raw_format_entry_value_16">16</string>

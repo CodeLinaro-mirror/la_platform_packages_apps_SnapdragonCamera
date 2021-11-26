@@ -202,13 +202,12 @@
   },
   "pref_camera2_raw_format_key":
   {
-    "0":{},
+    "0":{"pref_camera2_raw_reprocess_key":"0"},
     "10":{"pref_camera2_longshot_key":"off",
            "pref_camera2_manualhdr_key":"off",
            "pref_camera2_zsl_key":"hal-zsl"},
     "16":{"pref_camera2_longshot_key":"off",
           "pref_camera2_manualhdr_key":"off",
-          "pref_camera2_raw_reprocess_key": "0",
           "pref_camera2_zsl_key":"hal-zsl"}
   },
   "pref_camera2_hdr_key":
@@ -271,9 +270,9 @@
   {
     "0":{"pref_camera2_rawinfo_type_key":"off",
          "pref_camera2_physical_raw_reprocess_key":"off"},
-    "1": {"pref_camera2_raw_format_key" : "10"},
-    "2": {"pref_camera2_raw_format_key" : "10"},
-    "3": {"pref_camera2_raw_format_key" : "10"}
+    "1": {},
+    "2": {},
+    "3": {}
   },
   "pref_camera2_stats_visualizer_enable_key":
   {

@@ -830,6 +830,7 @@ public class CameraActivity extends Activity
         private byte[] mJpegData;
         private boolean mCheckOrientation;
         private int mOrientation = -1;
+        private boolean isDng =false;
 
         public UpdateThumbnailTask(final byte[] jpegData, boolean checkOrientation) {
             mJpegData = jpegData;
@@ -854,6 +855,9 @@ public class CameraActivity extends Activity
                 if (path.endsWith(Storage.HEIF_POSTFIX)) {
                     mOrientation = getOrientationFromUri(uri);
                 }
+                if(path.endsWith(Storage.DNG_POSTFIX)){
+                    isDng = true;
+                }
                 if (img.isPhoto()) {
                     return decodeImageCenter(path);
                 } else {
@@ -866,7 +870,7 @@ public class CameraActivity extends Activity
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             if (bitmap == null) {
-                if (mThumbnail != null) {
+                if (mThumbnail != null && !isDng) {
                     // Clear the image resource when the bitmap is invalid.
                     mThumbnail.setImageDrawable(null);
                     mThumbnail.setVisibility(View.GONE);
