@@ -1606,7 +1606,6 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         updatePictureFormatPreference();
-        updateRawReprocess();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
@@ -1991,13 +1990,7 @@ public class SettingsActivity extends PreferenceActivity {
             if(rawFormatPref != null)
                 rawFormatPref.setEnabled(true);
             }
-    }
-    private void updateRawReprocess(){
-        ListPreference reprocessPref = (ListPreference)findPreference(SettingsManager.KEY_RAW_REPROCESS_TYPE);
-        if(reprocessPref != null && (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR)){
-            reprocessPref.setValue("0");
-            reprocessPref.setEnabled(false);
-        }
+
     }
     private void updateInSensorZoom(){
         ListPreference inSenorZoomPref = (ListPreference)findPreference(SettingsManager.KEY_INSENSOR_ZOOM);

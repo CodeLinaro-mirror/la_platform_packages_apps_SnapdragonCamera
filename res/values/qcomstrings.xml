@@ -1689,7 +1689,6 @@
     <string name="pref_camera2_raw_format_entry_16">Raw16(DNG)</string>
     <string name="pref_camera2_saveformat_entry_yuv10bit">YUV10bit</string>
     <string name="pref_camera2_saveformat_entry_yuv10bit_withmetedata">YUV10bit With MetaData</string>
-
     <string name="pref_camera2_raw_format_entry_value_0">0</string>
     <string name="pref_camera2_raw_format_entry_value_10">10</string>
     <string name="pref_camera2_raw_format_entry_value_16">16</string>

@@ -3061,6 +3061,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
 
                     if(mRawReprocessType != 0){
+
                         for(int i = 0; i < mRawCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mRAWImageReader[i].getSurface());
                             configuration.setPhysicalCameraId(mSettingsManager.getRawReprocessPhysicalId());
@@ -5169,7 +5170,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     continue;
                 }
                 mCameraId[i] = cameraId;
-
                 if (isClearSightOn()) {
                     if(i == getMainCameraId()) {
                         ClearSightImageProcessor.getInstance().init(map, mActivity,
@@ -5211,7 +5211,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         }
                                     });
                                 }
-                                Log.d(TAG, "image available for cam: " + mCamId);
+
                                 Image image = reader.acquireNextImage();
                                 if ((mLongshotActive || mNumFramesArrived.get() > 0)) {
                                     Log.d(TAG, "long shot image available num " + mNumImageArrived.incrementAndGet());
@@ -5241,12 +5241,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         Log.d(TAG,"setupcameraoutput-onImageAvailable width="+image.getWidth()+",height="+image.getHeight()+",stride="+image.getPlanes()[0].getRowStride());
                                         if(image.getFormat() == ImageFormat.RAW_SENSOR && mRawReprocessType == 0){
-                                            int setsucess = setInfoForDng();
+                                            TotalCaptureResult mRawMeta = waitForRawMetaData();
+                                            int setsucess = setInfoForDng(mRawMeta);
                                             if(setsucess == 0){
                                                 mActivity.getMediaSaveService().addDng(image,imglen, title,date,null, image.getWidth(), image.getHeight(), orientation, exif,
                                                                                                     mOnMediaSavedListener, mContentResolver,"dng");
-                                            }else if(mRawReprocessType == 0){
-                                                image.close();
+                                            }else{
+                                                mActivity.getMediaSaveService().addRawImage(bytes,title, "raw");
+                                                if(mRawReprocessType == 0){
+                                                    image.close();
+                                                }
                                             }
                                         }else{
                                             mActivity.getMediaSaveService().addRawImage(bytes,title, "raw");
@@ -5322,7 +5326,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                         } else {
                             mImageReader[i].setOnImageAvailableListener(listener, mImageAvailableHandler);
                         }
-
                         if (mRawReprocessType != 0){
                             for (int y=0; y< mRawCount ;y++){
                                 mRAWImageReader[y].setOnImageAvailableListener(listener, mImageAvailableHandler);
@@ -5420,12 +5423,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
-    private int setInfoForDng(){
+    public int setInfoForDng(TotalCaptureResult mRawMeta){
         try{
             CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
             CameraCharacteristics characteristics= manager.getCameraCharacteristics(String.valueOf(getMainCameraId()));
             mActivity.getMediaSaveService().setCharacteristics(characteristics);
-            mActivity.getMediaSaveService().setResult(waitForRawMetaData());
+            mActivity.getMediaSaveService().setResult(mRawMeta);
         } catch (CameraAccessException e) {
             e.printStackTrace();
             return -1;
@@ -8147,6 +8150,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.RAW10);
             mSupportedRawPictureSize = getMaxRawSize() != null ? getMaxRawSize() : rawSize[0];
             Log.i(TAG, " rawsize:" + rawSize[0].toString());
+
         }
         Log.i(TAG, "mSupportedRawPictureSize=" + mSupportedRawPictureSize);
 

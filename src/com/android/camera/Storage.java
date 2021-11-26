@@ -354,7 +354,7 @@ public class Storage {
         return bitmap;
      }
 
-    public static long writeDngFile(Image image,String path,CameraCharacteristics mCharacteristics,TotalCaptureResult mCaptureResult) {
+    public static int writeDngFile(Image image,String path,CameraCharacteristics mCharacteristics,TotalCaptureResult mCaptureResult) {
         int size = 0;
         FileOutputStream output = null;
         try {
