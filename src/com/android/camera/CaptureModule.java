@@ -431,6 +431,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
 
+    public static CameraCharacteristics.Key<Byte> support_hvx_shdr =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.hvxSHDRMode.hvxSHDRSupported", Byte.class);
+    public static final CameraCharacteristics.Key<Byte> hvxMFHDRSupported =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.hvxMFHDRMode.hvxMFHDRSupported", Byte.class);
+
     public static CameraCharacteristics.Key<Byte> logical_camera_type =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.logicalCameraType.logical_camera_type", Byte.class);
     public static CaptureRequest.Key<Integer> support_video_hdr_values =
@@ -666,6 +671,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableShadingCorrection", byte.class);
     public static final CaptureRequest.Key<Integer> mcxRawCbInfo =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.McxRawCallbackInfo", Integer.class);
+    public static final CaptureRequest.Key<Byte> enable_hvx_shdr =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableHVXSHDRMode", Byte.class);
+    public static final CaptureRequest.Key<Byte> enable_hvx_mfhdr =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableHVXMFHDRMode", byte.class);
     public static final CaptureRequest.Key<Byte> mctf =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMCTFwithReferenceFrame", byte.class);
     public static final CaptureRequest.Key<Byte> enable_statsvisualizer =
@@ -3328,6 +3337,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
             mPreviewRequestBuilder[cameraId] = mVideoRecordRequestBuilder;
             mIsPreviewingVideo = true;
+
             if (isHighSpeedRateCapture()) {
                 if (PersistUtil.enableMediaRecorder() && (mVideoRecordingSurface != null)) {
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
@@ -3586,7 +3596,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCurrentSceneMode == null) {
             int index = mIntentMode == INTENT_MODE_VIDEO ?
                     CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
-
             mCurrentModeIndex =  mNextModeIndex = index;
             mCurrentSceneMode = mSceneCameraIds.get(index);
         }
@@ -6125,6 +6134,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(raw_ids != null && raw_ids.size() > 0 || mSaveRaw){
             applyMcxRawCbInfo(builder);
         }
+        applyHvxShdr(builder);
+        applyHVXMFHDRMode(builder);
         applyFaceContourVersion(builder);
         applyExtendMaxZoom(builder);
         applyMctf(builder);
@@ -6156,6 +6167,38 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyeMFNRAIDEMode(CaptureRequest.Builder builder){
         if (isAIDE2Enabled()) {
             VendorTagUtil.enableMFNRAIDEMode(builder, (byte)0x01);
+        }
+    }
+
+    private void applyHvxShdr(CaptureRequest.Builder request) {
+        if (!mSettingsManager.isHvxShdrSupported(getMainCameraId())){
+            return;
+        }
+        try{
+            byte value = 0;
+            String hvx_shdr = mSettingsManager.getValue(
+                    SettingsManager.KEY_HVX_SHDR);
+            if(hvx_shdr != null && Integer.valueOf(hvx_shdr) > 0)
+                value = 1;
+            request.set(CaptureModule.enable_hvx_shdr,value);
+        } catch (IllegalArgumentException e){
+
+        }
+    }
+
+    private void applyHVXMFHDRMode(CaptureRequest.Builder request){
+        if (!mSettingsManager.isHvxMFHDRSupported()){
+            return;
+        }
+        try{
+            byte value = 0;
+            String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
+            if(hvx_mfhdr != null && Integer.valueOf(hvx_mfhdr) > 0)
+                value = 1;
+            request.set(CaptureModule.enable_hvx_mfhdr, value);
+            request.set(CaptureModule.mctf, value);
+        } catch (IllegalArgumentException e){
+
         }
     }
 
@@ -7862,7 +7905,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updateVideoSnapshotSize() {
         mVideoSnapshotSize = getMaxPictureSizeLiveshot(getMainCameraId(),mVideoSize.getWidth(),
                 mVideoSize.getHeight());
-        if(mSettingsManager.isLiveshotSizeSameAsVideoSize()){
+        String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
+        if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || "1".equals(hvx_shdr)){
             mVideoSnapshotSize = mVideoSize;
         }
         String videoSnapshot = PersistUtil.getVideoSnapshotSize();
@@ -8084,6 +8128,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
+
                     if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                         if (PersistUtil.enableMediaRecorder())  {
                             mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
@@ -10993,6 +11038,13 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyVideoEIS(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
+
+        String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
+        if (hvx_shdr != null) {
+            if (Integer.valueOf(hvx_shdr) > 0){
+                value = "V3";
+            }
+        }
 
         if (DEBUG) {
             Log.d(TAG, "applyVideoEIS EISV select: " + value);

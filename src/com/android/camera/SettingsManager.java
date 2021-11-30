@@ -283,6 +283,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_STATSNN_CONTROL = "pref_camera2_statsnn_control_key";
     public static final String KEY_PDNET_TOGGLE = "pref_camera2_pdnet_toggle_key";
     public static final String KEY_RAW_CB_INFO = "pref_camera2_raw_cb_info_key";
+    public static final String KEY_HVX_SHDR = "pref_camera2_hvx_shdr_key";
+    public static final String KEY_HVX_MFHDR = "pref_camera2_hvx_mfhdr_key";
     public static final String KEY_QLL = "pref_camera2_qll_key";
     public static final String KEY_AI_DENOISER = "pref_camera2_ai_denoiser_key";
     public static final String KEY_AI_DENOISER_FORMAT = "pref_camera2_ai_denoiser_format_key";
@@ -1434,6 +1436,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference vsr = mPreferenceGroup.findPreference(KEY_VSR);
         ListPreference shadingCorrection = mPreferenceGroup.findPreference(KEY_SHADING_CORRECTION);
         ListPreference inSensorZoom = mPreferenceGroup.findPreference(KEY_INSENSOR_ZOOM);
+        ListPreference hvx_mfhdr = mPreferenceGroup.findPreference(KEY_HVX_MFHDR);
+        ListPreference hvx_shdr = mPreferenceGroup.findPreference(KEY_HVX_SHDR);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -1622,6 +1626,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (shadingCorrection != null) {
             if (!isShadingCorrectionSupported()){
                 mFilteredKeys.add(shadingCorrection.getKey());
+            }
+        }
+
+        if (hvx_shdr != null) {
+            if (!isHvxShdrSupported(cameraId)){
+                mFilteredKeys.add(hvx_shdr.getKey());
+            }
+        }
+
+        if(hvx_mfhdr != null){
+            if (!isHvxMFHDRSupported()) {
+                removePreference(mPreferenceGroup, KEY_HVX_MFHDR);
             }
         }
 
@@ -2597,6 +2613,35 @@ public class SettingsManager implements ListMenu.SettingsListener {
 //        }
 //        return ret;
         return true;
+    }
+
+    public boolean isHvxMFHDRSupported() {
+        boolean result = false;
+        try {
+            if (mCharacteristics.size() >0){
+                // 1 for Kodiak (if enabled) 0 for Lahaina
+                byte isSupported = mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.hvxMFHDRSupported);
+                result = (isSupported == 1);
+            }
+        } catch (IllegalArgumentException|NullPointerException e) {
+            e.printStackTrace();
+            Log.w(TAG, "Supported hvxMFHDRSupported is null.");
+        }
+        return result;
+    }
+
+    public boolean isHvxShdrSupported(int id) {
+        boolean ret = false;
+        try{
+            if (mCharacteristics.size() >0){
+                byte hvx_shdr_available = mCharacteristics.get(id).get(
+                        CaptureModule.support_hvx_shdr);
+                ret = hvx_shdr_available == 1;
+            }
+        } catch(IllegalArgumentException|NullPointerException e){
+            e.printStackTrace();
+        }
+        return ret;
     }
 
     private boolean isFastShutterModeSupported(int id) {
