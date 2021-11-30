@@ -396,7 +396,7 @@ public class PersistUtil {
     }
 
     public static boolean isQuadBayerSensorEnabled() {
-        return getBoolean("persist.sys.cameraapp.quadbayersensor", false);
+        return getBoolean("persist.sys.cameraapp.quadbayersensor", true);
     }
 
     public static boolean isConcurrentSessionEnabled() {

@@ -412,10 +412,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public static CaptureResult.Key<Byte> isHdr =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.is_hdr_scene", Byte.class);
-    public static CameraCharacteristics.Key<Byte> IS_SUPPORT_QCFA_SENSOR =
-            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.quadra_cfa.is_qcfa_sensor", Byte.class);
-    public static CameraCharacteristics.Key<int[]> QCFA_SUPPORT_DIMENSION =
-            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.quadra_cfa.qcfa_dimension", int[].class);
     public static CameraCharacteristics.Key<int[]> support_video_hdr_modes =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.available_video_hdr_modes.video_hdr_modes", int[].class);
     public static CameraCharacteristics.Key<int[]> support_video_mfhdr_modes =
@@ -810,7 +806,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mCaptureStartTime;
     private boolean mPaused = true;
     private boolean mResumed = true;
-    private boolean mIsSupportedQcfa = false;
     private Semaphore mSurfaceReadyLock = new Semaphore(1);
     private final Object mVideoStateLock = new Object();
     private VideoState mVideoState;
@@ -4070,7 +4065,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 fs2Value = Integer.parseInt(valueFS2);
             }
             if (!mSettingsManager.isMultiCameraEnabled()) {
-                if (!(mIsSupportedQcfa || isDeepZoom() || (fs2Value ==1) ||
+                if (!(isDeepZoom() || (fs2Value ==1) ||
                         mSettingsManager.getQuadBayerSensorPrefEnabled())) {
                     addPreviewSurface(captureBuilder, null, id);
                 }
@@ -5697,7 +5692,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private boolean captureWaitImageReceive() {
-        return mIsSupportedQcfa || isMFNREnabled() || isHDREnable();
+        return isMFNREnabled() || isHDREnable();
     }
 
     private Size parsePictureSize(String value) {
@@ -6588,16 +6583,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void openProcessors() {
         String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
-        mIsSupportedQcfa = mSettingsManager.getQcfaPrefEnabled() &&
-                mSettingsManager.getIsSupportedQcfa(getMainCameraId());
-        // add the judgement condition for special qcfa
-        if (mIsSupportedQcfa) {
-            Size qcfaSize = mSettingsManager.getQcfaSupportSize();
-            if (mPictureSize.getWidth() <= qcfaSize.getWidth() / 2 &&
-                    mPictureSize.getHeight() <= qcfaSize.getHeight() / 2) {
-                mIsSupportedQcfa = false;
-            }
-        }
         boolean isFlashOn = false;
         boolean isMakeupOn = false;
         boolean isSelfieMirrorOn = false;
@@ -6629,7 +6614,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mPostProcessor.onOpen(filterMode, isFlashOn, isTrackingFocusSettingOn(),
                     isT2TFocusSettingOn(), isMakeupOn, isSelfieMirrorOn,mSaveRaw,
-                    mIsSupportedQcfa, mDeepPortraitMode);
+                    mDeepPortraitMode);
         }
         if(mFrameProcessor != null) {
             mFrameProcessor.onOpen(getFrameProcFilterId(), mPreviewSize);

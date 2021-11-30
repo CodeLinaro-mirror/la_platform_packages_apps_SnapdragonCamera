@@ -286,11 +286,6 @@
          "pref_camera2_longshot_key":"off"},
     "0": {}
   },
-  "pref_camera2_qcfa_key":
-  {
-    "enable":{"pref_camera2_longshot_key":"off"},
-    "disable": {}
-  },
     "pref_camera2_picture_format_key":
   {
     "2":{"pref_camera2_saveraw_key": "disable",

@@ -245,7 +245,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MANUAL_WB_G_GAIN = "pref_camera2_manual_wb_g_gain";
     public static final String KEY_MANUAL_WB_B_GAIN = "pref_camera2_manual_wb_b_gain";
 
-    public static final String KEY_QCFA = "pref_camera2_qcfa_key";
     public static final String KEY_QUAD_BAYER_SENSOR = "pref_camera2_quad_bayer_sensor_key";
     public static final String KEY_REMOSAIC_REPROCESSING = "pref_camera2_remosaic_reprocessing_key";
     public static final String KEY_EIS_VALUE = "pref_camera2_eis_key";
@@ -2631,10 +2630,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         boolean isDeepportrait = getDeepportraitEnabled();
         boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
 
-        if (getQcfaPrefEnabled() && getIsSupportedQcfa(cameraId)) {
-            res.add(getSupportedQcfaDimension(cameraId));
-        }
-
         if (getQuadBayerSensorPrefEnabled()) {
             Size qcfaMaxSize = getSupportedQCFAMaxPictureSize();
             if (qcfaMaxSize != null) {
@@ -3263,15 +3258,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return  modes;
     }
 
-    public boolean getQcfaPrefEnabled() {
-        ListPreference qcfaPref = mPreferenceGroup.findPreference(KEY_QCFA);
-        String qcfa = qcfaPref.getValue();
-        if(qcfa != null && qcfa.equals("enable")) {
-            return true;
-        }
-        return false;
-    }
-
     public boolean getQuadBayerSensorPrefEnabled() {
         ListPreference quadBayerPref = mPreferenceGroup.findPreference(KEY_QUAD_BAYER_SENSOR);
         String value = quadBayerPref.getValue();
@@ -3296,40 +3282,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return true;
         }
         return false;
-    }
-
-    public boolean getIsSupportedQcfa (int cameraId) {
-        byte isSupportQcfa = 0;
-        try {
-            isSupportQcfa = mCharacteristics.get(cameraId).get(
-                    CaptureModule.IS_SUPPORT_QCFA_SENSOR);
-        } catch(Exception e) {
-        }
-        return isSupportQcfa == 1 ? true : false;
-    }
-
-    public String getSupportedQcfaDimension(int cameraId) {
-        int[] qcfaDimension = mCharacteristics.get(cameraId).get(
-                CaptureModule.QCFA_SUPPORT_DIMENSION);
-        if (qcfaDimension == null) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < qcfaDimension.length; i ++) {
-            sb.append(qcfaDimension[i]);
-            if (i == 0) {
-                sb.append("x");
-            }
-        }
-        return sb.toString();
-    }
-
-    public Size getQcfaSupportSize() {
-        String qcfaSize = getSupportedQcfaDimension(mCameraId);
-        if (qcfaSize != null) {
-            return parseSize(getSupportedQcfaDimension(mCameraId));
-        }
-        return new Size(0, 0);
     }
 
     public List<String> getSupportedSaturationLevelAvailableModes(int cameraId) {
