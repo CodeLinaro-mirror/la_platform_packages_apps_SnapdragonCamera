@@ -153,6 +153,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private float mScreenBrightness = 0.0f;
     private ProgressBar mProgressBar;
     private boolean mZoomRatioSupport = false;
+    private int[] mScreenHDRIcon = {R.drawable.ic_hdr_off, R.drawable.ic_hdr};
+    private int mScreenHDRindex;
     private AFView mAFViewRender;
 
     private SurfaceHolder.Callback callbackMono = new SurfaceHolder.Callback() {
@@ -263,6 +265,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     private View mFilterModeSwitcher;
     private View mSceneModeSwitcher;
+    private ImageView mSceneModeHDR;
     private View mFrontBackSwitcher;
     private ImageView mMakeupButton;
     private SeekBar mMakeupSeekBar;
@@ -499,11 +502,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mExitBestMode = (ImageView) mRootView.findViewById(R.id.exit_best_mode);
         mFilterModeSwitcher = mRootView.findViewById(R.id.filter_mode_switcher);
         mSceneModeSwitcher = mRootView.findViewById(R.id.scene_mode_switcher);
+        mSceneModeHDR = (ImageView)mRootView.findViewById(R.id.scene_mode_hdr);
         mFrontBackSwitcher = mRootView.findViewById(R.id.front_back_switcher);
         mMakeupButton = (ImageView) mRootView.findViewById(R.id.ts_makeup_switcher);
         mMakeupSeekBarLayout = mRootView.findViewById(R.id.makeup_seekbar_layout);
         mSeekbarBody = mRootView.findViewById(R.id.seekbar_body);
         mSeekbarToggleButton = (ImageView) mRootView.findViewById(R.id.seekbar_toggle);
+        mSceneModeSwitcher.setVisibility(View.GONE);
         mSeekbarToggleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -585,7 +590,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         });
 
         initFilterModeButton();
-        initSceneModeButton();
+        initSceneModeHDR();
         initCameraSwitcher();
         initFlashButton();
         updateMenus();
@@ -1356,7 +1361,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void reInitUI() {
-        initSceneModeButton();
+        initSceneModeHDR();
         initFilterModeButton();
         initFlashButton();
         initZoomSeekBar();
@@ -1634,6 +1639,28 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+    public void initSceneModeHDR() {
+        mSceneModeHDR.setVisibility(View.INVISIBLE);
+        String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
+        if (value == null) return;
+        mSceneModeHDR.setVisibility(View.VISIBLE);
+        mScreenHDRindex = mSettingsManager.getValueIndex(SettingsManager.KEY_SCENE_MODE);
+        mSceneModeHDR.setImageResource(mScreenHDRIcon[mScreenHDRindex]);
+        if (mSettingsManager.isMultiCameraEnabled()){
+            mSceneModeHDR.setEnabled(false);
+        } else {
+            mSceneModeHDR.setEnabled(true);
+            mSceneModeHDR.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mScreenHDRindex = (mScreenHDRindex + 1) % mScreenHDRIcon.length;
+                    mSettingsManager.setValueIndex(SettingsManager.KEY_SCENE_MODE, mScreenHDRindex);
+                    mSceneModeHDR.setImageResource(mScreenHDRIcon[mScreenHDRindex]);
+                }
+            });
+        }
+    }
+
     private void initFilterModeButton() {
         mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         String value = mSettingsManager.getValue(SettingsManager.KEY_COLOR_EFFECT);
@@ -1870,7 +1897,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mDeepZoomModeRect.setVisibility(View.INVISIBLE);
         mFrontBackSwitcher.setVisibility(View.INVISIBLE);
         mFilterModeSwitcher.setVisibility(View.INVISIBLE);
-        mSceneModeSwitcher.setVisibility(View.INVISIBLE);
+        mSceneModeHDR.setVisibility(View.INVISIBLE);
         mSettingsIcon.setVisibility(View.INVISIBLE);
         String value = mSettingsManager.getValue(SettingsManager.KEY_MAKEUP);
         if(value != null && value.equals("0")) {
@@ -1910,12 +1937,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
         hideFrontBackSwither();
         mMakeupButton.setVisibility(View.INVISIBLE);
-        mSceneModeSwitcher.setVisibility(View.INVISIBLE);
+        mSceneModeHDR.setVisibility(View.INVISIBLE);
         //settings for each mode
         switch (mode) {
             case DEFAULT:
                 mFilterModeSwitcher.setVisibility(View.VISIBLE);
-                mSceneModeSwitcher.setVisibility(View.VISIBLE);
+                mSceneModeHDR.setVisibility(View.VISIBLE);
                 mVideoButton.setVisibility(View.INVISIBLE);
                 mMuteButton.setVisibility(View.INVISIBLE);
                 mPauseButton.setVisibility(View.INVISIBLE);
@@ -1923,7 +1950,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             case RTB:
             case SAT:
                 mFilterModeSwitcher.setVisibility(View.VISIBLE);
-                mSceneModeSwitcher.setVisibility(View.VISIBLE);
+                mSceneModeHDR.setVisibility(View.VISIBLE);
                 mVideoButton.setVisibility(View.INVISIBLE);
                 if(!CaptureModule.MCXMODE) mFlashButton.setVisibility(View.INVISIBLE);
                 mMuteButton.setVisibility(View.INVISIBLE);
@@ -2184,7 +2211,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         }
         if (mFrontBackSwitcher != null) mFrontBackSwitcher.setEnabled(status);
-        if (mSceneModeSwitcher != null) mSceneModeSwitcher.setEnabled(status);
+        if (mSceneModeHDR != null) mSceneModeHDR.setEnabled(status);
         if (mFilterModeSwitcher != null) mFilterModeSwitcher.setEnabled(status);
         if (mMakeupButton != null) mMakeupButton.setVisibility(View.GONE);
         if (mShutterButton != null) mShutterButton.setEnabled(status);
@@ -2295,9 +2322,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         mFilterModeSwitcher.setEnabled(enableFilterMenu);
         if (mSettingsManager.isMultiCameraEnabled()){
-            mSceneModeSwitcher.setEnabled(false);
+            mSceneModeHDR.setEnabled(false);
         } else {
-            mSceneModeSwitcher.setEnabled(enableSceneMenu);
+            mSceneModeHDR.setEnabled(enableSceneMenu);
         }
     }
 

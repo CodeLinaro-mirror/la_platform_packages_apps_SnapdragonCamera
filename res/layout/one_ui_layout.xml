@@ -131,6 +131,11 @@
         android:src="@drawable/more_options" />
 
     <com.android.camera.ui.RotateImageView
+        android:id="@+id/scene_mode_hdr"
+        style="@style/OneUIMenuButton"
+        android:src="@drawable/ic_hdr_off" />
+
+    <com.android.camera.ui.RotateImageView
         android:id="@+id/filter_mode_switcher"
         style="@style/OneUIMenuButton"
         android:src="@drawable/filters" />

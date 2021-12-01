@@ -63,6 +63,7 @@ public class OneUICameraControls extends RotatableLayout {
     private View mTsMakeupSwitcher;
     private View mPreview;
     private View mSceneModeSwitcher;
+    private View mSceneModeHDR;
     private View mFilterModeSwitcher;
     private View mMakeupSeekBar;
     private View mMakeupSeekBarLowText;
@@ -162,6 +163,7 @@ public class OneUICameraControls extends RotatableLayout {
         mMute = findViewById(R.id.mute_button);
         mPreview = findViewById(R.id.preview_thumb);
         mSceneModeSwitcher = findViewById(R.id.scene_mode_switcher);
+        mSceneModeHDR = findViewById(R.id.scene_mode_hdr);
         mFilterModeSwitcher = findViewById(R.id.filter_mode_switcher);
         mRemainingPhotos = (LinearLayout) findViewById(R.id.remaining_photos);
         mRemainingPhotosText = (TextView) findViewById(R.id.remaining_photos_text);
@@ -234,7 +236,7 @@ public class OneUICameraControls extends RotatableLayout {
         });
 
         mViews = new View[]{
-                mSceneModeSwitcher, mFilterModeSwitcher, mFrontBackSwitcher,
+                mSceneModeHDR, mFilterModeSwitcher, mFrontBackSwitcher,
                 mFlashButton, mShutter,
                 mPreview, mPauseButton, mCancelButton, mSettingsButton
         };
@@ -246,6 +248,7 @@ public class OneUICameraControls extends RotatableLayout {
             mTsMakeupSwitcher.setEnabled(false);
             mTsMakeupSwitcher.setVisibility(View.GONE);
         }
+        mSceneModeSwitcher.setVisibility(View.GONE);
         setProModeParameters();
     }
 
@@ -339,7 +342,7 @@ public class OneUICameraControls extends RotatableLayout {
 
     private void setLocation(int w, int h) {
         int rotation = getUnifiedRotation();
-        setLocation(mSceneModeSwitcher, true, PANEL_INDEX_0);
+        setLocation(mSceneModeHDR, true, PANEL_INDEX_0);
         setLocation(mFilterModeSwitcher, true, PANEL_INDEX_1);
         if (mIsVideoMode) {
             setLocation(mMute, true, PANEL_INDEX_1);
@@ -518,7 +521,7 @@ public class OneUICameraControls extends RotatableLayout {
     public void setOrientation(int orientation, boolean animation) {
         mOrientation = orientation;
         View[] views = {
-                mSceneModeSwitcher, mFilterModeSwitcher, mFrontBackSwitcher,
+                mSceneModeHDR, mFilterModeSwitcher, mFrontBackSwitcher,
                 mFlashButton, mSettingsButton, mPreview,
                 mMute, mShutter, mVideoShutter, mMakeupSeekBarLowText, mMakeupSeekBarHighText,
                 mPauseButton, mExitBestPhotpMode
