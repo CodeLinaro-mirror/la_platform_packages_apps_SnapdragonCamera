@@ -246,8 +246,6 @@ public class CameraActivity extends Activity
     private Intent mStandardShareIntent;
     private ShareActionProvider mPanoramaShareActionProvider;
     private Intent mPanoramaShareIntent;
-    private LocalMediaObserver mLocalImagesObserver;
-    private LocalMediaObserver mLocalVideosObserver;
     private SettingsManager mSettingsManager;
 
     private final int DEFAULT_SYSTEM_UI_VISIBILITY = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
@@ -1666,16 +1664,6 @@ public class CameraActivity extends Activity
 
         setupNfcBeamPush();
 
-        mLocalImagesObserver = new LocalMediaObserver();
-        mLocalVideosObserver = new LocalMediaObserver();
-
-        getContentResolver().registerContentObserver(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true,
-                mLocalImagesObserver);
-        getContentResolver().registerContentObserver(
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true,
-                mLocalVideosObserver);
-
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         mDeveloperMenuEnabled = prefs.getBoolean(CameraSettings.KEY_DEVELOPER_MENU, false);
 
@@ -1753,8 +1741,6 @@ public class CameraActivity extends Activity
         mCurrentModule.onPauseAfterSuper();
 
         mPaused = true;
-        mLocalImagesObserver.setActivityPaused(true);
-        mLocalVideosObserver.setActivityPaused(true);
     }
 
     @Override
@@ -1893,17 +1879,12 @@ public class CameraActivity extends Activity
         // than the preview.
         mResetToPreviewOnResume = true;
 
-        if (mLocalVideosObserver.isMediaDataChangedDuringPause()
-                || mLocalImagesObserver.isMediaDataChangedDuringPause()) {
-            if (!mSecureCamera) {
-                // If it's secure camera, requestLoad() should not be called
-                // as it will load all the data.
-                mDataAdapter.requestLoad(getContentResolver());
-                mThumbnailDrawable = null;
-            }
+        if (!mSecureCamera) {
+            // If it's secure camera, requestLoad() should not be called
+            // as it will load all the data.
+            mDataAdapter.requestLoad(getContentResolver());
+            mThumbnailDrawable = null;
         }
-        mLocalImagesObserver.setActivityPaused(false);
-        mLocalVideosObserver.setActivityPaused(false);
         if (PersistUtil.isTraceEnable())
             Trace.endSection();
     }
@@ -1959,8 +1940,6 @@ public class CameraActivity extends Activity
             Log.d(TAG, "wake lock release");
         }
         if (mCursor != null) {
-            getContentResolver().unregisterContentObserver(mLocalImagesObserver);
-            getContentResolver().unregisterContentObserver(mLocalVideosObserver);
             unregisterReceiver(mSDcardMountedReceiver);
 
             mCursor.close();

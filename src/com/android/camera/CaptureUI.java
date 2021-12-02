@@ -548,6 +548,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mCameraControls.setIntentMode(intentMode);
             mCameraControls.setVideoMode(false);
             mCancelButton.setVisibility(View.VISIBLE);
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mCancelButton.getLayoutParams();
+            lp.topMargin = CameraUtil.dpToPixel(60);
+            mCancelButton.setLayoutParams(lp);
             mReviewCancelButton = mRootView.findViewById(R.id.preview_btn_cancel);
             mReviewDoneButton = mRootView.findViewById(R.id.done_button);
             mReviewRetakeButton = mRootView.findViewById(R.id.preview_btn_retake);
@@ -2406,6 +2409,21 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mModule.selectCameraMode(photoModeIndex);
         } else {
             mModule.setNextSceneMode(photoModeIndex);
+        }
+    }
+
+    public void setSoundEffectsForRecording(boolean enabled) {
+        if (mShutterButton != null) {
+            mShutterButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mMuteButton != null) {
+            mMuteButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mFlashButton != null) {
+            mFlashButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mThumbnail != null) {
+            mThumbnail.setSoundEffectsEnabled(enabled);
         }
     }
 
