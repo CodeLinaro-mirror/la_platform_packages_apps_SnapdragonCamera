@@ -458,4 +458,8 @@ public class PersistUtil {
     public static float getLuxIdxThreadhold(){
         return Float.parseFloat(PERSIST_CAMERA_LUX_IDX_THREADHOLD);
     }
+
+    public static boolean getHardSwitchEnabled(){
+        return getBoolean("persist.sys.camera.hard_switch_enable", false);
+    }
 }

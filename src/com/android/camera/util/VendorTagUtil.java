@@ -88,6 +88,8 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVSR", Integer.class);
     public static final CaptureRequest.Key<Byte> enableMFNRAIDEMode =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMFNRAIDEMode", byte.class);
+    public static final CaptureRequest.Key<Byte> enableHardSwitch =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMCXSPMActiveCamStateOpt", byte.class);
 
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
@@ -298,6 +300,13 @@ public class VendorTagUtil {
         Log.i(TAG,"set enableMFNRAIDEMode: " + enable);
         if (isSupported(builder, enableMFNRAIDEMode)) {
             builder.set(enableMFNRAIDEMode, enable);
+        }
+    }
+
+    public static void enableHardSwitch(CaptureRequest.Builder builder, byte enable) {
+        Log.i(TAG,"set enableHardSwitch: " + enable);
+        if (isSupported(builder, enableHardSwitch)) {
+            builder.set(enableHardSwitch, enable);
         }
     }
 }

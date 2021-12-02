@@ -6108,6 +6108,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyStatsVisualizerOptionMask(builder);
         applyStatsNNControl(builder);
         applyeMFNRAIDEMode(builder);
+        applyeHardSwitchParam(builder);
+    }
+
+    private void applyeHardSwitchParam(CaptureRequest.Builder builder){
+        VendorTagUtil.enableHardSwitch(builder, (byte)(PersistUtil.getHardSwitchEnabled() ? 0x01 : 0x00));
     }
 
     private void applyeMFNRAIDEMode(CaptureRequest.Builder builder){
