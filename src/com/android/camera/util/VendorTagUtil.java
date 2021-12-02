@@ -89,6 +89,8 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.BlurMode", Integer.class);
     public static final CaptureRequest.Key<Byte> enableMFNRAIDEMode =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMFNRAIDEMode", byte.class);
+    public static final CaptureRequest.Key<Byte> enableHardSwitch =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMCXSPMActiveCamStateOpt", byte.class);
 
     private static final CaptureRequest.Key<Integer> VIULL_ENALE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVIULL", Integer.class);
@@ -308,6 +310,7 @@ public class VendorTagUtil {
         }
     }
 
+
     public static void setVIULLMode(CaptureRequest.Builder builder, int enable) {
         if (isSupported(builder, VIULL_ENALE)) {
             builder.set(VIULL_ENALE, enable);
@@ -317,6 +320,13 @@ public class VendorTagUtil {
     public static void setTargetZoom(CaptureRequest.Builder builder, float value) {
         if (isSupported(builder, targetZoom)) {
             builder.set(targetZoom, value);
+        }
+    }
+
+    public static void enableHardSwitch(CaptureRequest.Builder builder, byte enable) {
+        Log.i(TAG,"set enableHardSwitch: " + enable);
+        if (isSupported(builder, enableHardSwitch)) {
+            builder.set(enableHardSwitch, enable);
         }
     }
 }

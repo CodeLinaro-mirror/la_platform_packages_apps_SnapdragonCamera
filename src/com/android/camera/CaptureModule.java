@@ -6871,6 +6871,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyAICameraParam(builder);
         applyAICameraBlurModeParam(builder);
         applyXCFAOptimization(builder);
+
+        applyeHardSwitchParam(builder);
+    }
+
+    private void applyeHardSwitchParam(CaptureRequest.Builder builder){
+        VendorTagUtil.enableHardSwitch(builder, (byte)(PersistUtil.getHardSwitchEnabled() ? 0x01 : 0x00));
     }
 
     private void applyAICameraParam(CaptureRequest.Builder builder){
