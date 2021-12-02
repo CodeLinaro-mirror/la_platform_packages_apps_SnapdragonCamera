@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016,2022, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -29,6 +29,7 @@
 package com.android.camera.util;
 
 import android.graphics.Point;
+import android.media.MediaRecorder;
 import android.os.SystemProperties;
 import android.text.TextUtils;
 import android.util.Log;
@@ -125,6 +126,11 @@ public class PersistUtil {
             SystemProperties.get("persist.sys.camera.display.lmax", "");
     private static final int PERSIST_BURST_PREVIEW_REQUEST_NUMS =
             SystemProperties.getInt("persist.sys.camera.burst.preview.nums", 0);
+    // MediaRecorder.AudioSource.CAMCORDER = 5；Microphone audio source tuned for video recording.
+    // MediaRecorder.AudioSource.MIC = 1; Microphone audio source ;
+    // MediaRecorder.AudioSource.DEFAULT = 0; Default audio source *;
+    private static final int PERSIST_AUDIO_SOURCE =
+            SystemProperties.getInt("persist.sys.camera.audio_source", MediaRecorder.AudioSource.CAMCORDER);
 
     public static int getMemoryLimit() {
         return PERSIST_MEMORY_LIMIT;
@@ -310,4 +316,5 @@ public class PersistUtil {
         return PERSIST_DISPLAY_LMAX;
     }
 
+    public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }
 }
