@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017,2022, The Linux Foundation. All rights reserved.
  * Not a Contribution.
  *
  * Copyright (C) 2012 The Android Open Source Project
@@ -4681,7 +4681,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         mProfile.videoCodec = mVideoEncoder;
         if (!mCaptureTimeLapse && !hfr) {
-            mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mMediaRecorder.setAudioSource(PersistUtil.getAudioSource());
             mProfile.audioCodec = audioEncoder;
             if (mProfile.audioCodec == MediaRecorder.AudioEncoder.AMR_NB) {
                 mProfile.fileFormat = MediaRecorder.OutputFormat.THREE_GPP;
