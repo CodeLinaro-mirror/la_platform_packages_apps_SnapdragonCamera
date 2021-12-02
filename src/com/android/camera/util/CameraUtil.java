@@ -167,6 +167,7 @@ public class CameraUtil {
     public static final String KEY_SAVE = "save";
     public static final String KEY_DELETE = "delete";
     public static final String KEY_DELETE_ALL = "delete_all";
+    public static int sScreenWidth;
 
     public static boolean isSupported(String value, List<String> supported) {
         return supported == null ? false : supported.indexOf(value) >= 0;
@@ -221,6 +222,9 @@ public class CameraUtil {
                 context.getSystemService(Context.WINDOW_SERVICE);
         wm.getDefaultDisplay().getMetrics(metrics);
         sPixelDensity = metrics.density;
+        int dpw = (int) (metrics.widthPixels / sPixelDensity + 0.5);
+        int dph = (int) (metrics.heightPixels / sPixelDensity + 0.5);
+        sScreenWidth = dpw < dph ? dpw : dph;
         sImageFileNamer = new ImageFileNamer(
                 context.getString(R.string.image_file_name_format));
     }
