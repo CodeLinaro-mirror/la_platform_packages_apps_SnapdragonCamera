@@ -6081,11 +6081,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             builder.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE, CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS);
         }
         applyManualHDR(builder);
-        //if(MCXMODE){
-        //    applyMcxMasterCb(builder);
-        //}
+        if(MCXMODE){
+            applyMcxMasterCb(builder);
+        }
         Set<String> raw_ids = mSettingsManager.getPhysicalFeatureEnableId(SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
-        if(raw_ids != null && raw_ids.size() > 0){
+        if(raw_ids != null && raw_ids.size() > 0 || mSaveRaw){
             applyMcxRawCbInfo(builder);
         }
         applyFaceContourVersion(builder);
