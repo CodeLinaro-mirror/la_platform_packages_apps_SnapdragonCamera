@@ -821,7 +821,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean[] mCameraOpened = new boolean[MAX_NUM_CAM];
     private CameraDevice[] mCameraDevice = new CameraDevice[MAX_NUM_CAM];
     private String[] mCameraId = new String[MAX_NUM_CAM];
-    private String[] mSelectableModes = {"Video", "HFR", "Photo", "Bokeh", "SAT", "ProMode"};
+    private String[] mSelectableModes = {"Video", "HFR", "Photo", "Bokeh", "SAT", "Pro"};
     private ArrayList<SceneModule> mSceneCameraIds = new ArrayList<>();
     public static boolean MCXMODE = false;
     public static boolean QUADBYAERSENSOR = false;

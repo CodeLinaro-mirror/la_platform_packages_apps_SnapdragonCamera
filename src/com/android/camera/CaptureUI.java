@@ -1909,6 +1909,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         if (mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL) {
             mShutterButton.setVisibility(View.VISIBLE);
+            mThumbnail.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -1922,6 +1923,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL) {
             mShutterButton.setVisibility(View.INVISIBLE);
             mModeSelectLayout.setVisibility(View.VISIBLE);
+            mThumbnail.setVisibility(View.VISIBLE);
         }
         mFilterModeSwitcher.setVisibility(View.VISIBLE);
         if (mFilterMenuStatus == FILTER_MENU_ON) {

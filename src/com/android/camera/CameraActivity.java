@@ -783,7 +783,12 @@ public class CameraActivity extends Activity
         if (mThumbnail != null) {
             mThumbnail.setImageDrawable(mThumbnailDrawable);
             if (!isSecureCamera()) {
-                mThumbnail.setVisibility(View.VISIBLE);
+                if(mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
+                        || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR)){
+                    return;
+                }else {
+                    mThumbnail.setVisibility(View.VISIBLE);
+                }
             } else {
                 //under SecureCamera and UbiFocus mode, if click shutter button, if it is
                 // Refocus,should display the thumbnail.
@@ -806,7 +811,12 @@ public class CameraActivity extends Activity
         if (mThumbnailDrawable != null) {
             mThumbnail.setImageDrawable(mThumbnailDrawable);
             if (!isSecureCamera() && !isCaptureIntent()) {
-                mThumbnail.setVisibility(View.VISIBLE);
+                if(mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
+                || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR)){
+                    return;
+                }else {
+                    mThumbnail.setVisibility(View.VISIBLE);
+                }
             } else {
                 //under SecureCamera and UbiFocus mode, when back from RefocusActivity,if not save
                 // image and is Refocus ,still need to display the thumbnail.

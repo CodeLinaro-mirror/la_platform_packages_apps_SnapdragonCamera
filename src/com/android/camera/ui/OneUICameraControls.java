@@ -365,7 +365,7 @@ public class OneUICameraControls extends RotatableLayout {
             } else {
                 setLocation(mVideoShutter, false, PANEL_INDEX_2);
                 setLocation(mShutter, false, PANEL_INDEX_2);
-                setLocation(mPreview, false, PANEL_INDEX_0);
+                setLocation(mPreview, false, 0.85f);
             }
             setLocation(mExitBestPhotpMode ,false, PANEL_INDEX_4);
         }
