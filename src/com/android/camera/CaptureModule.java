@@ -4907,7 +4907,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 warningToast("Camera is not ready yet to take a video snapshot.");
                 return;
             }
-            checkAndPlayShutterSound(id);
             CaptureRequest.Builder captureBuilder = getRequestBuilder(
                     CameraDevice.TEMPLATE_VIDEO_SNAPSHOT,id,mSettingsManager.getPhysicalCameraId());
 
@@ -8710,6 +8709,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     keepScreenOn();
                 }
             });
+            mUI.setSoundEffectsForRecording(false);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             quitRecordingWithError("IllegalArgumentException");
@@ -9586,6 +9586,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mVideoEncoder != null) {
             mVideoEncoder.signalEndOfInputStream();
         }
+        mUI.setSoundEffectsForRecording(true);
         checkAndPlayRecordSound(cameraId, false);
         mStopRecPending = true;
         mRecordingPausing = false;

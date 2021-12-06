@@ -3377,4 +3377,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+    public void setSoundEffectsForRecording(boolean enabled) {
+        if (mShutterButton != null) {
+            mShutterButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mMuteButton != null) {
+            mMuteButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mFlashButton != null) {
+            mFlashButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mThumbnail != null) {
+            mThumbnail.setSoundEffectsEnabled(enabled);
+        }
+    }
 }
