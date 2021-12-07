@@ -263,12 +263,6 @@
          "pref_camera2_timer_key": "0"},
     "0":{}
   },
-  "pref_camera2_facedetection_key":
-  {
-    "on": {"pref_camera2_touch_track_focus_key": "off",
-          "pref_camera2_statsnn_control_key": "0"},
-    "off":{}
-  },
   "pref_camera2_raw_reprocess_key":
   {
     "0":{"pref_camera2_rawinfo_type_key":"off",
