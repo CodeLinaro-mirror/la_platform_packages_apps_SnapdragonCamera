@@ -297,6 +297,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_PHYSICAL_RAW_REPROCESS = "pref_camera2_physical_raw_reprocess_key";
     public static final String KEY_RAWINFO_TYPE = "pref_camera2_rawinfo_type_key";
     public static final String KEY_RAW_FORMAT_TYPE = "pref_camera2_raw_format_key";
+
+    public static final String KEY_TORCH_HDR_VALUE= "pref_camera2_torch_hdr_key";
     private static final String TAG = "SnapCam_SettingsManager";
 
     private static SettingsManager sInstance;
@@ -409,7 +411,34 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
         mDependency = parseJson("dependency.json");
     }
-
+   public boolean isTorchHDREnabled(boolean isflashRequired,CaptureResult mResult) {
+        boolean torchHDREnable = false;
+        boolean flashEnable =false;
+        String torchHDRValue = getValue(KEY_TORCH_HDR_VALUE);
+        if (torchHDRValue != null) {
+            torchHDREnable = torchHDRValue.equals("1");
+        }
+        boolean isTorchHdrTag = false;
+        if(mResult != null){
+            try {
+            if(mResult.get(CaptureModule.isTorchHdr) > 0 ) isTorchHdrTag = true;
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+         String flashValue = getValue(KEY_FLASH_MODE);
+         if(flashValue != null && (flashValue.equals("on") || (flashValue.equals("auto") && isflashRequired))){
+            flashEnable = true;
+         }else{
+            flashEnable =false;
+         }
+       if (getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("manual")){
+           return torchHDREnable && flashEnable;
+       }else if(getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("auto")){
+            return  torchHDREnable && flashEnable && isTorchHdrTag;
+       }
+       return false;
+    }
     public void reloadCharacteristics(int cameraId){
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
@@ -796,7 +825,37 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch (IllegalArgumentException e) {
             Log.e(TAG, "getMaxPreviewSize no vendorTag max_preview_size:");
         }
+        int[] hdrMaxSize = getHdrMaxResolution();
+        if(isMfhdrEnabled() && hdrMaxSize != null){
+            if((maxPreviewSize != null && (maxPreviewSize[0]*maxPreviewSize[1] > hdrMaxSize[0]*hdrMaxSize[1])) ||
+                    maxPreviewSize == null){
+               maxPreviewSize = hdrMaxSize;
+            }
+        }
         return maxPreviewSize;
+    }
+
+    public int[] getHdrMaxResolution() {
+        int[] maxHdrSize = null;
+        try {
+            maxHdrSize = mCharacteristics.get(mCameraId).get(CaptureModule.hdrMaxResolution);
+        } catch(IllegalArgumentException | NullPointerException e) {
+            Log.w(TAG, "getHdrMaxResolution occurs exception");
+        }
+        return maxHdrSize;
+    }
+
+    public boolean isMfhdrEnabled() {
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            String[] modeLists = hdrmode.split(" ");
+            for (int i = 0; i < modeLists.length; i ++) {
+                if(modeLists[i].equals("MFHDR") || modeLists[i].equals("SHDR")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public boolean isLiveshotSizeSameAsVideoSize(){
@@ -2038,8 +2097,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isFrontIDHFRSupported() {
         boolean result = true;
-        result = getSupportedHighFrameRate(CaptureModule.CameraMode.HFR, CaptureModule.FRONT_ID)
-                .size() != 0;
+        if (-1 == CaptureModule.FRONT_ID) {
+            result = false;
+        } else {
+            result = getSupportedHighFrameRate(CaptureModule.CameraMode.HFR,
+                    CaptureModule.FRONT_ID).size() != 0;
+        }
         Log.v(TAG, " isFrontIDHFRSupported result :" + result);
         return result;
     }
@@ -2775,8 +2838,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(sizes[i].toString());
                 if (profile != null && CamcorderProfile.hasProfile(cameraId, profile)) {
                     if (getValue(KEY_MANUAL_HDR) != null &&
-                            getValue(KEY_MANUAL_HDR).equals("manual") &&
-                            sizes[i].toString().equals("3840x2160") &&
+                            (getValue(KEY_MANUAL_HDR).equals("manual") || getValue(KEY_MANUAL_HDR).equals("auto")) &&
+                            (sizes[i].toString().equals("3840x2160") || sizes[i].toString().equals("7680x4320"))&&
                             getValue(SettingsManager.KEY_SELECT_MODE) != null &&
                             !getValue(SettingsManager.KEY_SELECT_MODE).equals(
                                     "single_rear_cameraid")){
@@ -3292,7 +3355,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public Size getQcfaSupportSize() {
         String qcfaSize = getSupportedQcfaDimension(mCameraId);
-        if (qcfaSize != null) {
+        if (qcfaSize != null && qcfaSize.indexOf('x') > 0 ) {
             return parseSize(getSupportedQcfaDimension(mCameraId));
         }
         return new Size(0, 0);
@@ -3387,13 +3450,25 @@ public class SettingsManager implements ListMenu.SettingsListener {
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
         }
         Size[] dngSize = getSupportedOutputSize(cameraId,ImageFormat.RAW_SENSOR);
+        Size qcfaSize = getQcfaSupportSize();
         if(dngSize != null && dngSize.length > 0 && (getValue(SettingsManager.KEY_SAVERAW) == null ||
-        (getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("disable"))) && !isRawReprocess()){
+        (getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("disable")))
+                && !isRawReprocess() && CaptureModule.CameraMode.DEFAULT == CaptureModule.CURRENT_MODE &&
+                (dngSize[0].getWidth() < qcfaSize.getWidth() && dngSize[0].getHeight() < qcfaSize.getHeight() ||
+                        (qcfaSize.getWidth() == 0 && qcfaSize.getHeight() == 0 ))){
         ret.add(String.valueOf(SettingsManager.DNG_FORMAT));
         }
         return ret;
     }
-
+    public boolean isSupportedHdr(){
+        if(((getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("disable")) ||
+                getValue(SettingsManager.KEY_SAVERAW) == null) && (((getValue(SettingsManager.KEY_INSENSOR_ZOOM) != null &&
+                getValue(SettingsManager.KEY_INSENSOR_ZOOM).equals("0")) || getValue(SettingsManager.KEY_INSENSOR_ZOOM) == null)) &&
+                 getVideoFPS()<= 30){
+             return true;
+        }
+        return false;
+    }
     public List<String> getSupportedManualHDR(int cameraId) {
         ArrayList<String> ret = new ArrayList<String>();
         ret.add("off");
@@ -3404,9 +3479,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Log.v(TAG, "getSupportedManualHDR support mode :" + mode);
             }
         }
-        if (isAutoHDRSupported() && getVideoFPS() <= 30){
-            if((getValue(SettingsManager.KEY_SAVERAW) != null && !getValue(SettingsManager.KEY_SAVERAW).equals("enable"))||
-            getValue(SettingsManager.KEY_SAVERAW) == null){
+        if (isAutoHDRSupported()){
+            if(isSupportedHdr()){
                 ret.add("auto");
             }
         }
