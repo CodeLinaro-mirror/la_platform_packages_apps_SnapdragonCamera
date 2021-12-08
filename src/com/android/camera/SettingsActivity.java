@@ -1619,12 +1619,14 @@ public class SettingsActivity extends PreferenceActivity {
             SettingsManager.Values values = entry.getValue();
             boolean disabled = values.overriddenValue != null;
             String value = disabled ? values.overriddenValue : values.value;
+            boolean enable = p.isEnabled();
             if (p instanceof SwitchPreference) {
                 ((SwitchPreference) p).setChecked(isOn(value));
-                ((SwitchPreference) p).setEnabled(true);
+                if (enable) {
+                    ((SwitchPreference) p).setEnabled(true);
+                }
             } else if (p instanceof ListPreference) {
                 ListPreference pref = (ListPreference) p;
-                boolean enable = p.isEnabled();
                 if (enable) {
                     pref.setEnabled(true);
                 }
@@ -1633,7 +1635,7 @@ public class SettingsActivity extends PreferenceActivity {
                     pref.setEnabled(false);
                 }
             }
-            if (disabled) p.setEnabled(false);
+            if (disabled && !enable) p.setEnabled(false);
         }
         // when enable deepzoom, disable the KEY_PICTURE_SIZE
         String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
