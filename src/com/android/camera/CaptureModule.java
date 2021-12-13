@@ -1577,7 +1577,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if(DEBUG) {
                     Log.v(TAG, "updateT2tTrackerView mT2TTrackState :" + mT2TTrackState +
                             ", trackerScore :" +trackerScore);
-                    Log.v(TAG, "updateT2tTrackerView resultROI :" + resultROI);
+                    if (resultROI != null) {
+                        Log.v(TAG, "updateT2tTrackerView resultROI :" + resultROI[0] + ", "
+                                + resultROI[1]+ ", "  + resultROI[2] + ", " + resultROI[3]);
+                    }
                 }
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
@@ -4346,7 +4349,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     return;
                 }
                 String requestTag = String.valueOf(request.getTag());
-                if (requestTag.equals("preview")) {
+                if (requestTag.equals("preview") || requestTag.equals("capture")) {
                     updateT2tTrackerView(result);
                     return;
                 }
