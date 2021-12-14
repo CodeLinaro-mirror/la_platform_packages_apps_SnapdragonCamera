@@ -460,6 +460,6 @@ public class PersistUtil {
     }
 
     public static boolean getHardSwitchEnabled(){
-        return getBoolean("persist.sys.camera.hard_switch_enable", false);
+        return getBoolean("persist.sys.camera.hard_switch_enable", true);
     }
 }
