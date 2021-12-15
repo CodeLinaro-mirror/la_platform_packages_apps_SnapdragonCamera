@@ -45,21 +45,21 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/mdp_preivew_frame"
-        android:rowCount="2"
+        android:rowCount="1"
         android:columnCount="2">
-        <SurfaceView
+        <com.android.camera.ui.MultiAutoFitSurfaceView
             android:id="@+id/main_preview_content"
             android:layout_rowSpan="1"
             android:layout_columnSpan="1"
             android:layout_gravity="center"
             android:clickable="true"/>
-        <SurfaceView
+        <com.android.camera.ui.MultiAutoFitSurfaceView
             android:id="@+id/first_preview_content"
             android:layout_rowSpan="1"
             android:layout_columnSpan="1"
             android:layout_gravity="center"
             android:clickable="true"/>
-        <SurfaceView
+       <!-- <SurfaceView
             android:id="@+id/second_preview_content"
             android:layout_rowSpan="1"
             android:layout_columnSpan="1"
@@ -70,7 +70,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             android:layout_rowSpan="1"
             android:layout_columnSpan="1"
             android:layout_gravity="center"
-            android:clickable="true"/>
+            android:clickable="true"/>-->
     </GridLayout>
 
     <com.android.camera.ui.RenderOverlay
@@ -82,8 +82,13 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.android.camera.ui.Camera2FaceView
+        <com.android.camera.ui.MultiCameraFaceView
             android:id="@+id/face_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+        <com.android.camera.ui.MultiCameraFaceView
+            android:id="@+id/face_view2"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone" />

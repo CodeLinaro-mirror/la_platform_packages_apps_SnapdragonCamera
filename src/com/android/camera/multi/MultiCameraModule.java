@@ -351,7 +351,7 @@ public class MultiCameraModule implements CameraModule, PhotoController {
 
     @Override
     public void onConfigurationChanged(Configuration config) {
-
+        mMultiCamera.onConfigurationChanged(config);
     }
 
     @Override
