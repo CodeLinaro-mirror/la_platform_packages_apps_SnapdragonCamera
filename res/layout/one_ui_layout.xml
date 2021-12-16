@@ -218,6 +218,19 @@
             android:thumb="@drawable/ic_beautify_oval"
             android:id="@id/zoom_seekbar"/>
     </LinearLayout>
+        <SeekBar
+            android:layout_width="140dp"
+            android:layout_height="50dp"
+            android:maxHeight="3dip"
+            android:minHeight="1dip"
+            android:visibility="gone"
+            android:paddingTop="1dp"
+            android:progressDrawable="@drawable/beautify_progressbar_style"
+            android:thumb="@drawable/evbar_thumb"
+            android:thumbOffset="0dp"
+            android:id="@+id/ev_seekbar">
+        </SeekBar>
+
 
     <SeekBar
         android:layout_width="320dp"

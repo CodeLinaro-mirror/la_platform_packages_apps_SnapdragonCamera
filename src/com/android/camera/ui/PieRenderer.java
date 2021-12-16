@@ -34,7 +34,7 @@ import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 import android.view.animation.Animation;
 import android.view.animation.Transformation;
-
+import com.android.camera.CaptureUI;
 import com.android.camera.CameraActivity;
 import com.android.camera.drawable.TextDrawable;
 import com.android.camera.ui.ProgressRenderer.VisibilityListener;
@@ -146,9 +146,13 @@ public class PieRenderer extends OverlayRenderer
     private int mDeadZone;
     private int mAngleZone;
     private float mCenterAngle;
+    private CaptureUI mUI;
 
     private ProgressRenderer mProgressRenderer;
 
+    public void setCapureUi(CaptureUI ui) {
+        mUI = ui;
+    }
     private Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
             switch(msg.what) {
@@ -1110,6 +1114,7 @@ public class PieRenderer extends OverlayRenderer
         public void run() {
             if (mState == STATE_PIE) return;
             setVisible(false);
+            mUI.hideEvSeekbar();
             mFocusX = mCenterX;
             mFocusY = mCenterY;
             mState = STATE_IDLE;

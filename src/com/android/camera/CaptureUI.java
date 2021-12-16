@@ -155,6 +155,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private boolean mZoomRatioSupport = false;
     private int[] mScreenHDRIcon = {R.drawable.ic_hdr_off, R.drawable.ic_hdr};
     private int mScreenHDRindex;
+    private SeekBar mEvSeekBar;
+    private boolean isEvChanging;
     private AFView mAFViewRender;
 
     private SurfaceHolder.Callback callbackMono = new SurfaceHolder.Callback() {
@@ -829,6 +831,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mPieRenderer == null) {
             mPieRenderer = new PieRenderer(mActivity);
             mRenderOverlay.addRenderer(mPieRenderer);
+            mPieRenderer.setCapureUi(this);
         }
 
         if (mZoomRenderer == null) {
@@ -860,7 +863,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mRecordingTimeRect.setVisibility(View.GONE);
         showFirstTimeHelp();
     }
-
     private void initAICameraSeekBar(){
         mAICameraSeekBar = (SeekBar) mRootView.findViewById(R.id.aicamera_seekbar);
         mAICameraSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -879,7 +881,51 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
     }
+    public boolean getIsEvChanging() {
+        return isEvChanging;
+    }
+    private void resetEv() {
+        String defaultEV = mActivity.getResources().getString(
+                R.string.pref_exposure_default);
+        mSettingsManager.setValue(SettingsManager.KEY_EXPOSURE, defaultEV);
+    }
+    private void initEvSeekBar() {
+        final int length = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE).length;
+        resetEv();
+        int index = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
+        final int section = 100 / length;
+        if (mEvSeekBar == null) {
+            mEvSeekBar = (SeekBar) mRootView.findViewById(R.id.ev_seekbar);
+            mEvSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    int index = progress / section;
+                    if (index > length - 1) index = length - 1;
+                    int currentIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
+                    if (currentIndex != index) {
+                        mSettingsManager.setValueIndex(SettingsManager.KEY_EXPOSURE, index);
+                    }
+                }
 
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                    isEvChanging = true;
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    isEvChanging = false;
+                }
+            });
+        }
+        setEvBarProgress(index, section, mEvSeekBar);
+    }
+
+    private void setEvBarProgress(int evIndex, int section, SeekBar seekBar) {
+        int progress = section * (evIndex);
+        if (progress >= 99) progress = 100;
+        seekBar.setProgress(progress);
+    }
     private void initZoomSeekBar() {
         mZoomLinearLayout = (LinearLayout) mRootView.findViewById(R.id.zoom_linearlayout);
         mZoomValueText = (TextView) mRootView.findViewById(R.id.zoom_value_text);
@@ -2656,6 +2702,27 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return focusIndicator;
     }
 
+    public void showEvSeekbar(int x, int y) {
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE) return;
+        initEvSeekBar();
+        int evX = x - mPieRenderer.getSize() / 2 - mPieRenderer.getSize() / 5;
+        int evY = y + mPieRenderer.getSize() / 2;
+        int zoombarlocation[] = new int[2];
+        mZoomLinearLayout.getLocationOnScreen(zoombarlocation);
+        if (evY > zoombarlocation[1]) {
+            evY = y - mPieRenderer.getSize();
+        }
+        mEvSeekBar.setX(evX);
+        mEvSeekBar.setY(evY);
+        mEvSeekBar.setVisibility(View.VISIBLE);
+    }
+
+    public void hideEvSeekbar() {
+        if (mEvSeekBar != null && mEvSeekBar.getVisibility() == View.VISIBLE) {
+            mEvSeekBar.setVisibility(View.GONE);
+            resetEv();
+        }
+    }
     @Override
     public boolean hasFaces() {
         return (mFaceView != null && mFaceView.faceExists());

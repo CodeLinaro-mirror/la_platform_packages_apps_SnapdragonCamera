@@ -2262,6 +2262,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mInTAF = true;
                     mUI.onFocusStarted();
                     mUI.setFocusPosition(mClickPosition[0], mClickPosition[1]);
+                    mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mUI.showEvSeekbar(mClickPosition[0], mClickPosition[1]);
+                        }
+                    });
                     lockExposure(mCurrentSceneMode.getCurrentId());
                     triggerFocusAtPoint(mClickPosition[0], mClickPosition[1], mCurrentSceneMode.getCurrentId());
                 }
@@ -7196,11 +7202,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         mUI.setFocusPosition(x, y);
+        mUI.showEvSeekbar(x, y);
         x = newXY[0];
         y = newXY[1];
         mInTAF = true;
         mUI.onFocusStarted();
         triggerFocusAtPoint(x, y, getMainCameraId());
+
     }
 
     @Override
@@ -7228,9 +7236,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             mLockAFAE = LOCK_AF_AE_STATE_START;
             applyIsAfLock(true);
             mUI.setFocusPosition(x, y);
+            mUI.showEvSeekbar(x,y);
             mUI.onFocusStarted();
             triggerFocusAtPoint(x, y, mCurrentSceneMode.getCurrentId());
             lockExposure(mCurrentSceneMode.getCurrentId());
+
         }
     }
 
@@ -12990,7 +13000,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                     openCamera(id);
                     break;
                 case CANCEL_TOUCH_FOCUS:
-                    cancelTouchFocus(id);
+                    if(!mUI.getIsEvChanging()) {
+                        cancelTouchFocus(id);
+                    }else{
+                        Message message =
+                                mCameraHandler.obtainMessage(CANCEL_TOUCH_FOCUS);
+                        mCameraHandler.sendMessageDelayed(message, CANCEL_TOUCH_FOCUS_DELAY);
+                    }
                     break;
             }
         }
