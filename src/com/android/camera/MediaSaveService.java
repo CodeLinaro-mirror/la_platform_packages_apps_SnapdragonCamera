@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteOrder;
 
 import android.app.Service;
@@ -247,6 +248,13 @@ public class MediaSaveService extends Service {
         new VideoSaveTask(path, duration, values, l, resolver).execute();
     }
 
+    public void updateVideo(Uri uri, ContentValues values,
+                            OnMediaSavedListener l, ContentResolver resolver) {
+        // We don't set a queue limit for video saving because the file
+        // is already in the storage. Only updating the database.
+        new VideoUpdateTask(uri, values, l, resolver).execute();
+    }
+
     public void setListener(Listener l) {
         mListener = l;
         if (l == null) return;
@@ -338,15 +346,24 @@ public void setCameraActivity(CameraActivity activity){
             }
 
             // combine to single mpo
-            String path = Storage.generateFilepath(title, pictureFormat);
-            int size = MpoInterface.writeMpo(mpo, path);
-            // Try to get the real image size after add exif.
-            File f = new File(path);
-            if (f.exists() && f.isFile()) {
-                size = (int) f.length();
+            Uri uri = Storage.addImage(resolver, title, date, loc, orientation, null,
+                    null, width, height, pictureFormat);
+            OutputStream out = null;
+            try {
+                out = resolver.openOutputStream(uri);
+                MpoInterface.writeMpo(mpo, out);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (out != null) {
+                    try {
+                        out.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-            return Storage.addImage(resolver, title, date, loc, orientation, null,
-                    size, path, width, height, pictureFormat);
+            return uri;
         }
 
         @Override
@@ -382,8 +399,12 @@ public void setCameraActivity(CameraActivity activity){
 
         @Override
         protected Long doInBackground(Void... params) {
-            long length = Storage.addRawImage(title, data, pictureFormat);
-            return new Long(length);
+            long length =  data.length;
+            ContentResolver resolver = getContentResolver();
+            long date = System.currentTimeMillis();
+            Storage.addRawImage(resolver, title, date, null, 0, null, data,
+                    0, 0, pictureFormat);
+            return length;
         }
 
         @Override
@@ -753,6 +774,41 @@ public void setCameraActivity(CameraActivity activity){
         @Override
         protected void onPostExecute(Uri uri) {
             if (listener != null) listener.onMediaSaved(uri);
+        }
+    }
+
+    private class VideoUpdateTask extends AsyncTask <Void, Void, Void> {
+        private final Uri uri;
+        private final ContentValues values;
+        private final OnMediaSavedListener listener;
+        private final ContentResolver resolver;
+
+        public VideoUpdateTask(Uri u, ContentValues values, OnMediaSavedListener l,
+                               ContentResolver r) {
+            this.uri = u;
+            this.values = new ContentValues(values);
+            this.listener = l;
+            this.resolver = r;
+        }
+
+        @Override
+        protected Void doInBackground(Void... v) {
+            try {
+                resolver.update(uri, values, null, null);
+            } catch (Exception e) {
+                // We failed to update the database.
+                Log.e(TAG, "failed to update video to media store", e);
+            } finally {
+                Log.v(TAG, "Current video URI: " + uri);
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Void v) {
+            if (listener != null) {
+                listener.onMediaSaved(uri);
+            }
         }
     }
 }
