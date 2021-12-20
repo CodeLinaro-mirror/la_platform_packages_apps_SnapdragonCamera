@@ -58,11 +58,13 @@ public class MultiCameraFaceView extends FaceView {
     private final int smile_threashold_no_smile = 30;
     private final int smile_threashold_small_smile = 60;
     private final int blink_threshold = 60;
+    private static final int SWITCH_DELAY = 50;
 
     private int[] mUncroppedWidths = new int[4];
     private int[] mUncroppedHeights = new int[4];
 
     private int[] mDisplayOrientations = new int[2];
+    private boolean[] mStateSwitchPendings = new boolean[16];
 
     private Face[] mFaces;
     private ExtendedFace[] mExFaces;
@@ -75,8 +77,14 @@ public class MultiCameraFaceView extends FaceView {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_SWITCH_FACES:
-                    mStateSwitchPending = false;
+                case 0:
+                    mStateSwitchPendings[0] = false;
+                    mFaces = mPendingFaces;
+                    mExFaces = mPendingExFaces;
+                    invalidate();
+                    break;
+                case 1:
+                    mStateSwitchPendings[1] = false;
                     mFaces = mPendingFaces;
                     mExFaces = mPendingExFaces;
                     invalidate();
@@ -135,23 +143,23 @@ public class MultiCameraFaceView extends FaceView {
     }
 
     public void setFaces(int index, Face[] faces, ExtendedFace[] extendedFaces) {
-        if (LOGV) Log.v(TAG, "Num of faces=" + faces.length);
+        if (LOGV) Log.v(TAG, "Num of faces=" + faces.length + ", index :" + index);
         if (mPause) return;
         if (mFaces != null) {
-            if ((faces.length > 0 && mFaces.length == 0)
+            if ((faces.length == 0 && mFaces.length == 0)
                     || (faces.length == 0 && mFaces.length > 0)) {
                 mPendingFaces = faces;
                 mPendingExFaces = extendedFaces;
-                if (!mStateSwitchPending) {
-                    mStateSwitchPending = true;
-                    mHandler.sendEmptyMessageDelayed(MSG_SWITCH_FACES, SWITCH_DELAY);
+                if (!mStateSwitchPendings[index]) {
+                    mStateSwitchPendings[index] = true;
+                    mHandler.sendEmptyMessageDelayed(index, SWITCH_DELAY);
                 }
                 return;
             }
         }
-        if (mStateSwitchPending) {
-            mStateSwitchPending = false;
-            mHandler.removeMessages(MSG_SWITCH_FACES);
+        if (mStateSwitchPendings[index]) {
+            mStateSwitchPendings[index] = false;
+            mHandler.removeMessages(index);
         }
         mFaces = faces;
         mExFaces = extendedFaces;
