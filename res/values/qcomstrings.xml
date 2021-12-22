@@ -1727,6 +1727,8 @@
     <string name="pref_camera2_ai_denoiser_mode_entry_value_aide1" translatable="false">0</string>
     <string name="pref_camera2_ai_denoiser_mode_entry_value_aide2" translatable="false">1</string>
     <string name="pref_camera2_ai_denoiser_mode_entry_value_aide_sat" translatable="false">2</string>
+
+    <string name="pref_camera_fd_title">FD Setting</string>
  <!-- torch hdr value-->
     <string name="pref_camera2_torch_hdr_title" translatable="true">Torch HDR</string>
     <string name="pref_camera2_torch_hdr_default" translatable="false">0</string>

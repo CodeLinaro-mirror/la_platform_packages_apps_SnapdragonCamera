@@ -108,9 +108,19 @@ import static com.android.camera.CaptureModule.CameraMode.DEFAULT;
 import static com.android.camera.CaptureModule.CameraMode.RTB;
 import static com.android.camera.CaptureModule.CameraMode.SAT;
 import static com.android.camera.CaptureModule.CameraMode.VIDEO;
+import android.app.Dialog;
 
+import android.widget.CheckBox;
+import com.android.camera.FdExpandListView;
+import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.BaseExpandableListAdapter;
+import android.widget.ExpandableListView;
+import android.widget.ExpandableListAdapter;
+import android.widget.RelativeLayout;
+import com.android.camera.FdExpandListView.FdExpandListViewAdapter;
 public class SettingsActivity extends PreferenceActivity {
     private static final String TAG = "SettingsActivity";
+
     private static final boolean DEV_LEVEL_ALL =
             PersistUtil.getDevOptionLevel() == PersistUtil.CAMERA2_DEV_OPTION_ALL;
     public static final String CAMERA_MODULE = "camera_module";
@@ -121,9 +131,11 @@ public class SettingsActivity extends PreferenceActivity {
     private boolean mDeveloperMenuEnabled;
     private int privateCounter = 0;
     private final int DEVELOPER_MENU_TOUCH_COUNT = 10;
+    private FdExpandListView fdExpandListView;
+    private ExpandableListView expandableListView = null;
+    private FdExpandListViewAdapter expandableAdapter = null;
     private boolean mIsSingleCameraMode = false;
     private String mAICameraValue = "0";
-
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
@@ -257,7 +269,6 @@ public class SettingsActivity extends PreferenceActivity {
                 if (pref.getKey().equals(SettingsManager.KEY_MANUAL_EXPOSURE)) {
                     UpdateManualExposureSettings();
                 }
-
                 if (pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT) ||
                         pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
                     mSettingsManager.updatePictureAndVideoSize();
@@ -333,7 +344,6 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
     };
-
     private boolean isPrefEnabled(String key) {
         boolean result = false;
         String prefValue = mSettingsManager.getValue(key);
@@ -1128,6 +1138,28 @@ public class SettingsActivity extends PreferenceActivity {
                         if ( preference.getKey().equals(SettingsManager.KEY_RESTORE_DEFAULT) ) {
                             onRestoreDefaultSettingsClick();
                         }
+                        if( preference.getKey().equals(SettingsManager.KEY_FD_SETTING)){
+                            View listView = (SettingsActivity.this).getLayoutInflater().inflate(
+                                    R.layout.expandlistview, null);
+                            final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
+                            alert.setTitle("FD Settings");
+                            alert.setView(listView);
+                            expandableListView = (ExpandableListView) listView.findViewById(R.id.main_expandablelistview);
+                            expandableAdapter = fdExpandListView.new FdExpandListViewAdapter(); //
+                            expandableListView.setAdapter(expandableAdapter);
+                            alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,int id) {
+                                    dialog.cancel();
+                                }
+                            });
+                            alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                @Override
+                                public void onDismiss(DialogInterface dialog) {
+                                    preference.setSummary(fdExpandListView.getFDSummery());
+                                }
+                            });
+                            alert.show();
+                        }
 
                         if (preference.getKey().equals(SettingsManager.KEY_MANUAL_HDR)) {
                             String value = ((ListPreference) preference).getValue();
@@ -1251,6 +1283,18 @@ public class SettingsActivity extends PreferenceActivity {
             removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, photoPre);
             removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, videoPre);
         }
+        Preference p = findPreference(SettingsManager.KEY_FD_SETTING);
+        if(p != null) {
+            fdExpandListView = new FdExpandListView(SettingsActivity.this);
+            fdExpandListView.initExpandData();
+            p.setSummary(fdExpandListView.getFDSummery());
+            removePreference(SettingsManager.KEY_FD_SMILE, developer);
+            removePreference(SettingsManager.KEY_FD_GAZE, developer);
+            removePreference(SettingsManager.KEY_FD_BLINK, developer);
+            removePreference(SettingsManager.KEY_FACIAL_CONTOUR, developer);
+            removePreference(SettingsManager.KEY_FACE_DETECTION_MODE, developer);
+            removePreference(SettingsManager.KEY_FACE_DETECTION_MODE, developer);
+        }
         if(!PersistUtil.isRawReprocessEnable() && developer != null){
             removePreference(SettingsManager.KEY_RAW_REPROCESS_TYPE, developer);
             removePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS, developer);
@@ -1297,6 +1341,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_FD_BLINK);
                         videoAddList.add(SettingsManager.KEY_FACE_DETECTION_MODE);
                         videoAddList.add(SettingsManager.KEY_FACIAL_CONTOUR);
+                        videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.add(mSettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                         videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                         videoAddList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
@@ -1618,6 +1663,7 @@ public class SettingsActivity extends PreferenceActivity {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
+
         updateZslPreference();
         updateVideoEncoderProfile();
         updateSwitchIDInModePreference(true);
@@ -2092,6 +2138,9 @@ public class SettingsActivity extends PreferenceActivity {
         filterPreferences();
         initializePreferences();
     }
+
+
+
 
     public class DragListViewAdapter extends BaseAdapter {
         private Context mContext;

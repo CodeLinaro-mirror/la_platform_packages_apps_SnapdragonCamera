@@ -80,7 +80,6 @@ import org.codeaurora.snapcam.R;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.IOException;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -217,8 +216,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AF_MODE = "pref_camera2_afmode_key";
     public static final String KEY_EXPOSURE_METERING_MODE = "pref_camera2_exposure_metering_key";
     public static final String KEY_MULTI_CAMERAS_MODE = "pref_camera2_multi_cameras_key";
-
-
     //manual 3A keys and parameter strings
     public static final String KEY_MANUAL_EXPOSURE = "pref_camera2_manual_exp_key";
     public static final String KEY_MANUAL_ISO_VALUE = "pref_camera2_manual_iso_key";
@@ -276,6 +273,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_FD_FACE_EXPRESSION = "pref_camera2_fd_face_expression_key";
     public static final String KEY_FACIAL_CONTOUR = "pref_camera2_facial_contour_key";
     public static final String KEY_FACE_DETECTION_MODE = "pref_camera2_face_detection_mode";
+    public static final String KEY_FD_SETTING = "pref_camera2_fd_setting_key";
     public static final String KEY_ZSL = "pref_camera2_zsl_key";
     public static final String KEY_BURST_LIMIT = "pref_camera2_burst_limit_key";
     public static final String KEY_VIDEO_ENCODER_PROFILE = "pref_camera2_videoencoderprofile_key";
@@ -1524,7 +1522,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 removePreference(mPreferenceGroup, KEY_VIDEO_FLASH_MODE);
             }
         }
-
         if (aiCamera != null) {
             if (filterUnsupportedOptions(aiCamera, getSupportedAICameraMode())) {
                 mFilteredKeys.add(aiCamera.getKey());
@@ -1532,7 +1529,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 mFilteredKeys.add(aiCameraBokeh.getKey());
             }
         }
-
         if (fd_smile != null && fd_gaze != null && fd_blink != null) {
             if (!isBsgcAvailable(mCameraId)) {
                 removePreference(mPreferenceGroup, KEY_FD_SMILE);
