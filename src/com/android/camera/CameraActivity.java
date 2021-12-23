@@ -67,7 +67,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
-import android.os.SystemProperties;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -418,7 +417,10 @@ public class CameraActivity extends Activity
             if (e.getCause().getLocalizedMessage().indexOf("Unknown camera error") != -1) {
                 support = false;
                 Log.d(TAG,"cameraAPICheck support1 ="+support);
+            } else if (e.getCause().getLocalizedMessage().indexOf("Unsupported HAL version") != -1) {
+                Log.d(TAG,"cameraAPICheck Unsupported HAL version support1 ="+support);
             }
+            support = false;
         } finally {
             SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
             SharedPreferences.Editor editor = preferences.edit();
@@ -1824,6 +1826,12 @@ public class CameraActivity extends Activity
             isStartPermissionActivity = true;
         }
         return isStartPermissionActivity;
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
     }
 
     @Override

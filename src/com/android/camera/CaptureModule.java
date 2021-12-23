@@ -59,10 +59,13 @@ import android.media.CameraProfile;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaActionSound;
+import android.media.MediaCodecInfo;
+import android.media.MediaCodecInfo.CodecCapabilities;
+import android.media.MediaCodecInfo.VideoCapabilities;
+import android.media.MediaCodecList;
+import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaRecorder;
-import android.media.EncoderCapabilities;
-import android.media.EncoderCapabilities.VideoEncoderCap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Debug;
@@ -114,7 +117,6 @@ import com.android.camera.util.PersistUtil;
 import com.android.camera.util.SettingTranslation;
 import com.android.camera.util.AccessibilityUtils;
 import com.android.camera.util.VendorTagUtil;
-import com.android.internal.util.MemInfoReader;
 
 import org.codeaurora.snapcam.R;
 import org.codeaurora.snapcam.filter.ClearSightImageProcessor;
@@ -136,6 +138,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.lang.reflect.Method;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 import androidx.heifwriter.HeifWriter;
@@ -154,10 +157,12 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static int MONO_ID = -1;
     public static int FRONT_ID = -1;
     public static int SWITCH_ID = -1;
+    public static int CURRENT_ID = 0;
     public static final int INTENT_MODE_NORMAL = 0;
     public static final int INTENT_MODE_CAPTURE = 1;
     public static final int INTENT_MODE_VIDEO = 2;
     public static final int INTENT_MODE_CAPTURE_SECURE = 3;
+    public static final int INTENT_MODE_STILL_IMAGE_CAMERA = 4;
     private static final int BACK_MODE = 0;
     private static final int FRONT_MODE = 1;
     private static final int CANCEL_TOUCH_FOCUS_DELAY = PersistUtil.getCancelTouchFocusDelay();
@@ -374,6 +379,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final String sTempCropFilename = "crop-temp";
     private static final int REQUEST_CROP = 1000;
     private int mIntentMode = INTENT_MODE_NORMAL;
+    private boolean mIsVoiceTakePhote = false;
     private String mCropValue;
     private Uri mCurrentVideoUri;
     private ParcelFileDescriptor mVideoFileDescriptor;
@@ -454,6 +460,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private CamcorderProfile mProfile;
     private static final int CLEAR_SCREEN_DELAY = 4;
     private static final int UPDATE_RECORD_TIME = 5;
+    private static final int VOICE_INTERACTION_CAPTURE = 7;
     private ContentValues mCurrentVideoValues;
     private String mVideoFilename;
     private boolean mMediaRecorderPausing = false;
@@ -695,10 +702,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (mImageReader[id] == null) {
                         break;
                     }
-                    if (r.getRequest().containsTarget(mImageReader[id].getSurface())) {
+                    //if (r.getRequest().containsTarget(mImageReader[id].getSurface())) {
                         zsl = true;
-                        break;
-                    }
+                    //    break;
+                    //}
                 }
                 if (zsl){
                     mPostProcessor.onMetaAvailable(result);
@@ -1295,12 +1302,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         }
                                     }
                                 }
-
+                                if (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA &&
+                                        mIsVoiceTakePhote){
+                                    mHandler.sendEmptyMessageDelayed(VOICE_INTERACTION_CAPTURE, 500);
+                                }
                                 if (isClearSightOn()) {
                                     ClearSightImageProcessor.getInstance().onCaptureSessionConfigured(id == BAYER_ID, cameraCaptureSession);
                                 } else if (mChosenImageFormat == ImageFormat.PRIVATE && id == getMainCameraId()) {
                                     mPostProcessor.onSessionConfigured(mCameraDevice[id], mCaptureSession[id]);
                                 }
+
+                                mFirstPreviewLoaded = false;
 
                             } catch (CameraAccessException e) {
                                 e.printStackTrace();
@@ -1502,6 +1514,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void reinit() {
+        CURRENT_ID = getMainCameraId();
+        Log.d(TAG, "reinit: CURRENT_ID camera id " + CURRENT_ID);
         mSettingsManager.init();
     }
 
@@ -1548,6 +1562,32 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void initModeByIntent() {
         String action = mActivity.getIntent().getAction();
+        Log.v(TAG, " initModeByIntent action: " + action);
+        Bundle bundle = mActivity.getIntent().getExtras();
+        if (bundle != null) {
+            Log.v(TAG, " initModeByIntent bundle :" + bundle.toString());
+        }
+        if (MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA.equals(action)) {
+            mIntentMode = INTENT_MODE_STILL_IMAGE_CAMERA;
+            Set<String> categories = mActivity.getIntent().getCategories();
+            if (categories != null) {
+                for (String categorie : categories) {
+                    Log.v(TAG, " categorie :" + categorie);
+                    if (categorie.equals("android.intent.category.VOICE")) {
+                        mIsVoiceTakePhote = true;
+                    }
+                }
+            } else {
+                mIsVoiceTakePhote = false;
+            }
+            boolean isOpenOnly = mActivity.getIntent().getBooleanExtra(
+                    "com.google.assistant.extra.CAMERA_OPEN_ONLY", false);
+            if (isOpenOnly) {
+                mIsVoiceTakePhote = false;
+            }
+            Log.v(TAG, "initModeByIntent  CAMERA_OPEN_ONLY isOpenOnly :" + isOpenOnly +
+                    ", mIsVoiceTakePhote :" + mIsVoiceTakePhote);
+        }
         if (MediaStore.ACTION_IMAGE_CAPTURE.equals(action)) {
             mIntentMode = INTENT_MODE_CAPTURE;
         } else if (CameraActivity.ACTION_IMAGE_CAPTURE_SECURE.equals(action)) {
@@ -2341,6 +2381,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mImageReader[i].setOnImageAvailableListener(mPostProcessor.getImageHandler(), mImageAvailableHandler);
                         mPostProcessor.onImageReaderReady(mImageReader[i], mSupportedMaxPictureSize, mPictureSize);
                     } else if (i == getMainCameraId()) {
+                        Log.v(TAG, " mPictureSize :" + mPictureSize.getWidth() + " X " + mPictureSize.getHeight());
                         mImageReader[i] = ImageReader.newInstance(mPictureSize.getWidth(),
                                 mPictureSize.getHeight(), imageFormat, MAX_IMAGE_BUFFER_SIZE);
 
@@ -2399,7 +2440,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         ExifInterface exif = Exif.getExif(bytes);
                                         int orientation = Exif.getOrientation(exif);
 
-                                        if (mIntentMode != CaptureModule.INTENT_MODE_NORMAL) {
+                                        if (mIntentMode != CaptureModule.INTENT_MODE_NORMAL &&
+                                                mIntentMode != INTENT_MODE_STILL_IMAGE_CAMERA) {
                                             mJpegImageData = bytes;
                                             if (!mQuickCapture) {
                                                 showCapturedReview(bytes, orientation);
@@ -2421,6 +2463,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                         gDepth, title, date, null,  width, height,
                                                         orientation, exif, mOnMediaSavedListener, mContentResolver, "jpeg");
                                             } else {
+                                                if (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA) {
+                                                    mIntentMode = INTENT_MODE_NORMAL;
+                                                }
                                                 mActivity.getMediaSaveService().addImage(bytes, title, date,
                                                         null, width, height, orientation, exif,
                                                         mOnMediaSavedListener, mContentResolver, "jpeg");
@@ -2964,11 +3009,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             mInitHeifWriter.close();
         }
         closeCamera();
-        mUI.hideSurfaceView();
         resetAudioMute();
         mUI.releaseSoundPool();
         mUI.showPreviewCover();
-        mFirstPreviewLoaded = false;
         stopBackgroundThread();
         mLastJpegData = null;
         setProModeVisible();
@@ -2983,6 +3026,14 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     @Override
     public void onResumeBeforeSuper() {
+        // must change cameraId before "mPaused = false;"
+        int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
+        Log.v(TAG, " onResumeBeforeSuper facingOfIntentExtras :" + facingOfIntentExtras +
+                ", FRONT_ID :" + FRONT_ID + ", mIntentMode :" + mIntentMode);
+        if (facingOfIntentExtras != -1 && (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA)) {
+            mSettingsManager.setValue(SettingsManager.KEY_SWITCH_CAMERA,
+                    facingOfIntentExtras == CameraUtil.FACING_BACK ? "rear" : "front");
+        }
         mPaused = false;
         for (int i = 0; i < MAX_NUM_CAM; i++) {
             mCameraOpened[i] = false;
@@ -3869,6 +3920,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void updateVideoSnapshotSize() {
         mVideoSnapshotSize = mVideoSize;
+        if (mVideoSize == null) return;
         if (!is4kSize(mVideoSize) && (mHighSpeedCaptureRate == 0)) {
             mVideoSnapshotSize = getMaxPictureSizeLiveshot();
         }
@@ -3925,15 +3977,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         updateHFRSetting();
         updateVideoEncoder();
-        if (!isSessionSupportedByEncoder(mVideoSize.getWidth(), mVideoSize.getHeight(),
-                mHighSpeedCaptureRate)) {
-            mStartRecPending = false;
-            mIsRecordingVideo = false;
-            RotateTextToast.makeText(mActivity,R.string.error_app_unsupported_hfr,
-                    Toast.LENGTH_SHORT).show();
-            return false;
-        }
-
         try {
             setUpMediaRecorder(cameraId);
             mUI.clearFocus();
@@ -3955,11 +3998,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (mHighSpeedCapture) {
                 preview = mVideoSize;
             }
-            boolean changed = mUI.setPreviewSize(preview.getWidth(),
+            final boolean changed = mUI.setPreviewSize(preview.getWidth(),
                     preview.getHeight());
             if (changed) {
-                mUI.hideSurfaceView();
-                mUI.showSurfaceView();
+                mUI.showPreviewCover();
             }
             if (mHiston) {
                 updateGraghViewVisibility(View.GONE);
@@ -4058,6 +4100,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                         } catch (IllegalStateException e) {
                             e.printStackTrace();
                         }
+                        if (changed) {
+                            mFirstPreviewLoaded = false;
+                        }
                         if (!mFrameProcessor.isFrameListnerEnabled() && !startMediaRecorder()) {
                             mUI.showUIafterRecording();
                             releaseMediaRecorder();
@@ -4105,32 +4150,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mStartRecPending = false;
         return true;
-    }
-
-    private boolean isSessionSupportedByEncoder(int w, int h, int fps) {
-        int expectedMBsPerSec = w * h * fps;
-
-        List<VideoEncoderCap> videoEncoders = EncoderCapabilities.getVideoEncoders();
-        for (VideoEncoderCap videoEncoder: videoEncoders) {
-            if (videoEncoder.mCodec == mVideoEncoder) {
-                int maxMBsPerSec = (videoEncoder.mMaxFrameWidth * videoEncoder.mMaxFrameHeight
-                        * videoEncoder.mMaxFrameRate);
-                if (expectedMBsPerSec > maxMBsPerSec) {
-                    Log.e(TAG,"Selected codec " + mVideoEncoder
-                            + " does not support width(" + w
-                            + ") X height ("+ h
-                            + "@ " + fps +" fps");
-                    Log.e(TAG, "Max capabilities: " +
-                            "MaxFrameWidth = " + videoEncoder.mMaxFrameWidth + " , " +
-                            "MaxFrameHeight = " + videoEncoder.mMaxFrameHeight + " , " +
-                            "MaxFrameRate = " + videoEncoder.mMaxFrameRate);
-                    return false;
-                } else {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     private void updateTimeLapseSetting() {
@@ -4536,8 +4555,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         boolean changed = mUI.setPreviewSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         if (changed) {
-            mUI.hideSurfaceView();
-            mUI.showSurfaceView();
+            mUI.showPreviewCover();
         }
         if (!mPaused) {
             createSessions();
@@ -4748,27 +4766,23 @@ public class CaptureModule implements CameraModule, PhotoController,
             requestedSizeLimit = myExtras.getLong(MediaStore.EXTRA_SIZE_LIMIT);
         }
         //check if codec supports the resolution, otherwise throw toast
-        List<VideoEncoderCap> videoEncoders = EncoderCapabilities.getVideoEncoders();
-        for (VideoEncoderCap videoEnc: videoEncoders) {
-            if (videoEnc.mCodec == mVideoEncoder) {
-                if (videoWidth > videoEnc.mMaxFrameWidth ||
-                        videoWidth < videoEnc.mMinFrameWidth ||
-                        videoHeight > videoEnc.mMaxFrameHeight ||
-                        videoHeight < videoEnc.mMinFrameHeight) {
-                    Log.e(TAG, "Selected codec " + mVideoEncoder +
-                            " does not support "+ videoWidth + "x" + videoHeight
-                            + " resolution");
-                    Log.e(TAG, "Codec capabilities: " +
-                            "mMinFrameWidth = " + videoEnc.mMinFrameWidth + " , " +
-                            "mMinFrameHeight = " + videoEnc.mMinFrameHeight + " , " +
-                            "mMaxFrameWidth = " + videoEnc.mMaxFrameWidth + " , " +
-                            "mMaxFrameHeight = " + videoEnc.mMaxFrameHeight);
-                    mUnsupportedResolution = true;
-                    RotateTextToast.makeText(mActivity, R.string.error_app_unsupported,
-                            Toast.LENGTH_LONG).show();
-                    return;
-                }
-                break;
+        if (DEBUG) Log.d(TAG,"mProfile.videoCodec="+mProfile.videoCodec);
+        String type = SettingTranslation.getVideoEncoderType(mProfile.videoCodec);
+        if (DEBUG) Log.d(TAG,"codec type="+type);
+        MediaCodecList allCodecs = new MediaCodecList(MediaCodecList.ALL_CODECS);
+        MediaFormat format = MediaFormat.createVideoFormat(type,videoWidth,videoHeight);
+        try{
+            String encodeName = allCodecs.findEncoderForFormat(format);
+            if (DEBUG) Log.d(TAG,"encodeName="+encodeName);
+        } catch (IllegalArgumentException| NullPointerException e){
+            e.printStackTrace();
+            if (DEBUG) Log.d(TAG,"error="+e.getLocalizedMessage());
+            mUnsupportedResolution = true;
+        } finally {
+            if (mUnsupportedResolution) {
+                RotateTextToast.makeText(mActivity, R.string.error_app_unsupported_profile,
+                        Toast.LENGTH_LONG).show();
+                return;
             }
         }
 
@@ -4973,22 +4987,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Context.ACTIVITY_SERVICE);
             ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
             am.getMemoryInfo(memInfo);
-            SECONDARY_SERVER_MEM = memInfo.secondaryServerThreshold;
         }
 
         long totalMemory = Runtime.getRuntime().totalMemory();
         long maxMemory = Runtime.getRuntime().maxMemory();
         long remainMemory = maxMemory - totalMemory;
 
-        MemInfoReader reader = new MemInfoReader();
-        reader.readMemInfo();
-        long[] info = reader.getRawInfo();
-        long availMem = (info[Debug.MEMINFO_FREE] + info[Debug.MEMINFO_CACHED]) * 1024;
-
-        if (availMem <= SECONDARY_SERVER_MEM || remainMemory <= LONGSHOT_CANCEL_THRESHOLD) {
-            Log.e(TAG, "cancel longshot: free=" + info[Debug.MEMINFO_FREE] * 1024
-                    + " cached=" + info[Debug.MEMINFO_CACHED] * 1024
-                    + " threshold=" + SECONDARY_SERVER_MEM);
+        if (remainMemory <= LONGSHOT_CANCEL_THRESHOLD) {
+            Log.e(TAG, "cancel longshot: remainMemory=" + remainMemory
+                    + " threshold=" + LONGSHOT_CANCEL_THRESHOLD);
             RotateTextToast.makeText(mActivity, R.string.msg_cancel_longshot_for_limited_memory,
                     Toast.LENGTH_SHORT).show();
             return true;
@@ -6153,6 +6160,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                 case UPDATE_RECORD_TIME: {
                     updateRecordingTime();
+                    break;
+                }
+                case VOICE_INTERACTION_CAPTURE: {
+                    if (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA && mIsVoiceTakePhote) {
+                        onShutterButtonClick();
+                        mIsVoiceTakePhote = false;
+                    }
                     break;
                 }
             }
