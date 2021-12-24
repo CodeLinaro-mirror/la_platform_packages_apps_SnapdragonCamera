@@ -194,6 +194,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_DEVELOPER_MENU = "pref_camera2_developer_menu_key";
     public static final String KEY_RESTORE_DEFAULT = "pref_camera2_restore_default_key";
     public static final String KEY_FOCUS_DISTANCE = "pref_camera2_focus_distance_key";
+    public static final String KEY_EV_FOR_LONGEXPOSURE = "pref_camera2_ev_for_longexposure_key";
+    public static final String KEY_PREVIEW_EV = "pref_camera2_preview_ev_key";
     public static final String KEY_INSTANT_AEC = "pref_camera2_instant_aec_key";
     public static final String KEY_SATURATION_LEVEL = "pref_camera2_saturation_level_key";
     public static final String KEY_ANTI_BANDING_LEVEL = "pref_camera2_anti_banding_level_key";
@@ -1271,6 +1273,21 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return result;
     }
+    private boolean setPreferenceValue(String key, String value) {
+        boolean result = false;
+        String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
+                getCurrentPrepNameKey());
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName,
+                Context.MODE_PRIVATE);
+        String prefValue = sharedPreferences.getString(key, "");
+        if (prefValue != value) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(key, value);
+            editor.apply();
+            result = true;
+        }
+        return result;
+    }
 
     public void setProModeSliderValueForAutTest(String key, String value) {
         float valueF = 1.0f;
@@ -1295,7 +1312,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Context.MODE_PRIVATE);
         return sharedPreferences.getFloat(key, 0.5f);
     }
-
     public JSONArray getVideoSettings() {
         StringBuilder stringBuilder = new StringBuilder();
         try {
@@ -1352,21 +1368,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
             list.add(ss);
             notifyListeners(list);
         }
-    }
-    private boolean setPreferenceValue(String key, String value) {
-        boolean result = false;
-        String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
-                getCurrentPrepNameKey());
-        SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName,
-                Context.MODE_PRIVATE);
-        String prefValue = sharedPreferences.getString(key, "");
-        if (prefValue != value) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString(key, value);
-            editor.apply();
-            result = true;
-        }
-        return result;
     }
     public boolean setValue(String key, Set<String> set) {
         ListPreference pref = mPreferenceGroup.findPreference(key);
@@ -2032,6 +2033,21 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public long[] getExposureRangeValues(int cameraId) {
         long[] exposureRange = null;
+        try {
+            exposureRange =  mCharacteristics.get(cameraId).get(
+                    CaptureModule.EXPOSURE_RANGE);
+            if (exposureRange == null) {
+                Log.w(TAG, "get exposure range modes is null.");
+                return null;
+            }
+        } catch(IllegalArgumentException e) {
+            Log.w(TAG, "IllegalArgumentException Supported exposure range modes is null.");
+        }
+        return exposureRange;
+    }
+    public long[] getExposureRangeValues() {
+        long[] exposureRange = null;
+        int cameraId = mCaptureModule.getMainCameraId();
         try {
             exposureRange =  mCharacteristics.get(cameraId).get(
                     CaptureModule.EXPOSURE_RANGE);

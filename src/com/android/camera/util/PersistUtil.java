@@ -476,6 +476,22 @@ public class PersistUtil {
 
     public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }
     public static boolean showMFNRswitch(){return PERSIST_SHOW_MFNR_SWITCH;}
+    public static long strToLong(String str,long value) {
+        try {
+            long longStr = Long.parseLong(str);
+            return longStr;
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
+    public static int strToInt(String str,int value) {
+        try {
+            int intStr = Integer.parseInt(str);
+            return intStr;
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
     public static float getLuxIdxThreadhold(){
         return Float.parseFloat(PERSIST_CAMERA_LUX_IDX_THREADHOLD);
     }

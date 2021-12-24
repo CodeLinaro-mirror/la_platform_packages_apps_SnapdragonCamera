@@ -1400,6 +1400,7 @@ public class SettingsActivity extends PreferenceActivity {
                     }
                     proModeOnlyList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     proModeOnlyList.add(SettingsManager.KEY_TONE_MAPPING);
+                    proModeOnlyList.add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
                     addDeveloperOptions(developer, proModeOnlyList);
                 }
                 break;

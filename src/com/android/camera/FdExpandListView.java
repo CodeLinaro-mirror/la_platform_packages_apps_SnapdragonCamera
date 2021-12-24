@@ -161,7 +161,6 @@ public class FdExpandListView  {
                 @Override
                 public void onClick(View v) {
                     updateFDKey(groupPosition,childPosition);
-
                     notifyDataSetChanged();
                 }
             });
@@ -200,10 +199,7 @@ public class FdExpandListView  {
             String info = getFDEntry(groupPosition);
             tv.setText(key);
             TextView expandinfo =(TextView) convertView.findViewById(R.id.parent_info);
-
             expandinfo.setText(info);
-
-
             return convertView;
         }
 

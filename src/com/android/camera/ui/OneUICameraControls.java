@@ -34,11 +34,12 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
-
+import android.widget.RelativeLayout;
 import com.android.camera.CaptureModule;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;
 import com.android.camera.SettingsManager;
 import com.android.camera.Storage;
+import android.graphics.Color;
 
 import org.codeaurora.snapcam.R;
 
@@ -104,11 +105,29 @@ public class OneUICameraControls extends RotatableLayout {
     private TextView mManualText;
     private TextView mWhiteBalanceText;
     private TextView mIsoText;
+    private TextView mExposure;
+    private TextView mFocusDistance;
+    private TextView mWhiteBalance;
+    private TextView mIso;
+    private TextView mShutterSpeedText;
+    private TextView mShutterSpeed;
     private boolean mProModeOn = false;
     private RotateLayout mExposureRotateLayout;
     private RotateLayout mManualRotateLayout;
     private RotateLayout mWhiteBalanceRotateLayout;
     private RotateLayout mIsoRotateLayout;
+    private RotateLayout mShutterSpeedLayout;
+    private LinearLayout mExposureLayout;
+    private LinearLayout mManualLayout;
+    private LinearLayout mWBLayout;
+    private LinearLayout mISOLayout;
+    private LinearLayout mShutterLayout;
+    private static final int BLUE = 0xff4693fb;
+    private static final int GREY = 0xff808080;
+    private TextView[] mProViews;
+    private boolean isExposureEnable = true;
+
+
 
     public OneUICameraControls(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -174,63 +193,110 @@ public class OneUICameraControls extends RotatableLayout {
         mManualText = (TextView) findViewById(R.id.manual_value);
         mWhiteBalanceText = (TextView) findViewById(R.id.white_balance_value);
         mIsoText = (TextView) findViewById(R.id.iso_value);
+        mShutterSpeedText = (TextView) findViewById(R.id.shutterspeed_value);
         mProMode = (ProMode) findViewById(R.id.promode_slider);
+
+        mExposure =  (TextView) findViewById(R.id.exposure_text);
+        mFocusDistance = (TextView) findViewById(R.id.focusdistance_text);
+        mWhiteBalance = (TextView) findViewById(R.id.whitebalance_text);
+        mIso = (TextView) findViewById(R.id.iso_text);
+        mShutterSpeed = (TextView) findViewById(R.id.shutterspeed_text);
         mProMode.initialize(this);
 
         mExposureRotateLayout = (RotateLayout) findViewById(R.id.exposure_rotate_layout);
         mManualRotateLayout = (RotateLayout) findViewById(R.id.manual_rotate_layout);
         mWhiteBalanceRotateLayout = (RotateLayout) findViewById(R.id.white_balance_rotate_layout);
         mIsoRotateLayout = (RotateLayout) findViewById(R.id.iso_rotate_layout);
+        mShutterSpeedLayout = (RotateLayout) findViewById(R.id.shutterspeed_rotate_layout);
+        mExposureLayout = (LinearLayout) findViewById(R.id.exposure_layout);
+        mManualLayout =  (LinearLayout) findViewById(R.id.manual_layout);
+        mWBLayout = (LinearLayout) findViewById(R.id.wb_layout);
+        mISOLayout = (LinearLayout) findViewById(R.id.iso_layout);
+        mShutterLayout = (LinearLayout) findViewById(R.id.shutterspeed_layout);
+        mProViews = new TextView[]{
+                mExposure, mExposureText, mFocusDistance,
+                mManualText,mShutterSpeed, mShutterSpeedText,
+                 mWhiteBalance, mWhiteBalanceText, mIso, mIsoText
+        };
 
-        mExposureText.setOnClickListener(new OnClickListener() {
+        mExposure.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                if(!isExposureEnable) return;
                 resetProModeIcons();
                 int mode = mProMode.getMode();
                 if (mode == ProMode.EXPOSURE_MODE) {
                     mProMode.setMode(ProMode.NO_MODE);
+                    mExposure.setTextColor(Color.WHITE);
+                    mExposureText.setTextColor(Color.WHITE);
                 } else {
                     mExposureText.setSelected(true);
                     mProMode.setMode(ProMode.EXPOSURE_MODE);
+                    setProModeUi(mExposure,mExposureText);
                 }
             }
         });
-        mManualText.setOnClickListener(new OnClickListener() {
+        mFocusDistance.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 resetProModeIcons();
                 int mode = mProMode.getMode();
                 if (mode == ProMode.MANUAL_MODE) {
                     mProMode.setMode(ProMode.NO_MODE);
+                    mFocusDistance.setTextColor(Color.WHITE);
+                    mManualText.setTextColor(Color.WHITE);
                 } else {
                     mManualText.setSelected(true);
                     mProMode.setMode(ProMode.MANUAL_MODE);
+                    setProModeUi(mFocusDistance,mManualText);
                 }
             }
         });
-        mWhiteBalanceText.setOnClickListener(new OnClickListener() {
+        mShutterSpeed.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                resetProModeIcons();
+                int mode = mProMode.getMode();
+                if (mode == ProMode.EXPOSURE_TIME_MODE) {
+                    mProMode.setMode(ProMode.NO_MODE);
+                    mShutterSpeedText.setTextColor(Color.WHITE);
+                    mShutterSpeed.setTextColor(Color.WHITE);
+                } else {
+                    mShutterSpeedText.setSelected(true);
+                    mProMode.setMode(ProMode.EXPOSURE_TIME_MODE);
+                    setProModeUi(mShutterSpeed,mShutterSpeedText);
+                }
+            }
+        });
+        mWhiteBalance.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 resetProModeIcons();
                 int mode = mProMode.getMode();
                 if (mode == ProMode.WHITE_BALANCE_MODE) {
                     mProMode.setMode(ProMode.NO_MODE);
+                    mWhiteBalance.setTextColor(Color.WHITE);
+                    mWhiteBalanceText.setTextColor(Color.WHITE);
                 } else {
                     mWhiteBalanceText.setSelected(true);
                     mProMode.setMode(ProMode.WHITE_BALANCE_MODE);
+                    setProModeUi(mWhiteBalance,mWhiteBalanceText);
                 }
             }
         });
-        mIsoText.setOnClickListener(new OnClickListener() {
+        mIso.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 resetProModeIcons();
                 int mode = mProMode.getMode();
                 if (mode == ProMode.ISO_MODE) {
                     mProMode.setMode(ProMode.NO_MODE);
+                    mIso.setTextColor(Color.WHITE);
+                    mIsoText.setTextColor(Color.WHITE);
                 } else {
                     mIsoText.setSelected(true);
                     mProMode.setMode(ProMode.ISO_MODE);
+                    setProModeUi(mIso,mIsoText);
                 }
             }
         });
@@ -251,7 +317,16 @@ public class OneUICameraControls extends RotatableLayout {
         mSceneModeSwitcher.setVisibility(View.GONE);
         setProModeParameters();
     }
+    private void setProModeUi(TextView v1,TextView v2){
+        for (TextView v :mProViews){
+            if(v != null && (v == v1 || v == v2)){
+                v.setTextColor(BLUE);
+            }else {
+                v.setTextColor(Color.WHITE);
+            }
+        }
 
+    }
     @Override
     public void onSizeChanged(int w, int h, int oldw, int oldh){
         super.onSizeChanged(w, h, oldw, oldh);
@@ -532,10 +607,11 @@ public class OneUICameraControls extends RotatableLayout {
                 ((Rotatable) v).setOrientation(orientation, animation);
             }
         }
-        mExposureRotateLayout.setOrientation(orientation, animation);
+/*        mExposureRotateLayout.setOrientation(orientation, animation);
         mManualRotateLayout.setOrientation(orientation, animation);
         mWhiteBalanceRotateLayout.setOrientation(orientation, animation);
         mIsoRotateLayout.setOrientation(orientation, animation);
+        mShutterSpeedLayout.setOrientation(orientation, animation);*/
         mProMode.setOrientation(orientation);
         layoutRemaingPhotos();
     }
@@ -603,11 +679,10 @@ public class OneUICameraControls extends RotatableLayout {
 
     private void setProModeParameters() {
         int width = (mWidth > mHeight) ? mHeight : mWidth;
-        ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(width/ 4, width/ 4);
-        mExposureText.setLayoutParams(lp);
-        mManualText.setLayoutParams(lp);
-        mWhiteBalanceText.setLayoutParams(lp);
-        mIsoText.setLayoutParams(lp);
+        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(width/ 5, width/ 15);
+        for(TextView v :mProViews){
+            v.setLayoutParams(llp);
+        }
     }
 
     private void initializeProMode(boolean promode) {
@@ -617,9 +692,23 @@ public class OneUICameraControls extends RotatableLayout {
             return;
         }
         mProModeLayout.setVisibility(VISIBLE);
-        mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() - 48);
+        mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() -100);
     }
 
+    public void setModeDisable(int mode,boolean isEnable) {
+        switch (mode) {
+            case ProMode.EXPOSURE_MODE:
+                android.util.Log.d(TAG,"zcl,disable mode");
+                if(!isEnable) {
+                    mExposure.setTextColor(GREY);
+                    isExposureEnable = false;
+                }else{
+                    mExposure.setTextColor(Color.WHITE);
+                    isExposureEnable = true;
+                };
+                break;
+        }
+    }
     public void updateProModeText(int mode, String value) {
         switch (mode) {
             case ProMode.EXPOSURE_MODE:
@@ -634,6 +723,8 @@ public class OneUICameraControls extends RotatableLayout {
             case ProMode.ISO_MODE:
                 mIsoText.setText(value);
                 break;
+            case ProMode.EXPOSURE_TIME_MODE:
+                mShutterSpeedText.setText(value);
         }
     }
 }
