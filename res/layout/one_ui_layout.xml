@@ -202,6 +202,10 @@
             android:textSize="14dip"
             android:layout_gravity="center_horizontal"
             android:layout_above="@+id/zoom_seekbar"
+            android:alpha="0.7"
+            android:gravity="center"
+            android:clickable="true"
+            android:background="#D3D3D3"
             android:textColor="@android:color/white">
         </TextView>
 

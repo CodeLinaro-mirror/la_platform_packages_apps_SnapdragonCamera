@@ -329,7 +329,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     private LinearLayout mZoomLinearLayout;
 
-    private TextView mZoomSwitch;
     private int mZoomIndex = 0;
 
     private TextView mOfflineDumpTrigger;
@@ -691,58 +690,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         } else {
             mAFViewRender.setVisible(false);
         }
-        mZoomSwitch = (TextView)mRootView.findViewById(R.id.zoom_switch);
-        mZoomSwitch.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String[] entries;
-                String[] values;
-                float[] zoomRatioRange = mSettingsManager.getSupportedRatioZoomRange(
-                        mModule.getMainCameraId());
-                if (zoomRatioRange != null && zoomRatioRange[0] <1){
-                    String minZoomRatio = String.valueOf(zoomRatioRange[0]);
-                    entries = mActivity.getResources().getStringArray(
-                            R.array.pref_camera2_zomm_switch_wide_entries);
-                    values = mActivity.getResources().getStringArray(
-                            R.array.pref_camera2_zomm_switch_wide_entryvalues);
-
-                    entries[0] = minZoomRatio + "x";
-                    values[0] = minZoomRatio;
-                } else {
-                    entries = mActivity.getResources().getStringArray(
-                            R.array.pref_camera2_zomm_switch_entries);
-                    values = mActivity.getResources().getStringArray(
-                            R.array.pref_camera2_zomm_switch_entryvalues);
-                }
-                mZoomIndex = mZoomIncrease? mZoomIndex+1 : mZoomIndex -1;
-                if (mZoomIndex <= 0){
-                    mZoomIndex = 0;
-                    mZoomIncrease = true;
-                }
-
-                if (mZoomIndex >= values.length - 1){
-                    mZoomIndex = values.length - 1;
-                    mZoomIncrease = false;
-                }
-
-                float from  = mModule.getZoomValue();
-                float to = Float.valueOf(values[mZoomIndex]);
-                float range = to - from;
-                int frame = Math.abs((int)range * ZOOM_SMOOTH_FRAME);
-                if(frame == 0)
-                    frame = ZOOM_SMOOTH_FRAME;
-                else if(frame > ZOOM_SMOOTH_FRAME_MAX)
-                    frame = ZOOM_SMOOTH_FRAME_MAX;
-                module.updateZoomSmooth(from,to,frame);
-                if(mModule.onZoomChanged(to)) {
-                    mZoomSwitch.setText(entries[mZoomIndex]);
-                    if (mZoomRenderer != null) {
-                        mZoomRenderer.setZoom(to);
-                    }
-                }
-            }
-        });
-
         mOfflineDumpTrigger = (TextView)mRootView.findViewById(R.id.offline_dump_trigger);
         updateOfflineDumpTrigger(View.GONE);
         mOfflineDumpTrigger.setOnClickListener(new View.OnClickListener() {
@@ -938,6 +885,62 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                     mModule.getMainCameraId());
         }
+        mZoomValueText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
+                        isRTBModeInSelectMode()){
+                    float[] zoomRTBRange = mSettingsManager.getSupportedBokenRatioZoomRange(
+                           mModule.getMainCameraId());
+                    if(zoomRTBRange[0] > 1 ) {
+                        return;
+                    }
+                }
+                String[] entries;
+                String[] values;
+                float[] zoomRatioRange = mSettingsManager.getSupportedRatioZoomRange(
+                        mModule.getMainCameraId());
+                if (zoomRatioRange != null && zoomRatioRange[0] <1){
+                    String minZoomRatio = String.valueOf(zoomRatioRange[0]);
+                    entries = mActivity.getResources().getStringArray(
+                            R.array.pref_camera2_zomm_switch_wide_entries);
+                    values = mActivity.getResources().getStringArray(
+                            R.array.pref_camera2_zomm_switch_wide_entryvalues);
+
+                    entries[0] = minZoomRatio + "x";
+                    values[0] = minZoomRatio;
+                } else {
+                    entries = mActivity.getResources().getStringArray(
+                            R.array.pref_camera2_zomm_switch_entries);
+                    values = mActivity.getResources().getStringArray(
+                            R.array.pref_camera2_zomm_switch_entryvalues);
+                }
+                float from  = mModule.getZoomValue();
+                for(int i = 0; i<values.length; i++){
+                    if(from >= Float.valueOf(values[i])) continue;
+                    mZoomIndex =i;
+                    break;
+                }
+                if(from >= Float.valueOf(values[values.length - 1])){
+                    mZoomIndex = 0;
+                }
+                float to = Float.valueOf(values[mZoomIndex]);
+                float range = to - from;
+                int frame = Math.abs((int)range * ZOOM_SMOOTH_FRAME);
+                if(frame == 0)
+                    frame = ZOOM_SMOOTH_FRAME;
+                else if(frame > ZOOM_SMOOTH_FRAME_MAX)
+                    frame = ZOOM_SMOOTH_FRAME_MAX;
+                mModule.updateZoomSmooth(from,to,frame);
+                if(mModule.onZoomChanged(to)) {
+                    mZoomValueText.setText(entries[mZoomIndex]);
+                    if (mZoomRenderer != null) {
+                        mZoomRenderer.setZoom(to);
+                    }
+                }
+            }
+        });
+
         if (mModule.isExtendedMaxZoomEnable()) {
             float maxZoom = mSettingsManager.getSupportedExtendedMaxZoom(
                     mModule.getMainCameraId());
@@ -1109,12 +1112,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
-    public void hideZoomSwitch(){
-        if (mZoomSwitch != null){
-            mZoomSwitch.setVisibility(View.GONE);
-        }
-    }
-
     public void hideZoomSeekBar() {
         if (mZoomLinearLayout != null) {
             mZoomLinearLayout.setVisibility(View.GONE);
@@ -1124,9 +1121,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.GONE);
-        }
-        if (mZoomSwitch != null) {
-            mZoomSwitch.setVisibility(View.GONE);
         }
     }
 
@@ -1139,16 +1133,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.VISIBLE);
-        }
-        if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                isRTBModeInSelectMode()) {
-            if (mZoomSwitch != null) {
-                mZoomSwitch.setVisibility(View.GONE);
-            }
-        } else {
-            if (mZoomSwitch != null) {
-                mZoomSwitch.setVisibility(View.VISIBLE);
-            }
         }
         if(mFilterMenuStatus == FILTER_MENU_ON){
             hideZoomSeekBar();
@@ -1451,13 +1435,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
 
         mZoomIncrease = true;
-        mZoomSwitch.setText("1x");
-        if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                isRTBModeInSelectMode()) {
-            mZoomSwitch.setVisibility(View.GONE);
-        } else {
-            mZoomSwitch.setVisibility(View.VISIBLE);
-        }
         mFaceView.initMode();
         hideFrontBackSwither();
         if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
@@ -1469,16 +1446,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mCameraControls.setProMode(promode);
         if (promode) {
             mVideoButton.setVisibility(View.INVISIBLE);
-            mZoomSwitch.setVisibility(View.INVISIBLE);
             //mFlashButton.setVisibility(View.INVISIBLE);
         } else if (mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL &&
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO) {
             mVideoButton.setVisibility(View.VISIBLE);
         } else if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
                 isRTBModeInSelectMode()){
-            mZoomSwitch.setVisibility(View.GONE);
-        } else {
-            mZoomSwitch.setVisibility(View.VISIBLE);
         }
     }
 
