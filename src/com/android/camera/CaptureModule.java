@@ -3521,6 +3521,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     NamedEntity name = mNamedImages.getNextNameEntity();
                                     String title = (name == null) ? null : name.title;
                                     long date = (name == null) ? -1 : name.date;
+                                    if(image == null) return;
                                     byte[] bytes = getJpegData(image);
                                     Log.i(TAG, "image format:" + image.getFormat());
                                     if (image.getFormat() == ImageFormat.RAW10) {
@@ -5901,7 +5902,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             return false;
         }
 
-        requestAudioFocus();
+        if (!requestAudioFocus()) {
+            Log.w(TAG, "Audio focus request failed, recording failed");
+            return false;
+        }
         try {
             mMediaRecorder.start(); // Recording is now started
             mMediaRecorderStarted = true;
@@ -8838,15 +8842,18 @@ public class CaptureModule implements CameraModule, PhotoController,
      * Make sure we're not recording music playing in the background, ask the
      * MediaPlaybackService to pause playback.
      */
-    private void requestAudioFocus() {
+    private boolean requestAudioFocus() {
+        boolean requestResult = true;
         AudioManager am = (AudioManager)mActivity.getSystemService(Context.AUDIO_SERVICE);
         // Send request to obtain audio focus. This will stop other
         // music stream.
         int result = am.requestAudioFocus(null, AudioManager.STREAM_MUSIC,
                 AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
         if (result == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
+            requestResult = false;
             Log.v(TAG, "Audio focus request failed");
         }
+        return requestResult;
     }
 
     private void releaseAudioFocus() {
