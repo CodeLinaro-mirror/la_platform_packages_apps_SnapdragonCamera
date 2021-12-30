@@ -1012,12 +1012,14 @@ public class MultiSettingsActivity extends PreferenceActivity {
 
             if (sizes != null) {
                 for (int i = 0; i < sizes.length; i++) {
+                    if (sizes[i].getWidth() == sizes[i].getHeight()) continue;
                     res.add(sizes[i].toString());
                 }
             }
 
             if (highResSizes != null) {
                 for (int i = 0; i < highResSizes.length; i++) {
+                    if (sizes[i].getWidth() == sizes[i].getHeight()) continue;
                     res.add(highResSizes[i].toString());
                 }
             }
