@@ -44,6 +44,13 @@
             android:title="@string/pref_camera2_concurrent_camera_title"/>
 
         <SwitchPreference
+            android:defaultValue="true"
+            android:icon="@drawable/face_detection"
+            android:key="pref_multi_camera_facedetection_key"
+            android:layout="@layout/preference"
+            android:title="@string/pref_camera_facedetection_title" />
+
+        <SwitchPreference
             android:defaultValue="false"
             android:icon="@drawable/continuous_shot"
             android:key="pref_multi_camera_hal_zsl_key"
@@ -123,6 +130,13 @@
             android:entryValues="@array/pref_camera2_concurrent_camera_entryvalues"
             android:title="@string/pref_camera2_concurrent_camera_title"/>
 
+        <SwitchPreference
+            android:defaultValue="true"
+            android:icon="@drawable/face_detection"
+            android:key="pref_multi_camera_facedetection_key"
+            android:layout="@layout/preference"
+            android:title="@string/pref_camera_facedetection_title" />
+
         <ListPreference
             android:defaultValue="@string/pref_multi_camera_video_quality_default"
             android:entries="@array/pref_camera2_video_quality_entries"
@@ -134,6 +148,26 @@
             android:title="@string/pref_video_quality_title" />
 
         <ListPreference
+            android:defaultValue="@string/pref_camera_videoencoder_default"
+            android:entries="@array/pref_camera2_videoencoder_entries"
+            android:entryValues="@array/pref_camera2_videoencoder_entryvalues"
+            android:icon="@drawable/video_encoding"
+            android:key="pref_multi_camera_videoencoder1_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera_videoencoder_title" />
+
+        <ListPreference
+            android:defaultValue="@string/pref_camera2_videoencoderprofile_default"
+            android:entries="@array/pref_camera2_videoencoderprofile_entry"
+            android:entryValues="@array/pref_camera2_videoencoderprofile_entryvalues"
+            android:icon="@drawable/video_encoding"
+            android:key="pref_multi_camera_videoencoderprofile1_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_videoencoderprofile_title" />
+
+        <ListPreference
             android:defaultValue="@string/pref_multi_camera_video_quality_default"
             android:entries="@array/pref_camera2_video_quality_entries"
             android:entryValues="@array/pref_camera2_video_quality_entryvalues"
@@ -142,6 +176,26 @@
             android:layout="@layout/preference"
             android:summary="%s"
             android:title="@string/pref_video_quality_title" />
+
+        <ListPreference
+            android:defaultValue="@string/pref_camera_videoencoder_default"
+            android:entries="@array/pref_camera2_videoencoder_entries"
+            android:entryValues="@array/pref_camera2_videoencoder_entryvalues"
+            android:icon="@drawable/video_encoding"
+            android:key="pref_multi_camera_videoencoder2_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera_videoencoder_title" />
+
+        <ListPreference
+            android:defaultValue="@string/pref_camera2_videoencoderprofile_default"
+            android:entries="@array/pref_camera2_videoencoderprofile_entry"
+            android:entryValues="@array/pref_camera2_videoencoderprofile_entryvalues"
+            android:icon="@drawable/video_encoding"
+            android:key="pref_multi_camera_videoencoderprofile2_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_videoencoderprofile_title" />
 
         <ListPreference
             android:defaultValue="@string/pref_multi_camera_video_quality_default"
@@ -192,6 +246,16 @@
             android:layout="@layout/preference"
             android:summary="%s"
             android:title="@string/pref_camera_video_rotation_title" />
+
+        <ListPreference
+            android:key="pref__multi_camera_eis_key"
+            android:defaultValue="@string/pref_camera2_eis_default"
+            android:title="@string/pref_camera2_eis_title"
+            android:icon="@drawable/video_rotation"
+            android:entries="@array/pref_camera2_eis_entries"
+            android:entryValues="@array/pref_camera2_eis_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
 
     </PreferenceCategory>
 

@@ -22,8 +22,10 @@ import android.content.Context;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
+import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -37,11 +39,13 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.hardware.camera2.params.Face;
 import android.location.Location;
 import android.media.AudioManager;
 import android.media.CamcorderProfile;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.MediaCodecInfo;
 import android.media.MediaRecorder;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
@@ -81,6 +85,7 @@ import com.android.camera.CaptureModule;
 import com.android.camera.CameraSettings;
 import com.android.camera.ComboPreferences;
 import com.android.camera.Exif;
+import com.android.camera.ExtendedFace;
 import com.android.camera.exif.ExifInterface;
 import com.android.camera.LocationManager;
 import com.android.camera.MediaSaveService;
@@ -94,6 +99,7 @@ import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
 import com.android.camera.util.SettingTranslation;
 import com.android.camera.ui.RotateTextToast;
+import com.android.camera.util.VendorTagUtil;
 
 import org.codeaurora.snapcam.R;
 
@@ -101,6 +107,8 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         MediaRecorder.OnErrorListener, MediaRecorder.OnInfoListener {
 
     private static final String TAG = "SnapCam_MultiVideoModule";
+    private static final String FD_TAG = "MultiVideoModule_FD";
+    private static final boolean FD_DEBUG = PersistUtil.getFdDebug();
     public static final boolean DEBUG =
             (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_LOG) ||
                     (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_ALL);
@@ -114,20 +122,42 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     private static final int OPEN_CAMERA = 1;
     private static final int CREATE_SESSION = 2;
 
+    private int[] mDisplayRotations = new int[MAX_NUM_CAM];
+    private int[] mDisplayOrientations = new int[MAX_NUM_CAM];
+    private boolean[] mEisStopMediaRecords = new boolean[MAX_NUM_CAM];
+
     private static final int CLEAR_SCREEN_DELAY = 4;
     private static final int UPDATE_RECORD_TIME = 5;
+    private static final int STOP_RECORD_EIS = 6;
 
     private static final int SCREEN_DELAY = 2 * 60 * 1000;
 
     private static final int MAX_NUM_CAM = 16;
 
+    /** Add for EIS Configuration */
+    private int mStreamConfigOptMode = 0;
+    private static final int STREAM_CONFIG_MODE_QTIEIS_REALTIME = 0xF004;
+    private static final int STREAM_CONFIG_MODE_QTIEIS_LOOKAHEAD = 0xF008;
+
     private int mCameraListIndex = 0;
     private int mLastCameraId;
+
+    private Face[] mPreviewFaces = null;
+    private Face[] mStickyFaces = null;
+    private ExtendedFace[] mExFaces = null;
+    private ExtendedFace[] mStickyExFaces = null;
+    private Rect[] mCropRegion = new Rect[MAX_NUM_CAM];
 
     private static final CaptureRequest.Key<Byte> override_resource_cost_validation =
             new CaptureRequest.Key<>(
                     "org.codeaurora.qcamera3.sessionParameters.overrideResourceCostValidation",
                     byte.class);
+    //HDRVideo MODE
+    private static final CaptureRequest.Key<Integer> hdr_video_mode = new CaptureRequest.Key<>(
+            "org.codeaurora.qcamera3.sessionParameters.HDRVideoMode", Integer.class);
+
+    public static final CaptureResult.Key<Byte> result_end_stream =
+            new CaptureResult.Key<>("org.quic.camera.recording.endOfStream", byte.class);
 
     private CameraActivity mActivity;
     private MultiCameraUI mMultiCameraUI;
@@ -146,7 +176,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
 
     private Uri mCurrentVideoUri;
 
-    private boolean mMediaRecorderPausing = false;
+    private boolean[] mMediaRecorderPausings = new boolean[MAX_NUM_CAM];
 
     private boolean mRecordingTimeCountsDown = false;
 
@@ -243,10 +273,12 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             for (String id : concurrentIds){
                 Log.d(TAG, " onResume openCamera id="+id);
                 mCameraIDList.add(id);
+                setDisplayOrientation(Integer.parseInt(id));
             }
         } else {
             Log.d(TAG, " onResume openCamera default 0");
             mCameraIDList.add("0");
+            setDisplayOrientation(0);
         }
 
         mMultiCameraUI.hideSurfaceView();
@@ -254,6 +286,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         for (String cameraId : mCameraIDList){
             int id = Integer.valueOf(cameraId);
             updateVideoSize(id);
+            cropRegionForZoom(id);
             int index = mCameraIDList.indexOf(cameraId);
             if (index != -1) {
                 mMultiCameraUI.setPreviewSize(index, mPreviewSizes[id].getWidth(),
@@ -399,6 +432,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 captureBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
                 captureBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                         CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+                applyVideoEIS(captureBuilder);
 
                 // Orientation
                 int rotation = mActivity.getWindowManager().getDefaultDisplay().getRotation();
@@ -416,21 +450,29 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     @Override
     public void onButtonPause(String[] ids) {
         mRecordingTotalTime += SystemClock.uptimeMillis() - mRecordingStartTime;
-        mMediaRecorderPausing = true;
+        String defaultValue = mActivity.getString(R.string.pref_camera2_eis_default);
+        String value = mLocalSharedPref.getString(MultiSettingsActivity.KEY_VIDEO_EIS, defaultValue);
+        boolean noNeedEndofStreamWhenPause = value != null && value.equals("V3");
         for (String id : ids) {
             int cameraId = Integer.parseInt(id);
-            mMediaRecorders[cameraId].pause();
+            mMediaRecorderPausings[cameraId] = true;
+            if (noNeedEndofStreamWhenPause) {
+                mMediaRecorders[cameraId].pause();
+            } else {
+                setEndOfStream(cameraId,false, false);
+            }
         }
     }
 
     @Override
     public void onButtonContinue(String[] ids) {
-        mMediaRecorderPausing = false;
         for (String id : ids) {
             int cameraId = Integer.parseInt(id);
+            mMediaRecorderPausings[cameraId] = false;
             mMediaRecorders[cameraId].resume();
             mRecordingStartTime = SystemClock.uptimeMillis();
             updateRecordingTime(cameraId);
+            setEndOfStream(cameraId,true, false);
         }
     }
 
@@ -491,6 +533,92 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             if (mIsRecordingVideos[i]) return true;
         }
         return false;
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration config) {
+        Log.v(TAG, "onConfigurationChanged");
+        String[] cameraIds = getCameraIdList();
+        if (cameraIds != null) {
+            for (String id : cameraIds) {
+                int cameraId = Integer.parseInt(id);
+                setDisplayOrientation(cameraId);
+            }
+        }
+    }
+
+    private void updateFaceView(final Face[] faces, final ExtendedFace[] extendedFaces,
+                                final int index) {
+        mPreviewFaces = faces;
+        mExFaces = extendedFaces;
+        if (faces != null) {
+            if (faces.length != 0) {
+                if (FD_DEBUG){
+                    for (int i = 0; i < faces.length; i++){
+                        if (faces[i] != null){
+                            Log.d(FD_TAG,"face i="+i+" ROI="+faces[i].getBounds().toString());
+                        }
+                    }
+                }
+                mStickyFaces = faces;
+                mStickyExFaces = extendedFaces;
+            }
+            mMultiCameraModule.getMainHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    mMultiCameraUI.onFaceDetection(faces, extendedFaces, index);
+                }
+            });
+        }
+    }
+
+    private void updateFaceDetection(int id) {
+        boolean faceDetection = mLocalSharedPref.getBoolean(
+                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION, false);
+        Log.v(TAG, " updateFaceDetection faceDetection :" + faceDetection);
+        int index = mCameraIDList.indexOf(String.valueOf(id));
+
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (faceDetection)
+                    mMultiCameraUI.onStartFaceDetection(index, mDisplayOrientations[index],
+                            isFacingFront(id), mCropRegion[id], mCropRegion[id]);
+                else {
+                    mMultiCameraUI.onStopFaceDetection();
+                }
+            }
+        });
+    }
+
+    private void setDisplayOrientation(int id) {
+        int index = mCameraIDList.indexOf(String.valueOf(id));
+        mDisplayRotations[index] = CameraUtil.getDisplayRotation(mActivity);
+        mDisplayOrientations[index] = CameraUtil.getDisplayOrientationForCamera2(
+                mDisplayRotations[index], id);
+    }
+
+    private boolean isFacingFront(int id) {
+        int facing = mCharacteristics.get(id).get(CameraCharacteristics.LENS_FACING);
+        return facing == CameraCharacteristics.LENS_FACING_FRONT;
+    }
+
+    private Rect cropRegionForZoom(int id) {
+        if (DEBUG) {
+            Log.d(TAG, "cropRegionForZoom " + id);
+        }
+        Rect activeRegion = mCharacteristics.get(id).get(
+                CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        Rect cropRegion = new Rect();
+
+        int xCenter = activeRegion.width() / 2;
+        int yCenter = activeRegion.height() / 2;
+        int xDelta = (int) (activeRegion.width() / (2 * 1.0f));
+        int yDelta = (int) (activeRegion.height() / (2 * 1.0f));
+        cropRegion.set(xCenter - xDelta, yCenter - yDelta, xCenter + xDelta, yCenter + yDelta);
+        Log.d(TAG, "cropRegionForZoom  mCropRegion[id] " +  mCropRegion[id]);
+        mCropRegion[id] = cropRegion;
+        return mCropRegion[id];
     }
 
     private void openCameraInSequence(String id) {
@@ -655,6 +783,17 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         }
                     }
                     break;
+                case STOP_RECORD_EIS:
+                    int cameraId = msg.arg1;
+                    mMultiCameraModule.getMainHandler().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            keepScreenOnAwhile();
+                            mMultiCameraUI.enableVideo(true);
+                        }
+                    });
+                    stopMediaRecordAndSaveFile(cameraId);
+                    break;
             }
         }
     }
@@ -793,7 +932,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
                     MultiSettingsActivity.PREVIEW_HIEGHT_1_1);
         } else if (targetRatio == ratio_4_3) {
-            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH_4_3,
                     MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
         } else if (targetRatio == ratio_16_9) {
             previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH_16_9,
@@ -862,11 +1001,16 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                             Log.v(TAG, " mPreviewRequestBuilders onConfigured id :" + id);
                             // When the session is ready, we start displaying the preview.
                             mCameraPreviewSessions[id] = cameraCaptureSession;
+                            applyFaceDetection(mPreviewRequestBuilders[id]);
+                            updateFaceDetection(id);
+                            setDisplayOrientation(id);
+                            applyVideoEIS(mPreviewRequestBuilders[id]);
                             try {
                                 // Auto focus should be continuous for camera preview.
                                 mPreviewRequestBuilders[id].set(CaptureRequest.CONTROL_AF_MODE,
                                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
                                 // Finally, we start displaying the camera preview.
+                                mPreviewRequestBuilders[id].setTag(id);
                                 mCameraPreviewSessions[id].setRepeatingRequest(
                                         mPreviewRequestBuilders[id].build(),
                                         mCaptureCallback, mMultiCameraModule.getMyCameraHandler());
@@ -893,8 +1037,9 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             outConfigurations.add(new OutputConfiguration(surface));
 
             sessionConfiguration = new SessionConfiguration(
-                    SessionConfiguration.SESSION_REGULAR, outConfigurations,
+                    SessionConfiguration.SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
                     new HandlerExecutor(mCameraHandler), stateCallback);
+            //applyVideoEncoderProfile(mPreviewRequestBuilders[id], id);
             sessionConfiguration.setSessionParameters(mPreviewRequestBuilders[id].build());
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -933,12 +1078,33 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request,
                                         CaptureResult partialResult) {
             process(partialResult);
+
+            int id = (int) partialResult.getRequest().getTag();
+            int index = mCameraIDList.indexOf(String.valueOf(id));
+            Log.d(FD_TAG, "onCaptureProgressed id = " + id + ", index :" + index);
+            Face[] faces = partialResult.get(CaptureResult.STATISTICS_FACES);
+            if (FD_DEBUG)
+                Log.d(FD_TAG,"onCaptureProgressed Detected Face size = " + Integer.toString(faces == null? 0 : faces.length));
+            if (faces != null){
+                updateFaceView(faces, null, index);
+            }
         }
 
         @Override
         public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request,
                                        TotalCaptureResult result) {
             process(result);
+
+            int id = (int) result.getRequest().getTag();
+            int index = mCameraIDList.indexOf(String.valueOf(id));
+            Log.d(FD_TAG, "onCaptureCompleted id = " + id + ", index :" + index);
+            Face[] faces = result.get(CaptureResult.STATISTICS_FACES);
+            if (FD_DEBUG)
+                Log.d(FD_TAG, "onCaptureCompleted Detected Face size = " + Integer.toString(faces == null ? 0 : faces.length));
+            if (faces != null) {
+                updateFaceView(faces, null, index);
+            }
+            waitEISAndStopMediaRecorder(id, result);
         }
 
     };
@@ -1001,7 +1167,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     }
 
     private void startRecordingVideo(final int id) {
-        int index = mCameraIDList.indexOf(String.valueOf(id));
+        final int index = mCameraIDList.indexOf(String.valueOf(id));
         if (null == mCameraDevices[id] ||
                 !mMultiCameraUI.getSurfaceViewList().get(index).isEnabled()) {
             return;
@@ -1020,6 +1186,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 mRecordRequestBuilders[id].set(CaptureRequest.NOISE_REDUCTION_MODE,
                         CaptureRequest.NOISE_REDUCTION_MODE_HIGH_QUALITY);
             }
+            applyVideoEIS(mRecordRequestBuilders[id]);
             List<Surface> surfaces = new ArrayList<>();
 
             // Set up Surface for the camera preview
@@ -1047,14 +1214,17 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         public void run() {
                             mIsRecordingVideos[id] = true;
                             // Start recording
+                            updateFaceDetection(id);
+                            setDisplayOrientation(id);
                             mMediaRecorders[id].start();
                             requestAudioFocus();
                             mRecordingTotalTime = 0L;
                             mRecordingStartTime = SystemClock.uptimeMillis();
-                            mMediaRecorderPausing = false;
+                            mMediaRecorderPausings[id] = false;
                             mMultiCameraUI.resetPauseButton();
                             mMultiCameraUI.showRecordingUI(true);
                             updateRecordingTime(id);
+                            mEisStopMediaRecords[index] = true;
                             Log.v(TAG, " startRecordingVideo done " + id);
                         }
                     });
@@ -1076,16 +1246,23 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         mIsRecordingVideos[id] = false;
         Log.v(TAG, " stopRecordingVideo " + id);
         try {
-            mMediaRecorders[id].setOnErrorListener(null);
-            mMediaRecorders[id].setOnInfoListener(null);
-            // Stop recording
-            mMediaRecorders[id].stop();
-            mMediaRecorders[id].reset();
-            saveVideo(id);
-            keepScreenOnAwhile();
-            // release media recorder
-            releaseMediaRecorder(id);
-            releaseAudioFocus();
+            if (PersistUtil.needEndOfStream() && !isVideoEISDisable()) {
+                setEndOfStream(id, false, true);
+            }
+            if (isVideoEISDisable()) {
+                mMediaRecorders[id].setOnErrorListener(null);
+                mMediaRecorders[id].setOnInfoListener(null);
+                // Stop recording
+                mMediaRecorders[id].stop();
+                mMediaRecorders[id].reset();
+                saveVideo(id);
+
+                // release media recorder
+                releaseMediaRecorder(id);
+                releaseAudioFocus();
+            } else {
+                mMultiCameraUI.enableVideo(false);
+            }
         } catch (RuntimeException e) {
             Log.w(TAG, "MediaRecoder stop fail", e);
             if (mVideoFilenames[id] != null) deleteVideoFile(mVideoFilenames[id]);
@@ -1098,8 +1275,34 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             Log.d(TAG, "Video saved: " + mNextVideoAbsolutePaths[id]);
         }
         mNextVideoAbsolutePaths[id] = null;
-        int lastCameraId = Integer.parseInt(mCameraIDList.get(mCameraIDList.size() - 1));
-        if(!mPaused && id == lastCameraId) {
+        if(!mPaused && isVideoEISDisable()) {
+            createCameraPreviewSession(id, true);
+        }
+    }
+
+    private void stopMediaRecordAndSaveFile(int id) {
+        try {
+            mMediaRecorders[id].setOnErrorListener(null);
+            mMediaRecorders[id].setOnInfoListener(null);
+            // Stop recording
+            mMediaRecorders[id].stop();
+            mMediaRecorders[id].reset();
+            saveVideo(id);
+
+            mMultiCameraModule.getMainHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    keepScreenOnAwhile();
+                }
+            });
+            // release media recorder
+            releaseMediaRecorder(id);
+            releaseAudioFocus();
+        } catch (RuntimeException e) {
+            Log.w(TAG, "MediaRecoder stop fail", e);
+            if (mVideoFilenames[id] != null) deleteVideoFile(mVideoFilenames[id]);
+        }
+        if(!mPaused) {
             createCameraPreviewSession(id, true);
         }
     }
@@ -1115,10 +1318,93 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 }
     };
 
+    private void waitEISAndStopMediaRecorder(int id, CaptureResult result) {
+        boolean isEISV3Disable = isVideoEISDisable();
+        if (!isEISV3Disable) {
+            byte eisEndStream = 0;
+            try {
+                eisEndStream = result.get(result_end_stream);
+            } catch(IllegalArgumentException e) {
+                Log.e(TAG, " no vendorTag result_end_stream :" + result_end_stream);
+            }
+            if (DEBUG) {
+                Log.v(TAG, " waitEISAndStopMediaRecorder eisEndStream :" + eisEndStream + ", id :" + id);
+            }
+            if (eisEndStream == 1) {
+                int index = mCameraIDList.indexOf(String.valueOf(id));
+                if (index != -1 && mEisStopMediaRecords[index]) {
+                    Log.v(TAG, " waitEISAndStopMediaRecorder send message STOP_RECORD_EIS");
+                    mEisStopMediaRecords[index] = false;
+                    Message message = Message.obtain();
+                    message.what = STOP_RECORD_EIS;
+                    message.arg1 = id;
+                    mCameraHandler.sendMessage(message);
+                }
+            }
+        }
+    }
+
     private void keepScreenOnAwhile() {
         mMultiCameraModule.getMainHandler().removeMessages(CLEAR_SCREEN_DELAY);
         mActivity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mMultiCameraModule.getMainHandler().sendEmptyMessageDelayed(CLEAR_SCREEN_DELAY, SCREEN_DELAY);
+    }
+
+    private boolean isVideoEISDisable() {
+        boolean result = true;
+        String defaultValue = mActivity.getString(R.string.pref_camera2_eis_default);
+        String value = mLocalSharedPref.getString(MultiSettingsActivity.KEY_VIDEO_EIS, defaultValue);
+        result = value != null && value.equals("disable");
+        Log.d(TAG, "isVideoEISDisable " + result);
+        return result;
+    }
+
+    private void setEndOfStream(int id, boolean isResume, boolean isStopRecord) {
+        CaptureRequest.Builder captureRequestBuilder = mRecordRequestBuilders[id];
+        captureRequestBuilder.setTag(id);
+        try {
+            if (isResume) {
+                try {
+                    captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
+                    Log.d(TAG, "Set camera id " + id + " endofstream TAG to 0 on Resume");
+                    mCameraPreviewSessions[id].setRepeatingRequest(captureRequestBuilder.build(),
+                            mCaptureCallback, mCameraHandler);
+                } catch(IllegalArgumentException e) {
+                    Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
+                }
+            } else {
+                if ((mMediaRecorderPausings[id] || !mIsRecordingVideos[id]) && (mCameraPreviewSessions[id] != null)) {
+                    mCameraPreviewSessions[id].stopRepeating();
+                    try {
+                        captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
+                        Log.d(TAG, "Set camera id " + id + " endofstream TAG to 1");
+                    } catch (IllegalArgumentException illegalArgumentException) {
+                        Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
+                    }
+                    mCameraPreviewSessions[id].capture(
+                            captureRequestBuilder.build(), mCaptureCallback, mCameraHandler);
+                    Log.d(TAG, "Set camera id " + id + " endofstream TAG is done from APP");
+                    captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
+                }
+                if (!isStopRecord) {
+                    //is pause record
+                    mMediaRecorders[id].pause();
+                }
+                captureRequestBuilder = mPreviewRequestBuilders[id];
+                captureRequestBuilder.setTag(id);
+                if (!isVideoEISDisable() && isStopRecord) {
+                    captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
+                } else {
+                    captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
+                }
+                Log.d(TAG, "Set camera id " + id + " setRepeatingRequest endofstream TAG done");
+                mCameraPreviewSessions[id].setRepeatingRequest(captureRequestBuilder.build(),
+                        mCaptureCallback, mCameraHandler);
+            }
+        } catch (CameraAccessException | IllegalStateException | NullPointerException |
+                IllegalArgumentException e) {
+            e.printStackTrace();
+        }
     }
 
     private void releaseMediaRecorder(int id) {
@@ -1240,7 +1526,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             return;
         }
 
-        if (mMediaRecorderPausing) {
+        if (mMediaRecorderPausings[id]) {
             return;
         }
 
@@ -1305,6 +1591,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         }
         try {
             setUpCaptureRequestBuilder(mRecordRequestBuilders[id]);
+            mRecordRequestBuilders[id].setTag(id);
             mCameraPreviewSessions[id].setRepeatingRequest(mRecordRequestBuilders[id].build(),
                     mCaptureCallback, mMultiCameraModule.getMyCameraHandler());
         } catch (CameraAccessException e) {
@@ -1372,10 +1659,34 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         if (mAudioEncoder != -1) {
             mMediaRecorders[id].setAudioSource(MediaRecorder.AudioSource.MIC);
         }
+
+        String defaultEncoder = mActivity.getString(R.string.pref_camera_videoencoder_default);
+        String encoder = mLocalSharedPref.getString(
+                MultiSettingsActivity.KEY_VIDEO_ENCODER_ + id, defaultEncoder);
+        int videoEncoder = SettingTranslation.getVideoEncoder(encoder);
+        if (DEBUG) Log.d(TAG,"setUpMediaRecorder encoder= "+ encoder + " videoEncoder=" + videoEncoder);
+        mProfile.videoCodec = videoEncoder;
+
         mMediaRecorders[id].setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorders[id].setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         if (mNextVideoAbsolutePaths[id] == null || mNextVideoAbsolutePaths[id].isEmpty()) {
             mNextVideoAbsolutePaths[id] = generateVideoFilename(mProfile.fileFormat, id);
+        }
+
+        String encoderProfile = "Off";
+        String defaultProfile = mActivity.getString(R.string.pref_camera2_videoencoderprofile_default);
+        if (mLocalSharedPref != null) {
+            encoderProfile = mLocalSharedPref.getString(
+                    MultiSettingsActivity.KEY_VIDEO_ENCODER_PROFILE_ + id, defaultProfile);
+        }
+        boolean isVideoEncoderProfileSupported = !encoderProfile.equals("off");
+        Log.d(TAG, "set encoderProfile: " + encoderProfile + " " + isVideoEncoderProfileSupported);
+        if (isVideoEncoderProfileSupported &&
+                VendorTagUtil.isHDRVideoModeSupported(mCameraDevices[id])) {
+            int videoEncoderProfile = SettingTranslation.getVideoEncoderProfile(encoderProfile);
+            Log.d(TAG, "setVideoEncodingProfileLevel: " + videoEncoderProfile + " " + MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel1);
+            mMediaRecorders[id].setVideoEncodingProfileLevel(videoEncoderProfile,
+                    MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel1);
         }
 
         mMediaRecorders[id].setMaxDuration(mMaxVideoDurationInMs);
@@ -1383,7 +1694,8 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         mMediaRecorders[id].setVideoEncodingBitRate(10000000);
         mMediaRecorders[id].setVideoFrameRate(30);
         mMediaRecorders[id].setVideoSize(mVideoSize[id].getWidth(), mVideoSize[id].getHeight());
-        mMediaRecorders[id].setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mMediaRecorders[id].setVideoEncoder(videoEncoder);
+        if (DEBUG) Log.d(TAG," mMediaRecorder.setVideoEncoder="+videoEncoder);
         if (mAudioEncoder != -1) {
             mMediaRecorders[id].setAudioEncoder(mAudioEncoder);
         }
@@ -1405,6 +1717,74 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void applyFaceDetection(CaptureRequest.Builder request) {
+        boolean FdEnable = mLocalSharedPref.getBoolean(
+                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION, false);
+        Log.v(TAG, " applyFaceDetection FdEnable :" + FdEnable);
+        try {
+            int modeValue = CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF;
+            if (FdEnable){
+                modeValue = CaptureRequest.STATISTICS_FACE_DETECT_MODE_SIMPLE;
+            }
+            Log.v(TAG, " applyFaceDetection modeValue :" + modeValue);
+            request.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, modeValue);
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    private void applyVideoEncoderProfile(CaptureRequest.Builder builder, int cameraId) {
+        String profile = mActivity.getString(R.string.pref_camera2_videoencoderprofile_default);
+        if (mLocalSharedPref != null) {
+            profile = mLocalSharedPref.getString(
+                    MultiSettingsActivity.KEY_VIDEO_ENCODER_PROFILE_ + cameraId, profile);
+        }
+        int mode = 0;
+        if (profile.equals("HEVCProfileMain10HDR10")) {
+            mode = 2;
+        } else if (profile.equals("HEVCProfileMain10")) {
+            mode = 1;
+        } else if (profile.equals("HEVCProfileMain10HDR10Plus")) {
+            mode = 3;
+        }
+        Log.d(TAG, "applyVideoEncoderProfile set: " + mode);
+        builder.set(hdr_video_mode, mode);
+        VendorTagUtil.setHDRVideoMode(builder, (byte)mode);
+    }
+
+    private void applyVideoEIS(CaptureRequest.Builder request) {
+        String value = mLocalSharedPref.getString(
+                MultiSettingsActivity.KEY_VIDEO_EIS, "enable");
+
+        if (DEBUG) {
+            Log.d(TAG, "applyVideoEIS EIS select: " + value);
+        }
+        mStreamConfigOptMode = 0;
+        if (value != null) {
+            if (value.equals("V2")) {
+                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
+            } else if (value.equals("V3")) {
+                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_LOOKAHEAD;
+            }
+            byte byteValue = (byte) (value.equals("disable") ? 0x00 : 0x01);
+            try {
+                applyVideoStabilization(request, value.equals("disable"));
+                request.set(CaptureModule.eis_mode, byteValue);
+            } catch (IllegalArgumentException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void applyVideoStabilization(CaptureRequest.Builder builder, boolean isDisabled) {
+        if (isDisabled) {
+            builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CaptureRequest
+                    .CONTROL_VIDEO_STABILIZATION_MODE_OFF);
+        } else {
+            builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CaptureRequest
+                    .CONTROL_VIDEO_STABILIZATION_MODE_ON);
+        }
     }
 
     private void warningToast(final int sourceId) {

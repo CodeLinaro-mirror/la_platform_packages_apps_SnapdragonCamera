@@ -21,7 +21,10 @@ package com.android.camera.multi;
 import android.content.Context;
 import android.content.ContentResolver;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.ImageFormat;
+import android.graphics.Rect;
+import android.graphics.Point;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraAccessException;
@@ -34,6 +37,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.hardware.camera2.params.Face;
 import android.media.CameraProfile;
 import android.media.Image;
 import android.media.ImageReader;
@@ -62,8 +66,9 @@ import java.util.List;
 import com.android.camera.CameraActivity;
 import com.android.camera.CaptureModule;
 import com.android.camera.ComboPreferences;
-import com.android.camera.MediaSaveService;
 import com.android.camera.Exif;
+import com.android.camera.ExtendedFace;
+import com.android.camera.MediaSaveService;
 import com.android.camera.SoundClips;
 import com.android.camera.exif.ExifInterface;
 import com.android.camera.PhotoModule.NamedImages;
@@ -75,6 +80,8 @@ import org.codeaurora.snapcam.R;
 public class MultiCaptureModule implements MultiCamera {
 
     private static final String TAG = "SnapCam_MultiCaptureModule";
+    private static final String FD_TAG = "MultiCaptureModule_FD";
+    private static final boolean FD_DEBUG = PersistUtil.getFdDebug();
     public static final boolean DEBUG =
             (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_LOG) ||
                     (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_ALL);
@@ -95,9 +102,18 @@ public class MultiCaptureModule implements MultiCamera {
     private ArrayList<CameraCharacteristics> mCharacteristics;
     private boolean mPaused = true;
 
+    private Face[] mPreviewFaces = null;
+    private Face[] mStickyFaces = null;
+    private ExtendedFace[] mExFaces = null;
+    private ExtendedFace[] mStickyExFaces = null;
+
+    private int[] mDisplayRotations = new int[MAX_NUM_CAM];
+    private int[] mDisplayOrientations = new int[MAX_NUM_CAM];
+
     private ArrayList<String> mCameraIDList = new ArrayList<>();
     private CameraCaptureSession[] mCameraCaptureSessions = new CameraCaptureSession[MAX_NUM_CAM];
     private ImageReader[] mImageReaders = new ImageReader[MAX_NUM_CAM];
+    private Rect[] mCropRegion = new Rect[MAX_NUM_CAM];
 
     private Size mPreviewSizes[] = new Size[MAX_NUM_CAM];
 
@@ -168,16 +184,19 @@ public class MultiCaptureModule implements MultiCamera {
             for (String id : concurrentIds){
                 Log.d(TAG, " add camera id= "+id);
                 mCameraIDList.add(id);
+                setDisplayOrientation(Integer.parseInt(id));
             }
         } else {
             Log.d(TAG, "default 0");
             mCameraIDList.add("0");
+            setDisplayOrientation(0);
         }
 
         mMultiCameraUI.hideSurfaceView();
         for (String cameraId : mCameraIDList) {
             int id = Integer.valueOf(cameraId);
             createImageReader(id);
+            cropRegionForZoom(id);
             int index = mCameraIDList.indexOf(cameraId);
             Log.d(TAG, "onResume index :" + index);
             if (index != -1) {
@@ -267,6 +286,18 @@ public class MultiCaptureModule implements MultiCamera {
     @Override
     public String[] getCameraIdList() {
         return (String[])mCameraIDList.toArray(new String[0]);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration config) {
+        Log.v(TAG, "onConfigurationChanged");
+        String[] cameraIds = getCameraIdList();
+        if (cameraIds != null) {
+            for (String id : cameraIds) {
+                int cameraId = Integer.parseInt(id);
+                setDisplayOrientation(cameraId);
+            }
+        }
     }
 
     private void openCameraInSequence(String id) {
@@ -496,6 +527,9 @@ public class MultiCaptureModule implements MultiCamera {
                             Log.v(TAG, " CameraCaptureSession onConfigured id :" + id);
                             // When the session is ready, we start displaying the preview.
                             mCameraCaptureSessions[id] = cameraCaptureSession;
+                            applyFaceDetection(mPreviewRequestBuilders[id]);
+                            updateFaceDetection(id);
+                            setDisplayOrientation(id);
                             try {
                                 // Auto focus should be continuous for camera preview.
                                 mPreviewRequestBuilders[id].set(CaptureRequest.CONTROL_AF_MODE,
@@ -575,16 +609,109 @@ public class MultiCaptureModule implements MultiCamera {
         @Override
         public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request,
                                         CaptureResult partialResult) {
+            int id = (int) partialResult.getRequest().getTag();
+            int index = mCameraIDList.indexOf(String.valueOf(id));
+            Log.d(FD_TAG, "onCaptureProgressed id = " + id + ", index :" + index);
             process(partialResult);
+            Face[] faces = partialResult.get(CaptureResult.STATISTICS_FACES);
+            if (FD_DEBUG)
+                Log.d(FD_TAG,"onCaptureProgressed Detected Face size = " + Integer.toString(faces == null? 0 : faces.length));
+            if (faces != null){
+                updateFaceView(faces, null, index);
+            }
         }
 
         @Override
         public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request,
                                        TotalCaptureResult result) {
+            int id = (int) result.getRequest().getTag();
+            int index = mCameraIDList.indexOf(String.valueOf(id));
+            Log.d(FD_TAG, "onCaptureCompleted id = " + id + ", index :" + index);
             process(result);
+
+            Face[] faces = result.get(CaptureResult.STATISTICS_FACES);
+            if (FD_DEBUG)
+                Log.d(FD_TAG, "onCaptureCompleted Detected Face size = " + Integer.toString(faces == null ? 0 : faces.length));
+            if (faces != null) {
+                updateFaceView(faces, null, index);
+            }
         }
 
     };
+
+    private void updateFaceView(final Face[] faces, final ExtendedFace[] extendedFaces,
+                                final int index) {
+        mPreviewFaces = faces;
+        mExFaces = extendedFaces;
+        if (faces != null) {
+            if (faces.length != 0) {
+                if (FD_DEBUG){
+                    for (int i = 0; i < faces.length; i++){
+                        if (faces[i] != null){
+                            Log.d(FD_TAG,"face i="+i+" ROI="+faces[i].getBounds().toString());
+                        }
+                    }
+                }
+                mStickyFaces = faces;
+                mStickyExFaces = extendedFaces;
+            }
+            mMultiCameraModule.getMainHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    mMultiCameraUI.onFaceDetection(faces, extendedFaces, index);
+                }
+            });
+        }
+    }
+
+    private void updateFaceDetection(int id) {
+        boolean faceDetection = mLocalSharedPref.getBoolean(
+                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION, false);
+        Log.v(TAG, " updateFaceDetection faceDetection :" + faceDetection);
+        int index = mCameraIDList.indexOf(String.valueOf(id));
+
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (faceDetection)
+                    mMultiCameraUI.onStartFaceDetection(index, mDisplayOrientations[index],
+                            isFacingFront(id), mCropRegion[id], mCropRegion[id]);
+                else {
+                    mMultiCameraUI.onStopFaceDetection();
+                }
+            }
+        });
+    }
+
+    private void setDisplayOrientation(int id) {
+        int index = mCameraIDList.indexOf(String.valueOf(id));
+        mDisplayRotations[index] = CameraUtil.getDisplayRotation(mActivity);
+        mDisplayOrientations[index] = CameraUtil.getDisplayOrientationForCamera2(
+                mDisplayRotations[index], id);
+    }
+
+    private boolean isFacingFront(int id) {
+        int facing = mCharacteristics.get(id).get(CameraCharacteristics.LENS_FACING);
+        return facing == CameraCharacteristics.LENS_FACING_FRONT;
+    }
+
+    private Rect cropRegionForZoom(int id) {
+        if (DEBUG) {
+            Log.d(TAG, "cropRegionForZoom " + id);
+        }
+        Rect activeRegion = mCharacteristics.get(id).get(
+                CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        Rect cropRegion = new Rect();
+
+        int xCenter = activeRegion.width() / 2;
+        int yCenter = activeRegion.height() / 2;
+        int xDelta = (int) (activeRegion.width() / (2 * 1.0f));
+        int yDelta = (int) (activeRegion.height() / (2 * 1.0f));
+        cropRegion.set(xCenter - xDelta, yCenter - yDelta, xCenter + xDelta, yCenter + yDelta);
+        Log.d(TAG, "cropRegionForZoom  mCropRegion[id] " +  mCropRegion[id]);
+        mCropRegion[id] = cropRegion;
+        return mCropRegion[id];
+    }
 
     private void createImageReader(int id) {
         String defaultSize = mActivity.getString(R.string.pref_multi_camera_picturesize_default);
@@ -608,11 +735,21 @@ public class MultiCaptureModule implements MultiCamera {
         Size previewSize = null;
         Log.v(TAG, "getOptimalPreviewSize (targetRatio == ratio_1_1) " + (targetRatio == ratio_1_1) +
                 " , (targetRatio == ratio_4_3): " + (targetRatio == ratio_4_3) + ", (targetRatio == ratio_16_9) :" + (targetRatio == ratio_16_9));
+        Point size = PersistUtil.getCameraPreviewSize();
+        int width = 0;
+        int height = 0;
+        Log.v(TAG, "getOptimalPreviewSize size " + size);
+        if (size != null) {
+            width = size.x;
+            height = size.y;
+        } else {
+            width = height = 0;
+        }
         if (targetRatio == ratio_1_1) {
             previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
                     MultiSettingsActivity.PREVIEW_HIEGHT_1_1);
         } else if (targetRatio == ratio_4_3) {
-            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH_4_3,
                     MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
         } else if (targetRatio == ratio_16_9) {
             previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH_16_9,
@@ -620,6 +757,10 @@ public class MultiCaptureModule implements MultiCamera {
         } else {
             previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
                     MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
+        }
+        Log.v(TAG, "getOptimalPreviewSize width " + width + ", height :" + height);
+        if (size != null) {
+            previewSize = new Size(width, height);
         }
         Log.v(TAG, "getOptimalPreviewSize previewSize " + previewSize.getWidth() + " x " + previewSize.getHeight());
         return previewSize;
@@ -825,6 +966,21 @@ public class MultiCaptureModule implements MultiCamera {
                 defaultValue);
         int jpegQuality = getQualityNumber(value);
         request.set(CaptureRequest.JPEG_QUALITY, (byte) jpegQuality);
+    }
+
+    private void applyFaceDetection(CaptureRequest.Builder request) {
+        boolean FdEnable = mLocalSharedPref.getBoolean(
+                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION, false);
+        Log.v(TAG, " applyFaceDetection FdEnable :" + FdEnable);
+        try {
+            int modeValue = CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF;
+            if (FdEnable){
+                modeValue = CaptureRequest.STATISTICS_FACE_DETECT_MODE_SIMPLE;
+            }
+            Log.v(TAG, " applyFaceDetection modeValue :" + modeValue);
+            request.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, modeValue);
+        } catch (IllegalArgumentException e) {
+        }
     }
 
     private int getQualityNumber(String jpegQuality) {
