@@ -150,16 +150,13 @@ public class Storage {
      public static Uri addDng(ContentResolver resolver, String title, long date,
             Location location, int orientation, ExifInterface exif, Image image, int width,
             int height, String mimeType,String path,CameraCharacteristics mCharacteristics,TotalCaptureResult mCaptureResult) {
+         int size = 0;
+       size = writeDngFile(image,path, mCharacteristics,mCaptureResult);
 
-        writeDngFile(image,path, mCharacteristics,mCaptureResult);
-        int size = 0;
         // Try to get the real image size after add exif.
-        File f = new File(path);
-        if (f.exists() && f.isFile()) {
-            size = (int) f.length();
-        }
-        return addImage(resolver, title, date, location, orientation, exif,
-                size, path, width, height, mimeType);
+        if (size == 0) return null;
+         return addImage(resolver, title, date, location, orientation, exif,
+                                size, path, width, height, mimeType);
     }
 
     // Get a ContentValues object for the given photo data
@@ -258,7 +255,7 @@ public class Storage {
         return bitmap;
      }
 
-    public static long writeDngFile(Image image,String path,CameraCharacteristics mCharacteristics,TotalCaptureResult mCaptureResult) {
+    public static int writeDngFile(Image image,String path,CameraCharacteristics mCharacteristics,TotalCaptureResult mCaptureResult) {
         int size = 0;
         FileOutputStream output = null;
         try {
@@ -391,7 +388,7 @@ public class Storage {
                 return DIRECTORY + '/' + title + suffix;
             }
         }  else if(pictureFormat.equalsIgnoreCase("dng")) {
-            return DIRECTORY + '/' + title + ".dng";
+            return RAW_DIRECTORY + '/' + title + ".dng";
         }else{
             return RAW_DIRECTORY + '/' + title + ".raw";
         }

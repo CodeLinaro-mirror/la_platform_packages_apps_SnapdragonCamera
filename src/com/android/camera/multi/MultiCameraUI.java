@@ -21,6 +21,7 @@ package com.android.camera.multi;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.AnimationDrawable;
+import android.graphics.Rect;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,19 +34,21 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
 import com.android.camera.CameraActivity;
+import com.android.camera.ExtendedFace;
 import com.android.camera.PauseButton;
 import com.android.camera.PreviewGestures;
 import com.android.camera.data.Camera2ModeAdapter;
 import com.android.camera.ShutterButton;
-import com.android.camera.ui.AutoFitSurfaceView;
 import com.android.camera.ui.CameraControls;
-import com.android.camera.ui.Camera2FaceView;
+import com.android.camera.ui.MultiAutoFitSurfaceView;
+import com.android.camera.ui.MultiCameraFaceView;
 import com.android.camera.ui.CountDownView;
 import com.android.camera.ui.FlashToggleButton;
 import com.android.camera.ui.OneUICameraControls;
 import com.android.camera.ui.RenderOverlay;
 import com.android.camera.ui.RotateImageView;
 import com.android.camera.ui.RotateLayout;
+import com.android.camera.util.PersistUtil;
 
 import org.codeaurora.snapcam.R;
 
@@ -61,15 +64,17 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
     private View mRootView;
     private MultiCameraModule mModule;
     private PreviewGestures mGestures;
+    private MultiCameraFaceView mFaceView;
+    private MultiCameraFaceView mSencondFaceView;
 
     /**
      * An {@link AutoFitTextureView} for camera preview.
      */
-    private SurfaceView mMainPreviewSurface;
-    private SurfaceView mFirstPreviewSurface;
+    private MultiAutoFitSurfaceView mMainPreviewSurface;
+    private MultiAutoFitSurfaceView mFirstPreviewSurface;
     private SurfaceView mSecondPreviewSurface;
     private SurfaceView mThirdPreviewSurface;
-    private ArrayList<SurfaceView> mSurfaceViewList = new ArrayList();
+    private ArrayList<MultiAutoFitSurfaceView> mSurfaceViewList = new ArrayList();
 
     private SurfaceHolder mMainSurfaceHolder;
     private SurfaceHolder mFirstSurfaceHolder;
@@ -86,7 +91,6 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
 
     private CountDownView mCountDownView;
     private OneUICameraControls mCameraControls;
-    private Camera2FaceView mFaceView;
 
     private TextView mRecordingTimeView;
     private View mTimeLapseLabel;
@@ -121,6 +125,7 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
         initPauseButton();
         initSettingsMenu();
         initModeSelectLayout();
+        initMultiCameraFaceView();
     }
 
     @Override
@@ -140,6 +145,7 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
     private void showSurfaceView(int index) {
         mSurfaceViewList.get(index).getHolder().setFixedSize(
                 mPreviewWidths[index], mPreviewHeights[index]);
+        mSurfaceViewList.get(index).setAspectRatio(mPreviewHeights[index], mPreviewWidths[index]);
         mSurfaceViewList.get(index).setVisibility(View.VISIBLE);
     }
 
@@ -154,7 +160,7 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
 
     public void hideSurfaceView() {
         if (mSurfaceViewList.size() > 0) {
-            for (SurfaceView surfaceView : mSurfaceViewList) {
+            for (MultiAutoFitSurfaceView surfaceView : mSurfaceViewList) {
                 if (surfaceView.getVisibility() == View.VISIBLE) {
                     surfaceView.setVisibility(View.INVISIBLE);
                 }
@@ -164,27 +170,53 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
 
     private void initPreviewSurface() {
         // Multi camera preview
-        mMainPreviewSurface = (SurfaceView) mRootView.findViewById(R.id.main_preview_content);
-        mFirstPreviewSurface = (SurfaceView) mRootView.findViewById(R.id.first_preview_content);
-        mSecondPreviewSurface = (SurfaceView) mRootView.findViewById(R.id.second_preview_content);
-        mThirdPreviewSurface = (SurfaceView) mRootView.findViewById(R.id.third_preview_content);
+        mMainPreviewSurface = (MultiAutoFitSurfaceView) mRootView.findViewById(R.id.main_preview_content);
+        mFirstPreviewSurface = (MultiAutoFitSurfaceView) mRootView.findViewById(R.id.first_preview_content);
+        //mSecondPreviewSurface = (SurfaceView) mRootView.findViewById(R.id.second_preview_content);
+        //mThirdPreviewSurface = (SurfaceView) mRootView.findViewById(R.id.third_preview_content);
 
         mSurfaceViewList.add(mMainPreviewSurface);
         mSurfaceViewList.add(mFirstPreviewSurface);
-        mSurfaceViewList.add(mSecondPreviewSurface);
-        mSurfaceViewList.add(mThirdPreviewSurface);
+        //mSurfaceViewList.add(mSecondPreviewSurface);
+        //mSurfaceViewList.add(mThirdPreviewSurface);
 
         mMainSurfaceHolder = mMainPreviewSurface.getHolder();
         mMainSurfaceHolder.addCallback(mMainSurfaceHolderCallback);
         mMainSurfaceHolder.setFixedSize(MultiSettingsActivity.PREVIEW_WIDTH,
                 MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
+        mMainPreviewSurface.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right,
+                                       int bottom, int oldLeft, int oldTop, int oldRight,
+                                       int oldBottom) {
+                int width = right - left;
+                int height = bottom - top;
+                Log.v(TAG, " mMainPreviewSurface width :" + width + ", height :" + height);
+                if (mFaceView != null) {
+                    mFaceView.onSurfaceTextureSizeChanged(0, width, height);
+                }
+            }
+        });
 
         mFirstSurfaceHolder = mFirstPreviewSurface.getHolder();
         mFirstSurfaceHolder.addCallback(mFirstHolderCallback);
         mFirstSurfaceHolder.setFixedSize(MultiSettingsActivity.PREVIEW_WIDTH,
                 MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
+        mFirstPreviewSurface.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right,
+                                       int bottom, int oldLeft, int oldTop, int oldRight,
+                                       int oldBottom) {
+                int width = right - left;
+                int height = bottom - top;
+                Log.v(TAG, " mFirstPreviewSurface width :" + width + ", height :" + height + " mSencondFaceView :" + mSencondFaceView);
+                if (mSencondFaceView != null) {
+                    mSencondFaceView.onSurfaceTextureSizeChanged(1, width, height);
+                }
+            }
+        });
 
-        mSecondSurfaceHolder = mSecondPreviewSurface.getHolder();
+        /*mSecondSurfaceHolder = mSecondPreviewSurface.getHolder();
         mSecondSurfaceHolder.addCallback(mSecondHolderCallback);
         mSecondSurfaceHolder.setFixedSize(MultiSettingsActivity.PREVIEW_WIDTH,
                 MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
@@ -192,7 +224,15 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
         mThirdSurfaceHolder = mThirdPreviewSurface.getHolder();
         mThirdSurfaceHolder.addCallback(mThirdHolderCallback);
         mThirdSurfaceHolder.setFixedSize(MultiSettingsActivity.PREVIEW_WIDTH,
-                MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
+                MultiSettingsActivity.PREVIEW_HIEGHT_4_3);*/
+    }
+
+    private void initMultiCameraFaceView() {
+        mFaceView = (MultiCameraFaceView) mRootView.findViewById(R.id.face_view);
+        mFaceView.initMode();
+
+        mSencondFaceView = (MultiCameraFaceView) mRootView.findViewById(R.id.face_view2);
+        mSencondFaceView.initMode();
     }
 
     private void initShutterButton() {
@@ -248,8 +288,6 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
 
     private void initCameraControls() {
         mCameraControls = (OneUICameraControls) mRootView.findViewById(R.id.camera_controls);
-        mFaceView = (Camera2FaceView) mRootView.findViewById(R.id.face_view);
-        mFaceView.initMode();
     }
 
     private void initSettingsMenu() {
@@ -335,6 +373,64 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
         }
     }
 
+    public void onPause() {
+        if (mFaceView != null) mFaceView.clear();
+        if (mSencondFaceView != null) mSencondFaceView.clear();
+    }
+
+    public void onStartFaceDetection(int index, int orientation, boolean mirror, Rect cameraBound,
+                                     Rect originalCameraBound) {
+        mFaceView.setPhysicalSurfaceViewList(getSurfaceViewList());
+        if (index == 0) {
+            mFaceView.setBlockDraw(false);
+            mFaceView.clear();
+            mFaceView.setVisibility(View.VISIBLE);
+            mFaceView.setDisplayOrientation(index, orientation);
+            mFaceView.setMirror(mirror);
+            mFaceView.setCameraBound(index, cameraBound);
+            mFaceView.setOriginalCameraBound(index, originalCameraBound);
+            mFaceView.setZoomRationSupported(true);
+            float zoomValue = 1.0f;
+            if(PersistUtil.isCameraPostZoomFOV()) {
+                zoomValue = 1.0f;
+            }
+            mFaceView.setZoom(zoomValue);
+            mFaceView.resume();
+        } else if (index == 1) {
+            mSencondFaceView.setBlockDraw(false);
+            mSencondFaceView.clear();
+            mSencondFaceView.setVisibility(View.VISIBLE);
+            mSencondFaceView.setDisplayOrientation(index, orientation);
+            mSencondFaceView.setMirror(mirror);
+            mSencondFaceView.setCameraBound(index, cameraBound);
+            mSencondFaceView.setOriginalCameraBound(index, originalCameraBound);
+            mSencondFaceView.setZoomRationSupported(true);
+            float zoomValue = 1.0f;
+            if(PersistUtil.isCameraPostZoomFOV()) {
+                zoomValue = 1.0f;
+            }
+            mSencondFaceView.setZoom(zoomValue);
+            mSencondFaceView.resume();
+        }
+    }
+
+    public void onFaceDetection(android.hardware.camera2.params.Face[] faces,
+                                ExtendedFace[] extendedFaces, int index) {
+        mFaceView.setFaces(index, faces, extendedFaces);
+        mSencondFaceView.setFaces(index, faces, extendedFaces);
+    }
+
+    public void onStopFaceDetection() {
+        if (mFaceView != null) {
+            mFaceView.setBlockDraw(true);
+            mFaceView.clear();
+        }
+        if (mSencondFaceView != null) {
+            mSencondFaceView.setBlockDraw(true);
+            mSencondFaceView.clear();
+        }
+    }
+
     public void setRecordingTime(String text) {
         mRecordingTimeView.setText(text);
     }
@@ -347,6 +443,15 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
         mRecordingTimeView.setCompoundDrawablesWithIntrinsicBounds(
                 R.drawable.ic_recording_indicator, 0, 0, 0);
         mPauseButton.setPaused(false);
+    }
+
+    /**
+     * Enables or disables the video button.
+     */
+    public void enableVideo(boolean enabled) {
+        if (mVideoButton != null) {
+            mVideoButton.setEnabled(enabled);
+        }
     }
 
     public void showRecordingUI(boolean recording) {
@@ -467,10 +572,9 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
         return mShutterButton.isEnabled();
     }
 
-    public ArrayList<SurfaceView> getSurfaceViewList () {
+    public ArrayList<MultiAutoFitSurfaceView> getSurfaceViewList () {
         return mSurfaceViewList;
     }
-
 
     private void openSettingsMenu() {
         Intent intent = new Intent(mActivity, MultiSettingsActivity.class);

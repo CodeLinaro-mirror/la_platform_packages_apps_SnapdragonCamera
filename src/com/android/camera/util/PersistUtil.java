@@ -104,7 +104,7 @@ public class PersistUtil {
     private static final int CIRCULAR_BUFFER_SIZE_PERSIST =
             getInt("persist.sys.camera.zsl.buffer.size", 5);
     private static final int SAVE_TASK_MEMORY_LIMIT_IN_MB =
-            getInt("persist.sys.camera.perf.memlimit", 120);
+            getInt("persist.sys.camera.perf.memlimit", 150);
     private static final boolean PERSIST_CAMERA_UI_AUTO_TEST_ENABLED =
             getBoolean("persist.sys.camera.ui.auto_test", false);
     private static final boolean PERSIST_SEND_REQUEST_AFTER_FLUSH =
@@ -457,5 +457,9 @@ public class PersistUtil {
 
     public static float getLuxIdxThreadhold(){
         return Float.parseFloat(PERSIST_CAMERA_LUX_IDX_THREADHOLD);
+    }
+
+    public static boolean getHardSwitchEnabled(){
+        return getBoolean("persist.sys.camera.hard_switch_enable", true);
     }
 }

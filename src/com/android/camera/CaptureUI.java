@@ -2555,43 +2555,44 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mCameraControls.showRefocusToast(show);
     }
 
-    private FocusIndicator getFocusIndicator() {
+    private ArrayList<FocusIndicator> getFocusIndicator() {
+        ArrayList<FocusIndicator> foucusList =new ArrayList<>();
         if (mModule.isTrackingFocusSettingOn()) {
             if (mPieRenderer != null) {
                 mPieRenderer.clear();
             }
-            return mTrackingFocusRenderer;
+            foucusList.add(mTrackingFocusRenderer);
         }
         String value = mSettingsManager.getValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS);
         if (value != null && value.equals("on")) {
             if (mPieRenderer != null) {
                 mPieRenderer.clear();
             }
-            return mT2TFocusRenderer;
+            foucusList.add(mT2TFocusRenderer);
         }
         if (mModule.isSateNNFocusSettingOn()) {
             if (mPieRenderer != null) {
                 mPieRenderer.clear();
             }
-            return mStatsNNFocusRenderer;
+            foucusList.add(mStatsNNFocusRenderer);
         }
         if (mModule.isSateAFSettingOn()) {
             if (mPieRenderer != null) {
                 mPieRenderer.clear();
             }
-            return mAFViewRender;
+            foucusList.add(mAFViewRender);
         }
         FocusIndicator focusIndicator;
         if (mFaceView != null && mFaceView.faceExists() && !mIsTouchAF) {
             if (mPieRenderer != null) {
                 mPieRenderer.clear();
             }
-            focusIndicator = mFaceView;
+            foucusList.add(mFaceView);
         } else {
-            focusIndicator = mPieRenderer;
+            foucusList.add(mPieRenderer);
         }
 
-        return focusIndicator;
+        return foucusList;
     }
 
     @Override
@@ -2605,8 +2606,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     @Override
     public void clearFocus() {
-        FocusIndicator indicator = getFocusIndicator();
-        if (indicator != null) indicator.clear();
+        ArrayList<FocusIndicator> indicators = getFocusIndicator();
+        for (FocusIndicator indicator : indicators) {
+            if (indicator != null) indicator.clear();
+        }
         mIsTouchAF = false;
     }
 
@@ -2618,21 +2621,26 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     @Override
     public void onFocusStarted() {
-        FocusIndicator indicator = getFocusIndicator();
-        if (indicator != null) indicator.showStart();
+        ArrayList<FocusIndicator> indicators = getFocusIndicator();
+        for (FocusIndicator indicator : indicators) {
+            if (indicator != null) indicator.showStart();
+        }
     }
 
     @Override
     public void onFocusFailed(boolean timeOut) {
-        FocusIndicator indicator = getFocusIndicator();
-        if (indicator != null) indicator.showFail(timeOut);
-
+        ArrayList<FocusIndicator> indicators = getFocusIndicator();
+        for (FocusIndicator indicator : indicators) {
+            if (indicator != null) indicator.showFail(timeOut);
+        }
     }
 
     @Override
     public void onFocusSucceeded(boolean timeout) {
-        FocusIndicator indicator = getFocusIndicator();
-        if (indicator != null) indicator.showSuccess(timeout);
+        ArrayList<FocusIndicator> indicators = getFocusIndicator();
+        for (FocusIndicator indicator : indicators) {
+            if (indicator != null) indicator.showSuccess(timeout);
+        }
     }
 
     @Override
@@ -2895,6 +2903,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     mSceneModeLabelRect.setVisibility(View.GONE);
                 }else{
                     if ( needShowInstructional() ) {
+                        if ( mSceneModeInstructionalDialog != null && mSceneModeInstructionalDialog.isShowing()) {
+                            mSceneModeInstructionalDialog.dismiss();
+                            mSceneModeInstructionalDialog = null;
+                        }
                         showSceneInstructionalDialog(mOrientation);
                     }
                     showSceneModeLabel();
@@ -3093,4 +3105,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+    public void setSoundEffectsForRecording(boolean enabled) {
+        if (mShutterButton != null) {
+            mShutterButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mMuteButton != null) {
+            mMuteButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mFlashButton != null) {
+            mFlashButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mThumbnail != null) {
+            mThumbnail.setSoundEffectsEnabled(enabled);
+        }
+    }
 }

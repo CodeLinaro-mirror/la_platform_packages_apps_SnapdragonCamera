@@ -35,6 +35,11 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.MediaCodecInfo;
+import android.media.MediaCodecInfo.CodecCapabilities;
+import android.media.MediaCodecInfo.VideoCapabilities;
+import android.media.MediaCodecList;
+import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.media.CamcorderProfile;
 import android.os.Bundle;
@@ -47,6 +52,7 @@ import android.preference.PreferenceGroup;
 import android.preference.PreferenceScreen;
 import android.preference.SwitchPreference;
 import android.util.ArraySet;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.util.Log;
@@ -57,6 +63,7 @@ import org.codeaurora.snapcam.R;
 import com.android.camera.ComboPreferences;
 import com.android.camera.CameraSettings;
 import com.android.camera.SettingsManager;
+import com.android.camera.util.SettingTranslation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -74,13 +81,15 @@ public class MultiSettingsActivity extends PreferenceActivity {
 
     // Preview Size settings
     public static final int PREVIEW_WIDTH = 540;
-    public static final int PREVIEW_WIDTH_16_9 = 405;
+    public static final int PREVIEW_WIDTH_4_3 = 720;
+    public static final int PREVIEW_WIDTH_16_9 = 960;
     public static final int PREVIEW_HIEGHT_1_1 = 540;
-    public static final int PREVIEW_HIEGHT_4_3 = 720;
-    public static final int PREVIEW_HIEGHT_16_9 = 720;
+    public static final int PREVIEW_HIEGHT_4_3 = 480;
+    public static final int PREVIEW_HIEGHT_16_9 = 540;
 
     // capture settings
     public static final String KEY_HAL_ZAL = "pref_multi_camera_hal_zsl_key";
+    public static final String KEY_MULTI_FACE_DETECTION = "pref_multi_camera_facedetection_key";
     public static final String KEY_PICTURE_SIZE_ = "Picture_size_of_camera_";
     public static final String KEY_PICTURE_SIZE_1 = "pref_multi_camera_picturesize1_key";
     public static final String KEY_PICTURE_SIZE_2 = "pref_multi_camera_picturesize2_key";
@@ -96,9 +105,16 @@ public class MultiSettingsActivity extends PreferenceActivity {
     public static final String KEY_VIDEO_SIZE_2 = "pref_multi_camera_video_quality2_key";
     public static final String KEY_VIDEO_SIZE_3 = "pref_multi_camera_video_quality3_key";
     public static final String KEY_VIDEO_SIZE_4 = "pref_multi_camera_video_quality4_key";
+    public static final String KEY_VIDEO_ENCODER_ = "Video_Encoder_";
+    public static final String KEY_VIDEO_ENCODER_1 = "pref_multi_camera_videoencoder1_key";
+    public static final String KEY_VIDEO_ENCODER_2 = "pref_multi_camera_videoencoder2_key";
+    public static final String KEY_VIDEO_ENCODER_PROFILE_ = "Encoder_Profile_";
+    public static final String KEY_VIDEO_ENCODER_PROFILE_1 = "pref_multi_camera_videoencoderprofile1_key";
+    public static final String KEY_VIDEO_ENCODER_PROFILE_2 = "pref_multi_camera_videoencoderprofile2_key";
     public static final String KEY_VIDEO_DURATION = "pref_multi_camera_video_duration_key";
     public static final String KEY_AUDIO_ENCODER = "pref_multi_camera_audioencoder_key";
     public static final String KEY_VIDEO_ROTATION = "pref_multi_camera_video_rotation_key";
+    public static final String KEY_VIDEO_EIS = "pref__multi_camera_eis_key";
 
     private static final String KEY_RESTORE_DEFAULT = "pref_multi_camera_restore_default";
     private static final String KEY_VERSION_INFO = "multi_camera_version_info";
@@ -106,6 +122,7 @@ public class MultiSettingsActivity extends PreferenceActivity {
     public static final String KEY_CONCURRENT_CAMERA = "pref_camera2_concurrent_camera_key";
     public static final HashMap<Integer, String> KEY_PICTURE_SIZES = new HashMap<Integer, String>();
     public static final HashMap<Integer, String> KEY_VIDEO_SIZES = new HashMap<Integer, String>();
+    private static Map<String, Set<String>> VIDEO_ENCODER_PROFILE_TABLE = new HashMap<>();
 
     private SharedPreferences mSharedPreferences;
     private SharedPreferences mLocalSharedPref;
@@ -119,6 +136,15 @@ public class MultiSettingsActivity extends PreferenceActivity {
     public CharSequence[] mConcurrentEntryValues;
     public String[] mCameraIds;
     public String[] mConcurrentIds;
+
+    static {
+        Set<String> h265 = new HashSet<>();
+        h265.add("HEVCProfileMain10");
+        h265.add("HEVCProfileMain10HDR10");
+        h265.add("HEVCProfileMain10HDR10Plus");
+        VIDEO_ENCODER_PROFILE_TABLE.put("h265", h265);
+    }
+
 
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
@@ -139,7 +165,13 @@ public class MultiSettingsActivity extends PreferenceActivity {
                 value = ((ListPreference) p).getValue();
                 String title = (String)((ListPreference) p).getTitle();
                 if (key.contains("pref_multi_camera_picturesize") ||
-                        key.contains("pref_multi_camera_video_quality")) {
+                        key.contains("pref_multi_camera_video_quality") ||
+                        key.contains("pref_multi_camera_videoencoder") ||
+                        key.contains("pref_multi_camera_videoencoderprofile")) {
+                    if (key.contains("pref_multi_camera_videoencoder") && value.equals("h264")) {
+                        String id = title.substring(title.length() - 1);
+                        editor.putString(KEY_VIDEO_ENCODER_PROFILE_ + id, "off");
+                    }
                     editor.putString(title, value);
                 } else {
                     editor.putString(key, value);
@@ -170,9 +202,18 @@ public class MultiSettingsActivity extends PreferenceActivity {
                             ((MultiSelectListPreference)p).setValues(orignalValeus);
                     }
                 }
-
             }
-            editor.apply();
+
+            if (key.equals(KEY_VIDEO_ENCODER_1)) {
+                updateVideoEncoderProfile(0, KEY_VIDEO_ENCODER_1);
+            } else if (key.equals(KEY_VIDEO_ENCODER_2)) {
+                updateVideoEncoderProfile(1, KEY_VIDEO_ENCODER_2);
+            }
+            editor.commit();
+
+            if (key.equals(KEY_VIDEO_EIS)) {
+                updateVideQuality();
+            }
 
             if (key.equals(KEY_MULTI_CAMERAS_MODE)) {
                 String multiEnable = ((ListPreference) p).getValue();
@@ -205,12 +246,18 @@ public class MultiSettingsActivity extends PreferenceActivity {
 
         mMultiCameraMode = (MultiCameraModule.CameraMode) getIntent().getSerializableExtra(
                 CAMERA_MODULE);
+        mSharedPreferences = getPreferenceManager().getSharedPreferences();
+        mSharedPreferences.registerOnSharedPreferenceChangeListener(mSharedPreferenceChangeListener);
+
+        mLocalSharedPref = this.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(this,
+                        "multi" + mMultiCameraMode), Context.MODE_PRIVATE);
+
 
         initializeCameraCharacteristics();
         addPreferencesFromResource(R.xml.multi_setting_menu_preferences);
         filterPreferences();
         initializePreferences();
-
     }
 
     @Override
@@ -285,18 +332,12 @@ public class MultiSettingsActivity extends PreferenceActivity {
     }
 
     private void initializePreferences() {
-        mSharedPreferences = getPreferenceManager().getSharedPreferences();
-        mSharedPreferences.registerOnSharedPreferenceChangeListener(mSharedPreferenceChangeListener);
-
-        mLocalSharedPref = this.getSharedPreferences(
-                ComboPreferences.getLocalSharedPreferencesName(this,
-                        "multi" + mMultiCameraMode), Context.MODE_PRIVATE);
-
         setOnPreferenceClick();
 
         initializeConcurrentCameraIds();
 
         // capture settings
+        initializeFaceDetection();
         initializeHalZSLPref();
         initializePictureQuality();
         initializePictureSize1();
@@ -334,6 +375,135 @@ public class MultiSettingsActivity extends PreferenceActivity {
                 //don't filter
                 break;
         }
+        filterVideoEncoderOptions();
+    }
+
+    private void updateVideoEncoderProfile(int index, String key) {
+        ListPreference pref = (ListPreference) findPreference(key);
+        if (pref == null) {
+            return;
+        }
+        filterVideoEncoderProfileOptions(index, pref.getValue());
+    }
+
+    private void filterVideoEncoderOptions() {
+        ListPreference videoEncoder_1 = (ListPreference)findPreference(KEY_VIDEO_ENCODER_1);
+        ListPreference videoEncoder_2 = (ListPreference)findPreference(KEY_VIDEO_ENCODER_2);
+        String videoSize = null;
+        String cameraId = "0";
+        String defaultSize = this.getString(R.string.pref_multi_camera_picturesize_default);
+        if (mConcurrentIds != null && mConcurrentIds.length >0 && mConcurrentIds[0] != null){
+            cameraId = mConcurrentIds[0];
+        }
+        if (mLocalSharedPref != null) {
+            videoSize = mLocalSharedPref.getString(KEY_PICTURE_SIZE_ + cameraId, defaultSize);
+        }
+
+        if (videoEncoder_1 != null) {
+            filterUnsupported(KEY_VIDEO_ENCODER_1, getSupportedVideoEncoders(videoSize));
+        }
+
+        if (mConcurrentIds != null && mConcurrentIds.length >1 && mConcurrentIds[0] != null){
+            cameraId = mConcurrentIds[1];
+        }
+        if (mLocalSharedPref != null) {
+            videoSize = mLocalSharedPref.getString(KEY_PICTURE_SIZE_ + cameraId, defaultSize);
+        }
+
+        if (videoEncoder_2 != null) {
+            filterUnsupported(KEY_VIDEO_ENCODER_2, getSupportedVideoEncoders(videoSize));
+        }
+    }
+
+    private List<String> getSupportedVideoEncoders(String videoSize) {
+        ArrayList<String> supported = new ArrayList<String>();
+        supported.add(SettingTranslation.getVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT));
+        String str = null;
+        MediaCodecList list = new MediaCodecList(MediaCodecList.ALL_CODECS);
+        MediaCodecInfo[] codecInfos = list.getCodecInfos();
+        for (MediaCodecInfo info: codecInfos) {
+            if (!info.isEncoder() || info.getName().contains("google")) continue;
+            Log.d(TAG, "name= "+info.getName());
+            if (info.getSupportedTypes().length > 0 && info.getSupportedTypes()[0] != null){
+                for (String t : info.getSupportedTypes()){
+                    Log.d(TAG, "type= "+t);
+                }
+                int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
+                if (type != -1){
+                    str = SettingTranslation.getVideoEncoder(type);
+                    Log.d(TAG,"type="+type+" str="+str);
+                    if (isCurrentVideoResolutionSupportedByEncoder(info, videoSize)) {
+                        supported.add(str);
+                    }
+                }
+            }
+        }
+        return supported;
+    }
+
+    private boolean isCurrentVideoResolutionSupportedByEncoder(MediaCodecInfo info, String videoSizeStr) {
+        boolean supported = false;
+        if (videoSizeStr != null) {
+            Size videoSize = parseSize(videoSizeStr);
+            String[] supportedTypes = info.getSupportedTypes();
+            MediaCodecInfo.VideoCapabilities capabilities = null;
+            for (String type : supportedTypes) {
+                if (type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4)
+                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263)
+                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC)
+                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)) {
+                    capabilities = info.getCapabilitiesForType(type).getVideoCapabilities();
+                    if (capabilities == null ||
+                            !capabilities.getSupportedWidths().contains(videoSize.getWidth()) ||
+                            !capabilities.getSupportedWidths().contains(videoSize.getHeight())) {
+                        return false;
+                    } else {
+                        supported = true;
+                    }
+                }
+            }
+        }
+        return supported;
+    }
+
+    private Size parseSize(String value) {
+        int indexX = value.indexOf('x');
+        int width = Integer.parseInt(value.substring(0, indexX));
+        int height = Integer.parseInt(value.substring(indexX + 1));
+        return new Size(width, height);
+    }
+
+    private void filterVideoEncoderProfileOptions(int index, String videoEncoder) {
+        if (index == 0) {
+            ListPreference videoEncoderProfilePref1 = (ListPreference) findPreference(KEY_VIDEO_ENCODER_PROFILE_1);
+            ListPreference videoEncoderPref1 = (ListPreference) findPreference(KEY_VIDEO_ENCODER_1);
+            if ( videoEncoderProfilePref1 != null && videoEncoderPref1 != null ) {
+                filterUnsupported(KEY_VIDEO_ENCODER_PROFILE_1,
+                        getSupportedVideoEncoderProfile(videoEncoder),
+                        R.array.pref_camera2_videoencoderprofile_entry,
+                        R.array.pref_camera2_videoencoderprofile_entryvalues);
+            }
+        }
+
+        if (index == 1) {
+            ListPreference videoEncoderProfilePref2 = (ListPreference) findPreference(KEY_VIDEO_ENCODER_PROFILE_2);
+            ListPreference videoEncoderPref2 = (ListPreference) findPreference(KEY_VIDEO_ENCODER_2);
+            if ( videoEncoderProfilePref2 != null && videoEncoderPref2 != null ) {
+                filterUnsupported(KEY_VIDEO_ENCODER_PROFILE_2,
+                        getSupportedVideoEncoderProfile(videoEncoder),
+                        R.array.pref_camera2_videoencoderprofile_entry,
+                        R.array.pref_camera2_videoencoderprofile_entryvalues);
+            }
+        }
+    }
+
+    public List<String> getSupportedVideoEncoderProfile(String videoEncoder) {
+        List<String> profile = new ArrayList<>();
+        profile.add("off");
+        if ( VIDEO_ENCODER_PROFILE_TABLE.containsKey(videoEncoder) ) {
+            profile.addAll(VIDEO_ENCODER_PROFILE_TABLE.get(videoEncoder));
+        }
+        return profile;
     }
 
     private void setOnPreferenceClick() {
@@ -400,6 +570,29 @@ public class MultiSettingsActivity extends PreferenceActivity {
         }
     }
 
+    private void initializeFaceDetection() {
+        boolean isCheck = false;
+        if (mLocalSharedPref != null) {
+            isCheck = mLocalSharedPref.getBoolean(KEY_MULTI_FACE_DETECTION, false);
+        }
+        SwitchPreference faceDetection = (SwitchPreference)findPreference(KEY_MULTI_FACE_DETECTION);
+        if (faceDetection != null) {
+            faceDetection.setChecked(isCheck);
+        }
+    }
+
+    private boolean isFaceDetectionSupported(int id) {
+        int[] faceDetection = mCharacteristics.get(id).get
+                (CameraCharacteristics.STATISTICS_INFO_AVAILABLE_FACE_DETECT_MODES);
+        if (faceDetection != null) {
+            for (int value: faceDetection) {
+                if (value == CameraMetadata.STATISTICS_FACE_DETECT_MODE_SIMPLE)
+                    return true;
+            }
+        }
+        return false;
+    }
+
     private void initializePictureQuality() {
         String quality = this.getString(R.string.pref_camera_jpegquality_default);
         if (mLocalSharedPref != null) {
@@ -422,16 +615,12 @@ public class MultiSettingsActivity extends PreferenceActivity {
         filterUnsupported(KEY_PICTURE_SIZE_1, getSupportedPictureSize(Integer.valueOf(cameraId)));
 
         if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_ + cameraId, size);
+            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_ + cameraId, defaultSize);
         }
         if (pictureSizePref != null) {
             pictureSizePref.setTitle(KEY_PICTURE_SIZE_+cameraId);
             try {
-                if (size == null) {
-                    pictureSizePref.setValue(defaultSize);
-                } else {
-                    pictureSizePref.setValue(size);
-                }
+                pictureSizePref.setValue(size);
             } catch(IndexOutOfBoundsException e) {
             }
         }
@@ -452,17 +641,13 @@ public class MultiSettingsActivity extends PreferenceActivity {
         filterUnsupported(KEY_PICTURE_SIZE_2, getSupportedPictureSize(Integer.valueOf(cameraId)));
 
         if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_ + cameraId, size);
+            size = mLocalSharedPref.getString(KEY_PICTURE_SIZE_ + cameraId, defaultSize);
         }
         if (pictureSizePref != null) {
             pictureSizePref.setEnabled(true);
             pictureSizePref.setTitle(KEY_PICTURE_SIZE_ + cameraId);
             try {
-                if (size == null) {
-                    pictureSizePref.setValue(defaultSize);
-                } else {
-                    pictureSizePref.setValue(size);
-                }
+                pictureSizePref.setValue(size);
             } catch(IndexOutOfBoundsException e) {
             }
         }
@@ -472,11 +657,14 @@ public class MultiSettingsActivity extends PreferenceActivity {
         String size = null;
         String cameraId = "2";
         ListPreference pictureSizePref = (ListPreference) findPreference(KEY_PICTURE_SIZE_3);
+        PreferenceGroup photoPre = (PreferenceGroup) findPreference("photo");
         if (mConcurrentIds != null && mConcurrentIds.length >2 && mConcurrentIds[2] != null){
             cameraId = mConcurrentIds[2];
         } else {
-            if (pictureSizePref != null)
+            if (pictureSizePref != null) {
                 pictureSizePref.setEnabled(false);
+                removePreferenceGroup(KEY_PICTURE_SIZE_3, photoPre);
+            }
             return;
         }
         String defaultSize = this.getString(R.string.pref_multi_camera_picturesize_default);
@@ -502,11 +690,14 @@ public class MultiSettingsActivity extends PreferenceActivity {
         String size = null;
         String cameraId = "3";
         ListPreference pictureSizePref = (ListPreference) findPreference(KEY_PICTURE_SIZE_4);
+        PreferenceGroup photoPre = (PreferenceGroup) findPreference("photo");
         if (mConcurrentIds != null && mConcurrentIds.length >3 && mConcurrentIds[3] != null){
             cameraId = mConcurrentIds[3];
         } else {
-            if (pictureSizePref != null)
+            if (pictureSizePref != null) {
                 pictureSizePref.setEnabled(false);
+                removePreferenceGroup(KEY_PICTURE_SIZE_4, photoPre);
+            }
             return;
         }
         String defaultSize = this.getString(R.string.pref_multi_camera_picturesize_default);
@@ -539,26 +730,76 @@ public class MultiSettingsActivity extends PreferenceActivity {
         }
     }
 
-    private void initializeVideoSize1() {
-        String size = null;
+    private void updateVideQuality() {
         String cameraId = "0";
         ListPreference videoSizePref = (ListPreference) findPreference(KEY_VIDEO_SIZE_1);
+        ListPreference videoSizePref2 = (ListPreference) findPreference(KEY_VIDEO_SIZE_2);
+        if (mConcurrentIds != null && mConcurrentIds.length >0 && mConcurrentIds[0] != null){
+            cameraId = mConcurrentIds[0];
+            filterUnsupported(KEY_VIDEO_SIZE_1, getSupportedVideoSize(Integer.valueOf(cameraId)),
+                    R.array.pref_camera2_video_quality_entries,
+                    R.array.pref_camera2_video_quality_entryvalues);
+        }
+        if (mConcurrentIds != null && mConcurrentIds.length >1 && mConcurrentIds[1] != null) {
+            cameraId = mConcurrentIds[1];
+            filterUnsupported(KEY_VIDEO_SIZE_2, getSupportedVideoSize(Integer.valueOf(cameraId)),
+                    R.array.pref_camera2_video_quality_entries,
+                    R.array.pref_camera2_video_quality_entryvalues);
+        }
+    }
+
+    private void initializeVideoSize1() {
+        String size = null;
+        String encoder = null;
+        String encoderProfile = null;
+        String cameraId = "0";
+
+        ListPreference videoSizePref = (ListPreference) findPreference(KEY_VIDEO_SIZE_1);
+        ListPreference videoEncoder_1 = (ListPreference)findPreference(KEY_VIDEO_ENCODER_1);
+        ListPreference videoEncoderProfilePref1 = (ListPreference) findPreference(
+                KEY_VIDEO_ENCODER_PROFILE_1);
+
         if (mConcurrentIds != null && mConcurrentIds.length >0 && mConcurrentIds[0] != null){
             cameraId = mConcurrentIds[0];
         }
-        String defaultSize = this.getString(R.string.pref_multi_camera_video_quality_default);
+
         filterUnsupported(KEY_VIDEO_SIZE_1, getSupportedVideoSize(Integer.valueOf(cameraId)));
+        String defaultSize = this.getString(R.string.pref_multi_camera_video_quality_default);
         if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_ + cameraId, size);
+            size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_ + cameraId, defaultSize);
         }
         if (videoSizePref != null) {
             videoSizePref.setTitle(KEY_VIDEO_SIZE_ + cameraId);
             try {
-                if (size == null) {
-                    videoSizePref.setValue(defaultSize);
-                } else {
-                    videoSizePref.setValue(size);
-                }
+                videoSizePref.setValue(size);
+            } catch(IndexOutOfBoundsException e) {
+            }
+        }
+
+        // Video Encoder
+        String defaultEncoder = this.getString(R.string.pref_camera_videoencoder_default);
+        if (mLocalSharedPref != null) {
+            encoder = mLocalSharedPref.getString(KEY_VIDEO_ENCODER_ + cameraId, defaultEncoder);
+        }
+        if (videoEncoder_1 != null) {
+            filterVideoEncoderProfileOptions(Integer.parseInt(cameraId), encoder);
+            videoEncoder_1.setTitle(KEY_VIDEO_ENCODER_ + cameraId);
+            try {
+                videoEncoder_1.setValue(encoder);
+            } catch(IndexOutOfBoundsException e) {
+            }
+        }
+
+        // Video Encoder Profile
+        String defaultProfile = this.getString(R.string.pref_camera2_videoencoderprofile_default);
+        if (mLocalSharedPref != null) {
+            encoderProfile = mLocalSharedPref.getString(KEY_VIDEO_ENCODER_PROFILE_ + cameraId,
+                    defaultProfile);
+        }
+        if (videoEncoderProfilePref1 != null) {
+            videoEncoderProfilePref1.setTitle(KEY_VIDEO_ENCODER_PROFILE_ + cameraId);
+            try {
+                videoEncoderProfilePref1.setValue(encoderProfile);
             } catch(IndexOutOfBoundsException e) {
             }
         }
@@ -566,30 +807,71 @@ public class MultiSettingsActivity extends PreferenceActivity {
 
     private void initializeVideoSize2() {
         String size = null;
+        String encoder = null;
+        String encoderProfile = null;
         String cameraId = "1";
+        PreferenceGroup videoPre = (PreferenceGroup) findPreference("video");
         ListPreference videoSizePref = (ListPreference) findPreference(KEY_VIDEO_SIZE_2);
-        if (mConcurrentIds != null && mConcurrentIds.length >1 && mConcurrentIds[1] != null){
+        ListPreference videoEncoder_2 = (ListPreference) findPreference(KEY_VIDEO_ENCODER_2);
+        ListPreference videoEncoderProfilePref2 = (ListPreference) findPreference(KEY_VIDEO_ENCODER_PROFILE_2);
+        if (mConcurrentIds != null && mConcurrentIds.length >1 && mConcurrentIds[1] != null) {
             cameraId = mConcurrentIds[1];
-        } else {
-            if (videoSizePref != null)
-                videoSizePref.setEnabled(false);
-            return;
-        }
-        String defaultSize = this.getString(R.string.pref_multi_camera_video_quality_default);
-        filterUnsupported(KEY_VIDEO_SIZE_2, getSupportedVideoSize(Integer.valueOf(cameraId)));
-        if (mLocalSharedPref != null) {
-            size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_ + cameraId, size);
-        }
-        if (videoSizePref != null) {
-            videoSizePref.setEnabled(true);
-            videoSizePref.setTitle(KEY_VIDEO_SIZE_ + cameraId);
-            try {
-                if (size == null) {
-                    videoSizePref.setValue(defaultSize);
-                } else {
+
+            String defaultSize = this.getString(R.string.pref_multi_camera_video_quality_default);
+            filterUnsupported(KEY_VIDEO_SIZE_2, getSupportedVideoSize(Integer.valueOf(cameraId)));
+            if (mLocalSharedPref != null) {
+                size = mLocalSharedPref.getString(KEY_VIDEO_SIZE_ + cameraId, defaultSize);
+            }
+            if (videoSizePref != null) {
+                videoSizePref.setEnabled(true);
+                videoSizePref.setTitle(KEY_VIDEO_SIZE_ + cameraId);
+                try {
                     videoSizePref.setValue(size);
+                } catch(IndexOutOfBoundsException e) {
                 }
-            } catch(IndexOutOfBoundsException e) {
+            }
+
+            // Video Encoder
+            String defaultEncoder = this.getString(R.string.pref_camera_videoencoder_default);
+            if (mLocalSharedPref != null) {
+                encoder = mLocalSharedPref.getString(KEY_VIDEO_ENCODER_ + cameraId, defaultEncoder);
+            }
+            if (videoEncoder_2 != null) {
+                videoEncoder_2.setEnabled(true);
+                videoEncoder_2.setTitle(KEY_VIDEO_ENCODER_ + cameraId);
+                filterVideoEncoderProfileOptions(Integer.parseInt(cameraId), encoder);
+                try {
+                    videoEncoder_2.setValue(encoder);
+                } catch(IndexOutOfBoundsException e) {
+                }
+            }
+
+            // Video Encoder Profile
+            String defaultProfile = this.getString(R.string.pref_camera2_videoencoderprofile_default);
+            if (mLocalSharedPref != null) {
+                encoderProfile = mLocalSharedPref.getString(KEY_VIDEO_ENCODER_PROFILE_ + cameraId,
+                        defaultProfile);
+            }
+            if (videoEncoderProfilePref2 != null) {
+                videoEncoderProfilePref2.setTitle(KEY_VIDEO_ENCODER_PROFILE_ + cameraId);
+                try {
+                    videoEncoderProfilePref2.setValue(encoderProfile);
+                } catch(IndexOutOfBoundsException e) {
+                }
+            }
+
+        } else {
+            if (videoSizePref != null) {
+                videoSizePref.setEnabled(false);
+                videoSizePref.setTitle(KEY_VIDEO_SIZE_);
+            }
+            if (videoEncoder_2 != null) {
+                videoEncoder_2.setEnabled(false);
+                videoEncoder_2.setTitle(KEY_VIDEO_ENCODER_);
+            }
+            if (videoEncoderProfilePref2 != null) {
+                videoEncoderProfilePref2.setEnabled(false);
+                videoEncoderProfilePref2.setTitle(KEY_VIDEO_ENCODER_PROFILE_);
             }
         }
     }
@@ -598,11 +880,15 @@ public class MultiSettingsActivity extends PreferenceActivity {
         String size = null;
         String cameraId = "2";
         ListPreference videoSizePref = (ListPreference) findPreference(KEY_VIDEO_SIZE_3);
+        PreferenceGroup videoPre = (PreferenceGroup) findPreference("video");
+
         if (mConcurrentIds != null && mConcurrentIds.length >2 && mConcurrentIds[2] != null){
             cameraId = mConcurrentIds[2];
         } else {
-            if (videoSizePref != null)
+            if (videoSizePref != null) {
                 videoSizePref.setEnabled(false);
+                removePreferenceGroup(KEY_VIDEO_SIZE_3, videoPre);
+            }
             return;
         }
         String defaultSize = this.getString(R.string.pref_multi_camera_video_quality_default);
@@ -628,11 +914,15 @@ public class MultiSettingsActivity extends PreferenceActivity {
         String size = null;
         String cameraId = "3";
         ListPreference videoSizePref = (ListPreference) findPreference(KEY_VIDEO_SIZE_4);
+        PreferenceGroup videoPre = (PreferenceGroup) findPreference("video");
+
         if (mConcurrentIds != null && mConcurrentIds.length >3 && mConcurrentIds[3] != null){
             cameraId = mConcurrentIds[3];
         } else {
-            if (videoSizePref != null)
+            if (videoSizePref != null) {
                 videoSizePref.setEnabled(false);
+                removePreferenceGroup(KEY_VIDEO_SIZE_4, videoPre);
+            }
             return;
         }
         String defaultSize = this.getString(R.string.pref_multi_camera_video_quality_default);
@@ -722,12 +1012,14 @@ public class MultiSettingsActivity extends PreferenceActivity {
 
             if (sizes != null) {
                 for (int i = 0; i < sizes.length; i++) {
+                    if (sizes[i].getWidth() == sizes[i].getHeight()) continue;
                     res.add(sizes[i].toString());
                 }
             }
 
             if (highResSizes != null) {
                 for (int i = 0; i < highResSizes.length; i++) {
+                    if (sizes[i].getWidth() == sizes[i].getHeight()) continue;
                     res.add(highResSizes[i].toString());
                 }
             }
@@ -740,6 +1032,9 @@ public class MultiSettingsActivity extends PreferenceActivity {
 
     private List<String> getSupportedVideoSize(int cameraId) {
         List<String> res = new ArrayList<>();
+        String defaultValue = this.getResources().getString(R.string.pref_camera2_eis_default);
+        String eisValue = mLocalSharedPref.getString(KEY_VIDEO_EIS, defaultValue);
+        boolean isEISV3Enabled = "V3".equals(eisValue);
         try {
             StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
@@ -748,6 +1043,12 @@ public class MultiSettingsActivity extends PreferenceActivity {
             for (int i = 0; i < sizes.length; i++) {
                 if (CameraSettings.VIDEO_QUALITY_TABLE.containsKey(sizes[i].toString())) {
                     Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(sizes[i].toString());
+
+                    if (isEISV3Enabled && Math.min(sizes[i].getWidth(),sizes[i].getHeight()) < 720) {
+                        //video size should't be larger than 720p when EIS V3 is enabled
+                        continue;
+                    }
+
                     if (profile != null && CamcorderProfile.hasProfile(cameraId, profile)) {
                         res.add(sizes[i].toString());
                     }
@@ -784,13 +1085,52 @@ public class MultiSettingsActivity extends PreferenceActivity {
             int size = entries.size();
             listPref.setEntries(entries.toArray(new CharSequence[size]));
             listPref.setEntryValues(entryValues.toArray(new CharSequence[size]));
+            if (size == 1) {
+                listPref.setEnabled(false);
+            } else {
+                listPref.setEnabled(true);
+            }
         }
     }
 
-    private boolean removePreferenceGroup(String key, PreferenceScreen parentPreferenceScreen) {
+    private void filterUnsupported(String key, List<String> supported, int entriesId, int  entryValuesId) {
+        ListPreference listPref = (ListPreference) findPreference(key);
+        ArrayList<CharSequence> entries = new ArrayList<CharSequence>();
+        ArrayList<CharSequence> entryValues = new ArrayList<CharSequence>();
+        if (listPref != null) {
+            String[] listEntries = this.getResources().getStringArray(entriesId);
+            String[] listEntryValues = this.getResources().getStringArray(entryValuesId);
+            for (int i = 0, len = listEntryValues.length; i < len; i++) {
+                if (supported.indexOf(listEntryValues[i]) >= 0) {
+                    entries.add(listEntries[i]);
+                    entryValues.add(listEntryValues[i]);
+                }
+            }
+
+            int size = entries.size();
+            listPref.setEntries(entries.toArray(new CharSequence[size]));
+            listPref.setEntryValues(entryValues.toArray(new CharSequence[size]));
+            if (size == 1) {
+                listPref.setEnabled(false);
+            } else {
+                listPref.setEnabled(true);
+            }
+        }
+    }
+
+    private boolean removePreference(String key, PreferenceScreen parentPreferenceScreen) {
         PreferenceGroup removePreference = (PreferenceGroup) findPreference(key);
         if (removePreference != null && parentPreferenceScreen != null) {
             parentPreferenceScreen.removePreference(removePreference);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean removePreferenceGroup(String key, PreferenceGroup parentPreferenceGroup) {
+        Preference removePreference = findPreference(key);
+        if (removePreference != null && parentPreferenceGroup != null) {
+            parentPreferenceGroup.removePreference(removePreference);
             return true;
         }
         return false;

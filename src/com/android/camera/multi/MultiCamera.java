@@ -19,6 +19,8 @@ limitations under the License.
 */
 package com.android.camera.multi;
 
+import android.content.res.Configuration;
+
 public interface MultiCamera {
 
     boolean openCamera();
@@ -46,4 +48,6 @@ public interface MultiCamera {
     boolean isRecordingVideo();
 
     String[] getCameraIdList();
+
+    void onConfigurationChanged(Configuration config);
 }
