@@ -268,6 +268,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private SeekBar mMakeupSeekBar;
     private SeekBar mDeepportraitSeekBar;
     private SeekBar mZoomSeekBar;
+    private SeekBar mAICameraSeekBar;
     private View mMakeupSeekBarLayout;
     private View mSeekbarBody;
     private TextView mRecordingTimeView;
@@ -565,6 +566,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         });
         setMakeupButtonIcon();
         initZoomSeekBar();
+        initAICameraSeekBar();
 
         mFlashButton = (FlashToggleButton) mRootView.findViewById(R.id.flash_button);
         mModeSelectLayout = (RecyclerView) mRootView.findViewById(R.id.mode_select_layout);
@@ -854,6 +856,25 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         showFirstTimeHelp();
     }
 
+    private void initAICameraSeekBar(){
+        mAICameraSeekBar = (SeekBar) mRootView.findViewById(R.id.aicamera_seekbar);
+        mAICameraSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progresValue, boolean fromUser) {
+                if ( progresValue != 0 ) {
+                    int value = (int)(128*progresValue/100);
+                    mModule.updateAIStrengthValue(value);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+    }
+
     private void initZoomSeekBar() {
         mZoomLinearLayout = (LinearLayout) mRootView.findViewById(R.id.zoom_linearlayout);
         mZoomValueText = (TextView) mRootView.findViewById(R.id.zoom_value_text);
@@ -1022,6 +1043,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             } else {
                 mOfflineDumpTrigger.setVisibility(View.GONE);
             }
+        }
+    }
+
+    public void hideAICameraSeekBar() {
+        if (mAICameraSeekBar != null) {
+            mAICameraSeekBar.setVisibility(View.GONE);
+        }
+    }
+
+    public void showAICameraSeekBar() {
+        if (mAICameraSeekBar != null) {
+            mAICameraSeekBar.setVisibility(View.VISIBLE);
         }
     }
 

@@ -1631,6 +1631,21 @@
     <string name="pref_camera2_vsr_entry_value_disable" translatable="false">0</string>
     <string name="pref_camera2_vsr_entry_value_enable" translatable="false">1</string>
 
+    <!-- AI Camera-->
+    <string name="pref_camera2_ai_camera_title" translatable="true">AI Camera Mode</string>
+    <string name="pref_camera2_ai_camera_bokeh_title" translatable="true">AI Bokeh</string>
+    <string name="pref_camera2_ai_camera_snapshot_title" translatable="true">AI Snapshot</string>
+    <string name="pref_camera2_ai_camera_default" translatable="false">0</string>
+    <string name="pref_camera2_ai_camera_entry_disable" translatable="true">disable</string>
+    <string name="pref_camera2_ai_camera_entry_enable" translatable="true">enable</string>
+    <string name="pref_camera2_ai_camera_entry_value_disable" translatable="false">0</string>
+    <string name="pref_camera2_ai_camera_entry_value_enable" translatable="false">1</string>
+    <string name="pref_camera2_ai_camera_mode_entry_off" translatable="true">off</string>
+    <string name="pref_camera2_ai_camera_mode_entry_snapshot_only" translatable="true">snapshot_only</string>
+    <string name="pref_camera2_ai_camera_mode_entry_on" translatable="true">on</string>
+    <string name="pref_camera2_ai_camera_mode_entry_value_off" translatable="false">0</string>
+    <string name="pref_camera2_ai_camera_mode_entry_value_snapshot_only" translatable="false">1</string>
+    <string name="pref_camera2_ai_camera_mode_entry_value_on" translatable="false">2</string>
     <!-- raw reprocess type-->
     <string name="pref_camera2_raw_reprocess_default">0</string>
     <string name="pref_camera2_raw_reprocess_title">Raw Reprocess Callback Type</string>

@@ -760,6 +760,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.HWMFNRandAIDenoiser.HWMFNRandAIDE2TuningParams", byte[].class);
     public static final CaptureResult.Key<byte[]> StreamCropInfo =
             new CaptureResult.Key<>("com.qti.camera.streamCropInfo.StreamCropInfo", byte[].class);
+    public static CameraCharacteristics.Key<int[]> supportedAICameraModes =
+            new CameraCharacteristics.Key<>("org.quic.camera.capabilities.supportedAICameraModes", int[].class);
+    private static final CaptureRequest.Key<Byte> EnableAISnapshot =
+            new CaptureRequest.Key<>("org.quic.camera.AICamera.EnableAISnapshot", byte.class);
+    private static final CaptureRequest.Key<Integer> AICameraStrength =
+            new CaptureRequest.Key<>("org.quic.camera.AICamera.AIStrength", Integer.class);
 
     TotalCaptureResult mCaptureResult;
     float denoiseStrengthParam = 0.5f;
@@ -849,6 +855,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private CaptureUI mUI;
     private CameraActivity mActivity;
     private float mZoomValue = 1f;
+    private int mAIStrengthValue = 0;
     private FocusStateListener mFocusStateListener;
     private LocationManager mLocationManager;
     private SettingsManager mSettingsManager;
@@ -4075,6 +4082,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyCaptureMFNR(captureBuilder);
             }
             applyCaptureBurstFps(captureBuilder);
+            applyAICameraSnapshot(captureBuilder);
             String valueFS2 = mSettingsManager.getValue(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
             int fs2Value = 0;
             if (valueFS2 != null) {
@@ -6015,6 +6023,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyColorEffect(builder);
         applyVideoFlash(builder, id);
         applyVideoEIS(builder);
+        applyAICameraSnapshot(builder);
     }
 
     private void applySessionParameters(CaptureRequest.Builder builder){
@@ -6056,6 +6065,33 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyStatsVisualizerOptionMask(builder);
         applyStatsNNControl(builder);
         applyeMFNRAIDEMode(builder);
+        applyAICameraParam(builder);
+        applyAICameraBokehParam(builder);
+    }
+
+    private void applyAICameraParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA);
+        if(value != null &&  !value.equals("disable")){
+            Log.i(TAG,"set applyeAiCameraTag: " + value);
+            VendorTagUtil.setAICamera(builder, Integer.parseInt(value));
+        }
+    }
+
+    private void applyAICameraBokehParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA_BOKEH);
+        if(value != null &&  !value.equals("disable") && !value.equals("0")){
+            Log.i(TAG,"set applyeAiCameraBokehTag: " + value);
+            VendorTagUtil.setAICameraBokeh(builder, Integer.parseInt(value));
+        }
+    }
+
+    private void applyAICameraSnapshot(CaptureRequest.Builder builder) {
+        try {
+            builder.set(EnableAISnapshot, (byte)(mSettingsManager.isAICameraSnapshotEnabeld() ? 0x01 : 0x00));
+            Log.v(TAG, " applyAICameraSnapshot value :" + mSettingsManager.isAICameraSnapshotEnabeld());
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "cannot find vendor tag: " + EnableAISnapshot.toString());
+        }
     }
 
     private void applyeMFNRAIDEMode(CaptureRequest.Builder builder){
@@ -6106,6 +6142,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyLivePreview(builder);
         applyPdnetToggle(builder);
         applyPhotoEIS(builder);
+        applyAICameraStrength();
     }
 
     /**
@@ -6732,6 +6769,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         setProModeVisible();
         updateZoom();
         updateZoomSeekBarVisible();
+        updateAICameraSeekBar();
         updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
         mUI.showRelatedIcons(mCurrentSceneMode.mode);
         if(mIsCloseCamera) {
@@ -8590,6 +8628,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyBEStats(builder);
         applyPdnetToggle(builder);
         applyAWBCCTAndAgain(builder);
+        applyAICameraStrength();
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
@@ -11427,7 +11466,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mCaptureCallback, mCameraHandler);
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
-                        mSettingsManager.getVideoFPS());
+                            mSettingsManager.getVideoFPS());
                     if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                         if (mUI.getZoomFixedSupport()) {
                             applyZoomRatio(mVideoRecordRequestBuilder, mZoomValue, id);
@@ -11512,6 +11551,23 @@ public class CaptureModule implements CameraModule, PhotoController,
                             CaptureRequest.CONTROL_MODE_USE_SCENE_MODE,id);
                 }
             }
+        }
+    }
+
+    public void updateAIStrengthValue(int value){
+        mAIStrengthValue = value;
+        applyAICameraStrength();
+    }
+
+    private void applyAICameraStrength(){
+        if(mSettingsManager.isAICameraOn()) {
+            Log.i(TAG, "applyAICameraStrength: " + mAIStrengthValue);
+//            CaptureRequest.Builder request = getCurrentRequest();
+//            try {
+//                request.set(CaptureModule.AICameraStrength, mAIStrengthValue);
+//            } catch (IllegalArgumentException e) {
+//                e.printStackTrace();
+//            }
         }
     }
 
@@ -13250,7 +13306,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public void updateZoomSeekBarVisible() {
         if (mCurrentSceneMode.mode == CameraMode.PRO_MODE || mIsRTBCameraId ||
-                mCurrentSceneMode.mode == CameraMode.RTB || isRTBModeInSelectMode()) {
+                mCurrentSceneMode.mode == CameraMode.RTB || isRTBModeInSelectMode() ||
+                mSettingsManager.isAICameraOn()) {
             if (mCurrentSceneMode.mode == CameraMode.RTB || isRTBModeInSelectMode()) {
                 float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                         getMainCameraId());
@@ -13275,6 +13332,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             mUI.showZoomSeekBar();
             mUI.enableZoomSeekBar(true);
+        }
+    }
+
+    private void updateAICameraSeekBar(){
+        if(mSettingsManager.isAICameraOn()){
+            mUI.showAICameraSeekBar();
+        }else{
+            mUI.hideAICameraSeekBar();
         }
     }
 
