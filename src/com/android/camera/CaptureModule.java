@@ -6974,7 +6974,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public boolean updateZoomChanged(float requestedZoom) {
         Log.i(TAG,"updateZoomChanged,mPaused:" + mPaused + ",mResumed:" +mResumed);
-        if (mIsRTBCameraId || isTakingPicture() || !mResumed) return false;
+        if (mIsRTBCameraId || isTakingPicture() || !mResumed || mPaused) return false;
         float diff = Math.abs(mZoomValue - requestedZoom);
         if ((requestedZoom>=1.0 && diff> 0.05) || (requestedZoom < 1.0 && diff> 0.01)) {
             mZoomValue = requestedZoom;
