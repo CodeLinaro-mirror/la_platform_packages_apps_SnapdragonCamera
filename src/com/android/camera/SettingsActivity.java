@@ -167,13 +167,6 @@ public class SettingsActivity extends PreferenceActivity {
                 updatePreference(SettingsManager.KEY_VIDEO_DURATION);
                 updateVideoMFHDRPreference();
             } else if (key.equals(SettingsManager.KEY_SELECT_MODE)) {
-                value = ((ListPreference) p).getValue();
-                CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-                if (value.equals("single_rear_cameraid") && mode == CaptureModule.CameraMode.VIDEO) {
-                    updateSwitchIDInModePreference(false);
-                } else {
-                    updateSwitchIDInModePreference(true);
-                }
                 updateEISPreference();
                 updatePdnetTogglePreference();
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
