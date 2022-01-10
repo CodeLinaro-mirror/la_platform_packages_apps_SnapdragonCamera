@@ -179,6 +179,9 @@ public class PersistUtil {
         return FD_EXPRESSION_CONFIDENCE_ON;
     }
 
+    private static final boolean PERSIST_SHOW_VERTICAL_EV_BAR = getBoolean("persist.sys.camera.vertical.evbar",false);
+    private static final boolean PERSIST_SHOW_MFNR_SWITCH = getBoolean("persist.sys.camera.mfnr.switch",false);
+
     public static String getHFRRate() {
         return PERSIST_HFR_LIMIT;
     }
@@ -472,7 +475,7 @@ public class PersistUtil {
     public static boolean isRawCbInfoSupported() {return PERSIST_RAW_CB_INFO_SUPPORTED; }
 
     public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }
-
+    public static boolean showMFNRswitch(){return PERSIST_SHOW_MFNR_SWITCH;}
     public static float getLuxIdxThreadhold(){
         return Float.parseFloat(PERSIST_CAMERA_LUX_IDX_THREADHOLD);
     }

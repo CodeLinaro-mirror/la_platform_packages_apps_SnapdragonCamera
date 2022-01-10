@@ -425,12 +425,58 @@
             android:layout_height="200dip"
             android:layout_marginTop="50dip"
             android:layout_marginLeft="15dip" />
+
     </FrameLayout>
 
     <com.android.camera.ui.RenderOverlay
         android:id="@+id/render_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+    <TextView
+        android:id="@+id/mfnr_switch"
+        android:layout_width="28dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="70dip"
+        android:layout_marginLeft="70dip"
+        android:clickable="true"
+        android:textColor="@android:color/white"
+        android:alpha="0.7"
+        android:background="#D3D3D3"
+        android:textSize="13sp"
+        android:gravity="center"
+        android:text="ON"
+        android:visibility="gone"
+        />
+
+    <SeekBar
+        android:layout_width="140dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="60dip"
+        android:layout_marginLeft="95dip"
+        android:maxHeight="3dip"
+        android:minHeight="1dip"
+        android:paddingTop="1dp"
+        android:progressDrawable="@drawable/beautify_progressbar_style"
+        android:thumb="@drawable/evbar_thumb"
+        android:thumbOffset="0dp"
+        android:visibility="gone"
+        android:id="@+id/mfnr_seekbar"/>
+    <TextView
+        android:id="@+id/mfnr_text"
+        android:layout_width="28dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="63dip"
+        android:layout_marginLeft="160dip"
+        android:clickable="true"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:text="3"
+        android:visibility="gone"
+        />
+    </FrameLayout>
     <TextView
         android:id="@+id/offline_dump_trigger"
         android:layout_width="70dp"

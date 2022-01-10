@@ -276,6 +276,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private SeekBar mAICameraSeekBar;
     private View mMakeupSeekBarLayout;
     private View mSeekbarBody;
+    private TextView mMFNRSwitch;
+    private SeekBar mMfnrSeekBar;
+    private TextView mMFNRText;
     private TextView mRecordingTimeView;
     private View mTimeLapseLabel;
     private RotateLayout mRecordingTimeRect;
@@ -825,6 +828,90 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+    }
+    public void hidenMFNRtext(){
+        if(mMFNRText != null) mMFNRText.setVisibility(View.INVISIBLE);
+        if(mMfnrSeekBar != null) mMfnrSeekBar.setVisibility(View.INVISIBLE);
+        if (mMFNRSwitch != null) mMFNRSwitch.setVisibility(View.INVISIBLE);
+    }
+    public void showMFNRtext(){
+        if (mMFNRSwitch != null) mMFNRSwitch.setVisibility(View.VISIBLE);
+        if (mSettingsManager.isMFNREnabled()) {
+            if (mMFNRText != null) mMFNRText.setVisibility(View.VISIBLE);
+            if (mMfnrSeekBar != null) mMfnrSeekBar.setVisibility(View.VISIBLE);
+        }else{
+            if (mMFNRText != null) mMFNRText.setVisibility(View.INVISIBLE);
+            if (mMfnrSeekBar != null) mMfnrSeekBar.setVisibility(View.INVISIBLE);
+        }
+
+    }
+    public void initMfnrSeekBar() {
+        mMFNRSwitch = (TextView) mRootView.findViewById(R.id.mfnr_switch);
+        mMFNRText = (TextView) mRootView.findViewById(R.id.mfnr_text);
+        mMfnrSeekBar = (SeekBar) mRootView.findViewById(R.id.mfnr_seekbar);
+        int minFrame = 3;
+        int maxFrame = 8;
+        int[] frameRange = mSettingsManager.getMFNRFrameRange(mModule.getMainCameraId());
+        if (frameRange != null && frameRange[0] != 0 && frameRange[1] != 0) {
+            minFrame = frameRange[0];
+            maxFrame = frameRange[1];
+        }
+        if (mSettingsManager.isMFNREnabled()) {
+            mMFNRSwitch.setText("ON");
+        } else {
+            mMFNRSwitch.setText("OFF");
+        }
+        mMFNRSwitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mSettingsManager.isMFNREnabled()) {
+                    mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE, "0");
+                    mMFNRSwitch.setText("OFF");
+                    mMfnrSeekBar.setVisibility(View.INVISIBLE);
+                    mMFNRText.setVisibility(View.INVISIBLE);
+                } else {
+                    mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE, "1");
+                    mMFNRSwitch.setText("ON");
+                    mMfnrSeekBar.setVisibility(View.VISIBLE);
+                    mMFNRText.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+        final int length = maxFrame - minFrame + 1;
+        final int min = minFrame;
+        String mfnrFrame = mSettingsManager.getKeyValue(SettingsManager.KEY_CAPTURE_MFNR_FRAME);
+        int frameValue = minFrame;
+        try {
+            frameValue = Integer.parseInt(mfnrFrame);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        final int section = 100 / length;
+        int mProgress = (frameValue - minFrame) * section;
+        mMfnrSeekBar.setProgress(mProgress);
+        String frameStr = String.valueOf(frameValue);
+        mMFNRText.setText(frameStr);
+        mMfnrSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int index = progress / section;
+                if (index > length - 1) index = length - 1;
+                int value = index + min;
+                String str = String.valueOf(value);
+                mMFNRText.setText(str);
+                mSettingsManager.setKeyValue(SettingsManager.KEY_CAPTURE_MFNR_FRAME, true, str);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                isEvChanging = true;
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                isEvChanging = false;
             }
         });
     }

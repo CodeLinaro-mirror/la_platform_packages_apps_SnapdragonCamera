@@ -203,6 +203,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_VARIABLE_FPS = "pref_camera2_variable_fps_key";
     public static final String KEY_VIDEO_FLIP = "pref_camera2_video_flip_key";
     public static final String KEY_CAPTURE_MFNR_VALUE = "pref_camera2_capture_mfnr_key";
+    public static final String KEY_CAPTURE_MFNR_FRAME = "pref_camera2_capture_mfnr_frame_key";
     public static final String KEY_SENSOR_MODE_FS2_VALUE = "pref_camera2_fs2_key";
     public static final String KEY_ABORT_CAPTURES = "pref_camera2_abort_captures_key";
     public static final String KEY_MANUAL_HDR = "pref_camera2_manualhdr_key";
@@ -1332,7 +1333,41 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return false;
         }
     }
-
+    public String getKeyValue(String key) {
+        String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
+                getCurrentPrepNameKey());
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName,
+                Context.MODE_PRIVATE);
+        return sharedPreferences.getString(key, "");
+    }
+    public void setKeyValue(String key, boolean forceNotify, String value) {
+        boolean isSuccess = false;
+        if (value != "" && value != null) {
+            isSuccess = setPreferenceValue(key, value);
+        }
+        if (isSuccess || forceNotify) {
+            List<SettingState> list = new ArrayList<>();
+            Values values = new Values("" + value, null);
+            SettingState ss = new SettingState(key, values);
+            list.add(ss);
+            notifyListeners(list);
+        }
+    }
+    private boolean setPreferenceValue(String key, String value) {
+        boolean result = false;
+        String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
+                getCurrentPrepNameKey());
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName,
+                Context.MODE_PRIVATE);
+        String prefValue = sharedPreferences.getString(key, "");
+        if (prefValue != value) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(key, value);
+            editor.apply();
+            result = true;
+        }
+        return result;
+    }
     public boolean setValue(String key, Set<String> set) {
         ListPreference pref = mPreferenceGroup.findPreference(key);
         if (pref != null) {
@@ -2477,6 +2512,27 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     CaptureModule.MFNRType.toString());
         }
         return isSupported;
+    }
+    public boolean isMFNREnabled() {
+        boolean mfnrEnable = false;
+        String mfnrValue = getValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+        if (mfnrValue != null) {
+            mfnrEnable = mfnrValue.equals("1");
+        }
+        return mfnrEnable;
+    }
+    public int[] getMFNRFrameRange(int cameraId) {
+        int[] range = null;
+        try {
+            range = mCharacteristics.get(cameraId).get(CaptureModule.HWMFNR_FRAME_RANGE);
+            if (range == null) {
+                Log.w(TAG,  "get mfnrframe range  is null.");
+                return null;
+            }
+        } catch(IllegalArgumentException e) {
+            Log.w(TAG, " IllegalArgumentException Supported MFNRFrame range is null.e="+e);
+        }
+        return range;
     }
     public boolean isAutoFocusRegionSupported(List<Integer> ids) {
         for (int id : ids) {

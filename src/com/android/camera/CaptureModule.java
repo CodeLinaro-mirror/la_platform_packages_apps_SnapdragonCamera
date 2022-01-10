@@ -163,11 +163,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Executor;
 import java.util.Set;
 import java.util.HashMap;
-
+import android.widget.SeekBar;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import androidx.heifwriter.HeifWriter;
 
 
@@ -745,7 +744,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public static final CameraCharacteristics.Key<Integer> MFNRType =
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.MFNRType", Integer.class);
-
+    public static CameraCharacteristics.Key<int[]> HWMFNR_FRAME_RANGE =
+            new CameraCharacteristics.Key<>("org.quic.camera.HWMF.HWMFFramesRange", int[].class);
+    public static CaptureRequest.Key<Integer> mfnrFrameNO =
+            new CaptureRequest.Key<>("org.quic.camera.HWMF.HWMFNumOfFramesAPP", Integer.class);
     public static final CaptureResult.Key<Integer> isTorchHdr =
             new CaptureResult.Key<>("com.qti.stats_control.is_torch_hdr_snapshot", Integer.class);
     //vendor tag for AIDE2
@@ -801,6 +803,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private DrawAutoHDR2 mDrawAutoHDR2;
     public boolean mAutoHdrEnable;
     private MFNRDrawer mMFNRDrawer;
+    private TextView mMFNRSwitch;
+    private SeekBar mMfnrSeekBar;
+    private TextView mMFNRText;
     public boolean mMFNREnable;
     /*HDR Test*/
     private boolean mCaptureHDRTestEnable = false;
@@ -2506,6 +2511,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         mRsStatsLabel = (TextView) mRootView.findViewById(R.id.rs_stats_graph_label);
         mDrawAutoHDR2 = (DrawAutoHDR2 )mRootView.findViewById(R.id.autohdr_view);
         mMFNRDrawer = (MFNRDrawer )mRootView.findViewById(R.id.mfnr_view);
+        mMFNRSwitch = (TextView ) mRootView.findViewById(R.id.mfnr_switch);
+        mMFNRText = (TextView ) mRootView.findViewById(R.id.mfnr_text);
+        mMfnrSeekBar = (SeekBar) mRootView.findViewById(R.id.mfnr_seekbar);
         mLockAFAEText = (TextView ) mRootView.findViewById(R.id.lock_af_ae_label);
         mGraphViewR.setDataSection(0,256);
         mGraphViewGB.setDataSection(256,512);
@@ -2533,6 +2541,26 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         if (mMFNRDrawer != null) {
             mMFNRDrawer.setCaptureModuleObject(this);
+        }
+        if(mMFNRSwitch != null){
+            if(isMFNREnabled()) mMFNRSwitch.setText("ON");
+            else mMFNRSwitch.setText("OFF");
+            mMFNRSwitch.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if(isMFNREnabled()){
+                        mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE,"0");
+                        mMFNRSwitch.setText("OFF");
+                        mMfnrSeekBar.setVisibility(View.INVISIBLE);
+                        mMFNRText.setVisibility(View.INVISIBLE);
+                    }else{
+                        mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE,"1");
+                        mMFNRSwitch.setText("ON");
+                        mMfnrSeekBar.setVisibility(View.VISIBLE);
+                        mMFNRText.setVisibility(View.VISIBLE);
+                    }
+                }
+            });
         }
 
         mFirstTimeInitialized = true;
@@ -5703,7 +5731,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean isMFNREnabled() {
         boolean mfnrEnable = false;
-        if (mSettingsManager != null) {
+        if (mSettingsManager != null && showMFNR()) {
             String mfnrValue = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
             if (mfnrValue != null) {
                 mfnrEnable = mfnrValue.equals("1");
@@ -8786,14 +8814,21 @@ public class CaptureModule implements CameraModule, PhotoController,
             boolean isMfnrEnable = isMFNREnabled();
             int noiseReduMode = (isMfnrEnable ? CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY :
                     CameraMetadata.NOISE_REDUCTION_MODE_FAST);
+            String frameStr = mSettingsManager.getKeyValue(mSettingsManager.KEY_CAPTURE_MFNR_FRAME);
+            int frameValue = 3;
+            try {
+                frameValue = Integer.parseInt(frameStr);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
             Log.v(TAG, "applyCaptureMFNR mfnrEnable :" + isMfnrEnable + ", noiseReduMode :"
-                    + noiseReduMode);
+                    + noiseReduMode +",frameStr="+frameStr+",framevalue="+frameValue);
             builder.set(CaptureRequest.NOISE_REDUCTION_MODE, noiseReduMode);
             if (isMfnrEnable) {
                 try {
-                    builder.set(custom_noise_reduction, (byte) 0x01);
+                    builder.set(CaptureModule.mfnrFrameNO, frameValue);
                 } catch (IllegalArgumentException e) {
-                    Log.w(TAG, "capture can`t find vendor tag: " + custom_noise_reduction.toString());
+                    Log.w(TAG, "capture can`t find vendor tag: " + custom_noise_reduction.toString()+" or "+CaptureModule.mfnrFrameNO.toString());
                 }
             }
         }
@@ -11442,21 +11477,37 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void updateMFNRText() {
-        boolean isMfnrEnable = isMFNREnabled();
-        if (isMfnrEnable) {
-            mMFNREnable = true;
-            if (mMFNRDrawer != null) {
+        if (PersistUtil.showMFNRswitch() && showMFNR()) mUI.initMfnrSeekBar();
+        if (showMFNR()) {
+            if (isMFNREnabled() || PersistUtil.showMFNRswitch()) mMFNREnable = true;
+            else if (!PersistUtil.showMFNRswitch() && !isMFNREnabled()) mMFNREnable = false;
+            if (mMFNRDrawer != null && mMFNREnable) {
                 mMFNRDrawer.setVisibility(View.VISIBLE);
                 mMFNRDrawer.refleshMFNR();
+                if (PersistUtil.showMFNRswitch()) {
+                    mUI.showMFNRtext();
+                }
+            } else if (!mMFNREnable) {
+                mMFNREnable = false;
+                if (mMFNRDrawer != null) {
+                    mMFNRDrawer.setVisibility(View.INVISIBLE);
+                    if (PersistUtil.showMFNRswitch()) mUI.hidenMFNRtext();
+                }
             }
         } else {
             mMFNREnable = false;
             if (mMFNRDrawer != null) {
                 mMFNRDrawer.setVisibility(View.INVISIBLE);
+                if (PersistUtil.showMFNRswitch()) mUI.hidenMFNRtext();
             }
         }
     }
-
+    public boolean showMFNR(){
+        if ( (mCurrentSceneMode.mode == CameraMode.DEFAULT || mCurrentSceneMode.mode == CameraMode.RTB)
+                && !mPostProcessor.isSelfieMirrorOn() && !mSettingsManager.isZSLInAppEnabled())
+            return true;
+        else return false;
+    }
     private void updateGraghView(){
         mActivity.runOnUiThread(new Runnable() {
             public void run() {
@@ -14012,7 +14063,7 @@ class MFNRDrawer extends View {
             mfnrPaint.setStrokeWidth(1);
             mfnrPaint.setTextSize(32);
             mfnrPaint.setAlpha(255);
-            canvas.drawText("MFNR", 100, 100, mfnrPaint);
+            canvas.drawText("MFNR", 50, 100, mfnrPaint);
         } else {
             super.onDraw(canvas);
             return;
