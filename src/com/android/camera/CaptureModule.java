@@ -5903,7 +5903,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         if (!requestAudioFocus()) {
-            Log.w(TAG, "Audio focus request failed, recording failed");
+            mStartRecPending = false;
+            mIsRecordingVideo = false;
+            mIsPreviewingVideo = true;
+            Log.w(TAG, "Fail to request audio focus and could not start media recorder");
+            Toast.makeText(mActivity,"Could not start media recorder.\n " +
+                    "There may be calling in the background", Toast.LENGTH_LONG).show();
             return false;
         }
         try {
