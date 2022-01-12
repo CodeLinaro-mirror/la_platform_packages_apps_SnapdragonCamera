@@ -3790,8 +3790,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         mUI.enableShutter(false);
-        boolean isflashRequired = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
-        if(mSettingsManager.isTorchHDREnabled(isflashRequired,mPreviewCaptureResult)){
+        if(mSettingsManager.isTorchHDREnabled(mPreviewCaptureResult)){
             mCaptureTorchTrigger = true;
             applyFlash(mPreviewRequestBuilder[getMainCameraId()], getMainCameraId());
             try{

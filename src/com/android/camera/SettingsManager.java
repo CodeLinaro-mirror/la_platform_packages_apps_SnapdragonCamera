@@ -410,7 +410,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
         mDependency = parseJson("dependency.json");
     }
-   public boolean isTorchHDREnabled(boolean isflashRequired,CaptureResult mResult) {
+   public boolean isTorchHDREnabled(CaptureResult mResult) {
+        boolean isflashRequired = false;
         boolean torchHDREnable = false;
         boolean flashEnable =false;
         String torchHDRValue = getValue(KEY_TORCH_HDR_VALUE);
@@ -420,7 +421,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         boolean isTorchHdrTag = false;
         if(mResult != null){
             try {
-            if(mResult.get(CaptureModule.isTorchHdr) > 0 ) isTorchHdrTag = true;
+                if(mResult.get(CaptureModule.isTorchHdr) > 0 ) isTorchHdrTag = true;
+                isflashRequired = mResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
             }catch (Exception e) {
                 e.printStackTrace();
             }
