@@ -94,6 +94,7 @@ import com.android.camera.ui.AFView;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.deepportrait.GLCameraPreview;
 import com.android.camera.util.PersistUtil;
+import com.android.camera.ui.VerticalSeekBar;
 
 import org.codeaurora.snapcam.R;
 
@@ -158,6 +159,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private SeekBar mEvSeekBar;
     private boolean isEvChanging;
     private AFView mAFViewRender;
+    private VerticalSeekBar mVerticalEvBar;
+    private TextView mEvValue;
 
     private SurfaceHolder.Callback callbackMono = new SurfaceHolder.Callback() {
         // SurfaceHolder callbacks
@@ -576,7 +579,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         setMakeupButtonIcon();
         initZoomSeekBar();
         initAICameraSeekBar();
-
+        if(PersistUtil.showVerticalEvBar()) {
+            initVerticalEvBar();
+        }
         mFlashButton = (FlashToggleButton) mRootView.findViewById(R.id.flash_button);
         mModeSelectLayout = (RecyclerView) mRootView.findViewById(R.id.mode_select_layout);
         mModeSelectLayout.setLayoutManager(new LinearLayoutManager(mActivity,
@@ -851,6 +856,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mMFNRSwitch = (TextView) mRootView.findViewById(R.id.mfnr_switch);
         mMFNRText = (TextView) mRootView.findViewById(R.id.mfnr_text);
         mMfnrSeekBar = (SeekBar) mRootView.findViewById(R.id.mfnr_seekbar);
+        mMfnrSeekBar = (SeekBar) mRootView.findViewById(R.id.mfnr_seekbar);
         int minFrame = 3;
         int maxFrame = 8;
         int[] frameRange = mSettingsManager.getMFNRFrameRange(mModule.getMainCameraId());
@@ -915,6 +921,44 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
     }
+    private void initVerticalEvBar() {
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE) {
+            if (mEvValue != null && mEvValue.getVisibility() == View.VISIBLE)
+                mEvValue.setVisibility(View.INVISIBLE);
+            if (mVerticalEvBar != null && mVerticalEvBar.getVisibility() == View.VISIBLE)
+                mVerticalEvBar.setVisibility(View.INVISIBLE);
+            return;
+        }
+        final int length = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE).length;
+        int index = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
+        String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
+        if (mEvValue == null) mEvValue = (TextView) mRootView.findViewById(R.id.ev_value);
+        mEvValue.setText(value);
+        mEvValue.setVisibility(View.VISIBLE);
+        final int section = 100 / length;
+        if (mVerticalEvBar == null) {
+            mVerticalEvBar = (VerticalSeekBar) mRootView.findViewById(R.id.ev_verticalbar);
+            mVerticalEvBar.setOnSeekBarChangeListener(new VerticalSeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(VerticalSeekBar seekBar, int progress, boolean fromUser) {
+                    int index = progress / section;
+                    if (index > length - 1) index = length - 1;
+                    int currentIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
+                    if (currentIndex != index) {
+                        mSettingsManager.setValueIndex(SettingsManager.KEY_EXPOSURE, index);
+                        String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
+                        mEvValue.setText(value);
+                    }
+                }
+            });
+        }
+        mVerticalEvBar.setVisibility(View.VISIBLE);
+        int progress = section * (index);
+        if (progress > 100) progress = 100;
+        mVerticalEvBar.setProgress(progress);
+        float scale = (float) progress / 100;
+        mVerticalEvBar.freshProgress(scale);
+    }
     public boolean getIsEvChanging() {
         return isEvChanging;
     }
@@ -922,6 +966,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         String defaultEV = mActivity.getResources().getString(
                 R.string.pref_exposure_default);
         mSettingsManager.setValue(SettingsManager.KEY_EXPOSURE, defaultEV);
+        if(PersistUtil.showVerticalEvBar() && mVerticalEvBar != null) {
+            initVerticalEvBar();
+        }
     }
     private void initEvSeekBar() {
         final int length = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE).length;
@@ -954,12 +1001,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         setEvBarProgress(index, section, mEvSeekBar);
     }
-
     private void setEvBarProgress(int evIndex, int section, SeekBar seekBar) {
         int progress = section * (evIndex);
-        if (progress >= 99) progress = 100;
+        if (progress >100) progress = 100;
         seekBar.setProgress(progress);
     }
+
     private void initZoomSeekBar() {
         mZoomLinearLayout = (LinearLayout) mRootView.findViewById(R.id.zoom_linearlayout);
         mZoomValueText = (TextView) mRootView.findViewById(R.id.zoom_value_text);
@@ -1482,6 +1529,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         initFilterModeButton();
         initFlashButton();
         initZoomSeekBar();
+        if(PersistUtil.showVerticalEvBar()) {
+            initVerticalEvBar();
+        }
         setMakeupButtonIcon();
         showSceneModeLabel();
         updateMenus();

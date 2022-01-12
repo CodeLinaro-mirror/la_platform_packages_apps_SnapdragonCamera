@@ -472,6 +472,8 @@ public class PersistUtil {
         return PERSIST_RAW_REPROCESS_ENABLE;
     }
 
+    public static boolean showVerticalEvBar(){return PERSIST_SHOW_VERTICAL_EV_BAR;}
+
     public static boolean isRawCbInfoSupported() {return PERSIST_RAW_CB_INFO_SUPPORTED; }
 
     public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }

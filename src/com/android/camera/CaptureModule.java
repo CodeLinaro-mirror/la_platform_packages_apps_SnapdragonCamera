@@ -8935,6 +8935,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyAWBCCTAndAgain(builder);
         applyAICameraStrength();
         applyAIBlurConfigs(builder);
+        applyExposure(builder);
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
