@@ -6111,6 +6111,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyStatsNNControl(builder);
         applyeMFNRAIDEMode(builder);
         applyeHardSwitchParam(builder);
+        applyRawCbSourceType(builder);
     }
 
     private void applyeHardSwitchParam(CaptureRequest.Builder builder){
@@ -11307,6 +11308,17 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.v(TAG, " applyVSR mode :" + mode);
             if (mode != 0) {
                 VendorTagUtil.setVSRMode(request, mode);
+            }
+        }
+    }
+
+    private void applyRawCbSourceType(CaptureRequest.Builder request) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_RAWINFO_TYPE);
+        Log.v(TAG, " applyRawCbSourceType mode :" + value);
+        if (value != null  && !value.equals("disable") && !value.equals("off")) {
+            int mode = Integer.parseInt(value);
+            if (mode != 0) {
+                VendorTagUtil.setRawCbSourceType(request, mode);
             }
         }
     }
