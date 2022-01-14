@@ -172,6 +172,7 @@ import android.widget.SeekBar;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import androidx.annotation.NonNull;
 import androidx.heifwriter.HeifWriter;
 
 
@@ -1344,15 +1345,20 @@ public class CaptureModule implements CameraModule, PhotoController,
             if("preview".equals(String.valueOf(result.getRequest().getTag()))){
                 return;
             }
-            int id = (int) result.getRequest().getTag();
+            int id = getIdFromTag(result.getRequest().getTag());
             if (!mFirstPreviewLoaded) {
-                mActivity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
+                String tag_ = String.valueOf(result.getRequest().getTag());
+                int mainCameraId = getMainCameraId();
+                String curTag = mainCameraId + "-" + getCurrenCameraMode().name();
+                boolean shouldHideCover = curTag.equals(tag_);
+                Log.d(TAG, "shouldHideCover " + shouldHideCover +
+                        ", request tag " + tag_ + ", curTag " + curTag);
+                if (shouldHideCover) {
+                    mHandler.postDelayed(() -> {
                         mUI.hidePreviewCover();
-                    }
-                });
-                mFirstPreviewLoaded = true;
+                    }, 33L);
+                    mFirstPreviewLoaded = true;
+                }
             }
             if (id == getMainCameraId()) {
                 mPreviewCaptureResult = result;
@@ -1384,7 +1390,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if("preview".equals(String.valueOf(partialResult.getRequest().getTag()))){
                 return;
             }
-            int id = (int) partialResult.getRequest().getTag();
+            int id = getIdFromTag(partialResult.getRequest().getTag());
             if (id == getMainCameraId()) {
                 Face[] faces = partialResult.get(CaptureResult.STATISTICS_FACES);
                 if (FD_DEBUG)
@@ -1408,7 +1414,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if("preview".equals(String.valueOf(result.getRequest().getTag()))){
                 return;
             }
-            int id = (int) result.getRequest().getTag();
+            int id = getIdFromTag(result.getRequest().getTag());
             mVideoFrameNumber = result.getFrameNumber();
 
             if (id == getMainCameraId()) {
@@ -2790,6 +2796,23 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         return false;
     }
+
+    private void setTag(@NonNull CaptureRequest.Builder builder, @NonNull Object tag) {
+        Log.d(TAG, "setTag " + tag);
+        builder.setTag(tag);
+    }
+
+    private int getIdFromTag(Object tag) {
+        String tag_ = String.valueOf(tag);
+        int id  = 0;
+        try {
+            id = Integer.parseInt(tag_.substring(0, tag_.indexOf("-")));
+        } catch (Exception e) {
+
+        }
+        return id;
+    }
+
     private void createSession(final int id) {
         Log.d(TAG, "createSession,id: " + id + ",mPaused:" + mPaused + ",mCameraOpened:"
                 + mCameraOpened[id] + ",mCameraDevice:"+ mCameraDevice[id] + ", mChosenImageFormat :" + mChosenImageFormat);
@@ -2800,7 +2823,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         try {
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilder[id] = getRequestBuilder(id);
-            mPreviewRequestBuilder[id].setTag(id);
+            setTag(mPreviewRequestBuilder[id], "" + id + "-" + getCurrenCameraMode().name());
 
             CameraCaptureSession.StateCallback captureSessionCallback =
                     new CameraCaptureSession.StateCallback() {
@@ -3580,7 +3603,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mPreviewRequestBuilder[id].set(CaptureRequest.CONTROL_AF_MODE, afMode);
         applyAFRegions(mPreviewRequestBuilder[id], id);
         applyAERegions(mPreviewRequestBuilder[id], id);
-        mPreviewRequestBuilder[id].setTag(id);
+        setTag(mPreviewRequestBuilder[id], "" + id + "-" + getCurrenCameraMode().name());
         Log.d(TAG, "setAFModeToPreview ,preview:" + mPreviewRequestBuilder[id].toString());
         try {
             if (isSSMEnabled() && (mIsPreviewingVideo || mIsRecordingVideo)) {
@@ -3606,7 +3629,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         mPreviewRequestBuilder[id].set(CaptureRequest.LENS_FOCUS_DISTANCE, fd);
-        mPreviewRequestBuilder[id].setTag(id);
+        setTag(mPreviewRequestBuilder[id], "" + id + "-" + getCurrenCameraMode().name());
         try {
             if (id == MONO_ID && !canStartMonoPreview()) {
                 mCaptureSession[id].capture(mPreviewRequestBuilder[id]
@@ -4060,7 +4083,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         try {
             mState[id] = STATE_WAITING_AF_AE_LOCK;
             CaptureRequest.Builder builder = getRequestBuilder(id);
-            builder.setTag(id);
+            setTag(builder, "" + id + "-" + getCurrenCameraMode().name());
             addPreviewSurface(builder, null, id);
             // lock AF and Precapture
             applySettingsForLockAndPrecapture(builder, id);
@@ -4143,7 +4166,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         try {
             CaptureRequest.Builder builder = getRequestBuilder(id);
-            builder.setTag(id);
+            setTag(builder, "" + id + "-" + getCurrenCameraMode().name());
             addPreviewSurface(builder, null, id);
 
             if (mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
@@ -4189,7 +4212,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         try {
             CaptureRequest.Builder builder = getRequestBuilder(id);
-            builder.setTag(id);
+            setTag(builder, "" + id + "-" + getCurrenCameraMode().name());
             if((mCurrentSceneMode.mode == CameraMode.VIDEO ||
                     mCurrentSceneMode.mode == CameraMode.HFR) && !mIsRecordingVideo){
                 Surface surface = getPreviewSurfaceForSession(id);
@@ -5204,7 +5227,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         try {
             CaptureRequest.Builder builder = getRequestBuilder(id);
-            builder.setTag(id);
+            setTag(builder, "" + id + "-" + getCurrenCameraMode().name());
             addPreviewSurface(builder, null, id);
             if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE){
                 applySettingsForLockExposure(builder, id);
@@ -6062,7 +6085,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         try {
             if (mUI.getCurrentProMode() != ProMode.MANUAL_MODE) {
                 CaptureRequest.Builder builder = getRequestBuilder(id);
-                builder.setTag(id);
+                setTag(builder, "" + id + "-" + getCurrenCameraMode().name());
                 addPreviewSurface(builder, null, id);
                 applySettingsForUnlockFocus(builder, id);
                 if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE) {
@@ -9318,7 +9341,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mVideoRecordRequestBuilder = getRequestBuilder(CameraDevice.TEMPLATE_RECORD,
                     cameraId,mSettingsManager.getPhysicalCameraId());
         }
-        mVideoRecordRequestBuilder.setTag(cameraId);
+        setTag(mVideoRecordRequestBuilder, "" + cameraId + "-" + getCurrenCameraMode().name());
         if (mHighSpeedCapture && !isVariableFPSEnabled()) {
             mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                     mHighSpeedFPSRange);
@@ -9353,7 +9376,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.w(TAG, "setUpVideoPreviewRequestBuilder, Camera access failed");
             return;
         }
-        mVideoPreviewRequestBuilder.setTag(cameraId);
+        setTag(mVideoPreviewRequestBuilder, "" + cameraId + "-" + getCurrenCameraMode().name());
         if (mSettingsManager.getPhysicalCameraId() != null) {
             List<Surface> previewSurfaces = mUI.getPhysicalSurfaces();
             if(mSettingsManager.isLogicalEnable()){
@@ -13287,7 +13310,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         transformTouchCoords(x, y, id);
         try {
             if (mPreviewRequestBuilder[id] != null) {
-                mPreviewRequestBuilder[id].setTag(id);
+                setTag(mPreviewRequestBuilder[id], "" + id + "-" + getCurrenCameraMode().name());
                 registerRect[0] = mT2TrackRegions[id][0].getX();
                 registerRect[1] = mT2TrackRegions[id][0].getY();
                 registerRect[2] = mT2TrackRegions[id][0].getWidth();
