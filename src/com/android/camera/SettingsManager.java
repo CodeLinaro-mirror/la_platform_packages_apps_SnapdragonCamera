@@ -2401,6 +2401,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         getSupportedHighFrameRate(mode, mCameraId));
                 if (!mIsHFRSupported) {
                     mFilteredKeys.add(hfrPref.getKey());
+                } else {
+                    mFilteredKeys.remove(hfrPref.getKey());
                 }
             }else {
                 mIsHFRSupported = true;//init this value for other mode
@@ -2662,6 +2664,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     }
                 }
             }
+        }
+        if (supported.isEmpty()) {
+            supported.add("off");
         }
         Log.d(TAG,"getSupportedHighFrameRate-supported="+supported+",mCaptureModule.getVideoHdrMode()="+getVideoHdrMode());
         return supported;
