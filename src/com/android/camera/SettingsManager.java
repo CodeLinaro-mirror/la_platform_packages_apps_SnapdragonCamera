@@ -2764,6 +2764,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         continue;
                     }
                 }
+                if(sizes[i].getWidth() == 16320 && sizes[i].getHeight() == 12240 && !isNZSLEnabled()){
+                    //200MP size is only for NZSL
+                    continue;
+                }
                 res.add(highResSizes[i].toString());
             }
         }
@@ -3537,6 +3541,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         String value = getValue(KEY_ZSL);
         String halZSLValue = mContext.getString(R.string.pref_camera2_zsl_entryvalue_hal_zsl);
         if ( value != null && value.equals(halZSLValue) ){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public boolean isNZSLEnabled(){
+        String value = getValue(KEY_ZSL);
+        String nZSLValue = mContext.getString(R.string.pref_camera2_zsl_entryvalue_disable);
+        if ( value != null && value.equals(nZSLValue) ){
             return true;
         }else{
             return false;
