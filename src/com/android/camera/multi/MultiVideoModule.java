@@ -433,6 +433,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 captureBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                         CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
                 applyVideoEIS(captureBuilder);
+                applyFaceDetection(captureBuilder);
 
                 // Orientation
                 int rotation = mActivity.getWindowManager().getDefaultDisplay().getRotation();
@@ -1187,6 +1188,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         CaptureRequest.NOISE_REDUCTION_MODE_HIGH_QUALITY);
             }
             applyVideoEIS(mRecordRequestBuilders[id]);
+            applyFaceDetection(mRecordRequestBuilders[id]);
             List<Surface> surfaces = new ArrayList<>();
 
             // Set up Surface for the camera preview
