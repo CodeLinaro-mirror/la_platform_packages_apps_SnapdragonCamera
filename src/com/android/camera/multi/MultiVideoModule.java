@@ -1034,6 +1034,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 e.printStackTrace();
             }
 
+            updateOptMode();
             List<OutputConfiguration> outConfigurations = new ArrayList<>(1);
             outConfigurations.add(new OutputConfiguration(surface));
 
@@ -1046,6 +1047,92 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             e.printStackTrace();
         }
         return sessionConfiguration;
+    }
+
+    private SessionConfiguration prepareRecordingSessions(int id, List<Surface> surfaces) {
+        SessionConfiguration sessionConfiguration = null;
+        final int index = mCameraIDList.indexOf(String.valueOf(id));
+        Log.v(TAG, "prepareRecordingSessions id :" + id + " mCameraDevices[id] :" + mCameraDevices[id]);
+        try {
+            // We set up a videoRequest Builder with the output Surface.
+            mRecordRequestBuilders[id].setTag(id);
+
+            CameraCaptureSession.StateCallback stateCallback =
+                    new CameraCaptureSession.StateCallback() {
+                        @Override
+                        public void onConfigured(CameraCaptureSession cameraCaptureSession) {
+                            // The camera is already closed
+                            if (null == mCameraDevices[id]) {
+                                return;
+                            }
+                            mCameraPreviewSessions[id] = cameraCaptureSession;
+                            updateRecordingPreview(id);
+                            mActivity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mIsRecordingVideos[id] = true;
+                                    // Start recording
+                                    updateFaceDetection(id);
+                                    setDisplayOrientation(id);
+                                    mMediaRecorders[id].start();
+                                    requestAudioFocus();
+                                    mRecordingTotalTime = 0L;
+                                    mRecordingStartTime = SystemClock.uptimeMillis();
+                                    mMediaRecorderPausings[id] = false;
+                                    mMultiCameraUI.resetPauseButton();
+                                    mMultiCameraUI.showRecordingUI(true);
+                                    updateRecordingTime(id);
+                                    mEisStopMediaRecords[index] = true;
+                                    Log.v(TAG, " startRecordingVideo done " + id);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
+                            showToast("Recording onConfigureFailed");
+                        }
+                    };
+
+            try {
+                final byte enable = 1;
+                mRecordRequestBuilders[id].set(override_resource_cost_validation, enable);
+                Log.v(TAG, " video set" + override_resource_cost_validation + " is 1");
+            } catch (IllegalArgumentException e) {
+                e.printStackTrace();
+            }
+
+            updateOptMode();
+            List<OutputConfiguration> outConfigurations = new ArrayList<>(1);
+            for (Surface surface : surfaces) {
+                outConfigurations.add(new OutputConfiguration(surface));
+            }
+
+            sessionConfiguration = new SessionConfiguration(
+                    SessionConfiguration.SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
+                    new HandlerExecutor(mCameraHandler), stateCallback);
+            sessionConfiguration.setSessionParameters(mRecordRequestBuilders[id].build());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return sessionConfiguration;
+    }
+
+    private void updateOptMode() {
+        String defaultValue = mActivity.getString(R.string.pref_camera2_eis_default);
+        String value = mLocalSharedPref.getString(
+                MultiSettingsActivity.KEY_VIDEO_EIS, defaultValue);
+        mStreamConfigOptMode = 0;
+        if (value != null) {
+            if (value.equals("V2")) {
+                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
+            } else if (value.equals("V3")) {
+                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_LOOKAHEAD;
+            }
+        }
+        if (DEBUG) {
+            Log.d(TAG, "updateOptMode mStreamConfigOptMode: " + mStreamConfigOptMode);
+        }
     }
 
     private class HandlerExecutor implements Executor {
@@ -1176,10 +1263,10 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         Log.v(TAG, " startRecordingVideo " + id);
         try {
             closePreviewSession(id);
+            mRecordRequestBuilders[id] = mCameraDevices[id].createCaptureRequest(
+                        CameraDevice.TEMPLATE_RECORD);
             setUpMediaRecorder(id);
             createVideoSnapshotImageReader(id);
-            mRecordRequestBuilders[id] = mCameraDevices[id].createCaptureRequest(
-                    CameraDevice.TEMPLATE_RECORD);
             if (true) {
                 mRecordRequestBuilders[id].set(CaptureRequest.NOISE_REDUCTION_MODE,
                         CaptureRequest.NOISE_REDUCTION_MODE_FAST);
@@ -1195,50 +1282,20 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             Surface previewSurface = mMultiCameraUI.getSurfaceViewList().get(index).getHolder()
                     .getSurface();
             surfaces.add(previewSurface);
+            mRecordRequestBuilders[id].removeTarget(previewSurface);
             mRecordRequestBuilders[id].addTarget(previewSurface);
 
             // Set up Surface for the MediaRecorder
             Surface recorderSurface = mMediaRecorders[id].getSurface();
             surfaces.add(recorderSurface);
+            mRecordRequestBuilders[id].removeTarget(recorderSurface);
             mRecordRequestBuilders[id].addTarget(recorderSurface);
             surfaces.add(mImageReaders[id].getSurface());
 
             // Start a capture session
             // Once the session starts, we can update the UI and start recording
-            mCameraDevices[id].createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
-
-                @Override
-                public void onConfigured(CameraCaptureSession cameraCaptureSession) {
-                    mCameraPreviewSessions[id] = cameraCaptureSession;
-                    updateRecordingPreview(id);
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mIsRecordingVideos[id] = true;
-                            // Start recording
-                            updateFaceDetection(id);
-                            setDisplayOrientation(id);
-                            mMediaRecorders[id].start();
-                            requestAudioFocus();
-                            mRecordingTotalTime = 0L;
-                            mRecordingStartTime = SystemClock.uptimeMillis();
-                            mMediaRecorderPausings[id] = false;
-                            mMultiCameraUI.resetPauseButton();
-                            mMultiCameraUI.showRecordingUI(true);
-                            updateRecordingTime(id);
-                            mEisStopMediaRecords[index] = true;
-                            Log.v(TAG, " startRecordingVideo done " + id);
-                        }
-                    });
-                }
-
-                @Override
-                public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
-                    if (null != mActivity) {
-                        Toast.makeText(mActivity, "Configure Failed", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }, mMultiCameraModule.getMyCameraHandler());
+            SessionConfiguration sessionConfiguration = prepareRecordingSessions(id, surfaces);
+            mCameraDevices[id].createCaptureSession(sessionConfiguration);
         } catch (CameraAccessException | IllegalStateException | IOException e) {
             e.printStackTrace();
         }
@@ -1756,19 +1813,15 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     }
 
     private void applyVideoEIS(CaptureRequest.Builder request) {
+        String defaultValue = mActivity.getString(R.string.pref_camera2_eis_default);
         String value = mLocalSharedPref.getString(
-                MultiSettingsActivity.KEY_VIDEO_EIS, "enable");
+                MultiSettingsActivity.KEY_VIDEO_EIS, defaultValue);
 
         if (DEBUG) {
             Log.d(TAG, "applyVideoEIS EIS select: " + value);
         }
         mStreamConfigOptMode = 0;
         if (value != null) {
-            if (value.equals("V2")) {
-                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
-            } else if (value.equals("V3")) {
-                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_LOOKAHEAD;
-            }
             byte byteValue = (byte) (value.equals("disable") ? 0x00 : 0x01);
             try {
                 applyVideoStabilization(request, value.equals("disable"));
