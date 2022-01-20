@@ -1048,7 +1048,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             sessionConfiguration = new SessionConfiguration(
                     SessionConfiguration.SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
                     new HandlerExecutor(mCameraHandler), stateCallback);
-            //applyVideoEncoderProfile(mPreviewRequestBuilders[id], id);
+            applyVideoEncoderProfile(mPreviewRequestBuilders[id], id);
             sessionConfiguration.setSessionParameters(mPreviewRequestBuilders[id].build());
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -1118,6 +1118,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             sessionConfiguration = new SessionConfiguration(
                     SessionConfiguration.SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
                     new HandlerExecutor(mCameraHandler), stateCallback);
+            applyVideoEncoderProfile(mRecordRequestBuilders[id], id);
             sessionConfiguration.setSessionParameters(mRecordRequestBuilders[id].build());
         } catch (Exception e) {
             e.printStackTrace();
