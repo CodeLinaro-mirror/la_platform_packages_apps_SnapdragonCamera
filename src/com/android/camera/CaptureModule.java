@@ -3785,7 +3785,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      */
     private void takePicture() {
         Log.d(TAG, "takePicture");
-        if(!getCameraModeSwitcherAllowed() || !mUI.isShutterEnabled()){
+        if(!getCameraModeSwitcherAllowed() || !mUI.isShutterEnabled() ||mCurrentSessionClosed){
             Log.d(TAG, "mode switch not finished or shutter button is not enabled, can not take snapshot");
             return;
         }
@@ -5079,13 +5079,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     orientation = CameraUtil.getJpegRotation(getMainCameraId(),mOrientation);
                                     exif =  Exif.getExif(bytes);
                                     long imglen=bytes.length;
-                                    if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
-                                        Log.d(TAG,"setupcameraoutput-onImageAvailable width="+image.getWidth()+",height="+image.getHeight()+",stride="+image.getPlanes()[0].getRowStride());
-                                        if(image.getFormat() == ImageFormat.RAW_SENSOR && mRawReprocessType == 0){
+                                    int imageFormat = image.getFormat();
+                                    int imageWidth= image.getWidth();
+                                    int imageHeight = image.getHeight();
+                                    if (imageFormat == ImageFormat.RAW10 || imageFormat == ImageFormat.RAW_SENSOR) {
+                                        Log.d(TAG,"setupcameraoutput-onImageAvailable width="+imageWidth+",height="+imageHeight+",stride="+image.getPlanes()[0].getRowStride());
+                                        if(imageFormat == ImageFormat.RAW_SENSOR && mRawReprocessType == 0){
                                             TotalCaptureResult mRawMeta = waitForRawMetaData();
                                             int setsucess = setInfoForDng(mRawMeta);
                                             if(setsucess == 0){
-                                                mActivity.getMediaSaveService().addDng(image,imglen, title,date,null, image.getWidth(), image.getHeight(), orientation, exif,
+                                                mActivity.getMediaSaveService().addDng(image,imglen, title,date,null, imageWidth, imageHeight, orientation, exif,
                                                                                                     mOnMediaSavedListener, mContentResolver,"dng");
                                             }else{
                                                 mActivity.getMediaSaveService().addRawImage(bytes,title, "raw");
@@ -5112,11 +5115,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             image.close();
                                         }
 
-                                    } else if (image.getFormat() == ImageFormat.YUV_420_888) {
+                                    } else if (imageFormat == ImageFormat.YUV_420_888) {
                                         Log.d(TAG,"YUV buffer received from camera id =" + mCameraId);
                                         image.close();
                                     } else {
-                                        if (image.getFormat() != ImageFormat.HEIC) {
+                                        if (imageFormat != ImageFormat.HEIC) {
                                             exif = Exif.getExif(bytes);
                                             orientation = Exif.getOrientation(exif);
                                         }
@@ -5130,14 +5133,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             }
                                         } else {
                                             String pictureFormat = "jpeg";
-                                            if (image.getFormat() == ImageFormat.HEIC) {
+                                            if (imageFormat == ImageFormat.HEIC) {
                                                 pictureFormat = "heic";
                                             }
                                             if (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA) {
                                                 mIntentMode = INTENT_MODE_NORMAL;
                                             }
                                             mActivity.getMediaSaveService().addImage(bytes, title, date,
-                                                    null, image.getWidth(), image.getHeight(), orientation, exif,
+                                                    null, imageWidth, imageHeight, orientation, exif,
                                                     mOnMediaSavedListener, mContentResolver,pictureFormat);
 
                                             if (mLongshotActive) {
@@ -8056,6 +8059,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             mFirstPreviewLoaded = false;
             // Create slow motion request list
             List<CaptureRequest> slowMoRequests = null;
+            if(mCameraDevice[cameraId] == null){
+                Log.d(TAG, "camera has been closed, return it");
+                return;
+            }
             try {
                 setUpVideoCaptureRequestBuilder(cameraId);
                 if (isHighSpeedRateCapture()) {
