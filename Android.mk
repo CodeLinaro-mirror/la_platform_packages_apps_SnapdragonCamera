@@ -49,6 +49,12 @@ LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 #  LOCAL_REQUIRED_MODULES := libjni_aidenoiserutilv2
 #endif
 
+ifneq (,$(TARGET_BUILD_APPS))
+  LOCAL_JNI_SHARED_LIBRARIES := libjni_imageutil
+else
+  LOCAL_REQUIRED_MODULES := libjni_imageutil
+endif
+
 include $(BUILD_PACKAGE)
 
 include $(call all-makefiles-under, $(LOCAL_PATH))
