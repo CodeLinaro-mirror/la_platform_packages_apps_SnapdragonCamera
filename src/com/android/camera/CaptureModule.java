@@ -3318,7 +3318,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoRecordingSurface = mVideoEncoder.createInputSurface();
                 mVideoEncoder.start();
             }
-            mFrameProcessor.setVideoOutputSurface(mVideoRecordingSurface);
+            mFrameProcessor.setVideoOutputSurface(null);
             setUpVideoCaptureRequestBuilder(cameraId);
             if (!PersistUtil.enableMediaRecorder() && (mVideoRecordingSurface != null)) {
                 mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
@@ -8293,6 +8293,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mUI.clearFocus();
             }
             mUI.hideUIwhileRecording();
+            mFrameProcessor.setVideoOutputSurface(mVideoRecordingSurface);
             if (isHighSpeedRateCapture()) {
                 //This should be not needed since setRepeatingBurst don't change
                 //Will remove it in next version
@@ -9269,6 +9270,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
             }
         } else {
+            mFrameProcessor.setVideoOutputSurface(null);
             //stop without config stream
             try {
                 mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
