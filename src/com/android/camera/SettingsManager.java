@@ -2187,8 +2187,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             } catch (IllegalArgumentException ex) {
                 Log.w(TAG, "HFR is not supported for " + ex);
             }
-            if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 3) {
-                for (int i = 0; i < mExtendedHFRSize.length; i += 3) {
+            if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 4) {
+                for (int i = 0; i < mExtendedHFRSize.length; i += 4) {
                     String item = "hfr" + mExtendedHFRSize[i + 2];
                     if (!supported.contains(item)
                             && videoSize.getWidth() <= mExtendedHFRSize[i]
@@ -2284,8 +2284,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             } catch (IllegalArgumentException ex) {
                 Log.w(TAG, "HFR is not supported for " + ex);
             }
-            if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 3) {
-                for (int i = 0; i < mExtendedHFRSize.length; i += 3) {
+            if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 4) {
+                for (int i = 0; i < mExtendedHFRSize.length; i += 4) {
                     String item = "hfr" + mExtendedHFRSize[i + 2];
                     if (!supported.contains(item)
                             && videoSize.getWidth() <= mExtendedHFRSize[i]
