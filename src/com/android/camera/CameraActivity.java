@@ -1739,6 +1739,7 @@ public class CameraActivity extends Activity
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
+        if(mPaused) return false;
         boolean result = false;
         if (mFilmStripView.checkSendToModeView(ev)) {
             result = mFilmStripView.sendToModeView(ev);

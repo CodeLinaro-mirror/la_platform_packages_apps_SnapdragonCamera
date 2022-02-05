@@ -28,9 +28,8 @@ LOCAL_AAPT_FLAGS := \
 LOCAL_PACKAGE_NAME := SnapdragonCamera
 LOCAL_VENDOR_MODULE := true
 LOCAL_PRIVILEGED_MODULE := true
-#LOCAL_PRIVATE_PLATFORM_APIS:=true
 
-LOCAL_SDK_VERSION := current
+LOCAL_SDK_VERSION := system_current
 LOCAL_RENDERSCRIPT_TARGET_API := 23
 
 #Do not override for targets using vanilla AOSP
@@ -49,6 +48,12 @@ LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 #else
 #  LOCAL_REQUIRED_MODULES := libjni_aidenoiserutilv2
 #endif
+
+ifneq (,$(TARGET_BUILD_APPS))
+  LOCAL_JNI_SHARED_LIBRARIES := libjni_imageutil
+else
+  LOCAL_REQUIRED_MODULES := libjni_imageutil
+endif
 
 include $(BUILD_PACKAGE)
 

@@ -167,14 +167,8 @@ public class SettingsActivity extends PreferenceActivity {
                 updatePreference(SettingsManager.KEY_VIDEO_DURATION);
                 updateVideoMFHDRPreference();
             } else if (key.equals(SettingsManager.KEY_SELECT_MODE)) {
-                value = ((ListPreference) p).getValue();
-                CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-                if (value.equals("single_rear_cameraid") && mode == CaptureModule.CameraMode.VIDEO) {
-                    updateSwitchIDInModePreference(false);
-                } else {
-                    updateSwitchIDInModePreference(true);
-                }
                 updateEISPreference();
+                updateT2TPreference();
                 updatePdnetTogglePreference();
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
@@ -189,6 +183,8 @@ public class SettingsActivity extends PreferenceActivity {
                     picSize.setEnabled(true);
                     picFormat.setEnabled(true);
                 }
+            } else if (key.equals(SettingsManager.KEY_FACE_DETECTION)) {
+                updateT2TPreference();
             }
             List<String> list = mSettingsManager.getDependentKeys(key);
             if (list != null) {
@@ -1514,6 +1510,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateLongShotPreference();
         updateVideoHfrFpsPreference();
         updateEISPreference();
+        updateT2TPreference();
         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         updatePictureFormatPreference();
@@ -1533,9 +1530,7 @@ public class SettingsActivity extends PreferenceActivity {
             boolean enable = p.isEnabled();
             if (p instanceof SwitchPreference) {
                 ((SwitchPreference) p).setChecked(isOn(value));
-                if (enable) {
-                    ((SwitchPreference) p).setEnabled(true);
-                }
+                ((SwitchPreference) p).setEnabled(enable && !disabled);
             } else if (p instanceof ListPreference) {
                 ListPreference pref = (ListPreference) p;
                 if (enable) {
@@ -1863,6 +1858,32 @@ public class SettingsActivity extends PreferenceActivity {
             if (selectModePref.getValue().equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
                 if (eisPref != null) {
                     eisPref.setEnabled(false);
+                }
+            }
+        }
+    }
+
+    private void updateT2TPreference() {
+        CaptureModule.CameraMode mode = (CaptureModule.CameraMode)
+                getIntent().getSerializableExtra(CAMERA_MODULE);
+        ListPreference selectModePref = (ListPreference) findPreference(
+                SettingsManager.KEY_SELECT_MODE);
+        SwitchPreference t2TFocus = (SwitchPreference) findPreference(
+                SettingsManager.KEY_TOUCH_TRACK_FOCUS);
+        SwitchPreference faceDetection = (SwitchPreference) findPreference(
+                SettingsManager.KEY_FACE_DETECTION);
+        if (selectModePref != null && t2TFocus != null && mode == CaptureModule.CameraMode.VIDEO) {
+            if (selectModePref.getValue().equals("rtb")) {
+                t2TFocus.setEnabled(false);
+                t2TFocus.setChecked(false);
+                mSettingsManager.setValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "off");
+            } else {
+                if (faceDetection.isChecked()) {
+                    t2TFocus.setEnabled(false);
+                    t2TFocus.setChecked(false);
+                    mSettingsManager.setValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "off");
+                } else {
+                    t2TFocus.setEnabled(true);
                 }
             }
         }
