@@ -202,6 +202,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if(mode == CaptureModule.CameraMode.VIDEO && mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID){
                     recreate();
                 }
+                updateT2TPreference();
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
                 value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
@@ -394,9 +395,6 @@ public class SettingsActivity extends PreferenceActivity {
                 if (SettingsManager.KEY_PHOTO_EIS_VALUE.equals(pref.getKey())
                         || SettingsManager.KEY_EIS_VALUE.equals(pref.getKey())) {
                     updatePreviewStabilizationPreference();
-                }
-                if(mSettingsManager.KEY_FACE_DETECTION.equals(pref.getKey())){
-                    updateT2TPreference();
                 }
                 if(mSettingsManager.KEY_SWITCH_CAMERA .equals(pref.getKey())){
                     checkExposurTimeValue();
@@ -2344,28 +2342,20 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
 
-	private void updateT2TPreference() {
+    private void updateT2TPreference() {
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode)
                 getIntent().getSerializableExtra(CAMERA_MODULE);
         ListPreference selectModePref = (ListPreference) findPreference(
                 SettingsManager.KEY_SELECT_MODE);
         SwitchPreference t2TFocus = (SwitchPreference) findPreference(
                 SettingsManager.KEY_TOUCH_TRACK_FOCUS);
-        SwitchPreference faceDetection = (SwitchPreference) findPreference(
-                SettingsManager.KEY_FACE_DETECTION);
         if (t2TFocus != null && mode == CaptureModule.CameraMode.VIDEO) {
             if (selectModePref != null && selectModePref.getValue().equals("rtb")) {
                 t2TFocus.setEnabled(false);
                 t2TFocus.setChecked(false);
                 mSettingsManager.setValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "off");
             } else {
-                if (faceDetection.isChecked()) {
-                    t2TFocus.setEnabled(false);
-                    t2TFocus.setChecked(false);
-                    mSettingsManager.setValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "off");
-                } else {
-                    t2TFocus.setEnabled(true);
-                }
+                t2TFocus.setEnabled(true);
             }
         }
     }
