@@ -863,7 +863,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         int[] hdrMaxSize = getHdrMaxResolution();
         if(isMfhdrEnabled() && hdrMaxSize != null){
-            if((maxPreviewSize != null && (maxPreviewSize[0]*maxPreviewSize[1] > hdrMaxSize[0]*hdrMaxSize[1])) ||
+            if((maxPreviewSize != null && (maxPreviewSize[0]*maxPreviewSize[1] > hdrMaxSize[0]*hdrMaxSize[1] && hdrMaxSize[0] > 0 && hdrMaxSize[1] > 0)) ||
                     maxPreviewSize == null){
                maxPreviewSize = hdrMaxSize;
             }
