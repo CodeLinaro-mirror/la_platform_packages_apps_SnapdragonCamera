@@ -183,8 +183,6 @@ public class SettingsActivity extends PreferenceActivity {
                     picSize.setEnabled(true);
                     picFormat.setEnabled(true);
                 }
-            } else if (key.equals(SettingsManager.KEY_FACE_DETECTION)) {
-                updateT2TPreference();
             }
             List<String> list = mSettingsManager.getDependentKeys(key);
             if (list != null) {
@@ -1870,21 +1868,15 @@ public class SettingsActivity extends PreferenceActivity {
                 SettingsManager.KEY_SELECT_MODE);
         SwitchPreference t2TFocus = (SwitchPreference) findPreference(
                 SettingsManager.KEY_TOUCH_TRACK_FOCUS);
-        SwitchPreference faceDetection = (SwitchPreference) findPreference(
-                SettingsManager.KEY_FACE_DETECTION);
         if (selectModePref != null && t2TFocus != null && mode == CaptureModule.CameraMode.VIDEO) {
+            Log.v("daming", " selectModePref.getValue() :" + selectModePref.getValue());
             if (selectModePref.getValue().equals("rtb")) {
-                t2TFocus.setEnabled(false);
-                t2TFocus.setChecked(false);
                 mSettingsManager.setValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "off");
+                t2TFocus.setChecked(false);
+                t2TFocus.setEnabled(false);
             } else {
-                if (faceDetection.isChecked()) {
-                    t2TFocus.setEnabled(false);
-                    t2TFocus.setChecked(false);
-                    mSettingsManager.setValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "off");
-                } else {
-                    t2TFocus.setEnabled(true);
-                }
+                Log.v("daming", " t2TFocus.setEnabled(true) ");
+                t2TFocus.setEnabled(true);
             }
         }
     }
