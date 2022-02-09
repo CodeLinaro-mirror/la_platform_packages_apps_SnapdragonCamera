@@ -755,7 +755,7 @@ public class MultiCaptureModule implements MultiCamera {
             previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH_16_9,
                     MultiSettingsActivity.PREVIEW_HIEGHT_16_9);
         } else {
-            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH_4_3,
                     MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
         }
         Log.v(TAG, "getOptimalPreviewSize width " + width + ", height :" + height);
