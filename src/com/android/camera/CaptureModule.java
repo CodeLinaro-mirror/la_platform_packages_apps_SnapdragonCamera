@@ -2921,12 +2921,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                     mPreviewRequestBuilder[id].addTarget(surface);
 
-                    if (!mSettingsManager.isHeifWriterEncoding() && mRawReprocessType != 1 && !isAIDE2Enabled()) {
+                    Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
+                    if (!mSettingsManager.isHeifWriterEncoding() && mRawReprocessType != 1) {
                         if (!isMultiResolutionImageReaderEnabled()) {
-                            list.add(mImageReader[id].getSurface());
+                            if((isAIDE2Enabled() && (physical_ids != null && physical_ids.size() != 0)) || !isAIDE2Enabled()){
+                                Log.i(TAG, "add blob configure stream for mcx aide2 or other case");
+                                list.add(mImageReader[id].getSurface());
+                            }
                         }
                     }
-
                     if (mSettingsManager.isMultiCameraEnabled() &&
                             !mSettingsManager.isLogicalFeatureEnable(
                                     SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK)) {
@@ -2978,7 +2981,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                             outputConfigurations.add(outputConfiguration);
                         }
                     }
-                    Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
                     if(isAIDE2Enabled()) {
                         if(physical_ids != null && physical_ids.size() != 0){
                             for (String physicalId : physical_ids){
