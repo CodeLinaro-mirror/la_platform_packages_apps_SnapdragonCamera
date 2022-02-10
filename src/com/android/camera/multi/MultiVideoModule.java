@@ -388,6 +388,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     @Override
     public void onVideoButtonClick(String[] ids) {
         checkAndPlayShutterSound(mIsRecordingVideos[0]);
+        mMultiCameraUI.enableVideo(false);
         for (String id : ids) {
             int cameraId = Integer.parseInt(id);
             Log.d(TAG, " onVideoButtonClick id :" + cameraId + "  recording is :" +
@@ -404,6 +405,12 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 startRecordingVideo(cameraId);
             }
         }
+        mMultiCameraModule.getMainHandler().postDelayed (new Runnable() {
+            @Override
+            public void run() {
+                mMultiCameraUI.enableVideo(true);
+            }
+        }, 1200);
     }
 
     @Override
@@ -786,13 +793,13 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                     break;
                 case STOP_RECORD_EIS:
                     int cameraId = msg.arg1;
-                    mMultiCameraModule.getMainHandler().post(new Runnable() {
+                    mMultiCameraModule.getMainHandler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             keepScreenOnAwhile();
                             mMultiCameraUI.enableVideo(true);
                         }
-                    });
+                    }, 1200);
                     stopMediaRecordAndSaveFile(cameraId);
                     break;
             }
