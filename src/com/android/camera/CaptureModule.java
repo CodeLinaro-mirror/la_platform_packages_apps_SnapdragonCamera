@@ -4532,22 +4532,28 @@ public class CaptureModule implements CameraModule, PhotoController,
         mBurstLimit = "1".equals(mSettingsManager.getValue(SettingsManager.KEY_BURST_LIMIT));
         if (!mBurstLimit) {
             List<CaptureRequest> burstList = new ArrayList<>();
-            float burstShotFpsNums = 0.0f;
-            if(calculateMaxFps() > 0){
-                burstShotFpsNums = 30/calculateMaxFps() - 1;
+            float previewProportion = 0f;
+            if (calculateMaxFps() > 0f) {
+                previewProportion = 30f / calculateMaxFps() - 1f;
             }
-            Log.i(TAG, "burstShotFpsNums:" + burstShotFpsNums);
-
-            if (mSettingsManager.isHeifHALEncoding()) {
-                burstShotFpsNums += 2;
+            Log.i(TAG, "burstShot, previewProportion:" + previewProportion);
+            float captureProportion = 1.0f;
+            int previewCount = 0;
+            int captureCount = 0;
+            for (int i = 0; i < 30; i++) {
+                if ((captureProportion - previewProportion) >= 0f) {
+                    captureBuilder.setTag("capture");
+                    burstList.add(captureBuilder.build());
+                    captureProportion -= previewProportion;
+                    captureCount++;
+                } else {
+                    mPreviewRequestBuilder[id].setTag("preview");
+                    burstList.add(mPreviewRequestBuilder[id].build());
+                    captureProportion++;
+                    previewCount++;
+                }
             }
-            for (int i = 0; i <= burstShotFpsNums - 1; i++) {
-                mPreviewRequestBuilder[id].setTag("preview");
-                burstList.add(mPreviewRequestBuilder[id].build());
-            }
-            captureBuilder.setTag("capture");
-            burstList.add(captureBuilder.build());
-
+            Log.d(TAG, "burstShot, previewCount " + previewCount + ", captureCount " + captureCount);
             mCaptureSession[id].setRepeatingBurst(burstList, mLongshotCallBack, mCaptureCallbackHandler);
         } else {
             captureBuilder.setTag("capture-limit");
