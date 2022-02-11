@@ -204,9 +204,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static final int TYPE_SAT = 2;
     public static final int TYPE_VR360 = 3;
     public static int MONO_ID = -1;
+    public static int LOGICAL_ID = -1;
     public static int FRONT_ID = -1;
     public static int SWITCH_ID = -1;
-    public static int LOGICAL_ID = -1;
     public static final int INTENT_MODE_NORMAL = 0;
     public static final int INTENT_MODE_CAPTURE = 1;
     public static final int INTENT_MODE_VIDEO = 2;
@@ -830,6 +830,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private int mLogicalId = -1;
     private int mSingleRearId = -1;
+    private int mFrontId = -1;
     private int mQuadBayerId = -1;
     private SceneModule mCurrentSceneMode;
     private int mNextModeIndex = 1;
@@ -3621,14 +3622,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 removeList[CameraMode.VIDEO.ordinal()] = false;
                 removeList[CameraMode.PRO_MODE.ordinal()] = false;
                 if (physical_ids != null && physical_ids.size() == 0 &&
-                        facing != CameraCharacteristics.LENS_FACING_FRONT){
-                    if (mSingleRearId == -1) {
-                        mSingleRearId = camereIdIndex;
-                        Log.i(TAG, "mSingleRearId:" + camereIdIndex);
-                    }
-                } else if (physical_ids != null && physical_ids.size() != 0 && MCXMODE){
+                        facing != CameraCharacteristics.LENS_FACING_FRONT &&
+                        mSingleRearId == -1){
+                    mSingleRearId = camereIdIndex;
+                    Log.i(TAG, "mSingleRearId:" + camereIdIndex);
+                } else if (physical_ids != null && physical_ids.size() != 0 && MCXMODE
+                        && mLogicalId == -1){
                     mLogicalId = camereIdIndex;
-                    LOGICAL_ID = mLogicalId;
+                    LOGICAL_ID = camereIdIndex;
                     Log.i(TAG,"mLogicalId:" + camereIdIndex);
                     removeList[CameraMode.RTB.ordinal()] = false;
                     if (mSceneCameraIds.get(CameraMode.RTB.ordinal()).rearCameraId >= 0) {
@@ -3638,8 +3639,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mSceneCameraIds.get(CameraMode.RTB.ordinal()).rearCameraId = camereIdIndex;
                 }
                 if (physical_ids != null && physical_ids.size() == 0 &&
-                        facing == CameraCharacteristics.LENS_FACING_FRONT) {
-                    CaptureModule.FRONT_ID = camereIdIndex;
+                        facing == CameraCharacteristics.LENS_FACING_FRONT &&
+                        mFrontId == -1) {
+                    mFrontId = camereIdIndex;
+                    FRONT_ID = camereIdIndex;
                     Log.i(TAG,"FRONT_ID:" + camereIdIndex);
                     mSceneCameraIds.get(CameraMode.DEFAULT.ordinal()).frontCameraId = camereIdIndex;
                     mSceneCameraIds.get(CameraMode.VIDEO.ordinal()).frontCameraId = camereIdIndex;
