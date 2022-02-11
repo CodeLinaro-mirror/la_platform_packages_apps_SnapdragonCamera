@@ -8298,6 +8298,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mUI.hideUIwhileRecording();
             mFrameProcessor.setVideoOutputSurface(mVideoRecordingSurface);
             if (isHighSpeedRateCapture()) {
+                mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                 //This should be not needed since setRepeatingBurst don't change
                 //Will remove it in next version
                 List<CaptureRequest> slowMoRequests  = mSuperSlomoCapture ?
