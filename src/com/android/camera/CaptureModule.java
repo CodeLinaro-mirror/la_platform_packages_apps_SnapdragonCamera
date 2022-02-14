@@ -3521,6 +3521,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     NamedEntity name = mNamedImages.getNextNameEntity();
                                     String title = (name == null) ? null : name.title;
                                     long date = (name == null) ? -1 : name.date;
+                                    if(image == null) return;
                                     byte[] bytes = getJpegData(image);
                                     Log.i(TAG, "image format:" + image.getFormat());
                                     if (image.getFormat() == ImageFormat.RAW10) {
@@ -5902,7 +5903,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         if (!requestAudioFocus()) {
-            Log.w(TAG, "Audio focus request failed, recording failed");
+            mStartRecPending = false;
+            mIsRecordingVideo = false;
+            mIsPreviewingVideo = true;
+            Log.w(TAG, "Fail to request audio focus and could not start media recorder");
+            Toast.makeText(mActivity,"Could not start media recorder.\n " +
+                    "There may be calling in the background", Toast.LENGTH_LONG).show();
             return false;
         }
         try {
