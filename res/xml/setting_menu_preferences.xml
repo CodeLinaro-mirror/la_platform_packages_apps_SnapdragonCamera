@@ -592,6 +592,24 @@
             android:entryValues="@array/pref_camera2_face_detection_entryvalues" />
 
         <ListPreference
+            android:key="pref_camera2_fd_gender_key"
+            android:defaultValue="@string/pref_camera2_fd_gender_default"
+            android:title="@string/pref_camera2_fd_gender_title"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:entries="@array/pref_camera2_fd_gender_entries"
+            android:entryValues="@array/pref_camera2_fd_gender_entryvalues" />
+
+        <ListPreference
+            android:key="pref_camera2_fd_face_expression_key"
+            android:defaultValue="@string/pref_camera2_fd_face_expression_default"
+            android:title="@string/pref_camera2_fd_face_expression_title"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:entries="@array/pref_camera2_fd_face_expression_entries"
+            android:entryValues="@array/pref_camera2_fd_face_expression_entryvalues" />
+
+        <ListPreference
             android:defaultValue="@string/pref_camera2_sharpness_control_default"
             android:entries="@array/pref_camera2_sharpness_control_entries"
             android:entryValues="@array/pref_camera2_multilevel_sharpness_entryvalues"

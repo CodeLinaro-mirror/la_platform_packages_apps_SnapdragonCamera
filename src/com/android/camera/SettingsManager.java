@@ -272,6 +272,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_FD_SMILE = "pref_camera2_fd_smile_key";
     public static final String KEY_FD_GAZE = "pref_camera2_fd_gaze_key";
     public static final String KEY_FD_BLINK = "pref_camera2_fd_blink_key";
+    public static final String KEY_FD_GENDER = "pref_camera2_fd_gender_key";
+    public static final String KEY_FD_FACE_EXPRESSION = "pref_camera2_fd_face_expression_key";
     public static final String KEY_FACIAL_CONTOUR = "pref_camera2_facial_contour_key";
     public static final String KEY_FACE_DETECTION_MODE = "pref_camera2_face_detection_mode";
     public static final String KEY_ZSL = "pref_camera2_zsl_key";
