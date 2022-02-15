@@ -1501,19 +1501,10 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_HVX_SHDR);
         updatePreference(SettingsManager.KEY_HVX_MFHDR);
         updateMultiPreference(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
-        updateVideoHDRPreference();
-        updateVideoVariableFpsPreference();
-        updateVideoMFHDRPreference();
-        updateStoragePreference();
-        initializePhysicalPreferences();
-        updatePhysicalPreferences();
-        updateLongShotPreference();
-        updateVideoHfrFpsPreference();
-        updateEISPreference();
-        updateT2TPreference();
         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
-        updatePictureFormatPreference();
+        initializePhysicalPreferences();
+        updatePhysicalPreferences();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
@@ -1527,12 +1518,12 @@ public class SettingsActivity extends PreferenceActivity {
             SettingsManager.Values values = entry.getValue();
             boolean disabled = values.overriddenValue != null;
             String value = disabled ? values.overriddenValue : values.value;
-            boolean enable = p.isEnabled();
             if (p instanceof SwitchPreference) {
                 ((SwitchPreference) p).setChecked(isOn(value));
-                ((SwitchPreference) p).setEnabled(enable && !disabled);
+                ((SwitchPreference) p).setEnabled(true);
             } else if (p instanceof ListPreference) {
                 ListPreference pref = (ListPreference) p;
+                boolean enable = p.isEnabled();
                 if (enable) {
                     pref.setEnabled(true);
                 }
@@ -1541,7 +1532,7 @@ public class SettingsActivity extends PreferenceActivity {
                     pref.setEnabled(false);
                 }
             }
-            if (disabled && !enable) p.setEnabled(false);
+            if (disabled) p.setEnabled(false);
         }
         // when enable deepzoom, disable the KEY_PICTURE_SIZE
         String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
@@ -1591,6 +1582,15 @@ public class SettingsActivity extends PreferenceActivity {
         updatePictureSizePreferenceButton();
         updateVsrPreference();
         updateHvxDependencyPref();
+        updateVideoHDRPreference();
+        updateVideoVariableFpsPreference();
+        updateVideoMFHDRPreference();
+        updateStoragePreference();
+        updateLongShotPreference();
+        updateVideoHfrFpsPreference();
+        updateEISPreference();
+        updateT2TPreference();
+        updatePictureFormatPreference();
     }
 
     private void updateAudioEncoderPreference() {
