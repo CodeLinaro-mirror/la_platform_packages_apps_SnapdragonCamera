@@ -2965,15 +2965,32 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public List<String> getSupportedVideoSize(int cameraId) {
         if (cameraId > mCharacteristics.size())return null;
         List<String> res = new ArrayList<>();
+        List<Size> videoSizes = new ArrayList<>();
+        Size[] maxSizes = null;
         if (cameraId == -1) return res;
         CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
         StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
                 CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+        StreamConfigurationMap streamConfigurationMap = mCharacteristics.get(cameraId).get(
+                CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
+        if (streamConfigurationMap != null) {
+            maxSizes = streamConfigurationMap.getOutputSizes(MediaRecorder.class);
+        }
+
         Size[] outRes = map.getOutputSizes(MediaRecorder.class);
         Size[] highRes = map.getHighResolutionOutputSizes(ImageFormat.PRIVATE);
-        Size[] sizes = new Size[outRes.length+highRes.length];
-        System.arraycopy(highRes,0,sizes,0,highRes.length);
-        System.arraycopy(outRes,0,sizes,highRes.length,outRes.length);
+        for (Size size : outRes) {
+            videoSizes.add(size);
+        }
+        for (Size size : highRes) {
+            videoSizes.add(size);
+        }
+        if (maxSizes != null) {
+            for (Size size : maxSizes) {
+                videoSizes.add(size);
+            }
+        }
         boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
         String eisValue = getValue(SettingsManager.KEY_EIS_VALUE);
         boolean isEISV3Enabled = "V3".equals(eisValue);
@@ -2989,40 +3006,40 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
             }
         }
-        for (int i = 0; i < sizes.length; i++) {
+        for (int i = 0; i < videoSizes.size(); i++) {
             if (isHeifEnabled && heifCap != null ){
-                if (!heifCap.getSupportedWidths().contains(sizes[i].getWidth()) ||
-                        !heifCap.getSupportedHeights().contains(sizes[i].getHeight())){
+                if (!heifCap.getSupportedWidths().contains(videoSizes.get(i).getWidth()) ||
+                        !heifCap.getSupportedHeights().contains(videoSizes.get(i).getHeight())){
                     continue;
                 }
             }
-            if (CameraSettings.VIDEO_QUALITY_TABLE.containsKey(sizes[i].toString())) {
-                Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(sizes[i].toString());
+            if (CameraSettings.VIDEO_QUALITY_TABLE.containsKey(videoSizes.get(i).toString())) {
+                Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(videoSizes.get(i).toString());
                 if (profile != null && CamcorderProfile.hasProfile(cameraId, profile)) {
                     if (getValue(KEY_MANUAL_HDR) != null &&
                             (getValue(KEY_MANUAL_HDR).equals("manual") || getValue(KEY_MANUAL_HDR).equals("auto")) &&
-                            (sizes[i].toString().equals("3840x2160") || sizes[i].toString().equals("7680x4320"))&&
+                            (videoSizes.get(i).toString().equals("3840x2160") || videoSizes.get(i).toString().equals("7680x4320"))&&
                             getValue(SettingsManager.KEY_SELECT_MODE) != null &&
                             !getValue(SettingsManager.KEY_SELECT_MODE).equals(
                                     "single_rear_cameraid")){
                         continue;
                     }
-                    if (isEISV3Enabled && Math.min(sizes[i].getWidth(),sizes[i].getHeight()) < 720) {
+                    if (isEISV3Enabled && Math.min(videoSizes.get(i).getWidth(),videoSizes.get(i).getHeight()) < 720) {
                         //video size should't be larger than 720p when EIS V3 is enabled
                         continue;
                     }
                     if (mode == CaptureModule.CameraMode.HFR &&
-                            Math.min(sizes[i].getWidth(), sizes[i].getHeight()) < 480) {
+                            Math.min(videoSizes.get(i).getWidth(), videoSizes.get(i).getHeight()) < 480) {
                         //Video size should`t be larger than VGA(640x480) in HFR mode
                         continue;
                     }
                     if (getValue(SettingsManager.KEY_VSR) != null &&
                             getValue(SettingsManager.KEY_VSR).equals("1") &&
-                            sizes[i].toString().equals("7680x4320")) {
+                            videoSizes.get(i).toString().equals("7680x4320")) {
                         continue;
                     }
 
-                    res.add(sizes[i].toString());
+                    res.add(videoSizes.get(i).toString());
                 }
             }
         }
@@ -3478,6 +3495,27 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return true;
         }
         return false;
+    }
+
+    public boolean isMaxConfigureSize(int cameraId, Size videoSize) {
+        boolean result = false;
+        Size[] maxSizes = null;
+        Log.v(TAG, " isMaxConfigureSize cameraId :" + cameraId + ", videoSize :" + videoSize);
+        StreamConfigurationMap streamConfigurationMap = mCharacteristics.get(cameraId).get(
+                CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
+        if (streamConfigurationMap != null) {
+            maxSizes = streamConfigurationMap.getOutputSizes(MediaRecorder.class);
+        }
+        if (maxSizes != null) {
+            for (Size size : maxSizes) {
+                if ((size.getWidth() == videoSize.getWidth() &&
+                        size.getHeight() == videoSize.getHeight()) &&
+                        (videoSize.getWidth() * videoSize.getHeight() > 1920 * 1080)) {
+                    result = true;
+                }
+            }
+        }
+        return result;
     }
 
     public List<String> getSupportedSaturationLevelAvailableModes(int cameraId) {
