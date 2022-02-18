@@ -888,7 +888,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private String mCropValue;
     private Uri mCurrentVideoUri;
     private boolean mTempHoldVideoInVideoIntent = false;
-    private boolean mCurrentSessionClosed = false;
+    private boolean mCurrentSessionClosed = true;
     private ParcelFileDescriptor mVideoFileDescriptor;
     private Uri mSaveUri;
     private boolean mQuickCapture;
@@ -3790,8 +3790,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         mUI.enableShutter(false);
-        boolean isflashRequired = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
-        if(mSettingsManager.isTorchHDREnabled(isflashRequired,mPreviewCaptureResult)){
+        if(mSettingsManager.isTorchHDREnabled(mPreviewCaptureResult)){
             mCaptureTorchTrigger = true;
             applyFlash(mPreviewRequestBuilder[getMainCameraId()], getMainCameraId());
             try{
@@ -6835,6 +6834,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         updateZoomSeekBarVisible();
         updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
         mUI.showRelatedIcons(mCurrentSceneMode.mode);
+        mCurrentSessionClosed = true;
         if(mIsCloseCamera) {
             openCamera(getMainCameraId());
         }
@@ -6860,7 +6860,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             mCameraHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    mCurrentSessionClosed = true;
                     createSessions();
                 }
             });
@@ -10698,7 +10697,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCurrentSceneMode.mode == CameraMode.HFR ||
                 mCurrentSceneMode.mode == CameraMode.VIDEO) {
             if (!isHighSpeedRateCapture() && mSettingsManager.isLiveshotSupported(mVideoSize,mSettingsManager.getVideoFPS())){
-                if (mUI.isShutterEnabled()) {
+                if (mUI.isShutterEnabled() && !mCurrentSessionClosed) {
                     captureVideoSnapshot(id);
                 }
             }
@@ -12613,7 +12612,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
 
-        if (updatePreviewLogical) {
+        if (updatePreviewLogical && !mCurrentSessionClosed) {
             try {
                 int cameraId = getMainCameraId();
                 if (checkSessionAndBuilder(mCaptureSession[cameraId],
