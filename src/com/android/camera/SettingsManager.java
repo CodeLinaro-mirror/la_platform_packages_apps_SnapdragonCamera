@@ -2846,9 +2846,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     if (getValue(KEY_MANUAL_HDR) != null &&
                             (getValue(KEY_MANUAL_HDR).equals("manual") || getValue(KEY_MANUAL_HDR).equals("auto")) &&
                             (sizes[i].toString().equals("3840x2160") || sizes[i].toString().equals("7680x4320"))&&
-                            getValue(SettingsManager.KEY_SELECT_MODE) != null &&
+                            (getValue(SettingsManager.KEY_SELECT_MODE) != null &&
                             !getValue(SettingsManager.KEY_SELECT_MODE).equals(
-                                    "single_rear_cameraid")){
+                                    "single_rear_cameraid") && mCaptureModule.getMcxMode())){
                         continue;
                     }
                     if (isEISV3Enabled && Math.min(sizes[i].getWidth(),sizes[i].getHeight()) < 720) {

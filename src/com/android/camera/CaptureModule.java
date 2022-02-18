@@ -2355,6 +2355,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         return MONO_MODE;
     }
 
+    public boolean getMcxMode(){
+        return MCXMODE;
+    }
+
     private boolean isClearSightOn() {
         String value = mSettingsManager.getValue(SettingsManager.KEY_CLEARSIGHT);
         if (value == null) return false;
