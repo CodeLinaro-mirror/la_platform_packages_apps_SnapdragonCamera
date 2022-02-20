@@ -36,7 +36,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.TotalCaptureResult;
 import android.location.Location;
+import android.media.Image;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
@@ -79,6 +82,8 @@ public class MediaSaveService extends Service {
     private Listener mListener;
     // Memory used by the total queued save request, in bytes.
     private long mMemoryUse;
+    private TotalCaptureResult mCaptureResult;
+    private CameraCharacteristics mCharacteristics;
 
     public interface Listener {
         public void onQueueStatus(boolean full);
@@ -111,6 +116,23 @@ public class MediaSaveService extends Service {
     @Override
     public void onCreate() {
         mMemoryUse = 0;
+    }
+
+    public synchronized void setResult(final TotalCaptureResult result) {
+        if (result == null) throw new NullPointerException();
+        mCaptureResult = result;
+    }
+    public synchronized TotalCaptureResult getResult() {
+        return mCaptureResult;
+    }
+    public void setCharacteristics(
+            final CameraCharacteristics characteristics)
+            throws NullPointerException {
+        if (characteristics == null) {
+            Log.e(TAG,"characteristics is null");
+            throw new NullPointerException();
+        }
+        mCharacteristics = characteristics;
     }
 
     public boolean isQueueFull() {
@@ -160,12 +182,37 @@ public class MediaSaveService extends Service {
         t.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
-    public void addRawImage(final byte[] data, String title, String pictureFormat) {
+    public void addDng(final Image image, long length,String title, long date, Location loc,
+                       int width, int height, int orientation, ExifInterface exif,
+                       OnMediaSavedListener l, ContentResolver resolver, String pictureFormat) {
         if (isQueueFull()) {
             Log.e(TAG, "Cannot add image when the queue is full");
             return;
         }
-        RawImageSaveTask t = new RawImageSaveTask(data, title, pictureFormat);
+        DngSaveTask t = new DngSaveTask(image, length,title, date,
+                (loc == null) ? null : new Location(loc),
+                width, height, orientation, exif, resolver, l, pictureFormat);
+
+        mMemoryUse += length;
+        if (isQueueFull()) {
+            onQueueFull();
+        }
+        t.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+
+    public void addRawImage(final byte[] data, String title, String pictureFormat) {
+        addRawImage(data,title,0,null,0,0,0,null,pictureFormat);
+    }
+    public void addRawImage(final byte[] data, String title, long date, Location loc,
+                            int width, int height, int orientation, ExifInterface exif,
+                            String pictureFormat) {
+        if (isQueueFull()) {
+            Log.e(TAG, "Cannot add image when the queue is full");
+            return;
+        }
+        RawImageSaveTask t = new RawImageSaveTask(data, title, date,
+                (loc == null) ? null : new Location(loc),
+                width, height, orientation, exif, pictureFormat);
 
         mMemoryUse += data.length;
         if (isQueueFull()) {
@@ -173,6 +220,7 @@ public class MediaSaveService extends Service {
         }
         t.execute();
     }
+
 
     public void addHEIFImage(String path,String title,long date , Location loc,
                              int width, int height, int orientation, ExifInterface exif,
@@ -333,11 +381,27 @@ public class MediaSaveService extends Service {
     private class RawImageSaveTask extends AsyncTask<Void, Void, Long> {
         private byte[] data;
         private String title;
+        private long date;
+        private Location loc;
+        private int width, height;
+        private int orientation;
+        private ExifInterface exif;
+        private ContentResolver resolver;
+        private OnMediaSavedListener listener;
         private String pictureFormat;
 
-        public RawImageSaveTask(byte[] data, String title, String pictureFormat) {
+        public RawImageSaveTask(byte[] data, String title, long date, Location loc,
+                                int width, int height, int orientation, ExifInterface exif,String pictureFormat) {
             this.data = data;
             this.title = title;
+            this.date = date;
+            this.loc = loc;
+            this.width = width;
+            this.height = height;
+            this.orientation = orientation;
+            this.exif = exif;
+            this.resolver = resolver;
+            this.listener = listener;
             this.pictureFormat = pictureFormat;
         }
 
@@ -348,14 +412,72 @@ public class MediaSaveService extends Service {
 
         @Override
         protected Long doInBackground(Void... params) {
-            long length = Storage.addRawImage(title, data, pictureFormat);
-            return new Long(length);
+            long length =  data.length;
+            ContentResolver resolver = getContentResolver();
+            long date = System.currentTimeMillis();
+            Storage.addRawImage(resolver, title, date, loc, orientation, exif, data,
+                    width, height, pictureFormat);
+            return length;
         }
 
         @Override
         protected void onPostExecute(Long l) {
             boolean previouslyFull = isQueueFull();
             mMemoryUse -= data.length;
+            if (isQueueFull() != previouslyFull) onQueueAvailable();
+        }
+    }
+
+    private class DngSaveTask extends AsyncTask <Void, Void, Uri> {
+        final Image image;
+        private String title;
+        private long date;
+        private Location loc;
+        private int width, height;
+        private int orientation;
+        private ExifInterface exif;
+        private ContentResolver resolver;
+        private OnMediaSavedListener listener;
+        private String pictureFormat;
+        private long length;
+        public DngSaveTask(final Image image, long length,String title, long date, Location loc,
+                           int width, int height, int orientation, ExifInterface exif,
+                           ContentResolver resolver, OnMediaSavedListener listener, String pictureFormat) {
+            this.image = image;
+            this.title = title;
+            this.date = date;
+            this.loc = loc;
+            this.width = width;
+            this.height = height;
+            this.orientation = orientation;
+            this.exif = exif;
+            this.resolver = resolver;
+            this.listener = listener;
+            this.pictureFormat = pictureFormat;
+            this.length = length;
+        }
+        @Override
+        protected void onPreExecute() {
+            // do nothing.
+        }
+        @Override
+        protected Uri doInBackground(Void... v) {
+            // Decode bounds
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            String path = Storage.generateFilepath(title, pictureFormat);
+            BitmapFactory.decodeFile(path, options);
+            width = options.outWidth;
+            height = options.outHeight;
+
+            return Storage.addDng(
+                    resolver, title, date, loc, orientation, exif, image, width, height, pictureFormat,path,mCharacteristics,mCaptureResult);
+        }
+        @Override
+        protected void onPostExecute(Uri uri) {
+            if (listener != null) listener.onMediaSaved(uri);
+            boolean previouslyFull = isQueueFull();
+            mMemoryUse -= length;
             if (isQueueFull() != previouslyFull) onQueueAvailable();
         }
     }
