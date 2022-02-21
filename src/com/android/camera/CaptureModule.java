@@ -10366,7 +10366,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 .getVideoEncoder(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER));
         if (DEBUG) Log.d(TAG,"videoEncoder="+ videoEncoder+
                 " settings="+mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER));
-        if (!audioSelected.equals("off")) {
+        if (PersistUtil.needAudioEncoder() && !audioSelected.equals("off")) {
             audioEncoder = SettingTranslation
                     .getAudioEncoder(mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER));
         }
