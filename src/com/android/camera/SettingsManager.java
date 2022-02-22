@@ -701,7 +701,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Thread writeThread = new Thread(){
             @Override
             public void run() {
-                String filePath = AutoTestUtil.createFile(mContext);
+                String filePath = AutoTestUtil.createFile(mContext, "AutoTestHelp");
                 AutoTestUtil.writeFileContent(filePath, supportLists);
             }
         };
@@ -3569,13 +3569,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         Size[] dngSize = getSupportedOutputSize(cameraId,ImageFormat.RAW_SENSOR);
         if(dngSize != null && dngSize.length > 0 && (getValue(SettingsManager.KEY_SAVERAW) == null ||
-        (getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("disable"))) && !isRawReprocess()){
+        (getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("0"))) && !isRawReprocess()){
         ret.add(String.valueOf(SettingsManager.DNG_FORMAT));
         }
         return ret;
     }
     public boolean isSupportedHdr(){
-        if(((getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("disable")) ||
+        if(((getValue(SettingsManager.KEY_SAVERAW) != null && getValue(SettingsManager.KEY_SAVERAW).equals("0")) ||
                 getValue(SettingsManager.KEY_SAVERAW) == null) && (((getValue(SettingsManager.KEY_INSENSOR_ZOOM) != null &&
                 getValue(SettingsManager.KEY_INSENSOR_ZOOM).equals("0")) || getValue(SettingsManager.KEY_INSENSOR_ZOOM) == null)) &&
                  getVideoFPS()<= 30){
@@ -3654,9 +3654,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public void filterVideoMaunalHDRModes(int[] modes) {
         ListPreference videoMaunalHdr = mPreferenceGroup.findPreference(KEY_MANUAL_HDR);
-        videoMaunalHdr.reloadInitialEntriesAndEntryValues();
-        if (filterUnsupportedOptions(videoMaunalHdr, getSupportedManualHDR(getCurrentCameraId()))) {
-            mFilteredKeys.add(videoMaunalHdr.getKey());
+        if (videoMaunalHdr != null) {
+            videoMaunalHdr.reloadInitialEntriesAndEntryValues();
+            if (filterUnsupportedOptions(videoMaunalHdr, getSupportedManualHDR(getCurrentCameraId()))) {
+                mFilteredKeys.add(videoMaunalHdr.getKey());
+            }
         }
     }
 

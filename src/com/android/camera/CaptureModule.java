@@ -55,6 +55,7 @@ import android.hardware.camera2.params.MultiResolutionStreamInfo;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
+import android.hardware.camera2.params.LensShadingMap;
 import android.location.Location;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -101,6 +102,7 @@ import android.graphics.Paint;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.util.AttributeSet;
+import android.util.Pair;
 
 import com.android.camera.data.Camera2ModeAdapter.OnItemClickListener;
 import com.android.camera.deepportrait.CamGLRenderObserver;
@@ -129,6 +131,7 @@ import com.android.camera.ui.StateNNTrackFocusRenderer;
 import com.android.camera.util.AccessibilityUtils;
 import com.android.camera.ui.AFView;
 import com.android.camera.util.ApiHelper;
+import com.android.camera.util.AutoTestUtil;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
 import com.android.camera.util.SettingTranslation;
@@ -149,6 +152,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -914,6 +918,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mQuickCapture;
     private byte[] mJpegImageData;
     private boolean mSaveRaw = false;
+    private boolean mYUV10bit = false;
+    private boolean mYUV10BitWithMetadata = false;
     private boolean mSupportZoomCapture = true;
     private long mStartRecordingTime;
     private long mStopRecordingTime;
@@ -960,6 +966,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      */
     private ImageReader[] mImageReader = new ImageReader[MAX_NUM_CAM];
     private ImageReader[] mRawImageReader = new ImageReader[MAX_NUM_CAM];
+    private ImageReader[] mYUV10bitImageReader = new ImageReader[MAX_NUM_CAM];
     private Size[] mPhysicalSizes = new Size[PHYSICAL_CAMERA_COUNT];
     private Size[] mPhysicalRawSizes = new Size[PHYSICAL_CAMERA_COUNT];
     private Size[] mPhysicalVideoSizes = new Size[PHYSICAL_CAMERA_COUNT];
@@ -2422,10 +2429,21 @@ public class CaptureModule implements CameraModule, PhotoController,
         return  value.equals(String.valueOf(CaptureRequest.STATISTICS_FACE_DETECT_MODE_FULL));
     }
 
-    private boolean isRawCaptureOn() {
+    private void updateImageFormatKey() {
+        mSaveRaw = false;
+        mYUV10bit = false;
+        mYUV10BitWithMetadata = false;
         String value = mSettingsManager.getValue(SettingsManager.KEY_SAVERAW);
-        if (value == null) return  false;
-        return value.equals("enable");
+        if (value == null) return;
+        if (value.equals("37")) {
+            mSaveRaw = true;
+        } else if (value.equals("54")) {
+            mYUV10bit = true;
+        } else if (value.equals("99")) {
+            mYUV10BitWithMetadata = true;
+        }
+        Log.v(TAG, " updateImageFormatKey mSaveRaw :" + mSaveRaw + ", mYUV10bit :" + mYUV10bit
+                + ", mYUV10BitWithMetadata :" + mYUV10BitWithMetadata);
     }
 
     public boolean isDeepPortraitMode() {
@@ -2958,6 +2976,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (mSaveRaw) {
                         list.add(mRawImageReader[id].getSurface());
                     }
+                    if (mYUV10bit || mYUV10BitWithMetadata) {
+                        list.add(mYUV10bitImageReader[id].getSurface());
+                    }
 
                     for (Surface s : list) {
                         if (s == surface) {
@@ -3060,6 +3081,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mPreviewRequestBuilder[id].addTarget(mImageReader[id].getSurface());
                             if (mSaveRaw) {
                                 mPreviewRequestBuilder[id].addTarget(mRawImageReader[id].getSurface());
+                            }
+                            if (mYUV10bit || mYUV10BitWithMetadata) {
+                                mPreviewRequestBuilder[id].addTarget(mYUV10bitImageReader[id].getSurface());
                             }
                             InputConfiguration inputConfig = new InputConfiguration(mImageReader[id].getWidth(),
                                     mImageReader[id].getHeight(), mImageReader[id].getImageFormat());
@@ -4199,6 +4223,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (mSaveRaw && mRawImageReader[id] != null) {
                         captureBuilder.addTarget(mRawImageReader[id].getSurface());
                     }
+                    if ((mYUV10bit || mYUV10BitWithMetadata) && mYUV10bitImageReader[id] != null) {
+                        captureBuilder.addTarget(mYUV10bitImageReader[id].getSurface());
+                    }
                     if (mSettingsManager.isHeifWriterEncoding()) {
                         long captureTime = System.currentTimeMillis();
                         mNamedImages.nameNewImage(captureTime);
@@ -4352,6 +4379,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         captureBuilder.addTarget(mImageReader[id].getSurface());
         if (mSaveRaw) {
             captureBuilder.addTarget(mRawImageReader[id].getSurface());
+        }
+        if ((mYUV10bit || mYUV10BitWithMetadata) && mYUV10bitImageReader[id] != null) {
+            captureBuilder.addTarget(mYUV10bitImageReader[id].getSurface());
         }
         mPostProcessor.onStartCapturing();
         if(mPostProcessor.isManualMode()) {
@@ -4738,6 +4768,27 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                TotalCaptureResult result) {
                     Log.d(TAG, "captureStillPictureForCommon onCaptureCompleted: " + id  + ",metadataOwnerInfo:" + result.get(CaptureModule.metadataOwnerInfo)+",result="+result);
                     mRawInputMeta = result;
+                    if (mYUV10BitWithMetadata) {
+                        List<String> metaDataLists = new ArrayList<String>();
+                        long sensorTimeStamp = result.get(CaptureResult.SENSOR_TIMESTAMP).longValue();
+                        Log.v(TAG, " Save metaData title :" + sensorTimeStamp);
+
+                        List<CaptureResult.Key<?>> keys = result.getKeys();
+                        // Move to CameraMetadata#toString
+                        for (CaptureResult.Key<?> key : keys) {
+                            metaDataLists.add ("Key:");
+                            metaDataLists.add (String.format("%s\n", key.getName()));
+                            metaDataLists.add ("value:");
+                            metaDataLists.add (String.format("%s\n", String.format("%s\n",
+                                    metadataValueToString(result.get(key)))));
+                        }
+
+                        // Save YUV10bit metaData
+                        String filePath = AutoTestUtil.createFile(mActivity,
+                                String.valueOf(sensorTimeStamp));
+                        AutoTestUtil.writeFileContent(filePath, metaDataLists);
+                        Log.v(TAG, "Save metaDataFile " + filePath + " done!");
+                    }
                 }
 
                 @Override
@@ -4794,6 +4845,34 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 }
             }, mCaptureCallbackHandler);
+        }
+    }
+
+    private static String metadataValueToString(Object object) {
+        if (object == null) {
+            return "<null>";
+        }
+        if (object.getClass().isArray()) {
+            StringBuilder builder = new StringBuilder();
+            builder.append("[");
+            int length = Array.getLength(object);
+            for (int i = 0; i < length; ++i) {
+                Object item = Array.get(object, i);
+                builder.append(metadataValueToString(item));
+
+                if (i != length - 1) {
+                    builder.append(", ");
+                }
+            }
+            builder.append(']');
+            return builder.toString();
+        } else {
+            if (object instanceof LensShadingMap) {
+                return ((LensShadingMap) object).toString();
+            } else if (object instanceof Pair) {
+                return ((Pair<?, ?>) object).toString();
+            }
+            return object.toString();
         }
     }
 
@@ -5084,7 +5163,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     int orientation = 0;
                                     ExifInterface exif = null;
                                     orientation = CameraUtil.getJpegRotation(getMainCameraId(),mOrientation);
-                                    exif =  Exif.getExif(bytes);
+                                    if (image.getFormat() != ImageFormat.YCBCR_P010) {
+                                        exif =  Exif.getExif(bytes);
+                                    }
                                     long imglen=bytes.length;
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         Log.d(TAG,"setupcameraoutput-onImageAvailable width="+image.getWidth()+",height="+image.getHeight()+",stride="+image.getPlanes()[0].getRowStride());
@@ -5117,6 +5198,14 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                                     } else if (image.getFormat() == ImageFormat.YUV_420_888) {
                                         Log.d(TAG,"YUV buffer received from camera id =" + mCameraId);
+                                        image.close();
+                                    } else if (image.getFormat() == ImageFormat.YCBCR_P010) {
+                                        byte[] yuv = getYUV10BitFromImage(image);
+                                        long timeStamp = image.getTimestamp();
+                                        Log.d(TAG,"YUV10bit received from camera format =" +
+                                                image.getFormat() + ", title :" + timeStamp + ".yuv");
+                                        mActivity.getMediaSaveService().addRawImage(yuv,
+                                                String.valueOf(timeStamp),"yuv");
                                         image.close();
                                     } else {
                                         if (image.getFormat() != ImageFormat.HEIC) {
@@ -5237,6 +5326,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mRawImageReader[i] = ImageReader.newInstance(mSupportedRawPictureSize.getWidth(),
                                     mSupportedRawPictureSize.getHeight(), mSettingsManager.getRawFormat(), MAX_IMAGEREADERS);
                             mRawImageReader[i].setOnImageAvailableListener(listener, mImageAvailableHandler);
+                        }
+                        if (mYUV10bit || mYUV10BitWithMetadata) {
+                            Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.YCBCR_P010);
+                            List<Size> yuvSizeList = Arrays.asList(yuvSizes);
+                            yuvSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
+                            Log.v(TAG, " create mYUV10bitImageReader yuv size : " +
+                                    yuvSizeList.get(0).getWidth() + " x " +
+                                    yuvSizeList.get(0).getHeight());
+                            mYUV10bitImageReader[i] = ImageReader.newInstance(yuvSizeList.get(0).getWidth(),
+                                    yuvSizeList.get(0).getHeight(), ImageFormat.YCBCR_P010, MAX_IMAGEREADERS);
+                            mYUV10bitImageReader[i].setOnImageAvailableListener(listener, mImageAvailableHandler);
                         }
                     }
                 }
@@ -5486,6 +5586,27 @@ public class CaptureModule implements CameraModule, PhotoController,
             int height = image.getHeight();
             ByteBuffer dataY= image.getPlanes()[0].getBuffer();
             ByteBuffer dataUV = image.getPlanes()[2].getBuffer();
+            dataY.rewind();
+            dataUV.rewind();
+            byte[] bytesY = new byte[dataY.remaining()];
+            dataY.get(bytesY);
+            byte[] bytesUV = new byte[dataUV.remaining()];
+            dataUV.get(bytesUV);
+            byte[] data = new byte[bytesY.length+bytesUV.length];
+            System.arraycopy(bytesY,0,data,0,bytesY.length);
+            System.arraycopy(bytesUV,0,data,bytesY.length,bytesUV.length);
+            return data;
+        }catch (IllegalStateException e) {
+            return null;
+        }
+    }
+
+    private byte[] getYUV10BitFromImage(Image image) {
+        try{
+            int width = image.getWidth();
+            int height = image.getHeight();
+            ByteBuffer dataY= image.getPlanes()[0].getBuffer();
+            ByteBuffer dataUV = image.getPlanes()[1].getBuffer();
             dataY.rewind();
             dataUV.rewind();
             byte[] bytesY = new byte[dataY.remaining()];
@@ -6708,6 +6829,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         boolean isFlashOn = false;
         boolean isMakeupOn = false;
         boolean isSelfieMirrorOn = false;
+        updateImageFormatKey();
         if(mPostProcessor != null) {
             String selfieMirror = mSettingsManager.getValue(SettingsManager.KEY_SELFIEMIRROR);
             if(selfieMirror != null && selfieMirror.equalsIgnoreCase("on")) {
@@ -6721,8 +6843,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(flashMode != null && flashMode.equalsIgnoreCase("on")) {
                 isFlashOn = true;
             }
-
-            mSaveRaw = isRawCaptureOn();
             int filterMode = PostProcessor.FILTER_NONE;
             if (scene != null) {
                 int mode = Integer.parseInt(scene);

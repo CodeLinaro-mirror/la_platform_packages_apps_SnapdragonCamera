@@ -1992,9 +1992,9 @@ public class SettingsActivity extends PreferenceActivity {
                 SettingsManager.KEY_ZSL);
         if ((zslPref != null && zslPref.getValue().equals("app-zsl")) || mSettingsManager.isLimitedHDR() || mSettingsManager.isDNGCreator()) {
             if (rawPref != null) {
-                rawPref.setValue("disable");
+                rawPref.setValue("0");
                 rawPref.setEnabled(false);
-                mSettingsManager.setValue(SettingsManager.KEY_SAVERAW, "disable");
+                mSettingsManager.setValue(SettingsManager.KEY_SAVERAW, "0");
             }
         }else{
             if(rawPref != null)
