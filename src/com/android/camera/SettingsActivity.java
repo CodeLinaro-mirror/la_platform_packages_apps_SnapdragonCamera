@@ -888,6 +888,7 @@ public class SettingsActivity extends PreferenceActivity {
     }
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        requestWindowFeature(Window.FEATURE_OPTIONS_PANEL);
         super.onCreate(savedInstanceState);
         int flag = WindowManager.LayoutParams.FLAG_FULLSCREEN;
         Window window = getWindow();
