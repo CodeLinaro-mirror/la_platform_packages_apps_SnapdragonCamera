@@ -282,7 +282,7 @@ public class AIDenoiserService extends Service {
         Log.i(TAG,"AideV2Process finished");
     }
 
-    public byte[] generateAideV2Image(CameraActivity activity, int orientation, Size pictureSize, Rect rect, TotalCaptureResult captureResult, int quality){
+    public byte[] generateAideV2Image(CameraActivity activity, int orientation, Size pictureSize, Rect rect, TotalCaptureResult captureResult, int quality, int format){
         Log.d(TAG,"src mstrideY="+mStrideY+" mStrideC="+mStrideC);
         int dataLength = mStrideY * mHeight * 3 /2;
         byte[] srcImage = new byte[dataLength];
@@ -305,9 +305,9 @@ public class AIDenoiserService extends Service {
         Log.d(TAG,"cropYuvImage, rect:" + rect.toString());
         srcImage = cropYuvImage(srcImage,mStrideY, mWidth, mHeight, rect);
         activity.getMediaSaveService().addRawImage(srcImage,"aftercrop","yuv");
-        Bitmap bitmap = nv21ToRgbAndResize(activity.getApplicationContext(), srcImage,rect.width(),
-                rect.height(), pictureSize.getWidth(), pictureSize.getHeight());
-        srcImage = bitmapToJpeg(bitmap, orientation, captureResult);
+        //after crop, the stride will change to width, srcWidth/srcHeight is cropped size
+        Bitmap bitmap = yuvToRgbAndResize(srcImage,rect.width(), rect.height(), pictureSize.getWidth(), pictureSize.getHeight(), format);
+        srcImage = bitmapToJpeg(bitmap, orientation, captureResult, quality);
         Log.d(TAG,"test done");
         System.gc();
         return srcImage;
@@ -368,41 +368,38 @@ public class AIDenoiserService extends Service {
         return ret;
     }
 
-    public Bitmap nv21ToRgbAndResize(Context context, byte[] srcImage,int srcWidth, int srcHeight, int dstWidth,
-                                     int dstHeight) {
-        RenderScript rs = RenderScript.create(context);
-
-        ScriptIntrinsicYuvToRGB yuvToRgbIntrinsic =
-                ScriptIntrinsicYuvToRGB.create(rs, Element.U8_4(rs));
-
-        Type.Builder yuvType = new Type.Builder(rs, Element.U8(rs))
-                .setX(srcImage.length);
-        Allocation yuvIn = Allocation.createTyped(rs, yuvType.create(), Allocation.USAGE_SCRIPT);
-
-        Type.Builder rgbaType = new Type.Builder(rs, Element.RGBA_8888(rs))
-                .setX(srcWidth)
-                .setY(srcHeight);
-        Allocation rgbaOut = Allocation.createTyped(rs, rgbaType.create(), Allocation.USAGE_SCRIPT);
-
-        yuvIn.copyFrom(srcImage);
-
-        yuvToRgbIntrinsic.setInput(yuvIn);
-        yuvToRgbIntrinsic.forEach(rgbaOut);
-
-        Bitmap rgba = Bitmap.createBitmap(srcWidth, srcHeight, Bitmap.Config.ARGB_8888);
-        rgbaOut.copyTo(rgba);
-
+    public Bitmap yuvToRgbAndResize(byte[] srcImage,int srcWidth, int srcHeight, int dstWidth, int dstHeight, int format) {
+        ByteBuffer rgboutput = ByteBuffer.allocateDirect(srcWidth*srcHeight *3);
+        mAideUtil.nativeCvtYuvToRgb(srcImage, rgboutput.array(), srcWidth, srcHeight, srcWidth, format);
+        int[] colors = convertByteToColor(rgboutput.array());
+        Bitmap rgba = Bitmap.createBitmap(colors, 0, srcWidth, srcWidth, srcHeight, Bitmap.Config.ARGB_8888);
         float scaleWidth = ((float) dstWidth) / srcWidth;
         float scaleHeight = ((float) dstHeight) / srcHeight;
         Matrix matrix = new Matrix();
         matrix.postScale(scaleWidth, scaleHeight);
         Bitmap ret = Bitmap.createBitmap(rgba, 0, 0, srcWidth, srcHeight, matrix,true);
-        if (rgba != null & !rgba.isRecycled()){
-            rgba.recycle();
-            rgba = null;
-        }
-
         return ret;
+    }
+
+    public static int cvtByteToInt(byte data) {
+        int highBit = (int) ((data >> 4) & 0x0F);
+        int lowBit = (int) (0x0F & data);
+        return highBit * 16 + lowBit;
+    }
+
+    public static int[] convertByteToColor(byte[] data) {
+        if (data.length == 0) {
+            return null;
+        }
+        int[] color = new int[data.length / 3];
+        int red, green, blue;
+        for (int i = 0; i < color.length; ++i) {
+            red = cvtByteToInt(data[i * 3]);
+            green = cvtByteToInt(data[i * 3 + 1]);
+            blue = cvtByteToInt(data[i * 3 + 2]);
+            color[i] = (red << 16) | (green << 8) | blue | 0xFF000000;
+        }
+        return color;
     }
 
     public byte[] nv21ToJpeg(byte[] srcImage, int orientation, TotalCaptureResult result, Size size, int quality, int stride) {
@@ -416,9 +413,9 @@ public class AIDenoiserService extends Service {
         return bytes;
     }
 
-    public byte[] bitmapToJpeg(Bitmap bitmap, int orientation, TotalCaptureResult result){
+    public byte[] bitmapToJpeg(Bitmap bitmap, int orientation, TotalCaptureResult result, int quality){
         BitmapOutputStream bos = new BitmapOutputStream(1024);
-        bitmap.compress(Bitmap.CompressFormat.JPEG,85,bos);
+        bitmap.compress(Bitmap.CompressFormat.JPEG,quality,bos);
         byte[] bytes = bos.getArray();
         bytes = addExifTags(bytes, orientation, result);
         return bytes;
