@@ -2712,14 +2712,17 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void waitForPreviewSurfaceReady() {
+        if (mPaused) return;
         try {
             if (!mSurfaceReady) {
                 if (!mSurfaceReadyLock.tryAcquire(2000, TimeUnit.MILLISECONDS)) {
                     if (mPaused) {
                         Log.d(TAG, "mPaused status occur Time out waiting for surface.");
+                        mSurfaceReadyLock.release();
                         throw new IllegalStateException("Paused Time out waiting for surface.");
                     } else {
                         Log.d(TAG, "Time out waiting for surface.");
+                        mSurfaceReadyLock.release();
                         throw new RuntimeException("Time out waiting for surface.");
                     }
                 }
@@ -2905,6 +2908,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.v(TAG,
                         "createSession: normal status occur Time out waiting for surface ");
             }
+            if(mPaused) return;
             surface = getPreviewSurfaceForSession(id);
 
             if(id == getMainCameraId()) {
