@@ -12258,7 +12258,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyZoom(captureRequest, id);
             }
         }
-        if (!checkSessionAndBuilder(mCaptureSession[id], captureRequest)) {
+        if (!checkSessionAndBuilder(mCaptureSession[id], captureRequest) || mCurrentSessionClosed) {
             return;
         }
         if (mState[id] == STATE_WAITING_TOUCH_FOCUS) {
