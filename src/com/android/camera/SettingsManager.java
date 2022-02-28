@@ -288,8 +288,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_RAW_CB_INFO = "pref_camera2_raw_cb_info_key";
     public static final String KEY_QLL = "pref_camera2_qll_key";
     public static final String KEY_AI_CAMERA = "pref_camera2_ai_camera_key";
-    public static final String KEY_AI_CAMERA_BOKEH = "pref_camera2_ai_camera_bokeh_key";
+    public static final String KEY_AI_CAMERA_BLURMODE = "pref_camera2_ai_camera_blurmode_key";
     public static final String KEY_AI_CAMERA_SNAPSHOT = "pref_camera2_ai_camera_snapshot_key";
+    public static final String KEY_AI_BLUR_SHAPE = "pref_camera2_blur_shape_key";
+    public static final String KEY_AI_BLUR_STRENGTH = "pref_camera2_blur_strength_key";
+    public static final String KEY_AI_BLUR_DISTANCE = "pref_camera2_blur_distance_key";
+    public static final String KEY_AI_BLUR_LUMA = "pref_camera2_blur_luma_key";
+    public static final String KEY_AI_BLUR_CHROMAU = "pref_camera2_blur_chromau_key";
+    public static final String KEY_AI_BLUR_CHROMAV = "pref_camera2_blur_chromav_key";
+
     public static final String KEY_AI_DENOISER = "pref_camera2_ai_denoiser_key";
     public static final String KEY_AI_DENOISER_FORMAT = "pref_camera2_ai_denoiser_format_key";
     public static final String KEY_AI_DENOISER_MODE = "pref_camera2_ai_denoiser_mode_key";
@@ -1402,6 +1409,30 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
     }
 
+    public float geBlurSliderValue(String key) {
+        String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
+                getCurrentPrepNameKey());
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName,
+                Context.MODE_PRIVATE);
+        return sharedPreferences.getFloat(key, 0f);
+    }
+
+    public void setBlurSliderValue(String key, boolean forceNotify, float value) {
+        boolean isSuccess = false;
+        if (value >= 0) {
+            isSuccess = setFocusValue(key, value);
+        }
+        if(key == null){
+            return;
+        }
+        if (isSuccess || forceNotify) {
+            List<SettingState> list = new ArrayList<>();
+            Values values = new Values("" + value, null);
+            SettingState ss = new SettingState(key, values);
+            list.add(ss);
+            notifyListeners(list);
+        }
+    }
     public float getCalculatedFocusDistance() {
         float minFocus = getMinimumFocusDistance(mCameraId);
         return getFocusSliderValue(KEY_FOCUS_DISTANCE) * minFocus;
@@ -1526,7 +1557,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference inSensorZoom = mPreferenceGroup.findPreference(KEY_INSENSOR_ZOOM);
         ListPreference aiCamera = mPreferenceGroup.findPreference(KEY_AI_CAMERA);
         ListPreference aiCameraSnapshot = mPreferenceGroup.findPreference(KEY_AI_CAMERA_SNAPSHOT);
-        ListPreference aiCameraBokeh = mPreferenceGroup.findPreference(KEY_AI_CAMERA_BOKEH);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -1562,7 +1592,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (filterUnsupportedOptions(aiCamera, getSupportedAICameraMode())) {
                 mFilteredKeys.add(aiCamera.getKey());
                 mFilteredKeys.add(aiCameraSnapshot.getKey());
-                mFilteredKeys.add(aiCameraBokeh.getKey());
             }
         }
         if (fd_smile != null && fd_gaze != null && fd_blink != null) {
@@ -3554,8 +3583,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return false;
     }
-    public List<String> getSupportedManualHDR(int cameraId) {
+
+    public boolean isAIBokehMode(){
         boolean isAICameraEnabled = Integer.parseInt(getAICameraValue()) == 2;
+        String value = getValue(SettingsManager.KEY_SELECT_MODE);
+        boolean isAIBokeh = isAICameraEnabled && value != null && value.equals("rtb");
+        Log.i(TAG,"isAIBokehMode:" + isAICameraEnabled + ",value:" + value);
+        return isAIBokeh;
+    }
+
+    public List<String> getSupportedManualHDR(int cameraId) {
         ArrayList<String> ret = new ArrayList<String>();
         ret.add("off");
         int modes[] = isManualHDRSupported();
@@ -3566,11 +3603,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         if (isAutoHDRSupported()){
-            if(isSupportedHdr() && !isAICameraEnabled){
+            if(isSupportedHdr() && !isAIBokehMode()){
                 ret.add("auto");
             }
         }
-        if ((modes != null && modes.length > 0) && (!isFacingFront(mCameraId) || isAICameraEnabled)) {
+        if ((modes != null && modes.length > 0) && (!isFacingFront(mCameraId) || isAIBokehMode())) {
             ret.add("manual");
         }
         if (ret.size() == 1) {

@@ -88,8 +88,8 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVSR", Integer.class);
     private static final CaptureRequest.Key<Integer> ai_camera =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.AICameraMode", Integer.class);
-    private static final CaptureRequest.Key<Integer> ai_camera_bokeh =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.AICameraBokeh", Integer.class);
+    private static final CaptureRequest.Key<Integer> BlurMode =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.BlurMode", Integer.class);
     public static final CaptureRequest.Key<Byte> enableMFNRAIDEMode =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMFNRAIDEMode", byte.class);
 
@@ -304,9 +304,9 @@ public class VendorTagUtil {
         }
     }
 
-    public static void setAICameraBokeh(CaptureRequest.Builder builder, int enable) {
-        if (isSupported(builder, ai_camera_bokeh)) {
-            builder.set(ai_camera_bokeh, enable);
+    public static void setAICameraBlurMode(CaptureRequest.Builder builder, int enable) {
+        if (isSupported(builder, BlurMode)) {
+            builder.set(BlurMode, enable);
         }
     }
 

@@ -767,6 +767,19 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.AICamera.EnableAISnapshot", byte.class);
     private static final CaptureRequest.Key<Integer> AICameraStrength =
             new CaptureRequest.Key<>("org.quic.camera.AICamera.AIStrength", Integer.class);
+    private static final CaptureRequest.Key<Integer> blurShape =
+            new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurShape", Integer.class);
+    private static final CaptureRequest.Key<Float> blurStrength =
+            new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurStrength", Float.class);
+    private static final CaptureRequest.Key<Float> blurFocusDistance =
+            new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurFocusDistance", Float.class);
+    private static final CaptureRequest.Key<Float> blurLumaSuppressio =
+            new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurLumaSuppressio", Float.class);
+    private static final CaptureRequest.Key<Float> blurChromaSuppressionU =
+            new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionU", Float.class);
+    private static final CaptureRequest.Key<Float> blurChromaSuppressionV =
+            new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionV", Float.class);
+
 
     TotalCaptureResult mCaptureResult;
     float denoiseStrengthParam = 0.5f;
@@ -6119,7 +6132,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyStatsNNControl(builder);
         applyeMFNRAIDEMode(builder);
         applyAICameraParam(builder);
-        applyAICameraBokehParam(builder);
+        applyAICameraBlurModeParam(builder);
     }
 
     private void applyAICameraParam(CaptureRequest.Builder builder){
@@ -6130,11 +6143,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
-    private void applyAICameraBokehParam(CaptureRequest.Builder builder){
-        String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA_BOKEH);
-        if(value != null &&  !value.equals("disable") && !value.equals("0")){
-            Log.i(TAG,"set applyeAiCameraBokehTag: " + value);
-            VendorTagUtil.setAICameraBokeh(builder, Integer.parseInt(value));
+    private void applyAICameraBlurModeParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA_BLURMODE);
+        if(value != null &&  !value.equals("disable")){
+            Log.i(TAG,"set applyAICameraBlurModeParam: " + value);
+            VendorTagUtil.setAICameraBlurMode(builder, Integer.parseInt(value));
         }
     }
 
@@ -6374,6 +6387,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             closeImageReader();
         }
         setProModeVisible();
+        seBlurConfigSlideVisible();
         closeVideoFileDescriptor();
         if (mIntentMode != CaptureModule.INTENT_MODE_NORMAL
                 && isExitCamera && mJpegImageData != null) {
@@ -6820,6 +6834,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         });
         mUI.enableShutter(true);
         setProModeVisible();
+        seBlurConfigSlideVisible();
         updateZoom();
         updateZoomSeekBarVisible();
         updateAICameraSeekBar();
@@ -8785,6 +8800,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyPdnetToggle(builder);
         applyAWBCCTAndAgain(builder);
         applyAICameraStrength();
+        applyAIBlurConfigs(builder);
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
@@ -11809,14 +11825,56 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyAICameraStrength(){
+        if (!mIsRecordingVideo && !mIsPreviewingVideo || mCurrentSessionClosed) return;
         if(mSettingsManager.isAICameraOn()) {
             Log.i(TAG, "applyAICameraStrength: " + mAIStrengthValue);
-//            CaptureRequest.Builder request = getCurrentRequest();
-//            try {
-//                request.set(CaptureModule.AICameraStrength, mAIStrengthValue);
-//            } catch (IllegalArgumentException e) {
-//                e.printStackTrace();
-//            }
+            try {
+                mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
+            } catch (CameraAccessException e) {
+                Log.e(TAG, "Camera Access Exception in applyFlashForUIChange, apply failed");
+            }
+        }
+    }
+
+    private void applyAIBlurConfigs(CaptureRequest.Builder builder){
+        if (!mIsRecordingVideo && !mIsPreviewingVideo || mCurrentSessionClosed) return;
+        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
+        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
+        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
+        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_LUMA, builder);
+        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAU, builder);
+        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAV, builder);
+    }
+
+    private void applyAIBlurConfig(String key, CaptureRequest.Builder builder){
+        String mode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        boolean isBokehMode = mode != null && mode.equals("rtb");
+        if(isBokehMode) {
+            try {
+                if (key.equals(SettingsManager.KEY_AI_BLUR_SHAPE)) {
+                    String value =  mSettingsManager.getValue(SettingsManager.KEY_AI_BLUR_SHAPE);
+                    Log.i(TAG, "applyAIblurShape: " + value);
+                    if (value == null) return;
+                    int intValue = Integer.parseInt(value);
+                    builder.set(CaptureModule.blurShape, intValue);
+                }else{
+                    float value = mSettingsManager.geBlurSliderValue(key);
+                    Log.i(TAG, "applyAIBlurConfig: " + value + ",key:" + key);
+                    if(key.equals(SettingsManager.KEY_AI_BLUR_STRENGTH)){
+                        builder.set(CaptureModule.blurStrength, value*7);
+                    }else if(key.equals(SettingsManager.KEY_AI_BLUR_DISTANCE)){
+                        builder.set(CaptureModule.blurFocusDistance, value);
+                    }else if(key.equals(SettingsManager.KEY_AI_BLUR_LUMA)){
+                        builder.set(CaptureModule.blurLumaSuppressio, value);
+                    }else if(key.equals(SettingsManager.KEY_AI_BLUR_CHROMAU)){
+                        builder.set(CaptureModule.blurChromaSuppressionU, value-0.5f);
+                    }else if(key.equals(SettingsManager.KEY_AI_BLUR_CHROMAV)) {
+                        builder.set(CaptureModule.blurChromaSuppressionV, value - 0.5f);
+                    }
+                }
+            } catch (IllegalArgumentException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -12753,6 +12811,20 @@ public class CaptureModule implements CameraModule, PhotoController,
                 case SettingsManager.KEY_SCENE_MODE:
                     restartAll();
                     return;
+                case SettingsManager.KEY_AI_BLUR_SHAPE:
+                case SettingsManager.KEY_AI_BLUR_STRENGTH:
+                case SettingsManager.KEY_AI_BLUR_DISTANCE:
+                case SettingsManager.KEY_AI_BLUR_LUMA:
+                case SettingsManager.KEY_AI_BLUR_CHROMAU:
+                case SettingsManager.KEY_AI_BLUR_CHROMAV:
+                    applyAIBlurConfigs(mVideoRecordRequestBuilder);
+                    applyAIBlurConfigs(mVideoPreviewRequestBuilder);
+                    try {
+                        mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
+                    } catch (CameraAccessException e) {
+                        Log.e(TAG, "Camera Access Exception in applyFlashForUIChange, apply failed");
+                    }
+                    return;
             }
             updatePreviewLogical |= applyPreferenceToPreview(getMainCameraId(),
                     key, value);
@@ -13447,6 +13519,12 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void setProModeVisible() {
         boolean promode = mCurrentSceneMode.mode == CameraMode.PRO_MODE;
         mUI.initializeProMode(!mPaused && promode);
+    }
+
+    private void seBlurConfigSlideVisible() {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        boolean isBokeh = value != null && value.equals("rtb");
+        mUI.initializeBlurConfigSlide(!mPaused && isBokeh);
     }
 
     boolean checkSessionAndBuilder(CameraCaptureSession session, CaptureRequest.Builder builder) {

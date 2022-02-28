@@ -1542,6 +1542,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+    public void initializeBlurConfigSlide(boolean blurmode) {
+        mCameraControls.setBlurMode(blurmode);
+    }
+
     // called from onResume but only the first time
     public void initializeFirstTime() {
         // Initialize shutter button.

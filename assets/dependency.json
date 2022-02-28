@@ -282,10 +282,12 @@
   },
   "pref_camera2_select_mode_key":
   {
-    "sat": {"pref_camera2_pdnet_toggle_key": "0"},
+    "sat": {"pref_camera2_pdnet_toggle_key": "0",
+      "pref_camera2_ai_camera_blurmode_key": "0"},
     "rtb": {"pref_camera2_pdnet_toggle_key": "0",
             "pref_camera2_extended_max_zoom_key": "0"},
-    "single_rear_cameraid" : {}
+    "single_rear_cameraid" : { "pref_camera2_ai_camera_blurmode_key": "0"},
+    "default" : { "pref_camera2_ai_camera_blurmode_key": "0"}
   },
   "pref_camera2_quad_bayer_sensor_key":
   {

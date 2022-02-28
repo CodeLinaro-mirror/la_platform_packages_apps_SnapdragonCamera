@@ -28,6 +28,11 @@
         android:layout_height="wrap_content"
         android:layout_width="wrap_content" />
 
+    <com.android.camera.ui.AIBlurConfigSlide
+        android:id="@+id/aiblur_slide"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content" />
+
     <com.android.camera.ui.FlashToggleButton
         android:id="@+id/flash_button"
         style="@style/OneUIMenuButton"
@@ -173,6 +178,7 @@
     </LinearLayout>
 
     <include layout="@layout/pro_mode_layout" />
+    <include layout="@layout/ai_blur_layout" />
 
     <SeekBar
         android:layout_width="320dp"
