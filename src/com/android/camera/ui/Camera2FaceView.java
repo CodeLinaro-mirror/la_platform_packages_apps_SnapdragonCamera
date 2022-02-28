@@ -142,8 +142,10 @@ public class Camera2FaceView extends FaceView {
     private boolean isFDRectOutOfBound(Rect faceRect) {
         boolean result = false;
         if(mZoomRationSupported && mPostZoomFov) {
-            result = mOriginalCameraBound.left > faceRect.left ||
-                    mOriginalCameraBound.top > faceRect.top ||
+            // change mOriginalCameraBound.left to 0 and mOriginalCameraBound.top to 0
+            // This is for special sensor caused, camx can`t fixed, so app fixed.
+            result = 0 > faceRect.left ||
+                    0 > faceRect.top ||
                     faceRect.right > mOriginalCameraBound.right ||
                     faceRect.bottom > mOriginalCameraBound.bottom;
         } else {
@@ -264,7 +266,9 @@ public class Camera2FaceView extends FaceView {
             for (int i = 0; i < mFaces.length; i++) {
                 if (mFaces[i].getScore() < 50) continue;
                 Rect faceBound = mFaces[i].getBounds();
-                faceBound.offset(-mOriginalCameraBound.left, -mOriginalCameraBound.top);
+                // This is for special sensor caused, camx can`t fixed, so app fixed.
+                //faceBound.offset(-mOriginalCameraBound.left, -mOriginalCameraBound.top);
+                faceBound.offset(0, 0);
                 if (isFDRectOutOfBound(faceBound)) continue;
                 mRect.set(faceBound);
                 if (mZoom != 1.0f && !(mZoomRationSupported && mPostZoomFov)) {

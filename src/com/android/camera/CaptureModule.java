@@ -569,9 +569,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.afdData.AvgStaticConfidenceScore", Float.class);
     //AF infos
     private static final CaptureResult.Key<Byte> isPDENABLE =
-            new CaptureResult.Key<>("org.quic.camera.afData.isPDENABLE", Byte.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.isPDEnable", Byte.class);
     private static final CaptureResult.Key<Integer> pd_type =
-            new CaptureResult.Key<>("org.quic.camera.afData.PDTYPE", Integer.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.PDType", Integer.class);
     private static final CaptureResult.Key<Byte> isSparseHW =
             new CaptureResult.Key<>("org.quic.camera.afData.isSparseHW", Byte.class);
     private static final CaptureResult.Key<Byte> isDualPDHW =
@@ -583,13 +583,13 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final CaptureResult.Key<Integer> lenspos =
             new CaptureResult.Key<>("org.quic.camera.afData.lenspos", Integer.class);
     private static final CaptureResult.Key<Integer> roix_start =
-            new CaptureResult.Key<>("org.quic.camera.afData.roix_start", Integer.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.roixstart", Integer.class);
     private static final CaptureResult.Key<Integer> roiy_start =
-            new CaptureResult.Key<>("org.quic.camera.afData.roiy_start", Integer.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.roiystart", Integer.class);
     private static final CaptureResult.Key<Integer> roix_end =
-            new CaptureResult.Key<>("org.quic.camera.afData.roix_end", Integer.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.roixend", Integer.class);
     private static final CaptureResult.Key<Integer> roiy_end =
-            new CaptureResult.Key<>("org.quic.camera.afData.roiy_end", Integer.class);
+            new CaptureResult.Key<>("org.quic.camera.afData.roiyend", Integer.class);
     private static final CaptureResult.Key<int[]> rsStats =
             new CaptureResult.Key<>("org.quic.camera.afData.rsStats", int[].class);
     //camera id && request id
@@ -746,6 +746,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public static final CameraCharacteristics.Key<Integer> MFNRType =
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.MFNRType", Integer.class);
+
+    public static final CaptureResult.Key<Integer> isTorchHdr =
+            new CaptureResult.Key<>("com.qti.stats_control.is_torch_hdr_snapshot", Integer.class);
     //vendor tag for AIDE2
     public static final CameraCharacteristics.Key<Byte> isAIDE2Supported =
             new CameraCharacteristics.Key<>("org.quic.camera.AIDE2Supported.isAIDE2Supported", byte.class);
@@ -1105,6 +1108,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int mLockAFAE = LOCK_AF_AE_STATE_NONE;
     private TextView mLockAFAEText;
     private int[] mClickPosition = new int[2];
+
+    private boolean mCaptureTorchTrigger = false;
 
     private class SelfieThread extends Thread {
         public void run() {
@@ -3715,6 +3720,17 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         mUI.enableShutter(false);
+        boolean isflashRequired = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
+        if(mSettingsManager.isTorchHDREnabled(isflashRequired,mPreviewCaptureResult)){
+            mCaptureTorchTrigger = true;
+            applyFlash(mPreviewRequestBuilder[getMainCameraId()], getMainCameraId());
+            try{
+                mCaptureSession[getMainCameraId()].setRepeatingRequest(
+                mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback,mCameraHandler);
+            } catch (CameraAccessException | IllegalStateException e) {
+                e.printStackTrace();
+            }
+        }
         if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) &&
                 !isFlashOn(getMainCameraId()) && (mPreviewCaptureResult != null &&
                 mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) !=
@@ -3726,12 +3742,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (takeZSLPicture(cameraId)) {
                 return;
             }
-            if (mUI.getCurrentProMode() == ProMode.MANUAL_MODE) {
+            if (mUI.getCurrentProMode() == ProMode.MANUAL_MODE ) {
                 captureStillPicture(cameraId);
             } else {
                 if (mLongshotActive) {
                     parallelLockFocusExposure(cameraId);
-                } else {
+                } else{
                     if (mPreviewCaptureResult != null) {
                         Integer aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
                         isFlashRequiredInDriver = aeState != null &&
@@ -5556,7 +5572,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      * finished.
      */
     public void unlockFocus(int id) {
-        Log.d(TAG, "unlockFocus " + id);
+        Log.d(TAG, "unlockFocus  " + id);
         isFlashRequiredInDriver = false;
         if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id]) || mCurrentSceneMode.mode == CameraMode.VIDEO) {
             return;
@@ -5595,6 +5611,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mControlAFMode = CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
                 mIsAutoFocusStarted = false;
             }
+            mCaptureTorchTrigger =false;
             applyFlash(mPreviewRequestBuilder[id], id);
             if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
                 applySettingsForUnlockExposure(mPreviewRequestBuilder[id], id);
@@ -5667,6 +5684,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         return mfnrEnable;
     }
+
 
     private boolean isVariableFPSEnabled() {
         boolean variableFPSEnable = false;
@@ -11861,7 +11879,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (isCaptureBurst) {
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
-                } else {
+                } else if(mCaptureTorchTrigger) {
+                    request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                    request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+                }else{
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
                 }
@@ -11872,7 +11893,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     // When long shot is active, turn off the flash in auto mode
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
-                } else {
+                } else if(mCaptureTorchTrigger){
+                    request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                    request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+                }else{
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
                 }

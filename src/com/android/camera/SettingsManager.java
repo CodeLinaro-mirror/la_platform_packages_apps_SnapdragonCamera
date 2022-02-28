@@ -296,6 +296,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_PHYSICAL_RAW_REPROCESS = "pref_camera2_physical_raw_reprocess_key";
     public static final String KEY_RAWINFO_TYPE = "pref_camera2_rawinfo_type_key";
     public static final String KEY_RAW_FORMAT_TYPE = "pref_camera2_raw_format_key";
+
+    public static final String KEY_TORCH_HDR_VALUE= "pref_camera2_torch_hdr_key";
     private static final String TAG = "SnapCam_SettingsManager";
 
     private static SettingsManager sInstance;
@@ -408,7 +410,34 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
         mDependency = parseJson("dependency.json");
     }
-
+   public boolean isTorchHDREnabled(boolean isflashRequired,CaptureResult mResult) {
+        boolean torchHDREnable = false;
+        boolean flashEnable =false;
+        String torchHDRValue = getValue(KEY_TORCH_HDR_VALUE);
+        if (torchHDRValue != null) {
+            torchHDREnable = torchHDRValue.equals("1");
+        }
+        boolean isTorchHdrTag = false;
+        if(mResult != null){
+            try {
+            if(mResult.get(CaptureModule.isTorchHdr) > 0 ) isTorchHdrTag = true;
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+         String flashValue = getValue(KEY_FLASH_MODE);
+         if(flashValue != null && (flashValue.equals("on") || (flashValue.equals("auto") && isflashRequired))){
+            flashEnable = true;
+         }else{
+            flashEnable =false;
+         }
+       if (getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("manual")){
+           return torchHDREnable && flashEnable;
+       }else if(getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("auto")){
+            return  torchHDREnable && flashEnable && isTorchHdrTag;
+       }
+       return false;
+    }
     public void reloadCharacteristics(int cameraId){
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
@@ -2187,8 +2216,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             } catch (IllegalArgumentException ex) {
                 Log.w(TAG, "HFR is not supported for " + ex);
             }
-            if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 3) {
-                for (int i = 0; i < mExtendedHFRSize.length; i += 3) {
+            if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 4) {
+                for (int i = 0; i < mExtendedHFRSize.length; i += 4) {
                     String item = "hfr" + mExtendedHFRSize[i + 2];
                     if (!supported.contains(item)
                             && videoSize.getWidth() <= mExtendedHFRSize[i]
@@ -2284,8 +2313,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             } catch (IllegalArgumentException ex) {
                 Log.w(TAG, "HFR is not supported for " + ex);
             }
-            if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 3) {
-                for (int i = 0; i < mExtendedHFRSize.length; i += 3) {
+            if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 4) {
+                for (int i = 0; i < mExtendedHFRSize.length; i += 4) {
                     String item = "hfr" + mExtendedHFRSize[i + 2];
                     if (!supported.contains(item)
                             && videoSize.getWidth() <= mExtendedHFRSize[i]
