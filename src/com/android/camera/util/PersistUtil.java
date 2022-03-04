@@ -407,6 +407,10 @@ public class PersistUtil {
         return getBoolean("persist.sys.cameraapp.multiresimagereader", false);
     }
 
+    public static boolean needAudioEncoder() {
+        return getBoolean("persist.sys.cameraapp.needaudio", true);
+    }
+
     public static boolean isPersistVideoLiveshot(){
         return PERSIST_VIDEO_LIVESHOT;
     }
