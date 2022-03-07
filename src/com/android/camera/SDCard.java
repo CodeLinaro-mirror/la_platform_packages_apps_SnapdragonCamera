@@ -66,20 +66,9 @@ public class SDCard {
         if (mVolume == null) {
             return null;
         }
-        if (mPath == null) {
-            File[] dirs = mContext.getExternalFilesDirs(null);
-            if (dirs != null) {
-                String dir;
-                for (int i=0; i<dirs.length; i++) {
-                    if (dirs[i] == null) continue;
-                    dir = dirs[i].getAbsolutePath();
-                    if (mVolume.getDirectory() != null &&
-                            dir.startsWith(mVolume.getDirectory().toString())) {
-                        mPath = dir;
-                        break;
-                    }
-                }
-            }
+        if (mPath == null && mVolume.getDirectory() != null) {
+            mPath = mVolume.getDirectory().getAbsolutePath() + "/DCIM/Camera";
+            Log.i(TAG, "getDirectory " + mPath);
         }
         return mPath;
     }

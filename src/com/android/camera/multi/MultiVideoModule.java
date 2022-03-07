@@ -388,6 +388,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     @Override
     public void onVideoButtonClick(String[] ids) {
         checkAndPlayShutterSound(mIsRecordingVideos[0]);
+        mMultiCameraUI.enableVideo(false);
         for (String id : ids) {
             int cameraId = Integer.parseInt(id);
             Log.d(TAG, " onVideoButtonClick id :" + cameraId + "  recording is :" +
@@ -404,6 +405,12 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 startRecordingVideo(cameraId);
             }
         }
+        mMultiCameraModule.getMainHandler().postDelayed (new Runnable() {
+            @Override
+            public void run() {
+                mMultiCameraUI.enableVideo(true);
+            }
+        }, 1200);
     }
 
     @Override
@@ -786,13 +793,13 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                     break;
                 case STOP_RECORD_EIS:
                     int cameraId = msg.arg1;
-                    mMultiCameraModule.getMainHandler().post(new Runnable() {
+                    mMultiCameraModule.getMainHandler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             keepScreenOnAwhile();
                             mMultiCameraUI.enableVideo(true);
                         }
-                    });
+                    }, 1200);
                     stopMediaRecordAndSaveFile(cameraId);
                     break;
             }
@@ -939,7 +946,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH_16_9,
                     MultiSettingsActivity.PREVIEW_HIEGHT_16_9);
         } else {
-            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH,
+            previewSize = new Size(MultiSettingsActivity.PREVIEW_WIDTH_4_3,
                     MultiSettingsActivity.PREVIEW_HIEGHT_4_3);
         }
         Log.v(TAG, "getOptimalVideoPreviewSize previewSize " + previewSize.getWidth() + " x " + previewSize.getHeight());
@@ -1041,7 +1048,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             sessionConfiguration = new SessionConfiguration(
                     SessionConfiguration.SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
                     new HandlerExecutor(mCameraHandler), stateCallback);
-            //applyVideoEncoderProfile(mPreviewRequestBuilders[id], id);
+            applyVideoEncoderProfile(mPreviewRequestBuilders[id], id);
             sessionConfiguration.setSessionParameters(mPreviewRequestBuilders[id].build());
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -1111,6 +1118,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             sessionConfiguration = new SessionConfiguration(
                     SessionConfiguration.SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
                     new HandlerExecutor(mCameraHandler), stateCallback);
+            applyVideoEncoderProfile(mRecordRequestBuilders[id], id);
             sessionConfiguration.setSessionParameters(mRecordRequestBuilders[id].build());
         } catch (Exception e) {
             e.printStackTrace();

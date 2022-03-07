@@ -447,6 +447,7 @@
     <!-- Camera Preferences Picture size dialog box entries -->
     <string-array name="pref_camera2_picturesize_entries" translatable="false">
         <item>@string/pref_camera_picturesize_entry_256mp</item>
+        <item>@string/pref_camera_picturesize_entry_200mp</item>
         <item>8192 x 8192</item>
         <item>8192 x 4320</item>
         <item>7680 x 4320</item>
@@ -495,6 +496,7 @@
          driver -->
     <string-array name="pref_camera2_picturesize_entryvalues" translatable="false">
         <item>16000x16000</item>
+        <item>16320x12240</item>
         <item>8192x8192</item>
         <item>8192x4320</item>
         <item>7680x4320</item>
@@ -1580,6 +1582,26 @@ for time lapse recording -->
     <string-array name="pref_camera2_extended_max_zoom_entryvalues" translatable="false">
         <item>@string/pref_camera2_extended_max_zoom_entry_value_disable</item>
         <item>@string/pref_camera2_extended_max_zoom_entry_value_enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_hvx_shdr_entries" translatable="false">
+        <item>@string/pref_camera2_hvx_hdr_entry_enable</item>
+        <item>@string/pref_camera2_hvx_hdr_entry_disable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_hvx_shdr_entry_values" translatable="false">
+        <item>@string/pref_camera2_hvx_hdr_entry_value_enable</item>
+        <item>@string/pref_camera2_hvx_hdr_entry_value_disable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_hvx_mfhdr_entries" translatable="false">
+        <item>@string/pref_camera2_hvx_hdr_entry_enable</item>
+        <item>@string/pref_camera2_hvx_hdr_entry_disable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_hvx_mfhdr_entry_values" translatable="false">
+        <item>@string/pref_camera2_hvx_hdr_entry_value_enable</item>
+        <item>@string/pref_camera2_hvx_hdr_entry_value_disable</item>
     </string-array>
 
     <string-array name="pref_camera2_master_cb_entries" translatable="false">
