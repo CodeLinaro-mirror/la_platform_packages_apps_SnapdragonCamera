@@ -6701,7 +6701,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (mPhysicalPreviewSizes[i] == null){
                     mPhysicalPreviewSizes[i] = mPreviewSize;
                 }
-                Log.d(TAG,"set Physical "+ id+ " capture size="+mPhysicalSizes[i].toString()
+                Log.d(TAG," set Physical "+ id+ " capture size="+mPhysicalSizes[i].toString()
                          +" preview size="+mPhysicalPreviewSizes[i].toString());
 
                 Size[] rawSizes;
@@ -7814,51 +7814,54 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updatePictureSize() {
         String pictureSize = mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE);
         mPictureSize = parsePictureSize(pictureSize);
-        if(PersistUtil.isRawReprocessQcfa()){
-            mPictureSize = new Size(8000,6000);
+        if (PersistUtil.isRawReprocessQcfa()) {
+            mPictureSize = new Size(8000, 6000);
         }
         Size[] prevSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
                 SurfaceHolder.class);
         List<Size> prevSizeList = Arrays.asList(prevSizes);
-        prevSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
+        prevSizeList.sort((o1, o2) -> o2.getWidth() * o2.getHeight() - o1.getWidth() * o1.getHeight());
         mSupportedMaxPictureSize = prevSizeList.get(0);
         Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.PRIVATE);
         List<Size> yuvSizeList = Arrays.asList(yuvSizes);
-        yuvSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
-        for (int i = 0; i< mYUVCount; i++) {
-            if(PersistUtil.isRawReprocessQcfa()){
-                mYUVsize[i] = new Size(8000,6000);
-            }else{
+        yuvSizeList.sort((o1, o2) -> o2.getWidth() * o2.getHeight() - o1.getWidth() * o1.getHeight());
+        for (int i = 0; i < mYUVCount; i++) {
+            if (PersistUtil.isRawReprocessQcfa()) {
+                mYUVsize[i] = new Size(8000, 6000);
+            } else {
                 mYUVsize[i] = yuvSizeList.get(0);
             }
         }
-        if( mRawCount == 1){
+        if (mRawCount == 1) {
             Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(mSettingsManager.getRawReprocessPhysicalId()), mSettingsManager.getRawFormat());
-            if(PersistUtil.isRawReprocessQcfa()){
-                mRawSize[0] = new Size(8000,6000);
-            }else{
+            if (PersistUtil.isRawReprocessQcfa()) {
+                mRawSize[0] = new Size(8000, 6000);
+            } else {
                 mRawSize[0] = rawSize[0];
             }
         }
 
         Size[] rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
-                    mSettingsManager.getRawFormat());
-        if (rawSize == null || rawSize.length == 0 || mSettingsManager.getRawFormat() == 0) {
-            mSupportedRawPictureSize = null;
+                mSettingsManager.getRawFormat());
+        if ((rawSize == null || rawSize.length == 0 || mSettingsManager.getRawFormat() == 0) && mSaveRaw) {
             mSaveRaw = false;
-        } else {
+        }
+        if (mSaveRaw) {
             mSupportedRawPictureSize = getMaxRawSize() != null && (mSettingsManager.getRawFormat() == ImageFormat.RAW10 ||
                     (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR && isRawReprocess())) ? getMaxRawSize() : rawSize[0];
-            Log.i(TAG, "rawsize:" + rawSize[0].toString()+",mSupportedRawPictureSize="+mSupportedRawPictureSize);
+        } else {
+            rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.RAW10);
+            mSupportedRawPictureSize = getMaxRawSize() != null ? getMaxRawSize() : rawSize[0];
         }
+        Log.i(TAG, " rawsize:" + rawSize[0].toString() + ",mSupportedRawPictureSize=" + mSupportedRawPictureSize);
 
         if (mSupportedRawPictureSize != null) {
-         Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
+            Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
         }
         mPreviewSize = getOptimalPreviewSize(mPictureSize, prevSizes);
         Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(getMainCameraId());
         mPictureThumbSize = getOptimalPreviewSize(mPictureSize, thumbSizes); // get largest thumb size
-        if(isAIDE2Enabled()){
+        if (isAIDE2Enabled()) {
             getMaxAide2Size();
         }
     }
