@@ -1715,7 +1715,7 @@ public class SettingsActivity extends PreferenceActivity {
         if (videoPref != null && videoPref.getValue() != null &&
                 (videoPref.getValue().equals("3840x2160") || videoPref.getValue().equals("7680x4320"))) {
             if (selectModePref != null && selectModePref.getValue() != null &&
-                    !selectModePref.getValue().equals("single_rear_cameraid")) {
+                    !selectModePref.getValue().equals("single_rear_cameraid") && CaptureModule.MCXMODE) {
                 pref.setEnabled(false);
             }
         }
