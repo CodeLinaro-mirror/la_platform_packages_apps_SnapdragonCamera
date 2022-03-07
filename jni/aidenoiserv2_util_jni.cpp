@@ -220,6 +220,9 @@ JNIEXPORT jint JNICALL Java_com_android_camera_aide_AideUtil_nativeCvtYuvToRgb(
     uint8_t* pRed = (uint8_t*)malloc(height * stride * sizeof(uint8_t));
     uint8_t* pGreen = (uint8_t*)malloc(height * stride * sizeof(uint8_t));
     uint8_t* pBlue = (uint8_t*)malloc(height * stride * sizeof(uint8_t));
+    if ( (pRed == NULL) ||  (pGreen == NULL) || (pBlue == NULL)) {
+        return 0;
+    }
     const uint32_t maxRgb = 255;
     for (int i = 0; i < height; i += 2) {
         for (int j = 0; j < width; j += 2) {
