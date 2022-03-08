@@ -148,6 +148,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
     private ExtendedFace[] mStickyExFaces = null;
     private Rect[] mCropRegion = new Rect[MAX_NUM_CAM];
 
+    // Session Parameter
     private static final CaptureRequest.Key<Byte> override_resource_cost_validation =
             new CaptureRequest.Key<>(
                     "org.codeaurora.qcamera3.sessionParameters.overrideResourceCostValidation",
@@ -432,6 +433,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 int index = mCameraIDList.indexOf(String.valueOf(cameraId));
                 captureBuilder.addTarget(mMultiCameraUI.getSurfaceViewList().get(
                         index).getHolder().getSurface());
+                captureBuilder.addTarget(mMediaRecorders[cameraId].getSurface());
                 // Use the same AE and AF modes as the preview.
                 captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
@@ -441,15 +443,19 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
                 applyVideoEIS(captureBuilder);
                 applyFaceDetection(captureBuilder);
+                final byte enable = 1;
+                captureBuilder.set(override_resource_cost_validation, enable);
+                Log.v(TAG, " captureBuilder set" + override_resource_cost_validation + " is 1");
 
                 // Orientation
                 int rotation = mActivity.getWindowManager().getDefaultDisplay().getRotation();
                 captureBuilder.set(CaptureRequest.JPEG_ORIENTATION,
                         CameraUtil.getJpegRotation(cameraId, rotation));
+                applyVideoEncoderProfile(captureBuilder, cameraId);
                 mCameraPreviewSessions[cameraId].capture(captureBuilder.build(),
                         mCaptureStillCallback, mMultiCameraModule.getMyCameraHandler());
                 Log.d(TAG, " cameraCaptureSession" + id + " captured ");
-            } catch (CameraAccessException e) {
+            } catch (CameraAccessException | IllegalArgumentException e) {
                 e.printStackTrace();
             }
         }
