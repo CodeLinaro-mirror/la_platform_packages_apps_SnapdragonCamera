@@ -2414,7 +2414,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean isRawCaptureOn() {
         String value = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
-        if (value == null) return  false;
+        if (value == null || mCurrentSceneMode.mode != CameraMode.DEFAULT || mSettingsManager.isMultiCameraEnabled())  return  false;
         return !value.equals("0");
     }
 
@@ -2942,9 +2942,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                             }
                         }
                     }
-                    if (mSettingsManager.isMultiCameraEnabled() &&
+                    if ((mSettingsManager.isMultiCameraEnabled() &&
                             !mSettingsManager.isLogicalFeatureEnable(
-                                    SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK)) {
+                                    SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK) )) {
                         list.remove(mImageReader[id].getSurface());
                     }
                     if (mSaveRaw && mRawReprocessType == 0 && !isPhysicalRaw()) {
@@ -3155,6 +3155,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         if(Integer.parseInt(mPhysicalRawId[i]) == physicalId ){
                             builder.addTarget(mPhysicalRawReader[i].getSurface());
                             targetCount++;
+                            builder.addTarget(mPhysicalJpegReader[i].getSurface());
+                            targetCount++;
                             break;
                         }
                     }
@@ -3252,6 +3254,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                     configuration.setPhysicalCameraId(id);
                 }
                 outputConfigurations.add(configuration);
+
+                OutputConfiguration configuration_jpeg = new OutputConfiguration(
+                        mPhysicalJpegReader[i].getSurface());
+                configuration_jpeg.setPhysicalCameraId(id);
+                outputConfigurations.add(configuration_jpeg);
+                Log.d(TAG,"add jpeg output format=jpeg physicalId="+id+" size="
+                        +mPhysicalJpegReader[i].getWidth()+"x"+mPhysicalJpegReader[i].getHeight()+",mPhysicalJpegReader[i].getSurface()="+mPhysicalJpegReader[i].getSurface());
             }
         }
         return outputConfigurations;
@@ -4269,8 +4278,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                             }
                             if (mSaveRaw && isPhysicalRaw() ){
                                 addPhysicalCaptureTarget(captureBuilder);
+                                captureBuilder.removeTarget(mImageReader[id].getSurface());
                             } else if (mSaveRaw && !isPhysicalRaw()) {
                                 captureBuilder.addTarget(mRawImageReader[id].getSurface());
+                                captureBuilder.addTarget(mImageReader[id].getSurface());
                             }
                         }
                         if(mRawReprocessType != 0){
@@ -5023,7 +5034,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         int imageFormat = image.getFormat();
         int imageWidth = image.getWidth();
         int imageHeight = image.getHeight();
-        Log.d(TAG, "saveRawImg-onImageAvailable width=" + imageWidth + ",height=" + imageHeight + ",stride=" + image.getPlanes()[0].getRowStride() + ",.getPixelStride()=" + image.getPlanes()[0].getPixelStride());
+        Log.d(TAG, "saveRawImg-onImageAvailable width=" + imageWidth + ",height=" + imageHeight + ",stride=" + image.getPlanes()[0].getRowStride() + ",imglen=" + imglen);
         if (imageFormat == ImageFormat.RAW_SENSOR && mRawReprocessType == 0) {
             TotalCaptureResult mRawMeta = waitForRawMetaData();
             int setsucess = setInfoForDng(mRawMeta);
@@ -5304,6 +5315,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
     private boolean isPhysicalRaw() {
+
         if ((switchedCameraId || getMainCameraId() == 1 || isSingleCameraMode())) {
             return false;
         } else {
@@ -5316,6 +5328,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
             if(!isPhysicalRaw())  characteristics= manager.getCameraCharacteristics(String.valueOf(getMainCameraId()));
             else characteristics= manager.getCameraCharacteristics(String.valueOf(mActiveCameraIds.get(0)));
+            Log.d(TAG,"setInfoForDng mRawMeta="+mRawMeta+",characteristics="+characteristics);
             mActivity.getMediaSaveService().setCharacteristics(characteristics);
             mActivity.getMediaSaveService().setResult(mRawMeta);
         } catch (CameraAccessException e) {
@@ -5439,39 +5452,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     size = mPictureSize;
                 }
-                mPhysicalJpegReader[i] = ImageReader.newInstance(size.getWidth(),
-                        size.getHeight(), ImageFormat.JPEG, 3);
-                Log.d(TAG, "JPEG imageReader i=" + i + " id=" + id + " index=" + index +
-                        " size=" + size.toString());
-                PhysicalImageListener jpegListener = new PhysicalImageListener() {
-                    @Override
-                    public void onImageAvailable(ImageReader reader) {
-                        Log.d(TAG, "new jpeg image from physical camera " + id);
-                        Image image = reader.acquireNextImage();
-                        mNamedImages.nameNewImage(System.currentTimeMillis());
-                        NamedEntity name = mNamedImages.getNextNameEntity();
-                        String title = (name == null) ? null : name.title;
-                        title = title + "_phy_" + id;
-                        long date = (name == null) ? -1 : name.date;
-
-                        byte[] bytes = getJpegData(image);
-                        int orientation = 0;
-                        ExifInterface exif = null;
-                        if (image.getFormat() != ImageFormat.HEIC) {
-                            exif = Exif.getExif(bytes);
-                            orientation = Exif.getOrientation(exif);
-                        } else {
-                            orientation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
-                        }
-                        Log.d(TAG, "new jpeg image from physical camera orientation :" + orientation);
-                        mActivity.getMediaSaveService().addImage(bytes, title, date,
-                                null, image.getWidth(), image.getHeight(), orientation, null,
-                                mOnMediaSavedListener, mContentResolver, "jpeg");
-                        image.close();
-                    }
-                };
-                jpegListener.setCamId(id);
-                mPhysicalJpegReader[i].setOnImageAvailableListener(jpegListener, mImageAvailableHandler);
+                setPhysicalJpegImgReader(size,id,i);
                 i++;
             }
         }
@@ -5534,6 +5515,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 String id = mPhysicalRawId[i];
                 if (size != null) setPhysicalImgReader(size, id, i);
             }
+            for(int i =0 ;i < mPhysicalSizes.length; i++){
+                Size size = mPhysicalSizes[i];
+                String id = mPhysicalRawId[i];
+                if (size != null) setPhysicalJpegImgReader(size, id, i);
+            }
         }
     }
 
@@ -5559,6 +5545,40 @@ public class CaptureModule implements CameraModule, PhotoController,
         };
         rawListener.setCamId(id);
         mPhysicalRawReader[i].setOnImageAvailableListener(rawListener, mImageAvailableHandler);
+    }
+    private void setPhysicalJpegImgReader(Size size, String id, int i){
+        mPhysicalJpegReader[i] = ImageReader.newInstance(size.getWidth(),
+                size.getHeight(), ImageFormat.JPEG, 3);
+        Log.d(TAG, "setJpegImgReader i=" + i + " id=" + id +
+                " size=" + size.toString());
+        PhysicalImageListener jpegListener = new PhysicalImageListener() {
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                Log.d(TAG, "new jpeg image from physical camera " + id);
+                Image image = reader.acquireNextImage();
+                mNamedImages.nameNewImage(System.currentTimeMillis());
+                NamedEntity name = mNamedImages.getNextNameEntity();
+                String title = (name == null) ? null : name.title;
+                title = title + "_phy_" + id;
+                long date = (name == null) ? -1 : name.date;
+
+                byte[] bytes = getJpegData(image);
+                int orientation = 0;
+                ExifInterface exif = null;
+                if (image.getFormat() != ImageFormat.HEIC) {
+                    exif = Exif.getExif(bytes);
+                    orientation = Exif.getOrientation(exif);
+                } else {
+                    orientation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
+                }
+                mActivity.getMediaSaveService().addImage(bytes, title, date,
+                        null, image.getWidth(), image.getHeight(), orientation, null,
+                        mOnMediaSavedListener, mContentResolver, "jpeg");
+                image.close();
+            }
+        };
+        jpegListener.setCamId(id);
+        mPhysicalJpegReader[i].setOnImageAvailableListener(jpegListener, mImageAvailableHandler);
     }
 
     public static byte[] getYUVFromImage(Image image) {
@@ -6707,7 +6727,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (mPhysicalPreviewSizes[i] == null){
                     mPhysicalPreviewSizes[i] = mPreviewSize;
                 }
-                Log.d(TAG," set Physical "+ id+ " capture size="+mPhysicalSizes[i].toString()
+                Log.d(TAG,"updatePhysicalSize set Physical "+ id+ " capture size="+mPhysicalSizes[i].toString()
                          +" preview size="+mPhysicalPreviewSizes[i].toString());
 
                 Size[] rawSizes;
@@ -7420,7 +7440,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     public boolean isSingleCameraMode(){
         if(CaptureModule.FRONT_ID==mCurrentSceneMode.getCurrentId())
             return true;
-
         String selectMode=mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         if (selectMode!=null && selectMode.equals("single_rear_cameraid")
                 || mSingleRearId == getMainCameraId()) {
