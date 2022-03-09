@@ -2919,7 +2919,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 } else {
                     if ((mSettingsManager.isMultiCameraEnabled() &&
-                            mSettingsManager.isLogicalEnable()) || (mSaveRaw && mRawReprocessType == 0 && !switchedCameraId && getMainCameraId() != 1)) {
+                            mSettingsManager.isLogicalEnable()) || (mSaveRaw && mRawReprocessType == 0 && isPhysicalRaw())) {
                         List<OutputConfiguration> physicalOutput =
                                 getPhysicalOutputConfiguration();
                         if (physicalOutput.size() != 0) {
@@ -2947,7 +2947,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK)) {
                         list.remove(mImageReader[id].getSurface());
                     }
-                    if (mSaveRaw && mRawReprocessType == 0 && (switchedCameraId || getMainCameraId() == 1)) {
+                    if (mSaveRaw && mRawReprocessType == 0 && !isPhysicalRaw()) {
                         list.add(mRawImageReader[id].getSurface());
                     }
 
@@ -4267,9 +4267,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     captureBuilder.addTarget(mImageReader[id].getSurface());
                                 }
                             }
-                            if (mSaveRaw && !switchedCameraId && getMainCameraId() != 1 ){
+                            if (mSaveRaw && isPhysicalRaw() ){
                                 addPhysicalCaptureTarget(captureBuilder);
-                            } else if (mSaveRaw && (switchedCameraId || getMainCameraId() == 1)) {
+                            } else if (mSaveRaw && !isPhysicalRaw()) {
                                 captureBuilder.addTarget(mRawImageReader[id].getSurface());
                             }
                         }
@@ -5303,12 +5303,18 @@ public class CaptureModule implements CameraModule, PhotoController,
             e.printStackTrace();
         }
     }
-
+    private boolean isPhysicalRaw() {
+        if ((switchedCameraId || getMainCameraId() == 1 || isSingleCameraMode())) {
+            return false;
+        } else {
+            return true;
+        }
+    }
     public int setInfoForDng(TotalCaptureResult mRawMeta){
         try{
             CameraCharacteristics characteristics;
             CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
-            if(switchedCameraId || getMainCameraId() == 1)  characteristics= manager.getCameraCharacteristics(String.valueOf(getMainCameraId()));
+            if(!isPhysicalRaw())  characteristics= manager.getCameraCharacteristics(String.valueOf(getMainCameraId()));
             else characteristics= manager.getCameraCharacteristics(String.valueOf(mActiveCameraIds.get(0)));
             mActivity.getMediaSaveService().setCharacteristics(characteristics);
             mActivity.getMediaSaveService().setResult(mRawMeta);
