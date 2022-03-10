@@ -127,11 +127,6 @@ public class FixedFirstDataAdapter extends AbstractLocalDataAdapterWrapper
     public void setListener(Listener listener) {
         mListener = listener;
         mAdapter.setListener((listener == null) ? null : this);
-        // The first data is always there. Thus, When the listener is set,
-        // we should call listener.onDataLoaded().
-        if (mListener != null) {
-            mListener.onDataLoaded();
-        }
     }
 
     @Override
