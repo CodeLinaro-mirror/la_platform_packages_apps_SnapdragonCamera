@@ -200,6 +200,12 @@
     "0":{"pref_camera2_ai_denoiser_mode_key":"1",
          "pref_camera2_ai_denoiser_format_key":"1"}
   },
+  "pref_camera2_ai_camera_key":
+  {
+    "1":{},
+    "0":{"pref_camera2_ai_camera_bokeh_key":"0",
+         "pref_camera2_ai_camera_snapshot_key":"0"}
+  },
   "pref_camera2_saveraw_key":
   {
     "enable":{"pref_camera2_longshot_key":"off"},

@@ -29,12 +29,11 @@
 
 package com.android.camera;
 
-import android.graphics.Point;
-import android.hardware.camera2.params.Face;
-
-import java.util.ArrayList;
-
 public class ExtendedFace {
+    private int mGender = -1;
+    private int[] mGenderConfidence = null;
+    private int mFaceExpression = -1;
+    private int[] mFaceExpressionConfidences = null;
     private int mSmileDegree = 0;
     private int mSmileConfidence = 0;
     private int mBlinkDetected = 0;
@@ -51,6 +50,10 @@ public class ExtendedFace {
 
     public ExtendedFace(int id) {
         mId = id;
+    }
+
+    public int getId() {
+        return mId;
     }
 
     public int getBlinkDetected() {
@@ -130,5 +133,49 @@ public class ExtendedFace {
 
     public int[] getLandMarks() {
         return mLandMarks;
+    }
+
+    public void setGender(int gender) {
+        this.mGender = gender;
+    }
+
+    public void setGenderConfidence(int[] genderConfidences) {
+        this.mGenderConfidence = genderConfidences;
+    }
+
+    public void setFaceExpression(int faceExpression) {
+        this.mFaceExpression = faceExpression;
+    }
+
+    public int getGender() {
+        return this.mGender;
+    }
+
+    public int[] getGenderConfidence() {
+        return this.mGenderConfidence;
+    }
+
+    public int getFaceExpression() {
+        return this.mFaceExpression;
+    }
+
+    public void setFaceExpressionConfidences(int[] confidences) {
+        this.mFaceExpressionConfidences = confidences;
+    }
+
+    public int[] getFaceExpressionConfidences() {
+        return this.mFaceExpressionConfidences;
+    }
+
+
+    public enum FDExpressionIndex {
+        Neutral,
+        Surprise,
+        Fear,
+        Disgust,
+        Happiness,
+        Sad,
+        Anger,
+        ;
     }
 }

@@ -214,6 +214,18 @@
             android:id="@id/zoom_seekbar"/>
     </LinearLayout>
 
+    <SeekBar
+        android:layout_width="320dp"
+        android:layout_height="30dp"
+        android:maxHeight="3dip"
+        android:minHeight="1dip"
+        android:layout_marginLeft="10dp"
+        android:layout_marginBottom="140dp"
+        android:layout_gravity="center_horizontal|bottom"
+        android:progressDrawable="@drawable/beautify_progressbar_style"
+        android:thumb="@drawable/ic_beautify_oval"
+        android:id="@+id/aicamera_seekbar"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

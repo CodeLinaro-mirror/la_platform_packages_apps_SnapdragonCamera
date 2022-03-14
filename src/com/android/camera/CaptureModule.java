@@ -20,7 +20,6 @@
 package com.android.camera;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
@@ -39,7 +38,6 @@ import android.graphics.RectF;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraCharacteristics.Key;
 import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
@@ -49,7 +47,6 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.MultiResolutionImageReader;
 import android.hardware.camera2.TotalCaptureResult;
-import android.hardware.camera2.params.Capability;
 import android.hardware.camera2.params.Face;
 import android.hardware.camera2.params.InputConfiguration;
 import android.hardware.camera2.params.MeteringRectangle;
@@ -58,9 +55,6 @@ import android.hardware.camera2.params.MultiResolutionStreamInfo;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
-import android.hardware.camera2.params.Capability;
-import android.hardware.camera2.params.SessionConfiguration;
-import android.hardware.camera2.params.StreamConfigurationMap;
 import android.location.Location;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -76,13 +70,10 @@ import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
 import android.media.MediaCodecList;
-import android.media.MediaFormat;
-import android.media.MediaMetadataRetriever;
 import android.media.MediaMuxer;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Debug;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -101,7 +92,6 @@ import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -172,10 +162,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Executor;
 import java.util.Set;
-import java.util.concurrent.TimeoutException;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Map;
 import java.util.HashMap;
 
 import org.json.JSONArray;
@@ -479,6 +465,19 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CaptureRequest.Key<Byte> blinkEnable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.blink_enable",
                     Byte.class);
+    public static final CaptureRequest.Key<Byte> FACE_EXPRESSION_ENABLE =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.face_expression_enable",
+                    Byte.class);
+
+    public static final CaptureRequest.Key<Byte> GENDER_ENABLE =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.gender_enable",
+                    Byte.class);
+
+    public static  CaptureResult.Key<int[]> GENDER =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.gender", int[].class);
+
+    public static final CaptureResult.Key<int[]> FACE_EXPRESSION =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.face_expression", int[].class);
 
     public static CaptureResult.Key<Integer> ssmCaptureComplete =
             new CaptureResult.Key<>("com.qti.chi.superslowmotionfrc.CaptureComplete", Integer.class);
@@ -760,6 +759,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.HWMFNRandAIDenoiser.HWMFNRandAIDE2TuningParams", byte[].class);
     public static final CaptureResult.Key<byte[]> StreamCropInfo =
             new CaptureResult.Key<>("com.qti.camera.streamCropInfo.StreamCropInfo", byte[].class);
+    public static CameraCharacteristics.Key<int[]> supportedAICameraModes =
+            new CameraCharacteristics.Key<>("org.quic.camera.capabilities.supportedAICameraModes", int[].class);
+    private static final CaptureRequest.Key<Byte> EnableAISnapshot =
+            new CaptureRequest.Key<>("org.quic.camera.AICamera.EnableAISnapshot", byte.class);
+    private static final CaptureRequest.Key<Integer> AICameraStrength =
+            new CaptureRequest.Key<>("org.quic.camera.AICamera.AIStrength", Integer.class);
 
     TotalCaptureResult mCaptureResult;
     float denoiseStrengthParam = 0.5f;
@@ -849,6 +854,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private CaptureUI mUI;
     private CameraActivity mActivity;
     private float mZoomValue = 1f;
+    private int mAIStrengthValue = 0;
     private FocusStateListener mFocusStateListener;
     private LocationManager mLocationManager;
     private SettingsManager mSettingsManager;
@@ -1351,8 +1357,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (FD_DEBUG)
                     Log.d(FD_TAG,"onCaptureProgressed Detected Face size = " + Integer.toString(faces == null? 0 : faces.length));
                 if (faces != null && mSettingsManager.isFDRenderingAtPreview()){
-                    if (isBsgcDetecionOn() || isFacialContourOn() || isFacePointOn()){
-                        updateFaceView(faces, getBsgcInfo(partialResult, faces.length));
+                    if (isBsgcDetecionOn() || isFacialContourOn() || isFacePointOn()
+                            || isFaceExpressionOn()
+                            || isGenderOn()) {
+                        updateFaceView(faces, getBsgcInfo(partialResult, faces));
                     } else {
                         updateFaceView(faces, null);
                     }
@@ -1387,8 +1395,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (FD_DEBUG)
                     Log.d(FD_TAG, "onCaptureCompleted Detected Face size = " + Integer.toString(faces == null ? 0 : faces.length));
                 if (faces != null && mSettingsManager.isFDRenderingAtPreview()) {
-                    if (isBsgcDetecionOn() || isFacialContourOn() || isFacePointOn()) {
-                        updateFaceView(faces, getBsgcInfo(result, faces.length));
+                    if (isBsgcDetecionOn() || isFacialContourOn() || isFacePointOn()
+                            || isFaceExpressionOn()
+                            || isGenderOn()) {
+                        updateFaceView(faces, getBsgcInfo(result, faces));
                     } else {
                         updateFaceView(faces, null);
                     }
@@ -2339,6 +2349,17 @@ public class CaptureModule implements CameraModule, PhotoController,
         String value = mSettingsManager.getValue(SettingsManager.KEY_CLEARSIGHT);
         if (value == null) return false;
         return isBackCamera() && getCameraMode() == DUAL_MODE && value.equals("on");
+    }
+
+    private boolean isGenderOn() {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_FD_GENDER);
+        if (value == null) return false;
+        return  value.equals("enable");
+    }
+    private boolean isFaceExpressionOn() {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_FD_FACE_EXPRESSION);
+        if (value == null) return false;
+        return  value.equals("enable");
     }
 
     private boolean isBsgcDetecionOn() {
@@ -4075,6 +4096,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyCaptureMFNR(captureBuilder);
             }
             applyCaptureBurstFps(captureBuilder);
+            applyAICameraSnapshot(captureBuilder);
             String valueFS2 = mSettingsManager.getValue(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
             int fs2Value = 0;
             if (valueFS2 != null) {
@@ -6015,6 +6037,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyColorEffect(builder);
         applyVideoFlash(builder, id);
         applyVideoEIS(builder);
+        applyAICameraSnapshot(builder);
     }
 
     private void applySessionParameters(CaptureRequest.Builder builder){
@@ -6056,6 +6079,33 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyStatsVisualizerOptionMask(builder);
         applyStatsNNControl(builder);
         applyeMFNRAIDEMode(builder);
+        applyAICameraParam(builder);
+        applyAICameraBokehParam(builder);
+    }
+
+    private void applyAICameraParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA);
+        if(value != null &&  !value.equals("disable")){
+            Log.i(TAG,"set applyeAiCameraTag: " + value);
+            VendorTagUtil.setAICamera(builder, Integer.parseInt(value));
+        }
+    }
+
+    private void applyAICameraBokehParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA_BOKEH);
+        if(value != null &&  !value.equals("disable") && !value.equals("0")){
+            Log.i(TAG,"set applyeAiCameraBokehTag: " + value);
+            VendorTagUtil.setAICameraBokeh(builder, Integer.parseInt(value));
+        }
+    }
+
+    private void applyAICameraSnapshot(CaptureRequest.Builder builder) {
+        try {
+            builder.set(EnableAISnapshot, (byte)(mSettingsManager.isAICameraSnapshotEnabeld() ? 0x01 : 0x00));
+            Log.v(TAG, " applyAICameraSnapshot value :" + mSettingsManager.isAICameraSnapshotEnabeld());
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "cannot find vendor tag: " + EnableAISnapshot.toString());
+        }
     }
 
     private void applyeMFNRAIDEMode(CaptureRequest.Builder builder){
@@ -6106,6 +6156,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyLivePreview(builder);
         applyPdnetToggle(builder);
         applyPhotoEIS(builder);
+        applyAICameraStrength();
     }
 
     /**
@@ -6732,6 +6783,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         setProModeVisible();
         updateZoom();
         updateZoomSeekBarVisible();
+        updateAICameraSeekBar();
         updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
         mUI.showRelatedIcons(mCurrentSceneMode.mode);
         if(mIsCloseCamera) {
@@ -7253,7 +7305,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         return false;
     }
 
-    private ExtendedFace[] getBsgcInfo(CaptureResult captureResult, int size) {
+    private ExtendedFace[] getBsgcInfo(CaptureResult captureResult, Face[] faces) {
+        final int size = faces.length;
         if (captureResult == null || size == 0) {
             if(FD_DEBUG)
                 Log.d(FD_TAG,"extendface size ="+size);
@@ -7284,14 +7337,26 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (FD_DEBUG)
                     Log.d(FD_TAG,"smileConfidenceArray="+Arrays.toString(smileConfidenceArray));
                 for (int i = 0; i < size; i++) {
-                    ExtendedFace tmp = new ExtendedFace(i);
+                    ExtendedFace tmp = new ExtendedFace(faces[i].getId());
                     try {
-                        tmp.setSmileDegree(smileDegreeArray[i]);
-                        tmp.setSmileConfidence(smileConfidenceArray[i]);
-                        tmp.setGazeDirection(gazeDirectionArray[3 * i], gazeDirectionArray[3 * i + 1], gazeDirectionArray[3 * i + 2]);
-                        tmp.setGazeAngle(gazeAngleArray[i]);
-                        tmp.setBlinkDetected(blinkDetectedArray[i]);
-                        tmp.setBlinkDegree(blinkDegreesArray[2 * i], blinkDegreesArray[2 * i + 1]);
+                        if (smileDegreeArray != null && i < smileDegreeArray.length) {
+                            tmp.setSmileDegree(smileDegreeArray[i]);
+                        }
+                        if (smileConfidenceArray != null && i < smileConfidenceArray.length) {
+                            tmp.setSmileConfidence(smileConfidenceArray[i]);
+                        }
+                        if (gazeDirectionArray != null && (3 * i + 2) < gazeDirectionArray.length) {
+                            tmp.setGazeDirection(gazeDirectionArray[3 * i], gazeDirectionArray[3 * i + 1], gazeDirectionArray[3 * i + 2]);
+                        }
+                        if (gazeAngleArray != null && i < gazeAngleArray.length) {
+                            tmp.setGazeAngle(gazeAngleArray[i]);
+                        }
+                        if (blinkDetectedArray != null && i < blinkDetectedArray.length) {
+                            tmp.setBlinkDetected(blinkDetectedArray[i]);
+                        }
+                        if (blinkDegreesArray != null && (2 * i + 1) < blinkDegreesArray.length) {
+                            tmp.setBlinkDegree(blinkDegreesArray[2 * i], blinkDegreesArray[2 * i + 1]);
+                        }
                     } catch (ArrayIndexOutOfBoundsException e) {}
                     extendedFaces[i] = tmp;
                 }
@@ -7309,14 +7374,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (FD_DEBUG) {
                         Log.d(FD_TAG, "FaceContour result header size is "+ faceContour);
                     }
-                    contourPoints = Arrays.copyOfRange(contour_all,faceContour,contour_all.length);
+                    if (contour_all != null) {
+                        contourPoints = Arrays.copyOfRange(contour_all,faceContour,contour_all.length);
+                    }
                 }
 
                 if (FD_DEBUG) {
                     Log.d(FD_TAG,"Version=V"+ contourMode + ", contour_results = " +
                             Arrays.toString(contour_all));
                 }
-                Face[] faces = captureResult.get(CaptureResult.STATISTICS_FACES);
                 int[] landmarkPoints = new int[6 * faces.length];
                 for (int i = 0 ; i < faces.length; i++){
                     landmarkPoints[6*i] = faces[i].getLeftEyePosition().x;
@@ -7331,7 +7397,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                 ExtendedFace tmp;
                 if (extendedFaces[0] == null) {
-                    tmp = new ExtendedFace(0);
+                    tmp = new ExtendedFace(faces[0].getId());
                     extendedFaces[0] = tmp;
                 } else {
                     tmp = extendedFaces[0];
@@ -7339,8 +7405,93 @@ public class CaptureModule implements CameraModule, PhotoController,
                 tmp.setContour(contourPoints);
                 tmp.setLandMarks(landmarkPoints);
             }
+
+            if (isGenderOn()) {
+                try {
+                    int[] genderArray = captureResult.get(GENDER);
+                    if (FD_DEBUG)
+                        Log.d(FD_TAG, "genderArray=" + Arrays.toString(genderArray));
+                    if (genderArray == null) {
+                        throw new RuntimeException("gender result is null");
+                    }
+                    int arrayIndex = 0;
+                    final int version = genderArray[arrayIndex++];
+                    if (FD_DEBUG) {
+                        Log.d(FD_TAG, "fd gender version " + version);
+                    }
+                    final int faceNum = genderArray[arrayIndex++];
+                    arrayIndex += 2;
+                    for (int i = 0; i < faceNum; i++) {
+                        int[] confidences = new int[2];
+                        for (int j = 0; j < 2; j++) {
+                            confidences[j] = genderArray[arrayIndex++];
+                        }
+                        final int gender = genderArray[arrayIndex++];
+                        final int face_id = genderArray[arrayIndex++];
+                        ExtendedFace tmp = null;
+                        int k_ = 0;
+                        for (int k = 0; k < faces.length; k++) {
+                            if (faces[k] != null && face_id == faces[k].getId()) {
+                                k_ = k;
+                                break;
+                            }
+                        }
+                        tmp = extendedFaces[k_];
+                        if (tmp == null) {
+                            tmp = new ExtendedFace(face_id);
+                        }
+                        tmp.setGender(gender);
+                        tmp.setGenderConfidence(confidences);
+                        extendedFaces[k_] = tmp;
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "GENDER", e.fillInStackTrace());
+                }
+
+            }
+
+            if (isFaceExpressionOn()) {
+                try {
+                    int[] expressionArray = captureResult.get(FACE_EXPRESSION);
+                    if (FD_DEBUG)
+                        Log.d(FD_TAG,"expressionArray=" + Arrays.toString(expressionArray));
+                    int expressionCount = ExtendedFace.FDExpressionIndex.values().length;
+                    int arrayIndex = 0;
+                    final int version = expressionArray[arrayIndex++];
+                    if (FD_DEBUG) {
+                        Log.d(FD_TAG, "fd expression version " + version);
+                    }
+                    final int faceNum = expressionArray[arrayIndex++];
+                    arrayIndex += 2;
+                    for (int i = 0; i < faceNum; i++) {
+                        int[] confidences = new int[expressionCount];
+                        for (int j = 0; j < expressionCount; j++) {
+                            confidences[j] = expressionArray[arrayIndex++];
+                        }
+                        final int faceExpression = expressionArray[arrayIndex++];
+                        final int face_id = expressionArray[arrayIndex++];
+                        ExtendedFace tmp = null;
+                        int k_ = 0;
+                        for (int k = 0; k < faces.length; k++) {
+                            if (faces[k] != null && face_id == faces[k].getId()) {
+                                k_ = k;
+                                break;
+                            }
+                        }
+                        tmp = extendedFaces[k_];
+                        if (tmp == null) {
+                            tmp = new ExtendedFace(face_id);
+                        }
+                        tmp.setFaceExpression(faceExpression);
+                        tmp.setFaceExpressionConfidences(confidences);
+                        extendedFaces[k_] = tmp;
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "FACE_EXPRESSION", e.fillInStackTrace());
+                }
+            }
         } catch (IllegalArgumentException|NullPointerException e){
-            e.printStackTrace();
+            Log.w(TAG, "getBsgcInfo", e.fillInStackTrace());
         }
         return extendedFaces;
     }
@@ -8590,6 +8741,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyBEStats(builder);
         applyPdnetToggle(builder);
         applyAWBCCTAndAgain(builder);
+        applyAICameraStrength();
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
@@ -11427,7 +11579,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mCaptureCallback, mCameraHandler);
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
-                        mSettingsManager.getVideoFPS());
+                            mSettingsManager.getVideoFPS());
                     if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                         if (mUI.getZoomFixedSupport()) {
                             applyZoomRatio(mVideoRecordRequestBuilder, mZoomValue, id);
@@ -11512,6 +11664,23 @@ public class CaptureModule implements CameraModule, PhotoController,
                             CaptureRequest.CONTROL_MODE_USE_SCENE_MODE,id);
                 }
             }
+        }
+    }
+
+    public void updateAIStrengthValue(int value){
+        mAIStrengthValue = value;
+        applyAICameraStrength();
+    }
+
+    private void applyAICameraStrength(){
+        if(mSettingsManager.isAICameraOn()) {
+            Log.i(TAG, "applyAICameraStrength: " + mAIStrengthValue);
+//            CaptureRequest.Builder request = getCurrentRequest();
+//            try {
+//                request.set(CaptureModule.AICameraStrength, mAIStrengthValue);
+//            } catch (IllegalArgumentException e) {
+//                e.printStackTrace();
+//            }
         }
     }
 
@@ -11994,6 +12163,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                     request.set(CaptureModule.smileEnable, bsgc_enable);
                     request.set(CaptureModule.gazeEnable, bsgc_enable);
                     request.set(CaptureModule.blinkEnable, bsgc_enable);
+                }
+
+                if (isGenderOn()) {
+                    request.set(CaptureModule.GENDER_ENABLE, (byte)1);
+                }
+
+                if (isFaceExpressionOn()) {
+                    request.set(CaptureModule.FACE_EXPRESSION_ENABLE, (byte)1);
                 }
 
                 if (facialContour != null) {
@@ -13250,7 +13427,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public void updateZoomSeekBarVisible() {
         if (mCurrentSceneMode.mode == CameraMode.PRO_MODE || mIsRTBCameraId ||
-                mCurrentSceneMode.mode == CameraMode.RTB || isRTBModeInSelectMode()) {
+                mCurrentSceneMode.mode == CameraMode.RTB || isRTBModeInSelectMode() ||
+                mSettingsManager.isAICameraOn()) {
             if (mCurrentSceneMode.mode == CameraMode.RTB || isRTBModeInSelectMode()) {
                 float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                         getMainCameraId());
@@ -13275,6 +13453,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             mUI.showZoomSeekBar();
             mUI.enableZoomSeekBar(true);
+        }
+    }
+
+    private void updateAICameraSeekBar(){
+        if(mSettingsManager.isAICameraOn()){
+            mUI.showAICameraSeekBar();
+        }else{
+            mUI.hideAICameraSeekBar();
         }
     }
 

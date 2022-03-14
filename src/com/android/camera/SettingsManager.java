@@ -272,6 +272,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_FD_SMILE = "pref_camera2_fd_smile_key";
     public static final String KEY_FD_GAZE = "pref_camera2_fd_gaze_key";
     public static final String KEY_FD_BLINK = "pref_camera2_fd_blink_key";
+    public static final String KEY_FD_GENDER = "pref_camera2_fd_gender_key";
+    public static final String KEY_FD_FACE_EXPRESSION = "pref_camera2_fd_face_expression_key";
     public static final String KEY_FACIAL_CONTOUR = "pref_camera2_facial_contour_key";
     public static final String KEY_FACE_DETECTION_MODE = "pref_camera2_face_detection_mode";
     public static final String KEY_ZSL = "pref_camera2_zsl_key";
@@ -284,6 +286,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_PDNET_TOGGLE = "pref_camera2_pdnet_toggle_key";
     public static final String KEY_RAW_CB_INFO = "pref_camera2_raw_cb_info_key";
     public static final String KEY_QLL = "pref_camera2_qll_key";
+    public static final String KEY_AI_CAMERA = "pref_camera2_ai_camera_key";
+    public static final String KEY_AI_CAMERA_BOKEH = "pref_camera2_ai_camera_bokeh_key";
+    public static final String KEY_AI_CAMERA_SNAPSHOT = "pref_camera2_ai_camera_snapshot_key";
     public static final String KEY_AI_DENOISER = "pref_camera2_ai_denoiser_key";
     public static final String KEY_AI_DENOISER_FORMAT = "pref_camera2_ai_denoiser_format_key";
     public static final String KEY_AI_DENOISER_MODE = "pref_camera2_ai_denoiser_mode_key";
@@ -874,6 +879,59 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return new Size(width, height);
     }
 
+    public List<String> getSupportedAICameraMode() {
+        ArrayList<String> ret = new ArrayList<String>();
+//        if(getCurrentCameraId() == CaptureModule.FRONT_ID) {
+//            ret.add("0");
+//            ret.add("1");
+//            ret.add("2");
+//        }
+        int modes[] = null;
+        try {
+            modes = mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.supportedAICameraModes);
+        } catch (Exception e) {
+        }
+        if (modes != null) {
+            for (int mode : modes) {
+                Log.v(TAG, "getSupportedAICameraMode support mode :" + mode);
+                ret.add(String.valueOf(mode));
+            }
+        }
+        HashSet<String> hs=new HashSet<String>();
+        hs.addAll(ret);
+        ret.clear();
+        ret.addAll(hs);
+        if(ret.size() == 1){
+            return null;
+        }
+        return ret;
+    }
+
+    public String getAICameraValue(){
+        String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
+                getCurrentPrepNameKey());
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName,
+                Context.MODE_PRIVATE);
+        String prefValue = sharedPreferences.getString(KEY_AI_CAMERA, "0");
+        return prefValue;
+    }
+
+    public boolean isAICameraOn(){
+        String value = getValue(KEY_AI_CAMERA);
+        if(value != null && !value.equals("disable")){
+            return Integer.parseInt(value) == 2;
+        }
+        return false;
+    }
+
+    public boolean isAICameraSnapshotEnabeld(){
+        String value = getValue(KEY_AI_CAMERA_SNAPSHOT);
+        if(value != null && !value.equals("disable")){
+            return Integer.parseInt(value) == 1;
+        }
+        return false;
+    }
+
     private void initDependencyTable() {
         for (int i = 0; i < mPreferenceGroup.size(); i++) {
             ListPreference pref = (ListPreference) mPreferenceGroup.get(i);
@@ -1432,6 +1490,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference vsr = mPreferenceGroup.findPreference(KEY_VSR);
         ListPreference shadingCorrection = mPreferenceGroup.findPreference(KEY_SHADING_CORRECTION);
         ListPreference inSensorZoom = mPreferenceGroup.findPreference(KEY_INSENSOR_ZOOM);
+        ListPreference aiCamera = mPreferenceGroup.findPreference(KEY_AI_CAMERA);
+        ListPreference aiCameraSnapshot = mPreferenceGroup.findPreference(KEY_AI_CAMERA_SNAPSHOT);
+        ListPreference aiCameraBokeh = mPreferenceGroup.findPreference(KEY_AI_CAMERA_BOKEH);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -1461,6 +1522,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
             // Front Camera does not support video
             if (mCameraId == CaptureModule.FRONT_ID) {
                 removePreference(mPreferenceGroup, KEY_VIDEO_FLASH_MODE);
+            }
+        }
+
+        if (aiCamera != null) {
+            if (filterUnsupportedOptions(aiCamera, getSupportedAICameraMode())) {
+                mFilteredKeys.add(aiCamera.getKey());
+                mFilteredKeys.add(aiCameraSnapshot.getKey());
+                mFilteredKeys.add(aiCameraBokeh.getKey());
             }
         }
 
@@ -3418,6 +3487,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return false;
     }
     public List<String> getSupportedManualHDR(int cameraId) {
+        boolean isAICameraEnabled = Integer.parseInt(getAICameraValue()) == 2;
         ArrayList<String> ret = new ArrayList<String>();
         ret.add("off");
         int modes[] = isManualHDRSupported();
@@ -3428,11 +3498,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         if (isAutoHDRSupported()){
-            if(isSupportedHdr()){
+            if(isSupportedHdr() && !isAICameraEnabled){
                 ret.add("auto");
             }
         }
-        if ((modes != null && modes.length > 0) && !isFacingFront(mCameraId)) {
+        if ((modes != null && modes.length > 0) && (!isFacingFront(mCameraId) || isAICameraEnabled)) {
             ret.add("manual");
         }
         if (ret.size() == 1) {
