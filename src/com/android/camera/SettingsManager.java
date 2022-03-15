@@ -3585,9 +3585,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public void filterVideoMaunalHDRModes(int[] modes) {
         ListPreference videoMaunalHdr = mPreferenceGroup.findPreference(KEY_MANUAL_HDR);
-        videoMaunalHdr.reloadInitialEntriesAndEntryValues();
-        if (filterUnsupportedOptions(videoMaunalHdr, getSupportedManualHDR(getCurrentCameraId()))) {
-            mFilteredKeys.add(videoMaunalHdr.getKey());
+        if(videoMaunalHdr != null) {
+            videoMaunalHdr.reloadInitialEntriesAndEntryValues();
+            if (filterUnsupportedOptions(videoMaunalHdr, getSupportedManualHDR(getCurrentCameraId()))) {
+                mFilteredKeys.add(videoMaunalHdr.getKey());
+            }
         }
     }
     public void updatePrefByIntent(int mIntend){
