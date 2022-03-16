@@ -36,11 +36,15 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.RelativeLayout;
+
 import com.android.camera.CaptureModule;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;
 import com.android.camera.SettingsManager;
 import com.android.camera.Storage;
+
+import android.graphics.RectF;
 import android.graphics.Color;
+import android.graphics.DashPathEffect;
 
 import org.codeaurora.snapcam.R;
 
@@ -56,6 +60,10 @@ public class OneUICameraControls extends RotatableLayout {
     private static final float PANEL_INDEX_3 = 3f;
     private static final float PANEL_INDEX_4 = 4f;
     private View mShutter;
+    private ShutterButtonAnim mShutterAnim;
+    private int mTotalProgress;
+    public RectF mShutterAnimRect;
+    public boolean mShowButtonAnim = false;
     private View mVideoShutter;
     private View mExitBestPhotpMode;
     private View mPauseButton;
@@ -127,9 +135,6 @@ public class OneUICameraControls extends RotatableLayout {
     private static final int GREY = 0xff808080;
     private TextView[] mProViews;
     private boolean isExposureEnable = true;
-
-
-
     private boolean mBlurModeOn = false;
     private ViewGroup mAIBlurLayout;
     private AIBlurConfigSlide mAIBlurSlide;
@@ -145,7 +150,6 @@ public class OneUICameraControls extends RotatableLayout {
     private RotateLayout mBlurLumaLayout;
     private RotateLayout mBlurChromaULayout;
     private RotateLayout mBlurChromaVLayout;
-
     public OneUICameraControls(Context context, AttributeSet attrs) {
         super(context, attrs);
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -162,7 +166,7 @@ public class OneUICameraControls extends RotatableLayout {
         mBottom = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, getResources().getDisplayMetrics());
         mVisible = true;
 
-        Display display = ((Activity)context).getWindowManager().getDefaultDisplay();
+        Display display = ((Activity) context).getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
         mWidth = size.x;
@@ -184,6 +188,7 @@ public class OneUICameraControls extends RotatableLayout {
     public void onFinishInflate() {
         super.onFinishInflate();
         mShutter = findViewById(R.id.shutter_button);
+        mShutterAnim = findViewById(R.id.shutterbutton_anim);
         mVideoShutter = findViewById(R.id.video_button);
         mExitBestPhotpMode = findViewById(R.id.exit_best_mode);
         mPauseButton = findViewById(R.id.video_pause);
@@ -194,7 +199,7 @@ public class OneUICameraControls extends RotatableLayout {
         mMakeupSeekBarHighText = findViewById(R.id.makeup_high_text);
         mMakeupSeekBar = findViewById(R.id.makeup_seekbar);
         mMakeupSeekBarLayout = findViewById(R.id.makeup_seekbar_layout);
-        ((SeekBar)mMakeupSeekBar).setMax(100);
+        ((SeekBar) mMakeupSeekBar).setMax(100);
         mFlashButton = findViewById(R.id.flash_button);
         mMute = findViewById(R.id.mute_button);
         mPreview = findViewById(R.id.preview_thumb);
@@ -213,7 +218,7 @@ public class OneUICameraControls extends RotatableLayout {
         mShutterSpeedText = (TextView) findViewById(R.id.shutterspeed_value);
         mProMode = (ProMode) findViewById(R.id.promode_slider);
 
-        mExposure =  (TextView) findViewById(R.id.exposure_text);
+        mExposure = (TextView) findViewById(R.id.exposure_text);
         mFocusDistance = (TextView) findViewById(R.id.focusdistance_text);
         mWhiteBalance = (TextView) findViewById(R.id.whitebalance_text);
         mIso = (TextView) findViewById(R.id.iso_text);
@@ -226,20 +231,20 @@ public class OneUICameraControls extends RotatableLayout {
         mIsoRotateLayout = (RotateLayout) findViewById(R.id.iso_rotate_layout);
         mShutterSpeedLayout = (RotateLayout) findViewById(R.id.shutterspeed_rotate_layout);
         mExposureLayout = (LinearLayout) findViewById(R.id.exposure_layout);
-        mManualLayout =  (LinearLayout) findViewById(R.id.manual_layout);
+        mManualLayout = (LinearLayout) findViewById(R.id.manual_layout);
         mWBLayout = (LinearLayout) findViewById(R.id.wb_layout);
         mISOLayout = (LinearLayout) findViewById(R.id.iso_layout);
         mShutterLayout = (LinearLayout) findViewById(R.id.shutterspeed_layout);
         mProViews = new TextView[]{
                 mExposure, mExposureText, mFocusDistance,
-                mManualText,mShutterSpeed, mShutterSpeedText,
-                 mWhiteBalance, mWhiteBalanceText, mIso, mIsoText
+                mManualText, mShutterSpeed, mShutterSpeedText,
+                mWhiteBalance, mWhiteBalanceText, mIso, mIsoText
         };
-
+        mShutterAnim.setObject(this);
         mExposure.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!isExposureEnable) return;
+                if (!isExposureEnable) return;
                 resetProModeIcons();
                 int mode = mProMode.getMode();
                 if (mode == ProMode.EXPOSURE_MODE) {
@@ -249,7 +254,7 @@ public class OneUICameraControls extends RotatableLayout {
                 } else {
                     mExposureText.setSelected(true);
                     mProMode.setMode(ProMode.EXPOSURE_MODE);
-                    setProModeUi(mExposure,mExposureText);
+                    setProModeUi(mExposure, mExposureText);
                 }
             }
         });
@@ -265,7 +270,7 @@ public class OneUICameraControls extends RotatableLayout {
                 } else {
                     mManualText.setSelected(true);
                     mProMode.setMode(ProMode.MANUAL_MODE);
-                    setProModeUi(mFocusDistance,mManualText);
+                    setProModeUi(mFocusDistance, mManualText);
                 }
             }
         });
@@ -281,7 +286,7 @@ public class OneUICameraControls extends RotatableLayout {
                 } else {
                     mShutterSpeedText.setSelected(true);
                     mProMode.setMode(ProMode.EXPOSURE_TIME_MODE);
-                    setProModeUi(mShutterSpeed,mShutterSpeedText);
+                    setProModeUi(mShutterSpeed, mShutterSpeedText);
                 }
             }
         });
@@ -297,7 +302,7 @@ public class OneUICameraControls extends RotatableLayout {
                 } else {
                     mWhiteBalanceText.setSelected(true);
                     mProMode.setMode(ProMode.WHITE_BALANCE_MODE);
-                    setProModeUi(mWhiteBalance,mWhiteBalanceText);
+                    setProModeUi(mWhiteBalance, mWhiteBalanceText);
                 }
             }
         });
@@ -313,7 +318,7 @@ public class OneUICameraControls extends RotatableLayout {
                 } else {
                     mIsoText.setSelected(true);
                     mProMode.setMode(ProMode.ISO_MODE);
-                    setProModeUi(mIso,mIsoText);
+                    setProModeUi(mIso, mIsoText);
                 }
             }
         });
@@ -327,7 +332,7 @@ public class OneUICameraControls extends RotatableLayout {
                 R.dimen.one_ui_bottom_large);
         mBottomSmallSize = getResources().getDimensionPixelSize(
                 R.dimen.one_ui_bottom_small);
-        if(!BeautificationFilter.isSupportedStatic()) {
+        if (!BeautificationFilter.isSupportedStatic()) {
             mTsMakeupSwitcher.setEnabled(false);
             mTsMakeupSwitcher.setVisibility(View.GONE);
         }
@@ -430,24 +435,26 @@ public class OneUICameraControls extends RotatableLayout {
             }
         });
     }
-    private void setProModeUi(TextView v1,TextView v2){
-        for (TextView v :mProViews){
-            if(v != null && (v == v1 || v == v2)){
+
+    private void setProModeUi(TextView v1, TextView v2) {
+        for (TextView v : mProViews) {
+            if (v != null && (v == v1 || v == v2)) {
                 v.setTextColor(BLUE);
-            }else {
+            } else {
                 v.setTextColor(Color.WHITE);
             }
         }
 
     }
+
     @Override
-    public void onSizeChanged(int w, int h, int oldw, int oldh){
+    public void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
 
         mWidth = w;
         mHeight = h;
-        if(mMakeupSeekBar != null) {
-            mMakeupSeekBar.setMinimumWidth(mWidth/2);
+        if (mMakeupSeekBar != null) {
+            mMakeupSeekBar.setMinimumWidth(mWidth / 2);
         }
         setProModeParameters();
         setAIBlurConfigParameters();
@@ -498,7 +505,7 @@ public class OneUICameraControls extends RotatableLayout {
     }
 
     private void setLocation(View v, boolean top, float idx) {
-        if(v == null) {
+        if (v == null) {
             return;
         }
         int w = v.getMeasuredWidth();
@@ -515,10 +522,38 @@ public class OneUICameraControls extends RotatableLayout {
             bW = mWidth / BOTTOM_PANEL_SPACE_NUM;
         }
         v.setX(bW * idx + (bW - w) / 2);
+        if (v == mShutter) {
+            mShutterAnimRect = new RectF();
+            mShutterAnimRect.left = bW * idx + (bW - w) / 2 + 5;
+            mShutterAnimRect.top = mHeight - mBottom + (mBottom - h) / 2 + 5;
+            mShutterAnimRect.right = mShutterAnimRect.left + w - 7;
+            mShutterAnimRect.bottom = mShutterAnimRect.top + h - 7;
+        }
+    }
+
+    public void showAnim() {
+        mShowButtonAnim = true;
+        if (mShutterAnim != null) {
+            mShutterAnim.setVisibility(View.VISIBLE);
+            mShutterAnim.refleshProgress();
+        }
+    }
+
+    public void hidenAnim() {
+        mShowButtonAnim = false;
+        if (mShutterAnim != null && mShutterAnim.getVisibility() == View.VISIBLE) {
+            mShutterAnim.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    public void setShutterProgress(int progress, int totalProgress) {
+        if (progress <= totalProgress && progress > 0) {
+            mShutterAnim.setProgress(progress, totalProgress);
+        }
     }
 
     private void setLocationCustomBottom(View v, float x, float y) {
-        if(v == null) {
+        if (v == null) {
             return;
         }
         int w = v.getMeasuredWidth();
@@ -538,12 +573,12 @@ public class OneUICameraControls extends RotatableLayout {
             setLocation(mFlashButton, true, PANEL_INDEX_2);
             setLocation(mSettingsButton, true, PANEL_INDEX_3);
             setLocation(mPauseButton, false, 3.15f);
-            setLocation(mShutter, false , 0.85f);
+            setLocation(mShutter, false, 0.85f);
             setLocation(mVideoShutter, false, PANEL_INDEX_2);
-            setLocation(mExitBestPhotpMode ,false, PANEL_INDEX_4);
+            setLocation(mExitBestPhotpMode, false, PANEL_INDEX_4);
         } else {
             setLocation(mFlashButton, true, PANEL_INDEX_2);
-            setLocation(mSettingsButton,true, PANEL_INDEX_3);
+            setLocation(mSettingsButton, true, PANEL_INDEX_3);
             setLocation(mFrontBackSwitcher, false, 3.15f);
             if (mIntentMode == CaptureModule.INTENT_MODE_CAPTURE) {
                 setLocation(mShutter, false, PANEL_INDEX_2);
@@ -556,7 +591,7 @@ public class OneUICameraControls extends RotatableLayout {
                 setLocation(mShutter, false, PANEL_INDEX_2);
                 setLocation(mPreview, false, 0.85f);
             }
-            setLocation(mExitBestPhotpMode ,false, PANEL_INDEX_4);
+            setLocation(mExitBestPhotpMode, false, PANEL_INDEX_4);
         }
         setLocationCustomBottom(mMakeupSeekBarLayout, 0, 1);
 
@@ -564,7 +599,7 @@ public class OneUICameraControls extends RotatableLayout {
     }
 
     private void setBottomButtionSize(View view, int width, int height) {
-        FrameLayout.LayoutParams layout = (FrameLayout.LayoutParams)view.getLayoutParams();
+        FrameLayout.LayoutParams layout = (FrameLayout.LayoutParams) view.getLayoutParams();
         layout.height = height;
         layout.width = width;
         view.setLayoutParams(layout);
@@ -800,8 +835,8 @@ public class OneUICameraControls extends RotatableLayout {
 
     private void setProModeParameters() {
         int width = (mWidth > mHeight) ? mHeight : mWidth;
-        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(width/ 5, width/ 15);
-        for(TextView v :mProViews){
+        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(width / 5, width / 15);
+        for (TextView v : mProViews) {
             v.setLayoutParams(llp);
         }
     }
@@ -813,23 +848,24 @@ public class OneUICameraControls extends RotatableLayout {
             return;
         }
         mProModeLayout.setVisibility(VISIBLE);
-        mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() -100);
+        mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() - 100);
     }
 
-    public void setModeDisable(int mode,boolean isEnable) {
+    public void setModeDisable(int mode, boolean isEnable) {
         switch (mode) {
             case ProMode.EXPOSURE_MODE:
-                android.util.Log.d(TAG,"zcl,disable mode");
-                if(!isEnable) {
+                if (!isEnable) {
                     mExposure.setTextColor(GREY);
                     isExposureEnable = false;
-                }else{
+                } else {
                     mExposure.setTextColor(Color.WHITE);
                     isExposureEnable = true;
-                };
+                }
+                ;
                 break;
         }
     }
+
     public void updateProModeText(int mode, String value) {
         switch (mode) {
             case ProMode.EXPOSURE_MODE:
@@ -913,5 +949,45 @@ public class OneUICameraControls extends RotatableLayout {
                 mBlurChromaVText.setText(value);
                 break;
         }
+    }
+}
+
+class ShutterButtonAnim extends View {
+    private OneUICameraControls mcontrol;
+    private int mProgress;
+    private int mTotalProgress;
+
+    public ShutterButtonAnim(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if (mcontrol.mShowButtonAnim) {
+            Paint paint = new Paint();
+            paint.setColor(Color.WHITE);
+            paint.setAntiAlias(true);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setPathEffect(new DashPathEffect(new float[]{5, 10}, 0));
+            paint.setStrokeWidth(8);
+            canvas.drawArc(mcontrol.mShutterAnimRect, -90, ((float) mProgress / mTotalProgress) * 360, false, paint); //
+        } else {
+            super.onDraw(canvas);
+            return;
+        }
+    }
+
+    public void setObject(OneUICameraControls control) {
+        mcontrol = control;
+    }
+
+    public void setProgress(int progress, int totalProgress) {
+        mProgress = progress;
+        mTotalProgress = totalProgress;
+        postInvalidate();
+    }
+
+    public void refleshProgress() {
+        invalidate();
     }
 }

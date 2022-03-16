@@ -158,6 +158,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private int mScreenHDRindex;
     private SeekBar mEvSeekBar;
     private boolean isEvChanging;
+    private int mCurrentProgress;
+    private int mTotalProgress;
     private AFView mAFViewRender;
     private VerticalSeekBar mVerticalEvBar;
     private TextView mEvValue;
@@ -2518,7 +2520,19 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mShutterButton.setEnabled(enabled);
         }
     }
-
+    public void startShutterAnim(long totalProgress) {
+        mCurrentProgress = 0;
+        mTotalProgress = (int) totalProgress;
+        mCameraControls.showAnim();
+        new Thread(new ProgressRunable()).start();
+    }
+    public void stopShutterAnim() {
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                mCameraControls.hidenAnim();
+            }
+        });
+    }
     public boolean isShutterEnabled() {
         return mShutterButton.isEnabled();
     }
@@ -3294,6 +3308,25 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mReviewImage.setImageBitmap(bitmap);
             mReviewImage.setVisibility(View.VISIBLE);
             mDecodeTaskForReview = null;
+        }
+    }
+    private class ProgressRunable implements Runnable {
+        @Override
+        public void run() {
+            while (mCurrentProgress <= mTotalProgress) {
+                mCameraControls.setShutterProgress(mCurrentProgress, mTotalProgress);
+                try {
+                    Thread.sleep(200);
+                    mCurrentProgress += 200;
+                    if (mCurrentProgress > mTotalProgress) {
+                        mCurrentProgress = mTotalProgress;
+                        mCameraControls.setShutterProgress(mCurrentProgress, mTotalProgress);
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 

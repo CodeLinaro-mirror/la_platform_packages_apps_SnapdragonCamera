@@ -65,7 +65,10 @@
         android:focusable="true"
         android:scaleType="fitCenter"
         android:src="@drawable/photo_capture" />
-
+    <com.android.camera.ui.ShutterButtonAnim
+        android:id="@+id/shutterbutton_anim"
+        android:layout_width="@dimen/one_ui_bottom_large"
+        android:layout_height="@dimen/one_ui_bottom_large" />
     <com.android.camera.ui.RotateImageView
         android:id="@+id/video_button"
         android:layout_width="@dimen/one_ui_bottom_large"

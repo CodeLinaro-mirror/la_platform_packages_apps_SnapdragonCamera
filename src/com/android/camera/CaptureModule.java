@@ -4218,16 +4218,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (mSettingsManager.isMultiCameraEnabled()) {
                     int count = addPhysicalCaptureTarget(captureBuilder);
                     if (mSettingsManager.isLogicalFeatureEnable(
-                            SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK)){
+                            SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK)) {
                         captureBuilder.addTarget(mImageReader[id].getSurface());
                     } else {
-                        if(count == 0){
+                        if (count == 0) {
                             warningToast("No output is selected");
                             unlockFocus(id);
                             return;
                         }
                     }
-                }else {
+                } else {
                     if (mSaveRaw && mRawImageReader[id] != null) {
                         captureBuilder.addTarget(mRawImageReader[id].getSurface());
                     }
@@ -4240,19 +4240,19 @@ public class CaptureModule implements CameraModule, PhotoController,
                         NamedEntity name = mNamedImages.getNextNameEntity();
                         String title = (name == null) ? null : name.title;
                         long date = (name == null) ? -1 : name.date;
-                        String pictureFormat = mLongshotActive? "heics":"heic";
+                        String pictureFormat = mLongshotActive ? "heics" : "heic";
                         String path = Storage.generateFilepath(title, pictureFormat);
                         String value = mSettingsManager.getValue(SettingsManager.KEY_JPEG_QUALITY);
                         int quality = getQualityNumber(value);
-                        int orientation = CameraUtil.getJpegRotation(id,mOrientation);
-                        int imageCount = mLongshotActive? PersistUtil.getLongshotShotLimit(): 1;
-                        HeifWriter writer = createHEIFEncoder(path,mPictureSize.getWidth(),mPictureSize.getHeight(),
-                                orientation,imageCount,quality);
+                        int orientation = CameraUtil.getJpegRotation(id, mOrientation);
+                        int imageCount = mLongshotActive ? PersistUtil.getLongshotShotLimit() : 1;
+                        HeifWriter writer = createHEIFEncoder(path, mPictureSize.getWidth(), mPictureSize.getHeight(),
+                                orientation, imageCount, quality);
                         if (writer != null) {
-                            mHeifImage = new HeifImage(writer,path,title,date,orientation,quality);
+                            mHeifImage = new HeifImage(writer, path, title, date, orientation, quality);
                             Surface input = writer.getInputSurface();
                             mHeifOutput.addSurface(input);
-                            try{
+                            try {
                                 mCaptureSession[id].updateOutputConfiguration(mHeifOutput);
                                 captureBuilder.addTarget(input);
                                 writer.start();
@@ -4266,64 +4266,64 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 Log.d(TAG, "Add multi image reader surface to snapshot req.");
                                 captureBuilder.addTarget(mMultiResImageReader.getSurface());
                             } else {
-                                if (mImageReader[id] != null){
+                                if (mImageReader[id] != null) {
                                     captureBuilder.addTarget(mImageReader[id].getSurface());
                                 }
                             }
                         }
-                        if(mRawReprocessType != 0){
+                        if (mRawReprocessType != 0) {
                             Log.i(TAG, "add raw image for first capture request");
                             captureBuilder.addTarget(mRAWImageReader[0].getSurface());
                         }
-                        if(isAIDE2Enabled()){
+                        if (isAIDE2Enabled()) {
                             mCaptureRequestNum = 0;
                             Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
-                            if(physical_ids != null && physical_ids.size() != 0){
+                            if (physical_ids != null && physical_ids.size() != 0) {
                                 synchronized (mActiveCameraIds) {
                                     mAideActiveCameraIds.clear();
-                                    if(mActiveCameraIds.size() > 1 ){
+                                    if (mActiveCameraIds.size() > 1) {
                                         for (int activeId : mActiveCameraIds) {
-                                            if(activeId != Integer.valueOf(mMasterCameraId)){
-                                                Log.i(TAG,"add Aux full yuv for dual zone" + activeId);
+                                            if (activeId != Integer.valueOf(mMasterCameraId)) {
+                                                Log.i(TAG, "add Aux full yuv for dual zone" + activeId);
                                                 captureBuilder.addTarget(mAideFullImageReader[getIndexByPhysicalId(Integer.toString(activeId))].getSurface());
-                                                mCaptureRequestNum ++ ;
+                                                mCaptureRequestNum++;
                                                 mAideActiveCameraIds.put(activeId, false);
-                                            }else {
-                                                Log.i(TAG,"add master full yuv for dual zone " + activeId);
+                                            } else {
+                                                Log.i(TAG, "add master full yuv for dual zone " + activeId);
                                                 mAideActiveCameraIds.put(activeId, true);
                                                 captureBuilder.addTarget(mAideFullImageReader[getIndexByPhysicalId(Integer.toString(activeId))].getSurface());
-                                                mCaptureRequestNum ++ ;
-                                                if(mAideAECLuxIndex >= lux_index_threadhold){//for low light, only HWMFNR, will not add ds image
-                                                    Log.i(TAG,"add master ds yuv for dual zone " + activeId);
+                                                mCaptureRequestNum++;
+                                                if (mAideAECLuxIndex >= lux_index_threadhold) {//for low light, only HWMFNR, will not add ds image
+                                                    Log.i(TAG, "add master ds yuv for dual zone " + activeId);
                                                     captureBuilder.addTarget(mAideDs4ImageReader[getIndexByPhysicalId(Integer.toString(activeId))].getSurface());
-                                                    mCaptureRequestNum ++ ;
+                                                    mCaptureRequestNum++;
                                                 }
                                             }
                                         }
-                                    }else if(mActiveCameraIds.size() == 1){
+                                    } else if (mActiveCameraIds.size() == 1) {
                                         mAideActiveCameraIds.put(mActiveCameraIds.get(0), true);
-                                        Log.i(TAG,"add active full yuv for single zone " + mActiveCameraIds.get(0));
+                                        Log.i(TAG, "add active full yuv for single zone " + mActiveCameraIds.get(0));
                                         captureBuilder.addTarget(mAideFullImageReader[getIndexByPhysicalId(Integer.toString(mActiveCameraIds.get(0)))].getSurface());
-                                        mCaptureRequestNum ++ ;
-                                        if(mAideAECLuxIndex >= lux_index_threadhold){//for low light, only HWMFNR, will not add ds image
-                                            Log.i(TAG,"add active ds yuv for single zone " + mActiveCameraIds.get(0));
+                                        mCaptureRequestNum++;
+                                        if (mAideAECLuxIndex >= lux_index_threadhold) {//for low light, only HWMFNR, will not add ds image
+                                            Log.i(TAG, "add active ds yuv for single zone " + mActiveCameraIds.get(0));
                                             captureBuilder.addTarget(mAideDs4ImageReader[getIndexByPhysicalId(Integer.toString(mActiveCameraIds.get(0)))].getSurface());
-                                            mCaptureRequestNum ++ ;
+                                            mCaptureRequestNum++;
                                         }
                                     }
                                 }
-                            }else {
+                            } else {
                                 captureBuilder.addTarget(mAideFullImageReader[getMainCameraId()].getSurface());
-                                mCaptureRequestNum ++ ;
-                                if(mAideAECLuxIndex >= lux_index_threadhold){//for low light, only HWMFNR, will not add ds image
+                                mCaptureRequestNum++;
+                                if (mAideAECLuxIndex >= lux_index_threadhold) {//for low light, only HWMFNR, will not add ds image
                                     captureBuilder.addTarget(mAideDs4ImageReader[getMainCameraId()].getSurface());
-                                    mCaptureRequestNum ++ ;
+                                    mCaptureRequestNum++;
                                 }
                             }
                         }
                     }
                 }
-                if(mPaused || !mCamerasOpened) {
+                if (mPaused || !mCamerasOpened) {
                     //for avoid occurring crash when click back before capture finished.
                     //CameraDevice was already closed
                     return;
@@ -4332,6 +4332,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                     captureStillPictureForLongshot(captureBuilder, id);
                 } else {
                     captureStillPictureForCommon(captureBuilder, id);
+                }
+                double tmpValue = 1000000;
+                double time = mLongExpTime / tmpValue;
+                int expTime = new Double(time).intValue();
+                if (expTime > 1000) {
+                    mUI.startShutterAnim(expTime);
                 }
             }
         } catch (CameraAccessException e) {
@@ -5774,7 +5780,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void unlockFocus(int id) {
         Log.d(TAG, "unlockFocus " + id );
         if(mIsLongExpTmCp) {
-            mIsLongExpTmCp =false;
+            mIsLongExpTmCp = false;
+            mUI.stopShutterAnim();
         }
         isFlashRequiredInDriver = false;
         if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id]) || mCurrentSceneMode.mode == CameraMode.VIDEO) {
