@@ -807,6 +807,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionU", Float.class);
     private static final CaptureRequest.Key<Float> blurChromaSuppressionV =
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionV", Float.class);
+    public static CameraCharacteristics.Key<Byte> isMLVideoSupported =
+            new CameraCharacteristics.Key<>("org.quic.camera.videoretouch.isVideoRetouchSupported", byte.class);
 
     public static final CaptureResult.Key<Byte> focusAssistEnable =
             new CaptureResult.Key<>("org.quic.camera.touchFocusAssist.touchFocusAssist", byte.class);
@@ -6940,12 +6942,18 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyAICameraParam(builder);
         applyAICameraBlurModeParam(builder);
         applyXCFAOptimization(builder);
-
         applyeHardSwitchParam(builder);
+        applyMLVideoParam(builder);
     }
 
     private void applyeHardSwitchParam(CaptureRequest.Builder builder){
         VendorTagUtil.enableHardSwitch(builder, (byte)(PersistUtil.getHardSwitchEnabled() ? 0x01 : 0x00));
+    }
+
+    private void applyMLVideoParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
+        Log.d(TAG,"applyMLVideoParam, value:" + value);
+        VendorTagUtil.enableMLVideo(builder, (byte)(value != null && value.equals("on") ? 0x01 : 0x00));
     }
 
     private void applyAICameraParam(CaptureRequest.Builder builder){
@@ -9033,6 +9041,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoSize.getHeight());
         if(mSettingsManager.isLiveshotSizeSameAsVideoSize()){
             mVideoSnapshotSize = mVideoSize;
+        }
+        String mlVideo = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
+        if(mlVideo != null && mlVideo.equals("on")){
+            mVideoSnapshotSize = mVideoPreviewSize;
         }
         String videoSnapshot = PersistUtil.getVideoSnapshotSize();
         String[] sourceStrArray = videoSnapshot.split("x");

@@ -1813,5 +1813,9 @@
     <string name="pref_camera2_preview_profile_title" translatable="true">Peview Profile</string>
     <string name="pref_camera2_capture_profile_title" translatable="true">Capture Profile</string>
     <string name="pref_camera2_performance_debug_title" translatable="true">Performance Debug</string>
+
+    <!-- ML Video -->
+    <string name="pref_camera2_ml_video_title" translatable="true">VideoRetouch</string>
+    <string name="pref_camera2_ml_video_default" translatable="false">off</string>
 </resources>
 
