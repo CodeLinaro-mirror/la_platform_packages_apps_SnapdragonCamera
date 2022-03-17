@@ -637,6 +637,15 @@
             android:summary="%s"/>
 
         <ListPreference
+            android:key="pref_camera2_mlvideo_key"
+            android:defaultValue="@string/pref_camera2_ml_video_default"
+            android:title="@string/pref_camera2_ml_video_title"
+            android:entries="@array/pref_camera2_camera2_entries"
+            android:entryValues="@array/pref_camera2_camera2_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
             android:key="pref_camera2_photo_eis_key"
             android:defaultValue="@string/pref_camera2_photo_eis_default"
             android:title="@string/pref_camera2_photo_eis_title"
