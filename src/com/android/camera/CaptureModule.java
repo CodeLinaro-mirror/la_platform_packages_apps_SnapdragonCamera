@@ -266,6 +266,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private long mVideoFrameNumber = 0;
     private boolean mIsRTBCameraId = false;
+    private boolean mIsFacialMaskSupported = true;
 
     /** For temporary save warmstart gains and cct value*/
     private float mRGain = -1.0f;
@@ -454,6 +455,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CaptureResult.Key<int[]> contourPointsExtend =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.contour_results",
                     int[].class);
+    private static CaptureResult.Key<byte[]> facialMaskResults =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.mask_results",
+                    byte[].class);
     public static CaptureRequest.Key<Byte> facialContourVersion =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.contour_version",
                     Byte.class);
@@ -1430,6 +1434,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                         updateFaceView(faces, getBsgcInfo(result, faces));
                     } else {
                         updateFaceView(faces, null);
+                    }
+                    if (PersistUtil.isFacialMaskDetection() && mIsFacialMaskSupported) {
+                        updateFacialMask(result);
                     }
                 }
                 updateT2tTrackerView(result);
@@ -7739,6 +7746,38 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.w(TAG, "getBsgcInfo", e.fillInStackTrace());
         }
         return extendedFaces;
+    }
+
+    private void updateFacialMask(CaptureResult result) {
+        byte[] facialMasks = null;
+        int[] facialMaskInts = null;
+        try {
+            facialMasks = result.get(facialMaskResults);
+        } catch (IllegalArgumentException e) {
+            mIsFacialMaskSupported = false;
+            Log.w(TAG, "can`t get vendorTag facialMaskResults :" + facialMaskResults);
+        } catch (NullPointerException e) {
+            Log.w(TAG, "updateFacialMask facialMasks get NULL");
+        }
+        if (facialMasks != null) {
+            int size = facialMasks.length / 4;
+            facialMaskInts = new int[size];
+            Log.w(TAG, " onCaptureCompleted size :" + size);
+            int j = 0;
+            for (int i = 0; i < facialMasks.length; i += 4) {
+                facialMaskInts[j] = byteArray2Int(facialMasks, i);
+                Log.w(TAG, " onCaptureCompleted j :" + j + ", i :" + i);
+                j++;
+            }
+        }
+
+        if (facialMasks != null && facialMaskInts != null) {
+            try {
+                mUI.onFacialMaskDetection(facialMaskInts);
+            } catch(Exception e) {
+                Log.e(TAG, " updateFacialMask occur exception");
+            }
+        }
     }
 
     private void updateFaceView(final Face[] faces, final ExtendedFace[] extendedFaces) {

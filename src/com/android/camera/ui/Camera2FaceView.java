@@ -30,6 +30,7 @@ package com.android.camera.ui;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
@@ -57,6 +58,9 @@ public class Camera2FaceView extends FaceView {
     private Rect mCameraBound;
     private Rect mOriginalCameraBound;
     private float mZoom = 1.0f;
+
+    private int[] mFacialMasks;
+
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -174,6 +178,13 @@ public class Camera2FaceView extends FaceView {
             Log.v(TAG, "Num of ex faces=" + mExFaces.length);
         }
         if (!mBlocked && (mFaces != null) && (mFaces.length > 0) && mCameraBound != null) {
+            invalidate();
+        }
+    }
+
+    public void setFacialMasks(int[] facialMasks) {
+        mFacialMasks = facialMasks;
+        if (!mBlocked && (facialMasks != null) && (facialMasks.length > 0) && mCameraBound != null) {
             invalidate();
         }
     }
@@ -298,6 +309,32 @@ public class Camera2FaceView extends FaceView {
                         mMatrix.mapPoints(points);
                         pointTranslateMatrix.mapPoints(points);
                         canvas.drawPoints(points,mPointPaint);
+                    }
+                }
+            }
+
+            if (mFacialMasks != null && mFacialMasks.length > 4) {
+                for (int i = 1; i < mFacialMasks.length; i += 5) {
+                    if ((mFacialMasks[i+2] - mFacialMasks[i])  > 0 &&
+                            (mFacialMasks[i+3] - mFacialMasks[i+1]) > 0) {
+                        Rect faceMask = new Rect(mFacialMasks[i], mFacialMasks[i+1],
+                                mFacialMasks[i+2], mFacialMasks[i+3]);
+                        faceMask.offset(0, 0);
+                        if (isFDRectOutOfBound(faceMask)) continue;
+                        mRect.set(faceMask);
+                        if (mZoom != 1.0f && !(mZoomRationSupported && mPostZoomFov)) {
+                            mRect.left = mRect.left - mCameraBound.left;
+                            mRect.right = mRect.right - mCameraBound.left;
+                            mRect.top = mRect.top - mCameraBound.top;
+                            mRect.bottom = mRect.bottom - mCameraBound.top;
+                        }
+                        translateMatrix.mapRect(mRect);
+                        if (LOGV) CameraUtil.dumpRect(mRect, "Original Facial mask");
+                        mMatrix.mapRect(mRect);
+                        if (LOGV) CameraUtil.dumpRect(mRect, "Transformed Facial mask");
+                        mPaint.setColor(Color.BLUE);
+                        mRect.offset(dx, dy);
+                        canvas.drawRect(mRect, mPaint);
                     }
                 }
             }

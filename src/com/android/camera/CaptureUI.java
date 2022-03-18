@@ -2958,6 +2958,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFaceView.setFaces(faces,extendedFaces);
     }
 
+    public void onFacialMaskDetection(int[] facialMasks) {
+        mFaceView.setFacialMasks(facialMasks);
+    }
+
     public Point getSurfaceViewSize() {
         Point point = new Point();
         if (mSurfaceView != null) point.set(mSurfaceView.getWidth(), mSurfaceView.getHeight());

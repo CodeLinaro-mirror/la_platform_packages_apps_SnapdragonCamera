@@ -46,6 +46,7 @@ public class ExtendedFace {
     private int mRollDirection = 0;
     private int[] mContour;
     private int[] mLandMarks;
+    private int[] mFacialMarks;
     private int mId;
 
     public ExtendedFace(int id) {
@@ -133,6 +134,14 @@ public class ExtendedFace {
 
     public int[] getLandMarks() {
         return mLandMarks;
+    }
+
+    public void setFacialMasks(int[] facialMarks) {
+        mFacialMarks = facialMarks;
+    }
+
+    public int[] getFacialMasks() {
+        return mFacialMarks;
     }
 
     public void setGender(int gender) {
