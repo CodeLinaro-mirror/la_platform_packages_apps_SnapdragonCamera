@@ -39,8 +39,8 @@
 # base_version_minor is 2 digits and auto-increment for developing FR.
 # base_version_build is 3 digits and auto-increment for fixing CR.
 base_version_major := 2
-base_version_minor := 05
-base_version_build := 105
+base_version_minor := 06
+base_version_build := 106
 
 #####################################################
 #####################################################
