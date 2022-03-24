@@ -31,12 +31,11 @@ package com.android.camera.ui;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.graphics.Point;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.hardware.camera2.params.Face;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.Settings;
 import android.util.AttributeSet;
 import android.util.Log;
 
@@ -79,6 +78,18 @@ public class Camera2FaceView extends FaceView {
     private boolean mPostZoomFov = false;
     private boolean mZoomRationSupported = false;
 
+    private boolean mGenderEnable = false;
+
+    private boolean mGenderConfidenceEnable = false;
+
+    private boolean mFaceExpressionEnable = false;
+
+    private boolean mFaceExpressionConfidenceEnable = false;
+
+    private Paint mTextPaint;
+
+    private Paint mFaceExpressionConfidencePaint;
+
     public Camera2FaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
@@ -95,6 +106,31 @@ public class Camera2FaceView extends FaceView {
         mFdBlinkEnable = "enable".equals(SettingsManager.getInstance().getValue(
                 SettingsManager.KEY_FD_BLINK));
         mPostZoomFov = PersistUtil.isCameraPostZoomFOV();
+
+        mGenderEnable = "enable".equals(SettingsManager.getInstance().
+                getValue(SettingsManager.KEY_FD_GENDER));
+
+        mGenderConfidenceEnable = mGenderEnable && PersistUtil.isGenderConfidenceOn();
+
+        mFaceExpressionEnable = "enable".equals(SettingsManager.getInstance().
+                getValue(SettingsManager.KEY_FD_FACE_EXPRESSION));
+
+        mFaceExpressionConfidenceEnable = mFaceExpressionEnable && PersistUtil.isFaceExpressionConfidenceOn();
+
+        if ((mGenderEnable || mFaceExpressionEnable) && mTextPaint ==null) {
+            mTextPaint = new Paint();
+            mTextPaint.setAntiAlias(true);
+            mTextPaint.setTextSize(20 * getResources().getDisplayMetrics().density);
+            mTextPaint.setStrokeWidth(2);
+        }
+
+        if ((mFaceExpressionConfidenceEnable || mGenderConfidenceEnable)
+                && mFaceExpressionConfidencePaint == null) {
+            mFaceExpressionConfidencePaint = new Paint();
+            mFaceExpressionConfidencePaint.setAntiAlias(true);
+            mFaceExpressionConfidencePaint.setTextSize(16 * getResources().getDisplayMetrics().density);
+            mFaceExpressionConfidencePaint.setStrokeWidth(2);
+        }
     }
 
     public void setCameraBound(Rect cameraBound) {
@@ -285,7 +321,7 @@ public class Camera2FaceView extends FaceView {
                 mRect.offset(dx, dy);
                 canvas.drawRect(mRect, mPaint);
 
-                if (i < extendFaceSize &&
+                if (i < extendFaceSize && mExFaces != null &&
                         mExFaces[i] != null) {
                     ExtendedFace exFace = mExFaces[i];
                     Face face = mFaces[i];
@@ -450,6 +486,70 @@ public class Camera2FaceView extends FaceView {
                             canvas.drawOval(mRect, mPaint);
                         }
                     }
+
+                    if (mGenderEnable) {
+                        int gender = exFace.getGender();
+                        if (gender != -1) {
+                            String genderText = gender == 0 ? "Male" : "Female";
+                            canvas.drawText(genderText, mRect.left, mRect.top - mTextPaint.descent(), mTextPaint);
+                        }
+                    }
+
+                    if (mGenderConfidenceEnable) {
+                        int[] genderConfidence = exFace.getGenderConfidence();
+                        if (genderConfidence != null) {
+                            for (int j =0; j < genderConfidence.length; j++) {
+                                try {
+                                    String genderText = (j == 0 ? "Male" : "Female") + " Confidence: " + genderConfidence[j];
+                                    if (mFaceExpressionConfidencePaint != null) {
+                                        float offset = mFaceExpressionConfidencePaint.getTextSize();
+                                        canvas.drawText(genderText, mRect.left,
+                                                mRect.top - offset - mTextPaint.descent() - offset * j,
+                                                mFaceExpressionConfidencePaint);
+                                    }
+                                } catch (Exception e) {
+                                    Log.w(TAG, "", e.fillInStackTrace());
+                                }
+                            }
+                        }
+                    }
+
+                    if (mFaceExpressionEnable) {
+                        int expression = exFace.getFaceExpression();
+                        if (expression != -1) {
+                            ExtendedFace.FDExpressionIndex expressionIndex =
+                                    ExtendedFace.FDExpressionIndex.values()[expression];
+                            String expressionText = expressionIndex.name();
+                            float textSize = mTextPaint.getTextSize();
+                            canvas.drawText(expressionText, mRect.left, mRect.bottom + textSize, mTextPaint);
+                        }
+                    }
+
+                    if (mFaceExpressionConfidenceEnable) {
+                        int[] confidences = exFace.getFaceExpressionConfidences();
+                        float offset = 0;
+                        if (mTextPaint != null) {
+                            offset = mTextPaint.getTextSize();
+                        }
+                        if (confidences != null) {
+
+                            for (int j =0; j < confidences.length; j++) {
+                                try {
+
+                                    ExtendedFace.FDExpressionIndex expressionIndex =
+                                            ExtendedFace.FDExpressionIndex.values()[j];
+                                    String expressionInfoText = expressionIndex.name() + " : " + confidences[j];
+
+                                    float textSize = mFaceExpressionConfidencePaint.getTextSize();
+                                    canvas.drawText(expressionInfoText, mRect.left, mRect.bottom + offset + textSize * (j + 1), mFaceExpressionConfidencePaint);
+                                } catch (Exception e) {
+                                    Log.w(TAG, "", e.fillInStackTrace());
+                                }
+                            }
+
+                        }
+                    }
+
                 }
             }
             canvas.restore();

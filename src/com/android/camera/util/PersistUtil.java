@@ -165,6 +165,20 @@ public class PersistUtil {
     private static final String PERSIST_CAMERA_LUX_IDX_THREADHOLD =
             get("persist.sys.camera.lux_idx_threadhold", "320");
 
+    private static final boolean FD_GENDER_CONFIDENCE_ON =
+            getBoolean("persist.sys.camera.fd_gender_confidence_on", false);
+
+    private static final boolean FD_EXPRESSION_CONFIDENCE_ON =
+            getBoolean("persist.sys.camera.fd_expression_confidence_on", false);
+
+    public static boolean isGenderConfidenceOn() {
+        return FD_GENDER_CONFIDENCE_ON;
+    }
+
+    public static boolean isFaceExpressionConfidenceOn() {
+        return FD_EXPRESSION_CONFIDENCE_ON;
+    }
+
     public static String getHFRRate() {
         return PERSIST_HFR_LIMIT;
     }
@@ -405,6 +419,10 @@ public class PersistUtil {
 
     public static boolean isMultiResolutionImageReaderEnabled() {
         return getBoolean("persist.sys.cameraapp.multiresimagereader", false);
+    }
+
+    public static boolean needAudioEncoder() {
+        return getBoolean("persist.sys.cameraapp.needaudio", true);
     }
 
     public static boolean isPersistVideoLiveshot(){
