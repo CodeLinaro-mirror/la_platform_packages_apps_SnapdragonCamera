@@ -10909,7 +10909,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void generateVideoOutputFile() {
-        if (mIsRecordingVideo) {
+        if (mIsRecordingVideo || (mHighSpeedCapture && mHighSpeedCaptureRate > 90)) {
             String fileName = generateVideoFilename(mProfile.fileFormat);
             Log.v(TAG, "New video filename: " + fileName);
             Uri videoTable = Storage.getVideoBaseUri();
