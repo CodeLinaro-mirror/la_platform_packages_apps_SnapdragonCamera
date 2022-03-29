@@ -6199,6 +6199,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyColorEffect(builder);
         applyVideoFlash(builder, id);
         applyVideoEIS(builder);
+        applyExposure(builder);
     }
 
     private void applySessionParameters(CaptureRequest.Builder builder){
@@ -8881,6 +8882,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyPdnetToggle(builder);
         applyAWBCCTAndAgain(builder);
         applyWbColorTemperature(builder);
+        applyExposure(builder);
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
@@ -12782,7 +12784,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 e.printStackTrace();
             }
         }
-
         if (updatePreviewLogical && !mCurrentSessionClosed) {
             try {
                 int cameraId = getMainCameraId();
