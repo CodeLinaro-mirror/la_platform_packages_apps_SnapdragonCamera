@@ -158,6 +158,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_PHYSICAL_CAMCORDER = "pref_camera2_physical_camcorder_key";
     public static final String KEY_PHYSICAL_JPEG_CALLBACK = "pref_camera2_physical_jpeg_key";
     public static final String KEY_PHYSICAL_YUV_CALLBACK ="pref_camera2_physical_yuv_key";
+    public static final String KEY_PHYSICAL_YUV10BIT_CALLBACK ="pref_camera2_physical_yuv10bit_key";
     public static final String KEY_PHYSICAL_RAW_CALLBACK ="pref_camera2_physical_raw_key";
     public static final String KEY_PHYSICAL_HDR ="pref_camera2_physical_hdr_key";
     public static final String KEY_PHYSICAL_MFNR ="pref_camera2_physical_mfnr_key";
@@ -1200,6 +1201,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (getPhysicalCameraId() == null){
             if (!isLogicalEnable() &&
                     !KEY_PHYSICAL_YUV_CALLBACK.equals(key) &&
+                    !KEY_PHYSICAL_YUV10BIT_CALLBACK.equals(key) &&
                     !KEY_PHYSICAL_RAW_CALLBACK.equals(key) &&
                     !KEY_PHYSICAL_JPEG_CALLBACK.equals(key)){
                 return null;
@@ -1866,6 +1868,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 removePreference(mPreferenceGroup, KEY_PHYSICAL_CAMCORDER);
                 removePreference(mPreferenceGroup, KEY_PHYSICAL_JPEG_CALLBACK);
                 removePreference(mPreferenceGroup, KEY_PHYSICAL_YUV_CALLBACK);
+                removePreference(mPreferenceGroup, KEY_PHYSICAL_YUV10BIT_CALLBACK);
                 removePreference(mPreferenceGroup, KEY_PHYSICAL_RAW_CALLBACK);
                 removePreference(mPreferenceGroup, KEY_PHYSICAL_HDR);
                 removePreference(mPreferenceGroup, KEY_PHYSICAL_MFNR);
@@ -1886,6 +1889,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         KEY_PHYSICAL_JPEG_CALLBACK);
                 ListPreference physicalYuvCallback = mPreferenceGroup.findPreference(
                         KEY_PHYSICAL_YUV_CALLBACK);
+                ListPreference physicalYuv10bitCallback = mPreferenceGroup.findPreference(
+                        KEY_PHYSICAL_YUV10BIT_CALLBACK);
                 ListPreference physicalRawCallback = mPreferenceGroup.findPreference(
                         KEY_PHYSICAL_RAW_CALLBACK);
                 ListPreference physicalHDR = mPreferenceGroup.findPreference(
@@ -1917,6 +1922,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 physicalJpegCallback.setEntryValues(newEntryValues);
                 physicalYuvCallback.setEntries(newEntries);
                 physicalYuvCallback.setEntryValues(newEntryValues);
+                physicalYuv10bitCallback.setEntries(newEntries);
+                physicalYuv10bitCallback.setEntryValues(newEntryValues);
                 physicalRawCallback.setEntries(newEntries);
                 physicalRawCallback.setEntryValues(newEntryValues);
                 CharSequence[] singlePhysicalEntries = new CharSequence[newEntries.length + 1];

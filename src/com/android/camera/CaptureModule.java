@@ -981,6 +981,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private Size mLogicalVideoPreviewSize;
     private Size[] mPhysicalVideoPreviewSizes = new Size[PHYSICAL_CAMERA_COUNT];
     private ImageReader[] mPhysicalYuvReader = new ImageReader[MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
+    private ImageReader[] mPhysicalYuv10bitReader = new ImageReader[MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private ImageReader[] mPhysicalRawReader = new ImageReader[MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private ImageReader[] mPhysicalJpegReader = new ImageReader[PHYSICAL_CAMERA_COUNT];
     //yuv raw images are for raw reprocess
@@ -3181,6 +3182,19 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
         }
+        Set<String> yuv10bit_ids = mSettingsManager.getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_YUV10BIT_CALLBACK);
+        if(yuv10bit_ids != null){
+            Iterator<String> id=yuv10bit_ids.iterator();
+            for (ImageReader reader : mPhysicalYuv10bitReader) {
+                if (reader != null){
+                    builder.addTarget(reader.getSurface());
+                    targetCount++;
+                    Log.d(TAG,"add yuv 10bit target id="+id.next()+" size="
+                            +reader.getWidth()+"x"+reader.getHeight());
+                }
+            }
+        }
         Set<String> raw_ids = mSettingsManager.getPhysicalFeatureEnableId(
                 SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
         if(raw_ids != null){
@@ -3262,6 +3276,23 @@ public class CaptureModule implements CameraModule, PhotoController,
                 outputConfigurations.add(configuration);
                 Log.d(TAG,"add output format=yuv physicalId="+id+" size="
                         +mPhysicalYuvReader[i].getWidth()+"x"+mPhysicalYuvReader[i].getHeight());
+                i++;
+            }
+        }
+
+        Set<String> yuv10bit_ids = mSettingsManager.getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_YUV10BIT_CALLBACK);
+        if (yuv10bit_ids != null){
+            int i =0;
+            for (String id:yuv10bit_ids){
+                OutputConfiguration configuration = new OutputConfiguration(
+                        mPhysicalYuv10bitReader[i].getSurface());
+                if (!isLogicalId(id)){
+                    configuration.setPhysicalCameraId(id);
+                }
+                outputConfigurations.add(configuration);
+                Log.d(TAG,"add output format=yuv 10bit physicalId="+id+" size="
+                        +mPhysicalYuv10bitReader[i].getWidth()+"x"+mPhysicalYuv10bitReader[i].getHeight());
                 i++;
             }
         }
@@ -5576,6 +5607,43 @@ public class CaptureModule implements CameraModule, PhotoController,
                 };
                 yuvListener.setCamId(id);
                 mPhysicalYuvReader[i].setOnImageAvailableListener(yuvListener,mImageAvailableHandler);
+                i++;
+            }
+        }
+
+        Set<String> yuv10bit_ids = mSettingsManager.getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_YUV10BIT_CALLBACK);
+        if (yuv10bit_ids != null){
+            int i =0;
+            for (String id:yuv10bit_ids){
+                int index = getIndexByPhysicalId(id);
+                Size size;
+                if (index != -1){
+                    size = mPhysicalSizes[index];
+                } else {
+                    size = mPictureSize;
+                }
+                mPhysicalYuv10bitReader[i] = ImageReader.newInstance(size.getWidth(),
+                        size.getHeight(),ImageFormat.YCBCR_P010,3);
+                Log.d(TAG,"YUV 10bit imageReader i="+i+" id="+id+" index="+index+
+                        " size="+size.toString());
+                PhysicalImageListener yuv10bitListener = new PhysicalImageListener() {
+                    @Override
+                    public void onImageAvailable(ImageReader reader) {
+                        Log.d(TAG, "new yuv 10bit image from physical camera "+id);
+                        Image image = reader.acquireNextImage();
+                        byte[] yuv = getYUV10BitFromImage(image);
+                        mNamedImages.nameNewImage(System.currentTimeMillis());
+                        NamedEntity name = mNamedImages.getNextNameEntity();
+                        String title = (name == null) ? null : name.title;
+                        title = title+"_phy_10bit_"+id;
+                        long date = (name == null) ? -1 : name.date;
+                        mActivity.getMediaSaveService().addRawImage(yuv,title,"yuv");
+                        image.close();
+                    }
+                };
+                yuv10bitListener.setCamId(id);
+                mPhysicalYuv10bitReader[i].setOnImageAvailableListener(yuv10bitListener,mImageAvailableHandler);
                 i++;
             }
         }
