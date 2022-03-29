@@ -1,2 +1,3 @@
 PRODUCT_PACKAGES += \
-    SnapdragonCamera
+    SnapdragonCamera \
+    libjni_aidenoiserutilv2
