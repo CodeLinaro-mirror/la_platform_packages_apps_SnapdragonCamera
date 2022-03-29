@@ -3153,6 +3153,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }else if(mSaveRaw){
             int physicalId = mActiveCameraIds.get(0);
+            Log.d(TAG,"addPhysicalCaptureTarget  physicalId="+physicalId);
                     for( int i = 0;i < mPhysicalRawId.length;i++){
                         if(Integer.parseInt(mPhysicalRawId[i]) == physicalId ){
                             builder.addTarget(mPhysicalRawReader[i].getSurface());
@@ -5135,7 +5136,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     mHandler.post(new Runnable() {
                                         @Override
                                         public void run() {
-                                            Log.d(TAG, "image available for cam enable shutter button " );
+                                            Log.d(TAG, " image available for cam enable shutter button " );
                                             mUI.enableShutter(true);
                                         }
                                     });
@@ -5534,6 +5535,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         PhysicalImageListener rawListener = new PhysicalImageListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
+                Log.d(TAG, "PhysicalImgReader image available from physical camera " + id);
                 Image image = reader.acquireNextImage();
                 ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                 byte[] raw = new byte[buffer.remaining()];
@@ -5556,7 +5558,15 @@ public class CaptureModule implements CameraModule, PhotoController,
         PhysicalImageListener jpegListener = new PhysicalImageListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
-                Log.d(TAG, "new jpeg image from physical camera " + id);
+                if (captureWaitImageReceive()) {
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d(TAG, " PhysicalJpegImgReader image available for cam enable shutter button " );
+                            mUI.enableShutter(true);
+                        }
+                    });
+                }
                 Image image = reader.acquireNextImage();
                 mNamedImages.nameNewImage(System.currentTimeMillis());
                 NamedEntity name = mNamedImages.getNextNameEntity();
