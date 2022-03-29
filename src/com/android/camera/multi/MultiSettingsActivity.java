@@ -480,8 +480,8 @@ public class MultiSettingsActivity extends PreferenceActivity {
             if ( videoEncoderProfilePref1 != null && videoEncoderPref1 != null ) {
                 filterUnsupported(KEY_VIDEO_ENCODER_PROFILE_1,
                         getSupportedVideoEncoderProfile(videoEncoder),
-                        R.array.pref_camera2_videoencoderprofile_entry,
-                        R.array.pref_camera2_videoencoderprofile_entryvalues);
+                        R.array.pref_multi_camera_videoencoderprofile_entry,
+                        R.array.pref_multi_camera_videoencoderprofile_entryvalues);
             }
         }
 
@@ -491,8 +491,8 @@ public class MultiSettingsActivity extends PreferenceActivity {
             if ( videoEncoderProfilePref2 != null && videoEncoderPref2 != null ) {
                 filterUnsupported(KEY_VIDEO_ENCODER_PROFILE_2,
                         getSupportedVideoEncoderProfile(videoEncoder),
-                        R.array.pref_camera2_videoencoderprofile_entry,
-                        R.array.pref_camera2_videoencoderprofile_entryvalues);
+                        R.array.pref_multi_camera_videoencoderprofile_entry,
+                        R.array.pref_multi_camera_videoencoderprofile_entryvalues);
             }
         }
     }
