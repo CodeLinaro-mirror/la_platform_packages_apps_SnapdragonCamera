@@ -889,6 +889,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public List<String> getSupportedAICameraMode() {
         ArrayList<String> ret = new ArrayList<String>();
+        //add only for test
 //        if(getCurrentCameraId() == CaptureModule.FRONT_ID) {
 //            ret.add("0");
 //            ret.add("1");
@@ -3586,7 +3587,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isAIBokehMode(){
         boolean isAICameraEnabled = Integer.parseInt(getAICameraValue()) == 2;
-        String value = getValue(SettingsManager.KEY_SELECT_MODE);
+        final SharedPreferences pref = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext,
+                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        String value = pref.getString(SettingsManager.KEY_SELECT_MODE, null);
         boolean isAIBokeh = isAICameraEnabled && value != null && value.equals("rtb");
         Log.i(TAG,"isAIBokehMode:" + isAICameraEnabled + ",value:" + value);
         return isAIBokeh;

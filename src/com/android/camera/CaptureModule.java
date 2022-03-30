@@ -6236,6 +6236,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             builder.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE, CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_STILL_CAPTURE);
         }
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        Log.i(TAG,"set bokeh mode: selectMode" +selectMode);
         if(selectMode != null && selectMode.equals("rtb")){
             builder.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE, CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS);
         }
@@ -11970,13 +11971,14 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyAICameraStrength(){
-        if (!mIsRecordingVideo && !mIsPreviewingVideo || mCurrentSessionClosed) return;
+        if (mCurrentSessionClosed) return;
         if(mSettingsManager.isAICameraOn()) {
             Log.i(TAG, "applyAICameraStrength: " + mAIStrengthValue);
             try {
+                mPreviewRequestBuilder[getMainCameraId()].set(CaptureModule.AICameraStrength, mAIStrengthValue);
                 mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
-            } catch (CameraAccessException e) {
-                Log.e(TAG, "Camera Access Exception in applyFlashForUIChange, apply failed");
+            } catch (CameraAccessException| IllegalArgumentException e) {
+                Log.e(TAG, "Camera Access Exception in applyAICameraStrength, apply failed");
             }
         }
     }
@@ -12962,12 +12964,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 case SettingsManager.KEY_AI_BLUR_LUMA:
                 case SettingsManager.KEY_AI_BLUR_CHROMAU:
                 case SettingsManager.KEY_AI_BLUR_CHROMAV:
-                    applyAIBlurConfigs(mVideoRecordRequestBuilder);
-                    applyAIBlurConfigs(mVideoPreviewRequestBuilder);
+                    applyAIBlurConfig(key,mVideoRecordRequestBuilder);
+                    applyAIBlurConfig(key,mVideoPreviewRequestBuilder);
                     try {
                         mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
                     } catch (CameraAccessException e) {
-                        Log.e(TAG, "Camera Access Exception in applyFlashForUIChange, apply failed");
+                        Log.e(TAG, "Camera Access Exception in applyAIBlurConfig, apply failed");
                     }
                     return;
             }
