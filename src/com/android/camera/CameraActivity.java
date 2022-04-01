@@ -839,6 +839,7 @@ public class CameraActivity extends Activity
 
         @Override
         protected Bitmap doInBackground(Void... params) {
+            Log.d(TAG, "UpdateThumbnailTask");
             if (mJpegData != null)
                 return decodeImageCenter(null);
 
@@ -1660,10 +1661,6 @@ public class CameraActivity extends Activity
         if (!mSecureCamera) {
             mDataAdapter = mWrappedDataAdapter;
             mFilmStripView.setDataAdapter(mDataAdapter);
-            if (!isCaptureIntent()) {
-                mDataAdapter.requestLoad(getContentResolver());
-                mDataRequested = true;
-            }
         } else {
             // Put a lock placeholder as the last image by setting its date to
             // 0.
@@ -1910,7 +1907,9 @@ public class CameraActivity extends Activity
         if (!mSecureCamera) {
             // If it's secure camera, requestLoad() should not be called
             // as it will load all the data.
-            mDataAdapter.requestLoad(getContentResolver());
+            if (!isCaptureIntent()) {
+                mDataAdapter.requestLoad(getContentResolver());
+            }
             mThumbnailDrawable = null;
         }
     }
