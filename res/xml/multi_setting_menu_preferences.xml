@@ -159,8 +159,8 @@
 
         <ListPreference
             android:defaultValue="@string/pref_camera2_videoencoderprofile_default"
-            android:entries="@array/pref_camera2_videoencoderprofile_entry"
-            android:entryValues="@array/pref_camera2_videoencoderprofile_entryvalues"
+            android:entries="@array/pref_multi_camera_videoencoderprofile_entry"
+            android:entryValues="@array/pref_multi_camera_videoencoderprofile_entryvalues"
             android:icon="@drawable/video_encoding"
             android:key="pref_multi_camera_videoencoderprofile1_key"
             android:layout="@layout/preference"
@@ -189,8 +189,8 @@
 
         <ListPreference
             android:defaultValue="@string/pref_camera2_videoencoderprofile_default"
-            android:entries="@array/pref_camera2_videoencoderprofile_entry"
-            android:entryValues="@array/pref_camera2_videoencoderprofile_entryvalues"
+            android:entries="@array/pref_multi_camera_videoencoderprofile_entry"
+            android:entryValues="@array/pref_multi_camera_videoencoderprofile_entryvalues"
             android:icon="@drawable/video_encoding"
             android:key="pref_multi_camera_videoencoderprofile2_key"
             android:layout="@layout/preference"
