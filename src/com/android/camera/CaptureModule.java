@@ -2861,6 +2861,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     mUI.updateGridLine();
                                 }
                             });
+                            if(!mSettingsManager.isLogicalEnable()){
+                                mActivity.runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        mUI.hideLogicalSurface();
+                                    }
+                                });
+                            }
                             mFirstPreviewLoaded = false;
                             try {
                                 if (isBackCamera() && getCameraMode() == DUAL_MODE) {
@@ -2956,6 +2963,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                 List<OutputConfiguration> outputConfigurations = new ArrayList<OutputConfiguration>();
                 if (mSettingsManager.getPhysicalCameraId() != null) {
+                    mUI.buildPhysicalSurfaces();
                     List<OutputConfiguration> physicalOutput = getPhysicalOutputConfiguration();
                     outputConfigurations.addAll(physicalOutput);
                     List<Surface> previewSurfaces = mUI.getPhysicalSurfaces();
@@ -2976,7 +2984,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                         int i=1;
                         for (String physical : mSettingsManager.getPhysicalCameraId()){
                             Log.d(TAG,"add surface physical id="+physical);
-                            mUI.hideSurfaceView();
+                            mActivity.runOnUiThread(new Runnable() {
+                                public void run() {
+                                    mUI.hideSurfaceView();
+                                }
+                            });
                             OutputConfiguration outputConfiguration =
                                     new OutputConfiguration(previewSurfaces.get(i));
                             outputConfiguration.setPhysicalCameraId(physical);
@@ -8823,6 +8835,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         public void onConfigured(CameraCaptureSession cameraCaptureSession) {
             Log.d(TAG, "mSessionListener session onConfigured");
             setCameraModeSwitcherAllowed(true);
+            if(!mSettingsManager.isLogicalEnable()){
+                mActivity.runOnUiThread(new Runnable() {
+                    public void run() {
+                        mUI.hideLogicalSurface();
+                    }
+                });
+            }
             int cameraId = getMainCameraId();
             mCurrentSession = cameraCaptureSession;
             mCaptureSession[cameraId] = cameraCaptureSession;
@@ -9537,6 +9556,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         setTag(mVideoPreviewRequestBuilder, "" + cameraId + "-" + getCurrenCameraMode().name());
         if (mSettingsManager.getPhysicalCameraId() != null) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
+                    mUI.hideSurfaceView();
+                }
+            });
+            mUI.buildPhysicalSurfaces();
             List<Surface> previewSurfaces = mUI.getPhysicalSurfaces();
             if(mSettingsManager.isLogicalEnable()){
                 mVideoPreviewRequestBuilder.addTarget(previewSurfaces.get(0));

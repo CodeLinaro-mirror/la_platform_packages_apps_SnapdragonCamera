@@ -361,6 +361,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private boolean[] mSurfaceReady = {false,false,false,false};
     private SurfaceView[] mPhysicalViews = new SurfaceView[CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private SurfaceHolder[] mPhysicalHolders = new SurfaceHolder[CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
+    List<Surface> mPreviewSurfaces = new ArrayList<>();
     private int mPreviewCount = 0;
     int mPreviewWidth;
     int mPreviewHeight;
@@ -2737,14 +2738,17 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
-    public List<Surface> getPhysicalSurfaces(){
-        List<Surface> previewSurfaces = new ArrayList<>();
+    public void buildPhysicalSurfaces(){
+        mPreviewSurfaces.clear();
         for (int i = 0; i< mPreviewCount; i++){
             if (mPhysicalViews[i] != null && mPhysicalViews[i].getVisibility() == View.VISIBLE){
-                previewSurfaces.add(mPhysicalHolders[i].getSurface());
+                mPreviewSurfaces.add(mPhysicalHolders[i].getSurface());
             }
         }
-        return previewSurfaces;
+    }
+
+    public List<Surface> getPhysicalSurfaces(){
+        return mPreviewSurfaces;
     }
 
     public void initPhysicalSurfaces(Size logicalPreviewSize,Size[] physicalPreviewSizes){
@@ -2810,6 +2814,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mSurfaceReady[i] = false;
         }
         mPreviewCount = 0;
+    }
+
+    public void hideLogicalSurface(){
+        Log.d(TAG,"hideLogicalSurface");
+        if (mPhysicalViews[0] != null){
+            mPhysicalViews[0].setVisibility(View.INVISIBLE);
+        }
     }
 
     public Surface getMonoDummySurface() {
