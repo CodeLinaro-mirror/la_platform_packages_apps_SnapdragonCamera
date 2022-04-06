@@ -3528,7 +3528,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 ret.add("auto");
             }
         }
-        if ((modes != null && modes.length > 0) && !isFacingFront(mCameraId)) {
+        if (modes != null && modes.length > 0) {
             ret.add("manual");
         }
         if (ret.size() == 1) {
