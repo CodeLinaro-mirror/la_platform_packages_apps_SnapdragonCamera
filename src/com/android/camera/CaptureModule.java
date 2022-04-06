@@ -476,11 +476,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.gender_enable",
                     Byte.class);
 
-    public static  CaptureResult.Key<int[]> GENDER =
-            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.gender", int[].class);
+    public static  CaptureResult.Key<byte[]> GENDER =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.gender", byte[].class);
 
-    public static final CaptureResult.Key<int[]> FACE_EXPRESSION =
-            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.face_expression", int[].class);
+    public static final CaptureResult.Key<byte[]> FACE_EXPRESSION =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.face_expression", byte[].class);
 
     public static CaptureResult.Key<Integer> ssmCaptureComplete =
             new CaptureResult.Key<>("com.qti.chi.superslowmotionfrc.CaptureComplete", Integer.class);
@@ -7602,26 +7602,42 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             if (isGenderOn()) {
                 try {
-                    int[] genderArray = captureResult.get(GENDER);
+                    byte[] genderArray = captureResult.get(GENDER);
                     if (FD_DEBUG)
                         Log.d(FD_TAG, "genderArray=" + Arrays.toString(genderArray));
                     if (genderArray == null) {
                         throw new RuntimeException("gender result is null");
                     }
                     int arrayIndex = 0;
-                    final int version = genderArray[arrayIndex++];
+                    final int version = byteArray2Int(genderArray, arrayIndex);
+                    arrayIndex += 4;
                     if (FD_DEBUG) {
                         Log.d(FD_TAG, "fd gender version " + version);
                     }
-                    final int faceNum = genderArray[arrayIndex++];
-                    arrayIndex += 2;
+                    final int faceNum = byteArray2Int(genderArray, arrayIndex);
+                    arrayIndex += 12;
+                    if (FD_DEBUG) {
+                        Log.d(FD_TAG, "fd gender faceNum " + faceNum);
+                    }
                     for (int i = 0; i < faceNum; i++) {
+                        final int gender = byteArray2Int(genderArray, arrayIndex);
+                        arrayIndex +=4;
+                        if (FD_DEBUG) {
+                            Log.d(FD_TAG, "fd gender index " + gender);
+                        }
+                        final int face_id = byteArray2Int(genderArray, arrayIndex);
+                        arrayIndex += 4;
+                        if (FD_DEBUG) {
+                            Log.d(FD_TAG, "fd gender face_id " + face_id);
+                        }
                         int[] confidences = new int[2];
                         for (int j = 0; j < 2; j++) {
-                            confidences[j] = genderArray[arrayIndex++];
+                            confidences[j] = byteArray2Int(genderArray, arrayIndex);
+                            arrayIndex += 4;
+                            if (FD_DEBUG) {
+                                Log.d(FD_TAG, "fd gender confidence " + j + " " + confidences[j]);
+                            }
                         }
-                        final int gender = genderArray[arrayIndex++];
-                        final int face_id = genderArray[arrayIndex++];
                         ExtendedFace tmp = null;
                         int k_ = 0;
                         for (int k = 0; k < faces.length; k++) {
@@ -7646,24 +7662,40 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             if (isFaceExpressionOn()) {
                 try {
-                    int[] expressionArray = captureResult.get(FACE_EXPRESSION);
+                    byte[] expressionArray = captureResult.get(FACE_EXPRESSION);
                     if (FD_DEBUG)
                         Log.d(FD_TAG,"expressionArray=" + Arrays.toString(expressionArray));
                     int expressionCount = ExtendedFace.FDExpressionIndex.values().length;
                     int arrayIndex = 0;
-                    final int version = expressionArray[arrayIndex++];
+                    final int version = byteArray2Int(expressionArray, arrayIndex);
+                    arrayIndex += 4;
                     if (FD_DEBUG) {
                         Log.d(FD_TAG, "fd expression version " + version);
                     }
-                    final int faceNum = expressionArray[arrayIndex++];
-                    arrayIndex += 2;
+                    final int faceNum = byteArray2Int(expressionArray, arrayIndex);
+                    arrayIndex += 12;
+                    if (FD_DEBUG) {
+                        Log.d(FD_TAG, "fd expression faceNum " + faceNum);
+                    }
                     for (int i = 0; i < faceNum; i++) {
+                        final int faceExpression = byteArray2Int(expressionArray, arrayIndex);
+                        arrayIndex += 4;
+                        if (FD_DEBUG) {
+                            Log.d(FD_TAG, "fd expression index " + faceExpression);
+                        }
+                        final int face_id = byteArray2Int(expressionArray, arrayIndex);
+                        arrayIndex += 4;
+                        if (FD_DEBUG) {
+                            Log.d(FD_TAG, "fd expression face_id " + face_id);
+                        }
                         int[] confidences = new int[expressionCount];
                         for (int j = 0; j < expressionCount; j++) {
-                            confidences[j] = expressionArray[arrayIndex++];
+                            confidences[j] = byteArray2Int(expressionArray, arrayIndex);
+                            arrayIndex += 4;
+                            if (FD_DEBUG) {
+                                Log.d(FD_TAG, "fd expression confidence " + j + " " + confidences[j]);
+                            }
                         }
-                        final int faceExpression = expressionArray[arrayIndex++];
-                        final int face_id = expressionArray[arrayIndex++];
                         ExtendedFace tmp = null;
                         int k_ = 0;
                         for (int k = 0; k < faces.length; k++) {

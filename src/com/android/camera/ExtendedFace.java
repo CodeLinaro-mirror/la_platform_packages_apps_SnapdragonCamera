@@ -178,4 +178,23 @@ public class ExtendedFace {
         Anger,
         ;
     }
+
+    @Override
+    public String toString() {
+        return "ExtendedFace{" +
+                "mId=" + mId +
+                ",mGender=" + mGender +
+                ", mFaceExpression=" + mFaceExpression +
+                ", mSmileDegree=" + mSmileDegree +
+                ", mSmileConfidence=" + mSmileConfidence +
+                ", mBlinkDetected=" + mBlinkDetected +
+                ", mLeyeBlink=" + mLeyeBlink +
+                ", mReyeBlink=" + mReyeBlink +
+                ", mGazeAngle=" + mGazeAngle +
+                ", mLeftrightGaze=" + mLeftrightGaze +
+                ", mTopbottomGaze=" + mTopbottomGaze +
+                ", mGazeDirection=" + mGazeDirection +
+                ", mRollDirection=" + mRollDirection +
+                '}';
+    }
 }

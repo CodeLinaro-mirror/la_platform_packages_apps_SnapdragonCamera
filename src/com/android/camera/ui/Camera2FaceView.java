@@ -170,6 +170,9 @@ public class Camera2FaceView extends FaceView {
         }
         mFaces = faces;
         mExFaces = extendedFaces;
+        if (LOGV && mExFaces != null) {
+            Log.v(TAG, "Num of ex faces=" + mExFaces.length);
+        }
         if (!mBlocked && (mFaces != null) && (mFaces.length > 0) && mCameraBound != null) {
             invalidate();
         }
@@ -320,6 +323,10 @@ public class Camera2FaceView extends FaceView {
                 mPaint.setColor(mColor);
                 mRect.offset(dx, dy);
                 canvas.drawRect(mRect, mPaint);
+
+                if (LOGV && mExFaces != null) {
+                    Log.v(TAG, "onDraw extendFaceSize " + extendFaceSize + ", mExFaces[" + i + "] " + mExFaces[i]);
+                }
 
                 if (i < extendFaceSize && mExFaces != null &&
                         mExFaces[i] != null) {
@@ -490,7 +497,7 @@ public class Camera2FaceView extends FaceView {
                     if (mGenderEnable) {
                         int gender = exFace.getGender();
                         if (gender != -1) {
-                            String genderText = gender == 0 ? "Male" : "Female";
+                            String genderText = gender == 1 ? "Male" : "Female";
                             canvas.drawText(genderText, mRect.left, mRect.top - mTextPaint.descent(), mTextPaint);
                         }
                     }
@@ -500,7 +507,7 @@ public class Camera2FaceView extends FaceView {
                         if (genderConfidence != null) {
                             for (int j =0; j < genderConfidence.length; j++) {
                                 try {
-                                    String genderText = (j == 0 ? "Male" : "Female") + " Confidence: " + genderConfidence[j];
+                                    String genderText = (j == 1 ? "Male" : "Female") + " Confidence: " + genderConfidence[j];
                                     if (mFaceExpressionConfidencePaint != null) {
                                         float offset = mFaceExpressionConfidencePaint.getTextSize();
                                         canvas.drawText(genderText, mRect.left,
