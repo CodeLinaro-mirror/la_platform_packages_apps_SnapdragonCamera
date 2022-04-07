@@ -776,6 +776,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static final CaptureResult.Key<byte[]> StreamCropInfo =
             new CaptureResult.Key<>("com.qti.camera.streamCropInfo.StreamCropInfo", byte[].class);
 
+    public static CameraCharacteristics.Key<Byte> isMLVideoSupported =
+            new CameraCharacteristics.Key<>("org.quic.camera.MLVideo.isMLVideoSupported", byte.class);
     TotalCaptureResult mCaptureResult;
     float denoiseStrengthParam = 0.5f;
     float color_saturation = 0.0f;
@@ -6232,6 +6234,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyeMFNRAIDEMode(builder);
         applyeHardSwitchParam(builder);
         applyRawCbSourceType(builder);
+        applyMLVideoParam(builder);
+    }
+
+    private void applyMLVideoParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
+        Log.i(TAG,"applyMLVideoParam, value:" + value);
+        VendorTagUtil.enableMLVideo(builder, (byte)(value != null && value.equals("on") ? 0x01 : 0x00));
     }
 
     private void applyeHardSwitchParam(CaptureRequest.Builder builder){
@@ -7987,6 +7996,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
         if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || "1".equals(hvx_shdr)){
             mVideoSnapshotSize = mVideoSize;
+        }
+        String mlVideo = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
+        if(mlVideo != null && mlVideo.equals("on")){
+            mVideoSnapshotSize = mVideoPreviewSize;
         }
         String videoSnapshot = PersistUtil.getVideoSnapshotSize();
         String[] sourceStrArray = videoSnapshot.split("x");

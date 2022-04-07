@@ -1176,6 +1176,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_AUDIO_RECORDING_MODE);
                 add(SettingsManager.KEY_HDR_WNR_MODE);
                 add(SettingsManager.KEY_HDR_ANS_MODE);
+                add(SettingsManager.KEY_ML_VIDEO);
             }
         };
         final ArrayList<String> multiCameraSettingList = new ArrayList<String>() {
@@ -1288,6 +1289,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         videoAddList.remove(SettingsManager.KEY_HVX_SHDR);
                         videoAddList.remove(SettingsManager.KEY_HVX_MFHDR);
+                        videoAddList.remove(SettingsManager.KEY_ML_VIDEO);
                     }
                     videoAddList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     videoAddList.add(SettingsManager.KEY_TONE_MAPPING);
