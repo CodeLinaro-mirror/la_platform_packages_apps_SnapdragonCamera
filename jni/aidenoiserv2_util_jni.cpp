@@ -30,6 +30,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <jni.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include <dlfcn.h>
 #include "aidenoiserv2/aidenoiserenginev2.h"
 
@@ -223,6 +224,9 @@ JNIEXPORT jint JNICALL Java_com_android_camera_aide_AideUtil_nativeCvtYuvToRgb(
     if ( (pRed == NULL) ||  (pGreen == NULL) || (pBlue == NULL)) {
         return 0;
     }
+    memset(pRed, 0, sizeof(height * stride * sizeof(uint8_t)));
+    memset(pGreen, 0, sizeof(height * stride * sizeof(uint8_t)));
+    memset(pBlue, 0, sizeof(height * stride * sizeof(uint8_t)));
     const uint32_t maxRgb = 255;
     for (int i = 0; i < height; i += 2) {
         for (int j = 0; j < width; j += 2) {
