@@ -9757,7 +9757,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (Exception e) {
                 Log.e(TAG, "cannot access the file: " + e);
             }
-
             mCurrentVideoValues.put(MediaStore.Video.Media.DURATION, duration);
             if (ApiHelper.isAndroidROrHigher()) {
                 mCurrentVideoValues.put(MediaStore.Video.Media.IS_PENDING, 0);
@@ -9808,8 +9807,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void setUpPhysicalMediaRecorder() throws IOException {
         Set<String> ids = mSettingsManager.getPhysicalFeatureEnableId(
                 SettingsManager.KEY_PHYSICAL_CAMCORDER);
-        if (ids == null || ids.size() == 0)
+        if (ids == null || ids.size() == 0) {
             return;
+        }
         releasePhysicalRecorder();
         int count = ids.size();
         Log.d(TAG,"setUpPhysicalMediaRecorder count="+count);
@@ -10882,7 +10882,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         try {
             mMediaRecorder.prepare();
         } catch (IOException e) {
-            Log.e(TAG, "prepare failed for " + mVideoFilename, e);
+            Log.e(TAG, " prepare failed for " + mVideoFilename, e);
             if (mCurrentVideoUri != null) {
                 mContentResolver.delete(mCurrentVideoUri, null);
                 mCurrentVideoUri = null;
@@ -12029,14 +12029,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
         if (value == null) return;
         int intValue = Integer.parseInt(value);
-        boolean promode = mCurrentSceneMode.mode == CameraMode.PRO_MODE;
-        String exposuretime = mSettingsManager.getKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE);
-        if(mIsLongExpTmCp) intValue = 0 ;
-        else if(promode && !exposuretime.equals("") && !exposuretime.equals("auto") && PersistUtil.strToLong(exposuretime,maxExpTime) > maxExpTime){
-            String previewEv = mSettingsManager.getKeyValue(SettingsManager.KEY_EV_FOR_LONGEXPOSURE);
-            if(!previewEv.equals("") && !previewEv.equals("auto"))
-            intValue = PersistUtil.strToInt(previewEv,0);
-        }
         request.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, intValue);
     }
 
@@ -12044,7 +12036,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (applyManualIsoExposure(request)) return;
         String isovalue = mSettingsManager.getValue(SettingsManager.KEY_ISO);
         String exposuretime = mSettingsManager.getKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE);
-
         if (isovalue == null || exposuretime == null) return;
         if (exposuretime.equals("") ) exposuretime = "auto";
         boolean promode = mCurrentSceneMode.mode == CameraMode.PRO_MODE;
@@ -12071,7 +12062,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         } else if (promode && exposuretime.equals("auto") && !isovalue.equals("auto")) {
             long longValue = SettingsManager.KEY_ISO_INDEX.get(isovalue);
-            setIsoValue(request, 0, longValue, false);
+            int intValue = PersistUtil.strToInt(isovalue,500);
+            setIsoValue(request, intValue, longValue, false);
         } else if (promode && !exposuretime.equals("auto") && isovalue.equals("auto")) {
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
             VendorTagUtil.setIsoExpPriority(request, previewExpTime);
@@ -12098,16 +12090,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void setIsoValue(CaptureRequest.Builder request, int isoValue, long longValue, boolean isManual) {
         VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
-        if (isManual) {
-            VendorTagUtil.setIsoExpPriority(request, longValue);
-            VendorTagUtil.setUseIsoValues(request, isoValue);
-            if (DEBUG) {
-                Log.v(TAG, " manual setUseIsoValues ISO value :" + isoValue + ",setIsoExpPriority longValue=" + longValue);
-            }
-        } else {
-            VendorTagUtil.setIsoExpPriority(request, longValue);
-        }
-
+        VendorTagUtil.setIsoExpPriority(request, longValue);
+        VendorTagUtil.setUseIsoValues(request, isoValue);
         if (request.get(CaptureRequest.SENSOR_EXPOSURE_TIME) != null) {
             mIsoExposureTime = request.get(CaptureRequest.SENSOR_EXPOSURE_TIME);
         }
@@ -12124,6 +12108,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime);
         request.set(CaptureRequest.SENSOR_SENSITIVITY, isoValue);
+        VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
+        VendorTagUtil.setIsoExpPriority(request, 0L);
     }
     private boolean applyManualIsoExposure(CaptureRequest.Builder request) {
         boolean result = false;
