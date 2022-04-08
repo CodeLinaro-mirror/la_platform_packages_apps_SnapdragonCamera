@@ -9745,7 +9745,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
         }
-        if (mVideoFileDescriptor != null && mCurrentVideoUri != null) {
+        if (mVideoFileDescriptor != null && mCurrentVideoUri != null && mCurrentVideoValues != null) {
             long duration = 0L;
             MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 
