@@ -777,7 +777,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("com.qti.camera.streamCropInfo.StreamCropInfo", byte[].class);
 
     public static CameraCharacteristics.Key<Byte> isMLVideoSupported =
-            new CameraCharacteristics.Key<>("org.quic.camera.MLVideo.isMLVideoSupported", byte.class);
+            new CameraCharacteristics.Key<>("org.quic.camera.videoretouch.isVideoRetouchSupported", byte.class);
     TotalCaptureResult mCaptureResult;
     float denoiseStrengthParam = 0.5f;
     float color_saturation = 0.0f;

@@ -93,7 +93,7 @@ public class VendorTagUtil {
     private static final CaptureRequest.Key<Integer> rawCbSourceType =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.RawCbSourceType", Integer.class);
     public static final CaptureRequest.Key<Byte> EnableMLVideo =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMLVideo", byte.class);
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVideoRetouch", byte.class);
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
     private static final int MANUAL_WB_GAINS_MODE = 2;
