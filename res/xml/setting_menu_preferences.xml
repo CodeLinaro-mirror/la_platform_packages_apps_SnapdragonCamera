@@ -678,6 +678,15 @@
             android:summary="%s"/>
 
         <ListPreference
+            android:key="pref_camera2_preview_stabilization_key"
+            android:defaultValue="@string/pref_camera2_preview_stabilization_default"
+            android:title="@string/pref_camera2_preview_stabilization_title"
+            android:entries="@array/pref_camera2_preview_stabilization_entries"
+            android:entryValues="@array/pref_camera2_preview_stabilization_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
             android:key="pref_camera2_fovc_key"
             android:defaultValue="@string/pref_camera2_fovc_default"
             android:title="@string/pref_camera2_fovc_title"

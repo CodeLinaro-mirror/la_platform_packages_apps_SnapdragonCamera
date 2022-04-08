@@ -351,8 +351,13 @@ public class SettingsActivity extends PreferenceActivity {
                 if(pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)){
                     updateVideoMFHDRPreference();
                 }
-                if(pref.getKey().equals(SettingsManager.KEY_ZSL) || pref.getKey().equals(SettingsManager.KEY_MULTIRESIMAGEREADER)){
+                if(pref.getKey().equals(SettingsManager.KEY_ZSL) || pref.getKey().equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                     updateMultiResReprocess();
+                }
+
+                if (SettingsManager.KEY_PHOTO_EIS_VALUE.equals(pref.getKey())
+                        || SettingsManager.KEY_EIS_VALUE.equals(pref.getKey())) {
+                    updatePreviewStabilizationPreference();
                 }
             }
         }
@@ -1368,6 +1373,7 @@ public class SettingsActivity extends PreferenceActivity {
                         }
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA);
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
+                        videoAddList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
                     } else {
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
@@ -1723,6 +1729,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePictureSizePreferenceButton();
         updateVsrPreference();
         updateMultiResReprocess();
+        updatePreviewStabilizationPreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1975,6 +1982,40 @@ public class SettingsActivity extends PreferenceActivity {
         } else {
             picturePref.setEnabled(true);
         }
+    }
+
+    private void updatePreviewStabilizationPreference() {
+        CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        if (mode != VIDEO && mode != DEFAULT) {
+            return;
+        }
+        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_PREVIEW_STABILIZATION);
+        if (pref == null) {
+            return;
+        }
+        if (mode == VIDEO) {
+            String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
+            if (value != null) {
+                if (!value.equals("V2")) {
+                    pref.setValueIndex(0);
+                    pref.setEnabled(false);
+                    mSettingsManager.setValue(SettingsManager.KEY_PREVIEW_STABILIZATION, "disable");
+                    return;
+                }
+            }
+        } else {
+            String value = mSettingsManager.getValue(SettingsManager.KEY_PHOTO_EIS_VALUE);
+            if (value != null) {
+                if (!value.equals("V2")) {
+                    pref.setValueIndex(0);
+                    pref.setEnabled(false);
+                    mSettingsManager.setValue(SettingsManager.KEY_PREVIEW_STABILIZATION, "disable");
+                    return;
+                }
+            }
+        }
+
+        pref.setEnabled(true);
     }
 
     private void updateEISPreference() {

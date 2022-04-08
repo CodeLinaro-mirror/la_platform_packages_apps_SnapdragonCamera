@@ -249,6 +249,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_REMOSAIC_REPROCESSING = "pref_camera2_remosaic_reprocessing_key";
     public static final String KEY_EIS_VALUE = "pref_camera2_eis_key";
     public static final String KEY_PHOTO_EIS_VALUE = "pref_camera2_photo_eis_key";
+    public static final String KEY_PREVIEW_STABILIZATION = "pref_camera2_preview_stabilization_key";
     public static final String KEY_FOVC_VALUE = "pref_camera2_fovc_key";
     public static final String KEY_DEEPPORTRAIT_VALUE = "pref_camera2_deepportrait_key";
     public static final String KEY_AWB_RAGIN_VALUE = "pref_camera2_awb_cct_rgain_key";
@@ -4037,6 +4038,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return fpsRate;
     }
+
+    public boolean isVideoPreviewStabilizationSupported() {
+        boolean supported = false;
+        Size videoSize = getVideoSize();
+        int longEdge = Math.max(videoSize.getWidth(), videoSize.getHeight());
+        int shortEdge = Math.min(videoSize.getWidth(), videoSize.getHeight());
+        if (getVideoFPS() <= 30 && longEdge <= 1920 && shortEdge <= 1080) {
+            supported = true;
+        }
+        return supported;
+    }
+
     public String getVideoHdrMode(){
         String value = getValue(SettingsManager.KEY_MANUAL_HDR);
         Log.v(TAG, "getVideoHdrMode value :" + value);

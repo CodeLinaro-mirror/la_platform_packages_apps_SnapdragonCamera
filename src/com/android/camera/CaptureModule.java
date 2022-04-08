@@ -3659,6 +3659,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 e.printStackTrace();
                 continue;
             }
+            if (DEBUG) {
+                List<CaptureRequest.Key<?>> availableSessionKeys = characteristics.getAvailableSessionKeys();
+                for (CaptureRequest.Key<?> key : availableSessionKeys) {
+                    if (key != null) {
+                        Log.d(TAG, "availableSessionKeys: " + key + " in camera " + cameraId);
+                    }
+                }
+            }
             int[] capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
             boolean foundDepth = false;
             for (int capability : capabilities) {
@@ -6444,6 +6452,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.DEFAULT) {
             applyVSR(builder);
+            applyPreviewStabilization(builder);
         }
         applyNumHDRExposure(builder);
         applyStatsVisualizerOptionMask(builder);
@@ -11605,6 +11614,40 @@ public class CaptureModule implements CameraModule, PhotoController,
         return intValue;
     }
 
+    private void applyPreviewStabilization(CaptureRequest.Builder request) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
+
+        if (DEBUG) {
+            Log.d(TAG, "applyPreviewStabilization EISV select: " + value);
+        }
+        boolean previewStabilizationOn = false;
+        if (value != null) {
+            if (value.equals("V2")) {
+                previewStabilizationOn = "enable".equals(mSettingsManager.
+                        getValue(SettingsManager.KEY_PREVIEW_STABILIZATION))
+                        && mSettingsManager.isVideoPreviewStabilizationSupported();
+                if (previewStabilizationOn) {
+                    try {
+                        if (DEBUG) {
+                            Log.d(TAG, "applyPreviewStabilization PREVIEW_STABILIZATION");
+                        }
+                        request.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+                                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION);
+                    } catch (IllegalArgumentException e) {
+                        Log.w(TAG, "", e.fillInStackTrace());
+                    }
+                }
+            }
+            if (!previewStabilizationOn) {
+                try {
+                    applyVideoStabilization(request, value.equals("disable"));
+                } catch (IllegalArgumentException e) {
+                    Log.w(TAG, "", e.fillInStackTrace());
+                }
+            }
+        }
+    }
+
     private void applyVideoEIS(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
 
@@ -11612,18 +11655,36 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.d(TAG, "applyVideoEIS EISV select: " + value);
         }
         mStreamConfigOptMode = 0;
+        boolean previewStabilizationOn = false;
         if (value != null) {
             if (value.equals("V2")) {
                 mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
+                previewStabilizationOn = "enable".equals(mSettingsManager.
+                        getValue(SettingsManager.KEY_PREVIEW_STABILIZATION))
+                         && mSettingsManager.isVideoPreviewStabilizationSupported();
+                if (previewStabilizationOn) {
+                    try {
+                        if (DEBUG) {
+                            Log.d(TAG, "applyVideoEIS PREVIEW_STABILIZATION");
+                        }
+                        request.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+                                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION);
+                        request.set(CaptureModule.eis_mode, (byte) 0x01);
+                    } catch (IllegalArgumentException e) {
+                        e.printStackTrace();
+                    }
+                }
             } else if (value.equals("V3")) {
                 mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_LOOKAHEAD;
             }
-            byte byteValue = (byte) (value.equals("disable") ? 0x00 : 0x01);
-            try {
-                applyVideoStabilization(request, value.equals("disable"));
-                request.set(CaptureModule.eis_mode, byteValue);
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
+            if (!previewStabilizationOn) {
+                byte byteValue = (byte) (value.equals("disable") ? 0x00 : 0x01);
+                try {
+                    applyVideoStabilization(request, value.equals("disable"));
+                    request.set(CaptureModule.eis_mode, byteValue);
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -11636,17 +11697,33 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         Log.d(TAG, "applyPhotoEIS EISV select: " + value);
         mStreamConfigOptMode = 0;
+        boolean previewStabilizationOn = false;
         if (value != null) {
             if (value.equals("V2")) {
                 mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
+                previewStabilizationOn = "enable".equals(mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_STABILIZATION));
+                if (previewStabilizationOn) {
+                    try {
+                        if (DEBUG) {
+                            Log.d(TAG, "applyPhotoEIS PREVIEW_STABILIZATION");
+                        }
+                        request.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+                                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION);
+                        request.set(CaptureModule.eis_mode, (byte) 0x01);
+                    } catch (IllegalArgumentException e) {
+                        e.printStackTrace();
+                    }
+                }
             } else if (value.equals("dynamic")) {
-                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_DYNAMIC_MARGIN ;
+                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_DYNAMIC_MARGIN;
             }
-            try {
-                applyVideoStabilization(request, value.equals("disable"));
-                request.set(CaptureModule.eis_mode, (byte)0x00); //set EISV3Enable 0 at photo mode
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
+            if (!previewStabilizationOn) {
+                try {
+                    applyVideoStabilization(request, value.equals("disable"));
+                    request.set(CaptureModule.eis_mode, (byte) 0x00); //set EISV3Enable 0 at photo mode
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

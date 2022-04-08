@@ -526,6 +526,13 @@
         camera:entryValues="@array/pref_camera2_photo_eis_entryvalues" />
 
     <ListPreference
+        camera:key="pref_camera2_preview_stabilization_key"
+        camera:defaultValue="@string/pref_camera2_preview_stabilization_default"
+        camera:title="@string/pref_camera2_preview_stabilization_title"
+        camera:entries="@array/pref_camera2_preview_stabilization_entries"
+        camera:entryValues="@array/pref_camera2_preview_stabilization_entryvalues" />
+
+    <ListPreference
         camera:key="pref_camera2_fovc_key"
         camera:defaultValue="@string/pref_camera2_fovc_default"
         camera:title="@string/pref_camera2_fovc_title"
