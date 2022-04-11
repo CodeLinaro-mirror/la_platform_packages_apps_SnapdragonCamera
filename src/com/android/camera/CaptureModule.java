@@ -10261,7 +10261,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             mMuxerStart = false;
             mMuxer = null;
         }
-        cleanupEmptyFile();
     }
 
     private String getEncoderForamtVideo(String encoderSelected) {
@@ -10814,6 +10813,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mAudioEncoder.release();
             mAudioEncoder = null;
         }
+        cleanupEmptyFile();
     }
     //------------------------------------------end-----------------------------------------
 
@@ -11032,7 +11032,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void generateVideoOutputFile() {
-        if (mIsRecordingVideo || (mHighSpeedCapture && mHighSpeedCaptureRate > 90)) {
+        if (mIsRecordingVideo
+                || (mHighSpeedCapture && mHighSpeedCaptureRate > 90)
+                || !PersistUtil.enableMediaRecorder()) {
             String fileName = generateVideoFilename(mProfile.fileFormat);
             Log.v(TAG, "New video filename: " + fileName);
             Uri videoTable = Storage.getVideoBaseUri();
