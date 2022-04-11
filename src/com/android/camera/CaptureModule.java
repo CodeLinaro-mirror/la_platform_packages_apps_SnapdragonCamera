@@ -754,9 +754,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static final CameraCharacteristics.Key<Integer> MFNRType =
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.MFNRType", Integer.class);
     public static CameraCharacteristics.Key<int[]> HWMFNR_FRAME_RANGE =
-            new CameraCharacteristics.Key<>("org.quic.camera.HWMF.HWMFFramesRange", int[].class);
+            new CameraCharacteristics.Key<>("org.quic.camera.MultiFrameNodeReduction.MFFramesRange", int[].class);
     public static CaptureRequest.Key<Integer> mfnrFrameNO =
-            new CaptureRequest.Key<>("org.quic.camera.HWMF.HWMFNumOfFramesAPP", Integer.class);
+            new CaptureRequest.Key<>("org.quic.camera.MultiFrameNodeReduction.MFNumOfFrames", Integer.class);
     public static final CaptureResult.Key<Integer> isTorchHdr =
             new CaptureResult.Key<>("com.qti.stats_control.is_torch_hdr_snapshot", Integer.class);
     //vendor tag for AIDE2
@@ -9305,6 +9305,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             builder.set(CaptureRequest.NOISE_REDUCTION_MODE, noiseReduMode);
             if (isMfnrEnable) {
                 try {
+                    builder.set(custom_noise_reduction, (byte) 0x01);
                     builder.set(CaptureModule.mfnrFrameNO, frameValue);
                 } catch (IllegalArgumentException e) {
                     Log.w(TAG, "capture can`t find vendor tag: " + custom_noise_reduction.toString()+" or "+CaptureModule.mfnrFrameNO.toString());
