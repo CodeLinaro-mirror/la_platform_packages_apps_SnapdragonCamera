@@ -205,6 +205,7 @@ public class SettingsActivity extends PreferenceActivity {
                     picSize.setEnabled(true);
                     picFormat.setEnabled(true);
                 }
+                updateMultiResReprocess();
             }
             List<String> list = mSettingsManager.getDependentKeys(key);
             if (list != null) {
@@ -337,6 +338,9 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if(pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)){
                     updateVideoMFHDRPreference();
+                }
+                if(pref.getKey().equals(SettingsManager.KEY_ZSL) || pref.getKey().equals(SettingsManager.KEY_MULTIRESIMAGEREADER)){
+                    updateMultiResReprocess();
                 }
             }
         }
@@ -1457,6 +1461,8 @@ public class SettingsActivity extends PreferenceActivity {
             {
                 add(SettingsManager.KEY_MULTIRESIMAGEREADER);
                 add(SettingsManager.KEY_ZSL);
+                add(SettingsManager.KEY_MULTIRESREPROCESS_INPUT);
+                add(SettingsManager.KEY_MULTIRESREPROCESS_OUTPUT);
             }
         };
         if(mode == DEFAULT){
@@ -1464,6 +1470,24 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
 
+    private void updateMultiResReprocess(){
+        ListPreference inpref = (ListPreference)findPreference(SettingsManager.KEY_MULTIRESREPROCESS_INPUT);
+        ListPreference outpref = (ListPreference)findPreference(SettingsManager.KEY_MULTIRESREPROCESS_OUTPUT);
+        String value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
+        ListPreference zslValue = (ListPreference)findPreference(SettingsManager.KEY_ZSL);
+        if(inpref != null && outpref != null){
+            if(value != null && "1".equals(value) && (zslValue != null && zslValue.getValue().equals("app-zsl"))) {
+                inpref.setEnabled(true);
+                outpref.setEnabled(true);
+                mSettingsManager.updateMultiReprocessInputOutput();
+                updatePreference(SettingsManager.KEY_MULTIRESREPROCESS_INPUT);
+                updatePreference(SettingsManager.KEY_MULTIRESREPROCESS_OUTPUT);
+            }else {
+                inpref.setEnabled(false);
+                outpref.setEnabled(false);
+            }
+        }
+    }
     private void updateAICameraPerf(){
         PreferenceGroup developer = (PreferenceGroup) findPreference("developer");
         ArrayList<String> aiCameraList = new ArrayList<String>();
@@ -1678,6 +1702,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateRawInfoPref();
         updatePictureSizePreferenceButton();
         updateVsrPreference();
+        updateMultiResReprocess();
     }
 
     private void updateAudioEncoderPreference() {

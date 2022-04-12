@@ -1553,6 +1553,26 @@ for time lapse recording -->
         <item>@string/pref_camera2_multiresimagereader_entry_disable</item>
     </string-array>
 
+    <string-array name="pref_camera2_format_entries" translatable="false">
+        <item>@string/pref_camera2_format_entry_raw_sensor</item>
+        <item>@string/pref_camera2_format_entry_private</item>
+        <item>@string/pref_camera2_format_entry_yuv_420_888</item>
+        <item>@string/pref_camera2_format_entry_raw_private</item>
+        <item>@string/pref_camera2_format_entry_raw10</item>
+        <item>@string/pref_camera2_format_entry_ycbcr_p010</item>
+        <item>@string/pref_camera2_format_entry_jpeg</item>
+    </string-array>
+
+    <string-array name="pref_camera2_format_entryvalues" translatable="false">
+        <item>@string/pref_camera2_format_entry_value_raw_sensor</item>
+        <item>@string/pref_camera2_format_entry_value_private</item>
+        <item>@string/pref_camera2_format_entry_value_yuv_420_888</item>
+        <item>@string/pref_camera2_format_entry_value_raw_private</item>
+        <item>@string/pref_camera2_format_entry_value_raw10</item>
+        <item>@string/pref_camera2_format_entry_value_ycbcr_p010</item>
+        <item>@string/pref_camera2_format_entry_value_jpeg</item>
+    </string-array>
+
     <string-array name="pref_camera2_select_mode_entryvalues" translatable="false">
         <item>@string/pref_camera2_select_mode_entry_value_default</item>
         <item>@string/pref_camera2_select_mode_entry_value_sat</item>

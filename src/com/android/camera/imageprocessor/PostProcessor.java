@@ -453,7 +453,13 @@ public class PostProcessor{
     public void onMultiImageReaderReady(MultiResolutionImageReader multiresImageReader) {
         mMultiInputImageReader = multiresImageReader;
         if (mUseZSL) {
-            mMultiOutputImageReader = mController.initOutputMultiImageReader(ImageFormat.JPEG);
+            //here to change reprocess output format
+            String output = SettingsManager.getInstance().getValue(SettingsManager.KEY_MULTIRESREPROCESS_OUTPUT);
+            int format = ImageFormat.JPEG;
+            if(output != null) {
+                format = Integer.parseInt(output);
+            }
+            mMultiOutputImageReader = mController.initOutputMultiImageReader(format);
             mMultiOutputImageReader.setOnImageAvailableListener(mListener, new HandlerExecutor(mHandler));
         }
     }

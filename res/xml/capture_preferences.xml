@@ -816,6 +816,20 @@
         camera:entryValues="@array/pref_camera2_multiresimagereader_entryvalues" />
 
     <ListPreference
+        camera:key="pref_camera2_multiresreprocess_input_key"
+        camera:defaultValue="@string/pref_camera2_multiresimagereader_input_default"
+        camera:title="@string/pref_camera2_multiresimagereader_input_title"
+        camera:entries="@array/pref_camera2_format_entries"
+        camera:entryValues="@array/pref_camera2_format_entryvalues" />
+
+    <ListPreference
+        camera:key="pref_camera2_multiresreprocess_output_key"
+        camera:defaultValue="@string/pref_camera2_multiresimagereader_output_default"
+        camera:title="@string/pref_camera2_multiresimagereader_output_title"
+        camera:entries="@array/pref_camera2_format_entries"
+        camera:entryValues="@array/pref_camera2_format_entryvalues" />
+
+    <ListPreference
         camera:key="pref_camera2_qll_key"
         camera:defaultValue="@string/pref_camera2_qll_default"
         camera:title="@string/pref_camera2_qll_title"

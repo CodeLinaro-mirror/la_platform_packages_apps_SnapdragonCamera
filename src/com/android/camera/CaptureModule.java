@@ -5244,7 +5244,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if ((imageFormat == ImageFormat.YUV_420_888 || imageFormat == ImageFormat.PRIVATE)
                             && i == getMainCameraId()) {
                         if (isMultiResolutionImageReaderEnabled()) {
-                            initReprocessMultiImageReader(imageFormat);
+                            String input = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESREPROCESS_INPUT);
+                            int format = imageFormat;
+                            if(input != null) {
+                                format = Integer.parseInt(input);
+                            }
+                            initReprocessMultiImageReader(format);
                         } else {
                             initRepocessImageReader(imageFormat);
                         }
@@ -7067,7 +7072,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             mChosenImageFormat = ImageFormat.JPEG;
         }
         setUpCameraOutputs(mChosenImageFormat);
-
     }
 
     private void loadSoundPoolResource() {

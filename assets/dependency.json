@@ -166,8 +166,10 @@
                 "pref_camera2_multi_camera_mode_key": "0",
                 "pref_camera2_picture_format_key":"0"
     },
-    "hal-zsl": {"pref_camera2_remosaic_reprocessing_key": "disable"},
-    "disable": {"pref_camera2_remosaic_reprocessing_key": "disable"}
+    "hal-zsl": {"pref_camera2_remosaic_reprocessing_key": "disable"
+    },
+    "disable": {"pref_camera2_remosaic_reprocessing_key": "disable"
+    }
   },
   "pref_camera2_videoencoder_key":
   {

@@ -304,6 +304,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_VSR = "pref_camera2_vsr_key";
 
     public static final String KEY_MULTIRESIMAGEREADER = "pref_camera2_multiresimagereader_key";
+    public static final String KEY_MULTIRESREPROCESS_INPUT = "pref_camera2_multiresreprocess_input_key";
+    public static final String KEY_MULTIRESREPROCESS_OUTPUT = "pref_camera2_multiresreprocess_output_key";
 
     public static final String KEY_RAW_REPROCESS_TYPE = "pref_camera2_raw_reprocess_key";
     public static final String KEY_PHYSICAL_RAW_REPROCESS = "pref_camera2_physical_raw_reprocess_key";
@@ -557,7 +559,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     getCurrentCameraId()));
         }
     }
-
+    public void updateMultiReprocessInputOutput() {
+        ListPreference inputPref = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_INPUT);
+        ListPreference outputPref = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_OUTPUT);
+        if (inputPref != null) {
+            inputPref.setEntries(mContext.getResources().getStringArray(
+                    R.array.pref_camera2_format_entries));
+            inputPref.setEntryValues(mContext.getResources().getStringArray(
+                    R.array.pref_camera2_format_entryvalues));
+            filterUnsupportedOptions(inputPref, getSupportedMultiResReprocessInput());
+        }
+        if (outputPref != null) {
+            outputPref.setEntries(mContext.getResources().getStringArray(
+                    R.array.pref_camera2_format_entries));
+            outputPref.setEntryValues(mContext.getResources().getStringArray(
+                    R.array.pref_camera2_format_entryvalues));
+            filterUnsupportedOptions(outputPref, getSupportedMultiResReprocessOutput());
+        }
+    }
     public void updateHDRSceneMode() {
         IconListPreference sceneMode = (IconListPreference)mPreferenceGroup.findPreference(KEY_SCENE_MODE);
         if (sceneMode != null) {
@@ -1172,6 +1191,38 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return supported;
     }
 
+    public List<String> getSupportedMultiResReprocessInput() {
+        List<String> formats = new ArrayList<>();
+        if (mCharacteristics.size() > 0) {
+            MultiResolutionStreamConfigurationMap multiResolutionMap =
+                    mCharacteristics.get(mCameraId)
+                            .get(CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP);
+            if(multiResolutionMap != null) {
+                int[] inputformats = multiResolutionMap.getInputFormats();
+                for (int format : inputformats) {
+                    formats.add("" + format);
+                    Log.i(TAG, "input format:" + format);
+                }
+            }
+        }
+        return formats;
+    }
+
+    public List<String> getSupportedMultiResReprocessOutput() {
+        List<String> formats = new ArrayList<>();
+//        if (mCharacteristics.size() > 0) {
+//            MultiResolutionStreamConfigurationMap multiResolutionMap =
+//                    mCharacteristics.get(mCameraId)
+//                            .get(CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP);
+//            int[] outputformats = multiResolutionMap.getOutputFormats();
+//            for (int format : outputformats) {
+//                formats.add("" + format);
+//            }
+//        }
+        formats.add("256");
+        return formats;
+    }
+
     public Set<String> getPhysicalCameraId() {
         if (!isMultiCameraEnabled())
             return null;
@@ -1559,6 +1610,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference inSensorZoom = mPreferenceGroup.findPreference(KEY_INSENSOR_ZOOM);
         ListPreference aiCamera = mPreferenceGroup.findPreference(KEY_AI_CAMERA);
         ListPreference aiCameraSnapshot = mPreferenceGroup.findPreference(KEY_AI_CAMERA_SNAPSHOT);
+        ListPreference multireprocess_input = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_INPUT);
+        ListPreference multireprocess_output = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_OUTPUT);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -1845,6 +1898,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
 
+        if (multireprocess_input != null) {
+            if (filterUnsupportedOptions(multireprocess_input,
+                    getSupportedMultiResReprocessInput())) {
+                mFilteredKeys.add(multireprocess_input.getKey());
+            }
+        }
+
+        if (multireprocess_output != null) {
+            if (filterUnsupportedOptions(multireprocess_output,
+                    getSupportedMultiResReprocessOutput())) {
+                mFilteredKeys.add(multireprocess_output.getKey());
+            }
+        }
         if (inSensorZoom != null) {
             if (!isInSensorZoomSupported()) {
                 removePreference(mPreferenceGroup, KEY_INSENSOR_ZOOM);
