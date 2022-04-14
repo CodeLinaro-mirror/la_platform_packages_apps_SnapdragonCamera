@@ -261,6 +261,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final int mShotNum = PersistUtil.getLongshotShotLimit();
     private boolean mLongshoting = false;
     private AtomicInteger mNumFramesArrived = new AtomicInteger(0);
+    private AtomicInteger mNumImageArrived = new AtomicInteger(0);
     private final int MAX_IMAGEREADERS = 10;
 
     private long mVideoFrameNumber = 0;
@@ -4431,12 +4432,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                     updateT2tTrackerView(result);
                     return;
                 }
-                if (mNumFramesArrived.get() >= mShotNum) {
-                    mLongshotActive = false;
-                    return;
 
-                }
+                mNumFramesArrived.incrementAndGet();
+
                 Log.d(TAG, "captureStillPictureForLongshot onCaptureCompleted: " + mNumFramesArrived.get() + " " + mShotNum);
+                if (mLongshotActive && mNumFramesArrived.get() >= mShotNum) {
+                    mLongshotActive = false;
+                    mHandler.post(() -> stopBurstShot());
+                    mUI.enableVideo(true);
+                    return;
+                }
 
                 if (mLongshotActive) {
                     checkAndPlayShutterSound(getMainCameraId());
@@ -4487,17 +4492,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                     return;
                 }
                 mLongshoting = true;
-                mNumFramesArrived.incrementAndGet();
-                if(mNumFramesArrived.get() == mShotNum) {
-                    mLastLongshotTimestamp = timestamp;
-                }
                 Log.d(TAG, "captureStillPictureForLongshot onCaptureStarted: " + mNumFramesArrived.get());
             }
 
             @Override
             public void onCaptureBufferLost(CameraCaptureSession session,
                    CaptureRequest request, Surface target, long frameNumber) {
-                mNumFramesArrived.decrementAndGet();
+                String requestTag = String.valueOf(request.getTag());
+                if (requestTag.equals("preview")) {
+                    return;
+                }
                 Log.d(TAG, "captureStillPictureForLongShot onCaptureBufferLost: frameNumber is "
                         + frameNumber);
 
@@ -4507,15 +4511,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             public void onCaptureFailed(CameraCaptureSession session,
                                         CaptureRequest request,
                                         CaptureFailure result) {
-                Log.d(TAG, "captureStillPictureForLongshot onCaptureFailed.");
-                if (mLongshotActive) {
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mUI.doShutterAnimation();
-                        }
-                    });
+                if (mPaused) {
+                    return;
                 }
+                String requestTag = String.valueOf(request.getTag());
+                if (requestTag.equals("preview")) {
+                    return;
+                }
+                Log.d(TAG, "captureStillPictureForLongshot onCaptureFailed ." + mNumFramesArrived.get());
             }
 
             @Override
@@ -4583,28 +4586,29 @@ public class CaptureModule implements CameraModule, PhotoController,
         mBurstLimit = "1".equals(mSettingsManager.getValue(SettingsManager.KEY_BURST_LIMIT));
         if (!mBurstLimit) {
             List<CaptureRequest> burstList = new ArrayList<>();
-            float burstShotFpsNums = 0.0f;
-            if(calculateMaxFps() > 0){
-                burstShotFpsNums = 30/calculateMaxFps() - 1;
+            float previewProportion = 0f;
+            if (calculateMaxFps() > 0f) {
+                previewProportion = 30f / calculateMaxFps() - 1f;
             }
-            Log.i(TAG, "burstShotFpsNums:" + burstShotFpsNums);
-
-            mPreviewRequestBuilder[id].setTag("preview");
-            burstList.add(mPreviewRequestBuilder[id].build());
-            float previewNum = 1.0f;
-            for (int i = 0; i <= PersistUtil.getLongshotShotLimit() - 1; i++) {
-                if ((previewNum - burstShotFpsNums) >= 0.0) {
+            Log.i(TAG, "burstShot, previewProportion:" + previewProportion);
+            float captureProportion = 1.0f;
+            int previewCount = 0;
+            int captureCount = 0;
+            for (int i = 0; i < 30; i++) {
+                if ((captureProportion - previewProportion) >= 0f) {
                     captureBuilder.setTag("capture");
                     burstList.add(captureBuilder.build());
-                    previewNum -= burstShotFpsNums;
+                    captureProportion -= previewProportion;
+                    captureCount++;
                 } else {
                     mPreviewRequestBuilder[id].setTag("preview");
                     burstList.add(mPreviewRequestBuilder[id].build());
-                    previewNum ++ ;
+                    captureProportion++;
+                    previewCount++;
                 }
             }
-
-            mCaptureSession[id].captureBurst(burstList, mLongshotCallBack, mCaptureCallbackHandler);
+            Log.d(TAG, "burstShot, previewCount " + previewCount + ", captureCount " + captureCount);
+            mCaptureSession[id].setRepeatingBurst(burstList, mLongshotCallBack, mCaptureCallbackHandler);
         } else {
             captureBuilder.setTag("capture-limit");
             mCaptureSession[id].capture(captureBuilder.build(),mLongshotCallBack,mCaptureCallbackHandler);
@@ -5172,10 +5176,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 }
                                 Log.d(TAG, "image available for cam: " + mCamId);
                                 Image image = reader.acquireNextImage();
-                                if ((!mLongshotActive) && image.getTimestamp() > mLastLongshotTimestamp && mNumFramesArrived.get() > mShotNum) {
-                                    image.close();
-                                    Log.d(TAG, "image duplicate mLastLongshotTimestamp ");
-                                    return;
+                                if ((mLongshotActive || mNumFramesArrived.get() > 0)) {
+                                    Log.d(TAG, "long shot image available num " + mNumImageArrived.incrementAndGet());
+                                    if (mNumImageArrived.get() > mShotNum) {
+                                        image.close();
+                                        Log.d(TAG, "image arrived over limit");
+                                        return;
+                                    }
                                 }
                                 if (isMpoOn()) {
                                     mMpoSaveHandler.obtainMessage(
@@ -7975,8 +7982,25 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (!pressed && mLongshotActive) {
             Log.d(TAG, "Longshot button up");
             mLongshotActive = false;
-            mPostProcessor.stopLongShot();
+            if (mPostProcessor.isZSLEnabled()) {
+                mPostProcessor.stopLongShot();
+            } else {
+                stopBurstShot();
+            }
             mUI.enableVideo(!mLongshotActive);
+        }
+    }
+
+    private void stopBurstShot() {
+        Log.d(TAG, "stopBurstShot");
+        try {
+            int id = getMainCameraId();
+            enableShutterAndVideoOnUiThread(id);
+            mCaptureSession[id].stopRepeating();
+            mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
+                    .build(), mCaptureCallback, mCameraHandler);
+        } catch (CameraAccessException | IllegalStateException e) {
+            Log.e(TAG, "stopBurstShot", e.fillInStackTrace());
         }
     }
 
@@ -11176,6 +11200,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.d(TAG, "Start Longshot");
             mLongshotActive = true;
             mNumFramesArrived.getAndSet(0);
+            mNumImageArrived.getAndSet(0);
             mUI.enableVideo(!mLongshotActive);
             checkSelfieFlashAndTakePicture();
         } else {
