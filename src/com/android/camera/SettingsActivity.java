@@ -1549,6 +1549,7 @@ public class SettingsActivity extends PreferenceActivity {
                 for(String id : SettingsManager.KEY_PHYSICAL_SIZE){
                     add(id);
                 }
+                add(SettingsManager.KEY_STREAM_USECASE);
             }
         };
 
@@ -1588,6 +1589,7 @@ public class SettingsActivity extends PreferenceActivity {
     private void initializePhysicalPreferences(){
         updatePreference(SettingsManager.KEY_SINGLE_PHYSICAL_CAMERA);
         updatePreference(SettingsManager.KEY_MULTI_CAMERA_MODE);
+        updatePreference(SettingsManager.KEY_STREAM_USECASE);
         updateMultiPreference(SettingsManager.KEY_PHYSICAL_CAMERA);
         updateMultiPreference(SettingsManager.KEY_PHYSICAL_CAMCORDER);
         updateMultiPreference(SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK);

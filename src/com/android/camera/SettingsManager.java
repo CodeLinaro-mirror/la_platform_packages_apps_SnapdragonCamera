@@ -154,6 +154,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_ONCAPTUREBUFFERLOST_HINT = "pref_camera2_oncapturebufferlost_key";
     public static final String KEY_SWITCH_CAMERA = "pref_camera2_switch_camera_key";
     public static final String KEY_MULTI_CAMERA_MODE = "pref_camera2_multi_camera_mode_key";
+    public static final String KEY_STREAM_USECASE = "pref_camera2_stream_usecase_key";
     public static final String KEY_PHYSICAL_CAMERA = "pref_camera2_physical_camera_key";
     public static final String KEY_PHYSICAL_CAMCORDER = "pref_camera2_physical_camcorder_key";
     public static final String KEY_PHYSICAL_JPEG_CALLBACK = "pref_camera2_physical_jpeg_key";
@@ -1172,7 +1173,20 @@ public class SettingsManager implements ListMenu.SettingsListener {
         String enable = getValue(SettingsManager.KEY_MULTI_CAMERA_MODE);
         return "1".equals(enable);
     }
-
+    public boolean isStreamUseCaseEnabled(){
+        String enable = getValue(SettingsManager.KEY_STREAM_USECASE);
+        return "1".equals(enable);
+    }
+    public boolean isAvailableUseCase(int cameraId,long useCaseId){
+        boolean isSupported = false;
+        long[]avilibleCase = mCharacteristics.get(cameraId).get(CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES);
+       for(int i = 0;i < avilibleCase.length ;i++){
+           Log.d(TAG,"isAvailableUseCase avilibleCase[i]="+avilibleCase[i]);
+           if (useCaseId == avilibleCase[i]) isSupported = true;
+       }
+        Log.d(TAG,"isAvailableUseCase isSupported="+isSupported);
+       return isSupported;
+    }
     public String getSinglePhysicalCamera(){
         String id = getValue(KEY_SINGLE_PHYSICAL_CAMERA);
         if (!"logical".equals(id) && id != null)
@@ -1935,6 +1949,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (!buildPhysicalCamera(cameraId, physicalCamera) ||
                     !PersistUtil.isMultiCameraEnabled()){
                 removePreference(mPreferenceGroup, KEY_MULTI_CAMERA_MODE);
+                removePreference(mPreferenceGroup, KEY_STREAM_USECASE);
                 removePreference(mPreferenceGroup, KEY_PHYSICAL_CAMERA);
                 removePreference(mPreferenceGroup, KEY_PHYSICAL_CAMCORDER);
                 removePreference(mPreferenceGroup, KEY_PHYSICAL_JPEG_CALLBACK);

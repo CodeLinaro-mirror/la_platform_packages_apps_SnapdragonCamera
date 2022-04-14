@@ -790,7 +790,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final CaptureRequest.Key<Float> blurChromaSuppressionV =
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionV", Float.class);
 
-
+    private static final long SCALER_AVAILABLE_STREAM_USE_CASES_VENDOR_START = 0x10000;
+    private static final long SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV = 0x10001;
     TotalCaptureResult mCaptureResult;
     float denoiseStrengthParam = 0.5f;
     float color_saturation = 0.0f;
@@ -3265,6 +3266,17 @@ public class CaptureModule implements CameraModule, PhotoController,
         return outputConfigurations;
     }
 
+    private void setStreamUseCase(int cameraId,long caseId, OutputConfiguration configuration) {
+        try {
+            Log.d(TAG, " setStreamUseCase cameraid="+cameraId+",caseId="+caseId);
+            if (mSettingsManager.isStreamUseCaseEnabled() && mSettingsManager.isAvailableUseCase(cameraId, caseId)) {
+                Log.d(TAG, " setStreamUseCase ");
+                configuration.setStreamUseCase(caseId);
+            }
+        } catch (IllegalArgumentException | NoSuchFieldError e) {
+            Log.e(TAG, "setStreamUseCase error e= "+e);
+        }
+    }
     private List<OutputConfiguration> getPhysicalOutputConfiguration(){
         if (!mSettingsManager.isMultiCameraEnabled() && !mSaveRaw)
             return null;
@@ -3272,12 +3284,14 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         Set<String> jpeg_ids = mSettingsManager.getPhysicalFeatureEnableId(
                 SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK);
+        Log.d(TAG,"getPhysicalOutputConfiguration jpeg_ids="+jpeg_ids);
         if (jpeg_ids != null){
             int i = 0;
             for (String id : jpeg_ids){
                 OutputConfiguration configuration = new OutputConfiguration(
                         mPhysicalJpegReader[i].getSurface());
                 configuration.setPhysicalCameraId(id);
+                setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 outputConfigurations.add(configuration);
                 Log.d(TAG,"add output format=jpeg physicalId="+id+" size="
                         +mPhysicalJpegReader[i].getWidth()+"x"+mPhysicalJpegReader[i].getHeight());
@@ -3295,6 +3309,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
                 }
+                setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 outputConfigurations.add(configuration);
                 Log.d(TAG,"add output format=yuv physicalId="+id+" size="
                         +mPhysicalYuvReader[i].getWidth()+"x"+mPhysicalYuvReader[i].getHeight());
@@ -3312,6 +3327,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
                 }
+                setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 outputConfigurations.add(configuration);
                 Log.d(TAG,"add output format=yuv 10bit physicalId="+id+" size="
                         +mPhysicalYuv10bitReader[i].getWidth()+"x"+mPhysicalYuv10bitReader[i].getHeight());
@@ -3329,6 +3345,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
                 }
+                setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 outputConfigurations.add(configuration);
                 i++;
             }
@@ -3339,6 +3356,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!isLogicalId(id)) {
                     configuration.setPhysicalCameraId(id);
                 }
+                setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 outputConfigurations.add(configuration);
 
                 OutputConfiguration configuration_jpeg = new OutputConfiguration(
