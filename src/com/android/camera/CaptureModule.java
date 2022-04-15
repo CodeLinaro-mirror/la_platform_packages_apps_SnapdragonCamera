@@ -777,8 +777,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurStrength", Float.class);
     private static final CaptureRequest.Key<Float> blurFocusDistance =
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurFocusDistance", Float.class);
-    private static final CaptureRequest.Key<Float> blurLumaSuppressio =
-            new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurLumaSuppressio", Float.class);
+    private static final CaptureRequest.Key<Float> blurLumaSuppression =
+            new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurLumaSuppression", Float.class);
     private static final CaptureRequest.Key<Float> blurChromaSuppressionU =
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionU", Float.class);
     private static final CaptureRequest.Key<Float> blurChromaSuppressionV =
@@ -12109,7 +12109,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }else if(key.equals(SettingsManager.KEY_AI_BLUR_DISTANCE)){
                         builder.set(CaptureModule.blurFocusDistance, value);
                     }else if(key.equals(SettingsManager.KEY_AI_BLUR_LUMA)){
-                        builder.set(CaptureModule.blurLumaSuppressio, value);
+                        builder.set(CaptureModule.blurLumaSuppression, value);
                     }else if(key.equals(SettingsManager.KEY_AI_BLUR_CHROMAU)){
                         builder.set(CaptureModule.blurChromaSuppressionU, value-0.5f);
                     }else if(key.equals(SettingsManager.KEY_AI_BLUR_CHROMAV)) {
