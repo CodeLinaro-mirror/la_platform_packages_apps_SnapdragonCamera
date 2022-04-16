@@ -1806,16 +1806,7 @@ public class SettingsActivity extends PreferenceActivity {
         } else {
             pref.setEnabled(false);
         }
-        ListPreference videoPref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_QUALITY);
-        ListPreference selectModePref = (ListPreference)findPreference(SettingsManager.KEY_SELECT_MODE);
         ListPreference eisPref = (ListPreference)findPreference(SettingsManager.KEY_EIS_VALUE);
-        if (videoPref != null && videoPref.getValue() != null &&
-                (videoPref.getValue().equals("3840x2160") || videoPref.getValue().equals("7680x4320"))) {
-            if (selectModePref != null && selectModePref.getValue() != null &&
-                    !selectModePref.getValue().equals("single_rear_cameraid")) {
-                pref.setEnabled(false);
-            }
-        }
         if(mSettingsManager.isAIBokehMode()) {
             if (eisPref != null && eisPref.getValue() != null && eisPref.getValue().equals("disable")) {
                 pref.setValue("off");

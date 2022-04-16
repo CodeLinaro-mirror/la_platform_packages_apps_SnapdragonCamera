@@ -3016,14 +3016,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (CameraSettings.VIDEO_QUALITY_TABLE.containsKey(videoSizes.get(i).toString())) {
                 Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(videoSizes.get(i).toString());
                 if (profile != null && CamcorderProfile.hasProfile(cameraId, profile)) {
-                    if (getValue(KEY_MANUAL_HDR) != null &&
-                            (getValue(KEY_MANUAL_HDR).equals("manual") || getValue(KEY_MANUAL_HDR).equals("auto")) &&
-                            (videoSizes.get(i).toString().equals("3840x2160") || videoSizes.get(i).toString().equals("7680x4320"))&&
-                            getValue(SettingsManager.KEY_SELECT_MODE) != null &&
-                            !getValue(SettingsManager.KEY_SELECT_MODE).equals(
-                                    "single_rear_cameraid")){
-                        continue;
-                    }
                     if (isEISV3Enabled && Math.min(videoSizes.get(i).getWidth(),videoSizes.get(i).getHeight()) < 720) {
                         //video size should't be larger than 720p when EIS V3 is enabled
                         continue;
