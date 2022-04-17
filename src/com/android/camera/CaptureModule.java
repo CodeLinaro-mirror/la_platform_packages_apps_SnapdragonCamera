@@ -784,7 +784,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     float tone = 0.0f;
     float detail_enhancement = 0.0f;
     private Object mAideLock = new Object();
-    float mAideAdrcGain = 100;
+    float mAideAdrcGain = 10;
     public static final CameraCharacteristics.Key<int[]> hdrMaxResolution =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.HDRMaxResolutionCap.HDRMaxResolution", int[].class);
 
@@ -1460,9 +1460,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if(isAIDE2Enabled()){
                 try {
-                    mAideAdrcGain = result.get(adrc_gain);
+                    mAideAdrcGain = result.get(aecFrame_adrc_gain);
                 } catch (IllegalArgumentException e) {
-                    if (DEBUG) Log.d(TAG, "no adrc_gain tag");
+                    if (DEBUG) Log.d(TAG, "no aecFrame_adrc_gain tag");
                 }
                 byte[] multiCameraIds = result.get(MultiCameraIds);
                 if(multiCameraIds != null) {
