@@ -4648,12 +4648,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             int orientation = CameraUtil.getJpegRotation(id,mOrientation);
             int quality = getQualityNumber(mSettingsManager.getValue(SettingsManager.KEY_JPEG_QUALITY));
             unlockFocus(id);
-            enableShutterButtonOnMainThread(id);
             AIDenoiserService aiDenoiserService = mActivity.getAIDenoiserService();
             String format = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_FORMAT);
             if(mAideAECLuxIndex < lux_index_threadhold){//low light only do HWMFNR and no need to crop
                 aiDenoiserService.wantImagesNum(mCaptureRequestNum);
+                Log.i(TAG,"save jpeg for mfnr aide start");
                 byte[] yuv = getYUVFromImage(mAideFullImage);
+                mAideFullImage.close();
+                mAideFullImage = null;
+                enableShutterButtonOnMainThread(id);
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
                 Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,mSupportedAide2Size.getWidth(), mSupportedAide2Size.getHeight(), mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
                 byte[] jpeg = aiDenoiserService.bitmapToJpeg(bitmap, orientation, mCaptureResult, quality);
@@ -4664,6 +4667,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mActivity.getContentResolver(), "jpeg");
                 mActivity.updateThumbnail(jpeg);
                 if (TRACE_DEBUG) Trace.endSection();
+                Log.i(TAG,"save jpeg for mfnr aide done");
                 return;
             }
             Log.i(TAG,"wait " + mCaptureRequestNum + " YUVs");
@@ -4701,22 +4705,25 @@ public class CaptureModule implements CameraModule, PhotoController,
             mAideDownImage = null;
             namedEntity = null;
             String mode = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_MODE);
+            enableShutterButtonOnMainThread(id);
             //process aidev2
             Log.d(TAG, " mAideV2CaptureCallback, start to call aide lib");
             synchronized (mAideLock) {
                 if (TRACE_DEBUG) Trace.beginSection("aide2 process");
-                aiDenoiserService.startAideV2Process(aideV2Args.getsrcInputY(), aideV2Args.getsrcInputUV(), aideV2Args.getsrcDsInputY(),aideV2Args.getsrcDsInputUV(),
+                int result = aiDenoiserService.startAideV2Process(aideV2Args.getsrcInputY(), aideV2Args.getsrcInputUV(), aideV2Args.getsrcDsInputY(),aideV2Args.getsrcDsInputUV(),
                         aideV2Args.getInputFrameDim(), aideV2Args.getdownFrameDim(), 100000, 100, aideV2Args.getdenoiseStrengthParam(), aideV2Args.getadrcGain(), aideV2Args.getrGain(), aideV2Args.getbGain(), aideV2Args.getgGain(), Integer.parseInt(format), Integer.parseInt(mode));
                 if (TRACE_DEBUG) Trace.endSection();
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
-                byte[] srcImage = aiDenoiserService.generateAideV2Image(mActivity, aideV2Args.getorientation(), aideV2Args.getpictureSize(), aideV2Args.getcropRegion(), aideV2Args.getcaptureResult(), aideV2Args.getquality(), Integer.parseInt(format));
-                mActivity.getMediaSaveService().addImage(
-                        srcImage, aideV2Args.gettitle(), 0L, null,
-                        aideV2Args.getpictureSize().getWidth(),
-                        aideV2Args.getpictureSize().getHeight(),
-                        aideV2Args.getorientation(), null, getMediaSavedListener(),
-                        mActivity.getContentResolver(), "jpeg");
-                mActivity.updateThumbnail(srcImage);
+                if(result == 0) {
+                    byte[] srcImage = aiDenoiserService.generateAideV2Image(mActivity, aideV2Args.getorientation(), aideV2Args.getpictureSize(), aideV2Args.getcropRegion(), aideV2Args.getcaptureResult(), aideV2Args.getquality(), Integer.parseInt(format));
+                    mActivity.getMediaSaveService().addImage(
+                            srcImage, aideV2Args.gettitle(), 0L, null,
+                            aideV2Args.getpictureSize().getWidth(),
+                            aideV2Args.getpictureSize().getHeight(),
+                            aideV2Args.getorientation(), null, getMediaSavedListener(),
+                            mActivity.getContentResolver(), "jpeg");
+                    mActivity.updateThumbnail(srcImage);
+                }
                 if (TRACE_DEBUG) Trace.endSection();
             }
         }
@@ -4741,6 +4748,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         //output yuv and final picture have the different resolution ratio
         Rect cropRegion = new Rect();
+        if(originalCropRegion.right > mAideFullImage.getWidth() ||
+                originalCropRegion.bottom > mAideFullImage.getHeight()){
+            originalCropRegion.right = mAideFullImage.getWidth();
+            originalCropRegion.bottom = mAideFullImage.getHeight();
+        }
         int width = originalCropRegion.width();
         int height = originalCropRegion.height();
         Log.d(TAG, "cropRegionForAideV2Zoom  width: " +  width + ",height:" + height);
@@ -4748,6 +4760,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             width = mAideFullImage.getWidth();
             height = mAideFullImage.getHeight();
         }
+
         float aideRatio = (float) mAideFullImage.getWidth() / mAideFullImage.getHeight();
         float pictureRatio = (float) mPictureSize.getWidth() / mPictureSize.getHeight();
         if(aideRatio > pictureRatio){
