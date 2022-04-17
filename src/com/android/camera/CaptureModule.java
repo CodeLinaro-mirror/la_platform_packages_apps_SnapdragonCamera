@@ -4649,14 +4649,17 @@ public class CaptureModule implements CameraModule, PhotoController,
             int quality = getQualityNumber(mSettingsManager.getValue(SettingsManager.KEY_JPEG_QUALITY));
             unlockFocus(id);
             enableShutterButtonOnMainThread(id);
+            AIDenoiserService aiDenoiserService = mActivity.getAIDenoiserService();
+            String format = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_FORMAT);
             if(mAideAECLuxIndex < lux_index_threadhold){//low light only do HWMFNR and no need to crop
-                mActivity.getAIDenoiserService().wantImagesNum(mCaptureRequestNum);
+                aiDenoiserService.wantImagesNum(mCaptureRequestNum);
                 byte[] yuv = getYUVFromImage(mAideFullImage);
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
-                byte[] jpeg = mActivity.getAIDenoiserService().nv21ToJpeg(yuv, orientation, mCaptureResult, mSupportedAide2Size, quality, mAideFullImage.getPlanes()[0].getRowStride());
+                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,mSupportedAide2Size.getWidth(), mSupportedAide2Size.getHeight(), mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
+                byte[] jpeg = aiDenoiserService.bitmapToJpeg(bitmap, orientation, mCaptureResult, quality);
                 mActivity.getMediaSaveService().addImage(
                         jpeg, title, 0L, null,
-                        mSupportedAide2Size.getWidth(),mSupportedAide2Size.getHeight(),
+                        mPictureSize.getWidth(),mPictureSize.getHeight(),
                         orientation, null, getMediaSavedListener(),
                         mActivity.getContentResolver(), "jpeg");
                 mActivity.updateThumbnail(jpeg);
@@ -4664,7 +4667,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 return;
             }
             Log.i(TAG,"wait " + mCaptureRequestNum + " YUVs");
-            mActivity.getAIDenoiserService().wantImagesNum(mCaptureRequestNum);
+            aiDenoiserService.wantImagesNum(mCaptureRequestNum);
             Rect cropRegion = cropRegionForAideV2Zoom();
             //getimagedata
             int[] inputFrameDim = {mAideFullImage.getWidth(), mAideFullImage.getHeight(), mAideFullImage.getPlanes()[0].getRowStride(), mAideFullImage.getPlanes()[2].getRowStride()};
@@ -4697,17 +4700,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             mAideDownImage.close();
             mAideDownImage = null;
             namedEntity = null;
-            String format = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_FORMAT);
             String mode = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_MODE);
             //process aidev2
             Log.d(TAG, " mAideV2CaptureCallback, start to call aide lib");
             synchronized (mAideLock) {
                 if (TRACE_DEBUG) Trace.beginSection("aide2 process");
-                mActivity.getAIDenoiserService().startAideV2Process(aideV2Args.getsrcInputY(), aideV2Args.getsrcInputUV(), aideV2Args.getsrcDsInputY(),aideV2Args.getsrcDsInputUV(),
+                aiDenoiserService.startAideV2Process(aideV2Args.getsrcInputY(), aideV2Args.getsrcInputUV(), aideV2Args.getsrcDsInputY(),aideV2Args.getsrcDsInputUV(),
                         aideV2Args.getInputFrameDim(), aideV2Args.getdownFrameDim(), 100000, 100, aideV2Args.getdenoiseStrengthParam(), aideV2Args.getadrcGain(), aideV2Args.getrGain(), aideV2Args.getbGain(), aideV2Args.getgGain(), Integer.parseInt(format), Integer.parseInt(mode));
                 if (TRACE_DEBUG) Trace.endSection();
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
-                byte[] srcImage = mActivity.getAIDenoiserService().generateAideV2Image(mActivity, aideV2Args.getorientation(), aideV2Args.getpictureSize(), aideV2Args.getcropRegion(), aideV2Args.getcaptureResult(), aideV2Args.getquality(), Integer.parseInt(format));
+                byte[] srcImage = aiDenoiserService.generateAideV2Image(mActivity, aideV2Args.getorientation(), aideV2Args.getpictureSize(), aideV2Args.getcropRegion(), aideV2Args.getcaptureResult(), aideV2Args.getquality(), Integer.parseInt(format));
                 mActivity.getMediaSaveService().addImage(
                         srcImage, aideV2Args.gettitle(), 0L, null,
                         aideV2Args.getpictureSize().getWidth(),
@@ -4754,8 +4756,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             height = width * mPictureSize.getHeight() /mPictureSize.getWidth();
         }
         Log.d(TAG, "cropRegionForAideV2Zoom current ratio width: " +  width + ",height:" + height);
-        int xCenter = mAideFullImage.getWidth() / 2;
-        int yCenter = mAideFullImage.getHeight() / 2;
+        int xCenter = originalCropRegion.width() / 2 + originalCropRegion.left;
+        int yCenter = originalCropRegion.height() / 2 + originalCropRegion.top;
         int xDelta = (int) (width / 2);
         int yDelta = (int) (height / 2);
         cropRegion.set(xCenter - xDelta, yCenter - yDelta, xCenter + xDelta, yCenter + yDelta);
