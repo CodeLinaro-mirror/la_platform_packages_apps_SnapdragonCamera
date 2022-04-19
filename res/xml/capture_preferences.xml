@@ -422,8 +422,6 @@
 
     <ListPreference
         camera:defaultValue="@string/pref_camera2_quad_bayer_sensor_default"
-        camera:entries="@array/pref_camera2_quad_bayer_sensor_entries"
-        camera:entryValues="@array/pref_camera2_quad_bayer_sensor_entryvalues"
         camera:key="pref_camera2_quad_bayer_sensor_key"
         camera:title="@string/pref_camera2_quad_bayer_sensor_title" />
 

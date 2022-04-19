@@ -550,9 +550,7 @@
             android:defaultValue="@string/pref_camera2_quad_bayer_sensor_default"
             android:title="@string/pref_camera2_quad_bayer_sensor_title"
             android:layout="@layout/preference"
-            android:summary="%s"
-            android:entries="@array/pref_camera2_quad_bayer_sensor_entries"
-            android:entryValues="@array/pref_camera2_quad_bayer_sensor_entryvalues" />
+            android:summary="%s"/>
 
         <ListPreference
             android:key="pref_camera2_remosaic_reprocessing_key"

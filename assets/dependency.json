@@ -281,12 +281,6 @@
     "single_rear_cameraid" : { "pref_camera2_ai_camera_blurmode_key": "0"},
     "default" : { "pref_camera2_ai_camera_blurmode_key": "0"}
   },
-  "pref_camera2_quad_bayer_sensor_key":
-  {
-    "1":{"pref_camera2_picture_format_key":"0",
-         "pref_camera2_longshot_key":"off"},
-    "0": {}
-  },
   "pref_camera2_multiresimagereader_key":
   {
     "1":{"pref_camera2_picture_format_key":"0"},

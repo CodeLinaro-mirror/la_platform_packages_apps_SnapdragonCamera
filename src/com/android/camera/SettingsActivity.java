@@ -291,6 +291,8 @@ public class SettingsActivity extends PreferenceActivity {
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                     updatePreference(SettingsManager.KEY_SCENE_MODE);
                     updateZslPreference();
+                    updateLongShotPreference();
+                    updatePictureFormatPreference();
                 }
 
                 if (pref.getKey().equals(SettingsManager.KEY_TONE_MAPPING)) {
@@ -388,7 +390,7 @@ public class SettingsActivity extends PreferenceActivity {
 
         if (ZSLPref != null) {
             if (!isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) &&
-                    !isPrefEnabled(SettingsManager.KEY_QUAD_BAYER_SENSOR) &&
+                    !mSettingsManager.getQuadBayerSensorPrefEnabled() &&
                     !isInSATOrRTBMode) {
                 key_zsl.add("APP-ZSL");
                 value_zsl.add("app-zsl");
@@ -1630,6 +1632,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_VIDEO_ENCODER);
         updatePreference(SettingsManager.KEY_ZOOM);
         updatePreference(SettingsManager.KEY_SWITCH_CAMERA);
+        updatePreference(SettingsManager.KEY_QUAD_BAYER_SENSOR);
         updatePreference(SettingsManager.KEY_TONE_MAPPING);
         updatePreference(SettingsManager.KEY_LIVE_PREVIEW);
         updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
@@ -2220,7 +2223,8 @@ public class SettingsActivity extends PreferenceActivity {
             if(isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)){
                 longShot.setEnabled(true);
             } else {
-                if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
+                if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) ||
+                        mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                     mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
                     longShot.setEnabled(false);
                 } else {
@@ -2235,6 +2239,12 @@ public class SettingsActivity extends PreferenceActivity {
             mSettingsManager.filterPicturFormat();
             updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
        }
+        if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+            pictureFormatPref.setValue("0");
+            pictureFormatPref.setEnabled(false);
+        } else {
+            pictureFormatPref.setEnabled(true);
+        }
     }
 
     private void updatePreference(String key) {

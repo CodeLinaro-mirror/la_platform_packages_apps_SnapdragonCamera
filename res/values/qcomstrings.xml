@@ -1356,7 +1356,7 @@
 
     <!-- Quad Bayer Sensor Title -->
     <string name="pref_camera2_quad_bayer_sensor_title" translatable="true">Quad Bayer Sensor</string>
-    <string name="pref_camera2_quad_bayer_sensor_default" translatable="false">0</string>
+    <string name="pref_camera2_quad_bayer_sensor_default" translatable="false">-1</string>
     <!-- Quad Bayer Sensor choices -->
     <string name="pref_camera_quad_bayer_sensor_disable">disable</string>
     <string name="pref_camera_quad_bayer_sensor_enable">enable</string>

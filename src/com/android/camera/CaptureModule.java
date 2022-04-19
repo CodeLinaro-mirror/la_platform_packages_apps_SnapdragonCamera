@@ -855,12 +855,10 @@ public class CaptureModule implements CameraModule, PhotoController,
     private String[] mSelectableModes = {"Video", "HFR", "Photo", "Bokeh", "SAT", "Pro"};
     private ArrayList<SceneModule> mSceneCameraIds = new ArrayList<>();
     public static boolean MCXMODE = false;
-    public static boolean QUADBYAERSENSOR = false;
     private boolean switchedCameraId = false;
 
     private int mLogicalId = -1;
     private int mSingleRearId = -1;
-    private int mQuadBayerId = -1;
     private SceneModule mCurrentSceneMode;
     private int mNextModeIndex = 1;
     private int mCurrentModeIndex = 1;
@@ -3568,8 +3566,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void reinit() {
-        if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
-            CURRENT_ID = mQuadBayerId;
+        if (mSettingsManager.getQuadBayerSensorCameraId() != -1) {
+            CURRENT_ID = mSettingsManager.getQuadBayerSensorCameraId();
         } else {
             CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
             CURRENT_MODE = mCurrentSceneMode.mode;
@@ -3686,11 +3684,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                         MCXMODE = true;
                         Log.d(TAG, "set MCXMode true since no vendorTag logical_camera_type for " + cameraId);
                     }
-                }
-                if (capability == CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR) {
-                    QUADBYAERSENSOR = true;
-                    mQuadBayerId = Integer.parseInt(cameraId);
-                    Log.d(TAG, "Found ULTRA_HIGH_RESOLUTION_SENSOR is " + cameraId);
                 }
             }
             if(foundDepth) {
@@ -7644,8 +7637,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public int getMainCameraId() {
-        if (mQuadBayerId != -1 && mSettingsManager.getQuadBayerSensorPrefEnabled()) {
-            return mQuadBayerId;
+        if (mSettingsManager.getQuadBayerSensorCameraId() != -1) {
+            return mSettingsManager.getQuadBayerSensorCameraId();
         }
 
         if (CaptureModule.FRONT_ID != mCurrentSceneMode.getCurrentId()) {

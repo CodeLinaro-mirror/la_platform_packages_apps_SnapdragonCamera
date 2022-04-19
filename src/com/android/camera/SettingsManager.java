@@ -620,6 +620,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
             for (MandatoryStreamCombination combination : combinations) {
                 List<MandatoryStreamInformation> streamInfoList = combination.getStreamsInformation();
                 for (MandatoryStreamInformation streamInfo : streamInfoList) {
+                    if(streamInfo.getFormat() != ImageFormat.JPEG && streamInfo.getFormat() != ImageFormat.PRIVATE){
+                        continue;
+                    }
                     List<Size> inputSizes = streamInfo.getAvailableSizes();
                     Size[] availableSizes = new Size[inputSizes.size()];
                     availableSizes = inputSizes.toArray(availableSizes);
@@ -1620,6 +1623,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             mFilteredKeys.add(forceAUX.getKey());
         }
         buildCameraId();
+        buildQuadBayerOptions();
 
         if (savePath != null) {
             if (filterUnsupportedOptions(savePath, getSupportedSavePaths(cameraId))) {
@@ -1835,7 +1839,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
 
         if (quad_bayer_sensor != null) {
-            if (!CaptureModule.QUADBYAERSENSOR || !PersistUtil.isQuadBayerSensorEnabled() ||
+            if (!PersistUtil.isQuadBayerSensorEnabled() ||
                     isFacingFront(mCameraId)) {
                 mFilteredKeys.add(quad_bayer_sensor.getKey());
             }
@@ -2240,6 +2244,39 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference switchPref = mPreferenceGroup.findPreference(KEY_SWITCH_CAMERA);
         switchPref.setEntries(fullEntries);
         switchPref.setEntryValues(fullEntryValues);
+    }
+
+    private void buildQuadBayerOptions() {
+        try {
+            int numOfCameras = mCharacteristics.size();
+            CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
+            List<String> ids = new ArrayList<String>();
+            String[] cameraIdList = manager.getCameraIdList();
+            for (int i = 0; i < numOfCameras; i++) {
+                int[] capabilities = mCharacteristics.get(i).get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+                boolean foundQuadBayer = false;
+                for (int capability : capabilities) {
+                    if (capability == CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR) {
+                        Log.d(TAG, "Found QuadBayerSensor camera with id " + cameraIdList[i]);
+                        ids.add(cameraIdList[i]);
+                    }
+                }
+            }
+            int size = ids.size();
+            CharSequence[] fullEntryValues = new CharSequence[size + 1];
+            CharSequence[] fullEntries = new CharSequence[size + 1];
+            for(int i = 0; i < size; i++){
+               fullEntries[i] = "camera " + ids.get(i);
+               fullEntryValues[i] = "" + ids.get(i);
+            }
+            fullEntries[size] = "disable";
+            fullEntryValues[size] = "" + -1;
+            ListPreference quadBayerPref = mPreferenceGroup.findPreference(KEY_QUAD_BAYER_SENSOR);
+            quadBayerPref.setEntries(fullEntries);
+            quadBayerPref.setEntryValues(fullEntryValues);
+        }catch (CameraAccessException e){
+
+        }
     }
 
     private void filterVideoEncoderOptions() {
@@ -3541,10 +3578,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean getQuadBayerSensorPrefEnabled() {
         ListPreference quadBayerPref = mPreferenceGroup.findPreference(KEY_QUAD_BAYER_SENSOR);
         String value = quadBayerPref.getValue();
-        if(value != null && value.equals("1")) {
+        if(value != null && !value.equals("-1")) {
             return true;
         }
         return false;
+    }
+
+    public int getQuadBayerSensorCameraId() {
+        ListPreference quadBayerPref = mPreferenceGroup.findPreference(KEY_QUAD_BAYER_SENSOR);
+        String value = quadBayerPref.getValue();
+        if(value != null && !value.equals("-1")) {
+            return Integer.parseInt(value);
+        }
+        return -1;
     }
 
     public boolean getRemosaicReprocPrefEnabled() {
