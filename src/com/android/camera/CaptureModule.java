@@ -759,6 +759,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.MultiFrameNodeReduction.MFNumOfFrames", Integer.class);
     public static final CaptureResult.Key<Integer> isTorchHdr =
             new CaptureResult.Key<>("com.qti.stats_control.is_torch_hdr_snapshot", Integer.class);
+    private static final CaptureRequest.Key<Integer> snapshotHDR =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.SnapshotHDRMode", Integer.class);
+
     //vendor tag for AIDE2
     public static final CameraCharacteristics.Key<Byte> isAIDE2Supported =
             new CameraCharacteristics.Key<>("org.quic.camera.AIDE2Supported.isAIDE2Supported", byte.class);
@@ -6422,9 +6425,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             builder.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE, CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS);
         }
         applyManualHDR(builder);
-        //if(MCXMODE){
-        //    applyMcxMasterCb(builder);
-        //}
+        applySnapshotHDR(builder);
         Set<String> raw_ids = mSettingsManager.getPhysicalFeatureEnableId(SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
         if(raw_ids != null && raw_ids.size() > 0){
             applyMcxRawCbInfo(builder);
@@ -6448,7 +6449,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyNumHDRExposure(builder);
         applyStatsVisualizerOptionMask(builder);
         applyStatsNNControl(builder);
-        applyeMFNRAIDEMode(builder);
+        applyMFNRAIDEMode(builder);
         applyAICameraParam(builder);
         applyAICameraBlurModeParam(builder);
     }
@@ -6478,7 +6479,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
-    private void applyeMFNRAIDEMode(CaptureRequest.Builder builder){
+    private void applyMFNRAIDEMode(CaptureRequest.Builder builder){
         if (isAIDE2Enabled()) {
             VendorTagUtil.enableMFNRAIDEMode(builder, (byte)0x01);
         }
@@ -6495,6 +6496,22 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     }
+    private void applySnapshotHDR(CaptureRequest.Builder builder) {
+       String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
+       String value = mSettingsManager.getValue(SettingsManager.KEY_SNAPSHOT_HDRMODE);
+       if (value != null) {
+           int hdrMode = 0;
+           if (value.equals("mfhdr") && scene.equals("18")) {
+               hdrMode = 1;
+           }
+           try {
+               builder.set(snapshotHDR, hdrMode);
+           } catch (IllegalArgumentException e) {
+               Log.d(TAG, "vendor tag(" + snapshotHDR + ") is not available.");
+           }
+       }
+    }
+
     private void applyCommonSettings(CaptureRequest.Builder builder, int id) {
         builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
         builder.set(CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
@@ -11895,18 +11912,20 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else if(!hdrmode.equals("off")){
                 String[] modeLists = hdrmode.split(" ");
                 int[] modes = new int [3];
+                int value = 0;
                 for (int i = 0; i < modeLists.length; i ++) {
                     modes[i] = SettingsManager.KEY_HDR_MODES_ORDER.get(modeLists[i]);
                     Log.d(TAG,"applyManualHDR-modeLists[i]="+modeLists[i]+",modes[i]="+modes[i]);
                     if(modeLists[i].equals("MFHDR")) {
-                        VendorTagUtil.setMFHDRMode(request, 1);
+                        value |= 2;
                     } else if (modeLists[i].equals("SHDR")) {
-                        VendorTagUtil.setSHDRMode(request, 1);
+                        value |= 1;
                     } else if (modeLists[i].equals("QHDR")) {
-                        VendorTagUtil.setQHDRMode(request, 1);
+                        value |= 4;
                     }
                 }
-                VendorTagUtil.setHDRModes(request, modes);
+                VendorTagUtil.setHDRModes(request, value);
+                VendorTagUtil.setHDRModesPreference(request, modes);
             }
         }
     }
@@ -12099,6 +12118,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             case SettingsManager.KEY_SCENE_MODE:
                 updatePreview = true;
                 applySceneMode(mPreviewRequestBuilder[cameraId]);
+                applySnapshotHDR(mPreviewRequestBuilder[cameraId]);
                 break;
             case SettingsManager.KEY_EXPOSURE:
                 updatePreview = true;

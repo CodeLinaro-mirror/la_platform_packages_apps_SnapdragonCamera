@@ -297,12 +297,24 @@ public class SettingsActivity extends PreferenceActivity {
                     recreate();
                 }
 
-                if(pref.getKey().equals(SettingsManager.KEY_VIDEO_QUALITY) ||
-                   pref.getKey().equals(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE) ||
-                   pref.getKey().equals(SettingsManager.KEY_SELECT_MODE)){
+                if (pref.getKey().equals(SettingsManager.KEY_VIDEO_QUALITY) ||
+                        pref.getKey().equals(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE) ||
+                        pref.getKey().equals(SettingsManager.KEY_SELECT_MODE)){
                     updateEISPreference();
                     updateVideoVariableFpsPreference();
                     updateVideoHfrFpsPreference();
+                }
+
+                if (pref.getKey().equals(SettingsManager.KEY_SCENE_MODE)) {
+                   String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
+                   if (!scene.equals("18")) {
+                       ListPreference lp = (ListPreference)findPreference(
+                               SettingsManager.KEY_SNAPSHOT_HDRMODE);
+                       if (lp != null) {
+                           lp.setValue("default");
+                           lp.setEnabled(false);
+                       }
+                   }
                 }
 
                 if (pref.getKey().equals(SettingsManager.KEY_MANUAL_HDR) ||
@@ -1260,6 +1272,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_FD_BLINK);
                 add(SettingsManager.KEY_FACIAL_CONTOUR);
                 add(SettingsManager.KEY_ZSL);
+                add(SettingsManager.KEY_SNAPSHOT_HDRMODE);
                 add(SettingsManager.KEY_TONE_MAPPING);
                 add(SettingsManager.KEY_ONCAPTUREBUFFERLOST_HINT);
                 add(SettingsManager.KEY_BURST_LIMIT);
@@ -1661,6 +1674,13 @@ public class SettingsActivity extends PreferenceActivity {
             if (mode == SettingsManager.SCENE_MODE_DEEPZOOM_INT) {
                 Preference p = findPreference(SettingsManager.KEY_PICTURE_SIZE);
                 p.setEnabled(false);
+            } else if (mode != 18) {
+                ListPreference pref = (ListPreference)findPreference(
+                        SettingsManager.KEY_SNAPSHOT_HDRMODE);
+                if (pref != null) {
+                    pref.setEnabled(false);
+                    pref.setValue("default");
+                }
             }
         }
         // when get RAW10 size is null, disable the KEY_SAVERAW

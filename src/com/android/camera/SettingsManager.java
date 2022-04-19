@@ -306,6 +306,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MULTIRESIMAGEREADER = "pref_camera2_multiresimagereader_key";
     public static final String KEY_MULTIRESREPROCESS_INPUT = "pref_camera2_multiresreprocess_input_key";
     public static final String KEY_MULTIRESREPROCESS_OUTPUT = "pref_camera2_multiresreprocess_output_key";
+    public static final String KEY_SNAPSHOT_HDRMODE = "pref_camera2_snapshot_hdrmode";
 
     public static final String KEY_RAW_REPROCESS_TYPE = "pref_camera2_raw_reprocess_key";
     public static final String KEY_PHYSICAL_RAW_REPROCESS = "pref_camera2_physical_raw_reprocess_key";

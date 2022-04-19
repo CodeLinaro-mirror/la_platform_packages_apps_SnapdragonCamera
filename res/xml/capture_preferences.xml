@@ -379,6 +379,13 @@
         camera:entryValues="@array/pref_camera2_raw_format_entryvalues" />
 
     <ListPreference
+        camera:key="pref_camera2_snapshot_hdrmode"
+        camera:defaultValue="@string/pref_camera2_snapshot_hdrmode_default"
+        camera:title="@string/pref_camera2_snapshot_hdrmode_title"
+        camera:entries="@array/pref_camera2_snapshot_hdrmode_entries"
+        camera:entryValues="@array/pref_camera2_snapshot_hdrmode_entryvalues" />
+
+    <ListPreference
         camera:key="pref_camera2_zsl_key"
         camera:defaultValue="@string/pref_camera2_zsl_default"
         camera:title="@string/pref_camera2_zsl_title"

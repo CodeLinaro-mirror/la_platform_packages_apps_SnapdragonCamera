@@ -364,6 +364,15 @@
             android:summary="%s"/>
 
         <ListPreference
+            android:key="pref_camera2_snapshot_hdrmode"
+            android:defaultValue="@string/pref_camera2_snapshot_hdrmode_default"
+            android:entries="@array/pref_camera2_snapshot_hdrmode_entries"
+            android:entryValues="@array/pref_camera2_snapshot_hdrmode_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_snapshot_hdrmode_title" />
+
+        <ListPreference
             android:defaultValue="@string/pref_camera2_zsl_default"
             android:entries="@array/pref_camera2_zsl_entries"
             android:entryValues="@array/pref_camera2_zsl_entryvalues"

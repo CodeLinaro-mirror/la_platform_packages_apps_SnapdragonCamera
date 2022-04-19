@@ -1212,6 +1212,15 @@ for time lapse recording -->
         <item>@string/pref_camera2_fd_gender_entry_enable</item>
     </string-array>
 
+    <string-array name="pref_camera2_snapshot_hdrmode_entries" translatable="false">
+        <item>@string/pref_camera2_snapshot_hdrmode_entry_default</item>
+        <item>@string/pref_camera2_snapshot_hdrmode_entry_mfhdr</item>
+    </string-array>
+
+    <string-array name="pref_camera2_snapshot_hdrmode_entryvalues" translatable="false">
+        <item>@string/pref_camera2_snapshot_hdrmode_entry_value_default</item>
+        <item>@string/pref_camera2_snapshot_hdrmode_entry_value_mfhdr</item>
+    </string-array>
 
     <string-array name="pref_camera2_zomm_switch_entries" translatable="false">
         <item>1x</item>
