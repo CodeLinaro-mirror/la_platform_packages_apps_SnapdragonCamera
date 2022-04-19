@@ -17,14 +17,21 @@
      limitations under the License.
 -->
 <com.android.camera.ui.OneUICameraControls xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/camera_controls"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:focusable="true"
-    android:focusableInTouchMode="true">
+    android:focusableInTouchMode="true"
+    tools:ignore="MissingClass">
 
     <com.android.camera.ui.ProMode
         android:id="@+id/promode_slider"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content" />
+
+    <com.android.camera.ui.AIBlurConfigSlide
+        android:id="@+id/aiblur_slide"
         android:layout_height="wrap_content"
         android:layout_width="wrap_content" />
 
@@ -58,7 +65,10 @@
         android:focusable="true"
         android:scaleType="fitCenter"
         android:src="@drawable/photo_capture" />
-
+    <com.android.camera.ui.ShutterButtonAnim
+        android:id="@+id/shutterbutton_anim"
+        android:layout_width="@dimen/one_ui_bottom_large"
+        android:layout_height="@dimen/one_ui_bottom_large" />
     <com.android.camera.ui.RotateImageView
         android:id="@+id/video_button"
         android:layout_width="@dimen/one_ui_bottom_large"
@@ -131,6 +141,11 @@
         android:src="@drawable/more_options" />
 
     <com.android.camera.ui.RotateImageView
+        android:id="@+id/scene_mode_hdr"
+        style="@style/OneUIMenuButton"
+        android:src="@drawable/ic_hdr_off" />
+
+    <com.android.camera.ui.RotateImageView
         android:id="@+id/filter_mode_switcher"
         style="@style/OneUIMenuButton"
         android:src="@drawable/filters" />
@@ -168,6 +183,7 @@
     </LinearLayout>
 
     <include layout="@layout/pro_mode_layout" />
+    <include layout="@layout/ai_blur_layout" />
 
     <SeekBar
         android:layout_width="320dp"
@@ -197,6 +213,10 @@
             android:textSize="14dip"
             android:layout_gravity="center_horizontal"
             android:layout_above="@+id/zoom_seekbar"
+            android:alpha="0.7"
+            android:gravity="center"
+            android:clickable="true"
+            android:background="#D3D3D3"
             android:textColor="@android:color/white">
         </TextView>
 
@@ -213,7 +233,18 @@
             android:thumb="@drawable/ic_beautify_oval"
             android:id="@id/zoom_seekbar"/>
     </LinearLayout>
-
+        <SeekBar
+            android:layout_width="140dp"
+            android:layout_height="50dp"
+            android:maxHeight="3dip"
+            android:minHeight="1dip"
+            android:visibility="gone"
+            android:paddingTop="1dp"
+            android:progressDrawable="@drawable/beautify_progressbar_style"
+            android:thumb="@drawable/evbar_thumb"
+            android:thumbOffset="0dp"
+            android:id="@+id/ev_seekbar">
+        </SeekBar>
     <SeekBar
         android:layout_width="320dp"
         android:layout_height="30dp"
@@ -225,7 +256,34 @@
         android:progressDrawable="@drawable/beautify_progressbar_style"
         android:thumb="@drawable/ic_beautify_oval"
         android:id="@+id/aicamera_seekbar"/>
-
+    <com.android.camera.ui.VerticalSeekBar
+        android:id="@+id/ev_verticalbar"
+        android:layout_width="50dp"
+        android:layout_height="140dp"
+        android:maxHeight="3dip"
+        android:minHeight="1dip"
+        android:layout_gravity="center_vertical|right"
+        android:layout_marginRight="2dp"
+        android:thumbOffset="0dp"
+        android:progressDrawable="@drawable/beautify_progressbar_style"
+        android:thumb="@drawable/evbar_thumb"
+        android:max = "100"
+        android:visibility="gone"
+        tools:ignore="MissingClass" >
+    </com.android.camera.ui.VerticalSeekBar>
+    <TextView
+        android:id="@+id/ev_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|right"
+        android:layout_marginRight="35dp"
+        android:alpha="0.7"
+        android:clickable="true"
+        android:gravity="center"
+        android:text="0"
+        android:textColor="@android:color/white"
+        android:visibility="gone"
+        android:textSize="12sp" />
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

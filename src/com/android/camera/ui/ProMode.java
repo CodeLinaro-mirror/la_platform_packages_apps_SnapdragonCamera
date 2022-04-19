@@ -43,11 +43,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
+import com.android.camera.util.PersistUtil;
 import com.android.camera.SettingsManager;
-
+import java.util.List;
 import org.codeaurora.snapcam.R;
-
+import java.math.BigDecimal;
 import java.util.ArrayList;
 
 public class ProMode extends View {
@@ -56,11 +56,13 @@ public class ProMode extends View {
     public static final int MANUAL_MODE = 1;
     public static final int WHITE_BALANCE_MODE = 2;
     public static final int ISO_MODE = 3;
+    public static final int EXPOSURE_TIME_MODE = 4;
     private static final int DRAG_Y_THRESHOLD = 100;
     private static final int DRAG_X_THRESHOLD = 30;
     private static final int BLUE = 0xff4693fb;
     private static final int SELECTED_DOT_SIZE = 20;
     private static final int DOT_SIZE = 10;
+    private String TAG = "Promode";
     private static final int[] wbIcons = {R.drawable.auto, R.drawable.incandecent,
             R.drawable.fluorescent, R.drawable.sunlight, R.drawable.cloudy};
     private static final int[] wbIconsBlue = {R.drawable.auto_blue, R.drawable.incandecent_blue,
@@ -70,6 +72,8 @@ public class ProMode extends View {
     private int mCurveLeft;
     private int mCurveRight;
     private float mSlider = -1;
+    private float mFocusSlider = -1;
+    private float mExpTmSlider = -1;
     private Paint mPaint = new Paint();
     private int mNums;
     private int mIndex;
@@ -89,6 +93,19 @@ public class ProMode extends View {
     private Path mCurvePath = new Path();
     private int mCurveHeight;
     private int mOrientation;
+    private long []mExposureTime;
+    private double convertValue = 1000000000;
+    private long maxExposuretime = 100000000;
+    private double interval = 1.1;
+
+    private List<String>exposurTimeList;
+    private String mCurrentExposuretime;
+    private TextView mAutoText;
+    private int startExpTmIndex = 0;
+    private double evInterval =1;
+    private int startEvIndex = 0;
+    private int evForLongExposureTm = 30;
+
 
     public ProMode(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -98,18 +115,39 @@ public class ProMode extends View {
     }
 
     private void init() {
+        mExposureTime = mSettingsManager.getExposureRangeValues();
+        if(mExposureTime != null ) setExposuretimeList();
+        initExpousreTime();
         init(EXPOSURE_MODE);
         init(WHITE_BALANCE_MODE);
         init(ISO_MODE);
         mUI.updateProModeText(MANUAL_MODE, "Manual");
     }
-
+   private void initExpousreTime() {
+       mCurrentExposuretime = mSettingsManager.getKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE);
+       if (mCurrentExposuretime.equals("auto") || mCurrentExposuretime.equals(""))
+           mUI.updateProModeText(EXPOSURE_TIME_MODE, "Auto");
+       else {
+           long mExposurTime = PersistUtil.strToLong(mCurrentExposuretime,maxExposuretime);
+               mUI.updateProModeText(EXPOSURE_TIME_MODE, getExposureTimeStr(mExposurTime));
+       }
+   }
+   private int getIndexOfValue(String str,List<String>valueList){
+        for (int i = 0;i < valueList.size();i++ ){
+            if (str.equals(valueList.get(i))) return i;
+        }
+        return 0;
+   }
     private void init(int mode) {
         String key = getKey(mode);
         if (key == null) return;
         int index = mSettingsManager.getValueIndex(key);
         CharSequence[] cc = mSettingsManager.getEntries(key);
-        mUI.updateProModeText(mode, cc[index].toString());
+        if (mode == EXPOSURE_MODE && !mCurrentExposuretime.equals("auto") && PersistUtil.strToLong(mCurrentExposuretime,maxExposuretime) > maxExposuretime) {
+            mUI.updateProModeText(mode, "0");
+            mUI.setModeDisable(EXPOSURE_MODE, false);
+        } else
+            mUI.updateProModeText(mode, cc[index].toString());
     }
 
     @Override
@@ -122,11 +160,13 @@ public class ProMode extends View {
             canvas.drawPath(mCurvePath, mPaint);
         }
         mPaint.setStyle(Paint.Style.FILL);
-        if (mMode == MANUAL_MODE) {
+        if (mMode == MANUAL_MODE || mMode == EXPOSURE_TIME_MODE) {
             mPaint.setColor(Color.WHITE);
             canvas.drawCircle(mCurveLeft, mCurveY, DOT_SIZE, mPaint);
             canvas.drawCircle(mCurveRight, mCurveY, DOT_SIZE, mPaint);
             mPaint.setColor(BLUE);
+            if(mMode == MANUAL_MODE) mSlider = mFocusSlider;
+            else mSlider = mExpTmSlider;
             if (mSlider >= 0f) {
                 mCurveMeasure.getPosTan(mCurveMeasure.getLength() * mSlider, curveCoordinate, null);
                 canvas.drawCircle(curveCoordinate[0], curveCoordinate[1], SELECTED_DOT_SIZE,
@@ -160,7 +200,7 @@ public class ProMode extends View {
         mCurveLeft = mWidth / 10;
         mCurveRight = mWidth - mCurveLeft;
         mCurveHeight = mWidth / 7;
-        mCurveY = (int) (mHeight * 0.67);
+        mCurveY = (int) (mHeight * 0.70);
 
         float cx = (mCurveLeft + mCurveRight) / 2;
         mCurvePath.reset();
@@ -206,26 +246,25 @@ public class ProMode extends View {
         }
         mIndex = -1;
         String key = currentKey();
-        if (mMode == MANUAL_MODE) {
-            float value = mSettingsManager.getFocusSliderValue(SettingsManager.KEY_FOCUS_DISTANCE);
-            setSlider(value,true);
-            int stride = mCurveRight - mCurveLeft;
-            for (int i = 0; i < 2; i++) {
-                TextView v = new TextView(mContext);
-                String s = "infinity";
-                if (i == 1) s = "macro";
-                v.setText(s);
-                v.setTextColor(Color.WHITE);
-                v.measure(0, 0);
-                ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(v.getMeasuredWidth(),
-                        v.getMeasuredHeight());
-                v.setLayoutParams(lp);
-                v.setX(mCurveLeft + i * stride - v.getMeasuredWidth() / 2);
-                v.setY(mCurveY - 2 * v.getMeasuredHeight());
-                mParent.addView(v);
-                mAddedViews.add(v);
+        if (mMode == MANUAL_MODE || mMode == EXPOSURE_TIME_MODE) {
+            if (mMode == MANUAL_MODE) {
+                float value = mSettingsManager.getFocusSliderValue(SettingsManager.KEY_FOCUS_DISTANCE);
+                setSlider(value, true);
+                int stride = mCurveRight - mCurveLeft;
+                setSlideText("infinity", 0, stride);
+                setSlideText("macro", 1, stride);
+            } else if (mMode == EXPOSURE_TIME_MODE) {
+                int index = getIndexOfValue(mCurrentExposuretime,exposurTimeList);
+                mExpTmSlider = (float) index/exposurTimeList.size();
+                int stride = mCurveRight - mCurveLeft;
+                setSlideText("Auto", -1, stride);
+                for (int i = 0; i < mExposureTime.length; i++) {
+                    setSlideText(getExposureTimeStr(mExposureTime[i]), i, stride);
+                }
+                initExpousreTime();
+                invalidate();
             }
-        } else {
+        }else {
             if (key == null) return;
             CharSequence[] cc = mSettingsManager.getEntries(key);
             int length = mSettingsManager.getEntryValues(key).length;
@@ -261,7 +300,60 @@ public class ProMode extends View {
         }
         setOrientation(mOrientation);
     }
+        private String getExposureTimeStr (long exposuretime){
+            double value = exposuretime / convertValue;
+            if (value < 0.1) {
+                double tmpvalue = convertValue / exposuretime;
+                if(Math.round(tmpvalue) == 1 ) return "1";
+                return ("1/" + Math.round(tmpvalue));
+            } else if(exposuretime <= mExposureTime[1]) {
+                BigDecimal bigDecimal = new BigDecimal(value);
+                double bg = bigDecimal.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+                return String.valueOf(bg);
+            } else {
+                return String.valueOf(Math.round(value));
+            }
+    }
+    private void setSlideText(String text, int i,int stride) {
+        TextView v = new TextView(mContext);
+        v.setText(text);
+        v.measure(0, 0);
+        ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(v.getMeasuredWidth(),
+                v.getMeasuredHeight());
+        v.setLayoutParams(lp);
+        if (i == -1) {
+            v.setX(mCurveLeft - v.getMeasuredWidth() - 5);
+            v.setY(mCurveY + 25);
+            if(mCurrentExposuretime.equals("auto") ){
+                v.setTextColor(BLUE);
+            }else{
+                v.setTextColor(Color.WHITE);
+            }
+            v.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View vw) {
+                    mSettingsManager.setKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE,true,"auto");
+                    v.setTextColor(BLUE);
+                    mUI.updateProModeText(EXPOSURE_TIME_MODE, "Auto");
+                    mExpTmSlider = -1;
+                    if(!mCurrentExposuretime.equals("auto")&& PersistUtil.strToLong(mCurrentExposuretime,maxExposuretime) > maxExposuretime){
+                        mSettingsManager.setValueIndex(SettingsManager.KEY_EXPOSURE,startEvIndex);
+                        mUI.setModeDisable(EXPOSURE_MODE,true);
+                    }
+                    invalidate();
+                }
+                });
+            mAutoText = v;
+        } else {
+            v.setTextColor(Color.WHITE);
+            v.setX(mCurveLeft + i * stride - v.getMeasuredWidth() / 2);
+            v.setY(mCurveY - 2 * v.getMeasuredHeight());
+        }
 
+        mParent.addView(v);
+        mAddedViews.add(v);
+
+    }
     private String getKey(int mode) {
         switch (mode) {
             case EXPOSURE_MODE:
@@ -270,6 +362,8 @@ public class ProMode extends View {
                 return SettingsManager.KEY_WHITE_BALANCE;
             case ISO_MODE:
                 return SettingsManager.KEY_ISO;
+            case EXPOSURE_TIME_MODE:
+                return SettingsManager.KEY_MANUAL_EXPOSURE_VALUE;
         }
         return null;
     }
@@ -292,18 +386,60 @@ public class ProMode extends View {
 
         invalidate();
     }
-
+    private void setExposuretimeList() {
+        long exposuretime = mExposureTime[0];
+        exposurTimeList = new ArrayList<String>();
+        int i = 0;
+        while (exposuretime <= mExposureTime[1]) {
+            BigDecimal bigDecimal = new BigDecimal(exposuretime);
+            exposurTimeList.add(String.valueOf(exposuretime));
+            if(exposuretime < maxExposuretime) i++;
+            exposuretime = Math.round(exposuretime * interval);
+        }
+        exposurTimeList.add(String.valueOf(mExposureTime[1]));
+        startExpTmIndex = i;
+        if(exposurTimeList.size() - i > evForLongExposureTm){
+            evInterval =(double) (exposurTimeList.size() - i) / evForLongExposureTm;
+        }
+    }
     public void setSlider(float slider,boolean forceNotify) {
-        mSlider = slider;
-        mSettingsManager.setFocusSliderValue(SettingsManager.KEY_FOCUS_DISTANCE, forceNotify,
-                mSlider);
-        mUI.updateProModeText(mMode, "Manual");
+        if(mMode == MANUAL_MODE) {
+            mFocusSlider = slider;
+            mSettingsManager.setFocusSliderValue(SettingsManager.KEY_FOCUS_DISTANCE, forceNotify,
+                    mFocusSlider);
+            mUI.updateProModeText(mMode, "Manual");
+        }else if(mMode == EXPOSURE_TIME_MODE){
+            mExpTmSlider = slider;
+            int index =(int) (slider * exposurTimeList.size());
+            if (index > exposurTimeList.size() -1 ) index = exposurTimeList.size() -1;
+            String valuestr = exposurTimeList.get(index);
+            Long value =PersistUtil.strToLong(valuestr,maxExposuretime);
+            mUI.updateProModeText(mMode, getExposureTimeStr(value));
+            mSettingsManager.setKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE,forceNotify,valuestr);
+            mAutoText.setTextColor(Color.WHITE);
+            if(value > maxExposuretime && (!mCurrentExposuretime.equals("auto") && !mCurrentExposuretime.equals("")
+                    && PersistUtil.strToLong(mCurrentExposuretime,maxExposuretime) <= maxExposuretime)){
+                mUI.setModeDisable(EXPOSURE_MODE,false);
+                resetEV();
+            }else if(value <= maxExposuretime && (!mCurrentExposuretime.equals("auto") && !mCurrentExposuretime.equals("")
+            && PersistUtil.strToLong(mCurrentExposuretime,maxExposuretime) > maxExposuretime)){
+                mUI.setModeDisable(EXPOSURE_MODE,true);
+                mSettingsManager.setValueIndex(SettingsManager.KEY_EXPOSURE,startEvIndex);
+            }
+            if(value > maxExposuretime){
+                double evIndex =(index - startExpTmIndex)/evInterval;
+                int currentEvIndex = (int)Math.round(evIndex);
+                if (currentEvIndex > evForLongExposureTm) currentEvIndex = evForLongExposureTm;
+                mSettingsManager.setKeyValue(SettingsManager.KEY_EV_FOR_LONGEXPOSURE,forceNotify,String.valueOf(currentEvIndex));
+            }
+            mCurrentExposuretime = valuestr;
+        }
         invalidate();
     }
 
     private void setIndex(int index, boolean force) {
         if (mIndex == index && !force) return;
-        if (mIndex != -1) {
+        if (mIndex != -1 && mAddedViews != null && mAddedViews.size() > 0) {
             View v = mAddedViews.get(mIndex);
             if (v instanceof TextView) {
                 ((TextView) v).setTextColor(Color.WHITE);
@@ -342,10 +478,10 @@ public class ProMode extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (mMode == MANUAL_MODE) {
+        if (mMode == MANUAL_MODE || mMode == EXPOSURE_TIME_MODE) {
             float slider = getSlider(event.getX(), event.getY());
             if (slider >= 0) {
-                setSlider(slider,false);
+                setSlider(slider, false);
             }
         } else {
             int idx = findButton(event.getX(), event.getY());
@@ -379,14 +515,13 @@ public class ProMode extends View {
         }
     }
 
-    public void resetEVandWB(){
+    public void resetEV(){
         if (mSettingsManager != null) {
             String defaultEV = getResources().getString(
                     R.string.pref_exposure_default);
-            String defualtWB = getResources().getString(
-                    R.string.pref_camera2_whitebalance_default);
             mSettingsManager.setValue(SettingsManager.KEY_EXPOSURE,defaultEV);
-            mSettingsManager.setValue(SettingsManager.KEY_WHITE_BALANCE,defualtWB);
+            mUI.updateProModeText(EXPOSURE_MODE,"0");
+
         }
     }
 }

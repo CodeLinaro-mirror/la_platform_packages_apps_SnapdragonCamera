@@ -179,6 +179,9 @@ public class PersistUtil {
         return FD_EXPRESSION_CONFIDENCE_ON;
     }
 
+    private static final boolean PERSIST_SHOW_VERTICAL_EV_BAR = getBoolean("persist.sys.camera.vertical.evbar",false);
+    private static final boolean PERSIST_SHOW_MFNR_SWITCH = getBoolean("persist.sys.camera.mfnr.switch",false);
+
     public static String getHFRRate() {
         return PERSIST_HFR_LIMIT;
     }
@@ -469,10 +472,28 @@ public class PersistUtil {
         return PERSIST_RAW_REPROCESS_ENABLE;
     }
 
+    public static boolean showVerticalEvBar(){return PERSIST_SHOW_VERTICAL_EV_BAR;}
+
     public static boolean isRawCbInfoSupported() {return PERSIST_RAW_CB_INFO_SUPPORTED; }
 
     public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }
-
+    public static boolean showMFNRswitch(){return PERSIST_SHOW_MFNR_SWITCH;}
+    public static long strToLong(String str,long value) {
+        try {
+            long longStr = Long.parseLong(str);
+            return longStr;
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
+    public static int strToInt(String str,int value) {
+        try {
+            int intStr = Integer.parseInt(str);
+            return intStr;
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
     public static float getLuxIdxThreadhold(){
         return Float.parseFloat(PERSIST_CAMERA_LUX_IDX_THREADHOLD);
     }

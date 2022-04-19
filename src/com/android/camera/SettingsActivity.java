@@ -108,9 +108,19 @@ import static com.android.camera.CaptureModule.CameraMode.DEFAULT;
 import static com.android.camera.CaptureModule.CameraMode.RTB;
 import static com.android.camera.CaptureModule.CameraMode.SAT;
 import static com.android.camera.CaptureModule.CameraMode.VIDEO;
+import android.app.Dialog;
 
+import android.widget.CheckBox;
+import com.android.camera.FdExpandListView;
+import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.BaseExpandableListAdapter;
+import android.widget.ExpandableListView;
+import android.widget.ExpandableListAdapter;
+import android.widget.RelativeLayout;
+import com.android.camera.FdExpandListView.FdExpandListViewAdapter;
 public class SettingsActivity extends PreferenceActivity {
     private static final String TAG = "SettingsActivity";
+
     private static final boolean DEV_LEVEL_ALL =
             PersistUtil.getDevOptionLevel() == PersistUtil.CAMERA2_DEV_OPTION_ALL;
     public static final String CAMERA_MODULE = "camera_module";
@@ -121,9 +131,11 @@ public class SettingsActivity extends PreferenceActivity {
     private boolean mDeveloperMenuEnabled;
     private int privateCounter = 0;
     private final int DEVELOPER_MENU_TOUCH_COUNT = 10;
+    private FdExpandListView fdExpandListView;
+    private ExpandableListView expandableListView = null;
+    private FdExpandListViewAdapter expandableAdapter = null;
     private boolean mIsSingleCameraMode = false;
     private String mAICameraValue = "0";
-
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
@@ -177,6 +189,9 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 updateEISPreference();
                 updatePdnetTogglePreference();
+                if(mSettingsManager.isAICameraOn()){
+                    recreate();
+                }
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
                 value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
@@ -247,17 +262,16 @@ public class SettingsActivity extends PreferenceActivity {
             Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
             for( SettingsManager.SettingState state : settings) {
                 SettingsManager.Values values = map.get(state.key);
-                boolean enabled = values.overriddenValue == null;
+                boolean enabled = true;
+                if(values != null) enabled = values.overriddenValue == null;
                 Preference pref = findPreference(state.key);
                 if (pref == null) continue;
                 Log.i(TAG, "onsettingschange:" + pref.getKey() + ",enabled:" + enabled);
-
                 pref.setEnabled(enabled);
 
                 if (pref.getKey().equals(SettingsManager.KEY_MANUAL_EXPOSURE)) {
                     UpdateManualExposureSettings();
                 }
-
                 if (pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT) ||
                         pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
                     mSettingsManager.updatePictureAndVideoSize();
@@ -316,16 +330,17 @@ public class SettingsActivity extends PreferenceActivity {
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_AI_CAMERA)){
+                    String newValue = ((ListPreference) pref).getValue();
                     CaptureModule.CameraMode mode =
                             (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-                    String newValue = ((ListPreference) pref).getValue();
-                    if(mode == CaptureModule.CameraMode.VIDEO && !((mAICameraValue.equals("0") && newValue.equals("1")) || (mAICameraValue.equals("1") && newValue.equals("0")))){
+                    String value = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+                    if(mode == CaptureModule.CameraMode.VIDEO && mAICameraValue.equals("2") && value != null && value.equals("rtb")){
                         recreate();
+                        mSettingsManager.setValue(SettingsManager.KEY_SELECT_MODE, "default");
+                    }else{
+                        updateSwitchIDInModePreference(true);
                     }
                     mAICameraValue = newValue;
-                }
-                if(pref.getKey().equals(SettingsManager.KEY_AI_CAMERA_BOKEH)){
-                    updateEISPreference();
                 }
                 if(pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)){
                     updateVideoMFHDRPreference();
@@ -333,7 +348,6 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
     };
-
     private boolean isPrefEnabled(String key) {
         boolean result = false;
         String prefValue = mSettingsManager.getValue(key);
@@ -1128,6 +1142,28 @@ public class SettingsActivity extends PreferenceActivity {
                         if ( preference.getKey().equals(SettingsManager.KEY_RESTORE_DEFAULT) ) {
                             onRestoreDefaultSettingsClick();
                         }
+                        if( preference.getKey().equals(SettingsManager.KEY_FD_SETTING)){
+                            View listView = (SettingsActivity.this).getLayoutInflater().inflate(
+                                    R.layout.expandlistview, null);
+                            final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
+                            alert.setTitle("FD Settings");
+                            alert.setView(listView);
+                            expandableListView = (ExpandableListView) listView.findViewById(R.id.main_expandablelistview);
+                            expandableAdapter = fdExpandListView.new FdExpandListViewAdapter(); //
+                            expandableListView.setAdapter(expandableAdapter);
+                            alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,int id) {
+                                    dialog.cancel();
+                                }
+                            });
+                            alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                @Override
+                                public void onDismiss(DialogInterface dialog) {
+                                    preference.setSummary(fdExpandListView.getFDSummery());
+                                }
+                            });
+                            alert.show();
+                        }
 
                         if (preference.getKey().equals(SettingsManager.KEY_MANUAL_HDR)) {
                             String value = ((ListPreference) preference).getValue();
@@ -1201,7 +1237,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_AUDIO_RECORDING_MODE);
                 add(SettingsManager.KEY_HDR_WNR_MODE);
                 add(SettingsManager.KEY_HDR_ANS_MODE);
-                add(SettingsManager.KEY_AI_CAMERA_BOKEH);
+                add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
             }
         };
         final ArrayList<String> multiCameraSettingList = new ArrayList<String>() {
@@ -1251,6 +1287,18 @@ public class SettingsActivity extends PreferenceActivity {
             removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, photoPre);
             removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, videoPre);
         }
+        Preference p = findPreference(SettingsManager.KEY_FD_SETTING);
+        if(p != null) {
+            fdExpandListView = new FdExpandListView(SettingsActivity.this);
+            fdExpandListView.initExpandData();
+            p.setSummary(fdExpandListView.getFDSummery());
+            removePreference(SettingsManager.KEY_FD_SMILE, developer);
+            removePreference(SettingsManager.KEY_FD_GAZE, developer);
+            removePreference(SettingsManager.KEY_FD_BLINK, developer);
+            removePreference(SettingsManager.KEY_FACIAL_CONTOUR, developer);
+            removePreference(SettingsManager.KEY_FACE_DETECTION_MODE, developer);
+            removePreference(SettingsManager.KEY_FACE_DETECTION_MODE, developer);
+        }
         if(!PersistUtil.isRawReprocessEnable() && developer != null){
             removePreference(SettingsManager.KEY_RAW_REPROCESS_TYPE, developer);
             removePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS, developer);
@@ -1297,6 +1345,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_FD_BLINK);
                         videoAddList.add(SettingsManager.KEY_FACE_DETECTION_MODE);
                         videoAddList.add(SettingsManager.KEY_FACIAL_CONTOUR);
+                        videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.add(mSettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                         videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                         videoAddList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
@@ -1310,7 +1359,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA);
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
                     } else {
-                        videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BOKEH);
+                        videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                     }
@@ -1355,6 +1404,7 @@ public class SettingsActivity extends PreferenceActivity {
                     }
                     proModeOnlyList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     proModeOnlyList.add(SettingsManager.KEY_TONE_MAPPING);
+                    proModeOnlyList.add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
                     addDeveloperOptions(developer, proModeOnlyList);
                 }
                 break;
@@ -1426,15 +1476,16 @@ public class SettingsActivity extends PreferenceActivity {
         ArrayList<String> aiCameraList = new ArrayList<String>();
         CaptureModule.CameraMode mode =
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-        if (mSettingsManager.isAICameraOn() && mode == VIDEO){
+        String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        Log.i(TAG,"isAICameraOn:" + mSettingsManager.isAICameraOn() + ",selectMode: " + selectMode);
+        if (mSettingsManager.isAICameraOn() && selectMode != null && selectMode.equals("rtb") && mode == VIDEO){
             aiCameraList.add(SettingsManager.KEY_AI_CAMERA);
             aiCameraList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
-            aiCameraList.add(SettingsManager.KEY_AI_CAMERA_BOKEH);
+            aiCameraList.add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
             aiCameraList.add(SettingsManager.KEY_EIS_VALUE);
             aiCameraList.add(SettingsManager.KEY_MANUAL_HDR);
+            aiCameraList.add(SettingsManager.KEY_SELECT_MODE);
             addDeveloperOptions(developer,aiCameraList);
-        } else {
-            removePreference(SettingsManager.KEY_AI_CAMERA_BOKEH,developer);
         }
     }
 
@@ -1618,6 +1669,7 @@ public class SettingsActivity extends PreferenceActivity {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
+
         updateZslPreference();
         updateVideoEncoderProfile();
         updateSwitchIDInModePreference(true);
@@ -1698,6 +1750,10 @@ public class SettingsActivity extends PreferenceActivity {
                 key.add("RTB");
                 value.add("rtb");
             }
+            if(mSettingsManager.isAICameraOn()){
+                key = new ArrayList<String>(Arrays.asList("Default", "RTB"));
+                value = new ArrayList<String>(Arrays.asList( "default", "rtb"));
+            }
             pref.setEntries(key.toArray(new CharSequence[key.size()]));
             pref.setEntryValues(value.toArray(new CharSequence[value.size()]));
             int idx = pref.findIndexOfValue(pref.getValue());;
@@ -1707,7 +1763,7 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setValueIndex(idx);
             String cameraValue = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
             if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
-            pref.setEnabled(CaptureModule.MCXMODE && isBack);
+            pref.setEnabled((CaptureModule.MCXMODE && isBack) || mSettingsManager.isAICameraOn());
         }
     }
 
@@ -1760,7 +1816,7 @@ public class SettingsActivity extends PreferenceActivity {
                 pref.setEnabled(false);
             }
         }
-        if(mSettingsManager.isAICameraOn()) {
+        if(mSettingsManager.isAIBokehMode()) {
             if (eisPref != null && eisPref.getValue() != null && eisPref.getValue().equals("disable")) {
                 pref.setValue("off");
                 pref.setEnabled(false);
@@ -1902,21 +1958,21 @@ public class SettingsActivity extends PreferenceActivity {
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         ListPreference selectModePref = (ListPreference) findPreference(SettingsManager.KEY_SELECT_MODE);
         if (selectModePref != null) {
-            if (selectModePref.getValue().equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
+            if (selectModePref.getValue().equals("rtb") && mode == CaptureModule.CameraMode.VIDEO && !mSettingsManager.isAICameraOn()) {
                 if (eisPref != null) {
                     eisPref.setEnabled(false);
                 }
             }
         }
-        if(mSettingsManager.isAICameraOn()){
+        if(mSettingsManager.isAIBokehMode()){
             //remove v2 case
             List<String> list = new ArrayList<String>(Arrays.asList("disable", "V3" ));
             List<String> values = new ArrayList<String>(Arrays.asList( "disable", "V3"));
             if(eisPref != null) {
                 eisPref.setEntries(list.toArray(new CharSequence[list.size()]));
                 eisPref.setEntryValues(values.toArray(new CharSequence[values.size()]));
-                String value = mSettingsManager.getValue(mSettingsManager.KEY_AI_CAMERA_BOKEH);
-                if (value != null && Integer.parseInt(value) == 0) {
+                String value = mSettingsManager.getValue(mSettingsManager.KEY_SELECT_MODE);
+                if (value != null && !value.equals("rtb")) {
                     if (eisPref != null) {
                         eisPref.setEnabled(false);
                         eisPref.setValue("disable");
@@ -1936,9 +1992,9 @@ public class SettingsActivity extends PreferenceActivity {
                 SettingsManager.KEY_ZSL);
         if ((zslPref != null && zslPref.getValue().equals("app-zsl")) || mSettingsManager.isLimitedHDR() || mSettingsManager.isDNGCreator()) {
             if (rawPref != null) {
-                rawPref.setValue("disable");
+                rawPref.setValue("0");
                 rawPref.setEnabled(false);
-                mSettingsManager.setValue(SettingsManager.KEY_SAVERAW, "disable");
+                mSettingsManager.setValue(SettingsManager.KEY_SAVERAW, "0");
             }
         }else{
             if(rawPref != null)
@@ -2092,6 +2148,9 @@ public class SettingsActivity extends PreferenceActivity {
         filterPreferences();
         initializePreferences();
     }
+
+
+
 
     public class DragListViewAdapter extends BaseAdapter {
         private Context mContext;

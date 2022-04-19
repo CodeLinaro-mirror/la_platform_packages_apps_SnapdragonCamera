@@ -45,10 +45,10 @@ public class AutoTestUtil {
 
     private static final String TAG = "AutoTestUtil";
 
-    public static String createFile (Context context) {
+    public static String createFile (Context context, String title) {
         String path = context.getApplicationContext().getFilesDir().getAbsolutePath();
-        Log.v(TAG, "getFilePath path :" + path);
-        String filePathName = path + "/AutoTestHelp" + ".txt";
+        String filePathName = path + "/" + title + ".txt";
+        Log.v(TAG, "getFilePath path :" + path + ", filePathName :" + filePathName);
         File file = new File(filePathName);
         try {
             if (!file.exists()) {

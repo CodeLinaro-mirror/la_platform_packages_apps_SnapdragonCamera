@@ -1168,14 +1168,18 @@ for time lapse recording -->
         <item>@string/pref_camera2_auto_hdr_entry_disable</item>
     </string-array>
 
-    <string-array name="pref_camera2_saveraw_entries" translatable="false">
-        <item>@string/pref_camera2_saveraw_entry_disable</item>
-        <item>@string/pref_camera2_saveraw_entry_enable</item>
+    <string-array name="pref_camera2_saveformat_entries" translatable="false">
+        <item>@string/pref_camera2_saveformat_entry_disable</item>
+        <item>@string/pref_camera2_saveformat_entry_raw_enable</item>
+        <item>@string/pref_camera2_saveformat_entry_yuv10bit</item>
+        <item>@string/pref_camera2_saveformat_entry_yuv10bit_withmetedata</item>
     </string-array>
 
-    <string-array name="pref_camera2_saveraw_entryvalues" translatable="false">
-        <item>@string/pref_camera2_saveraw_value_disable</item>
-        <item>@string/pref_camera2_saveraw_value_enable</item>
+    <string-array name="pref_camera2_saveformat_entryvalues" translatable="false">
+        <item>@string/pref_camera2_saveformat_value_disable</item>
+        <item>@string/pref_camera2_saveformat_value_raw_enable</item>
+        <item>@string/pref_camera2_saveformat_value_yuv10bit</item>
+        <item>@string/pref_camera2_saveformat_value_yuv10bit_withmetedata</item>
     </string-array>
 
     <string-array name="pref_camera2_bsgc_entryvalues" translatable="false">
@@ -1700,6 +1704,34 @@ for time lapse recording -->
         <item>@string/pref_camera2_ai_camera_mode_entry_value_off</item>
         <item>@string/pref_camera2_ai_camera_mode_entry_value_snapshot_only</item>
         <item>@string/pref_camera2_ai_camera_mode_entry_value_on</item>
+    </string-array>
+
+    <string-array name="pref_camera2_ai_camera_blurmode_entries" translatable="false">
+        <item>@string/pref_camera2_ai_camera_blurmode_entry_off</item>
+        <item>@string/pref_camera2_ai_camera_blurmode_entry_LegacyBlur</item>
+        <item>@string/pref_camera2_ai_camera_blurmode_entry_SBlur</item>
+        <item>@string/pref_camera2_ai_camera_blurmode_entry_ExtremeSBlur</item>
+    </string-array>
+
+    <string-array name="pref_camera2_ai_camera_blurmode_entryvalues" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <string-array name="pref_camera2_ai_camera_blurshape_entries" translatable="false">
+        <item>@string/pref_camera2_ai_camera_blurshape_entry_disk1</item>
+        <item>@string/pref_camera2_ai_camera_blurshape_entry_disk2</item>
+        <item>@string/pref_camera2_ai_camera_blurshape_entry_rhombus</item>
+        <item>@string/pref_camera2_ai_camera_blurshape_entry_heart</item>
+    </string-array>
+
+    <string-array name="pref_camera2_ai_camera_blurshape_entryvalues" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
     </string-array>
 
     <string-array name="pref_camera2_ai_camera_entries" translatable="false">

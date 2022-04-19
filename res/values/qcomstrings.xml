@@ -1131,13 +1131,17 @@
     <string name="pref_camera2_timer_value_2sec" translatable="false">2</string>
     <string name="pref_camera2_timer_value_5sec" translatable="false">5</string>
     <string name="pref_camera2_timer_value_10sec" translatable="false">10</string>
-    <string name="pref_camera2_saveraw_default">disable</string>
-    <string name="pref_camera2_saveraw_title">Save with RAW format</string>
-    <string name="pref_camera2_saveraw_value_disable" translatable="false">disable</string>
-    <string name="pref_camera2_saveraw_value_enable" translatable="false">enable</string>
+    <string name="pref_camera2_saveformat_default">disable</string>
+    <string name="pref_camera2_saveformat_title">Save with YUV/RAW format</string>
+    <string name="pref_camera2_saveformat_entry_disable">disable</string>
+    <string name="pref_camera2_saveformat_entry_raw_enable">RAW Enable</string>
+    <string name="pref_camera2_saveformat_entry_yuv10bit">YUV10bit</string>
+    <string name="pref_camera2_saveformat_entry_yuv10bit_withmetedata">YUV10bit With MetaData</string>
 
-    <string name="pref_camera2_saveraw_entry_disable">disable</string>
-    <string name="pref_camera2_saveraw_entry_enable">enable</string>
+    <string name="pref_camera2_saveformat_value_disable" translatable="false">0</string>
+    <string name="pref_camera2_saveformat_value_raw_enable" translatable="false">37</string>
+    <string name="pref_camera2_saveformat_value_yuv10bit" translatable="false">54</string>
+    <string name="pref_camera2_saveformat_value_yuv10bit_withmetedata" translatable="false">99</string>
 
     <string name="panocapture_direction_is_not_determined" translatable="true">Move constantly in one direciton.</string>
     <string name="panocapture_intro" translatable="true">Press camera button to start.</string>
@@ -1648,7 +1652,7 @@
 
     <!-- AI Camera-->
     <string name="pref_camera2_ai_camera_title" translatable="true">AI Camera Mode</string>
-    <string name="pref_camera2_ai_camera_bokeh_title" translatable="true">AI Bokeh</string>
+    <string name="pref_camera2_ai_camera_bokeh_title" translatable="true">AI Blur Mode</string>
     <string name="pref_camera2_ai_camera_snapshot_title" translatable="true">AI Snapshot</string>
     <string name="pref_camera2_ai_camera_default" translatable="false">0</string>
     <string name="pref_camera2_ai_camera_entry_disable" translatable="true">disable</string>
@@ -1661,6 +1665,15 @@
     <string name="pref_camera2_ai_camera_mode_entry_value_off" translatable="false">0</string>
     <string name="pref_camera2_ai_camera_mode_entry_value_snapshot_only" translatable="false">1</string>
     <string name="pref_camera2_ai_camera_mode_entry_value_on" translatable="false">2</string>
+    <string name="pref_camera_blur_shape_title" translatable="true">BlurShape </string>
+    <string name="pref_camera2_ai_camera_blurmode_entry_off" translatable="true">BlurModeOff </string>
+    <string name="pref_camera2_ai_camera_blurmode_entry_LegacyBlur" translatable="true">LegacyBlur</string>
+    <string name="pref_camera2_ai_camera_blurmode_entry_SBlur" translatable="true">SBlur</string>
+    <string name="pref_camera2_ai_camera_blurmode_entry_ExtremeSBlur" translatable="true">ExtremeSBlur</string>
+    <string name="pref_camera2_ai_camera_blurshape_entry_disk1" translatable="true">Disk1 </string>
+    <string name="pref_camera2_ai_camera_blurshape_entry_disk2" translatable="true">Disk2</string>
+    <string name="pref_camera2_ai_camera_blurshape_entry_rhombus" translatable="true">Rhombus</string>
+    <string name="pref_camera2_ai_camera_blurshape_entry_heart" translatable="true">Heart</string>
     <!-- raw reprocess type-->
     <string name="pref_camera2_raw_reprocess_default">0</string>
     <string name="pref_camera2_raw_reprocess_title">Raw Reprocess Callback Type</string>
@@ -1727,6 +1740,8 @@
     <string name="pref_camera2_ai_denoiser_mode_entry_value_aide1" translatable="false">0</string>
     <string name="pref_camera2_ai_denoiser_mode_entry_value_aide2" translatable="false">1</string>
     <string name="pref_camera2_ai_denoiser_mode_entry_value_aide_sat" translatable="false">2</string>
+
+    <string name="pref_camera_fd_title">FD Setting</string>
  <!-- torch hdr value-->
     <string name="pref_camera2_torch_hdr_title" translatable="true">Torch HDR</string>
     <string name="pref_camera2_torch_hdr_default" translatable="false">0</string>

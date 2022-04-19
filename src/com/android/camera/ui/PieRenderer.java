@@ -34,12 +34,12 @@ import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 import android.view.animation.Animation;
 import android.view.animation.Transformation;
-
+import com.android.camera.CaptureUI;
 import com.android.camera.CameraActivity;
 import com.android.camera.drawable.TextDrawable;
 import com.android.camera.ui.ProgressRenderer.VisibilityListener;
 import org.codeaurora.snapcam.R;
-
+import com.android.camera.util.CameraUtil;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -146,9 +146,13 @@ public class PieRenderer extends OverlayRenderer
     private int mDeadZone;
     private int mAngleZone;
     private float mCenterAngle;
+    private CaptureUI mUI;
 
     private ProgressRenderer mProgressRenderer;
 
+    public void setCapureUi(CaptureUI ui) {
+        mUI = ui;
+    }
     private Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
             switch(msg.what) {
@@ -190,7 +194,7 @@ public class PieRenderer extends OverlayRenderer
         mOpen = new ArrayList<PieItem>();
         mOpen.add(new PieItem(null, 0));
         Resources res = ctx.getResources();
-        mRadius = (int) res.getDimensionPixelSize(R.dimen.pie_radius_start);
+        mRadius = (int)(CameraUtil.sScreenWidth/2);
         mRadiusInc = (int) res.getDimensionPixelSize(R.dimen.pie_radius_increment);
         mCircleSize = mRadius - res.getDimensionPixelSize(R.dimen.focus_radius_offset);
         mTouchOffset = (int) res.getDimensionPixelSize(R.dimen.pie_touch_offset);
@@ -1110,6 +1114,7 @@ public class PieRenderer extends OverlayRenderer
         public void run() {
             if (mState == STATE_PIE) return;
             setVisible(false);
+            mUI.hideEvSeekbar();
             mFocusX = mCenterX;
             mFocusY = mCenterY;
             mState = STATE_IDLE;
