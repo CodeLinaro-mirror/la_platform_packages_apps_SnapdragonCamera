@@ -107,7 +107,7 @@ public class CameraDataAdapter implements LocalDataAdapter {
     @Override
     public void setListener(Listener listener) {
         mListener = listener;
-        if (mImages != null) {
+        if (mImages != null && mImages.size() > 0) {
             mListener.onDataLoaded();
         }
     }
@@ -288,6 +288,7 @@ public class CameraDataAdapter implements LocalDataAdapter {
          */
         @Override
         protected LocalDataList doInBackground(ContentResolver... resolver) {
+            Log.d(TAG, "QueryTask");
             LocalDataList l = new LocalDataList();
             // Photos
             Cursor c = resolver[0].query(

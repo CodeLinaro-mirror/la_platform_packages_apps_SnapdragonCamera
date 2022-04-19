@@ -235,8 +235,8 @@
   },
   "pref_camera2_eis_key":
   {
-    "disable": {},
-    "V2": {},
+    "disable": {"pref_camera2_mlvideo_key":"off"},
+    "V2": {"pref_camera2_mlvideo_key":"off"},
     "V3": {"pref_camera2_video_duration_key":"0"}
   },
   "pref_camera2_multi_camera_mode_key":
