@@ -1597,6 +1597,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateLongShotPreference();
         updateVideoHfrFpsPreference();
         updateEISPreference();
+        updateT2TPreference();
         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         updatePictureFormatPreference();
@@ -1616,9 +1617,7 @@ public class SettingsActivity extends PreferenceActivity {
             boolean enable = p.isEnabled();
             if (p instanceof SwitchPreference) {
                 ((SwitchPreference) p).setChecked(isOn(value));
-                if (enable) {
-                    ((SwitchPreference) p).setEnabled(true);
-                }
+                ((SwitchPreference) p).setEnabled(enable && !disabled);
             } else if (p instanceof ListPreference) {
                 ListPreference pref = (ListPreference) p;
                 if (enable) {
@@ -1967,6 +1966,32 @@ public class SettingsActivity extends PreferenceActivity {
                     }
                 } else {
                     eisPref.setEnabled(true);
+                }
+            }
+        }
+    }
+
+	private void updateT2TPreference() {
+        CaptureModule.CameraMode mode = (CaptureModule.CameraMode)
+                getIntent().getSerializableExtra(CAMERA_MODULE);
+        ListPreference selectModePref = (ListPreference) findPreference(
+                SettingsManager.KEY_SELECT_MODE);
+        SwitchPreference t2TFocus = (SwitchPreference) findPreference(
+                SettingsManager.KEY_TOUCH_TRACK_FOCUS);
+        SwitchPreference faceDetection = (SwitchPreference) findPreference(
+                SettingsManager.KEY_FACE_DETECTION);
+        if (selectModePref != null && t2TFocus != null && mode == CaptureModule.CameraMode.VIDEO) {
+            if (selectModePref.getValue().equals("rtb")) {
+                t2TFocus.setEnabled(false);
+                t2TFocus.setChecked(false);
+                mSettingsManager.setValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "off");
+            } else {
+                if (faceDetection.isChecked()) {
+                    t2TFocus.setEnabled(false);
+                    t2TFocus.setChecked(false);
+                    mSettingsManager.setValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "off");
+                } else {
+                    t2TFocus.setEnabled(true);
                 }
             }
         }
