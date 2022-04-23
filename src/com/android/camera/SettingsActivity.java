@@ -213,12 +213,6 @@ public class SettingsActivity extends PreferenceActivity {
                     updatePreferenceButton(dependentKey);
                 }
             }
-            if (key.equals(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
-                if(isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)){
-                    ListPreference manualexp = (ListPreference) findPreference(SettingsManager.KEY_MANUAL_EXPOSURE);
-                    manualexp.setEnabled(false);
-                }
-            }
             // If Enable KEY_BURST_LIMIT, KEY_CAPTURE_MFNR_VALUE and KEY_LONGSHOT can same use
             // if diable KEY_BURST_LIMIT, enable KEY_CAPTURE_MFNR_VALUE, KEY_LONGSHOT is diable
             if (key.equals(SettingsManager.KEY_BURST_LIMIT) ||
