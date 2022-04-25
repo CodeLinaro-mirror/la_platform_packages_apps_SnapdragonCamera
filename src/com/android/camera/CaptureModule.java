@@ -5004,7 +5004,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             // send snapshot stream together with preview and video stream for snapshot request
             // stream is the surface for the app
-
             List<Surface> surfaces = new ArrayList<>();
             addPreviewSurface(captureBuilder, surfaces, id);
 
@@ -5048,7 +5047,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     captureBuilder.addTarget(mVideoSnapshotImageReader.getSurface());
                 }
 
-                if (mSettingsManager.isMaxConfigureSize(id, mVideoSnapshotSize)) {
+                if (mSettingsManager.isMaxConfigureSize(id, mVideoSize)) {
                     // SENSOR_PIXEL_MODE_DEFAULT
                     captureBuilder.set(CaptureRequest.SENSOR_PIXEL_MODE,
                             CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
@@ -8679,7 +8678,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else {
                 OutputConfiguration videoSnapshotConfig = new OutputConfiguration(
                         mVideoSnapshotImageReader.getSurface());
-                if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSnapshotSize)) {
+                if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
+                    videoSnapshotConfig.addSensorPixelModeUsed(
+                            CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
                     videoSnapshotConfig.addSensorPixelModeUsed(
                             CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
                     Log.v(TAG, " videoSnapShot OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
