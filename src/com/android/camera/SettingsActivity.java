@@ -1860,7 +1860,7 @@ public class SettingsActivity extends PreferenceActivity {
                 key.remove("SAT");
                 value.remove("sat");
             }
-            if(mSettingsManager.isAICameraOn()){
+            if(mSettingsManager.isAICameraOn() && mode == CaptureModule.CameraMode.VIDEO){
                 key = new ArrayList<String>(Arrays.asList("Default", "RTB"));
                 value = new ArrayList<String>(Arrays.asList( "default", "rtb"));
             }
@@ -1873,7 +1873,7 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setValueIndex(idx);
             String cameraValue = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
             if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
-            pref.setEnabled((CaptureModule.MCXMODE && isBack) || mSettingsManager.isAICameraOn());
+            pref.setEnabled((CaptureModule.MCXMODE && isBack) || (mSettingsManager.isAICameraOn() && mode == CaptureModule.CameraMode.VIDEO));
         }
     }
 

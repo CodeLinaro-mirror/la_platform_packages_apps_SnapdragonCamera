@@ -1694,8 +1694,7 @@
     <string name="pref_camera2_ai_camera_blurmode_entry_LegacyBlur" translatable="true">LegacyBlur</string>
     <string name="pref_camera2_ai_camera_blurmode_entry_SBlur" translatable="true">SBlur</string>
     <string name="pref_camera2_ai_camera_blurmode_entry_ExtremeSBlur" translatable="true">ExtremeSBlur</string>
-    <string name="pref_camera2_ai_camera_blurshape_entry_disk1" translatable="true">Disk1 </string>
-    <string name="pref_camera2_ai_camera_blurshape_entry_disk2" translatable="true">Disk2</string>
+    <string name="pref_camera2_ai_camera_blurshape_entry_circle" translatable="true">Circle </string>
     <string name="pref_camera2_ai_camera_blurshape_entry_rhombus" translatable="true">Rhombus</string>
     <string name="pref_camera2_ai_camera_blurshape_entry_heart" translatable="true">Heart</string>
     <!-- raw reprocess type-->
