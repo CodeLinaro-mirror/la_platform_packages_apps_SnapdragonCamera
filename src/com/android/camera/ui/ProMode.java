@@ -94,10 +94,10 @@ public class ProMode extends View {
     private int mCurveHeight;
     private int mOrientation;
     private long []mExposureTime;
+    private long mMinExpTm;
+    private long mMaxExpTm;
     private double mExpTmConvert = 1000000000;
     private long mLongExpTm = 100000000;
-    private double mExpTmInterval = 1.1;
-
     private List<String>mExpTmList;
     private String mCurrentExposuretime;
     private TextView mAutoText;
@@ -113,7 +113,11 @@ public class ProMode extends View {
 
     private void init() {
         mExposureTime = mSettingsManager.getExposureRangeValues();
-        if(mExposureTime != null ) setExposuretimeList();
+        if(mExposureTime != null && (mMinExpTm != mExposureTime[0] || mMaxExpTm != mExposureTime[1]) ) {
+            mMinExpTm = mExposureTime[0];
+            mMaxExpTm = mExposureTime[1];
+            setExposuretimeList();
+        }
         initExpousreTime();
         init(EXPOSURE_MODE);
         init(WHITE_BALANCE_MODE);
@@ -301,7 +305,9 @@ public class ProMode extends View {
     }
         private String getExposureTimeStr (long exposuretime){
             double value = exposuretime / mExpTmConvert;
-            if (value < 0.1) {
+            if(value == 0){
+                return String.valueOf(value);
+            }else if (value < 0.1) {
                 double tmpvalue = mExpTmConvert / exposuretime;
                 if(Math.round(tmpvalue) == 1 ) return "1";
                 return ("1/" + Math.round(tmpvalue));
@@ -388,12 +394,22 @@ public class ProMode extends View {
     private void setExposuretimeList() {
         long exposuretime = mExposureTime[0];
         mExpTmList = new ArrayList<String>();
-        int i = 0;
-        while (exposuretime <= mExposureTime[1]) {
+        mExpTmList.add(String.valueOf(exposuretime));
+        if(exposuretime == 0) {
+            exposuretime = 1;
+        }
+        while (exposuretime < mExposureTime[1]) {
+            if(exposuretime <= 1000){
+                exposuretime = Math.round(exposuretime * 5);
+            }else if(exposuretime <= 1000000){
+                exposuretime = Math.round(exposuretime * 2.5);
+            }else if(exposuretime <= mExpTmConvert){
+                exposuretime = Math.round(exposuretime * 1.1);
+            }else{
+                exposuretime = Math.round(exposuretime * 1.3);
+            }
             BigDecimal bigDecimal = new BigDecimal(exposuretime);
             mExpTmList.add(String.valueOf(exposuretime));
-            if(exposuretime < mLongExpTm) i++;
-            exposuretime = Math.round(exposuretime * mExpTmInterval);
         }
         mExpTmList.add(String.valueOf(mExposureTime[1]));
     }

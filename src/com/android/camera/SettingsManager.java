@@ -2149,6 +2149,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
     public long[] getExposureRangeValues() {
         long[] exposureRange = null;
+        if(mCaptureModule.getCurrenCameraMode() != CaptureModule.CameraMode.PRO_MODE) return null;
         int cameraId = mCaptureModule.getMainCameraId();
         try {
             exposureRange =  mCharacteristics.get(cameraId).get(
