@@ -178,13 +178,13 @@ public class ExtendedFace {
 
 
     public enum FDExpressionIndex {
-        Neutral,
         Surprise,
         Fear,
         Disgust,
         Happiness,
         Sad,
         Anger,
+        Neutral,
         ;
     }
 
