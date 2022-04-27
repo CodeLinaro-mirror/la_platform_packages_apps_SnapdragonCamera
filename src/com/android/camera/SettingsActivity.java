@@ -225,6 +225,10 @@ public class SettingsActivity extends PreferenceActivity {
                 updateLongShotPreference();
             }
 
+            if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
+                updateCaptureProfilePref();
+            }
+
             if (key.equals(SettingsManager.KEY_MANUAL_HDR)) {
                 value = ((ListPreference) p).getValue();
                 if (value.equals("manual")) {
@@ -1380,6 +1384,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA);
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
+                        videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                     } else {
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
@@ -1638,6 +1643,8 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_TONE_MAPPING);
         updatePreference(SettingsManager.KEY_LIVE_PREVIEW);
         updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
+        updatePreference(SettingsManager.KEY_PREVIEW_PROFILE);
+        updatePreference(SettingsManager.KEY_CAPTURE_PROFILE);
         updateMultiPreference(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
         updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
@@ -1737,6 +1744,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateRawInfoPref();
         updatePictureSizePreferenceButton();
         updateVsrPreference();
+        updateCaptureProfilePref();
         updateMultiResReprocess();
         updatePreviewStabilizationPreference();
         updateMultiVideoFPSPreference();
@@ -2031,6 +2039,25 @@ public class SettingsActivity extends PreferenceActivity {
              }
          }
          pref.setEnabled(true);
+    }
+
+    private void updateCaptureProfilePref() {
+        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_CAPTURE_PROFILE);
+        if(pref == null) return;
+        ListPreference rawFormat = (ListPreference)findPreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        String yuv10bit = this.getString(R.string.pref_camera2_saveformat_value_yuv10bit);
+        String yuv10bitWithMetadata = this.getString(
+                R.string.pref_camera2_saveformat_value_yuv10bit_withmetedata);
+        if(rawFormat != null){
+            String value = rawFormat.getValue();
+            if(value.equals(yuv10bit) || value.equals(yuv10bitWithMetadata)){
+                pref.setEnabled(true);
+            } else {
+                pref.setValue("0");
+                pref.setEnabled(false);
+                mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_PROFILE, "0");
+            }
+        }
     }
 
     private void updatePreferenceButton(String key) {

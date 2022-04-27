@@ -1292,6 +1292,20 @@ for time lapse recording -->
         <item>HEVCProfileMain10HDR10Plus</item>
     </string-array>
 
+    <string-array name="pref_camera2_preview_profile_entry" translatable="false">
+        <item>Off</item>
+        <item>HLG</item>
+        <item>HDR10</item>
+        <item>HDR10plus</item>
+    </string-array>
+
+    <string-array name="pref_camera2_preview_profile_entryvalues" translatable="false">
+        <item>0</item>
+        <item>2</item>
+        <item>4</item>
+        <item>8</item>
+    </string-array>
+
     <string-array name="pref_camera2_sharpness_control_entries">
         <item>@string/pref_camera2_sharpness_control_entry_level0</item>
         <item>@string/pref_camera2_sharpness_control_entry_level1</item>

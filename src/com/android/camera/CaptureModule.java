@@ -3001,7 +3001,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                         list.add(mYUV10bitImageReader[id].getSurface());
                     }
 
-
                     for (Surface s : list) {
                         if (s == surface) {
                             String physical_id = mSettingsManager.getSinglePhysicalCamera();
@@ -3032,6 +3031,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
                                     Log.v(TAG, "OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT");
                                 }
+                                String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
+                                Log.v(TAG, "OutputConfiguration set previewProfile :" + previewProfile);
+                                if (previewProfile != null && !previewProfile.equals("0")) {
+                                    out.setDynamicRangeProfile(Long.parseLong(previewProfile));
+                                }
                                 outputConfigurations.add(out);
                             }
                         } else {
@@ -3040,6 +3044,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 outputConfiguration.addSensorPixelModeUsed(
                                         CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
                                 Log.v(TAG, "OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+                            }
+                            if ((mYUV10bit || mYUV10BitWithMetadata) &&
+                                    s == mYUV10bitImageReader[id].getSurface()) {
+                                String captureProfile = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_PROFILE);
+                                Log.v(TAG, "OutputConfiguration set captureProfile :" + captureProfile);
+                                if (captureProfile != null && !captureProfile.equals("0")) {
+                                    outputConfiguration.setDynamicRangeProfile(Long.parseLong(captureProfile));
+                                }
                             }
                             outputConfigurations.add(outputConfiguration);
                         }
@@ -8738,6 +8750,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                             CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
                     Log.v(TAG, " video OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
                 }
+                if (mSettingsManager.isDynamicRangeTenBitSupported() &&
+                        !PersistUtil.isVideoEncoderProfileByVendorTag()) {
+                    String encoderProfile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
+                    if (encoderProfile != null) {
+                        String profile = SettingsManager.VIDEO_ENCODER_PROFILE_MAP.get(encoderProfile);
+                        Log.v(TAG, "OutputConfiguration set video encoderProfile :" +
+                                encoderProfile + ", profile :" + profile);
+                        if (!profile.equals("0")) {
+                            videoConfig.setDynamicRangeProfile(Long.parseLong(profile));
+                        }
+                    }
+                }
                 outConfigurations.add(videoConfig);
             }
             OutputConfiguration videoPrevConfig = new OutputConfiguration(mVideoPreviewSurface);
@@ -8748,6 +8772,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                         CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
                 Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT and " +
                         "SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+            }
+            String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
+            Log.v(TAG, "OutputConfiguration set video previewProfile :" + previewProfile);
+            if (previewProfile != null && !previewProfile.equals("0")) {
+                videoPrevConfig.setDynamicRangeProfile(Long.parseLong(previewProfile));
             }
             outConfigurations.add(videoPrevConfig);
         }
@@ -9516,7 +9545,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
-    private void applyVideoEncoderProfile(CaptureRequest.Builder builder) {
+    private void applyVideoEncoderProfileByVendorTag(CaptureRequest.Builder builder) {
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
         int mode = 0;
         if (profile.equals("HEVCProfileMain10HDR10")) {
@@ -9529,6 +9558,16 @@ public class CaptureModule implements CameraModule, PhotoController,
         Log.d(TAG, "setHDRVideoMode: " + mode);
         builder.set(hdr_video_mode, mode);
         VendorTagUtil.setHDRVideoMode(builder, (byte)mode);
+    }
+
+    private void applyVideoEncoderProfile(CaptureRequest.Builder builder) {
+        if (mSettingsManager.isDynamicRangeTenBitSupported()) {
+            if (PersistUtil.isVideoEncoderProfileByVendorTag()) {
+                applyVideoEncoderProfileByVendorTag(builder);
+            }
+        } else {
+            applyVideoEncoderProfileByVendorTag(builder);
+        }
     }
 
     private boolean isVideoEncoderProfileSupported() {

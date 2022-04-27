@@ -314,6 +314,24 @@
         android:title="DEVELOPER OPTIONS">
 
         <ListPreference
+            android:defaultValue="@string/pref_camera2_videoencoderprofile_default"
+            android:entries="@array/pref_camera2_preview_profile_entry"
+            android:entryValues="@array/pref_camera2_preview_profile_entryvalues"
+            android:key="pref_camera2_preview_profile_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_preview_profile_title" />
+
+        <ListPreference
+            android:defaultValue="@string/pref_camera2_videoencoderprofile_default"
+            android:entries="@array/pref_camera2_preview_profile_entry"
+            android:entryValues="@array/pref_camera2_preview_profile_entryvalues"
+            android:key="pref_camera2_captrue_profile_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_capture_profile_title" />
+
+        <ListPreference
             android:defaultValue="@string/pref_camera2_instant_aec_default"
             android:entries="@array/pref_camera2_instant_aec_entries"
             android:entryValues="@array/pref_camera2_instant_aec_entryvalues"

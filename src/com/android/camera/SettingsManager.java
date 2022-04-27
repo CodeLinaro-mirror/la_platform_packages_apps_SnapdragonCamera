@@ -41,6 +41,7 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.params.Capability;
+import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.hardware.camera2.params.MandatoryStreamCombination;
 import android.hardware.camera2.params.MandatoryStreamCombination.MandatoryStreamInformation;
 import android.hardware.camera2.params.MultiResolutionStreamConfigurationMap;
@@ -315,6 +316,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_RAWINFO_TYPE = "pref_camera2_rawinfo_type_key";
     public static final String KEY_RAW_FORMAT_TYPE = "pref_camera2_raw_format_key";
 
+    public static final String KEY_PREVIEW_PROFILE= "pref_camera2_preview_profile_key";
+    public static final String KEY_CAPTURE_PROFILE= "pref_camera2_captrue_profile_key";
+
     public static final String KEY_TORCH_HDR_VALUE= "pref_camera2_torch_hdr_key";
     private static final String TAG = "SnapCam_SettingsManager";
 
@@ -341,6 +345,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private ArrayList<String> mPrepNameKeys;
 
     private static Map<String, Set<String>> VIDEO_ENCODER_PROFILE_TABLE = new HashMap<>();
+    public static final HashMap<String, String> VIDEO_ENCODER_PROFILE_MAP = new HashMap<String, String>();
 
     public Map<String, Values> getValuesMap() {
         return mValuesMap;
@@ -369,6 +374,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
         KEY_HDR_MODES_ORDER.put("SHDR", 1);
         KEY_HDR_MODES_ORDER.put("MFHDR", 2);
         KEY_HDR_MODES_ORDER.put("QHDR", 3);
+        VIDEO_ENCODER_PROFILE_MAP.put("off", "0");
+        VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10", "2");
+        VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10HDR10", "4");
+        VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10HDR10Plus", "8");
     }
 
     private SettingsManager(Context context) {
@@ -1242,6 +1251,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return formats;
     }
 
+    public List<String> getSupportedCapturePreviewProfile() {
+        String[] data = {"0", "2", "4"};
+        List<String> profiles = new ArrayList<>();
+        for (String i : data) {
+            profiles.add(i);
+        }
+        return profiles;
+    }
+
     public Set<String> getPhysicalCameraId() {
         if (!isMultiCameraEnabled())
             return null;
@@ -1629,6 +1647,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference inSensorZoom = mPreferenceGroup.findPreference(KEY_INSENSOR_ZOOM);
         ListPreference aiCamera = mPreferenceGroup.findPreference(KEY_AI_CAMERA);
         ListPreference aiCameraSnapshot = mPreferenceGroup.findPreference(KEY_AI_CAMERA_SNAPSHOT);
+        ListPreference previewProfile = mPreferenceGroup.findPreference(KEY_PREVIEW_PROFILE);
+        ListPreference captureProfile = mPreferenceGroup.findPreference(KEY_CAPTURE_PROFILE);
         ListPreference multireprocess_input = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_INPUT);
         ListPreference multireprocess_output = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_OUTPUT);
 
@@ -1644,7 +1664,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 mFilteredKeys.add(savePath.getKey());
             }
         }
-
 
         if (whiteBalance != null) {
             if (filterUnsupportedOptions(whiteBalance, getSupportedWhiteBalanceModes(cameraId))) {
@@ -1942,6 +1961,32 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 removePreference(mPreferenceGroup, KEY_VSR);
             }
         }
+
+        Log.d(TAG, " isDynamicRangeTenBitSupported !isDynamicRangeTenBitSupported():" + !isDynamicRangeTenBitSupported());
+        if (!isDynamicRangeTenBitSupported()) {
+            if (previewProfile != null) {
+                removePreference(mPreferenceGroup, KEY_PREVIEW_PROFILE);
+            }
+            if (captureProfile != null) {
+                removePreference(mPreferenceGroup, KEY_CAPTURE_PROFILE);
+            }
+        } else {
+            if (previewProfile != null) {
+                if (filterUnsupportedOptions(previewProfile,
+                        getSupportedCapturePreviewProfile())) {
+                    mFilteredKeys.add(previewProfile.getKey());
+                }
+                previewProfile.print();
+            }
+            if (captureProfile != null) {
+                if (filterUnsupportedOptions(captureProfile,
+                        getSupportedCapturePreviewProfile())) {
+                    mFilteredKeys.add(captureProfile.getKey());
+                }
+                captureProfile.print();
+            }
+        }
+
         ListPreference physicalRawReprocessPref = (ListPreference)mPreferenceGroup.findPreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
         boolean ret = buildPhysicalCamera(cameraId, physicalRawReprocessPref);
 
@@ -2797,6 +2842,40 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return result > 1;
         }
         return (result > 0);
+    }
+
+    public boolean isDynamicRangeTenBitSupported() {
+        boolean isSupported = false;
+        int[] capabilities = mCharacteristics.get(getCurrentCameraId()).get(
+                CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+        for (int capability : capabilities) {
+            if (capability ==
+                    CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT) {
+                Log.d(TAG, " isDynamicRangeTenBitSupported REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT ");
+                isSupported = true;
+            }
+        }
+        try {
+            DynamicRangeProfiles dynamicProfiles = mCharacteristics.get(getCurrentCameraId()).get(
+                    CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES);
+            Log.d(TAG, " isDynamicRangeTenBitSupported dynamicProfiles :" + dynamicProfiles +
+                    ", isSupported :" + isSupported);
+            if(dynamicProfiles != null) {
+                ArrayList<Long> testProfiles = new ArrayList<Long>(dynamicProfiles.getSupportedProfiles());
+                for (int i = 0; i < testProfiles.size(); i ++) {
+                    Log.d(TAG, " testProfiles i :" + testProfiles.get(i));
+
+                }
+                boolean HLG10Support = dynamicProfiles.isExtraLatencyPresent(DynamicRangeProfiles.HLG10);
+                boolean HDR10Support = dynamicProfiles.isExtraLatencyPresent(DynamicRangeProfiles.HDR10);
+                boolean HDR10_PLUSSupport = dynamicProfiles.isExtraLatencyPresent(DynamicRangeProfiles.HDR10_PLUS);
+                Log.d(TAG, " isDynamicRangeTenBitSupported HLG10Support :" + HLG10Support +
+                    ", HDR10Support :" + HDR10Support + ", HDR10_PLUSSupport :" + HDR10_PLUSSupport);
+            }
+        } catch (NoSuchFieldError error) {
+            Log.w(TAG, " No field REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES ");
+        }
+        return isSupported;
     }
 
     public boolean isInSensorZoomSupported() {

@@ -337,6 +337,20 @@
         camera:title="@string/pref_camera2_touch_track_focus_title" />
 
     <ListPreference
+        camera:defaultValue="@string/pref_camera2_videoencoderprofile_default"
+        camera:entries="@array/pref_camera2_preview_profile_entry"
+        camera:entryValues="@array/pref_camera2_preview_profile_entryvalues"
+        camera:key="pref_camera2_preview_profile_key"
+        camera:title="@string/pref_camera2_preview_profile_title" />
+
+    <ListPreference
+        camera:defaultValue="@string/pref_camera2_videoencoderprofile_default"
+        camera:entries="@array/pref_camera2_preview_profile_entry"
+        camera:entryValues="@array/pref_camera2_preview_profile_entryvalues"
+        camera:key="pref_camera2_captrue_profile_key"
+        camera:title="@string/pref_camera2_capture_profile_title" />
+
+    <ListPreference
         camera:defaultValue="@string/pref_camera2_instant_aec_default"
         camera:entries="@array/pref_camera2_instant_aec_entries"
         camera:entryValues="@array/pref_camera2_instant_aec_entryvalues"

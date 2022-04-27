@@ -1780,5 +1780,9 @@
     <string name="pref_camera2_torch_hdr_entry_disable" translatable="true">disable</string>
     <string name="pref_camera2_torch_hdr_entry_value_enable" translatable="false">1</string>
     <string name="pref_camera2_torch_hdr_entry_value_disable" translatable="false">0</string>
+
+    <!-- Preview/capture profile-->
+    <string name="pref_camera2_preview_profile_title" translatable="true">Peview Profile</string>
+    <string name="pref_camera2_capture_profile_title" translatable="true">Capture Profile</string>
 </resources>
 
