@@ -11063,9 +11063,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         am.setParameters("hdr_record_on=false");
         am.setParameters("wnr_on=false");
         am.setParameters("ans_on=false");
-        am.setParameters("orientation=landscape");
-        am.setParameters("inverted=false");
-        am.setParameters("facing=front");
+        // Set orientation and inverted based on current display orientation
+        am.setParameters((mOrientation == 90 || mOrientation == 180)
+                            ? "inverted=true" : "inverted=false");
+        am.setParameters((mOrientation == 90 || mOrientation == 270)
+                            ? "orientation=landscape" : "orientation=portrait");
+        am.setParameters("facing=none");
         am.setParameters("hdr_audio_channel_count=0");
         am.setParameters("hdr_audio_sampling_rate=0");
     }

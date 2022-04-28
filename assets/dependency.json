@@ -187,7 +187,7 @@
   {
     "default":{"pref_camera2_hdrwnr_key":"off",
                "pref_camera2_hdrans_key":"off"},
-    "hdr":{}
+    "hdr":{"pref_camera2_audioencoder_key":"aac"}
   },
   "pref_camera2_capture_mfnr_key":
   {

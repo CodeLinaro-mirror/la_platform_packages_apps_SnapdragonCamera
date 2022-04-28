@@ -1727,11 +1727,17 @@ public class SettingsActivity extends PreferenceActivity {
 
     private void updateAudioEncoderPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_AUDIO_ENCODER);
+        String hdr_mode = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_RECORDING_MODE);
         if (pref == null) {
             return;
         }
         if (PersistUtil.enableMediaRecorder()) {
-            pref.setEnabled(true);
+            if (hdr_mode.equals("hdr")) {
+                pref.setEnabled(false);
+                pref.setValue("aac");
+            } else {
+                pref.setEnabled(true);
+            }
         } else {
             pref.setEnabled(false);
             pref.setValue("aac");
