@@ -305,6 +305,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AI_DENOISER_MODE = "pref_camera2_ai_denoiser_mode_key";
     public static final String KEY_INSENSOR_ZOOM = "pref_camera2_insensor_zoom_key";
     public static final String KEY_VSR = "pref_camera2_vsr_key";
+    public static final String KEY_VIULL = "pref_camera2_viull_key";
 
     public static final String KEY_MULTIRESIMAGEREADER = "pref_camera2_multiresimagereader_key";
     public static final String KEY_MULTIRESREPROCESS = "pref_camera2_multiresimagereader_reprocess_key";

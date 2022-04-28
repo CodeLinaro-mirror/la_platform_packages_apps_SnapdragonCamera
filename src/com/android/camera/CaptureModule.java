@@ -6521,6 +6521,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyVSR(builder);
             applyPreviewStabilization(builder);
         }
+        if (mCurrentSceneMode.mode == CameraMode.VIDEO) {
+            applyVIULL(builder);
+        }
         applyNumHDRExposure(builder);
         applyStatsVisualizerOptionMask(builder);
         applyStatsNNControl(builder);
@@ -12138,6 +12141,22 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.v(TAG, " applyVSR mode :" + mode);
             if (mode != 0) {
                 VendorTagUtil.setVSRMode(request, mode);
+            }
+        }
+    }
+
+    private void applyVIULL(CaptureRequest.Builder request) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_VIULL);
+        if (value != null ) {
+            int mode = 0;
+            try  {
+                mode = Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                //
+            }
+            Log.v(TAG, " applyVIULL mode :" + mode);
+            if (mode != 0) {
+                VendorTagUtil.setVIULLMode(request, mode);
             }
         }
     }

@@ -1058,6 +1058,15 @@
             android:summary="%s"/>
 
         <ListPreference
+            android:key="pref_camera2_viull_key"
+            android:defaultValue="@string/pref_camera2_viull_default"
+            android:title="@string/pref_camera2_viull_title"
+            android:entries="@array/pref_camera2_viull_entries"
+            android:entryValues="@array/pref_camera2_viull_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s" />
+
+        <ListPreference
             android:key="pref_camera2_insensor_zoom_key"
             android:defaultValue="@string/pref_camera2_insensor_zoom_default"
             android:title="@string/pref_camera2_insensor_zoom_title"
