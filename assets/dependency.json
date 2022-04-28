@@ -191,8 +191,7 @@
   },
   "pref_camera2_capture_mfnr_key":
   {
-    "1":{"pref_camera2_longshot_key":"off",
-         "pref_camera2_selfiemirror_key":"off"},
+    "1":{"pref_camera2_selfiemirror_key":"off"},
     "0":{"pref_camera2_ai_denoiser_key":"0"}
   },
   "pref_camera2_ai_denoiser_key":

@@ -1631,7 +1631,6 @@ public class SettingsActivity extends PreferenceActivity {
         initializePhysicalPreferences();
         updatePhysicalPreferences();
         updateAICameraPerf();
-        updateLongShotPreference();
         updateVideoHfrFpsPreference();
         updateEISPreference();
         updateT2TPreference();
@@ -1665,7 +1664,7 @@ public class SettingsActivity extends PreferenceActivity {
                     pref.setEnabled(false);
                 }
             }
-            if (disabled && !enable) p.setEnabled(false);
+            if (disabled) p.setEnabled(false);
         }
         // when enable deepzoom, disable the KEY_PICTURE_SIZE
         String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
@@ -1709,6 +1708,7 @@ public class SettingsActivity extends PreferenceActivity {
             e.printStackTrace();
         }
 
+        updateLongShotPreference();
         updateZslPreference();
         updateVideoEncoderProfile();
         updateSwitchIDInModePreference(true);
