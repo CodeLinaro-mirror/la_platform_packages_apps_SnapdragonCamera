@@ -686,8 +686,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.isDepthFocus.isDepthFocus", byte.class);
     private static final CaptureRequest.Key<Byte> capture_burst_fps =
             new CaptureRequest.Key<>("org.quic.camera.BurstFPS.burstfps", byte.class);
-    private static final CaptureRequest.Key<Byte> custom_noise_reduction =
-            new CaptureRequest.Key<>("org.quic.camera.CustomNoiseReduction.CustomNoiseReduction", byte.class);
 
     public static final CameraCharacteristics.Key<int[]> eis_config_table = new CameraCharacteristics.Key<>(
             "org.quic.camera2.VideoConfigurations.info.VideoConfigurationsTable",int[].class);
@@ -9300,14 +9298,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (mfnr_ids != null){
                 builder.set(CaptureRequest.NOISE_REDUCTION_MODE,
                         CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY);
-                builder.set(custom_noise_reduction, (byte) 0x01);
                 for (String id:mfnr_ids){
                     try {
                         builder.setPhysicalCameraKey(CaptureRequest.NOISE_REDUCTION_MODE,
                                 CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY,id);
-                        builder.setPhysicalCameraKey(custom_noise_reduction, (byte) 0x01,id);
                     } catch (Exception e) {
-                        Log.w(TAG, "capture can`t find vendor tag: " + custom_noise_reduction.toString());
+                        Log.w(TAG, "capture can`t find vendor NOISE_REDUCTION_MODE tag: ");
                     }
                 }
             }
@@ -9327,10 +9323,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             builder.set(CaptureRequest.NOISE_REDUCTION_MODE, noiseReduMode);
             if (isMfnrEnable) {
                 try {
-                    builder.set(custom_noise_reduction, (byte) 0x01);
                     builder.set(CaptureModule.mfnrFrameNO, frameValue);
                 } catch (IllegalArgumentException e) {
-                    Log.w(TAG, "capture can`t find vendor tag: " + custom_noise_reduction.toString()+" or "+CaptureModule.mfnrFrameNO.toString());
+                    Log.w(TAG, "capture can`t find vendor tag: " + CaptureModule.mfnrFrameNO.toString());
                 }
             }
         }
