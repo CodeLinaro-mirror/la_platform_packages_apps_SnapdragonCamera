@@ -2938,8 +2938,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
                     if (!mSettingsManager.isHeifWriterEncoding() && mRawReprocessType != 1) {
                         if (!isMultiResolutionImageReaderEnabled()) {
-                            if((isAIDE2Enabled() && (physical_ids != null && physical_ids.size() != 0)) || !isAIDE2Enabled()){
-                                Log.i(TAG, "add blob configure stream for mcx aide2 or other case");
+                            if(!isAIDE2Enabled()){
+                                Log.i(TAG, "add blob configure stream except aide case");
                                 list.add(mImageReader[id].getSurface());
                             }
                         }
