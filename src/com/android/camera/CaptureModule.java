@@ -2089,20 +2089,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void initRepocessImageReader(int format) {
         int i = getMainCameraId();
-        if (mPostProcessor.isZSLEnabled()) {
-            if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
-                Size qcfaMaxSize = mSettingsManager.getSupportedQCFAMaxPictureSize();
-                Log.v(TAG, "ZSL initRepocessImageReader qcfaMaxSize :" + qcfaMaxSize);
-                if (qcfaMaxSize != null) {
-                    mSupportedMaxPictureSize = qcfaMaxSize;
-                }
-            }
-            mImageReader[i] = ImageReader.newInstance(mSupportedMaxPictureSize.getWidth(),
-                    mSupportedMaxPictureSize.getHeight(), format, MAX_IMAGEREADERS + 2);
-        } else {
-            mImageReader[i] = ImageReader.newInstance(mPictureSize.getWidth(),
-                    mPictureSize.getHeight(), format, MAX_IMAGEREADERS + 2);
-        }
+        mImageReader[i] = ImageReader.newInstance(mPictureSize.getWidth(),
+                mPictureSize.getHeight(), format, MAX_IMAGEREADERS + 2);
         if (mSaveRaw) {
             mRawImageReader[i] = ImageReader.newInstance(mSupportedRawPictureSize.getWidth(),
                     mSupportedRawPictureSize.getHeight(), mSettingsManager.getRawFormat(), MAX_IMAGEREADERS + 2);
@@ -3051,6 +3039,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 Log.v(TAG, "OutputConfiguration set captureProfile :" + captureProfile);
                                 if (captureProfile != null && !captureProfile.equals("0")) {
                                     outputConfiguration.setDynamicRangeProfile(Long.parseLong(captureProfile));
+                                }
+                            }
+                            if(s == mImageReader[id].getSurface()){
+                                String physicalCameraId = mSettingsManager.getQuadBayerPhysicalId(Integer.toString(getMainCameraId()));
+                                if(physicalCameraId != null){
+                                    Log.i(TAG,"set physical id " + physicalCameraId + "for image reader stream");
+                                    outputConfiguration.setPhysicalCameraId(physicalCameraId);
                                 }
                             }
                             outputConfigurations.add(outputConfiguration);
@@ -5725,10 +5720,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Size size;
                 if (index != -1) {
                     size = mPhysicalRawSizes[index];
+                    if(mSettingsManager.isMcxQcfaMode()){
+                        List<Size> allSize = mSettingsManager.getSupportedQCFAMaxPictureSizeList(id, ImageFormat.RAW10);
+                        allSize.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
+                        if(allSize.size() != 0){
+                            size = allSize.get(0);
+                        }
+                    }
                 } else {
                     size = mSupportedRawPictureSize;
                 }
                 setPhysicalImgReader(size,id,i);
+                Log.d(TAG,"raw imageReader i="+i+" id="+id+" index="+index+ " size="+size.toString());
                 i++;
             }
         } else if (mSaveRaw && mRawReprocessType == 0) {

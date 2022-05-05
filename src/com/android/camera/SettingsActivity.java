@@ -305,6 +305,9 @@ public class SettingsActivity extends PreferenceActivity {
                     updateZslPreference();
                     updateLongShotPreference();
                     updatePictureFormatPreference();
+                    if(mSettingsManager.isMultiCameraEnabled()){
+                        recreate();
+                    }
                 }
 
                 if (pref.getKey().equals(SettingsManager.KEY_TONE_MAPPING)) {
@@ -1562,11 +1565,21 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_PHYSICAL_YUV_CALLBACK);
                 add(SettingsManager.KEY_PHYSICAL_YUV10BIT_CALLBACK);
                 add(SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
-                add(SettingsManager.KEY_PHYSICAL_HDR);
-                add(SettingsManager.KEY_PHYSICAL_MFNR);
-                add(SettingsManager.KEY_ZSL);
+                if(!mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                    add(SettingsManager.KEY_PHYSICAL_HDR);
+                    add(SettingsManager.KEY_PHYSICAL_MFNR);
+                    add(SettingsManager.KEY_ZSL);
+                }
+                int i=0;
+                int maxSize = 3;
+                if(mSettingsManager.isMcxQcfaMode() && mSettingsManager.getQuadBayerPhysicalList() != null){
+                    maxSize = mSettingsManager.getQuadBayerPhysicalList().size();
+                }
                 for(String id : SettingsManager.KEY_PHYSICAL_SIZE){
-                    add(id);
+                    if(i < maxSize) {
+                        add(id);
+                        i++;
+                    }
                 }
                 add(SettingsManager.KEY_STREAM_USECASE);
             }
@@ -1584,6 +1597,7 @@ public class SettingsActivity extends PreferenceActivity {
 
         if(mode == DEFAULT){
             if (mSettingsManager.isMultiCameraEnabled()){
+                multiCameraPhotoList.add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
                 multiCameraPhotoList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                 addDeveloperOptions(developer,multiCameraPhotoList);
             } else {
@@ -1618,6 +1632,9 @@ public class SettingsActivity extends PreferenceActivity {
         updateMultiPreference(SettingsManager.KEY_PHYSICAL_HDR);
         updateMultiPreference(SettingsManager.KEY_PHYSICAL_MFNR);
         Set<String> physicalIds = mSettingsManager.getAllPhysicalCameraId();
+        if(mSettingsManager.isMcxQcfaMode()){
+            physicalIds = mSettingsManager.getQuadBayerPhysicalList();
+        }
         if (physicalIds != null){
             int i = 0;
             String imageSizeTitle = getResources().getString(

@@ -196,6 +196,12 @@ public class PersistUtil {
     public static int getLongshotShotLimit(int defaultValue) {
         return  getInt("persist.sys.camera.longshot.shotnum", defaultValue);
     }
+    private static final String QUAD_BAYER_PHYSICAL_ID =
+            get("persist.sys.camera.quadBayerPhysicalId", "2");
+
+    public static String getQuadBayerPhysicalId() {
+        return QUAD_BAYER_PHYSICAL_ID;
+    }
 
     public static Point getCameraPreviewSize() {
         Point result = null;
