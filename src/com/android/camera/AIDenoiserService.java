@@ -263,7 +263,7 @@ public class AIDenoiserService extends Service {
     }
 
 
-    public void startAideV2Process(ByteBuffer inputY, ByteBuffer inputC, ByteBuffer dsinputY, ByteBuffer dsinputC,
+    public int startAideV2Process(ByteBuffer inputY, ByteBuffer inputC, ByteBuffer dsinputY, ByteBuffer dsinputC,
             int[] inputFrameDim, int[] downFrameDim, long expTimeInNs, int iso, float denoiseStrength, float adrcGain, int rGain, int bGain, int gGain, int imageformat, int mode){
         Log.i(TAG,"startAideV2Process, expTimeInNs：" + expTimeInNs + ",iso:" + iso + ",denoiseStrength:" +denoiseStrength + ",adrcGain:" + adrcGain +",rGain:" + rGain + "rGain:" + bGain + ",gGain:" + gGain );
         mWidth = inputFrameDim[0];
@@ -280,6 +280,7 @@ public class AIDenoiserService extends Service {
         //mAideUtil.nativeAIDenoiserEngineAbortV2();
         mAideUtil.nativeAIDenoiserEngineDestroyV2();
         Log.i(TAG,"AideV2Process finished");
+        return result;
     }
 
     public byte[] generateAideV2Image(CameraActivity activity, int orientation, Size pictureSize, Rect rect, TotalCaptureResult captureResult, int quality, int format){
