@@ -6407,6 +6407,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyColorEffect(builder);
         applyVideoFlash(builder, id);
         applyVideoEIS(builder);
+        applyExposure(builder);
         applyAICameraSnapshot(builder);
     }
 
