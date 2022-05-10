@@ -41,7 +41,7 @@ import com.android.camera.CaptureModule;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;
 import com.android.camera.SettingsManager;
 import com.android.camera.Storage;
-
+import com.android.camera.ui.FlashToggleButton;
 import android.graphics.RectF;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
@@ -67,7 +67,7 @@ public class OneUICameraControls extends RotatableLayout {
     private View mVideoShutter;
     private View mExitBestPhotpMode;
     private View mPauseButton;
-    private View mFlashButton;
+    private FlashToggleButton mFlashButton;
     private View mMute;
     private View mFrontBackSwitcher;
     private View mTsMakeupSwitcher;
@@ -200,7 +200,7 @@ public class OneUICameraControls extends RotatableLayout {
         mMakeupSeekBar = findViewById(R.id.makeup_seekbar);
         mMakeupSeekBarLayout = findViewById(R.id.makeup_seekbar_layout);
         ((SeekBar) mMakeupSeekBar).setMax(100);
-        mFlashButton = findViewById(R.id.flash_button);
+        mFlashButton = (FlashToggleButton)findViewById(R.id.flash_button);
         mMute = findViewById(R.id.mute_button);
         mPreview = findViewById(R.id.preview_thumb);
         mSceneModeSwitcher = findViewById(R.id.scene_mode_switcher);
@@ -858,13 +858,18 @@ public class OneUICameraControls extends RotatableLayout {
                 if(!isEnable) {
                     mExposure.setTextColor(GREY);
                     isExposureEnable = false;
+                    mFlashButton.setVisibility(View.INVISIBLE);
                 } else {
                     mExposure.setTextColor(Color.WHITE);
                     isExposureEnable = true;
+                    mFlashButton.setVisibility(View.VISIBLE);
                 }
                 ;
                 break;
         }
+    }
+    public void closeFlashForPro(){
+        mFlashButton.closeFlash(true);
     }
 
     public void updateProModeText(int mode, String value) {
@@ -885,6 +890,7 @@ public class OneUICameraControls extends RotatableLayout {
                 mShutterSpeedText.setText(value);
         }
     }
+
 
     public void setBlurMode(boolean blurMode) {
         mBlurModeOn = blurMode;

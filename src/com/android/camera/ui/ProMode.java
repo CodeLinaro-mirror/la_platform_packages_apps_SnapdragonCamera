@@ -428,7 +428,7 @@ public class ProMode extends View {
             mUI.updateProModeText(mMode, getExposureTimeStr(value));
             mSettingsManager.setKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE,forceNotify,valuestr);
             mAutoText.setTextColor(Color.WHITE);
-            if(mIsoIndex > 0 ) resetEVAndDisable();
+            if(mIsoIndex > 0 ) resetEVAndFlash();
             else if (mIsoIndex == 0) mUI.setModeEnable(EXPOSURE_MODE,true);
 
             mCurrentExposuretime = valuestr;
@@ -464,7 +464,7 @@ public class ProMode extends View {
         mUI.updateProModeText(mMode, cc[mIndex].toString());
         if(mMode == ISO_MODE) {
             if (mCurrentExposuretime != null && !mCurrentExposuretime.equals("auto") && !mCurrentExposuretime.equals("") && index > 0) {
-                resetEVAndDisable();
+                resetEVAndFlash();
             } else {
                 mUI.setModeEnable(EXPOSURE_MODE, true);
             }
@@ -522,8 +522,9 @@ public class ProMode extends View {
         }
     }
 
-    private void resetEVAndDisable(){
+    private void resetEVAndFlash(){
         mUI.setModeEnable(EXPOSURE_MODE,false);
+        mUI.closeFlashForPro();
         if (mSettingsManager != null) {
             String defaultEV = getResources().getString(
                     R.string.pref_exposure_default);

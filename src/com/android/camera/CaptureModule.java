@@ -12446,7 +12446,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setIsoAndExposureTime(CaptureRequest.Builder request, int isoValue, long exposureTime) {
-        mSettingsManager.setValue(SettingsManager.KEY_FLASH_MODE, "off");
         request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
         request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime);
@@ -12715,6 +12714,16 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private boolean isIsoAndE() {
+        if (mCurrentSceneMode.mode != CameraMode.PRO_MODE) return false;
+        String isovalue = mSettingsManager.getValue(SettingsManager.KEY_ISO);
+        String exposuretime = mSettingsManager.getKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE);
+        if (exposuretime.equals("") || isovalue.equals("") || exposuretime.equals("auto") || isovalue.equals("auto"))
+            return false;
+        else return true;
+
+
+    }
     //response to switch flash mode options in UI, repeat request as soon as switching
     private void applyFlashForUIChange(CaptureRequest.Builder request, int id) {
         if (!checkSessionAndBuilder(mCaptureSession[id], request) || mCurrentSessionClosed) {
@@ -12729,6 +12738,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.w(TAG, "flash not supported, can't set android.flash.mode");
             return;
         }
+
         String value = mSettingsManager.getValue(mCurrentSceneMode.mode == CameraMode.PRO_MODE ?
                 SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
         mIsAutoFlash = false;
@@ -12742,7 +12752,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setFlashMode(CaptureRequest.Builder request, String flashMode) {
-        if (request == null || flashMode == null) return;
+        if (request == null || flashMode == null || isIsoAndE()) return;
         boolean isCaptureBurst = isCaptureBrustMode();
         switch (flashMode) {
             case "on":
@@ -13265,6 +13275,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 case SettingsManager.KEY_VIDEO_FLASH_MODE:
                     switch (mCurrentSceneMode.mode) {
                         case PRO_MODE:
+
                             applyFlashForUIChange(mPreviewRequestBuilder[getMainCameraId()],
                                     getMainCameraId());
                             break;
@@ -14677,7 +14688,7 @@ class MFNRDrawer extends View {
 }
 
 abstract class PhysicalImageListener
-        implements ImageReader.OnImageAvailableListener{
+        implements ImageReader.OnImageAvailableListener {
     private String mCamId;
 
     public void setCamId(String camId) {
