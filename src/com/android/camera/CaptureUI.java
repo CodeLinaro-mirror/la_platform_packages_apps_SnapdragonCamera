@@ -923,12 +923,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
     }
+    private void hideVerticalEv(){
+        if (mEvValue != null && mEvValue.getVisibility() == View.VISIBLE)
+            mEvValue.setVisibility(View.INVISIBLE);
+        if (mVerticalEvBar != null && mVerticalEvBar.getVisibility() == View.VISIBLE){
+            mVerticalEvBar.setVisibility(View.INVISIBLE);
+            resetEv();
+            mVerticalEvBar = null;
+        }
+    }
     private void initVerticalEvBar() {
-        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE) {
-            if (mEvValue != null && mEvValue.getVisibility() == View.VISIBLE)
-                mEvValue.setVisibility(View.INVISIBLE);
-            if (mVerticalEvBar != null && mVerticalEvBar.getVisibility() == View.VISIBLE)
-                mVerticalEvBar.setVisibility(View.INVISIBLE);
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE || mScreenHDRindex == 1) {
+            hideVerticalEv();
             return;
         }
         final int length = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE).length;
@@ -1818,6 +1824,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     mScreenHDRindex = (mScreenHDRindex + 1) % mScreenHDRIcon.length;
                     mSettingsManager.setValueIndex(SettingsManager.KEY_SCENE_MODE, mScreenHDRindex);
                     mSceneModeHDR.setImageResource(mScreenHDRIcon[mScreenHDRindex]);
+
                 }
             });
         }
@@ -3167,6 +3174,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                         showSceneInstructionalDialog(mOrientation);
                     }
                     showSceneModeLabel();
+                    if(value.equals("18")) {//hdr
+                        hideVerticalEv();
+                    }
                 }
             }else if(state.key.equals(SettingsManager.KEY_FLASH_MODE) ) {
                 enableView(mFlashButton, SettingsManager.KEY_FLASH_MODE);
