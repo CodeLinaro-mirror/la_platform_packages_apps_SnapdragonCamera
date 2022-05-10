@@ -858,18 +858,23 @@ public class OneUICameraControls extends RotatableLayout {
                 if(!isEnable) {
                     mExposure.setTextColor(GREY);
                     isExposureEnable = false;
-                    mFlashButton.setVisibility(View.INVISIBLE);
+
                 } else {
                     mExposure.setTextColor(Color.WHITE);
                     isExposureEnable = true;
-                    mFlashButton.setVisibility(View.VISIBLE);
                 }
                 ;
                 break;
         }
     }
-    public void closeFlashForPro(){
-        mFlashButton.closeFlash(true);
+    public void closeFlashForPro( boolean isHiden){
+        android.util.Log.d(TAG,"zcl closeFlashForPro isHiden="+isHiden);
+        if(isHiden) {
+            mFlashButton.closeFlash(true);
+            mFlashButton.setVisibility(View.INVISIBLE);
+        }else{
+            mFlashButton.setVisibility(View.VISIBLE);
+        }
     }
 
     public void updateProModeText(int mode, String value) {
