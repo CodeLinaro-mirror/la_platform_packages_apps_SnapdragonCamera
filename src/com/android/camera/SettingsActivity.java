@@ -1743,16 +1743,26 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref == null) {
             return;
         }
-        if (PersistUtil.enableMediaRecorder()) {
-            if (hdr_mode.equals("hdr")) {
+        ListPreference multiCamerPref = (ListPreference)findPreference(
+                SettingsManager.KEY_MULTI_CAMERA_MODE);
+        if (multiCamerPref != null) {
+            String enable = multiCamerPref.getValue();
+            if (enable != null && enable.equals("1")) {
                 pref.setEnabled(false);
                 pref.setValue("aac");
             } else {
-                pref.setEnabled(true);
+                if (PersistUtil.enableMediaRecorder()) {
+                    if (hdr_mode.equals("hdr")) {
+                        pref.setEnabled(false);
+                        pref.setValue("aac");
+                    } else {
+                        pref.setEnabled(true);
+                    }
+                } else {
+                    pref.setEnabled(false);
+                    pref.setValue("aac");
+                }
             }
-        } else {
-            pref.setEnabled(false);
-            pref.setValue("aac");
         }
     }
 
@@ -1787,11 +1797,22 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref == null) {
             return;
         }
-        if (PersistUtil.enableMediaRecorder()) {
-            pref.setEnabled(true);
-        } else {
-            pref.setEnabled(false);
-            pref.setValue("0");
+
+        ListPreference multiCamerPref = (ListPreference)findPreference(
+                SettingsManager.KEY_MULTI_CAMERA_MODE);
+        if (multiCamerPref != null) {
+            String enable = multiCamerPref.getValue();
+            if (enable != null && enable.equals("1")) {
+                pref.setValue("0");
+                pref.setEnabled(false);
+            } else {
+                if (PersistUtil.enableMediaRecorder()) {
+                    pref.setEnabled(true);
+                } else {
+                    pref.setValue("0");
+                    pref.setEnabled(false);
+                }
+            }
         }
     }
 
