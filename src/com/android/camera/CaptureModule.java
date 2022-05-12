@@ -4775,7 +4775,18 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.i(TAG,"physicalCropRegion:" + originalCropRegion.toString());
         }else {
             originalCropRegion = mCaptureResult.get(CaptureResult.SCALER_CROP_REGION);
-            Log.i(TAG,"single crop region:" + originalCropRegion.toString());
+            Log.i(TAG,"single crop region from hal:" + originalCropRegion.toString());
+            Log.i(TAG,"single crop region for preview:" + mCropRegion[getMainCameraId()].toString() + ",camerdId:" + getMainCameraId());
+            Rect activeRegion = mSettingsManager.getSensorActiveArraySize(getMainCameraId());
+            Log.i(TAG,"sensor active array:" + activeRegion.toString());
+            //map preview crop to aide yuv size
+            int left = originalCropRegion.left*mAideFullImage.getWidth()/activeRegion.width();
+            int right = originalCropRegion.right*mAideFullImage.getWidth()/activeRegion.width();
+            int top = originalCropRegion.top *mAideFullImage.getHeight()/activeRegion.height();
+            int bottom = originalCropRegion.bottom *mAideFullImage.getHeight()/activeRegion.height();
+            originalCropRegion.set(left, top, right, bottom);
+            Log.i(TAG,"single crop region map to yuv size:" + originalCropRegion.toString());
+
         }
         //output yuv and final picture have the different resolution ratio
         Rect cropRegion = new Rect();
