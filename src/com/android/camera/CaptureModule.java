@@ -1996,6 +1996,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             initializePreviewConfiguration(id);
                             setDisplayOrientation();
                             updateFaceDetection();
+                            mFirstPreviewLoaded = false;
                             try {
                                 if (isBackCamera() && getCameraMode() == DUAL_MODE) {
                                     linkBayerMono(id);
@@ -4315,11 +4316,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mInitHeifWriter != null) {
             mInitHeifWriter.close();
         }
+        mUI.showPreviewCover();
         if(mIsCloseCamera) {
             closeCamera();
-            mUI.showPreviewCover();
-            mUI.hideSurfaceView();
-        }else{
+        } else {
             closeProcessors();
         }
         resetAudioMute();
@@ -4330,7 +4330,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         mZoomValue = 1f;
         mUI.updateZoomSeekBar(1.0f);
-        mFirstPreviewLoaded = false;
         if (isExitCamera && mIsCloseCamera) {
             stopBackgroundThread();
         }
@@ -4345,7 +4344,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         mJpegImageData = null;
     }
 
+    @Override
     public void onResumeBeforeSuper() {
+        onResumeBeforeSuper(false);
+    }
+
+    public void onResumeBeforeSuper(boolean resumeFromRestartAll) {
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         Log.v(TAG, " onResumeBeforeSuper facingOfIntentExtras :" + facingOfIntentExtras +
@@ -4367,7 +4371,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mState[i] = STATE_PREVIEW;
         }
         mLongshotActive = false;
-        if(mIsCloseCamera) {
+        if(!resumeFromRestartAll) {
             updatePreviewSurfaceReadyState(false);
         }
     }
@@ -5592,6 +5596,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mCurrentSession = cameraCaptureSession;
             mCaptureSession[cameraId] = cameraCaptureSession;
             updateFaceDetection();
+            mFirstPreviewLoaded = false;
             // Create slow motion request list
             List<CaptureRequest> slowMoRequests = null;
             try {
@@ -8441,12 +8446,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             updateLockAFAEVisibility();
         }
         onPauseBeforeSuper();
-        if(!mIsCloseCamera){
-            mUI.showPreviewCover();
-        }
         onPauseAfterSuper(false);
         reinitSceneMode();
-        onResumeBeforeSuper();
+        onResumeBeforeSuper(true);
         onResumeAfterSuper(true);
         setRefocusLastTaken(false);
         mIsCloseCamera = true;
