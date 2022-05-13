@@ -4727,6 +4727,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             ByteBuffer srcDsInputUV = ByteBuffer.allocateDirect(dsinputC.remaining());
             srcDsInputUV.put(dsinputC);
 
+            String mode = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_MODE);
+            if(mode.equals("0")){
+                mBGain = mGGain*detail_enhancement;
+            }
+            Log.i(TAG,"mAideV2CaptureCallback, mRGain:" + mRGain + ",mGGain:" + mGGain + ",detail_enhancement:" + detail_enhancement + ",mBGain:" + mBGain);
             AIDEV2ProcessFrameArgs aideV2Args = new AIDEV2ProcessFrameArgs(inputFrameDim, downFrameDim, srcInputY, srcInputUV, srcDsInputY, srcDsInputUV,
                     title, cropRegion, mCaptureResult, mPictureSize, denoiseStrengthParam, mAideAdrcGain, (int)(mRGain*1024), (int)(mBGain*1024), (int)(mGGain*1024), orientation, quality);
 
@@ -4735,7 +4740,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             mAideDownImage.close();
             mAideDownImage = null;
             namedEntity = null;
-            String mode = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_MODE);
             enableShutterButtonOnMainThread(id);
             //process aidev2
             Log.d(TAG, " mAideV2CaptureCallback, start to call aide lib");
