@@ -7255,8 +7255,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         updateAICameraSeekBar();
         updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
         mUI.showRelatedIcons(mCurrentSceneMode.mode);
-        if(mIsCloseCamera) {
+        if(mIsCloseCamera && !PersistUtil.isTorchMode()) {
             openCamera(getMainCameraId());
+        }else if (PersistUtil.isTorchMode()){
+                mUI.showTorchUI();
+                mUI.hideUIinTorchMode();
         }
         String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
         if (Integer.parseInt(scene) != SettingsManager.SCENE_MODE_UBIFOCUS_INT) {
@@ -7286,6 +7289,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             });
         }
     }
+
 
     private void checkRTBCameraId() {
         CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);

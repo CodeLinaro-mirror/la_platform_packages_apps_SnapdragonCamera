@@ -11,7 +11,7 @@
           http://www.apache.org/licenses/LICENSE-2.0
 
      Unless required by applicable law or agreed to in writing, software
-     distributed under the License is distributed on an "AS IS" BASIS,
+     distributed under the License is distributed on an "AS aIS" BASIS,
      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
      See the License for the specific language governing permissions and
      limitations under the License.
@@ -284,6 +284,111 @@
         android:textColor="@android:color/white"
         android:visibility="gone"
         android:textSize="12sp" />
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:id="@+id/torch_mode_body">
+        <com.android.camera.ui.VerticalSeekBar
+            android:id="@+id/torch_verticalbar"
+            android:layout_width="50dp"
+            android:layout_height="140dp"
+            android:maxHeight="3dip"
+            android:minHeight="1dip"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:thumbOffset="0dp"
+            android:progressDrawable="@drawable/beautify_progressbar_style"
+            android:thumb="@drawable/evbar_thumb"
+            android:max = "100"
+            tools:ignore="MissingClass" >
+        </com.android.camera.ui.VerticalSeekBar>
+        <TextView
+            android:id="@+id/torch_bar_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:layout_above="@+id/torch_verticalbar"
+            android:alpha="0.7"
+            android:clickable="true"
+            android:gravity="center"
+            android:text="3"
+            android:textColor="@android:color/white"
+            android:textSize="20sp" />
+        <TextView
+            android:id="@+id/torch_level_apply"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:layout_toRightOf="@+id/torch_bar_text"
+            android:layout_alignBottom="@+id/torch_bar_text"
+            android:alpha="0.7"
+            android:clickable="true"
+            android:gravity="center"
+            android:text="Apply"
+            android:textColor="@android:color/white"
+            android:background="#D3D3D3"
+            android:textSize="20sp" />
+        <TextView
+            android:id="@+id/torch_read_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/torch_verticalbar"
+            layout_alignBottom="@+id/torch_verticalbar"
+            android:alpha="0.7"
+            android:clickable="true"
+            android:gravity="center"
+            android:text="getTorchLevel"
+            android:textColor="@android:color/white"
+            android:background="#D3D3D3"
+            android:textSize="20sp" />
+        <TextView
+            android:id="@+id/torch_open_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_toLeftOf="@+id/torch_verticalbar"
+            android:layout_alignBottom ="@+id/torch_verticalbar"
+            android:alpha="0.7"
+            android:clickable="true"
+            android:gravity="center"
+            android:text="openTorch"
+            android:textColor="@android:color/white"
+            android:background="#D3D3D3"
+            android:textSize="20sp" />
+        <TextView
+            android:id="@+id/torch_level_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:layout_below="@+id/torch_read_text"
+            android:layout_toLeftOf="@+id/torch_verticalbar"
+            android:alpha="0.7"
+            android:clickable="true"
+            android:gravity="center"
+            android:text="3"
+            android:textColor="@android:color/white"
+            android:textSize="20sp" />
+        <TextView
+            android:id="@+id/torch_close_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_toRightOf="@+id/torch_verticalbar"
+            android:layout_alignBottom ="@+id/torch_verticalbar"
+            android:alpha="0.7"
+            android:clickable="true"
+            android:gravity="center"
+            android:text="closeTorch"
+            android:textColor="@android:color/white"
+            android:background="#D3D3D3"
+            android:textSize="20sp" />
+    </RelativeLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

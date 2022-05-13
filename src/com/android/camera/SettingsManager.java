@@ -172,6 +172,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_PICTURE_FORMAT = "pref_camera2_picture_format_key";
     public static final String KEY_ISO = "pref_camera2_iso_key";
     public static final String KEY_EXPOSURE = "pref_camera2_exposure_key";
+    public static final String KEY_TORCH_VALUE = "pref_camera2_torch_value";
     public static final String KEY_TIMER = "pref_camera2_timer_key";
     public static final String KEY_LONGSHOT = "pref_camera2_longshot_key";
     public static final String KEY_GRIDLINE = "pref_camera2_gridline_key";

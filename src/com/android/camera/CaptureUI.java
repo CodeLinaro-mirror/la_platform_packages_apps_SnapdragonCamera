@@ -94,10 +94,11 @@ import com.android.camera.ui.AFView;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.deepportrait.GLCameraPreview;
 import com.android.camera.util.PersistUtil;
+import android.hardware.camera2.CameraCharacteristics;
 import com.android.camera.ui.VerticalSeekBar;
-
+import android.hardware.camera2.CameraAccessException;
 import org.codeaurora.snapcam.R;
-
+import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -161,7 +162,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private int mCurrentProgress;
     private int mTotalProgress;
     private AFView mAFViewRender;
+    private RelativeLayout mTorchLayout;
+    private TextView mTorchLevel;
+    private TextView mTorchReadText;
+    private TextView mTorchBarLevel;
+    private TextView mTorchLevelApply;
+    private TextView mTorchCloseText;
+    private TextView mTorchOpenText;
+    private VerticalSeekBar mTorchbar;
     private VerticalSeekBar mVerticalEvBar;
+    private boolean mIsTorchOn;
+    private int mTorchLen ;
+    private int mTorchSection ;
     private TextView mEvValue;
 
     private SurfaceHolder.Callback callbackMono = new SurfaceHolder.Callback() {
@@ -488,9 +500,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mSurfaceViewMono.setZOrderMediaOverlay(true);
         mSurfaceHolderMono = mSurfaceViewMono.getHolder();
         mSurfaceHolderMono.addCallback(callbackMono);
-
         mGridLineView = (LinearLayout) mRootView.findViewById(R.id.grid_line);
-
         mPhysicalViews[0] = (SurfaceView) mRootView.findViewById(R.id.mdp_preview_physical_0);
         mPhysicalHolders[0] = mPhysicalViews[0].getHolder();
         mPhysicalHolders[0].addCallback(new PhysicalCallBack(0));
@@ -922,6 +932,116 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 isEvChanging = false;
             }
         });
+    }
+
+    public void showTorchUI() {
+        if(mTorchLayout == null) {
+            mTorchLayout = (RelativeLayout) mRootView.findViewById(R.id.torch_mode_body);
+            mTorchReadText = (TextView) mRootView.findViewById(R.id.torch_read_text);
+            mTorchLevel = (TextView) mRootView.findViewById(R.id.torch_level_value);
+            mTorchBarLevel = (TextView) mRootView.findViewById(R.id.torch_bar_text);
+            mTorchLevelApply = (TextView) mRootView.findViewById(R.id.torch_level_apply);
+            mTorchCloseText = (TextView) mRootView.findViewById(R.id.torch_close_text);
+            mTorchOpenText = (TextView) mRootView.findViewById(R.id.torch_open_text);
+            mTorchbar = (VerticalSeekBar) mRootView.findViewById(R.id.torch_verticalbar);
+        }
+        mTorchLayout.setVisibility(View.VISIBLE);
+        mIsTorchOn =false;
+        String currentId = String.valueOf(mModule.getMainCameraId());
+        android.hardware.camera2.CameraManager manager = (android.hardware.camera2.CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
+        openTorch(currentId,manager);
+        mTorchOpenText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openTorch(currentId,manager);
+            }
+        });
+        mTorchReadText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    int torchStrength = manager.getTorchStrengthLevel(currentId);
+                    mTorchLevel.setText(String.valueOf(torchStrength));
+                } catch (CameraAccessException | IllegalStateException | IllegalArgumentException | NoSuchMethodError e) {
+                    Log.e(TAG, "getTorchStrengthLevel  e=" + e);
+                }
+            }
+        });
+        mTorchCloseText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    manager.setTorchMode(currentId, false);
+                    mIsTorchOn = false;
+                }catch (CameraAccessException | IllegalStateException | IllegalArgumentException |NoSuchMethodError e){
+                    Log.e(TAG, "setTorchMode e=" + e);
+                }
+            }
+        });
+
+        mTorchLevelApply.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String keyLevel = mSettingsManager.getKeyValue(SettingsManager.KEY_TORCH_VALUE);
+                int currentValue = PersistUtil.strToInt(keyLevel, 3);
+                try {
+                    if (mIsTorchOn) {
+                        int currentLevel = manager.getTorchStrengthLevel(currentId);
+                        if (currentLevel != currentValue)
+                            manager.turnOnTorchWithStrengthLevel(currentId, currentValue);
+                    } else {
+                        Toast.makeText(mActivity, "openTorch first", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (CameraAccessException | IllegalStateException | IllegalArgumentException | NoSuchMethodError e) {
+                    Log.e(TAG, "turnOnTorchWithStrengthLevel e=" + e);
+                }
+            }
+        });
+
+        mTorchbar.setOnSeekBarChangeListener(new VerticalSeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(VerticalSeekBar seekBar, int progress, boolean fromUser) {
+                int index = progress / mTorchSection;
+                if (index > mTorchLen - 1 ) index = mTorchLen - 1;
+                String level = mSettingsManager.getKeyValue(SettingsManager.KEY_TORCH_VALUE);
+                int currentLevel = PersistUtil.strToInt(level,3);
+                if (currentLevel != index + 1) {
+                    currentLevel = index + 1;
+                    String str = String.valueOf(currentLevel);
+                    mTorchBarLevel.setText(str);
+                    mSettingsManager.setKeyValue(SettingsManager.KEY_TORCH_VALUE,true,str);
+                }
+            }
+        });
+
+    }
+    private void openTorch(String currentId, android.hardware.camera2.CameraManager manager) {
+        int maxLevel = 4;
+        int defaultLevel = 3;
+        int minLevel = 1;
+        try {
+            CameraCharacteristics pc = manager.getCameraCharacteristics(currentId);
+            if (pc.get(CameraCharacteristics.FLASH_INFO_STRENGTH_DEFAULT_LEVEL) != null) {
+                defaultLevel = pc.get(CameraCharacteristics.FLASH_INFO_STRENGTH_DEFAULT_LEVEL);
+            }
+            if (pc.get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL) != null) {
+                maxLevel = pc.get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL);
+            }
+            manager.turnOnTorchWithStrengthLevel(currentId, defaultLevel);
+            mIsTorchOn = true;
+        } catch (CameraAccessException | IllegalStateException | IllegalArgumentException | NoSuchFieldError e) {
+            Log.d(TAG, e.getMessage());
+        }
+        mTorchLen = maxLevel - minLevel + 1;
+        mTorchSection = 100 / mTorchLen;
+        int progress = mTorchSection * (defaultLevel - 1);
+        if (progress > 100) progress = 100;
+        mTorchbar.setProgress(progress);
+        float scale = (float) progress / 100;
+        mTorchbar.freshProgress(scale);
+        String defalutStr = String.valueOf(defaultLevel);
+        mTorchBarLevel.setText(defalutStr);
+        mSettingsManager.setKeyValue(SettingsManager.KEY_TORCH_VALUE, true, defalutStr);
     }
     private void hideVerticalEv(){
         if (mEvValue != null && mEvValue.getVisibility() == View.VISIBLE)
@@ -2057,6 +2177,17 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mAFViewRender.setVisible(false);
             mAFViewRender.setVisible(true);
         }
+    }
+    public void hideUIinTorchMode() {
+        mModeSelectLayout.setVisibility(View.INVISIBLE);
+        mFrontBackSwitcher.setVisibility(View.INVISIBLE);
+        mFilterModeSwitcher.setVisibility(View.INVISIBLE);
+        mSceneModeHDR.setVisibility(View.INVISIBLE);
+        mFlashButton.setVisibility(View.INVISIBLE);
+        mSettingsIcon.setVisibility(View.INVISIBLE);
+        mShutterButton.setVisibility(View.INVISIBLE);
+        mThumbnail.setVisibility(View.INVISIBLE);
+        hideZoomSeekBar();
     }
 
     public void hideUIwhileRecording() {
@@ -3297,12 +3428,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private class DecodeTask extends AsyncTask<Void, Void, Bitmap> {
         private final byte [] mData;
         private int mOrientation;
-
         public DecodeTask(byte[] data, int orientation) {
             mData = data;
             mOrientation = orientation;
         }
-
         @Override
         protected Bitmap doInBackground(Void... params) {
             Bitmap bitmap = CameraUtil.downSample(mData, mDownSampleFactor);
@@ -3402,7 +3531,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mModule.setNextSceneMode(photoModeIndex);
         }
     }
-
     public void setSoundEffectsForRecording(boolean enabled) {
         if (mShutterButton != null) {
             mShutterButton.setSoundEffectsEnabled(enabled);

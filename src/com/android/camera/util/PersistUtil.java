@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2016, The Linux Foundation. All rights reserved.
  *
@@ -64,7 +65,7 @@ public class PersistUtil {
     private static final int PERSIST_PREVIEW_SIZE =
             getInt("persist.sys.camera.preview.size", 0);
     // camera1 prop end
-
+    private static final boolean PERSIST_CAMERA_TORCH_MODE = getBoolean("persist.sys.camera.torch.mode", false);
     private static final String PERSIST_HFR_LIMIT =
             get("persist.sys.camera.hfr.rate", "");
     private static final boolean PERSIST_SKIP_MEMORY_CHECK =
@@ -181,7 +182,7 @@ public class PersistUtil {
 
     private static final boolean PERSIST_SHOW_VERTICAL_EV_BAR = getBoolean("persist.sys.camera.vertical.evbar",false);
     private static final boolean PERSIST_SHOW_MFNR_SWITCH = getBoolean("persist.sys.camera.mfnr.switch",false);
-
+    public static boolean isTorchMode(){ return PERSIST_CAMERA_TORCH_MODE; }
     public static String getHFRRate() {
         return PERSIST_HFR_LIMIT;
     }
