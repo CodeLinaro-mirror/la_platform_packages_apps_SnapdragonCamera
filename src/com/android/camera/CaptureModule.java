@@ -988,6 +988,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private ImageReader[] mPhysicalJpegReader = new ImageReader[PHYSICAL_CAMERA_COUNT];
     //yuv raw images are for raw reprocess
     public int mRawReprocessType = 0;
+    public boolean mMultiResReprocessEnabled = false;
     private int mYUVCount = 1;
     private Size[] mYUVsize = new Size[mYUVCount];
     private ImageReader[] mYUVImageReader = new ImageReader[mYUVCount];
@@ -2857,7 +2858,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     ClearSightImageProcessor.getInstance().onCaptureSessionConfigured(id == BAYER_ID, cameraCaptureSession);
                                 } else if (mChosenImageFormat == ImageFormat.PRIVATE && id == getMainCameraId()) {
                                     mPostProcessor.onSessionConfigured(mCameraDevice[id], mCaptureSession[id]);
-                                } else if (mRawReprocessType != 0) {
+                                } else if (mRawReprocessType != 0 || mMultiResReprocessEnabled) {
                                     mPostProcessor.onSessionConfigured(mCameraDevice[id], mCaptureSession[id]);
                                 }
 
@@ -3140,12 +3141,29 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         }else {
                             if (isMultiResolutionImageReaderEnabled()) {
-                                Collection<OutputConfiguration> outConfigs = OutputConfiguration.
-                                        createInstancesForMultiResolutionOutput(mMultiResImageReader);
-                                outputConfigurations.addAll(outConfigs);
+                                if(!mMultiResReprocessEnabled) {
+                                    Collection<OutputConfiguration> outConfigs = OutputConfiguration.
+                                            createInstancesForMultiResolutionOutput(mMultiResImageReader);
+                                    outputConfigurations.addAll(outConfigs);
+                                    createCameraSessionWithSessionConfiguration(id, outputConfigurations, null,
+                                            captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
+                                }else{
+                                    Log.d(TAG, "Add input multiresImageReader surface for reprocess case");
+                                    Collection<OutputConfiguration> outputConfigs =
+                                            OutputConfiguration.createInstancesForMultiResolutionOutput(
+                                                    mPostProcessor.getZSLReprocessMultiImageReader());
+                                    outputConfigurations.addAll(outputConfigs);
+                                    Collection<OutputConfiguration> inputConfigs =
+                                            OutputConfiguration.createInstancesForMultiResolutionOutput(
+                                                    mMultiResImageReader);
+                                    outputConfigurations.addAll(inputConfigs);
+                                    createCameraSessionWithSessionConfiguration(id, outputConfigurations, mInputConfig,
+                                            captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
+                                }
+                            }else{
+                                createCameraSessionWithSessionConfiguration(id, outputConfigurations, null,
+                                        captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                             }
-                            createCameraSessionWithSessionConfiguration(id, outputConfigurations, null,
-                                    captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         }
                     } else {
                         mCameraDevice[id].createCaptureSession(list, captureSessionCallback, mCameraHandler);
@@ -4293,13 +4311,13 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (valueFS2 != null) {
                 fs2Value = Integer.parseInt(valueFS2);
             }
-            if (!mSettingsManager.isMultiCameraEnabled()) {
+            if (!mSettingsManager.isMultiCameraEnabled() && !mMultiResReprocessEnabled) {
                 if (!(isDeepZoom() || (fs2Value ==1) ||
                         mSettingsManager.getQuadBayerSensorPrefEnabled())) {
                     addPreviewSurface(captureBuilder, null, id);
                 }
             }
-            if(mRawReprocessType != 0 && !PersistUtil.isRawReprocessQcfa()){
+            if(mRawReprocessType != 0 && !PersistUtil.isRawReprocessQcfa() && !mMultiResReprocessEnabled){
                 addPreviewSurface(captureBuilder, null, id);
             }
             if (mUI.getCurrentProMode() == ProMode.MANUAL_MODE) {
@@ -5232,7 +5250,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      * @param height The height of available size for camera preview
      */
     private void setUpCameraOutputs(int imageFormat) {
-        Log.d(TAG, "setUpCameraOutputs");
+        Log.d(TAG, "setUpCameraOutputs：" + imageFormat);
         CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
         try {
             //init heifWriter and get input surface
@@ -5288,13 +5306,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                             initRepocessImageReader(imageFormat);
                         }
                     } else if (i == getMainCameraId()) {
-                        if (isMultiResolutionImageReaderEnabled()) {
-                            mMultiResImageReader = initOutputMultiImageReader(imageFormat);
-                        } else {
-                            mImageReader[i] = ImageReader.newInstance(mPictureSize.getWidth(),
-                                    mPictureSize.getHeight(), imageFormat, MAX_IMAGEREADERS);
-                        }
-
                         for (int y = 0; y< mYUVCount; y++) {
                             mYUVImageReader[y] = ImageReader.newInstance(mYUVsize[y].getWidth(),mYUVsize[y].getHeight(),
                                     ImageFormat.YUV_420_888,3);
@@ -5323,6 +5334,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         Log.d(TAG, "image arrived over limit");
                                         return;
                                     }
+                                }
+                                if(mMultiResReprocessEnabled){
+                                    waitForRawMetaData();
+                                    Log.i(TAG, "start reprocess-image");
+                                    mPostProcessor.setMultiReader(reader);
+                                    mPostProcessor.reprocessImage(image, mRawInputMeta);
+                                    image.close();
+                                    return;
                                 }
                                 if (isMpoOn()) {
                                     mMpoSaveHandler.obtainMessage(
@@ -5406,6 +5425,22 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 }
                             }
                         };
+                        if (isMultiResolutionImageReaderEnabled()) {
+                            if(mMultiResReprocessEnabled){
+                                String input = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESREPROCESS_INPUT);
+                                int format = imageFormat;
+                                if(input != null) {
+                                    format = Integer.parseInt(input);
+                                }
+                                Log.i(TAG,"init for multi res reader for format:" + format);
+                                initReprocessMultiImageReader(format);
+                            }else{
+                                mMultiResImageReader = initOutputMultiImageReader(imageFormat);
+                            }
+                        } else {
+                            mImageReader[i] = ImageReader.newInstance(mPictureSize.getWidth(),
+                                    mPictureSize.getHeight(), imageFormat, MAX_IMAGEREADERS);
+                        }
                         if (isMultiResolutionImageReaderEnabled()) {
                             mMultiResImageReader.setOnImageAvailableListener(listener,
                                     new HandlerExecutor(mImageAvailableHandler));
@@ -6906,6 +6941,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void initializeValues() {
+        mMultiResReprocessEnabled = mSettingsManager.isMultiResReprocessEnabled();
         updateImageFormatKey();
         initYUVCallbackParam();
         updatePictureSize();

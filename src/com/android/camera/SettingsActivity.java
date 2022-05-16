@@ -212,7 +212,6 @@ public class SettingsActivity extends PreferenceActivity {
                     picSize.setEnabled(true);
                     picFormat.setEnabled(true);
                 }
-                updateMultiResReprocess();
             }else if (key.equals(SettingsManager.KEY_VIDEO_ENCODER_PROFILE)){
                 CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
                 if(mode == CaptureModule.CameraMode.VIDEO) {
@@ -296,7 +295,10 @@ public class SettingsActivity extends PreferenceActivity {
                 if(pref.getKey().equals(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
                     updateZslPreference();
                 }
-
+                if(pref.getKey().equals(SettingsManager.KEY_MULTIRESREPROCESS)) {
+                    updateZslPreference();
+                    updateMultiResReprocess();
+                }
                 if(pref.getKey().equals(SettingsManager.KEY_QUAD_BAYER_SENSOR)) {
                     mSettingsManager.updatePictureAndVideoSize();
                     mSettingsManager.updateHDRSceneMode();
@@ -378,9 +380,6 @@ public class SettingsActivity extends PreferenceActivity {
                 if(pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)){
                     updateVideoMFHDRPreference();
                 }
-                if(pref.getKey().equals(SettingsManager.KEY_ZSL) || pref.getKey().equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
-                    updateMultiResReprocess();
-                }
 
                 if (SettingsManager.KEY_PHOTO_EIS_VALUE.equals(pref.getKey())
                         || SettingsManager.KEY_EIS_VALUE.equals(pref.getKey())) {
@@ -412,7 +411,8 @@ public class SettingsActivity extends PreferenceActivity {
         if (ZSLPref != null) {
             if (!isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) &&
                     !mSettingsManager.getQuadBayerSensorPrefEnabled() &&
-                    !isInSATOrRTBMode) {
+                    !isInSATOrRTBMode &&
+                    !isPrefEnabled(SettingsManager.KEY_MULTIRESREPROCESS)) {
                 key_zsl.add("APP-ZSL");
                 value_zsl.add("app-zsl");
             }
@@ -1365,6 +1365,9 @@ public class SettingsActivity extends PreferenceActivity {
                     if (!PersistUtil.isMultiResolutionImageReaderEnabled() ||
                             !mSettingsManager.isMultiResolutionSupported()) {
                         removePreference(SettingsManager.KEY_MULTIRESIMAGEREADER, developer);
+                        removePreference(SettingsManager.KEY_MULTIRESREPROCESS, developer);
+                        removePreference(SettingsManager.KEY_MULTIRESREPROCESS_INPUT, developer);
+                        removePreference(SettingsManager.KEY_MULTIRESREPROCESS_OUTPUT, developer);
                     } else {
                         updateMultiResolutionRealted();
                     }
@@ -1508,6 +1511,7 @@ public class SettingsActivity extends PreferenceActivity {
             {
                 add(SettingsManager.KEY_MULTIRESIMAGEREADER);
                 add(SettingsManager.KEY_ZSL);
+                add(SettingsManager.KEY_MULTIRESREPROCESS);
                 add(SettingsManager.KEY_MULTIRESREPROCESS_INPUT);
                 add(SettingsManager.KEY_MULTIRESREPROCESS_OUTPUT);
             }
@@ -1520,10 +1524,10 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateMultiResReprocess(){
         ListPreference inpref = (ListPreference)findPreference(SettingsManager.KEY_MULTIRESREPROCESS_INPUT);
         ListPreference outpref = (ListPreference)findPreference(SettingsManager.KEY_MULTIRESREPROCESS_OUTPUT);
-        String value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
+        String value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESREPROCESS);
         ListPreference zslValue = (ListPreference)findPreference(SettingsManager.KEY_ZSL);
         if(inpref != null && outpref != null){
-            if(value != null && "1".equals(value) && (zslValue != null && zslValue.getValue().equals("app-zsl"))) {
+            if(value != null && "1".equals(value)) {
                 inpref.setEnabled(true);
                 outpref.setEnabled(true);
                 mSettingsManager.updateMultiReprocessInputOutput();

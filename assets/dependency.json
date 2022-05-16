@@ -290,6 +290,6 @@
   "pref_camera2_multiresimagereader_key":
   {
     "1":{"pref_camera2_picture_format_key":"0"},
-    "0": {}
+    "0": {"pref_camera2_multiresimagereader_reprocess_key":"0"}
   }
 }

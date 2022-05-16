@@ -307,6 +307,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_VSR = "pref_camera2_vsr_key";
 
     public static final String KEY_MULTIRESIMAGEREADER = "pref_camera2_multiresimagereader_key";
+    public static final String KEY_MULTIRESREPROCESS = "pref_camera2_multiresimagereader_reprocess_key";
     public static final String KEY_MULTIRESREPROCESS_INPUT = "pref_camera2_multiresreprocess_input_key";
     public static final String KEY_MULTIRESREPROCESS_OUTPUT = "pref_camera2_multiresreprocess_output_key";
     public static final String KEY_SNAPSHOT_HDRMODE = "pref_camera2_snapshot_hdrmode";
@@ -1213,6 +1214,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         String enable = sharedPreferences.getString(KEY_MULTI_CAMERA_MODE,"default");
         return "1".equals(enable);
     }
+
     public boolean isStreamUseCaseEnabled(){
         String enable = getValue(SettingsManager.KEY_STREAM_USECASE);
         return "1".equals(enable);
@@ -1227,6 +1229,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Log.d(TAG,"isAvailableUseCase isSupported="+isSupported);
        return isSupported;
     }
+
+    public boolean isMultiResReprocessEnabled(){
+        String enable = getValue(SettingsManager.KEY_MULTIRESREPROCESS);
+        return "1".equals(enable);
+    }
+
     public String getSinglePhysicalCamera(){
         String id = getValue(KEY_SINGLE_PHYSICAL_CAMERA);
         if (!"logical".equals(id) && id != null)
