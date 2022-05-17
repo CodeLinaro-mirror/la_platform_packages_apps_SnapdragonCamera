@@ -4341,9 +4341,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     }
                 }else {
-                    if ((mYUV10bit || mYUV10BitWithMetadata) && mYUV10bitImageReader[id] != null) {
-                        captureBuilder.addTarget(mYUV10bitImageReader[id].getSurface());
-                    }
                     if (mSettingsManager.isHeifWriterEncoding()) {
                         long captureTime = System.currentTimeMillis();
                         mNamedImages.nameNewImage(captureTime);
@@ -4377,7 +4374,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 Log.d(TAG, "Add multi image reader surface to snapshot req.");
                                 captureBuilder.addTarget(mMultiResImageReader.getSurface());
                             } else {
-                                if (mImageReader[id] != null && !isAIDE2Enabled()) {
+                                if ((mYUV10bit || mYUV10BitWithMetadata) &&
+                                        mYUV10bitImageReader[id] != null) {
+                                    captureBuilder.addTarget(mYUV10bitImageReader[id].getSurface());
+                                }
+                                if (mImageReader[id] != null && !isAIDE2Enabled() &&
+                                        (!(mYUV10bit || mYUV10BitWithMetadata) ||
+                                                mSettingsManager.isHeifHALEncoding())) {
                                     captureBuilder.addTarget(mImageReader[id].getSurface());
                                 }
                             }
