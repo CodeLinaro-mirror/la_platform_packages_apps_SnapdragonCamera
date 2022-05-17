@@ -1442,6 +1442,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (PersistUtil.isFacialMaskDetection() && mIsFacialMaskSupported) {
                         updateFacialMask(result);
                     }
+                } else {
+                    mUI.clearFacePoint();
                 }
                 updateT2tTrackerView(result);
             }
@@ -7786,6 +7788,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         boolean bsgEnable = isBsgcDetecionOn();
         boolean contourEnable = isFacialContourOn();
         boolean facePointEnable = isFacePointOn();
+        byte[] smileDegreeArray = null;
+        byte[] smileConfidenceArray = null;
         try {
             if (bsgEnable) {
                 byte[] blinkDetectedArray = captureResult.get(blinkDetected);
@@ -7800,12 +7804,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                 byte[] gazeAngleArray = captureResult.get(gazeAngle);
                 if (FD_DEBUG)
                     Log.d(FD_TAG,"gazeAngleArray="+Arrays.toString(gazeAngleArray));
-                byte[] smileDegreeArray = captureResult.get(smileDegree);
-                if (FD_DEBUG)
-                    Log.d(FD_TAG,"smileDegreeArray="+Arrays.toString(smileDegreeArray));
-                byte[] smileConfidenceArray = captureResult.get(smileConfidence);
-                if (FD_DEBUG)
-                    Log.d(FD_TAG,"smileConfidenceArray="+Arrays.toString(smileConfidenceArray));
+                try {
+                    smileDegreeArray = captureResult.get(smileDegree);
+                    if (FD_DEBUG)
+                        Log.d(FD_TAG,"smileDegreeArray="+Arrays.toString(smileDegreeArray));
+                    smileConfidenceArray = captureResult.get(smileConfidence);
+                    if (FD_DEBUG)
+                        Log.d(FD_TAG,"smileConfidenceArray="+Arrays.toString(smileConfidenceArray));
+                } catch (IllegalArgumentException e){
+                    Log.w(TAG, "getBsgcInfo", e.fillInStackTrace());
+                }
                 for (int i = 0; i < size; i++) {
                     ExtendedFace tmp = new ExtendedFace(faces[i].getId());
                     try {
@@ -8027,6 +8035,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch(Exception e) {
                 Log.e(TAG, " updateFacialMask occur exception");
             }
+        } else {
+            mUI.clearFacialMasks();
         }
     }
 

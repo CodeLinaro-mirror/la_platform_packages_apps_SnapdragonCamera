@@ -189,6 +189,16 @@ public class Camera2FaceView extends FaceView {
         }
     }
 
+    public void clearFacialMasks() {
+        mFacialMasks = null;
+        invalidate();
+    }
+
+    public void clearFacePoint() {
+        mFaces = null;
+        invalidate();
+    }
+
     private boolean isFDRectOutOfBound(Rect faceRect) {
         boolean result = false;
         if(mZoomRationSupported && mPostZoomFov) {

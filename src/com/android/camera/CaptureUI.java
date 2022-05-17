@@ -2868,6 +2868,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mFaceView != null) mFaceView.clear();
     }
 
+    public void clearFacialMasks() {
+        if (mFaceView != null) {
+            mFaceView.clearFacialMasks();
+        }
+    }
+
+    public void clearFacePoint() {
+        if (mFaceView != null) {
+            mFaceView.clearFacePoint();
+        }
+    }
+
     @Override
     public void clearFocus() {
         ArrayList<FocusIndicator> indicators = getFocusIndicator();
