@@ -94,17 +94,14 @@ public class ProMode extends View {
     private int mCurveHeight;
     private int mOrientation;
     private long []mExposureTime;
-    private double convertValue = 1000000000;
-    private long maxExposuretime = 100000000;
-    private double interval = 1.1;
-
-    private List<String>exposurTimeList;
+    private long mMinExpTm;
+    private long mMaxExpTm;
+    private double mExpTmConvert = 1000000000;
+    private long mLongExpTm = 100000000;
+    private List<String>mExpTmList;
     private String mCurrentExposuretime;
     private TextView mAutoText;
-    private int startExpTmIndex = 0;
-    private double evInterval =1;
-    private int startEvIndex = 0;
-    private int evForLongExposureTm = 30;
+    private int mIsoIndex = 0;
 
 
     public ProMode(Context context, AttributeSet attrs) {
@@ -116,7 +113,11 @@ public class ProMode extends View {
 
     private void init() {
         mExposureTime = mSettingsManager.getExposureRangeValues();
-        if(mExposureTime != null ) setExposuretimeList();
+        if(mExposureTime != null && (mMinExpTm != mExposureTime[0] || mMaxExpTm != mExposureTime[1]) ) {
+            mMinExpTm = mExposureTime[0];
+            mMaxExpTm = mExposureTime[1];
+            setExposuretimeList();
+        }
         initExpousreTime();
         init(EXPOSURE_MODE);
         init(WHITE_BALANCE_MODE);
@@ -128,8 +129,8 @@ public class ProMode extends View {
        if (mCurrentExposuretime.equals("auto") || mCurrentExposuretime.equals(""))
            mUI.updateProModeText(EXPOSURE_TIME_MODE, "Auto");
        else {
-           long mExposurTime = PersistUtil.strToLong(mCurrentExposuretime,maxExposuretime);
-               mUI.updateProModeText(EXPOSURE_TIME_MODE, getExposureTimeStr(mExposurTime));
+           long mExposurTime = PersistUtil.strToLong(mCurrentExposuretime, mLongExpTm);
+           mUI.updateProModeText(EXPOSURE_TIME_MODE, getExposureTimeStr(mExposurTime));
        }
    }
    private int getIndexOfValue(String str,List<String>valueList){
@@ -143,11 +144,14 @@ public class ProMode extends View {
         if (key == null) return;
         int index = mSettingsManager.getValueIndex(key);
         CharSequence[] cc = mSettingsManager.getEntries(key);
-        if (mode == EXPOSURE_MODE && !mCurrentExposuretime.equals("auto") && PersistUtil.strToLong(mCurrentExposuretime,maxExposuretime) > maxExposuretime) {
+        mIsoIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_ISO);
+        if (mode == EXPOSURE_MODE && mCurrentExposuretime != null && !mCurrentExposuretime.equals("auto") && !mCurrentExposuretime.equals("") && mIsoIndex > 0) {
             mUI.updateProModeText(mode, "0");
-            mUI.setModeDisable(EXPOSURE_MODE, false);
-        } else
+            mUI.setModeEnable(EXPOSURE_MODE, false);
+            mSettingsManager.setValueIndex(SettingsManager.KEY_EXPOSURE, 0);
+        } else {
             mUI.updateProModeText(mode, cc[index].toString());
+        }
     }
 
     @Override
@@ -254,8 +258,8 @@ public class ProMode extends View {
                 setSlideText("infinity", 0, stride);
                 setSlideText("macro", 1, stride);
             } else if (mMode == EXPOSURE_TIME_MODE) {
-                int index = getIndexOfValue(mCurrentExposuretime,exposurTimeList);
-                mExpTmSlider = (float) index/exposurTimeList.size();
+                int index = getIndexOfValue(mCurrentExposuretime,mExpTmList);
+                mExpTmSlider = (float) index/mExpTmList.size();
                 int stride = mCurveRight - mCurveLeft;
                 setSlideText("Auto", -1, stride);
                 for (int i = 0; i < mExposureTime.length; i++) {
@@ -291,19 +295,20 @@ public class ProMode extends View {
                     v.setX(mPoints[i].x - v.getMeasuredWidth() / 2);
                     v.setY(mPoints[i].y - 2 * v.getMeasuredHeight());
                 }
-
-
                 mParent.addView(v);
                 mAddedViews.add(v);
             }
             setIndex(index, true);
+
         }
         setOrientation(mOrientation);
     }
         private String getExposureTimeStr (long exposuretime){
-            double value = exposuretime / convertValue;
-            if (value < 0.1) {
-                double tmpvalue = convertValue / exposuretime;
+            double value = exposuretime / mExpTmConvert;
+            if(value == 0){
+                return String.valueOf(value);
+            }else if (value < 0.1) {
+                double tmpvalue = mExpTmConvert / exposuretime;
                 if(Math.round(tmpvalue) == 1 ) return "1";
                 return ("1/" + Math.round(tmpvalue));
             } else if(exposuretime <= mExposureTime[1]) {
@@ -336,9 +341,9 @@ public class ProMode extends View {
                     v.setTextColor(BLUE);
                     mUI.updateProModeText(EXPOSURE_TIME_MODE, "Auto");
                     mExpTmSlider = -1;
-                    if(!mCurrentExposuretime.equals("auto")&& PersistUtil.strToLong(mCurrentExposuretime,maxExposuretime) > maxExposuretime){
-                        mSettingsManager.setValueIndex(SettingsManager.KEY_EXPOSURE,startEvIndex);
-                        mUI.setModeDisable(EXPOSURE_MODE,true);
+                    if(!mCurrentExposuretime.equals("auto")){
+                        mUI.setModeEnable(EXPOSURE_MODE,true);
+                        mCurrentExposuretime = "auto";
                     }
                     invalidate();
                 }
@@ -388,19 +393,25 @@ public class ProMode extends View {
     }
     private void setExposuretimeList() {
         long exposuretime = mExposureTime[0];
-        exposurTimeList = new ArrayList<String>();
-        int i = 0;
-        while (exposuretime <= mExposureTime[1]) {
+        mExpTmList = new ArrayList<String>();
+        mExpTmList.add(String.valueOf(exposuretime));
+        if(exposuretime == 0) {
+            exposuretime = 1;
+        }
+        while (exposuretime < mExposureTime[1]) {
+            if(exposuretime <= 1000){
+                exposuretime = Math.round(exposuretime * 5);
+            }else if(exposuretime <= 1000000){
+                exposuretime = Math.round(exposuretime * 2.5);
+            }else if(exposuretime <= mExpTmConvert){
+                exposuretime = Math.round(exposuretime * 1.1);
+            }else{
+                exposuretime = Math.round(exposuretime * 1.3);
+            }
             BigDecimal bigDecimal = new BigDecimal(exposuretime);
-            exposurTimeList.add(String.valueOf(exposuretime));
-            if(exposuretime < maxExposuretime) i++;
-            exposuretime = Math.round(exposuretime * interval);
+            mExpTmList.add(String.valueOf(exposuretime));
         }
-        exposurTimeList.add(String.valueOf(mExposureTime[1]));
-        startExpTmIndex = i;
-        if(exposurTimeList.size() - i > evForLongExposureTm){
-            evInterval =(double) (exposurTimeList.size() - i) / evForLongExposureTm;
-        }
+        mExpTmList.add(String.valueOf(mExposureTime[1]));
     }
     public void setSlider(float slider,boolean forceNotify) {
         if(mMode == MANUAL_MODE) {
@@ -410,28 +421,16 @@ public class ProMode extends View {
             mUI.updateProModeText(mMode, "Manual");
         }else if(mMode == EXPOSURE_TIME_MODE){
             mExpTmSlider = slider;
-            int index =(int) (slider * exposurTimeList.size());
-            if (index > exposurTimeList.size() -1 ) index = exposurTimeList.size() -1;
-            String valuestr = exposurTimeList.get(index);
-            Long value =PersistUtil.strToLong(valuestr,maxExposuretime);
+            int index =(int) (slider * mExpTmList.size());
+            if (index > mExpTmList.size() -1 ) index = mExpTmList.size() -1;
+            String valuestr = mExpTmList.get(index);
+            Long value =PersistUtil.strToLong(valuestr,mLongExpTm);
             mUI.updateProModeText(mMode, getExposureTimeStr(value));
             mSettingsManager.setKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE,forceNotify,valuestr);
             mAutoText.setTextColor(Color.WHITE);
-            if(value > maxExposuretime && (!mCurrentExposuretime.equals("auto") && !mCurrentExposuretime.equals("")
-                    && PersistUtil.strToLong(mCurrentExposuretime,maxExposuretime) <= maxExposuretime)){
-                mUI.setModeDisable(EXPOSURE_MODE,false);
-                resetEV();
-            }else if(value <= maxExposuretime && (!mCurrentExposuretime.equals("auto") && !mCurrentExposuretime.equals("")
-            && PersistUtil.strToLong(mCurrentExposuretime,maxExposuretime) > maxExposuretime)){
-                mUI.setModeDisable(EXPOSURE_MODE,true);
-                mSettingsManager.setValueIndex(SettingsManager.KEY_EXPOSURE,startEvIndex);
-            }
-            if(value > maxExposuretime){
-                double evIndex =(index - startExpTmIndex)/evInterval;
-                int currentEvIndex = (int)Math.round(evIndex);
-                if (currentEvIndex > evForLongExposureTm) currentEvIndex = evForLongExposureTm;
-                mSettingsManager.setKeyValue(SettingsManager.KEY_EV_FOR_LONGEXPOSURE,forceNotify,String.valueOf(currentEvIndex));
-            }
+            if(mIsoIndex > 0 ) resetEVAndDisable();
+            else if (mIsoIndex == 0) mUI.setModeEnable(EXPOSURE_MODE,true);
+
             mCurrentExposuretime = valuestr;
         }
         invalidate();
@@ -463,6 +462,14 @@ public class ProMode extends View {
         if (key != null) mSettingsManager.setValueIndex(key, mIndex);
         CharSequence[] cc = mSettingsManager.getEntries(key);
         mUI.updateProModeText(mMode, cc[mIndex].toString());
+        if(mMode == ISO_MODE) {
+            if (mCurrentExposuretime != null && !mCurrentExposuretime.equals("auto") && !mCurrentExposuretime.equals("") && index > 0) {
+                resetEVAndDisable();
+            } else {
+                mUI.setModeEnable(EXPOSURE_MODE, true);
+            }
+            mIsoIndex = index;
+        }
         invalidate();
     }
 
@@ -515,13 +522,13 @@ public class ProMode extends View {
         }
     }
 
-    public void resetEV(){
+    private void resetEVAndDisable(){
+        mUI.setModeEnable(EXPOSURE_MODE,false);
         if (mSettingsManager != null) {
             String defaultEV = getResources().getString(
                     R.string.pref_exposure_default);
             mSettingsManager.setValue(SettingsManager.KEY_EXPOSURE,defaultEV);
             mUI.updateProModeText(EXPOSURE_MODE,"0");
-
         }
     }
 }

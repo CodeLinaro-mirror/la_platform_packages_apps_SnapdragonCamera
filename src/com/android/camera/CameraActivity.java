@@ -847,6 +847,7 @@ public class CameraActivity extends Activity
         private byte[] mJpegData;
         private boolean mCheckOrientation;
         private int mOrientation = -1;
+        private boolean isDng =false;
 
         public UpdateThumbnailTask(final byte[] jpegData, boolean checkOrientation) {
             mJpegData = jpegData;
@@ -868,8 +869,11 @@ public class CameraActivity extends Activity
             if (path == null) {
                 return null;
             } else {
-                if (path.endsWith(Storage.HEIF_POSTFIX) || path.endsWith(Storage.DNG_POSTFIX)) {
+                if (path.endsWith(Storage.HEIF_POSTFIX)) {
                     mOrientation = getOrientationFromUri(uri);
+                }
+                if(path.endsWith(Storage.DNG_POSTFIX)){
+                    isDng = true;
                 }
                 if (img.isPhoto()) {
                     return decodeImageCenter(path);
@@ -883,7 +887,7 @@ public class CameraActivity extends Activity
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             if (bitmap == null) {
-                if (mThumbnail != null) {
+                if (mThumbnail != null && !isDng) {
                     // Clear the image resource when the bitmap is invalid.
                     mThumbnail.setImageDrawable(null);
                     mThumbnail.setVisibility(View.GONE);
@@ -952,9 +956,6 @@ public class CameraActivity extends Activity
             opt.inSampleSize = sample;
             final BitmapRegionDecoder decoder;
             Bitmap bitmap = null;
-            if(path != null && path.endsWith(Storage.DNG_POSTFIX)){
-            bitmap = BitmapFactory.decodeFile(path, opt);
-            }else{
             try {
                 if (mJpegData == null) {
                     decoder = BitmapRegionDecoder.newInstance(path, true);
@@ -967,7 +968,7 @@ public class CameraActivity extends Activity
              bitmap = decoder.decodeRegion(rect, opt);
              if (decoder != null)
                 decoder.recycle();
-             }
+
             if (orientation != 0 && bitmap != null) {
                 Matrix matrix = new Matrix();
                 matrix.setRotate(orientation);

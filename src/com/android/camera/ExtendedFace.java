@@ -46,6 +46,7 @@ public class ExtendedFace {
     private int mRollDirection = 0;
     private int[] mContour;
     private int[] mLandMarks;
+    private int[] mFacialMarks;
     private int mId;
 
     public ExtendedFace(int id) {
@@ -135,6 +136,14 @@ public class ExtendedFace {
         return mLandMarks;
     }
 
+    public void setFacialMasks(int[] facialMarks) {
+        mFacialMarks = facialMarks;
+    }
+
+    public int[] getFacialMasks() {
+        return mFacialMarks;
+    }
+
     public void setGender(int gender) {
         this.mGender = gender;
     }
@@ -169,13 +178,32 @@ public class ExtendedFace {
 
 
     public enum FDExpressionIndex {
-        Neutral,
         Surprise,
         Fear,
         Disgust,
         Happiness,
         Sad,
         Anger,
+        Neutral,
         ;
+    }
+
+    @Override
+    public String toString() {
+        return "ExtendedFace{" +
+                "mId=" + mId +
+                ",mGender=" + mGender +
+                ", mFaceExpression=" + mFaceExpression +
+                ", mSmileDegree=" + mSmileDegree +
+                ", mSmileConfidence=" + mSmileConfidence +
+                ", mBlinkDetected=" + mBlinkDetected +
+                ", mLeyeBlink=" + mLeyeBlink +
+                ", mReyeBlink=" + mReyeBlink +
+                ", mGazeAngle=" + mGazeAngle +
+                ", mLeftrightGaze=" + mLeftrightGaze +
+                ", mTopbottomGaze=" + mTopbottomGaze +
+                ", mGazeDirection=" + mGazeDirection +
+                ", mRollDirection=" + mRollDirection +
+                '}';
     }
 }

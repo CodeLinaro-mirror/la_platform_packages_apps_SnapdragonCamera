@@ -2958,6 +2958,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFaceView.setFaces(faces,extendedFaces);
     }
 
+    public void onFacialMaskDetection(int[] facialMasks) {
+        mFaceView.setFacialMasks(facialMasks);
+    }
+
     public Point getSurfaceViewSize() {
         Point point = new Point();
         if (mSurfaceView != null) point.set(mSurfaceView.getWidth(), mSurfaceView.getHeight());
@@ -3377,4 +3381,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+    public void setSoundEffectsForRecording(boolean enabled) {
+        if (mShutterButton != null) {
+            mShutterButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mMuteButton != null) {
+            mMuteButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mFlashButton != null) {
+            mFlashButton.setSoundEffectsEnabled(enabled);
+        }
+        if (mThumbnail != null) {
+            mThumbnail.setSoundEffectsEnabled(enabled);
+        }
+    }
 }

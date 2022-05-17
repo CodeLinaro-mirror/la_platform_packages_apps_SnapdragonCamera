@@ -263,6 +263,7 @@ public class PostProcessor{
         @Override
         public void onImageAvailable(ImageReader reader) {
             try {
+
                 if(mUseZSL) {
                     if(mController.isLongShotActive() && mPendingContinuousRequestCount > 0) {
                         Image image = reader.acquireNextImage();
@@ -452,7 +453,13 @@ public class PostProcessor{
     public void onMultiImageReaderReady(MultiResolutionImageReader multiresImageReader) {
         mMultiInputImageReader = multiresImageReader;
         if (mUseZSL) {
-            mMultiOutputImageReader = mController.initOutputMultiImageReader(ImageFormat.JPEG);
+            //here to change reprocess output format
+            String output = SettingsManager.getInstance().getValue(SettingsManager.KEY_MULTIRESREPROCESS_OUTPUT);
+            int format = ImageFormat.JPEG;
+            if(output != null) {
+                format = Integer.parseInt(output);
+            }
+            mMultiOutputImageReader = mController.initOutputMultiImageReader(format);
             mMultiOutputImageReader.setOnImageAvailableListener(mListener, new HandlerExecutor(mHandler));
         }
     }
@@ -569,7 +576,6 @@ public class PostProcessor{
                 }
             }
             if (DEBUG_ZSL) Log.d(TAG, "reprocess Image request " + image.getTimestamp());
-
             CaptureRequest.Builder builder = null;
             try {
                 builder = mCameraDevice.createReprocessCaptureRequest(inputSettings);
@@ -621,7 +627,6 @@ public class PostProcessor{
                 } catch (IllegalStateException e) {
                     Log.e(TAG, "Queueing more than it can have");
                 }
-                Log.i(TAG, "reprocess capture request");
                 mCaptureSession.capture(builder.build(), new CameraCaptureSession.CaptureCallback(){
                     @Override
                     public void onCaptureCompleted(CameraCaptureSession session,
@@ -680,8 +685,25 @@ public class PostProcessor{
         mNamedImages.nameNewImage(captureStartTime);
         PhotoModule.NamedImages.NamedEntity name = mNamedImages.getNextNameEntity();
         String title = (name == null) ? null : name.title;
-        mActivity.getMediaSaveService().addRawImage(data, title, "raw");
-        image.close();
+        if(image.getFormat() == ImageFormat.RAW_SENSOR){
+            TotalCaptureResult mRawMeta = waitForMetaData(0);
+            int setsucess = mController.setInfoForDng(mRawMeta);
+            if(setsucess == 0) {
+                ExifInterface exif = null;
+                mOrientation = CameraUtil.getJpegRotation(mController.getMainCameraId(), mController.getDisplayOrientation());
+                exif =  Exif.getExif(data);
+                long date = (name == null) ? -1 : name.date;
+                mActivity.getMediaSaveService().addDng(image, data.length, title, date, null, image.getWidth(), image.getHeight(), mOrientation, exif,
+                        mController.getMediaSavedListener(), mActivity.getContentResolver(), "dng");
+            }else {
+                mActivity.getMediaSaveService().addRawImage(data, title, "raw");
+                image.close();
+            }
+        }else{
+            mActivity.getMediaSaveService().addRawImage(data, title, "raw");
+            image.close();
+        }
+
     }
 
     enum STATUS {

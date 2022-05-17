@@ -435,13 +435,15 @@ public class OneUICameraControls extends RotatableLayout {
             }
         });
     }
-
-    private void setProModeUi(TextView v1, TextView v2) {
+    private void setProModeUi(TextView v1,TextView v2) {
         for (TextView v : mProViews) {
             if (v != null && (v == v1 || v == v2)) {
                 v.setTextColor(BLUE);
             } else {
                 v.setTextColor(Color.WHITE);
+                if (v == mExposure && !isExposureEnable) v.setTextColor(GREY);
+                else
+                    v.setTextColor(Color.WHITE);
             }
         }
 
@@ -850,11 +852,10 @@ public class OneUICameraControls extends RotatableLayout {
         mProModeLayout.setVisibility(VISIBLE);
         mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() - 100);
     }
-
-    public void setModeDisable(int mode, boolean isEnable) {
+    public void setModeEnable(int mode,boolean isEnable) {
         switch (mode) {
             case ProMode.EXPOSURE_MODE:
-                if (!isEnable) {
+                if(!isEnable) {
                     mExposure.setTextColor(GREY);
                     isExposureEnable = false;
                 } else {

@@ -355,13 +355,22 @@
             android:title="@string/pref_camera2_auto_hdr_title" />
 
         <ListPreference
-            android:defaultValue="@string/pref_camera2_saveformat_default"
-            android:entries="@array/pref_camera2_saveformat_entries"
-            android:entryValues="@array/pref_camera2_saveformat_entryvalues"
-            android:key="pref_camera2_saveraw_key"
+            android:defaultValue="@string/pref_camera2_raw_format_default"
+            android:key="pref_camera2_raw_format_key"
+            android:title="@string/pref_camera2_raw_format_title"
+            android:entries="@array/pref_camera2_raw_format_entries"
+            android:entryValues="@array/pref_camera2_raw_format_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
+            android:key="pref_camera2_snapshot_hdrmode"
+            android:defaultValue="@string/pref_camera2_snapshot_hdrmode_default"
+            android:entries="@array/pref_camera2_snapshot_hdrmode_entries"
+            android:entryValues="@array/pref_camera2_snapshot_hdrmode_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"
-            android:title="@string/pref_camera2_saveformat_title" />
+            android:title="@string/pref_camera2_snapshot_hdrmode_title" />
 
         <ListPreference
             android:defaultValue="@string/pref_camera2_zsl_default"
@@ -425,6 +434,15 @@
             android:entries="@array/pref_camera2_physical_camera_entries"
             android:entryValues="@array/pref_camera2_physical_camera_entryvalues"
             android:title="@string/pref_camera2_physical_yuv_title"/>
+
+        <MultiSelectListPreference
+            android:defaultValue="@array/pref_camera2_physical_camera_default"
+            android:key="pref_camera2_physical_yuv10bit_key"
+            android:layout="@layout/preference"
+            android:summary="Choose which camera to enable YUV 10bit callback"
+            android:entries="@array/pref_camera2_physical_camera_entries"
+            android:entryValues="@array/pref_camera2_physical_camera_entryvalues"
+            android:title="@string/pref_camera2_physical_yuv10bit_title"/>
 
         <MultiSelectListPreference
             android:defaultValue="@array/pref_camera2_physical_camera_default"
@@ -730,15 +748,6 @@
             android:summary="%s"/>
 
         <ListPreference
-            android:defaultValue="@string/pref_camera2_raw_format_default"
-            android:key="pref_camera2_raw_format_key"
-            android:title="@string/pref_camera2_raw_format_title"
-            android:entries="@array/pref_camera2_raw_format_entries"
-            android:entryValues="@array/pref_camera2_raw_format_entryvalues"
-            android:layout="@layout/preference"
-            android:summary="%s"/>
-
-        <ListPreference
             android:defaultValue="@string/pref_camera2_rawinfo_type_default"
             android:key="pref_camera2_rawinfo_type_key"
             android:title="@string/pref_camera2_rawinfo_type_title"
@@ -968,6 +977,24 @@
             android:title="@string/pref_camera2_multiresimagereader_title"
             android:entries="@array/pref_camera2_multiresimagereader_entries"
             android:entryValues="@array/pref_camera2_multiresimagereader_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
+            android:key="pref_camera2_multiresreprocess_input_key"
+            android:defaultValue="@string/pref_camera2_multiresimagereader_input_default"
+            android:title="@string/pref_camera2_multiresimagereader_input_title"
+            android:entries="@array/pref_camera2_format_entries"
+            android:entryValues="@array/pref_camera2_format_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
+            android:key="pref_camera2_multiresreprocess_output_key"
+            android:defaultValue="@string/pref_camera2_multiresimagereader_output_default"
+            android:title="@string/pref_camera2_multiresimagereader_output_title"
+            android:entries="@array/pref_camera2_format_entries"
+            android:entryValues="@array/pref_camera2_format_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
 

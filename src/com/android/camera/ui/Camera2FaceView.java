@@ -30,6 +30,7 @@ package com.android.camera.ui;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
@@ -57,6 +58,9 @@ public class Camera2FaceView extends FaceView {
     private Rect mCameraBound;
     private Rect mOriginalCameraBound;
     private float mZoom = 1.0f;
+
+    private int[] mFacialMasks;
+
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -170,7 +174,17 @@ public class Camera2FaceView extends FaceView {
         }
         mFaces = faces;
         mExFaces = extendedFaces;
+        if (LOGV && mExFaces != null) {
+            Log.v(TAG, "Num of ex faces=" + mExFaces.length);
+        }
         if (!mBlocked && (mFaces != null) && (mFaces.length > 0) && mCameraBound != null) {
+            invalidate();
+        }
+    }
+
+    public void setFacialMasks(int[] facialMasks) {
+        mFacialMasks = facialMasks;
+        if (!mBlocked && (facialMasks != null) && (facialMasks.length > 0) && mCameraBound != null) {
             invalidate();
         }
     }
@@ -299,6 +313,32 @@ public class Camera2FaceView extends FaceView {
                 }
             }
 
+            if (mFacialMasks != null && mFacialMasks.length > 4) {
+                for (int i = 1; i < mFacialMasks.length; i += 5) {
+                    if ((mFacialMasks[i+2] - mFacialMasks[i])  > 0 &&
+                            (mFacialMasks[i+3] - mFacialMasks[i+1]) > 0) {
+                        Rect faceMask = new Rect(mFacialMasks[i], mFacialMasks[i+1],
+                                mFacialMasks[i+2], mFacialMasks[i+3]);
+                        faceMask.offset(0, 0);
+                        if (isFDRectOutOfBound(faceMask)) continue;
+                        mRect.set(faceMask);
+                        if (mZoom != 1.0f && !(mZoomRationSupported && mPostZoomFov)) {
+                            mRect.left = mRect.left - mCameraBound.left;
+                            mRect.right = mRect.right - mCameraBound.left;
+                            mRect.top = mRect.top - mCameraBound.top;
+                            mRect.bottom = mRect.bottom - mCameraBound.top;
+                        }
+                        translateMatrix.mapRect(mRect);
+                        if (LOGV) CameraUtil.dumpRect(mRect, "Original Facial mask");
+                        mMatrix.mapRect(mRect);
+                        if (LOGV) CameraUtil.dumpRect(mRect, "Transformed Facial mask");
+                        mPaint.setColor(Color.BLUE);
+                        mRect.offset(dx, dy);
+                        canvas.drawRect(mRect, mPaint);
+                    }
+                }
+            }
+
             for (int i = 0; i < mFaces.length; i++) {
                 if (mFaces[i].getScore() < 50) continue;
                 Rect faceBound = mFaces[i].getBounds();
@@ -320,6 +360,10 @@ public class Camera2FaceView extends FaceView {
                 mPaint.setColor(mColor);
                 mRect.offset(dx, dy);
                 canvas.drawRect(mRect, mPaint);
+
+                if (LOGV && mExFaces != null) {
+                    Log.v(TAG, "onDraw extendFaceSize " + extendFaceSize + ", mExFaces[" + i + "] " + mExFaces[i]);
+                }
 
                 if (i < extendFaceSize && mExFaces != null &&
                         mExFaces[i] != null) {
@@ -490,7 +534,7 @@ public class Camera2FaceView extends FaceView {
                     if (mGenderEnable) {
                         int gender = exFace.getGender();
                         if (gender != -1) {
-                            String genderText = gender == 0 ? "Male" : "Female";
+                            String genderText = gender == 1 ? "Male" : "Female";
                             canvas.drawText(genderText, mRect.left, mRect.top - mTextPaint.descent(), mTextPaint);
                         }
                     }
@@ -500,7 +544,7 @@ public class Camera2FaceView extends FaceView {
                         if (genderConfidence != null) {
                             for (int j =0; j < genderConfidence.length; j++) {
                                 try {
-                                    String genderText = (j == 0 ? "Male" : "Female") + " Confidence: " + genderConfidence[j];
+                                    String genderText = (j == 1 ? "Male" : "Female") + " Confidence: " + genderConfidence[j];
                                     if (mFaceExpressionConfidencePaint != null) {
                                         float offset = mFaceExpressionConfidencePaint.getTextSize();
                                         canvas.drawText(genderText, mRect.left,

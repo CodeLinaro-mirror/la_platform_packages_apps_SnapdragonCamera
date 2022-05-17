@@ -372,11 +372,18 @@
         camera:title="@string/pref_camera2_hdr_title" />
 
     <ListPreference
-        camera:key="pref_camera2_saveraw_key"
-        camera:defaultValue="@string/pref_camera2_saveformat_default"
-        camera:title="@string/pref_camera2_saveformat_title"
-        camera:entries="@array/pref_camera2_saveformat_entries"
-        camera:entryValues="@array/pref_camera2_saveformat_entryvalues" />
+        camera:defaultValue="@string/pref_camera2_raw_format_default"
+        camera:key="pref_camera2_raw_format_key"
+        camera:title="@string/pref_camera2_raw_format_title"
+        camera:entries="@array/pref_camera2_raw_format_entries"
+        camera:entryValues="@array/pref_camera2_raw_format_entryvalues" />
+
+    <ListPreference
+        camera:key="pref_camera2_snapshot_hdrmode"
+        camera:defaultValue="@string/pref_camera2_snapshot_hdrmode_default"
+        camera:title="@string/pref_camera2_snapshot_hdrmode_title"
+        camera:entries="@array/pref_camera2_snapshot_hdrmode_entries"
+        camera:entryValues="@array/pref_camera2_snapshot_hdrmode_entryvalues" />
 
     <ListPreference
         camera:key="pref_camera2_zsl_key"
@@ -580,13 +587,6 @@
         camera:entryValues="@array/pref_camera2_physical_camera_entryvalues" />
 
     <ListPreference
-        camera:defaultValue="@string/pref_camera2_raw_format_default"
-        camera:key="pref_camera2_raw_format_key"
-        camera:title="@string/pref_camera2_raw_format_title"
-        camera:entries="@array/pref_camera2_raw_format_entries"
-        camera:entryValues="@array/pref_camera2_raw_format_entryvalues" />
-
-    <ListPreference
         camera:defaultValue="@string/pref_camera2_rawinfo_type_default"
         camera:key="pref_camera2_rawinfo_type_key"
         camera:title="@string/pref_camera2_rawinfo_type_title"
@@ -626,6 +626,13 @@
         camera:defaultValue="@string/pref_camera2_physical_camera_default"
         camera:key="pref_camera2_physical_yuv_key"
         camera:title="@string/pref_camera2_physical_camera_title"
+        camera:entries="@array/pref_camera2_physical_camera_entries"
+        camera:entryValues="@array/pref_camera2_physical_camera_entryvalues"/>
+
+    <ListPreference
+        camera:defaultValue="@string/pref_camera2_physical_camera_default"
+        camera:key="pref_camera2_physical_yuv10bit_key"
+        camera:title="@string/pref_camera2_physical_yuv10bit_title"
         camera:entries="@array/pref_camera2_physical_camera_entries"
         camera:entryValues="@array/pref_camera2_physical_camera_entryvalues"/>
 
@@ -814,6 +821,20 @@
         camera:title="@string/pref_camera2_multiresimagereader_title"
         camera:entries="@array/pref_camera2_multiresimagereader_entries"
         camera:entryValues="@array/pref_camera2_multiresimagereader_entryvalues" />
+
+    <ListPreference
+        camera:key="pref_camera2_multiresreprocess_input_key"
+        camera:defaultValue="@string/pref_camera2_multiresimagereader_input_default"
+        camera:title="@string/pref_camera2_multiresimagereader_input_title"
+        camera:entries="@array/pref_camera2_format_entries"
+        camera:entryValues="@array/pref_camera2_format_entryvalues" />
+
+    <ListPreference
+        camera:key="pref_camera2_multiresreprocess_output_key"
+        camera:defaultValue="@string/pref_camera2_multiresimagereader_output_default"
+        camera:title="@string/pref_camera2_multiresimagereader_output_title"
+        camera:entries="@array/pref_camera2_format_entries"
+        camera:entryValues="@array/pref_camera2_format_entryvalues" />
 
     <ListPreference
         camera:key="pref_camera2_qll_key"

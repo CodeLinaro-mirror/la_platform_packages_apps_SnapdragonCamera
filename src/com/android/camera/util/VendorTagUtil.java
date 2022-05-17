@@ -74,12 +74,8 @@ public class VendorTagUtil {
     // Session Parameters
     private static final CaptureRequest.Key<Integer> autohdr_enable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableAutoHDR", Integer.class);
-    private static final CaptureRequest.Key<Integer> shdr_enable =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableSHDR", Integer.class);
-    private static final CaptureRequest.Key<Integer> mfhdr_enable =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMFHDR", Integer.class);
-    private static final CaptureRequest.Key<Integer> qhdr_enable =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableQHDR", Integer.class);
+    private static final CaptureRequest.Key<Integer> hdr_enable =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.HDRMode", Integer.class);
     private static final CaptureRequest.Key<int[]> hdr_modes =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.HDRModePreference", int[].class);
     private static final CaptureRequest.Key<Integer> qll_enable =
@@ -262,25 +258,13 @@ public class VendorTagUtil {
         }
     }
 
-    public static void setSHDRMode(CaptureRequest.Builder builder, int enable) {
-        if (isSupported(builder, shdr_enable)) {
-            builder.set(shdr_enable, enable);
+    public static void setHDRModes(CaptureRequest.Builder builder, int enable) {
+        if (isSupported(builder, hdr_enable)) {
+            builder.set(hdr_enable, enable);
         }
     }
 
-    public static void setMFHDRMode(CaptureRequest.Builder builder, int enable) {
-        if (isSupported(builder, mfhdr_enable)) {
-            builder.set(mfhdr_enable, enable);
-        }
-    }
-
-    public static void setQHDRMode(CaptureRequest.Builder builder, int enable) {
-        if (isSupported(builder, qhdr_enable)) {
-            builder.set(qhdr_enable, enable);
-        }
-    }
-
-    public static void setHDRModes(CaptureRequest.Builder builder, int[] modes) {
+    public static void setHDRModesPreference(CaptureRequest.Builder builder, int[] modes) {
         if (isSupported(builder, hdr_modes)) {
             builder.set(hdr_modes, modes);
         }
