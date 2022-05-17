@@ -210,6 +210,11 @@ public class SettingsActivity extends PreferenceActivity {
                     picFormat.setEnabled(true);
                 }
                 updateMultiResReprocess();
+            }else if (key.equals(SettingsManager.KEY_VIDEO_ENCODER_PROFILE)){
+                CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+                if(mode == CaptureModule.CameraMode.VIDEO) {
+                    updateSwitchIDInModePreference(true);
+                }
             }
             List<String> list = mSettingsManager.getDependentKeys(key);
             if (list != null) {
@@ -313,6 +318,12 @@ public class SettingsActivity extends PreferenceActivity {
                     updateEISPreference();
                     updateVideoVariableFpsPreference();
                     updateVideoHfrFpsPreference();
+                    CaptureModule.CameraMode mode =
+                            (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+                    if(mode == CaptureModule.CameraMode.VIDEO) {
+                        mSettingsManager.filterVideoEncoderProfileOptions();
+                        updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
+                    }
                 }
 
                 if (pref.getKey().equals(SettingsManager.KEY_SCENE_MODE)) {
@@ -1834,11 +1845,11 @@ public class SettingsActivity extends PreferenceActivity {
         List<String> key = new ArrayList<String>(Arrays.asList("Single rear cameraID", "SAT", "Default" ));
         List<String> value = new ArrayList<String>(Arrays.asList( "single_rear_cameraid", "sat", "default"));
         boolean isBack = false;
-
+        String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
         if (pref != null) {
             CaptureModule.CameraMode mode =
                     (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-            if (mode == CaptureModule.CameraMode.VIDEO && isShowRTB) {
+            if (mode == CaptureModule.CameraMode.VIDEO && isShowRTB && ( profile == null || (profile != null && !profile.equals("HEVCProfileMain10HDR10Plus")))) {
                 key.add("RTB");
                 value.add("rtb");
             }else if (mode == CaptureModule.CameraMode.HFR ){

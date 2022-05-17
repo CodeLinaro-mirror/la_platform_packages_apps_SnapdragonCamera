@@ -2426,7 +2426,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return result;
     }
 
-    private void filterVideoEncoderProfileOptions() {
+    public void filterVideoEncoderProfileOptions() {
         ListPreference videoEncoderProfilePref =
                 mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER_PROFILE);
         ListPreference videoEncoderPref = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
@@ -3763,6 +3763,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
         profile.add("off");
         if ( VIDEO_ENCODER_PROFILE_TABLE.containsKey(videoEncoder) ) {
             profile.addAll(VIDEO_ENCODER_PROFILE_TABLE.get(videoEncoder));
+            if(profile.contains("HEVCProfileMain10HDR10Plus") ) {
+                String value = getValue(KEY_SELECT_MODE);
+                if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO && (
+                        value != null && value.equals("rtb"))) {
+                    profile.remove("HEVCProfileMain10HDR10Plus");
+                }
+            }
         }
         return profile;
     }
