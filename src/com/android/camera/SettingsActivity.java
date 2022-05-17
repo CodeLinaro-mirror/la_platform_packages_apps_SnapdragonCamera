@@ -1841,6 +1841,9 @@ public class SettingsActivity extends PreferenceActivity {
             if (mode == CaptureModule.CameraMode.VIDEO && isShowRTB) {
                 key.add("RTB");
                 value.add("rtb");
+            }else if (mode == CaptureModule.CameraMode.HFR ){
+                key.remove("SAT");
+                value.remove("sat");
             }
             if(mSettingsManager.isAICameraOn()){
                 key = new ArrayList<String>(Arrays.asList("Default", "RTB"));
