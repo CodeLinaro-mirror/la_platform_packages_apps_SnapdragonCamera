@@ -159,6 +159,9 @@ public class SettingsActivity extends PreferenceActivity {
                         key.equals(SettingsManager.KEY_PHYSICAL_CAMCORDER)) {
                     updateMultiVideoFPSPreference();
                 }
+                if (key.equals(SettingsManager.KEY_PHYSICAL_CAMCORDER)) {
+                    updateMultiVideoEISPreference();
+                }
             }
             if (key.equals(SettingsManager.KEY_VIDEO_QUALITY)) {
                 updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
@@ -1759,6 +1762,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateMultiResReprocess();
         updatePreviewStabilizationPreference();
         updateMultiVideoFPSPreference();
+        updateMultiVideoEISPreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1959,7 +1963,32 @@ public class SettingsActivity extends PreferenceActivity {
             } else {
                 pref.setValue("off");
                 pref.setEnabled(false);
-                mSettingsManager.setValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, "off");
+            }
+        }
+    }
+
+    private void updateMultiVideoEISPreference() {
+        boolean changeEIS = true;
+        MultiSelectListPreference camCorderPref = (MultiSelectListPreference) findPreference(
+                SettingsManager.KEY_PHYSICAL_CAMCORDER);
+        if (camCorderPref != null) {
+            Set<String> camCorderSet = camCorderPref.getValues();
+            if (camCorderSet != null) {
+                for (String str : camCorderSet) {
+                    if (!"".equals(str)) {
+                        changeEIS &= false;
+                    }
+                }
+            }
+        }
+        ListPreference pref = (ListPreference)findPreference(
+                SettingsManager.KEY_EIS_VALUE);
+        if (pref != null) {
+            if (changeEIS) {
+                pref.setEnabled(true);
+            } else {
+                pref.setValue("disable");
+                pref.setEnabled(false);
             }
         }
     }
