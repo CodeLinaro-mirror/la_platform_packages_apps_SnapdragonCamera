@@ -2754,9 +2754,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                         mExtendedHFRSize[i + 2] >= 120){
                                     break;
                                 }
-                                if(isLimitedHDR() && mExtendedHFRSize[i + 2] >= 60){
-                                    break;
-                                }
                                 supported.add(item);
                                 supported.add("hsr" + mExtendedHFRSize[i + 2]);
                                 if (PersistUtil.isSSMEnabled() && !above1080p) {
@@ -2772,7 +2769,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (supported.isEmpty()) {
             supported.add("off");
         }
-        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported+",mCaptureModule.getVideoHdrMode()="+getVideoHdrMode());
+        Log.d(TAG,"getSupportedHighFrameRate-supported=" + supported);
         return supported;
     }
 
@@ -3943,7 +3940,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if(((getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) != null && getValue(SettingsManager.KEY_RAW_FORMAT_TYPE).equals("0")) ||
                 getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) == null) && (((getValue(SettingsManager.KEY_INSENSOR_ZOOM) != null &&
                 getValue(SettingsManager.KEY_INSENSOR_ZOOM).equals("0")) || getValue(SettingsManager.KEY_INSENSOR_ZOOM) == null)) &&
-                 getVideoFPS()<= 30){
+                getVideoFPS() <= 60){
              return true;
         }
         return false;
