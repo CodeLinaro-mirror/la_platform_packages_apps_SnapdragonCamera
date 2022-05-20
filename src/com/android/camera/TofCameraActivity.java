@@ -62,7 +62,9 @@ import android.util.SizeF;
 import android.view.Surface;
 import android.view.TextureView;
 import android.widget.Toast;
-
+import android.hardware.camera2.params.OutputConfiguration;
+import android.hardware.camera2.params.SessionConfiguration;
+import java.util.concurrent.Executor;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,6 +93,7 @@ public class TofCameraActivity extends Activity implements TextureView.SurfaceTe
     private Matrix mDrawMatrix;
     private volatile boolean mPreviewReady = false;
     private Handler mRenderHandler = new renderHandler();
+    private static final int SESSION_REGULAR = 0;
 
 
     private class renderHandler extends Handler {
@@ -263,9 +266,13 @@ public class TofCameraActivity extends Activity implements TextureView.SurfaceTe
                     Range<Integer> fpsRange = new Range<>(15, 30);
                     mPreviewRequest.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
                     mPreviewRequest.addTarget(mPreviewReader.getSurface());
-                    List<Surface> outputSurfaces = new ArrayList<>();
-                    outputSurfaces.add(mPreviewReader.getSurface());
-                    mCameraDevice.createCaptureSession(outputSurfaces,callback,null);
+                    List<OutputConfiguration> outConfigurations = new ArrayList<>();
+                    outConfigurations.add(new OutputConfiguration(mPreviewReader.getSurface()));
+                    SessionConfiguration sessionConfig = new SessionConfiguration(
+                            SESSION_REGULAR, outConfigurations, new HandlerExecutor(mProcessHandler), callback);
+                    sessionConfig.setSessionParameters(mPreviewRequest.build());
+                    mCameraDevice.createCaptureSession(sessionConfig);
+
                 } catch (CameraAccessException e) {
                     e.printStackTrace();
                 }
@@ -284,6 +291,20 @@ public class TofCameraActivity extends Activity implements TextureView.SurfaceTe
             }
         };
         mCameraManager.openCamera(cameraId, stateCallback, null);
+    }
+
+
+    private class HandlerExecutor implements Executor {
+        private final Handler ihandler;
+
+        public HandlerExecutor(Handler handler) {
+            ihandler = handler;
+        }
+
+        @Override
+        public void execute(Runnable runCmd) {
+            ihandler.post(runCmd);
+        }
     }
 
     private Bitmap depthToRGBA(ShortBuffer buffer,int width,int height) {
