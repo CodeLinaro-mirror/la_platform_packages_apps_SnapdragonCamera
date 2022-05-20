@@ -6967,7 +6967,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             int be_height = info[3];
             int depth = info[4];
             Log.i(TAG,"updateStatsParameters, bg_width:" + bg_width + "bg_height:" + bg_height + "be_width:" +be_width + "be_height:" +be_height + "depth:" +depth);
-            if (bg_width != -1 && bg_height != -1){
+            if (bg_width != -1 && bg_height != -1 && bg_width != 0 && bg_height != 0){
                 BGSTATS_DATA = bg_width*bg_height;
                 BGSTATS_WIDTH = bg_width*STATS_LENGTH;
                 BGSTATS_HEIGHT = bg_height*STATS_LENGTH;
@@ -6978,7 +6978,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 bg_b_statsdata = new int[BGSTATS_DATA];
                 bgstats_view.updateViewSize();
             }
-            if(be_width != -1 && be_height != -1) {
+            if(be_width != -1 && be_height != -1 && be_width != 0 && be_height != 0) {
                 BESTATS_DATA = be_width*be_height;
                 BESTATS_WIDTH = be_width*STATS_LENGTH;
                 BESTATS_HEIGHT = be_height*STATS_LENGTH;
@@ -6989,7 +6989,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 bestats_view.updateViewSize();
             }
 
-            if (depth != -1) {
+            if (depth != -1 && depth != 0) {
                 STATS_DATA_BIT_SHIFT = depth - 8;
                 statsParametersUpdated = STATS_PARAMETER_UPDATE;
             }
