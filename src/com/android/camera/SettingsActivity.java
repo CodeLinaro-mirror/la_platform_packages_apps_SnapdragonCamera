@@ -2164,7 +2164,10 @@ public class SettingsActivity extends PreferenceActivity {
                 if (!value.equals("V2")) {
                     pref.setValueIndex(0);
                     pref.setEnabled(false);
-                    mSettingsManager.setValue(SettingsManager.KEY_PREVIEW_STABILIZATION, "disable");
+                    return;
+                } else {
+                    pref.setValueIndex(1);
+                    pref.setEnabled(false);
                     return;
                 }
             }
@@ -2174,7 +2177,10 @@ public class SettingsActivity extends PreferenceActivity {
                 if (!value.equals("V2")) {
                     pref.setValueIndex(0);
                     pref.setEnabled(false);
-                    mSettingsManager.setValue(SettingsManager.KEY_PREVIEW_STABILIZATION, "disable");
+                    return;
+                } else {
+                    pref.setValueIndex(1);
+                    pref.setEnabled(false);
                     return;
                 }
             }
