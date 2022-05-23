@@ -3479,8 +3479,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             mPreviewRequestBuilder[cameraId] = mVideoRecordRequestBuilder;
             if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
                 mPreviewRequestBuilder[cameraId].set(CaptureRequest.SENSOR_PIXEL_MODE,
-                        CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
-                Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT");
+                        CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
+                Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
             }
             mIsPreviewingVideo = true;
             if (isHighSpeedRateCapture()) {
@@ -5100,7 +5100,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
 
                 if (mSettingsManager.isMaxConfigureSize(id, mVideoSize)) {
-                    // SENSOR_PIXEL_MODE_DEFAULT
                     captureBuilder.set(CaptureRequest.SENSOR_PIXEL_MODE,
                             CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
                     Log.v(TAG, "VideoSnapshot builder set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
@@ -8664,14 +8663,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                         if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
                             mVideoRecordRequestBuilder.set(CaptureRequest.SENSOR_PIXEL_MODE,
-                                    CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
-                            Log.v(TAG, " onConfigured mVideoRecordRequestBuilder set SENSOR_PIXEL_MODE_DEFAULT");
+                                    CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
+                            Log.v(TAG, " onConfigured mVideoRecordRequestBuilder set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
                         }
                     } else {
                         if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
                             mVideoRecordRequestBuilder.set(CaptureRequest.SENSOR_PIXEL_MODE,
-                                    CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
-                            Log.v(TAG, " onConfigured 2 mVideoRecordRequestBuilder set SENSOR_PIXEL_MODE_DEFAULT");
+                                    CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
+                            Log.v(TAG, " onConfigured 2 mVideoRecordRequestBuilder set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
                         }
                         mCurrentSession.setRepeatingRequest(mVideoRecordRequestBuilder.build(),
                                 mCaptureCallback, mCameraHandler);

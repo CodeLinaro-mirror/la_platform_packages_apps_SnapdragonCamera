@@ -2798,8 +2798,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public Rect getSensorActiveArraySize(int id) {
+        if(isMaxConfigureSize(id, getVideoSize())){
+            return getSensorActiveMaxArraySize(id);
+        }
         return mCharacteristics.get(id).get(CameraCharacteristics
                 .SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+    }
+
+    public Rect getSensorActiveMaxArraySize(int id) {
+        return mCharacteristics.get(id).get(CameraCharacteristics
+                .SENSOR_INFO_ACTIVE_ARRAY_SIZE_MAXIMUM_RESOLUTION);
     }
 
     public float getMaxZoom(List<Integer> ids) {
