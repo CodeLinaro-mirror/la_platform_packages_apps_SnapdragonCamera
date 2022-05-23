@@ -2381,17 +2381,25 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateLongShotPreference() {
         SwitchPreference longShot = (SwitchPreference) findPreference(
                 SettingsManager.KEY_LONGSHOT);
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         if (longShot != null) {
-            if(isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)){
+            if(isPrefEnabled(SettingsManager.KEY_BURST_LIMIT) ){
                 longShot.setEnabled(true);
             } else {
                 if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) ||
                         mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                     mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
+                    longShot.setChecked(false);
                     longShot.setEnabled(false);
                 } else {
                     longShot.setEnabled(true);
                 }
+            }
+            if(mode == CaptureModule.CameraMode.RTB && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)){
+                mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
+                longShot.setChecked(false);
+                longShot.setEnabled(false);
             }
         }
     }
