@@ -354,6 +354,7 @@ public class SettingsActivity extends PreferenceActivity {
                         pref.getKey().equals(SettingsManager.KEY_SELECT_MODE)) {
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
+                    updateEISPreference();
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
                     updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
@@ -2255,6 +2256,8 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateEISPreference() {
         ListPreference eisPref = (ListPreference)findPreference(
                 SettingsManager.KEY_EIS_VALUE);
+        String hdrValue = mSettingsManager.getValue(mSettingsManager.KEY_MANUAL_HDR);
+        if (eisPref == null) return;
         if (!mSettingsManager.isEISSupported(mSettingsManager.getVideoSize(),
                 mSettingsManager.getVideoFPS())) {
             if (eisPref != null) {
@@ -2276,11 +2279,11 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
-        if(mSettingsManager.isAIBokehMode()){
+        if (mSettingsManager.isAIBokehMode()) {
             //remove v2 case
-            List<String> list = new ArrayList<String>(Arrays.asList("disable", "V3" ));
-            List<String> values = new ArrayList<String>(Arrays.asList( "disable", "V3"));
-            if(eisPref != null) {
+            List<String> list = new ArrayList<String>(Arrays.asList("disable", "V3"));
+            List<String> values = new ArrayList<String>(Arrays.asList("disable", "V3"));
+            if (eisPref != null) {
                 eisPref.setEntries(list.toArray(new CharSequence[list.size()]));
                 eisPref.setEntryValues(values.toArray(new CharSequence[values.size()]));
                 String value = mSettingsManager.getValue(mSettingsManager.KEY_SELECT_MODE);
@@ -2294,6 +2297,15 @@ public class SettingsActivity extends PreferenceActivity {
                     eisPref.setEnabled(true);
                 }
             }
+        } else if (CaptureModule.CameraMode.VIDEO == mode) {
+            List<String> list = new ArrayList<String>(Arrays.asList("disable", "V2", "V3"));
+            List<String> values = new ArrayList<String>(Arrays.asList("disable", "V2", "V3"));
+            if (hdrValue != null && !hdrValue.equals("off")) {
+                list = new ArrayList<String>(Arrays.asList("disable", "V3"));
+                values = new ArrayList<String>(Arrays.asList("disable", "V3"));
+            }
+            eisPref.setEntries(list.toArray(new CharSequence[list.size()]));
+            eisPref.setEntryValues(values.toArray(new CharSequence[values.size()]));
         }
     }
 
