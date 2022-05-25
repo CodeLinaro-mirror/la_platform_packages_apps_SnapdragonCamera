@@ -1507,6 +1507,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         initializePhysicalPreferences();
         updatePhysicalPreferences();
+        updateVideoMFHDRPreference();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
@@ -1586,7 +1587,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateHvxDependencyPref();
         updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
-        updateVideoMFHDRPreference();
         updateStoragePreference();
         updateLongShotPreference();
         updateVideoHfrFpsPreference();
