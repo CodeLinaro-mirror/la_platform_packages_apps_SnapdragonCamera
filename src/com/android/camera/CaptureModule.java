@@ -8023,13 +8023,25 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         if (facialMasks != null) {
             int size = facialMasks.length / 4;
-            facialMaskInts = new int[size];
+            facialMaskInts = new int[40];
             Log.w(TAG, " onCaptureCompleted size :" + size);
             int j = 0;
-            for (int i = 0; i < facialMasks.length; i += 4) {
-                facialMaskInts[j] = byteArray2Int(facialMasks, i);
-                Log.w(TAG, " onCaptureCompleted j :" + j + ", i :" + i);
-                j++;
+            // why int i = 44
+            // struct FDMetaDataMaskResults
+            // {
+            //     UINT32         numMasks;(4 byte data)
+            //     INT32          faceID[FDMaxFaceCount];(40 byte data)
+            //     FDROIRegion    maskROI[FDMaxFaceCount];(160 byte data)
+            // }
+
+            try {
+                for (int i = 44; i < facialMasks.length; i += 4) {
+                    facialMaskInts[j] = byteArray2Int(facialMasks, i);
+                    Log.w(TAG, " onCaptureCompleted j :" + j + ", i :" + i + " facialMaskInts[j] :" + facialMaskInts[j]);
+                    j++;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, " updateFacialMask byteArray2Int occur exception");
             }
         }
 
