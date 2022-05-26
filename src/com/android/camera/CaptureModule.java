@@ -8362,10 +8362,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (!mSaveRaw) {
             rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.RAW10);
         }
-        if(getMaxRawSize() != null && (mSettingsManager.getRawFormat() == ImageFormat.RAW10 ||
+        Size maxRawSize = getMaxRawSize();
+        if(maxRawSize != null && (mSettingsManager.getRawFormat() == ImageFormat.RAW10 ||
                 (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR && isRawReprocess()))){
-            mSupportedRawPictureSize = getMaxRawSize();
-        }else if ((mSupportedRawPictureSize == null || (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null){
+            mSupportedRawPictureSize = maxRawSize;
+        }else if ((maxRawSize == null || (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null){
             mSupportedRawPictureSize = rawSize[0];
         }
         Log.i(TAG, "mSupportedRawPictureSize=" + mSupportedRawPictureSize+",mSaveRaw="+mSaveRaw);
