@@ -792,6 +792,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_VENDOR_START = 0x10000;
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV = 0x10001;
+    private static final int TIMESTAMP_BASE_SENSOR = OutputConfiguration.TIMESTAMP_BASE_SENSOR;
     TotalCaptureResult mCaptureResult;
     float denoiseStrengthParam = 0.5f;
     float color_saturation = 0.0f;
@@ -8857,6 +8858,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             outConfigurations.add(videoPrevConfig);
         }
         getOptMode();
+        setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
         try {
             SessionConfiguration sessionConfig = new SessionConfiguration(
                     SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
@@ -8867,13 +8869,26 @@ public class CaptureModule implements CameraModule, PhotoController,
             e.printStackTrace();
         }
     }
-
+    private void setTimeStamp(List<OutputConfiguration> outConfigurations,int timestamp){
+        if(PersistUtil.isSetTimeStamp()){
+            try{
+                Log.d(TAG,"setTimeStamp outConfigurations.size()="+outConfigurations.size());
+                for(int i = 0; i < outConfigurations.size(); i++) {
+                    OutputConfiguration config = outConfigurations.get(i);
+                    config.setTimestampBase(timestamp);
+                }
+            }catch (IllegalArgumentException | NoSuchMethodError e){
+                Log.d(TAG,"setTimeStamp exception ="+e);
+            }
+        }
+    }
     private void createCaptureSessionWithSessionConfiguration(CameraDevice camera, int opMode,
                                                               List<OutputConfiguration> outConfigurations,
                                                               InputConfiguration inputConfig,
                                                               CameraCaptureSession.StateCallback listener,
                                                               Handler handler,
                                                               CaptureRequest.Builder initialRequest) {
+        setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
         sessionConfig.setSessionParameters(initialRequest.build());
@@ -8913,6 +8928,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         outConfigurations.add(videoPreviewConfig);
         outConfigurations.add(videoRecordConfig);
+        setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
         try {
             SessionConfiguration sessionConfig = new SessionConfiguration(optionMode,
                     outConfigurations, new HandlerExecutor(mCameraHandler), mSessionListener);

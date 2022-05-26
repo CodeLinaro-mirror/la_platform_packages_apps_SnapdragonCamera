@@ -183,6 +183,11 @@ public class PersistUtil {
     private static final boolean PERSIST_SHOW_VERTICAL_EV_BAR = getBoolean("persist.sys.camera.vertical.evbar",false);
     private static final boolean PERSIST_SHOW_MFNR_SWITCH = getBoolean("persist.sys.camera.mfnr.switch",false);
     public static boolean isTorchMode(){ return PERSIST_CAMERA_TORCH_MODE; }
+    private static final boolean PERSIST_SET_TIMESTAMP = getBoolean("persist.sys.camera.set.timestamp",false);
+    public static boolean isSetTimeStamp(){
+        return PERSIST_SET_TIMESTAMP;
+    }
+
     public static String getHFRRate() {
         return PERSIST_HFR_LIMIT;
     }
