@@ -2650,6 +2650,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mPaused) return;
         try {
             if (!mSurfaceReady) {
+                Log.d(TAG, "start for tryAcquire");
                 if (!mSurfaceReadyLock.tryAcquire(2000, TimeUnit.MILLISECONDS)) {
                     if (mPaused) {
                         Log.d(TAG, "mPaused status occur Time out waiting for surface.");
@@ -2661,6 +2662,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         throw new RuntimeException("Time out waiting for surface.");
                     }
                 }
+                Log.d(TAG, "lock release after tryAcquire");
                 mSurfaceReadyLock.release();
             }
         } catch (InterruptedException e) {
@@ -2670,16 +2672,19 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void
     updatePreviewSurfaceReadyState(boolean rdy) {
-        if (rdy != mSurfaceReady) {
+        if (rdy != mSurfaceReady || !mSurfaceReady) {
             if (rdy) {
                 Log.i(TAG, "Preview Surface is ready!");
                 mSurfaceReadyLock.release();
                 mSurfaceReady = true;
             } else {
                 try {
-                    Log.i(TAG, "Preview Surface is not ready!");
+                    Log.i(TAG, "Preview Surface is not ready!" + mSurfaceReadyLock.availablePermits());
                     mSurfaceReady = false;
-                    mSurfaceReadyLock.acquire();
+                    if(mSurfaceReadyLock.availablePermits() != 0) {
+                        mSurfaceReadyLock.acquire();
+                    }
+                    Log.i(TAG, "SurfaceReadyLock acquire done");
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -6445,6 +6450,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onPauseBeforeSuper() {
         cancelTouchFocus();
         mPaused = true;
+        Log.d(TAG, "lock release after when pause: " + mSurfaceReadyLock.availablePermits());
+        if(mSurfaceReadyLock.availablePermits() == 0) {
+            mSurfaceReadyLock.release();
+            Log.d(TAG, "lock release after when pause done");
+        }
         mToast = null;
         mUI.onPause();
         if (mLongshoting){
