@@ -41,6 +41,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.util.Log;
 
 import com.android.camera.SettingsManager;
 
@@ -93,11 +94,12 @@ public class AIBlurConfigSlide extends View {
 
     private void init() {
         init(BLUR_SHAPR_MODE);
-        mUI.updateBlurModeText(BLUR_STRENGTH_MODE, "Strength");
-        mUI.updateBlurModeText(BLUR_FOCUS_DISTANCE_MODE, "Distance");
-        mUI.updateBlurModeText(BLUR_LUMA_MODE, "Luma");
-        mUI.updateBlurModeText(BLUR_CHROMEU_MODE, "ChromaU");
-        mUI.updateBlurModeText(BLUR_CHROMAV_MODE, "ChromaV");
+        init(BLUR_LUMA_MODE);
+        mUI.updateBlurModeText(BLUR_STRENGTH_MODE, mSettingsManager.geBlurSliderValue(getKey(BLUR_STRENGTH_MODE)));
+        mUI.updateBlurModeText(BLUR_FOCUS_DISTANCE_MODE, mSettingsManager.geBlurSliderValue(getKey(BLUR_FOCUS_DISTANCE_MODE)));
+        mUI.updateBlurModeText(BLUR_CHROMEU_MODE, mSettingsManager.geBlurSliderValue(getKey(BLUR_CHROMEU_MODE)));
+        mUI.updateBlurModeText(BLUR_CHROMAV_MODE, mSettingsManager.geBlurSliderValue(getKey(BLUR_CHROMAV_MODE)));
+        mUI.setChromaEnable(isChromaMode());
     }
 
     private void init(int mode) {
@@ -106,6 +108,10 @@ public class AIBlurConfigSlide extends View {
         int index = mSettingsManager.getValueIndex(key);
         CharSequence[] cc = mSettingsManager.getEntries(key);
         mUI.updateBlurModeText(mode, cc[index].toString());
+    }
+
+    public boolean isChromaMode(){
+        return mSettingsManager.getValue(SettingsManager.KEY_AI_BLUR_LUMA).equals("2");
     }
 
     @Override
@@ -118,7 +124,7 @@ public class AIBlurConfigSlide extends View {
             canvas.drawPath(mCurvePath, mPaint);
         }
         mPaint.setStyle(Paint.Style.FILL);
-        if (mMode == BLUR_SHAPR_MODE) {
+        if (mMode == BLUR_SHAPR_MODE || mMode == BLUR_LUMA_MODE) {
             for (int i = 0; i < mNums; i++) {
                 if (i == mIndex) {
                     mPaint.setColor(BLUE);
@@ -195,7 +201,7 @@ public class AIBlurConfigSlide extends View {
         }
         mIndex = -1;
         String key = currentKey();
-        if (mMode == BLUR_SHAPR_MODE) {
+        if (mMode == BLUR_SHAPR_MODE || mMode == BLUR_LUMA_MODE) {
             if (key == null) return;
             CharSequence[] cc = mSettingsManager.getEntries(key);
             int length = mSettingsManager.getEntryValues(key).length;
@@ -216,17 +222,15 @@ public class AIBlurConfigSlide extends View {
             }
             setIndex(index, true);
         } else if ( mode != NO_MODE){
-            float value = mSettingsManager.geBlurSliderValue(key);
-            setSlider(value,true);
+            float value = Float.valueOf(mSettingsManager.geBlurSliderValue(key));
+            setSlider(value,false);
             int stride = mCurveRight - mCurveLeft;
             for (int i = 0; i < 2; i++) {
                 TextView v = new TextView(mContext);
                 String s = "0";
                 if(mMode == BLUR_STRENGTH_MODE){
-                    if (i == 1) s = "7";
-                } else if(mMode == BLUR_FOCUS_DISTANCE_MODE){
                     if (i == 1) s = "1";
-                } else if(mMode == BLUR_LUMA_MODE){
+                } else if(mMode == BLUR_FOCUS_DISTANCE_MODE){
                     if (i == 1) s = "1";
                 }else{
                     s = "-0.5";
@@ -245,6 +249,7 @@ public class AIBlurConfigSlide extends View {
             }
         }
         setOrientation(mOrientation);
+        mUI.setChromaEnable(isChromaMode());
     }
 
     private String getKey(int mode) {
@@ -285,7 +290,9 @@ public class AIBlurConfigSlide extends View {
 
     public void setSlider(float slider,boolean forceNotify) {
         mSlider = slider;
-        mSettingsManager.setBlurSliderValue(getKey(mMode), forceNotify, mSlider);
+        String value = String.format("%.2f", slider);
+        mSettingsManager.setBlurSliderValue(getKey(mMode), forceNotify, value);
+        mUI.updateBlurModeText(mMode, value);
         invalidate();
     }
 
@@ -322,15 +329,26 @@ public class AIBlurConfigSlide extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (mMode == BLUR_SHAPR_MODE) {
+        if (mMode == BLUR_SHAPR_MODE || mMode == BLUR_LUMA_MODE) {
             int idx = findButton(event.getX(), event.getY());
             if (idx != -1) {
-                setIndex(idx, false);
+                setIndex(idx, true);
+            }
+            if(mMode == BLUR_LUMA_MODE){
+                mUI.setChromaEnable(idx ==2 ? true : false);
+                if(idx !=2){
+                    String defaultValue = "0.00";
+                    mSettingsManager.setBlurSliderValue(SettingsManager.KEY_AI_BLUR_CHROMAU, true, defaultValue);
+                    mUI.updateBlurModeText(BLUR_CHROMEU_MODE, defaultValue);
+                    mSettingsManager.setBlurSliderValue(SettingsManager.KEY_AI_BLUR_CHROMAV, true, defaultValue);
+                    mUI.updateBlurModeText(BLUR_CHROMAV_MODE, defaultValue);
+                    invalidate();
+                }
             }
         } else {
             float slider = getSlider(event.getX(), event.getY());
             if (slider >= 0) {
-                setSlider(slider,false);
+                setSlider(slider,true);
             }
         }
         return true;

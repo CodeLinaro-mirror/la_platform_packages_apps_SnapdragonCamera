@@ -1787,6 +1787,18 @@ for time lapse recording -->
         <item>2</item>
     </string-array>
 
+    <string-array name="pref_camera2_ai_camera_vsemode_entries" translatable="false">
+        <item>@string/pref_camera2_ai_camera_vsemode_entry_none</item>
+        <item>@string/pref_camera2_ai_camera_vsemode_entry_luma</item>
+        <item>@string/pref_camera2_ai_camera_vsemode_entry_chroma</item>
+    </string-array>
+
+    <string-array name="pref_camera2_ai_camera_vsemode_entryvalues" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
     <string-array name="pref_camera2_ai_camera_entries" translatable="false">
         <item>@string/pref_camera2_ai_camera_entry_disable</item>
         <item>@string/pref_camera2_ai_camera_entry_enable</item>

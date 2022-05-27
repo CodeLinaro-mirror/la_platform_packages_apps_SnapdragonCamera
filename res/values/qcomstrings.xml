@@ -1698,6 +1698,10 @@
     <string name="pref_camera2_ai_camera_blurshape_entry_circle" translatable="true">Circle </string>
     <string name="pref_camera2_ai_camera_blurshape_entry_rhombus" translatable="true">Rhombus</string>
     <string name="pref_camera2_ai_camera_blurshape_entry_heart" translatable="true">Heart</string>
+    <string name="pref_camera_blur_vsemode_title" translatable="true">VseMode </string>
+    <string name="pref_camera2_ai_camera_vsemode_entry_none" translatable="true">None </string>
+    <string name="pref_camera2_ai_camera_vsemode_entry_luma" translatable="true">Luma</string>
+    <string name="pref_camera2_ai_camera_vsemode_entry_chroma" translatable="true">Chroma</string>
     <!-- raw reprocess type-->
     <string name="pref_camera2_raw_reprocess_default">0</string>
     <string name="pref_camera2_raw_reprocess_title">Raw Reprocess Callback Type</string>

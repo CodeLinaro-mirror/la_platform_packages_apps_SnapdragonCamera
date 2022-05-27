@@ -36,6 +36,7 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.RelativeLayout;
+import android.util.Log;
 
 import com.android.camera.CaptureModule;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;
@@ -138,18 +139,20 @@ public class OneUICameraControls extends RotatableLayout {
     private boolean mBlurModeOn = false;
     private ViewGroup mAIBlurLayout;
     private AIBlurConfigSlide mAIBlurSlide;
+    private TextView[] mAIBlurViews;
     private TextView mBlurShapeText;
     private TextView mBlurStrengthText;
     private TextView mBlurFocusDistanceText;
     private TextView mBlurLumaText;
     private TextView mBlurChromaUText;
     private TextView mBlurChromaVText;
-    private RotateLayout mBlurShapeLayout;
-    private RotateLayout mBlurStrengthLayout;
-    private RotateLayout mBlurFocusDistanceLayout;
-    private RotateLayout mBlurLumaLayout;
-    private RotateLayout mBlurChromaULayout;
-    private RotateLayout mBlurChromaVLayout;
+    private TextView mBlurShape;
+    private TextView mBlurStrength;
+    private TextView mBlurFocusDistance;
+    private TextView mBlurLuma;
+    private TextView mBlurChromaU;
+    private TextView mBlurChromaV;
+
     public OneUICameraControls(Context context, AttributeSet attrs) {
         super(context, attrs);
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -346,95 +349,128 @@ public class OneUICameraControls extends RotatableLayout {
         mBlurLumaText = (TextView) findViewById(R.id.blur_luma_value);
         mBlurChromaUText = (TextView) findViewById(R.id.blur_chromaU_value);
         mBlurChromaVText = (TextView) findViewById(R.id.blur_chromaV_value);
+
+        mBlurShape = (TextView) findViewById(R.id.blur_shape_text);
+        mBlurStrength = (TextView) findViewById(R.id.blur_strength_text);
+        mBlurFocusDistance = (TextView) findViewById(R.id.blur_focus_distance_text);
+        mBlurLuma = (TextView) findViewById(R.id.blur_luma_text);
+        mBlurChromaU = (TextView) findViewById(R.id.blur_chromaU_text);
+        mBlurChromaV = (TextView) findViewById(R.id.blur_chromaV_text);
         mAIBlurSlide = (AIBlurConfigSlide) findViewById(R.id.aiblur_slide);
         mAIBlurSlide.initialize(this);
-
-        mBlurShapeLayout = (RotateLayout) findViewById(R.id.blur_shape_layout);
-        mBlurStrengthLayout = (RotateLayout) findViewById(R.id.blur_strength_layout);
-        mBlurFocusDistanceLayout = (RotateLayout) findViewById(R.id.blur_focus_distance_layout);
-        mBlurLumaLayout = (RotateLayout) findViewById(R.id.blur_luma_layout);
-        mBlurChromaULayout = (RotateLayout) findViewById(R.id.blur_chromaU_layout);
-        mBlurChromaVLayout = (RotateLayout) findViewById(R.id.blur_chromaV_layout);
-        setAIBlurConfigParameters();
-        mBlurShapeText.setOnClickListener(new OnClickListener() {
+        mAIBlurViews = new TextView[]{
+                mBlurShape, mBlurShapeText, mBlurStrength,mBlurStrengthText,mBlurFocusDistance,mBlurFocusDistanceText,
+                mBlurLuma, mBlurLumaText,mBlurChromaU,mBlurChromaUText,mBlurChromaV,mBlurChromaVText};
+        mBlurShape.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 resetAIBlurConfigIcons();
                 if (mAIBlurSlide.getMode() != AIBlurConfigSlide.BLUR_SHAPR_MODE) {
                     mBlurShapeText.setSelected(true);
-                    mBlurShapeText.setTextColor(0xff4693fb);
+                    setAIBlurUi(mBlurShape, mBlurShapeText);
                     mAIBlurSlide.setMode(AIBlurConfigSlide.BLUR_SHAPR_MODE);
                 }else {
                     mAIBlurSlide.setMode(AIBlurConfigSlide.NO_MODE);
+                    mBlurShape.setTextColor(Color.WHITE);
+                    mBlurShapeText.setTextColor(Color.WHITE);
                 }
             }
         });
-        mBlurStrengthText.setOnClickListener(new OnClickListener() {
+        mBlurStrength.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 resetAIBlurConfigIcons();
                 if (mAIBlurSlide.getMode() != AIBlurConfigSlide.BLUR_STRENGTH_MODE) {
                     mBlurStrengthText.setSelected(true);
-                    mBlurStrengthText.setTextColor(0xff4693fb);
+                    setAIBlurUi(mBlurStrength, mBlurStrengthText);
                     mAIBlurSlide.setMode(AIBlurConfigSlide.BLUR_STRENGTH_MODE);
                 }else {
                     mAIBlurSlide.setMode(AIBlurConfigSlide.NO_MODE);
+                    mBlurStrength.setTextColor(Color.WHITE);
+                    mBlurStrengthText.setTextColor(Color.WHITE);
                 }
             }
         });
-        mBlurFocusDistanceText.setOnClickListener(new OnClickListener() {
+        mBlurFocusDistance.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 resetAIBlurConfigIcons();
                 if (mAIBlurSlide.getMode() != AIBlurConfigSlide.BLUR_FOCUS_DISTANCE_MODE) {
                     mBlurFocusDistanceText.setSelected(true);
-                    mBlurFocusDistanceText.setTextColor(0xff4693fb);
+                    setAIBlurUi(mBlurFocusDistance, mBlurFocusDistanceText);
                     mAIBlurSlide.setMode(AIBlurConfigSlide.BLUR_FOCUS_DISTANCE_MODE);
                 }else {
                     mAIBlurSlide.setMode(AIBlurConfigSlide.NO_MODE);
+                    mBlurFocusDistance.setTextColor(Color.WHITE);
+                    mBlurFocusDistanceText.setTextColor(Color.WHITE);
                 }
             }
         });
-        mBlurLumaText.setOnClickListener(new OnClickListener() {
+        mBlurLuma.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 resetAIBlurConfigIcons();
                 if (mAIBlurSlide.getMode() != AIBlurConfigSlide.BLUR_LUMA_MODE) {
                     mBlurLumaText.setSelected(true);
-                    mBlurLumaText.setTextColor(0xff4693fb);
+                    setAIBlurUi(mBlurLuma, mBlurLumaText);
                     mAIBlurSlide.setMode(AIBlurConfigSlide.BLUR_LUMA_MODE);
                 }else {
                     mAIBlurSlide.setMode(AIBlurConfigSlide.NO_MODE);
+                    mBlurLuma.setTextColor(Color.WHITE);
+                    mBlurLumaText.setTextColor(Color.WHITE);
                 }
             }
         });
-        mBlurChromaUText.setOnClickListener(new OnClickListener() {
+        mBlurChromaU.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 resetAIBlurConfigIcons();
                 if (mAIBlurSlide.getMode() != AIBlurConfigSlide.BLUR_CHROMEU_MODE) {
                     mBlurChromaUText.setSelected(true);
-                    mBlurChromaUText.setTextColor(0xff4693fb);
+                    setAIBlurUi(mBlurChromaU, mBlurChromaUText);
                     mAIBlurSlide.setMode(AIBlurConfigSlide.BLUR_CHROMEU_MODE);
                 }else {
                     mAIBlurSlide.setMode(AIBlurConfigSlide.NO_MODE);
+                    mBlurChromaU.setTextColor(Color.WHITE);
+                    mBlurChromaUText.setTextColor(Color.WHITE);
                 }
             }
         });
-        mBlurChromaVText.setOnClickListener(new OnClickListener() {
+        mBlurChromaV.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 resetAIBlurConfigIcons();
                 if (mAIBlurSlide.getMode() != AIBlurConfigSlide.BLUR_CHROMAV_MODE) {
                     mBlurChromaVText.setSelected(true);
-                    mBlurChromaVText.setTextColor(0xff4693fb);
+                    setAIBlurUi(mBlurChromaV, mBlurChromaVText);
                     mAIBlurSlide.setMode(AIBlurConfigSlide.BLUR_CHROMAV_MODE);
                 }else {
                     mAIBlurSlide.setMode(AIBlurConfigSlide.NO_MODE);
+                    mBlurChromaV.setTextColor(Color.WHITE);
+                    mBlurChromaVText.setTextColor(Color.WHITE);
                 }
             }
         });
+        setAIBlurConfigParameters();
+        setChromaEnable(mAIBlurSlide.isChromaMode());
     }
+
+    public void setChromaEnable(boolean value){
+        mBlurChromaU.setEnabled(value);
+        mBlurChromaV.setEnabled(value);
+        if(!value) {
+            mBlurChromaU.setTextColor(GREY);
+            mBlurChromaUText.setTextColor(GREY);
+            mBlurChromaV.setTextColor(GREY);
+            mBlurChromaVText.setTextColor(GREY);
+        }else{
+            mBlurChromaU.setTextColor(Color.WHITE);
+            mBlurChromaUText.setTextColor(Color.WHITE);
+            mBlurChromaV.setTextColor(Color.WHITE);
+            mBlurChromaVText.setTextColor(Color.WHITE);
+        }
+    }
+
     private void setProModeUi(TextView v1,TextView v2) {
         for (TextView v : mProViews) {
             if (v != null && (v == v1 || v == v2)) {
@@ -764,13 +800,6 @@ public class OneUICameraControls extends RotatableLayout {
         mIsoRotateLayout.setOrientation(orientation, animation);
         mShutterSpeedLayout.setOrientation(orientation, animation);*/
         mProMode.setOrientation(orientation);
-        mBlurShapeLayout.setOrientation(orientation, animation);
-        mBlurStrengthLayout.setOrientation(orientation, animation);
-        mBlurFocusDistanceLayout.setOrientation(orientation, animation);
-        mBlurLumaLayout.setOrientation(orientation, animation);
-        mBlurChromaULayout.setOrientation(orientation, animation);
-        mBlurChromaVLayout.setOrientation(orientation, animation);
-        mAIBlurSlide.setOrientation(orientation);
         layoutRemaingPhotos();
     }
 
@@ -896,6 +925,16 @@ public class OneUICameraControls extends RotatableLayout {
         }
     }
 
+    private void setAIBlurUi(TextView v1,TextView v2) {
+        for (TextView v : mAIBlurViews) {
+            if (v != null && (v == v1 || v == v2)) {
+                v.setTextColor(BLUE);
+            } else {
+                v.setTextColor(Color.WHITE);
+            }
+        }
+
+    }
 
     public void setBlurMode(boolean blurMode) {
         mBlurModeOn = blurMode;
@@ -906,28 +945,19 @@ public class OneUICameraControls extends RotatableLayout {
 
     private void resetAIBlurConfigIcons() {
         mBlurShapeText.setSelected(false);
-        mBlurShapeText.setTextColor(Color.WHITE);
         mBlurStrengthText.setSelected(false);
-        mBlurStrengthText.setTextColor(Color.WHITE);
         mBlurFocusDistanceText.setSelected(false);
-        mBlurFocusDistanceText.setTextColor(Color.WHITE);
         mBlurLumaText.setSelected(false);
-        mBlurLumaText.setTextColor(Color.WHITE);
         mBlurChromaUText.setSelected(false);
-        mBlurChromaUText.setTextColor(Color.WHITE);
         mBlurChromaVText.setSelected(false);
-        mBlurChromaVText.setTextColor(Color.WHITE);
     }
 
     private void setAIBlurConfigParameters() {
         int width = (mWidth > mHeight) ? mHeight : mWidth;
-        ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(width/ 6, width/ 6);
-        mBlurShapeText.setLayoutParams(lp);
-        mBlurStrengthText.setLayoutParams(lp);
-        mBlurFocusDistanceText.setLayoutParams(lp);
-        mBlurLumaText.setLayoutParams(lp);
-        mBlurChromaUText.setLayoutParams(lp);
-        mBlurChromaVText.setLayoutParams(lp);
+        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(width / 6, width / 15);
+        for (TextView v : mAIBlurViews) {
+            v.setLayoutParams(llp);
+        }
     }
 
     private void initializeAIBlurSlide(boolean blurMode) {
@@ -941,6 +971,11 @@ public class OneUICameraControls extends RotatableLayout {
     }
 
     public void updateBlurModeText(int mode, String value) {
+        if((mode == AIBlurConfigSlide.BLUR_CHROMEU_MODE|| mode == AIBlurConfigSlide.BLUR_CHROMAV_MODE)){
+            Float text = Float.parseFloat(value);
+            text = text-0.5f;
+            value = String.format("%.2f", text);
+        }
         switch (mode) {
             case AIBlurConfigSlide.BLUR_SHAPR_MODE:
                 mBlurShapeText.setText(value);

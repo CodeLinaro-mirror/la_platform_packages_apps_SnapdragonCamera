@@ -297,7 +297,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AI_BLUR_SHAPE = "pref_camera2_blur_shape_key";
     public static final String KEY_AI_BLUR_STRENGTH = "pref_camera2_blur_strength_key";
     public static final String KEY_AI_BLUR_DISTANCE = "pref_camera2_blur_distance_key";
-    public static final String KEY_AI_BLUR_LUMA = "pref_camera2_blur_luma_key";
+    public static final String KEY_AI_BLUR_LUMA = "pref_camera2_blur_vsemode_key";
     public static final String KEY_AI_BLUR_CHROMAU = "pref_camera2_blur_chromau_key";
     public static final String KEY_AI_BLUR_CHROMAV = "pref_camera2_blur_chromav_key";
 
@@ -1540,23 +1540,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
     }
 
-    public float geBlurSliderValue(String key) {
+    public String geBlurSliderValue(String key) {
         String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
                 getCurrentPrepNameKey());
         SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName,
                 Context.MODE_PRIVATE);
-        return sharedPreferences.getFloat(key, 0f);
+//        String defaultValue = "0.00";
+//        if(key == KEY_AI_BLUR_CHROMAU || key == KEY_AI_BLUR_CHROMAV){
+//            defaultValue = "-0.50";
+//        }
+        return sharedPreferences.getString(key,"0.00");
     }
 
-    public void setBlurSliderValue(String key, boolean forceNotify, float value) {
-        boolean isSuccess = false;
-        if (value >= 0) {
-            isSuccess = setFocusValue(key, value);
-        }
+    public void setBlurSliderValue(String key, boolean forceNotify, String value) {
+        setPreferenceValue(key, value);
         if(key == null){
             return;
         }
-        if (isSuccess || forceNotify) {
+        if (forceNotify) {
             List<SettingState> list = new ArrayList<>();
             Values values = new Values("" + value, null);
             SettingState ss = new SettingState(key, values);

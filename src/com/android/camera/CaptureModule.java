@@ -783,8 +783,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurStrength", Float.class);
     private static final CaptureRequest.Key<Float> blurFocusDistance =
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurFocusDistance", Float.class);
-    private static final CaptureRequest.Key<Float> blurLumaSuppression =
-            new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurLumaSuppression", Float.class);
+    private static final CaptureRequest.Key<Integer> blurEffect =
+            new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurEffect", Integer.class);
     private static final CaptureRequest.Key<Float> blurChromaSuppressionU =
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionU", Float.class);
     private static final CaptureRequest.Key<Float> blurChromaSuppressionV =
@@ -12547,24 +12547,31 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(isBokehMode) {
             try {
                 if (key.equals(SettingsManager.KEY_AI_BLUR_SHAPE)) {
-                    String value =  mSettingsManager.getValue(SettingsManager.KEY_AI_BLUR_SHAPE);
+                    String value = mSettingsManager.getValue(SettingsManager.KEY_AI_BLUR_SHAPE);
                     Log.i(TAG, "applyAIblurShape: " + value);
                     if (value == null) return;
                     int intValue = Integer.parseInt(value);
                     builder.set(CaptureModule.blurShape, intValue);
+                }else if (key.equals(SettingsManager.KEY_AI_BLUR_LUMA)) {
+                    String value =  mSettingsManager.getValue(SettingsManager.KEY_AI_BLUR_LUMA);
+                    Log.i(TAG, "applyAIblurEffect: " + value);
+                    if (value == null) return;
+                    int intValue = Integer.parseInt(value);
+                    builder.set(CaptureModule.blurEffect, intValue);
                 }else{
-                    float value = mSettingsManager.geBlurSliderValue(key);
+                    float value = Float.valueOf(mSettingsManager.geBlurSliderValue(key));
+                    if(key.equals(SettingsManager.KEY_AI_BLUR_CHROMAU) || key.equals(SettingsManager.KEY_AI_BLUR_CHROMAV)){
+                        value = value-0.5f;
+                    }
                     Log.i(TAG, "applyAIBlurConfig: " + value + ",key:" + key);
                     if(key.equals(SettingsManager.KEY_AI_BLUR_STRENGTH)){
-                        builder.set(CaptureModule.blurStrength, value*7);
+                        builder.set(CaptureModule.blurStrength, value);
                     }else if(key.equals(SettingsManager.KEY_AI_BLUR_DISTANCE)){
                         builder.set(CaptureModule.blurFocusDistance, value);
-                    }else if(key.equals(SettingsManager.KEY_AI_BLUR_LUMA)){
-                        builder.set(CaptureModule.blurLumaSuppression, value);
                     }else if(key.equals(SettingsManager.KEY_AI_BLUR_CHROMAU)){
-                        builder.set(CaptureModule.blurChromaSuppressionU, value-0.5f);
+                        builder.set(CaptureModule.blurChromaSuppressionU, value);
                     }else if(key.equals(SettingsManager.KEY_AI_BLUR_CHROMAV)) {
-                        builder.set(CaptureModule.blurChromaSuppressionV, value - 0.5f);
+                        builder.set(CaptureModule.blurChromaSuppressionV, value);
                     }
                 }
             } catch (IllegalArgumentException e) {
