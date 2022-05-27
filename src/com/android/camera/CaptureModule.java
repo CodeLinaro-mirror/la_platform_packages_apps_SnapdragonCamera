@@ -11772,7 +11772,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyPreviewStabilization(CaptureRequest.Builder request) {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
+        String key = SettingsManager.KEY_PHOTO_EIS_VALUE;
+        if (mCurrentSceneMode.mode == CameraMode.VIDEO) {
+            key = SettingsManager.KEY_EIS_VALUE;
+        }
+        String value = mSettingsManager.getValue(key);
 
         if (DEBUG) {
             Log.d(TAG, "applyPreviewStabilization EISV select: " + value);

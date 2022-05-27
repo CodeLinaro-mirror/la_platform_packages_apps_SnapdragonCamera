@@ -1621,6 +1621,8 @@ public class SettingsActivity extends PreferenceActivity {
             if (mSettingsManager.isMultiCameraEnabled()){
                 multiCameraPhotoList.add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
                 multiCameraPhotoList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
+                multiCameraPhotoList.add(SettingsManager.KEY_PHOTO_EIS_VALUE);
+                multiCameraPhotoList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
                 addDeveloperOptions(developer,multiCameraPhotoList);
             } else {
                 multiCameraPhotoList.remove(SettingsManager.KEY_ZSL);
@@ -1632,6 +1634,7 @@ public class SettingsActivity extends PreferenceActivity {
             if (mSettingsManager.isMultiCameraEnabled()){
                 multiCameraVideoList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                 multiCameraVideoList.add(SettingsManager.KEY_EIS_VALUE);
+                multiCameraVideoList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
                 addDeveloperOptions(developer,multiCameraVideoList);
             } else {
                 for (String removeKey : multiCameraVideoList){
