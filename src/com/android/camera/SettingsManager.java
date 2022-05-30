@@ -604,6 +604,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     R.array.pref_camera2_scenemode_thumbnails));
             filterUnsupportedOptions(sceneMode, getSupportedSceneModes(getCurrentCameraId()));
         }
+        if(getQuadBayerSensorPrefEnabled()){
+            setValueIndex(KEY_SCENE_MODE, 0);
+        }
     }
 
     public void init() {
@@ -3460,17 +3463,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 .CONTROL_AVAILABLE_SCENE_MODES);
         List<String> modes = new ArrayList<>();
         modes.add("0"); // need special case handle for auto scene mode
-        if (mIsMonoCameraPresent) modes.add(SCENE_MODE_DUAL_STRING); // need special case handle for dual mode
-        if (OptizoomFilter.isSupportedStatic()) modes.add(SCENE_MODE_OPTIZOOM_INT + "");
-        if (UbifocusFilter.isSupportedStatic() && cameraId == CaptureModule.BAYER_ID) modes.add(SCENE_MODE_UBIFOCUS_INT + "");
-        if (BestpictureFilter.isSupportedStatic() && cameraId == CaptureModule.BAYER_ID) modes.add(SCENE_MODE_BESTPICTURE_INT + "");
-        if (PanoCaptureProcessView.isSupportedStatic() && cameraId == CaptureModule.BAYER_ID) modes.add(SCENE_MODE_PANORAMA_INT + "");
-        if (ChromaflashFilter.isSupportedStatic() && cameraId == CaptureModule.BAYER_ID) modes.add(SCENE_MODE_CHROMAFLASH_INT + "");
-        if (BlurbusterFilter.isSupportedStatic()) modes.add(SCENE_MODE_BLURBUSTER_INT + "");
-        if (SharpshooterFilter.isSupportedStatic()) modes.add(SCENE_MODE_SHARPSHOOTER_INT + "");
-        if (TrackingFocusFrameListener.isSupportedStatic()) modes.add(SCENE_MODE_TRACKINGFOCUS_INT + "");
-        if (DeepZoomFilter.isSupportedStatic()) modes.add(SCENE_MODE_DEEPZOOM_INT + "");
-        if (DeepPortraitFilter.isSupportedStatic()) modes.add(SCENE_MODE_DEEPPORTRAIT_INT+"");
         for (int mode : sceneModes) {
             //remove scene mode like "Sunset", "Night" such as, only keep "HDR" mode
             // QuadBayerSensor didn`t support HDR

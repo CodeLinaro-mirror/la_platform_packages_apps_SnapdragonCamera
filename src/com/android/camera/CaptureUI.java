@@ -1930,7 +1930,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void initSceneModeHDR() {
         mSceneModeHDR.setVisibility(View.INVISIBLE);
         String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
-        if (value == null) return;
+        if (value == null || mSettingsManager. getQuadBayerSensorPrefEnabled()) return;
+        CaptureModule.CameraMode currentMode = mModule.getCurrenCameraMode();
+        if(CaptureModule.CameraMode.DEFAULT != currentMode && CaptureModule.CameraMode.RTB != currentMode && CaptureModule.CameraMode.SAT != currentMode){
+           return;
+       }
         mSceneModeHDR.setVisibility(View.VISIBLE);
         mScreenHDRindex = mSettingsManager.getValueIndex(SettingsManager.KEY_SCENE_MODE);
         mSceneModeHDR.setImageResource(mScreenHDRIcon[mScreenHDRindex]);
@@ -1949,7 +1953,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             });
         }
     }
-
     private void initFilterModeButton() {
         mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         String value = mSettingsManager.getValue(SettingsManager.KEY_COLOR_EFFECT);
@@ -2239,12 +2242,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
         hideFrontBackSwither();
         mMakeupButton.setVisibility(View.INVISIBLE);
-        mSceneModeHDR.setVisibility(View.INVISIBLE);
         //settings for each mode
         switch (mode) {
             case DEFAULT:
                 mFilterModeSwitcher.setVisibility(View.VISIBLE);
-                mSceneModeHDR.setVisibility(View.VISIBLE);
                 mVideoButton.setVisibility(View.INVISIBLE);
                 mMuteButton.setVisibility(View.INVISIBLE);
                 mPauseButton.setVisibility(View.INVISIBLE);
@@ -2252,7 +2253,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             case RTB:
             case SAT:
                 mFilterModeSwitcher.setVisibility(View.VISIBLE);
-                mSceneModeHDR.setVisibility(View.VISIBLE);
                 mVideoButton.setVisibility(View.INVISIBLE);
                 if(!CaptureModule.MCXMODE) mFlashButton.setVisibility(View.INVISIBLE);
                 mMuteButton.setVisibility(View.INVISIBLE);
