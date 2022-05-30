@@ -686,7 +686,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.isDepthFocus.isDepthFocus", byte.class);
     private static final CaptureRequest.Key<Byte> capture_burst_fps =
             new CaptureRequest.Key<>("org.quic.camera.BurstFPS.burstfps", byte.class);
-
     public static final CameraCharacteristics.Key<int[]> eis_config_table = new CameraCharacteristics.Key<>(
             "org.quic.camera2.VideoConfigurations.info.VideoConfigurationsTable",int[].class);
     public static final CameraCharacteristics.Key<Byte> is_camera_fd_supported = new CameraCharacteristics.Key<>(
@@ -9449,7 +9448,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         builder.setPhysicalCameraKey(CaptureRequest.NOISE_REDUCTION_MODE,
                                 CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY,id);
                     } catch (Exception e) {
-                        Log.w(TAG, "capture can`t find vendor NOISE_REDUCTION_MODE tag: ");
+                        Log.w(TAG, "capture can`t find vendor NOISE_REDUCTION_MODE tag ");
                     }
                 }
             }
@@ -9459,11 +9458,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     CameraMetadata.NOISE_REDUCTION_MODE_FAST);
             String frameStr = mSettingsManager.getKeyValue(mSettingsManager.KEY_CAPTURE_MFNR_FRAME);
             int frameValue = 3;
-            try {
-                frameValue = Integer.parseInt(frameStr);
-            }catch (Exception e) {
-                e.printStackTrace();
-            }
+            frameValue = PersistUtil.strToInt(frameStr,frameValue);
             Log.v(TAG, "applyCaptureMFNR mfnrEnable :" + isMfnrEnable + ", noiseReduMode :"
                     + noiseReduMode +",frameStr="+frameStr+",framevalue="+frameValue);
             builder.set(CaptureRequest.NOISE_REDUCTION_MODE, noiseReduMode);
@@ -9471,7 +9466,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 try {
                     builder.set(CaptureModule.mfnrFrameNO, frameValue);
                 } catch (IllegalArgumentException e) {
-                    Log.w(TAG, "capture can`t find vendor tag: " + CaptureModule.mfnrFrameNO.toString());
+                    Log.w(TAG, "capture can`t find vendor tag:MFNumOfFrames");
                 }
             }
         }

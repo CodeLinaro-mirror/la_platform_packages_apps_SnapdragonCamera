@@ -1926,15 +1926,23 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             });
         }
     }
-
+    private boolean showHDRScene() {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
+        if (value == null || mSettingsManager.getQuadBayerSensorPrefEnabled()) return false;
+        CaptureModule.CameraMode currentMode = mModule.getCurrenCameraMode();
+        if (CaptureModule.CameraMode.DEFAULT != currentMode && CaptureModule.CameraMode.RTB != currentMode && CaptureModule.CameraMode.SAT != currentMode) {
+            return false;
+        }
+        if (CaptureModule.CameraMode.RTB == currentMode) {
+            String mfnrValue = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+            if (mfnrValue != null && !mfnrValue.equals("disable") && Integer.parseInt(mfnrValue) == 1)
+                return false;
+        }
+        return true;
+    }
     public void initSceneModeHDR() {
         mSceneModeHDR.setVisibility(View.INVISIBLE);
-        String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
-        if (value == null || mSettingsManager. getQuadBayerSensorPrefEnabled()) return;
-        CaptureModule.CameraMode currentMode = mModule.getCurrenCameraMode();
-        if(CaptureModule.CameraMode.DEFAULT != currentMode && CaptureModule.CameraMode.RTB != currentMode && CaptureModule.CameraMode.SAT != currentMode){
-           return;
-       }
+        if(!showHDRScene()) return;
         mSceneModeHDR.setVisibility(View.VISIBLE);
         mScreenHDRindex = mSettingsManager.getValueIndex(SettingsManager.KEY_SCENE_MODE);
         mSceneModeHDR.setImageResource(mScreenHDRIcon[mScreenHDRindex]);

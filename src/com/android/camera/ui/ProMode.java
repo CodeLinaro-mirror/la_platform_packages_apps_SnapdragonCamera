@@ -118,7 +118,7 @@ public class ProMode extends View {
             mMaxExpTm = mExposureTime[1];
             setExposuretimeList();
             initExpousreTime();
-        }
+        }else if(mExposureTime == null) initExpousreTime();
         init(EXPOSURE_MODE);
         init(WHITE_BALANCE_MODE);
         init(ISO_MODE);

@@ -294,9 +294,16 @@ public class SettingsActivity extends PreferenceActivity {
                 if ((pref.getKey().equals(SettingsManager.KEY_MANUAL_WB))) {
                     updateManualWBSettings();
                 }
-
                 if(pref.getKey().equals(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
                     updateZslPreference();
+                    updatePictureFormatPreference();
+                    if(isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)){
+                        CaptureModule.CameraMode mode =
+                                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+                        if(CaptureModule.CameraMode.RTB == mode) {
+                            mSettingsManager.setValueIndex(SettingsManager.KEY_SCENE_MODE, 0);
+                        }
+                    }
                 }
                 if(pref.getKey().equals(SettingsManager.KEY_MULTIRESREPROCESS)) {
                     updateZslPreference();
@@ -2417,11 +2424,13 @@ public class SettingsActivity extends PreferenceActivity {
     }
     private void updatePictureFormatPreference(){
        ListPreference pictureFormatPref = (ListPreference)findPreference(SettingsManager.KEY_PICTURE_FORMAT);
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
        if(pictureFormatPref != null){
             mSettingsManager.filterPicturFormat();
             updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
        }
-        if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+        if (mSettingsManager.getQuadBayerSensorPrefEnabled() ||(CaptureModule.CameraMode.RTB == mode && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE))) {
             pictureFormatPref.setValue("0");
             pictureFormatPref.setEnabled(false);
         } else {
@@ -2590,9 +2599,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
     }
-
-    public static interface CheckBoxChanged {
-        public void onCheckedChanged(int position, String title, boolean isChecked);
-
-    }
+   public static interface CheckBoxChanged {
+       public void onCheckedChanged(int position, String title, boolean isChecked);
+   }
 }
