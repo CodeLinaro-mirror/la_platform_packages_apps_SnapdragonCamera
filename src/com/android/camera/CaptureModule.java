@@ -2741,6 +2741,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     e.printStackTrace();
                 }
             }
+        } else if (!rdy) {
+            if (mSurfaceReadyLock.tryAcquire()) {
+                Log.i(TAG, "Preview Surface is not ready and tryAcquire Lock");
+            }
         }
     }
 
@@ -3443,6 +3447,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (RuntimeException e) {
                 Log.v(TAG,
                         "createSession: normal status occur Time out waiting for surface ");
+            }
+            if (mPaused) {
+                if (PersistUtil.enableMediaRecorder()) {
+                    releaseMediaRecorder();
+                } else {
+                    stopCodecThreads();
+                    releaseMediaCodec();
+                }
+                releaseAudioFocus();
+                return;
             }
             Surface surface = getPreviewSurfaceForSession(cameraId);
             mFrameProcessor.onOpen(getFrameProcFilterId(), mVideoSize);
@@ -6716,6 +6730,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onPauseBeforeSuper() {
         cancelTouchFocus();
         mPaused = true;
+        if (mSurfaceReadyLock.availablePermits() == 0) {
+            mSurfaceReadyLock.release();
+        }
         mToast = null;
         mUI.onPause();
         if (mLongshoting){
