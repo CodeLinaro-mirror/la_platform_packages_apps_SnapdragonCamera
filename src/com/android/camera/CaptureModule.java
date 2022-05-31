@@ -831,6 +831,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private final Object mVideoStateLock = new Object();
     private VideoState mVideoState;
     private boolean mSurfaceReady = true;
+    private boolean mIsWaiting4Surface = false;
     private boolean[] mCameraOpened = new boolean[MAX_NUM_CAM];
     private CameraDevice[] mCameraDevice = new CameraDevice[MAX_NUM_CAM];
     private String[] mCameraId = new String[MAX_NUM_CAM];
@@ -2651,6 +2652,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         try {
             if (!mSurfaceReady) {
                 Log.d(TAG, "start for tryAcquire");
+                mIsWaiting4Surface = true;
                 if (!mSurfaceReadyLock.tryAcquire(2000, TimeUnit.MILLISECONDS)) {
                     if (mPaused) {
                         Log.d(TAG, "mPaused status occur Time out waiting for surface.");
@@ -2664,6 +2666,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                 Log.d(TAG, "lock release after tryAcquire");
                 mSurfaceReadyLock.release();
+                mIsWaiting4Surface = false;
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -2672,6 +2675,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void
     updatePreviewSurfaceReadyState(boolean rdy) {
+        Log.i(TAG,"updatePreviewSurfaceReadyState, rdy:" + rdy + ",mSurfaceReady:" + mSurfaceReady);
         if (rdy != mSurfaceReady || !mSurfaceReady) {
             if (rdy) {
                 Log.i(TAG, "Preview Surface is ready!");
@@ -3357,6 +3361,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (RuntimeException e) {
                 Log.v(TAG,
                         "createSession: normal status occur Time out waiting for surface ");
+            }
+            if (mPaused) {
+                if (PersistUtil.enableMediaRecorder()) {
+                    releaseMediaRecorder();
+                } else {
+                    stopCodecThreads();
+                    releaseMediaCodec();
+                }
+                releaseAudioFocus();
+                return;
             }
             Surface surface = getPreviewSurfaceForSession(cameraId);
             mFrameProcessor.onOpen(getFrameProcFilterId(), mVideoSize);
@@ -6468,8 +6482,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onPauseBeforeSuper() {
         cancelTouchFocus();
         mPaused = true;
-        Log.d(TAG, "lock release after when pause: " + mSurfaceReadyLock.availablePermits());
-        if(mSurfaceReadyLock.availablePermits() == 0) {
+        Log.d(TAG, "lock release after when pause: " + mSurfaceReadyLock.availablePermits() + ",mIsWaiting4Surface:" + mIsWaiting4Surface);
+        if(mSurfaceReadyLock.availablePermits() == 0 && mIsWaiting4Surface) {
             mSurfaceReadyLock.release();
             Log.d(TAG, "lock release after when pause done");
         }
