@@ -2087,7 +2087,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mImageReader[i] = ImageReader.newInstance(mPictureSize.getWidth(),
                     mPictureSize.getHeight(), format, MAX_IMAGEREADERS + 2);
         }
-        if (mSaveRaw) {
+        if (mSaveRaw && mSupportedRawPictureSize != null) {
             mRawImageReader[i] = ImageReader.newInstance(mSupportedRawPictureSize.getWidth(),
                     mSupportedRawPictureSize.getHeight(), mSettingsManager.getRawFormat(), MAX_IMAGEREADERS + 2);
             mPostProcessor.setRawImageReader(mRawImageReader[i]);
@@ -5335,7 +5335,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 }, mImageAvailableHandler);
                             }
                         }
-                        if (mSaveRaw) {
+                        if (mSaveRaw && mSupportedRawPictureSize != null ) {
                             mRawImageReader[i] = ImageReader.newInstance(mSupportedRawPictureSize.getWidth(),
                                     mSupportedRawPictureSize.getHeight(), mSettingsManager.getRawFormat(), MAX_IMAGEREADERS);
                             mRawImageReader[i].setOnImageAvailableListener(listener, mImageAvailableHandler);
@@ -5542,7 +5542,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     size = mSupportedRawPictureSize;
                 }
-                setPhysicalImgReader(size,id,i);
+                if (size != null) setPhysicalImgReader(size,id,i);
                 i++;
             }
         } else if (mSaveRaw && mRawReprocessType == 0) {
@@ -7921,17 +7921,20 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         Size[] rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
                 mSettingsManager.getRawFormat());
-        if ((rawSize == null || rawSize.length == 0 || mSettingsManager.getRawFormat() == 0) && mSaveRaw) {
+        if ((rawSize == null || rawSize.length == 0 || mSettingsManager.getRawFormat() == 0)) {
             mSaveRaw = false;
         }
-        if (mSaveRaw) {
-            mSupportedRawPictureSize = getMaxRawSize() != null && (mSettingsManager.getRawFormat() == ImageFormat.RAW10 ||
-                    (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR && isRawReprocess())) ? getMaxRawSize() : rawSize[0];
-        } else {
+        if (!mSaveRaw) {
             rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.RAW10);
-            mSupportedRawPictureSize = getMaxRawSize() != null ? getMaxRawSize() : rawSize[0];
         }
-        Log.i(TAG, " rawsize:" + rawSize[0].toString() + ",mSupportedRawPictureSize=" + mSupportedRawPictureSize);
+        if(getMaxRawSize() != null && (mSettingsManager.getRawFormat() == ImageFormat.RAW10 ||
+                (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR && isRawReprocess()))){
+            mSupportedRawPictureSize = getMaxRawSize();
+        }else if ((mSupportedRawPictureSize == null || (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null){
+            mSupportedRawPictureSize = rawSize[0];
+            Log.i(TAG, "rawSize[0]=" + rawSize[0].toString());
+        }
+        Log.i(TAG, "mSupportedRawPictureSize=" + mSupportedRawPictureSize);
 
         if (mSupportedRawPictureSize != null) {
             Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
