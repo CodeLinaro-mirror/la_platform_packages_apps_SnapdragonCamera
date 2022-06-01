@@ -181,7 +181,7 @@ import java.util.HashMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
+import java.nio.BufferUnderflowException;
 import androidx.annotation.NonNull;
 import androidx.heifwriter.HeifWriter;
 
@@ -12690,6 +12690,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         } catch (IllegalArgumentException e) {
             mIsDepthFocus = false;
             if (DEBUG) e.printStackTrace();
+        }catch (BufferUnderflowException expected) {
+            if (DEBUG) Log.d(TAG,"updateFocusStateChange  BufferUnderflowException expected="+expected);
+            mIsDepthFocus = false;
         }
         if(resultAFState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED && mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE){
             updateLockAFAEVisibility();
