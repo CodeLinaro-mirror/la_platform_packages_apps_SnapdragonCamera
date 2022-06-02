@@ -3514,6 +3514,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (mIsCloseCamera && mCameraDevice[cameraId] == null) {
                 Log.w(TAG, "activity may be onPause, no need to pop up error msg.");
             } else {
+                mCaptureSession[cameraId] = null;
                 quitVideoToPhotoWithError(e.getMessage());
             }
         }
@@ -3591,6 +3592,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else if (mCaptureSession[id] instanceof CameraConstrainedHighSpeedCaptureSession) {
                 CameraConstrainedHighSpeedCaptureSession session =
                         (CameraConstrainedHighSpeedCaptureSession) mCaptureSession[id];
+
                 List requestList = session.createHighSpeedRequestList(mVideoRecordRequestBuilder.build());
                 session.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
             } else {

@@ -278,7 +278,6 @@ public class SettingsActivity extends PreferenceActivity {
                 if(values != null) enabled = values.overriddenValue == null;
                 Preference pref = findPreference(state.key);
                 if (pref == null) continue;
-                Log.i(TAG, "onsettingschange:" + pref.getKey() + ",enabled:" + enabled);
                 pref.setEnabled(enabled);
 
                 if (pref.getKey().equals(SettingsManager.KEY_MANUAL_EXPOSURE)) {
@@ -397,6 +396,9 @@ public class SettingsActivity extends PreferenceActivity {
                 if (SettingsManager.KEY_PHOTO_EIS_VALUE.equals(pref.getKey())
                         || SettingsManager.KEY_EIS_VALUE.equals(pref.getKey())) {
                     updatePreviewStabilizationPreference();
+                }
+                if(mSettingsManager.KEY_FACE_DETECTION.equals(pref.getKey())){
+                    updateT2TPreference();
                 }
             }
         }
@@ -2325,8 +2327,8 @@ public class SettingsActivity extends PreferenceActivity {
                 SettingsManager.KEY_TOUCH_TRACK_FOCUS);
         SwitchPreference faceDetection = (SwitchPreference) findPreference(
                 SettingsManager.KEY_FACE_DETECTION);
-        if (selectModePref != null && t2TFocus != null && mode == CaptureModule.CameraMode.VIDEO) {
-            if (selectModePref.getValue().equals("rtb")) {
+        if (t2TFocus != null && mode == CaptureModule.CameraMode.VIDEO) {
+            if (selectModePref != null && selectModePref.getValue().equals("rtb")) {
                 t2TFocus.setEnabled(false);
                 t2TFocus.setChecked(false);
                 mSettingsManager.setValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "off");
