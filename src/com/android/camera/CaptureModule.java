@@ -3963,8 +3963,8 @@ public class CaptureModule implements CameraModule, PhotoController,
      */
     private void takePicture() {
         Log.d(TAG, "takePicture");
-        if(!getCameraModeSwitcherAllowed() || !mUI.isShutterEnabled()){
-            Log.d(TAG, "mode switch not finished or shutter button is not enabled, can not take snapshot");
+        if(!getCameraModeSwitcherAllowed() || !mUI.isShutterEnabled() || mCurrentSessionClosed){
+            Log.d(TAG, "mode switch not finished or shutter button is not enabled or session is closed, can not take snapshot");
             return;
         }
         mUI.enableShutter(false);
@@ -9158,7 +9158,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         mIsRecordingVideo = false;
         mUI.showUIafterRecording();
         mFrameProcessor.setVideoOutputSurface(null);
-        restartSession(true);
+        if(mCameraModeSwitcherAllowed) {
+            restartSession(true);
+        }
     }
 
     private boolean sendSSMRequestBuilder() {
@@ -11462,7 +11464,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onVideoButtonClick() {
         if (!isRecorderReady() || getCameraMode() == DUAL_MODE ||
         (getCurrenCameraMode() != CameraMode.VIDEO && getCurrenCameraMode() != CameraMode.HFR)) return;
-
         if (!mIsRecordingVideo) {
             if (!triggerVideoRecording(getMainCameraId())) {
                 // Show ui when start recording failed.
