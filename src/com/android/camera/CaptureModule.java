@@ -672,9 +672,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static final CaptureRequest.Key<Integer> mcxRawCbInfo =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.McxRawCallbackInfo", Integer.class);
     public static final CaptureRequest.Key<Byte> enable_hvx_shdr =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableHVXSHDRMode", Byte.class);
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHVXSHDRMode", Byte.class);
     public static final CaptureRequest.Key<Byte> enable_hvx_mfhdr =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableHVXMFHDRMode", byte.class);
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHVXMFHDRMode", byte.class);
     public static final CaptureRequest.Key<Byte> mctf =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMCTFwithReferenceFrame", byte.class);
     public static final CaptureRequest.Key<Byte> enable_statsvisualizer =
@@ -6313,7 +6313,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(hvx_shdr != null && Integer.valueOf(hvx_shdr) > 0)
                 value = 1;
             request.set(CaptureModule.enable_hvx_shdr,value);
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException|NullPointerException e) {
 
         }
     }
@@ -6329,7 +6329,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 value = 1;
             request.set(CaptureModule.enable_hvx_mfhdr, value);
             request.set(CaptureModule.mctf, value);
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException|NullPointerException e) {
 
         }
     }
