@@ -2966,7 +2966,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 } else {
                     if ((mSettingsManager.isMultiCameraEnabled() &&
-                            mSettingsManager.isLogicalEnable()) || (mSaveRaw && mRawReprocessType == 0 && isPhysicalRaw())) {
+                            mSettingsManager.isLogicalEnable()) || (mSaveRaw && mRawReprocessType == 0 && !isPhysicalRaw())) {
                         List<OutputConfiguration> physicalOutput =
                                 getPhysicalOutputConfiguration();
                         if (physicalOutput.size() != 0) {
@@ -2990,7 +2990,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK) )) {
                         list.remove(mImageReader[id].getSurface());
                     }
-                    if (mSaveRaw && mRawReprocessType == 0 && !isPhysicalRaw()) {
+                    if (mSaveRaw && mRawReprocessType == 0 && isPhysicalRaw()) {
                         list.add(mRawImageReader[id].getSurface());
                     }
                     if (mYUV10bit || mYUV10BitWithMetadata) {
@@ -3049,10 +3049,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     outputConfiguration.setDynamicRangeProfile(Long.parseLong(captureProfile));
                                 }
                             }
-                            if(s == mImageReader[id].getSurface()){
+                            if(s == mImageReader[id].getSurface() || s == mRawImageReader[id].getSurface()){
                                 String physicalCameraId = mSettingsManager.getQuadBayerPhysicalId(Integer.toString(getMainCameraId()));
                                 if(physicalCameraId != null){
-                                    Log.i(TAG,"set physical id " + physicalCameraId + "for image reader stream");
+                                    Log.i(TAG," set physical id " + physicalCameraId + "for image reader stream");
                                     outputConfiguration.setPhysicalCameraId(physicalCameraId);
                                 }
                             }
@@ -4416,10 +4416,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     captureBuilder.addTarget(mImageReader[id].getSurface());
                                 }
                             }
-                            if (mSaveRaw && isPhysicalRaw() ){
+                            if (mSaveRaw && !isPhysicalRaw() ){
                                 addPhysicalCaptureTarget(captureBuilder);
                                 captureBuilder.removeTarget(mImageReader[id].getSurface());
-                            } else if (mSaveRaw && !isPhysicalRaw()) {
+                            } else if (mSaveRaw && isPhysicalRaw()) {
                                 captureBuilder.addTarget(mRawImageReader[id].getSurface());
                                 captureBuilder.addTarget(mImageReader[id].getSurface());
                             }
@@ -5563,19 +5563,24 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private boolean isPhysicalRaw() {
-
-        if ((switchedCameraId || getMainCameraId() == 1 || isSingleCameraMode())) {
-            return false;
-        } else {
+        if (switchedCameraId || getMainCameraId() == 1 || isSingleCameraMode() || mSettingsManager.getQuadBayerSensorPrefEnabled())  {
             return true;
+        } else {
+            return false;
         }
     }
     public int setInfoForDng(TotalCaptureResult mRawMeta){
         try{
             CameraCharacteristics characteristics;
             CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
-            if(!isPhysicalRaw())  characteristics= manager.getCameraCharacteristics(String.valueOf(getMainCameraId()));
-            else characteristics= manager.getCameraCharacteristics(String.valueOf(mActiveCameraIds.get(0)));
+            String activeCameraId = String.valueOf(getMainCameraId());
+            if(isPhysicalRaw()) {
+                String qcfaId = mSettingsManager.getQuadBayerPhysicalId(Integer.toString(getMainCameraId()));
+                if(qcfaId != null) activeCameraId = qcfaId;
+            } else{
+                activeCameraId = String.valueOf(mActiveCameraIds.get(0));
+            }
+            characteristics= manager.getCameraCharacteristics(activeCameraId);
             Log.d(TAG,"setInfoForDng mRawMeta="+mRawMeta+",characteristics="+characteristics);
             mActivity.getMediaSaveService().setCharacteristics(characteristics);
             mActivity.getMediaSaveService().setResult(mRawMeta);
@@ -8341,16 +8346,19 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void updatePictureSize() {
         String pictureSize = mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE);
+        int currentId = getMainCameraId();
+        int rawFormat = mSettingsManager.getRawFormat() != 0 ? mSettingsManager.getRawFormat() : ImageFormat.RAW10;
         mPictureSize = parsePictureSize(pictureSize);
         if(PersistUtil.isRawReprocessQcfa()){
             mPictureSize = new Size(8000,6000);
         }
-        Size[] prevSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
+
+        Size[] prevSizes = mSettingsManager.getSupportedOutputSize(currentId,
                 SurfaceHolder.class);
         List<Size> prevSizeList = Arrays.asList(prevSizes);
         prevSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
         mSupportedMaxPictureSize = prevSizeList.get(0);
-        Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.PRIVATE);
+        Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(currentId, ImageFormat.PRIVATE);
         List<Size> yuvSizeList = Arrays.asList(yuvSizes);
         yuvSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
         for (int i = 0; i< mYUVCount; i++) {
@@ -8361,37 +8369,40 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
         if( mRawCount == 1){
-            Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(mSettingsManager.getRawReprocessPhysicalId()), mSettingsManager.getRawFormat());
+            Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(mSettingsManager.getRawReprocessPhysicalId()), rawFormat);
             if(PersistUtil.isRawReprocessQcfa()){
                 mRawSize[0] = new Size(8000,6000);
             }else{
                 mRawSize[0] = rawSize[0];
             }
         }
-
-        Size[] rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
-                mSettingsManager.getRawFormat());
-        Log.i(TAG, " rawsize:" + rawSize + ",mSaveRaw=" + mSaveRaw+",mSettingsManager.getRawFormat()="+mSettingsManager.getRawFormat());
-        if ((rawSize == null || rawSize.length == 0 || mSettingsManager.getRawFormat() == 0)) {
-            mSaveRaw = false;
+        mSupportedRawPictureSize = null;
+        if(mSettingsManager.getQuadBayerSensorPrefEnabled() && mSaveRaw){
+                mSupportedRawPictureSize = mSettingsManager.getQCFARawSize(String.valueOf(currentId),rawFormat);
         }
-        if (!mSaveRaw) {
-            rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.RAW10);
+        if(mSupportedRawPictureSize == null) {
+            Size[] rawSize = mSettingsManager.getSupportedOutputSize(currentId, rawFormat);
+            Log.i(TAG, " rawsize:" + rawSize + ",mSaveRaw=" + mSaveRaw + ",mSettingsManager.getRawFormat()=" + rawFormat);
+            if ((rawSize == null || rawSize.length == 0 || rawFormat == 0)) {
+                mSaveRaw = false;
+            }
+            if (!mSaveRaw) {
+                rawSize = mSettingsManager.getSupportedOutputSize(currentId, ImageFormat.RAW10);
+            }
+            Size maxRawSize = getMaxRawSize();
+            if (maxRawSize != null && (rawFormat == ImageFormat.RAW10 ||
+                    (rawFormat == ImageFormat.RAW_SENSOR && isRawReprocess()))) {
+                mSupportedRawPictureSize = maxRawSize;
+            } else if ((maxRawSize == null || (rawFormat == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null) {
+                mSupportedRawPictureSize = rawSize[0];
+                Log.i(TAG, "rawSize: " + rawSize[0].toString());
+            }
         }
-        Size maxRawSize = getMaxRawSize();
-        if(maxRawSize != null && (mSettingsManager.getRawFormat() == ImageFormat.RAW10 ||
-                (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR && isRawReprocess()))){
-            mSupportedRawPictureSize = maxRawSize;
-        }else if ((maxRawSize == null || (mSettingsManager.getRawFormat() == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null){
-            mSupportedRawPictureSize = rawSize[0];
-        }
-        Log.i(TAG, "mSupportedRawPictureSize=" + mSupportedRawPictureSize+",mSaveRaw="+mSaveRaw);
-
         if (mSupportedRawPictureSize != null) {
          Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
         }
         mPreviewSize = getOptimalPreviewSize(mPictureSize, prevSizes);
-        Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(getMainCameraId());
+        Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(currentId);
         mPictureThumbSize = getOptimalPreviewSize(mPictureSize, thumbSizes); // get largest thumb size
         if(isAIDE2Enabled()){
             getMaxAide2Size();
@@ -8432,6 +8443,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             for (String physicalId : physical_ids){
                 Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(physicalId), ImageFormat.RAW10);
                 if (rawSize != null && rawSize.length != 0) {
+                    Log.i(TAG, "getMaxRawSize=" + rawSize[0].toString());
                     allRawSize.add(rawSize[0]);
                 }
             }

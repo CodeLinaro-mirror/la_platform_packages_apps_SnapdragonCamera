@@ -693,7 +693,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return res;
     }
-
+    public Size getQCFARawSize(String cameraId, int format) {
+        List<Size> allSize = getSupportedQCFAMaxPictureSizeList(cameraId, ImageFormat.RAW10);
+        allSize.sort((o1, o2) -> o2.getWidth() * o2.getHeight() - o1.getWidth() * o1.getHeight());
+        if (allSize.size() != 0) {
+            Size size = allSize.get(0);
+            return size;
+        } else
+            return null;
+    }
     private Size getMaxSize(Size... sizes) {
         if (sizes == null || sizes.length == 0) {
             return null;
