@@ -157,6 +157,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -7028,12 +7029,25 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mSettingsManager.getSupportedOutputSize(
                 Integer.valueOf(getMainCameraId()),SurfaceHolder.class));
         Set<String> ids = mSettingsManager.getAllPhysicalCameraId();
+        Set<String> quadBayerIds = new HashSet<>();
+        if(mSettingsManager.isMcxQcfaMode()){
+            quadBayerIds = mSettingsManager.getQuadBayerPhysicalList();
+        }
         if (ids != null) {
             int i = 0;
+            int x = 0;
             for (String id : ids){
                 if (i >= PHYSICAL_CAMERA_COUNT)
                     break;
-                String pictureSize = mSettingsManager.getValue(SettingsManager.KEY_PHYSICAL_SIZE[i]);
+                String pictureSize = null;
+                if(quadBayerIds.size() != 0){
+                    if(quadBayerIds.contains(id)) {
+                        pictureSize = mSettingsManager.getValue(SettingsManager.KEY_PHYSICAL_SIZE[x]);
+                        x++;
+                    }
+                }else{
+                    pictureSize = mSettingsManager.getValue(SettingsManager.KEY_PHYSICAL_SIZE[i]);
+                }
                 if (pictureSize != null){
                     mPhysicalSizes[i] = parsePictureSize(pictureSize);
                 } else {
