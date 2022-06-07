@@ -281,6 +281,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private float mAdrcGain = -1.0f;
     private float mDarkBoostGain = -1.0f;
     private int mExposureCount = -1;
+    private int mAECCameraId = -1;
 
     private long[] mAecFramecontrolExosureTime = new long[3];
     private float[] mAecFramecontrolLinearGain = new float[3];
@@ -603,6 +604,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     //camera id && request id
     private static final CaptureResult.Key<Long> stats_visualizer_request_id =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECRequestID", Long.class);
+    private static final CaptureRequest.Key<Integer> request_aec_camera_id =
+            new CaptureRequest.Key<>("org.quic.camera2.statsconfigs.AECCameraID", Integer.class);
     private static final CaptureResult.Key<Integer> stats_visualizer_camera_id =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECCameraID", Integer.class);
 
@@ -910,6 +913,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mExistAECFrameControlTag = true;
     private boolean mExistAECDarkGainTag = true;
     private boolean mExposureCountTag = true;
+    private boolean mAECCameraIdTag = true;
 
     private static final long SDCARD_SIZE_LIMIT = 4000 * 1024 * 1024L;
     private static final String sTempCropFilename = "crop-temp";
@@ -12825,6 +12829,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         float luxIndex = pref.getFloat(SettingsManager.KEY_AEC_LUX_INDEX, awbDefault);
         float adrcGain = pref.getFloat(SettingsManager.KEY_AEC_ADRC_GAIN, awbDefault);
         float darkBoostGain = pref.getFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, awbDefault);
+        int aecCameraId = pref.getInt(SettingsManager.KEY_WARM_START_AEC_CAMERA_ID, -1);
         if (rGain != awbDefault && gGain != awbDefault && gGain != bGain) {
             Float[] awbGains = {rGain, gGain, bGain};
             Float[] tcs = {tc0, tc1};
@@ -12876,6 +12881,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                         awbWarmStart_dark_boost_gain);
             }
         }
+        if (aecCameraId != -1) {
+            try {
+                request.set(request_aec_camera_id, aecCameraId);
+                result = true;
+            } catch (IllegalArgumentException e) {
+                Log.v(TAG, "applyAWBCCTAndAgain AECCameraId vendor tag missing:" +
+                        request_aec_camera_id);
+            }
+        }
         return result;
     }
 
@@ -12909,6 +12923,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             } catch (IllegalArgumentException | NullPointerException e) {
                 mExposureCountTag = false;
+                e.printStackTrace();
+            }
+
+            try {
+                if (mAECCameraIdTag) {
+                    mAECCameraId = captureResult.get(stats_visualizer_camera_id);
+                }
+            } catch (IllegalArgumentException | NullPointerException e) {
+                mAECCameraIdTag = false;
                 e.printStackTrace();
             }
 
@@ -12956,6 +12979,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_0, mAWBDecisionAfterTC[0]);
         editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_1, mAWBDecisionAfterTC[1]);
         editor.putInt(SettingsManager.KEY_WARM_START_EXPOSURE_COUNT, mExposureCount);
+        editor.putInt(SettingsManager.KEY_WARM_START_AEC_CAMERA_ID, mAECCameraId);
 
         if (mAECSensitivity.length == 3) {
             editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_0, mAECSensitivity[0]);
