@@ -922,6 +922,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mIsVoiceTakePhote = false;
     private String mCropValue;
     private Uri mCurrentVideoUri;
+    private final Set<Uri> mUrisInvalid = new HashSet<>();
     private boolean mTempHoldVideoInVideoIntent = false;
     private boolean mCurrentSessionClosed = false;
     private ParcelFileDescriptor mVideoFileDescriptor;
@@ -10272,6 +10273,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                     mActivity.getMediaSaveService().updateVideo(videoUri, contentValues,
                             mOnVideoSavedListener, mContentResolver);
+                    Log.d(TAG, "remove invalid uri " + videoUri);
+                    mUrisInvalid.remove(videoUri);
                 }
             }
         }
@@ -10294,6 +10297,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             mActivity.getMediaSaveService().updateVideo(mCurrentVideoUri,
                     mCurrentVideoValues,
                     mOnVideoSavedListener, mContentResolver);
+            Log.d(TAG, "remove invalid uri " + mCurrentVideoUri);
+            mUrisInvalid.remove(mCurrentVideoUri);
         }
         mCurrentVideoValues = null;
     }
@@ -10380,6 +10385,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         try {
                             ParcelFileDescriptor parcelFileDescriptor = mContentResolver.openFileDescriptor(videoUri, "rw");
                             recorder.setOutputFile(parcelFileDescriptor.getFileDescriptor());
+                            Log.d(TAG, "add invalid uri " + videoUri);
+                            mUrisInvalid.add(videoUri);
                         } catch (IOException e) {
                             Log.e(TAG, "openFileDescriptor failed for " + videoUri, e);
                             releaseMediaRecorder();
@@ -11247,6 +11254,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mAudioEncoder = null;
         }
         cleanupEmptyFile();
+        deleteInvalidUri();
     }
     //------------------------------------------end-----------------------------------------
 
@@ -11480,8 +11488,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoFileDescriptor =
                         mContentResolver.openFileDescriptor(videoUri, "rw");
                 mCurrentVideoUri = videoUri;
+                Log.d(TAG, "add invalid uri " + mCurrentVideoUri);
+                mUrisInvalid.add(mCurrentVideoUri);
             } catch (java.io.FileNotFoundException ex) {
                 // invalid uri
+                Log.d(TAG, "remove invalid uri " + mCurrentVideoUri);
+                mUrisInvalid.remove(mCurrentVideoUri);
                 mContentResolver.delete(videoUri, null, null);
                 mCurrentVideoUri = null;
                 Log.e(TAG, ex.toString());
@@ -14217,6 +14229,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void releaseMediaRecorder() {
         Log.v(TAG, "Releasing media recorder.");
+        deleteInvalidUri();
         cleanupEmptyFile();
         if (mMediaRecorder != null) {
             try{
@@ -14247,6 +14260,18 @@ public class CaptureModule implements CameraModule, PhotoController,
             mVideoFileDescriptor = null;
         }
         Arrays.fill(mPhysicalUris, null);
+    }
+
+    private void deleteInvalidUri() {
+        for (Uri uri : mUrisInvalid) {
+            if (uri != null) {
+                try {
+                    Log.d(TAG, "deleteInvalidUri " + uri);
+                    mContentResolver.delete(uri, null);
+                } catch (Exception e) {}
+            }
+        }
+        mUrisInvalid.clear();
     }
 
     private void showToast(String tips) {
