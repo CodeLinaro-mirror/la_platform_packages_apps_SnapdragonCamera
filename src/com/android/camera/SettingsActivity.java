@@ -80,7 +80,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.text.InputType;
-
+import android.graphics.ImageFormat;
 import org.codeaurora.snapcam.R;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.ui.RotateTextToast;
@@ -1507,6 +1507,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         initializePhysicalPreferences();
         updatePhysicalPreferences();
+        updateVideoMFHDRPreference();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
@@ -1547,9 +1548,9 @@ public class SettingsActivity extends PreferenceActivity {
         }
         // when get RAW10 size is null, disable the KEY_SAVERAW
         int cameraId = mSettingsManager.getCurrentCameraId();
-        Size[] rawSize = mSettingsManager.getSupportedOutputSize(cameraId,
-                mSettingsManager.getRawFormat());
-        if (rawSize == null && mSettingsManager.getRawFormat() > 0 ) {
+        Size[] dngSize = mSettingsManager.getSupportedOutputSize(cameraId, ImageFormat.RAW_SENSOR);
+        Size[] rawSize = mSettingsManager.getSupportedOutputSize(cameraId, ImageFormat.RAW10);
+        if (rawSize == null && dngSize == null ) {
             Preference p = findPreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
             if (p != null) {
                 p.setEnabled(false);
@@ -1586,7 +1587,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateHvxDependencyPref();
         updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
-        updateVideoMFHDRPreference();
         updateStoragePreference();
         updateLongShotPreference();
         updateVideoHfrFpsPreference();

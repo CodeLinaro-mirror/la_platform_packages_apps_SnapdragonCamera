@@ -195,7 +195,8 @@
   },
   "pref_camera2_ai_denoiser_key":
   {
-    "1":{"pref_camera2_raw_format_key": "0"},
+    "1":{"pref_camera2_raw_format_key": "0",
+         "pref_camera2_manualhdr_key": "off"},
     "0":{"pref_camera2_ai_denoiser_mode_key":"1",
          "pref_camera2_ai_denoiser_format_key":"1"}
   },

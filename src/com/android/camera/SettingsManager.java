@@ -2784,7 +2784,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         continue;
                     }
                 }
-                if(sizes[i].getWidth() == 16320 && sizes[i].getHeight() == 12240 && !isNZSLEnabled()){
+                if(highResSizes[i].getWidth() == 16320 && highResSizes[i].getHeight() == 12240 && !isNZSLEnabled()){
                     //200MP size is only for NZSL
                     continue;
                 }
@@ -3568,7 +3568,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isNZSLEnabled(){
-        String value = getValue(KEY_ZSL);
+        String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey());
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName, Context.MODE_PRIVATE);
+        String value = sharedPreferences.getString(KEY_ZSL,"default");
         String nZSLValue = mContext.getString(R.string.pref_camera2_zsl_entryvalue_disable);
         if ( value != null && value.equals(nZSLValue) ){
             return true;
