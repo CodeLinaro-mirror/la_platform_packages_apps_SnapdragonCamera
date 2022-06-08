@@ -6602,6 +6602,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
+        }else if(facingOfIntentExtras == -1  && mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA){
+            mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
+            mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         }
         reinit();
         mPaused = false;
