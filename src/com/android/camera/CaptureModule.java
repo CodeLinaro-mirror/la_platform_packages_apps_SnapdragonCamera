@@ -439,10 +439,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.blink_detected", byte[].class);
     public static CaptureResult.Key<byte[]> blinkDegree =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.blink_degree", byte[].class);
-    public static CaptureResult.Key<byte[]> smileDegree =
-            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.smile_degree", byte[].class);
-    public static CaptureResult.Key<byte[]> smileConfidence =
-            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.smile_confidence", byte[].class);
     public static CaptureResult.Key<byte[]> gazeAngle =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.gaze_angle", byte[].class);
     public static CaptureResult.Key<int[]> gazeDirection =
@@ -451,9 +447,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CaptureResult.Key<byte[]> gazeDegree =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.gaze_degree",
                     byte[].class);
-    public static CaptureResult.Key<int[]> contourPoints =
-            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.contours",
-                    int[].class);
     public static CaptureResult.Key<int[]> contourPointsExtend =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.contour_results",
                     int[].class);
@@ -465,9 +458,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Byte.class);
     public static CaptureRequest.Key<Byte> facialContourEnable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.contour_enable",
-                    Byte.class);
-    public static CaptureRequest.Key<Byte> smileEnable =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.smile_enable",
                     Byte.class);
     public static CaptureRequest.Key<Byte> gazeEnable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.gaze_enable",
@@ -7829,8 +7819,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         boolean bsgEnable = isBsgcDetecionOn();
         boolean contourEnable = isFacialContourOn();
         boolean facePointEnable = isFacePointOn();
-        byte[] smileDegreeArray = null;
-        byte[] smileConfidenceArray = null;
         try {
             if (bsgEnable) {
                 byte[] blinkDetectedArray = captureResult.get(blinkDetected);
@@ -7845,25 +7833,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 byte[] gazeAngleArray = captureResult.get(gazeAngle);
                 if (FD_DEBUG)
                     Log.d(FD_TAG,"gazeAngleArray="+Arrays.toString(gazeAngleArray));
-                try {
-                    smileDegreeArray = captureResult.get(smileDegree);
-                    if (FD_DEBUG)
-                        Log.d(FD_TAG,"smileDegreeArray="+Arrays.toString(smileDegreeArray));
-                    smileConfidenceArray = captureResult.get(smileConfidence);
-                    if (FD_DEBUG)
-                        Log.d(FD_TAG,"smileConfidenceArray="+Arrays.toString(smileConfidenceArray));
-                } catch (IllegalArgumentException e){
-                    Log.w(TAG, "getBsgcInfo", e.fillInStackTrace());
-                }
                 for (int i = 0; i < size; i++) {
                     ExtendedFace tmp = new ExtendedFace(faces[i].getId());
                     try {
-                        if (smileDegreeArray != null && i < smileDegreeArray.length) {
-                            tmp.setSmileDegree(smileDegreeArray[i]);
-                        }
-                        if (smileConfidenceArray != null && i < smileConfidenceArray.length) {
-                            tmp.setSmileConfidence(smileConfidenceArray[i]);
-                        }
                         if (gazeDirectionArray != null && (3 * i + 2) < gazeDirectionArray.length) {
                             tmp.setGazeDirection(gazeDirectionArray[3 * i], gazeDirectionArray[3 * i + 1], gazeDirectionArray[3 * i + 2]);
                         }
@@ -7884,9 +7856,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 String contourMode = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
                 int[] contour_all = null;
                 int[] contourPoints = null;
-                if ("0".equals(contourMode)) {
-                    contourPoints = captureResult.get(CaptureModule.contourPoints);
-                } else if ("1".equals(contourMode) || "2".equals(contourMode) || "3".equals(contourMode)) {
+                if ("1".equals(contourMode) || "2".equals(contourMode) || "3".equals(contourMode)) {
                     contourPoints = captureResult.get(CaptureModule.contourPointsExtend);
                     contour_all = captureResult.get(CaptureModule.contourPointsExtend);
                     int faceContour = PersistUtil.getPersistFaceContourHeaderSize();
@@ -13187,7 +13157,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     } else {
                         bsgc_enable = 0;
                     }
-                    request.set(CaptureModule.smileEnable, bsgc_enable);
                     request.set(CaptureModule.gazeEnable, bsgc_enable);
                     request.set(CaptureModule.blinkEnable, bsgc_enable);
                 }

@@ -498,49 +498,6 @@ public class Camera2FaceView extends FaceView {
                         }
                     }
 
-                    if (mFdSmileEnable && face.getMouthPosition() != null) {
-                        Log.e(TAG, "smile: " + exFace.getSmileDegree() + "," +
-                                exFace.getSmileConfidence());
-                        if (exFace.getSmileDegree() < smile_threashold_no_smile) {
-                            point[0] = face.getMouthPosition().x - delta_x;
-                            point[1] = face.getMouthPosition().y;
-                            point[2] = face.getMouthPosition().x + delta_x;
-                            point[3] = face.getMouthPosition().y;
-                            Matrix faceMatrix = new Matrix();
-                            faceMatrix.preRotate(exFace.getRollDirection(),
-                                    face.getMouthPosition().x, face.getMouthPosition().y);
-                            faceMatrix.mapPoints(point);
-                            bsgcTranslateMatrix.mapPoints(point);
-                            mMatrix.mapPoints(point);
-                            canvas.drawLine(point[0] + dx, point[1] + dy,
-                                    point[2] + dx, point[3] + dy, mPaint);
-                        } else if (exFace.getSmileDegree() <
-                                smile_threashold_small_smile) {
-                            int rotation_mouth = 360 - mDisplayRotation;
-                            mRect.set(face.getMouthPosition().x-delta_x,
-                                    face.getMouthPosition().y-delta_y, face.getMouthPosition().x+delta_x,
-                                    face.getMouthPosition().y+delta_y);
-                            bsgcTranslateMatrix.mapRect(mRect);
-                            mMatrix.mapRect(mRect);
-                            mRect.offset(dx, dy);
-                            canvas.drawArc(mRect, rotation_mouth,
-                                    180, true, mPaint);
-                        } else {
-                            float[] mouthPoint = new float[2];
-                            mouthPoint[0] = face.getMouthPosition().x;
-                            mouthPoint[1] = face.getMouthPosition().y;
-                            bsgcTranslateMatrix.mapPoints(mouthPoint);
-                            mMatrix.mapPoints(mouthPoint);
-                            mRect.set(face.getMouthPosition().x-delta_x,
-                                    face.getMouthPosition().y-delta_y, face.getMouthPosition().x+delta_x,
-                                    face.getMouthPosition().y+delta_y);
-                            bsgcTranslateMatrix.mapRect(mRect);
-                            mMatrix.mapRect(mRect);
-                            mRect.offset(dx, dy);
-                            canvas.drawOval(mRect, mPaint);
-                        }
-                    }
-
                     if (mGenderEnable) {
                         int gender = exFace.getGender();
                         if (gender != -1) {

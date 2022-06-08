@@ -34,8 +34,6 @@ public class ExtendedFace {
     private int[] mGenderConfidence = null;
     private int mFaceExpression = -1;
     private int[] mFaceExpressionConfidences = null;
-    private int mSmileDegree = 0;
-    private int mSmileConfidence = 0;
     private int mBlinkDetected = 0;
     private int mLeyeBlink = 0;
     private int mReyeBlink = 0;
@@ -69,14 +67,6 @@ public class ExtendedFace {
         return mReyeBlink;
     }
 
-    public int getSmileDegree() {
-        return mSmileDegree;
-    }
-
-    public int getSmileConfidence() {
-        return mSmileConfidence;
-    }
-
     public int getLeftrightGaze() {
         return mLeftrightGaze;
     }
@@ -102,10 +92,6 @@ public class ExtendedFace {
         this.mReyeBlink = right;
     }
 
-    public void setSmileDegree(byte smileDegree) {
-        this.mSmileDegree = smileDegree;
-    }
-
     public void setGazeDirection(int topbottomGaze, int leftrightGaze, int rollDirection) {
         this.mTopbottomGaze = topbottomGaze;
         this.mLeftrightGaze = leftrightGaze;
@@ -114,10 +100,6 @@ public class ExtendedFace {
 
     public void setGazeAngle(byte gazeAngle) {
         this.mGazeAngle = gazeAngle;
-    }
-
-    public void setSmileConfidence(int smileConfidence) {
-        this.mSmileConfidence = smileConfidence;
     }
 
     public void setContour(int[] contour) {
@@ -194,8 +176,6 @@ public class ExtendedFace {
                 "mId=" + mId +
                 ",mGender=" + mGender +
                 ", mFaceExpression=" + mFaceExpression +
-                ", mSmileDegree=" + mSmileDegree +
-                ", mSmileConfidence=" + mSmileConfidence +
                 ", mBlinkDetected=" + mBlinkDetected +
                 ", mLeyeBlink=" + mLeyeBlink +
                 ", mReyeBlink=" + mReyeBlink +
