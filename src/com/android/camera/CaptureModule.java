@@ -8887,7 +8887,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         mVideoSnapshotSize = getMaxPictureSizeLiveshot(getMainCameraId(),mVideoSize.getWidth(),
                 mVideoSize.getHeight());
         String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
-        if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || "1".equals(hvx_shdr)){
+        String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
+        if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || "1".equals(hvx_shdr) || "1".equals(hvx_mfhdr)){
             mVideoSnapshotSize = mVideoSize;
         }
         String videoSnapshot = PersistUtil.getVideoSnapshotSize();
