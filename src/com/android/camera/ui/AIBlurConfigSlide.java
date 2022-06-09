@@ -337,7 +337,7 @@ public class AIBlurConfigSlide extends View {
             if(mMode == BLUR_LUMA_MODE){
                 mUI.setChromaEnable(idx ==2 ? true : false);
                 if(idx !=2){
-                    String defaultValue = "0.00";
+                    String defaultValue = "0.50";
                     mSettingsManager.setBlurSliderValue(SettingsManager.KEY_AI_BLUR_CHROMAU, true, defaultValue);
                     mUI.updateBlurModeText(BLUR_CHROMEU_MODE, defaultValue);
                     mSettingsManager.setBlurSliderValue(SettingsManager.KEY_AI_BLUR_CHROMAV, true, defaultValue);

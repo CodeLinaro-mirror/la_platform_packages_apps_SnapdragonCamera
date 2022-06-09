@@ -1556,11 +1556,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 getCurrentPrepNameKey());
         SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName,
                 Context.MODE_PRIVATE);
-//        String defaultValue = "0.00";
-//        if(key == KEY_AI_BLUR_CHROMAU || key == KEY_AI_BLUR_CHROMAV){
-//            defaultValue = "-0.50";
-//        }
-        return sharedPreferences.getString(key,"0.00");
+        String defaultValue = "0.00";
+        if(key == KEY_AI_BLUR_CHROMAU || key == KEY_AI_BLUR_CHROMAV){
+            defaultValue = "0.50";
+        }else if(key == KEY_AI_BLUR_STRENGTH){
+            defaultValue = "1.00";
+        }
+        return sharedPreferences.getString(key,defaultValue);
     }
 
     public void setBlurSliderValue(String key, boolean forceNotify, String value) {

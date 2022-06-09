@@ -1677,7 +1677,7 @@
 
     <!-- AI Camera-->
     <string name="pref_camera2_ai_camera_title" translatable="true">AI Camera Mode</string>
-    <string name="pref_camera2_ai_camera_bokeh_title" translatable="true">AI Blur Mode</string>
+    <string name="pref_camera2_ai_camera_bokeh_title" translatable="true">Blur Mode</string>
     <string name="pref_camera2_ai_camera_snapshot_title" translatable="true">AI Snapshot</string>
     <string name="pref_camera2_ai_camera_default" translatable="false">0</string>
     <string name="pref_camera2_ai_camera_entry_disable" translatable="true">disable</string>

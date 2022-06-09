@@ -464,10 +464,20 @@ public class OneUICameraControls extends RotatableLayout {
             mBlurChromaV.setTextColor(GREY);
             mBlurChromaVText.setTextColor(GREY);
         }else{
-            mBlurChromaU.setTextColor(Color.WHITE);
-            mBlurChromaUText.setTextColor(Color.WHITE);
-            mBlurChromaV.setTextColor(Color.WHITE);
-            mBlurChromaVText.setTextColor(Color.WHITE);
+            if(mAIBlurSlide.getMode() == AIBlurConfigSlide.BLUR_CHROMEU_MODE){
+                mBlurChromaU.setTextColor(BLUE);
+                mBlurChromaUText.setTextColor(BLUE);
+            }else{
+                mBlurChromaU.setTextColor(Color.WHITE);
+                mBlurChromaUText.setTextColor(Color.WHITE);
+            }
+            if(mAIBlurSlide.getMode() == AIBlurConfigSlide.BLUR_CHROMAV_MODE){
+                mBlurChromaV.setTextColor(BLUE);
+                mBlurChromaVText.setTextColor(BLUE);
+            }else{
+                mBlurChromaV.setTextColor(Color.WHITE);
+                mBlurChromaVText.setTextColor(Color.WHITE);
+            }
         }
     }
 
