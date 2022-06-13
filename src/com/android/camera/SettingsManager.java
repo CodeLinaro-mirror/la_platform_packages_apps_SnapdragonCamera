@@ -2103,10 +2103,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference hfrPref = mPreferenceGroup.findPreference(KEY_VIDEO_HIGH_FRAME_RATE);
         if (hfrPref != null) {
             CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
-            if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO){
+            if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO) {
+                ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
                 hfrPref.reloadInitialEntriesAndEntryValues();
                 mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
-                        getSupportedHighFrameRate(mode, mCameraId));
+                        getSupportedHighFrameRate(mode, videoQuality.getValue(), mCameraId));
                 if (!mIsHFRSupported) {
                     mFilteredKeys.add(hfrPref.getKey());
                 } else {
@@ -2127,7 +2128,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (-1 == CaptureModule.FRONT_ID) {
             result = false;
         } else {
-            result = getSupportedHighFrameRate(CaptureModule.CameraMode.HFR,
+            ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
+            result = getSupportedHighFrameRate(CaptureModule.CameraMode.HFR, videoQuality.getValue(),
                     CaptureModule.FRONT_ID).size() != 0;
         }
         Log.v(TAG, " isFrontIDHFRSupported result :" + result);
@@ -2264,7 +2266,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return supported;
     }
 
-    private List<String> getSupportedHighFrameRate(CaptureModule.CameraMode mode, int id) {
+    private List<String> getSupportedHighFrameRate(CaptureModule.CameraMode mode,
+                                                   String videoSizeStr, int id) {
         int cameraId = id;
         String selectMode = getValue(KEY_SELECT_MODE);
         if(mode == CaptureModule.CameraMode.HFR &&
@@ -2277,10 +2280,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if(mode == CaptureModule.CameraMode.VIDEO) {
             supported.add("off");
         }
-        ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
         ListPreference videoEncoder = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
-        if (videoQuality == null || videoEncoder == null) return supported;
-        String videoSizeStr = videoQuality.getValue();
+        if (videoSizeStr == null || videoEncoder == null) return supported;
         int videoEncoderNum = SettingTranslation.getVideoEncoder(videoEncoder.getValue());
         VideoCapabilities videoCapabilities = null;
         boolean findVideoEncoder = false;
@@ -2372,9 +2373,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     }
                 }
             }
-        }
-        if (supported.isEmpty()) {
-            supported.add("off");
         }
         Log.d(TAG,"getSupportedHighFrameRate-supported="+supported+",mCaptureModule.getVideoHdrMode()="+getVideoHdrMode());
         return supported;
@@ -2932,6 +2930,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     if (getValue(SettingsManager.KEY_VSR) != null &&
                             getValue(SettingsManager.KEY_VSR).equals("1") &&
                             sizes[i].toString().equals("7680x4320")) {
+                        continue;
+                    }
+                    if (mode == CaptureModule.CameraMode.HFR &&
+                        getSupportedHighFrameRate(mode, sizes[i].toString(), cameraId).size() == 0) {
+                        // Filter video size if Video High frame rate didn`t supported
                         continue;
                     }
 
