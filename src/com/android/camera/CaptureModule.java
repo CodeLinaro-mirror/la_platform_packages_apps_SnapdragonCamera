@@ -13525,7 +13525,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             updateLockAFAEVisibility();
         }
         if (mIsDepthFocus && !mInTAF) {
-            resultAFState = CaptureResult.CONTROL_AF_STATE_INACTIVE;
+            mUI.showFocusCircle(false);
+        }else{
+            mUI.showFocusCircle(true);
         }
         final Integer afState = resultAFState;
         // Report state change when AF state has changed.
