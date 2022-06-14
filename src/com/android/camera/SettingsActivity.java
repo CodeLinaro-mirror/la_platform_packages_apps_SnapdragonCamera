@@ -238,6 +238,7 @@ public class SettingsActivity extends PreferenceActivity {
             if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
                 updateCaptureProfilePref();
                 updateLongShotPreference();
+                updateSelfieMirrorPreference();
             }
 
             if (key.equals(SettingsManager.KEY_MANUAL_HDR)) {
@@ -1807,6 +1808,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateMultiVideoFPSPreference();
         updateMultiVideoEISPreference();
         updateViullPreference();
+        updateSelfieMirrorPreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -2438,6 +2440,27 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
     }
+
+    private void updateSelfieMirrorPreference() {
+        SwitchPreference selfieMirror = (SwitchPreference) findPreference(SettingsManager.KEY_SELFIEMIRROR);
+        if (selfieMirror == null) {
+            return;
+        }
+        ListPreference rawFormat = (ListPreference)findPreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        String yuv10bit = this.getString(R.string.pref_camera2_saveformat_value_yuv10bit);
+        String yuv10bitWithMetadata = this.getString(
+                R.string.pref_camera2_saveformat_value_yuv10bit_withmetedata);
+        if(rawFormat != null){
+            String value = rawFormat.getValue();
+            if(value.equals(yuv10bit) || value.equals(yuv10bitWithMetadata)){
+                selfieMirror.setChecked(false);
+                selfieMirror.setEnabled(false);
+                return;
+            }
+        }
+        selfieMirror.setEnabled(true);
+    }
+
     private void updatePictureFormatPreference(){
        ListPreference pictureFormatPref = (ListPreference)findPreference(SettingsManager.KEY_PICTURE_FORMAT);
         CaptureModule.CameraMode mode =
