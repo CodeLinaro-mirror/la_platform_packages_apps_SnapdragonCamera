@@ -237,6 +237,7 @@ public class SettingsActivity extends PreferenceActivity {
 
             if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
                 updateCaptureProfilePref();
+                updateLongShotPreference();
             }
 
             if (key.equals(SettingsManager.KEY_MANUAL_HDR)) {
@@ -2424,6 +2425,16 @@ public class SettingsActivity extends PreferenceActivity {
                 mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
                 longShot.setChecked(false);
                 longShot.setEnabled(false);
+            }
+
+            ListPreference rawFormat = (ListPreference)findPreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+            if(rawFormat != null) {
+                String value = rawFormat.getValue();
+                if (!"0".equals(value)) {
+                    longShot.setChecked(false);
+                    longShot.setEnabled(false);
+
+                }
             }
         }
     }
