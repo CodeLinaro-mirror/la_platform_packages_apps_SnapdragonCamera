@@ -2289,7 +2289,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mSettingsManager.setValue(SettingsManager.KEY_COLOR_EFFECT,"0");
         }
         String maunalHDR = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_HDR);
-        if (maunalHDR != null && (maunalHDR.equals("manual"))) {
+        if (maunalHDR != null && (maunalHDR.equals("manual") || maunalHDR.equals("auto"))) {
             mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         }
     }
