@@ -1330,7 +1330,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void enableZoomSeekBar(boolean enable) {
        if (mZoomSeekBar != null)
-           mZoomSeekBar.setEnabled(enable); 
+           mZoomSeekBar.setEnabled(enable);
+       if(mZoomValueText != null)
+           mZoomValueText.setEnabled(enable);
     }
 
     public boolean getZoomFixedSupport() {
