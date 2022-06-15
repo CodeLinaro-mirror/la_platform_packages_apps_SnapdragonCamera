@@ -1659,7 +1659,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             initVerticalEvBar();
         }
         setMakeupButtonIcon();
-        showSceneModeLabel();
         updateMenus();
         if(mModule.isTrackingFocusSettingOn()) {
             mTrackingFocusRenderer.setVisible(false);
@@ -2238,8 +2237,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mFilterMenuStatus == FILTER_MENU_ON) {
             removeFilterMenu(true);
         }
-        //exit recording mode needs to refresh scene mode label.
-        showSceneModeLabel();
     }
 
     public void showRelatedIcons(CaptureModule.CameraMode mode) {
@@ -3331,7 +3328,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     if ( needShowInstructional() ) {
                         showSceneInstructionalDialog(mOrientation);
                     }
-                    showSceneModeLabel();
                     if(value.equals("18")) {//hdr
                         hideVerticalEv();
                     }
