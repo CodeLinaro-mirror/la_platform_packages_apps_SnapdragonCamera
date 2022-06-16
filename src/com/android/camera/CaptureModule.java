@@ -3639,12 +3639,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void reinit() {
-        if (mSettingsManager.getQuadBayerSensorCameraId() != -1) {
-            CURRENT_ID = mSettingsManager.getQuadBayerSensorCameraId();
-        } else {
-            CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
-            CURRENT_MODE = mCurrentSceneMode.mode;
-        }
+        CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
+        CURRENT_MODE = mCurrentSceneMode.mode;
         Log.d(TAG,"reinit: CURRENT_ID camera id " + CURRENT_ID);
         mSettingsManager.init();
     }
@@ -7766,10 +7762,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public int getMainCameraId() {
-        if (mSettingsManager.getQuadBayerSensorCameraId() != -1) {
-            return mSettingsManager.getQuadBayerSensorCameraId();
-        }
-
         if (CaptureModule.FRONT_ID != mCurrentSceneMode.getCurrentId()) {
             String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
             if (selectMode != null && selectMode.equals("single_rear_cameraid") && mSingleRearId != -1) {
@@ -14581,6 +14573,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else if (selectMode != null && selectMode.equals("sat") && mLogicalId != -1) {
                 cameraId = mLogicalId;
             }
+            String quadBayer =  mSettingsManager.getValue(SettingsManager.KEY_QUAD_BAYER_SENSOR);
+            if (quadBayer != null && !quadBayer.equals("-1")) {
+                cameraId = Integer.parseInt(quadBayer);
+            }
             return checkCameraId(cameraId);
         }
 
@@ -14605,6 +14601,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     return mSingleRearId;
                 } else if (selectMode != null && selectMode.equals("sat") && mLogicalId != -1) {
                     return mLogicalId;
+                }
+                String quadBayer = pref.getString(SettingsManager.KEY_QUAD_BAYER_SENSOR, null);
+                if (quadBayer != null && !quadBayer.equals("-1")) {
+                    return Integer.parseInt(quadBayer);
                 }
                 if (swithCameraId != -1) {
                     cameraId = swithCameraId;
