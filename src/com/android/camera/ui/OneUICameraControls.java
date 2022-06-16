@@ -907,7 +907,6 @@ public class OneUICameraControls extends RotatableLayout {
         }
     }
     public void closeFlashForPro( boolean isHiden){
-        android.util.Log.d(TAG,"zcl closeFlashForPro isHiden="+isHiden);
         if(isHiden) {
             mFlashButton.closeFlash(true);
             mFlashButton.setVisibility(View.INVISIBLE);

@@ -129,7 +129,7 @@ public class ProMode extends View {
         mCurrentExposuretime = mSettingsManager.getKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE);
         if (mCurrentExposuretime.equals("auto") || mCurrentExposuretime.equals("")) {
             mUI.updateProModeText(EXPOSURE_TIME_MODE, "Auto");
-            mUI.closeFlashForPro(false);
+           if(mExposureTime != null) mUI.closeFlashForPro(false);
         }
        else{
             long mExposurTime = PersistUtil.strToLong(mCurrentExposuretime, mLongExpTm);
