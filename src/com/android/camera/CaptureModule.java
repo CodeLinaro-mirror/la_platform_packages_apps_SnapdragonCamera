@@ -6662,6 +6662,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyPdnetToggle(builder);
         applyPhotoEIS(builder);
         applyAICameraStrength();
+        applyTargetZoom(builder, 0f);
     }
 
     /**
@@ -7506,7 +7507,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else {
                 mZoomValue = zoom;
             }
-            applyZoomAndUpdate(getMainCameraId(),true);
+            applyZoomAndUpdate(getMainCameraId(),true, to);
         }
     }
 
@@ -12439,9 +12440,20 @@ public class CaptureModule implements CameraModule, PhotoController,
         return updatePreview;
     }
 
+    private void applyTargetZoom(CaptureRequest.Builder builder, float targetZoom) {
+        if (DEBUG) {
+            Log.d(TAG, "applyTargetZoom, " + targetZoom);
+        }
+        VendorTagUtil.setTargetZoom(builder, targetZoom);
+    }
+
     private void applyZoomAndUpdate(int id, boolean instant) {
+        applyZoomAndUpdate(id, instant, 0f);
+    }
+
+    private void applyZoomAndUpdate(int id, boolean instant, float targetZoom) {
         CaptureRequest.Builder captureRequest = mPreviewRequestBuilder[id];
-        Log.i(TAG,"applyZoomAndUpdate, mRecordingPausing:" + mRecordingPausing);
+        Log.i(TAG,"applyZoomAndUpdate, mRecordingPausing:" + mRecordingPausing + ", " + mZoomValue);
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         boolean isUseVideoPreview = true;
         if (mCurrentSceneMode.mode == CameraMode.HFR ) {
@@ -12477,6 +12489,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             applyZoom(captureRequest, id);
         }
+
+        applyTargetZoom(captureRequest, targetZoom);
+
         try {
             if(id == MONO_ID && !canStartMonoPreview()) {
                 mCaptureSession[id].capture(captureRequest
