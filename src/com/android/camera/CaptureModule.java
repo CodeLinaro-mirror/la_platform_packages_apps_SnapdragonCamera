@@ -6480,6 +6480,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         keepScreenOnAwhile();
         // release media recorder
         releaseMediaRecorder();
+        resetAudioMute();
         releaseAudioFocus();
         mUI.showRecordingUI(false, false);
         mUI.enableShutter(true);
