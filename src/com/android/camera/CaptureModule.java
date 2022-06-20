@@ -8005,8 +8005,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                         if (FD_DEBUG) {
                             Log.d(FD_TAG, "fd gender face_id " + face_id);
                         }
-                        int[] confidences = new int[2];
-                        for (int j = 0; j < 2; j++) {
+                        int genderCount = ExtendedFace.FDGenderIndex.values().length;
+                        int[] confidences = new int[genderCount];
+                        for (int j = 0; j < genderCount; j++) {
                             confidences[j] = byteArray2Int(genderArray, arrayIndex);
                             arrayIndex += 4;
                             if (FD_DEBUG) {
