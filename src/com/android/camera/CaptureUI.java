@@ -1855,8 +1855,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mIsVideoUI || !mModule.getCameraModeSwitcherAllowed()
                 || !isSupportFrontCamera(mModule.getCurrenCameraMode())
                 || (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
-                    !mSettingsManager.isFrontIDHFRSupported())
-                || mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                    !mSettingsManager.isFrontIDHFRSupported())) {
             return;
         }
         mModule.setCameraModeSwitcherAllowed(false);
@@ -2647,8 +2646,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private void hideFrontBackSwither() {
         if (mFrontBackSwitcher != null &&
                 ((mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
-                !mSettingsManager.isFrontIDHFRSupported()) ||
-                        mSettingsManager.getQuadBayerSensorPrefEnabled())) {
+                !mSettingsManager.isFrontIDHFRSupported()))) {
             mFrontBackSwitcher.setVisibility(View.INVISIBLE);
         }
     }
