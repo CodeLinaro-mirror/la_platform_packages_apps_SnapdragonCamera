@@ -368,10 +368,12 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CameraCharacteristics.Key<float[]> WB_RGB_GAINS_RANGE =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.manualWB.gains_range", float[].class);
 
-    public static CameraCharacteristics.Key<Integer> buckets =
-            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.histogram.buckets", Integer.class);
+    public static CaptureResult.Key<Integer> buckets =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.histogram.buckets", Integer.class);
     public static CameraCharacteristics.Key<Integer> maxCount =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.histogram.max_count", Integer.class);
+    public static CaptureResult.Key<Integer> stats_type =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.histogram.stats_type",Integer.class);
     public static CaptureResult.Key<int[]> histogramStats =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.histogram.stats", int[].class);
     public static CaptureResult.Key<Integer> stats_width =
@@ -848,6 +850,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int mOrientation = OrientationEventListener.ORIENTATION_UNKNOWN;
     /*Histogram variables*/
     private Camera2GraphView mGraphViewR,mGraphViewGB,mGraphViewB;
+    private Camera2RGBGraphView mGraphViewRGB;
     private Camera2BGBitMap    bgstats_view;
     private Camera2BEBitMap    bestats_view;
     private Camera2RSBitMap    rsstats_view;
@@ -1537,6 +1540,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateBGStatsVisibility(View.GONE);
                 updateBEStatsVisibility(View.GONE);
                 updateGraghViewVisibility(View.GONE);
+                updateRGBGraghViewVisibility(View.GONE);
                 mUI.updateAFDInfoVisibility(View.GONE);
                 mUI.updateAFInfoVisibility(View.GONE);
                 mRSStatson = false;
@@ -1907,14 +1911,28 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updateStatsView(String stats_visualizer,CaptureResult result) {
         int r, g, b, index;
         if (stats_visualizer.contains("2")) {
-            int[] histogramStats = result.get(CaptureModule.histogramStats);
-            if (histogramStats != null && mHiston) {
+            try {
+                int[] histogramStats = result.get(CaptureModule.histogramStats);
+                if (histogramStats != null && mHiston) {
                     /*The first element in the array stores max hist value . Stats data begin
                     from second value*/
-                synchronized (statsdata) {
-                    System.arraycopy(histogramStats, 0, statsdata, 0, STATS_DATA);
+                    synchronized (statsdata) {
+                        System.arraycopy(histogramStats, 0, statsdata, 0, STATS_DATA);
+                    }
+                    int binCount = result.get(CaptureModule.buckets);
+                    int statsType = result.get(CaptureModule.stats_type);
+                    Log.i(TAG, "binCount:" + binCount + ",statsType:" + statsType);
+                    if (statsType == 6 && binCount == 256) {
+                        updateRGBGraghViewVisibility(View.INVISIBLE);
+                        updateGraghViewVisibility(View.VISIBLE);
+                        updateGraghView();
+                    } else {
+                        updateGraghViewVisibility(View.INVISIBLE);
+                        updateRGBGraghViewVisibility(View.VISIBLE);
+                        updateRGBGraghView();
+                    }
                 }
-                updateGraghView();
+            } catch (IllegalArgumentException e) {
             }
         }
 
@@ -2771,6 +2789,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mGraphViewR = (Camera2GraphView) mRootView.findViewById(R.id.graph_view_r);
         mGraphViewGB = (Camera2GraphView) mRootView.findViewById(R.id.graph_view_gb);
         mGraphViewB = (Camera2GraphView) mRootView.findViewById(R.id.graph_view_b);
+        mGraphViewRGB = (Camera2RGBGraphView) mRootView.findViewById(R.id.graph_view_rgb);
         bgstats_view = (Camera2BGBitMap) mRootView.findViewById(R.id.bg_stats_graph);
         bestats_view = (Camera2BEBitMap) mRootView.findViewById(R.id.be_stats_graph);
         rsstats_view = (Camera2RSBitMap) mRootView.findViewById(R.id.rs_stats_graph);
@@ -2790,6 +2809,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         mGraphViewR.setDataSection(0,256);
         mGraphViewGB.setDataSection(256,512);
         mGraphViewB.setDataSection(512,768);
+        mGraphViewRGB.setDataSection(0,768);
+        if (mGraphViewRGB != null){
+            mGraphViewRGB.setCaptureModuleObject(this);
+        }
         if (mGraphViewR != null){
             mGraphViewR.setCaptureModuleObject(this);
         }
@@ -4438,6 +4461,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             if(mHiston) {
                 updateGraghViewVisibility(View.INVISIBLE);
+                updateRGBGraghViewVisibility(View.INVISIBLE);
             }
 
             if(mBGStatson) {
@@ -4517,6 +4541,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mState[id] = STATE_WAITING_AF_LOCK;
             if (mHiston) {
                 updateGraghViewVisibility(View.INVISIBLE);
+                updateRGBGraghViewVisibility(View.INVISIBLE);
             }
 
             if (mBGStatson) {
@@ -8798,6 +8823,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (mGapGraphView != null) {
                 mGapGraphView.setRotation(-mOrientation);
             }
+            if (mGraphViewRGB != null) {
+                mGraphViewRGB.setRotation(-mOrientation);
+            }
             if (mGraphViewR != null) {
                 mGraphViewR.setRotation(-mOrientation);
             }
@@ -8811,6 +8839,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         // need to re-initialize mGraphView to show histogram on rotate
         mGapGraphView = (Camera2RequestGapGraphView) mRootView.findViewById(R.id.graph_view_gap);
+        mGraphViewRGB  = (Camera2RGBGraphView) mRootView.findViewById(R.id.graph_view_rgb);
         mGraphViewR  = (Camera2GraphView) mRootView.findViewById(R.id.graph_view_r);
         mGraphViewGB = (Camera2GraphView) mRootView.findViewById(R.id.graph_view_gb);
         mGraphViewB  = (Camera2GraphView) mRootView.findViewById(R.id.graph_view_b);
@@ -8824,6 +8853,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             mGapGraphView.setAlpha(0.75f);
             mGapGraphView.setCaptureModuleObject(this);
             mGapGraphView.PreviewChanged();
+        }
+        mGraphViewRGB.setDataSection(0,768);
+        if(mGraphViewRGB != null){
+            mGraphViewRGB.setAlpha(0.75f);
+            mGraphViewRGB.setCaptureModuleObject(this);
+            mGraphViewRGB.PreviewChanged();
         }
         if(mGraphViewR != null){
             mGraphViewR.setAlpha(0.75f);
@@ -12745,8 +12780,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 final byte enable = 1;
                 request.set(CaptureModule.histMode, enable);
                 mHiston = true;
-                updateGraghViewVisibility(View.VISIBLE);
-                updateGraghView();
                 return;
             }
         }
@@ -12941,6 +12974,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     }
+    private void updateRGBGraghViewVisibility(final int visibility) {
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(mGraphViewRGB != null) {
+                    mGraphViewRGB.setVisibility(visibility);
+                }
+            }
+        });
+    }
 
     private void applyEnableCinematic(CaptureRequest.Builder request) {
         try {
@@ -12994,12 +13036,24 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     }
+
     public boolean showMFNR(){
         if ( (mCurrentSceneMode.mode == CameraMode.DEFAULT || mCurrentSceneMode.mode == CameraMode.RTB)
                 && !mPostProcessor.isSelfieMirrorOn() && !mSettingsManager.isZSLInAppEnabled())
             return true;
         else return false;
     }
+
+    private void updateRGBGraghView(){
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(mGraphViewRGB != null) {
+                    mGraphViewRGB.PreviewChanged();
+                }
+            }
+        });
+    }
+
     private void updateGraghView(){
         mActivity.runOnUiThread(new Runnable() {
             public void run() {
@@ -15596,6 +15650,102 @@ class Camera2RequestGapGraphView extends View {
             canvas.drawText(Float.toString(mScale/2), 3*border, graphheight/2 + 15, paint);
             cavas.drawLine(0, graphheight/4 + border, 3*border, graphheight/4 + border, paint);
             canvas.drawText(Float.toString(mScale/4*3), 3*border, graphheight/4 + 15, paint);
+        }
+    }
+    public void PreviewChanged() {
+        invalidate();
+    }
+
+    public void setCaptureModuleObject(CaptureModule captureModule) {
+        mCaptureModule = captureModule;
+    }
+}
+
+class Camera2RGBGraphView extends View {
+    private Bitmap  mBitmap;
+    private Paint   mPaint = new Paint();
+    private Paint   mPaintRect = new Paint();
+    private Canvas  mCanvas = new Canvas();
+    private float   mScale = (float)3;
+    private float   mWidth;
+    private float   mHeight;
+    private int mStart, mEnd;
+    private CaptureModule mCaptureModule;
+    private float scaled;
+    private static int STATS_SIZE = 768;
+    private static final String TAG = "Camera2RGBGraphView";
+
+    public Camera2RGBGraphView(Context context, AttributeSet attrs) {
+        super(context,attrs);
+
+        mPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+        mPaintRect.setColor(0xFFFFFFFF);
+        mPaintRect.setStyle(Paint.Style.FILL);
+    }
+
+    void setDataSection(int start, int end){
+        mStart =  start;
+        mEnd = end;
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565);
+        mCanvas.setBitmap(mBitmap);
+        mWidth = w;
+        mHeight = h;
+        super.onSizeChanged(w, h, oldw, oldh);
+    }
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if(mCaptureModule == null && !mCaptureModule.mHiston) {
+            android.util.Log.e(TAG, "returning as histogram is off ");
+            return;
+        }
+
+        if (mBitmap != null) {
+            final Paint paint = mPaint;
+            final Canvas cavas = mCanvas;
+            final float border = 5;
+            float graphheight = mHeight - (2 * border);
+            float graphwidth = mWidth - (2 * border);
+            float left, top, right, bottom;
+            float bargap = 0.0f;
+
+            cavas.drawColor(0xFFAAAAAA);
+            paint.setColor(Color.BLACK);
+
+            for (int k = 0; k <= (graphheight / 32); k++) {
+                float y = (float) (32 * k) + border;
+                cavas.drawLine(border, y, graphwidth + border, y, paint);
+            }
+            for (int j = 0; j <= (graphwidth / 32); j++) {
+                float x = (float) (32 * j) + border;
+                cavas.drawLine(x, border, x, graphheight + border, paint);
+            }
+            synchronized(CaptureModule.statsdata) {
+                STATS_SIZE = CaptureModule.statsdata.length;
+                float barwidth = graphwidth / STATS_SIZE;
+                mEnd = CaptureModule.statsdata.length;
+                int maxValue = Integer.MIN_VALUE;
+                for ( int i = mStart ; i < mEnd ; i++ ) {
+                    if ( maxValue < CaptureModule.statsdata[i] ) {
+                        maxValue = CaptureModule.statsdata[i];
+                    }
+                }
+                mScale = ( float ) maxValue;
+                for(int i=mStart ; i < mEnd ; i++)  {
+                    scaled = (CaptureModule.statsdata[i]/mScale)*graphheight;
+                    if(scaled >= (float)STATS_SIZE)
+                        scaled = (float)STATS_SIZE;
+                    left = (bargap * (i - mStart + 1)) + (barwidth * (i - mStart)) + border;
+                    top = graphheight + border;
+                    right = left + barwidth;
+                    bottom = top - scaled;
+                    cavas.drawRect(left, top, right, bottom, mPaintRect);
+                }
+            }
+            canvas.drawBitmap(mBitmap, 0, 0, null);
         }
     }
     public void PreviewChanged() {
