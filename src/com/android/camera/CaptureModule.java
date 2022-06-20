@@ -3054,7 +3054,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     outputConfiguration.setDynamicRangeProfile(Long.parseLong(captureProfile));
                                 }
                             }
-                            if(s == mImageReader[id].getSurface() || s == mRawImageReader[id].getSurface()){
+                            Log.i(TAG," mImageReader[id] " + mImageReader[id] + "mRawImageReader[id] :" + mRawImageReader[id]);
+                            if(s == mImageReader[id].getSurface() || (mRawImageReader[id] != null &&
+                                    s == mRawImageReader[id].getSurface())) {
                                 String physicalCameraId = mSettingsManager.getQuadBayerPhysicalId(Integer.toString(getMainCameraId()));
                                 if(physicalCameraId != null){
                                     Log.i(TAG," set physical id " + physicalCameraId + "for image reader stream");
