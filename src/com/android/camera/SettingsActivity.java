@@ -1735,7 +1735,7 @@ public class SettingsActivity extends PreferenceActivity {
             videoPref.setValue("1920x1080");
             videoPref.setEnabled(false);
         }else{
-            if(selectModePref != null) selectModePref.setEnabled(true);
+            updateSwitchIDInModePreference(true);
             if(videoPref != null) videoPref.setEnabled(true);
         }
     }
