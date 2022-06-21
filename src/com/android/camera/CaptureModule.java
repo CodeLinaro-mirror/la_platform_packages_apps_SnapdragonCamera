@@ -3081,7 +3081,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     }
                 }
-
                 if(mChosenImageFormat == ImageFormat.YUV_420_888 || mChosenImageFormat == ImageFormat.PRIVATE) {
                     if (mPostProcessor.isZSLEnabled()) {
                         if (isMultiResolutionImageReaderEnabled()) {
@@ -3199,13 +3198,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }else if(mSaveRaw){
             int physicalId = mActiveCameraIds.get(0);
-            Log.d(TAG,"addPhysicalCaptureTarget  physicalId="+physicalId);
+            Log.d(TAG," mActiveCameraIds="+physicalId);
                     for( int i = 0;i < mPhysicalRawId.length;i++){
                         if(Integer.parseInt(mPhysicalRawId[i]) == physicalId ){
                             builder.addTarget(mPhysicalRawReader[i].getSurface());
                             targetCount++;
-                            builder.addTarget(mPhysicalJpegReader[i].getSurface());
-                            targetCount++;
+                            if(mSettingsManager.JPEG_FORMAT == mSettingsManager.getSavePictureFormat()) {
+                                builder.addTarget(mPhysicalJpegReader[i].getSurface());
+                                targetCount++;
+                            }
                             break;
                         }
                     }
@@ -3303,13 +3304,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                     configuration.setPhysicalCameraId(id);
                 }
                 outputConfigurations.add(configuration);
-
-                OutputConfiguration configuration_jpeg = new OutputConfiguration(
-                        mPhysicalJpegReader[i].getSurface());
-                configuration_jpeg.setPhysicalCameraId(id);
-                outputConfigurations.add(configuration_jpeg);
-                Log.d(TAG,"add jpeg output format=jpeg physicalId="+id+" size="
-                        +mPhysicalJpegReader[i].getWidth()+"x"+mPhysicalJpegReader[i].getHeight()+",mPhysicalJpegReader[i].getSurface()="+mPhysicalJpegReader[i].getSurface());
+                Log.d(TAG, "add raw output physicalId=" + id + " size="
+                        + mPhysicalRawReader[i].getWidth() + "x" + mPhysicalRawReader[i].getHeight() + ",mPhysicalRawReader[i].getSurface()=" + mPhysicalRawReader[i].getSurface());
+                if (mSettingsManager.JPEG_FORMAT == mSettingsManager.getSavePictureFormat()) {
+                    OutputConfiguration configuration_jpeg = new OutputConfiguration(
+                            mPhysicalJpegReader[i].getSurface());
+                    configuration_jpeg.setPhysicalCameraId(id);
+                    outputConfigurations.add(configuration_jpeg);
+                    Log.d(TAG, "add jpeg output format=jpeg physicalId=" + id + " size="
+                            + mPhysicalJpegReader[i].getWidth() + "x" + mPhysicalJpegReader[i].getHeight() + ",mPhysicalJpegReader[i].getSurface()=" + mPhysicalJpegReader[i].getSurface());
+                }
             }
         }
         return outputConfigurations;
@@ -4339,8 +4343,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                             }
                             if (mSaveRaw && isPhysicalRaw() ){
                                 addPhysicalCaptureTarget(captureBuilder);
-                                captureBuilder.removeTarget(mImageReader[id].getSurface());
-                            } else if (mSaveRaw && !isPhysicalRaw()) {
+                                if(mSettingsManager.JPEG_FORMAT == mSettingsManager.getSavePictureFormat()) {
+                                    captureBuilder.removeTarget(mImageReader[id].getSurface());
+                                }
+                            } else if (mSaveRaw && isPhysicalRaw()) {
                                 captureBuilder.addTarget(mRawImageReader[id].getSurface());
                                 captureBuilder.addTarget(mImageReader[id].getSurface());
                             }
@@ -5326,6 +5332,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mMultiResImageReader.setOnImageAvailableListener(listener,
                                     new HandlerExecutor(mImageAvailableHandler));
                         } else {
+
                             mImageReader[i].setOnImageAvailableListener(listener, mImageAvailableHandler);
                         }
                         if (mRawReprocessType != 0){
