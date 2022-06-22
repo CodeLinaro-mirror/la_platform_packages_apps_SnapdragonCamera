@@ -11523,7 +11523,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCurrentSceneMode.mode == CameraMode.HFR ||
                 mCurrentSceneMode.mode == CameraMode.VIDEO) {
             if (!isHighSpeedRateCapture() && mSettingsManager.isLiveshotSupported(mVideoSize,mSettingsManager.getVideoFPS())){
-                if (mUI.isShutterEnabled()) {
+                if (mUI.isShutterEnabled() && mRecordingStarted) {
                     captureVideoSnapshot(id);
                 }
             }
