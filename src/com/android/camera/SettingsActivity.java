@@ -120,7 +120,7 @@ public class SettingsActivity extends PreferenceActivity {
                                               String key) {
             Preference p = findPreference(key);
             Log.i(TAG, "onSharedPreferenceChanged key:" + key);
-            if (p == null) return;
+            if (p == null || key == null) return;
             String value;
             if (p instanceof SwitchPreference) {
                 boolean checked = ((SwitchPreference) p).isChecked();

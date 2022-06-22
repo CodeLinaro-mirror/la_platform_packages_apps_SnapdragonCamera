@@ -4727,6 +4727,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             ByteBuffer srcDsInputUV = ByteBuffer.allocateDirect(dsinputC.remaining());
             srcDsInputUV.put(dsinputC);
 
+            String mode = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_MODE);
+            if(mode.equals("0")){
+                mBGain = mGGain*detail_enhancement;
+            }
+            Log.i(TAG,"mAideV2CaptureCallback, mRGain:" + mRGain + ",mGGain:" + mGGain + ",detail_enhancement:" + detail_enhancement + ",mBGain:" + mBGain);
             AIDEV2ProcessFrameArgs aideV2Args = new AIDEV2ProcessFrameArgs(inputFrameDim, downFrameDim, srcInputY, srcInputUV, srcDsInputY, srcDsInputUV,
                     title, cropRegion, mCaptureResult, mPictureSize, denoiseStrengthParam, mAideAdrcGain, (int)(mRGain*1024), (int)(mBGain*1024), (int)(mGGain*1024), orientation, quality);
 
@@ -4735,7 +4740,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             mAideDownImage.close();
             mAideDownImage = null;
             namedEntity = null;
-            String mode = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_MODE);
             enableShutterButtonOnMainThread(id);
             //process aidev2
             Log.d(TAG, " mAideV2CaptureCallback, start to call aide lib");
@@ -4775,7 +4779,18 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.i(TAG,"physicalCropRegion:" + originalCropRegion.toString());
         }else {
             originalCropRegion = mCaptureResult.get(CaptureResult.SCALER_CROP_REGION);
-            Log.i(TAG,"single crop region:" + originalCropRegion.toString());
+            Log.i(TAG,"single crop region from hal:" + originalCropRegion.toString());
+            Log.i(TAG,"single crop region for preview:" + mCropRegion[getMainCameraId()].toString() + ",camerdId:" + getMainCameraId());
+            Rect activeRegion = mSettingsManager.getSensorActiveArraySize(getMainCameraId());
+            Log.i(TAG,"sensor active array:" + activeRegion.toString());
+            //map preview crop to aide yuv size
+            int left = originalCropRegion.left*mAideFullImage.getWidth()/activeRegion.width();
+            int right = originalCropRegion.right*mAideFullImage.getWidth()/activeRegion.width();
+            int top = originalCropRegion.top *mAideFullImage.getHeight()/activeRegion.height();
+            int bottom = originalCropRegion.bottom *mAideFullImage.getHeight()/activeRegion.height();
+            originalCropRegion.set(left, top, right, bottom);
+            Log.i(TAG,"single crop region map to yuv size:" + originalCropRegion.toString());
+
         }
         //output yuv and final picture have the different resolution ratio
         Rect cropRegion = new Rect();
@@ -6602,6 +6617,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
+        }else if(facingOfIntentExtras == -1  && mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA){
+            mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
+            mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         }
         reinit();
         mPaused = false;
@@ -8065,7 +8083,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         mVideoSnapshotSize = getMaxPictureSizeLiveshot(getMainCameraId(),mVideoSize.getWidth(),
                 mVideoSize.getHeight());
         String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
-        if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || "1".equals(hvx_shdr)){
+        String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
+        if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || "1".equals(hvx_shdr) || "1".equals(hvx_mfhdr)){
             mVideoSnapshotSize = mVideoSize;
         }
         String mlVideo = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
