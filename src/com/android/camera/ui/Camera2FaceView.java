@@ -189,6 +189,16 @@ public class Camera2FaceView extends FaceView {
         }
     }
 
+    public void clearFacialMasks() {
+        mFacialMasks = null;
+        invalidate();
+    }
+
+    public void clearFacePoint() {
+        mFaces = null;
+        invalidate();
+    }
+
     private boolean isFDRectOutOfBound(Rect faceRect) {
         boolean result = false;
         if(mZoomRationSupported && mPostZoomFov) {
@@ -314,7 +324,7 @@ public class Camera2FaceView extends FaceView {
             }
 
             if (mFacialMasks != null && mFacialMasks.length > 4) {
-                for (int i = 1; i < mFacialMasks.length; i += 5) {
+                for (int i = 0; i < mFacialMasks.length; i += 4) {
                     if ((mFacialMasks[i+2] - mFacialMasks[i])  > 0 &&
                             (mFacialMasks[i+3] - mFacialMasks[i+1]) > 0) {
                         Rect faceMask = new Rect(mFacialMasks[i], mFacialMasks[i+1],
@@ -607,6 +617,7 @@ public class Camera2FaceView extends FaceView {
         // drawable.
         mFaces = null;
         mExFaces = null;
+        mColor = mFocusingColor;
         invalidate();
     }
 }

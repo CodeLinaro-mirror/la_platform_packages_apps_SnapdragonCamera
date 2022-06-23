@@ -445,14 +445,14 @@ public class PostProcessor{
     public void onSessionConfigured(CameraDevice cameraDevice, CameraCaptureSession captureSession) {
         mCameraDevice = cameraDevice;
         mCaptureSession = captureSession;
-        if(mUseZSL || mController.isRawReprocess()) {
+        if(mUseZSL || mController.isRawReprocess() || mController.mMultiResReprocessEnabled) {
             mImageWriter = ImageWriter.newInstance(captureSession.getInputSurface(), MAX_REQUIRED_IMAGE_NUM);
         }
     }
 
     public void onMultiImageReaderReady(MultiResolutionImageReader multiresImageReader) {
         mMultiInputImageReader = multiresImageReader;
-        if (mUseZSL) {
+        if (mUseZSL || mController.mMultiResReprocessEnabled) {
             //here to change reprocess output format
             String output = SettingsManager.getInstance().getValue(SettingsManager.KEY_MULTIRESREPROCESS_OUTPUT);
             int format = ImageFormat.JPEG;
@@ -548,6 +548,12 @@ public class PostProcessor{
 
     public void stopLongShot() {
         mPendingContinuousRequestCount = 0;
+    }
+
+    public void setMultiReader(ImageReader reader){
+        if(mController.mMultiResReprocessEnabled && mMultiInputImageReader!= null){
+            mMultiStreamInfo = mMultiInputImageReader.getStreamInfoForImageReader(reader);
+        }
     }
 
     public void reprocessImage(Image image, TotalCaptureResult metadata) {

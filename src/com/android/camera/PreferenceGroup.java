@@ -38,6 +38,7 @@ public class PreferenceGroup extends CameraPreference {
     }
 
     public void removePreference(int index) {
+
         list.remove(index);
     }
 
@@ -64,11 +65,12 @@ public class PreferenceGroup extends CameraPreference {
         // Find a leaf preference with the given key. Currently, the base
         // type of all "leaf" preference is "ListPreference". If we add some
         // other types later, we need to change the code.
-        for (CameraPreference pref : list) {
-            if (pref instanceof ListPreference) {
+        for (int i = 0; i < list.size(); i++) {
+            CameraPreference pref = list.get(i);
+            if (pref != null && pref instanceof ListPreference) {
                 ListPreference listPref = (ListPreference) pref;
                 if(listPref.getKey().equals(key)) return listPref;
-            } else if(pref instanceof PreferenceGroup) {
+            } else if(pref != null && pref instanceof PreferenceGroup) {
                 ListPreference listPref =
                         ((PreferenceGroup) pref).findPreference(key);
                 if (listPref != null) return listPref;

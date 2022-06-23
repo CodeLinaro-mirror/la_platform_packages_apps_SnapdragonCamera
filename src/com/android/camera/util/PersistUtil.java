@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2016, The Linux Foundation. All rights reserved.
  *
@@ -64,7 +65,7 @@ public class PersistUtil {
     private static final int PERSIST_PREVIEW_SIZE =
             getInt("persist.sys.camera.preview.size", 0);
     // camera1 prop end
-
+    private static final boolean PERSIST_CAMERA_TORCH_MODE = getBoolean("persist.sys.camera.torch.mode", false);
     private static final String PERSIST_HFR_LIMIT =
             get("persist.sys.camera.hfr.rate", "");
     private static final boolean PERSIST_SKIP_MEMORY_CHECK =
@@ -104,7 +105,7 @@ public class PersistUtil {
     private static final int CIRCULAR_BUFFER_SIZE_PERSIST =
             getInt("persist.sys.camera.zsl.buffer.size", 5);
     private static final int SAVE_TASK_MEMORY_LIMIT_IN_MB =
-            getInt("persist.sys.camera.perf.memlimit", 120);
+            getInt("persist.sys.camera.perf.memlimit", 320);
     private static final boolean PERSIST_CAMERA_UI_AUTO_TEST_ENABLED =
             getBoolean("persist.sys.camera.ui.auto_test", false);
     private static final boolean PERSIST_SEND_REQUEST_AFTER_FLUSH =
@@ -181,6 +182,11 @@ public class PersistUtil {
 
     private static final boolean PERSIST_SHOW_VERTICAL_EV_BAR = getBoolean("persist.sys.camera.vertical.evbar",false);
     private static final boolean PERSIST_SHOW_MFNR_SWITCH = getBoolean("persist.sys.camera.mfnr.switch",false);
+    public static boolean isTorchMode(){ return PERSIST_CAMERA_TORCH_MODE; }
+    private static final boolean PERSIST_SET_TIMESTAMP = getBoolean("persist.sys.camera.set.timestamp",false);
+    public static boolean isSetTimeStamp(){
+        return PERSIST_SET_TIMESTAMP;
+    }
 
     public static String getHFRRate() {
         return PERSIST_HFR_LIMIT;
@@ -195,6 +201,12 @@ public class PersistUtil {
     }
     public static int getLongshotShotLimit(int defaultValue) {
         return  getInt("persist.sys.camera.longshot.shotnum", defaultValue);
+    }
+    private static final String QUAD_BAYER_PHYSICAL_ID =
+            get("persist.sys.camera.quadBayerPhysicalId", "2");
+
+    public static String getQuadBayerPhysicalId() {
+        return QUAD_BAYER_PHYSICAL_ID;
     }
 
     public static Point getCameraPreviewSize() {
@@ -430,6 +442,10 @@ public class PersistUtil {
 
     public static boolean isFacialMaskDetection() {
         return getBoolean("persist.sys.cameraapp.facialmaskdetection", false);
+    }
+
+    public static boolean isVideoEncoderProfileByVendorTag() {
+        return getBoolean("persist.sys.cameraapp.videoprofilevendortag", true);
     }
 
     public static boolean isPersistVideoLiveshot(){

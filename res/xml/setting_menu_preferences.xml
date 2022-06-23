@@ -314,6 +314,24 @@
         android:title="DEVELOPER OPTIONS">
 
         <ListPreference
+            android:defaultValue="@string/pref_camera2_videoencoderprofile_default"
+            android:entries="@array/pref_camera2_preview_profile_entry"
+            android:entryValues="@array/pref_camera2_preview_profile_entryvalues"
+            android:key="pref_camera2_preview_profile_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_preview_profile_title" />
+
+        <ListPreference
+            android:defaultValue="@string/pref_camera2_videoencoderprofile_default"
+            android:entries="@array/pref_camera2_preview_profile_entry"
+            android:entryValues="@array/pref_camera2_preview_profile_entryvalues"
+            android:key="pref_camera2_captrue_profile_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_capture_profile_title" />
+
+        <ListPreference
             android:defaultValue="@string/pref_camera2_instant_aec_default"
             android:entries="@array/pref_camera2_instant_aec_entries"
             android:entryValues="@array/pref_camera2_instant_aec_entryvalues"
@@ -389,7 +407,14 @@
             android:title="@string/pref_camera2_multi_camera_mode_title"
             android:entries="@array/pref_camera2_multi_camera_mode_entries"
             android:entryValues="@array/pref_camera2_multi_camera_mode_entryvalues"/>
-
+        <ListPreference
+            android:defaultValue="@string/pref_camera2_stream_usecase_default"
+            android:key="pref_camera2_stream_usecase_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_stream_usecase_title"
+            android:entries="@array/pref_camera2_stream_usecase_entries"
+            android:entryValues="@array/pref_camera2_stream_usecase_entryvalues"/>
         <ListPreference
             android:defaultValue="@string/pref_camera2_single_physical_camera_default"
             android:key="pref_camera2_single_physical_camera_key"
@@ -550,9 +575,7 @@
             android:defaultValue="@string/pref_camera2_quad_bayer_sensor_default"
             android:title="@string/pref_camera2_quad_bayer_sensor_title"
             android:layout="@layout/preference"
-            android:summary="%s"
-            android:entries="@array/pref_camera2_quad_bayer_sensor_entries"
-            android:entryValues="@array/pref_camera2_quad_bayer_sensor_entryvalues" />
+            android:summary="%s"/>
 
         <ListPreference
             android:key="pref_camera2_remosaic_reprocessing_key"
@@ -674,6 +697,15 @@
             android:title="@string/pref_camera2_photo_eis_title"
             android:entries="@array/pref_camera2_photo_eis_entries"
             android:entryValues="@array/pref_camera2_photo_eis_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
+            android:key="pref_camera2_preview_stabilization_key"
+            android:defaultValue="@string/pref_camera2_preview_stabilization_default"
+            android:title="@string/pref_camera2_preview_stabilization_title"
+            android:entries="@array/pref_camera2_preview_stabilization_entries"
+            android:entryValues="@array/pref_camera2_preview_stabilization_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
 
@@ -981,6 +1013,15 @@
             android:summary="%s"/>
 
         <ListPreference
+            android:key="pref_camera2_multiresimagereader_reprocess_key"
+            android:defaultValue="@string/pref_camera2_multiresimagereader_default"
+            android:title="@string/pref_camera2_multiresimagereader_reprocess_title"
+            android:entries="@array/pref_camera2_multiresimagereader_entries"
+            android:entryValues="@array/pref_camera2_multiresimagereader_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
             android:key="pref_camera2_multiresreprocess_input_key"
             android:defaultValue="@string/pref_camera2_multiresimagereader_input_default"
             android:title="@string/pref_camera2_multiresimagereader_input_title"
@@ -1015,6 +1056,15 @@
             android:entryValues="@array/pref_camera2_vsr_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
+
+        <ListPreference
+            android:key="pref_camera2_viull_key"
+            android:defaultValue="@string/pref_camera2_viull_default"
+            android:title="@string/pref_camera2_viull_title"
+            android:entries="@array/pref_camera2_viull_entries"
+            android:entryValues="@array/pref_camera2_viull_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s" />
 
         <ListPreference
             android:key="pref_camera2_insensor_zoom_key"

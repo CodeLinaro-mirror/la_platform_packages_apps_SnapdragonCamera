@@ -101,7 +101,19 @@ public class FlashToggleButton extends RotateImageView {
             }
         });
     }
-
+    public void closeFlash(boolean videoFlash) {
+        String key;
+        int[] icons;
+        if (mIsVideoFlash) {
+            icons = videoFlashIcon;
+            key = SettingsManager.KEY_VIDEO_FLASH_MODE;
+        } else {
+            icons = cameraFlashIcon;
+            key = SettingsManager.KEY_FLASH_MODE;
+        }
+        mSettingsManager.setValueIndex(key, 0);
+        setImageResource(icons[0]);
+    }
     private void update() {
         int[] icons;
         if (mIsVideoFlash) {

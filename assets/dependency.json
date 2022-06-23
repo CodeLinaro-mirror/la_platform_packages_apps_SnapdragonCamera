@@ -200,6 +200,12 @@
     "0":{"pref_camera2_ai_denoiser_mode_key":"1",
          "pref_camera2_ai_denoiser_format_key":"1"}
   },
+  "pref_camera2_ai_camera_key":
+  {
+    "2":{},
+    "1":{},
+    "0":{"pref_camera2_ai_camera_snapshot_key":"0"}
+  },
   "pref_camera2_raw_format_key":
   {
     "0":{"pref_camera2_raw_reprocess_key":"0"},
@@ -228,18 +234,24 @@
              "pref_camera2_raw_format_key": "0",
              "pref_camera2_manual_exp_key": "off",
              "pref_camera2_video_hdr_key": "0",
+             "pref_camera2_touch_track_focus_key":"off",
              "pref_camera2_manual_wb_key": "0"},
     "manual": {"pref_camera2_zsl_key":"hal-zsl",
               "pref_camera2_coloreffect_key":"0",
               "pref_camera2_raw_format_key": "0",
               "pref_camera2_manual_exp_key": "off",
               "pref_camera2_video_hdr_key": "0",
+              "pref_camera2_touch_track_focus_key":"off",
               "pref_camera2_manual_wb_key": "0"}
+  },
+  "pref_camera2_touch_track_focus_key":
+  {
+    "on": {"pref_camera2_manualhdr_key": "off"}
   },
   "pref_camera2_eis_key":
   {
     "disable": {},
-    "V2": {},
+    "V2": {"pref_camera2_manualhdr_key": "off"},
     "V3": {"pref_camera2_video_duration_key":"0"}
   },
   "pref_camera2_multi_camera_mode_key":
@@ -281,15 +293,9 @@
     "single_rear_cameraid" : { "pref_camera2_ai_camera_blurmode_key": "0"},
     "default" : { "pref_camera2_ai_camera_blurmode_key": "0"}
   },
-  "pref_camera2_quad_bayer_sensor_key":
-  {
-    "1":{"pref_camera2_picture_format_key":"0",
-         "pref_camera2_longshot_key":"off"},
-    "0": {}
-  },
   "pref_camera2_multiresimagereader_key":
   {
     "1":{"pref_camera2_picture_format_key":"0"},
-    "0": {}
+    "0": {"pref_camera2_multiresimagereader_reprocess_key":"0"}
   }
 }

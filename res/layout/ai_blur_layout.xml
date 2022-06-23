@@ -39,106 +39,190 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:visibility="invisible">
-
     <com.android.camera.ui.RotateLayout
         android:id="@+id/blur_shape_layout"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-
-        <TextView
-            android:id="@+id/blur_shape_value"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:focusable="true"
-            android:gravity="center"
-            android:layout_gravity="center"
-            android:layout_weight="1"/>
-
+        android:layout_weight="1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/blur_shape_linear_layout"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/blur_shape_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:text="Shape"/>
+            <TextView
+                android:id="@+id/blur_shape_value"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:layout_below="@+id/blur_shape_text"/>
+        </LinearLayout>
     </com.android.camera.ui.RotateLayout>
 
     <com.android.camera.ui.RotateLayout
         android:id="@+id/blur_strength_layout"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-
-        <TextView
-            android:id="@+id/blur_strength_value"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:focusable="true"
-            android:gravity="center"
-            android:layout_gravity="center"
-            android:layout_weight="1" />
-
+        android:layout_weight="1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/blur_strength_linear_layout"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/blur_strength_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:text="Strength"/>
+            <TextView
+                android:id="@+id/blur_strength_value"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:layout_below="@+id/blur_strength_text"/>
+        </LinearLayout>
     </com.android.camera.ui.RotateLayout>
 
     <com.android.camera.ui.RotateLayout
         android:id="@+id/blur_focus_distance_layout"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-
-        <TextView
-            android:id="@+id/blur_focus_distance_value"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:focusable="true"
-            android:gravity="center"
-            android:layout_gravity="center"
-            android:layout_weight="1"/>
-
+        android:layout_weight="1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/blur_focus_distance_linear_layout"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/blur_focus_distance_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:text="Dis"/>
+            <TextView
+                android:id="@+id/blur_focus_distance_value"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:layout_below="@+id/blur_focus_distance_text"/>
+        </LinearLayout>
     </com.android.camera.ui.RotateLayout>
 
     <com.android.camera.ui.RotateLayout
         android:id="@+id/blur_luma_layout"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-
-        <TextView
-            android:id="@+id/blur_luma_value"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:focusable="true"
-            android:gravity="center"
-            android:layout_gravity="center"
-            android:layout_weight="1"/>
-
+        android:layout_weight="1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/blur_luma_linear_layout"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/blur_luma_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:text="VM"/>
+            <TextView
+                android:id="@+id/blur_luma_value"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:layout_below="@+id/blur_luma_text"/>
+        </LinearLayout>
     </com.android.camera.ui.RotateLayout>
 
     <com.android.camera.ui.RotateLayout
         android:id="@+id/blur_chromaU_layout"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-
-        <TextView
-            android:id="@+id/blur_chromaU_value"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:focusable="true"
-            android:gravity="center"
-            android:layout_gravity="center"
-            android:layout_weight="1"/>
-
+        android:layout_weight="1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/blur_chromaU_linear_layout"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/blur_chromaU_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:text="CU"/>
+            <TextView
+                android:id="@+id/blur_chromaU_value"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:layout_below="@+id/blur_chromaU_text"/>
+        </LinearLayout>
     </com.android.camera.ui.RotateLayout>
+
 
     <com.android.camera.ui.RotateLayout
         android:id="@+id/blur_chromaV_layout"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-
-        <TextView
-            android:id="@+id/blur_chromaV_value"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:focusable="true"
-            android:gravity="center"
-            android:layout_gravity="center"
-            android:layout_weight="1"/>
-
+        android:layout_weight="1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/blur_chromaV_linear_layout"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/blur_chromaV_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:text="CV"/>
+            <TextView
+                android:id="@+id/blur_chromaV_value"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:focusable="true"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:layout_below="@+id/blur_chromaV_text"/>
+        </LinearLayout>
     </com.android.camera.ui.RotateLayout>
 </LinearLayout>

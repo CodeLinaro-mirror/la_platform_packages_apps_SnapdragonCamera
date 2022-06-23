@@ -1346,6 +1346,8 @@
 
     <string name="pref_camera2_single_physical_camera_default" translatable="false"></string>
     <string name="pref_camera2_single_physical_camera_title" translatable="true">Enable single physical camera</string>
+    <string name="pref_camera2_stream_usecase_title" translatable="true">Enable stream output usecase</string>
+    <string name="pref_camera2_stream_usecase_default" translatable="false">0</string>
 
     <!-- QCFA Title -->
     <string name="pref_camera2_qcfa_title" translatable="true">QCFA</string>
@@ -1356,7 +1358,7 @@
 
     <!-- Quad Bayer Sensor Title -->
     <string name="pref_camera2_quad_bayer_sensor_title" translatable="true">Quad Bayer Sensor</string>
-    <string name="pref_camera2_quad_bayer_sensor_default" translatable="false">0</string>
+    <string name="pref_camera2_quad_bayer_sensor_default" translatable="false">-1</string>
     <!-- Quad Bayer Sensor choices -->
     <string name="pref_camera_quad_bayer_sensor_disable">disable</string>
     <string name="pref_camera_quad_bayer_sensor_enable">enable</string>
@@ -1387,6 +1389,13 @@
     <string name="pref_camera2_photo_eis_entry_value_v2enable" translatable="false">V2</string>
     <string name="pref_camera2_photo_eis_entry_value_dynamic" translatable="false">dynamic</string>
     <string name="pref_camera2_photo_eis_entry_value_disable" translatable="false">disable</string>
+
+    <string name="pref_camera2_preview_stabilization_title" translatable="true">Preview Stabilization</string>
+    <string name="pref_camera2_preview_stabilization_default" translatable="false">disable</string>
+    <string name="pref_camera2_preview_stabilization_entry_disable" translatable="true">Disable</string>
+    <string name="pref_camera2_preview_stabilization_entry_enable" translatable="true">Enable</string>
+    <string name="pref_camera2_preview_stabilization_entry_value_disable" translatable="false">disable</string>
+    <string name="pref_camera2_preview_stabilization_entry_value_enable" translatable="false">enable</string>
 
     <string name="pref_camera2_fovc_title" translatable="true">Video FOVC</string>
     <string name="pref_camera2_fovc_default" translatable="false">false</string>
@@ -1443,6 +1452,7 @@
     <string name="pref_camera2_stats_visualizer_entry_value_enable" translatable="false">1</string>
     <string name="pref_camera2_stats_visualizer_entry_value_disable" translatable="false">0</string>
 
+    <string name="pref_camera2_multiresimagereader_reprocess_title" translatable="false">MultiResolutionReprocess</string>
     <string name="pref_camera2_multiresimagereader_title" translatable="false">MultiResolutionImageReader</string>
     <string name="pref_camera2_multiresimagereader_default" translatable="false">0</string>
     <string name="pref_camera2_multiresimagereader_entry_enable" translatable="false">enable</string>
@@ -1685,10 +1695,13 @@
     <string name="pref_camera2_ai_camera_blurmode_entry_LegacyBlur" translatable="true">LegacyBlur</string>
     <string name="pref_camera2_ai_camera_blurmode_entry_SBlur" translatable="true">SBlur</string>
     <string name="pref_camera2_ai_camera_blurmode_entry_ExtremeSBlur" translatable="true">ExtremeSBlur</string>
-    <string name="pref_camera2_ai_camera_blurshape_entry_disk1" translatable="true">Disk1 </string>
-    <string name="pref_camera2_ai_camera_blurshape_entry_disk2" translatable="true">Disk2</string>
+    <string name="pref_camera2_ai_camera_blurshape_entry_circle" translatable="true">Circle </string>
     <string name="pref_camera2_ai_camera_blurshape_entry_rhombus" translatable="true">Rhombus</string>
     <string name="pref_camera2_ai_camera_blurshape_entry_heart" translatable="true">Heart</string>
+    <string name="pref_camera_blur_vsemode_title" translatable="true">VseMode </string>
+    <string name="pref_camera2_ai_camera_vsemode_entry_none" translatable="true">None </string>
+    <string name="pref_camera2_ai_camera_vsemode_entry_luma" translatable="true">Luma</string>
+    <string name="pref_camera2_ai_camera_vsemode_entry_chroma" translatable="true">Chroma</string>
     <!-- raw reprocess type-->
     <string name="pref_camera2_raw_reprocess_default">0</string>
     <string name="pref_camera2_raw_reprocess_title">Raw Reprocess Callback Type</string>
@@ -1720,6 +1733,12 @@
     <string name="pref_camera2_saveformat_value_yuv10bit" translatable="false">54</string>
     <string name="pref_camera2_saveformat_value_yuv10bit_withmetedata" translatable="false">99</string>
 
+    <string name="pref_camera2_viull_title" translatable="true">VIULL</string>
+    <string name="pref_camera2_viull_default" translatable="true">0</string>
+    <string name="pref_camera2_viull_entry_disable" translatable="true">Disable</string>
+    <string name="pref_camera2_viull_entry_enable" translatable="true">Enable</string>
+    <string name="pref_camera2_viull_entry_value_disable" translatable="false">0</string>
+    <string name="pref_camera2_viull_entry_value_enable" translatable="false">1</string>
 
     <!-- Multi camera value -->
     <string name="pref_multi_camera_picturesize_default" translatable="false">1920x1080</string>
@@ -1771,5 +1790,9 @@
     <string name="pref_camera2_torch_hdr_entry_disable" translatable="true">disable</string>
     <string name="pref_camera2_torch_hdr_entry_value_enable" translatable="false">1</string>
     <string name="pref_camera2_torch_hdr_entry_value_disable" translatable="false">0</string>
+
+    <!-- Preview/capture profile-->
+    <string name="pref_camera2_preview_profile_title" translatable="true">Peview Profile</string>
+    <string name="pref_camera2_capture_profile_title" translatable="true">Capture Profile</string>
 </resources>
 
