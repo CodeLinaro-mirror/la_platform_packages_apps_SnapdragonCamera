@@ -1108,7 +1108,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private Surface[] mPhysicalMediaSurfaces = new Surface[PHYSICAL_CAMERA_COUNT];
     private boolean mCameraModeSwitcherAllowed = true;
 
-    private static final int STATS_DATA = 768;
+    private static int STATS_DATA = 768;
     public static int statsdata[] = new int[STATS_DATA];
 
     private boolean mInTAF = false;
@@ -1916,12 +1916,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (histogramStats != null && mHiston) {
                     /*The first element in the array stores max hist value . Stats data begin
                     from second value*/
+                    STATS_DATA = histogramStats.length;
+                    statsdata = new int[STATS_DATA];
                     synchronized (statsdata) {
                         System.arraycopy(histogramStats, 0, statsdata, 0, STATS_DATA);
                     }
                     int binCount = result.get(CaptureModule.buckets);
                     int statsType = result.get(CaptureModule.stats_type);
-                    Log.i(TAG, "binCount:" + binCount + ",statsType:" + statsType);
+                    Log.i(TAG, "binCount:" + binCount + ",statsType:" + statsType + ",data length:" + histogramStats.length);
                     if (statsType == 6 && binCount == 256) {
                         updateRGBGraghViewVisibility(View.INVISIBLE);
                         updateGraghViewVisibility(View.VISIBLE);
