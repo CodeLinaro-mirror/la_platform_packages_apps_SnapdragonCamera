@@ -850,6 +850,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private String[] mCameraId = new String[MAX_NUM_CAM];
     private String[] mSelectableModes = {"Video", "HFR", "Photo", "Bokeh", "SAT", "Pro"};
     private ArrayList<SceneModule> mSceneCameraIds = new ArrayList<>();
+    private Set<String> mQuadBayerPhysicalIds = new HashSet<>();
     public static boolean MCXMODE = false;
     private boolean switchedCameraId = false;
 
@@ -3731,6 +3732,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         for (int i = 0; i < cameraIdList.length; i++) {
+            boolean isLogicalCamera = false;
             String cameraId = cameraIdList[i];
             CameraCharacteristics characteristics;
             try {
@@ -3756,6 +3758,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                 if (CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA == capability) {
                     Log.d(TAG, "Found logical multi camera with id " + cameraId);
+                    isLogicalCamera = true;
                     try {
                         Byte type = characteristics.get(logical_camera_type);
                         if (type == TYPE_DEFAULT) {
@@ -3768,6 +3771,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 }
             }
+
+            initQuadBayerPhsicalCameraIds(isLogicalCamera, cameraId, manager, characteristics, capabilities);
+
             if(foundDepth) {
                 mCameraId[i] = "-1";
                 continue;
@@ -3791,6 +3797,34 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (sceneModule.mode.ordinal() == i) {
                     mSceneCameraIds.remove(sceneModule);
                     break;
+                }
+            }
+        }
+    }
+
+    private void initQuadBayerPhsicalCameraIds(boolean isLogicalCamera, String cameraId,
+                                                      CameraManager manager,
+                                                      CameraCharacteristics characteristics,
+                                                      int[] capabilities ) {
+        if (isLogicalCamera) {
+            Set<String> physicalIds = characteristics.getPhysicalCameraIds();
+            if (physicalIds != null) {
+                for (String physicalId : physicalIds) {
+                    CameraCharacteristics characters;
+                    try {
+                        characters = manager.getCameraCharacteristics(physicalId);
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                        continue;
+                    }
+                    int[] physicalCapabilities = characters.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+                    for (int capability : physicalCapabilities) {
+                        if(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR == capability){
+                            Log.d(TAG, "Found QuadBayerSensor for camera: " +  cameraId + ",physical id:" + physicalId);
+                            mQuadBayerPhysicalIds.add(physicalId);
+                            mQuadBayerPhysicalIds.add(cameraId);
+                        }
+                    }
                 }
             }
         }
@@ -8546,8 +8580,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else if(mSettingsManager.isLiveshotSizeSameAsVideoSize()){
                     mPhysicalVideoSnapshotSizes[i] = mPhysicalVideoSizes[i];
                 } else {
-                    mPhysicalVideoSnapshotSizes[i] = getMaxPictureSizeLiveshot(Integer.valueOf(id),
-                            mPhysicalVideoSizes[i].getWidth(),mPhysicalVideoSizes[i].getHeight());
+                    if (mQuadBayerPhysicalIds.size() != 0 && mQuadBayerPhysicalIds.contains(id)) {
+                        mPhysicalVideoSnapshotSizes[i] = mPhysicalVideoSizes[i];
+                    } else {
+                        mPhysicalVideoSnapshotSizes[i] = getMaxPictureSizeLiveshot(Integer.valueOf(id),
+                                mPhysicalVideoSizes[i].getWidth(),mPhysicalVideoSizes[i].getHeight());
+                    }
                 }
                 Log.d(TAG,"set Physical "+ id + " video snapshot size="+
                         mPhysicalVideoSnapshotSizes[i].toString());
