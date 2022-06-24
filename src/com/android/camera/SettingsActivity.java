@@ -1057,7 +1057,7 @@ public class SettingsActivity extends PreferenceActivity {
             if (modes[i] == 1) {
                 listData.add(SettingsManager.KEY_MANUAL_SHDR);
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_SHDR).append("#");
-            } else if (modes[i] == 2 ) {
+            } else if (modes[i] == 2 && !mSettingsManager.isAIBokehMode()) {
                 listData.add(SettingsManager.KEY_MANUAL_MFHDR);
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_MFHDR).append("#");
             } else if (modes[i] == 3) {
