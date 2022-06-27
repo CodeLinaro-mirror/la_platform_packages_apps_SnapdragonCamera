@@ -355,6 +355,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private int mOfflineDumpTriIndex = 0;
     private boolean mZoomIncrease = true;
     private boolean mShowFocusCircle = true;
+    private boolean mFaceUpdated =false;
 
 
     private boolean[] mSurfaceReady = {false,false,false,false};
@@ -2938,6 +2939,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mShowFocusCircle = false;
         }
     }
+    public boolean getFaceUpdate(){
+       return mFaceUpdated ;
+    }
 
     private ArrayList<FocusIndicator> getFocusIndicator() {
         ArrayList<FocusIndicator> foucusList =new ArrayList<>();
@@ -2972,6 +2976,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mPieRenderer.clear();
             }
             foucusList.add(mFaceView);
+            mFaceUpdated = false;
+
         } else {
             if(mShowFocusCircle)
             foucusList.add(mPieRenderer);
@@ -3076,6 +3082,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         mFaceView.setZoom(zoomValue);
         mFaceView.resume();
+        mFaceUpdated = true;
     }
 
     public void updateFaceViewCameraBound(Rect cameraBound) {

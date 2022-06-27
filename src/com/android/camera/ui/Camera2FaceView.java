@@ -572,6 +572,7 @@ public class Camera2FaceView extends FaceView {
         // drawable.
         mFaces = null;
         mExFaces = null;
+        mColor = mFocusingColor;
         invalidate();
     }
 }

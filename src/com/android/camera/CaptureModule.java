@@ -8703,6 +8703,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             int cameraId = getMainCameraId();
             mCurrentSession = cameraCaptureSession;
             mCaptureSession[cameraId] = cameraCaptureSession;
+            //APP could  check if  afState is anything other than INACTIVE , it should change the focus circle and skip the passive transient state.
+            if (mLastResultAFState != CaptureResult.CONTROL_AF_STATE_INACTIVE && mFocusStateListener != null) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mFocusStateListener.onFocusStatusUpdate(CaptureResult.CONTROL_AF_STATE_INACTIVE);
+                    }
+                });
+            }
             updateFaceDetection();
             try {
                 setUpVideoCaptureRequestBuilder(cameraId);
@@ -8748,6 +8757,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             int cameraId = getMainCameraId();
             mCurrentSession = cameraCaptureSession;
             mCaptureSession[cameraId] = cameraCaptureSession;
+            //APP could  check if  afState is anything other than INACTIVE , it should change the focus circle and skip the passive transient state.
+            if (mLastResultAFState != CaptureResult.CONTROL_AF_STATE_INACTIVE && mFocusStateListener != null) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mFocusStateListener.onFocusStatusUpdate(CaptureResult.CONTROL_AF_STATE_INACTIVE);
+                    }
+                });
+            }
             updateFaceDetection();
             mFirstPreviewLoaded = false;
             // Create slow motion request list
@@ -12740,7 +12758,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
         }
         Log.d(TAG,"applyIsoAndExposureTime-iso="+isovalue+",exposuretime="+exposuretime+",mIsLongExpTmCp="+mIsLongExpTmCp
-        +",previewExpTime="+previewExpTime);
+        +",previewExpTime="+previewExpTime+",mLongExpTime="+mLongExpTime);
         if (!promode || (isovalue.equals("auto") && exposuretime.equals("auto"))) {
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
             VendorTagUtil.setIsoExpPriority(request, 0L);
@@ -13575,7 +13593,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         final Integer afState = resultAFState;
         // Report state change when AF state has changed.
-        if (resultAFState != mLastResultAFState && mFocusStateListener != null) {
+        if(DEBUG) Log.d(TAG,"resultAFState="+resultAFState+",mLastResultAFState="+mLastResultAFState+",mUI.getFaceUpdate()="+mUI.getFaceUpdate()+",mIsDepthFocus="+mIsDepthFocus);
+        if ((resultAFState != mLastResultAFState || mUI.getFaceUpdate())&& mFocusStateListener != null) {
             mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
