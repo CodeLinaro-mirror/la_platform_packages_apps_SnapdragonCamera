@@ -3149,6 +3149,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return true;
     }
 
+    private boolean isMfSHDREnable() {
+        final SharedPreferences pref = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext,
+                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        boolean isMfHDR = pref.getBoolean(KEY_MANUAL_MFHDR, false);
+        boolean isSHDR = pref.getBoolean(KEY_MANUAL_SHDR, false);
+        return isMfHDR || isSHDR;
+    }
+
     private List<String> getSupportedPictureSize(int cameraId) {
         if (cameraId > mCharacteristics.size())return null;
         StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
@@ -3158,6 +3167,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
         boolean isDeepportrait = getDeepportraitEnabled();
         boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
+        boolean isMfSHDREnabled = isMfSHDREnable();
 
         if (getQuadBayerSensorPrefEnabled()) {
             List<Size> qcfaSizes = getSupportedQCFAMaxPictureSizeList(Integer.toString(cameraId), ImageFormat.JPEG);
@@ -3194,6 +3204,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         (Math.min(sizes[i].getWidth(),sizes[i].getHeight()) < 720 ||
                         Math.max(sizes[i].getWidth(),sizes[i].getHeight()) <= 1024)) {
                     //some reslutions are not supported in deepportrait
+                    continue;
+                }
+
+                if (isMfSHDREnabled &&
+                        (sizes[i].getWidth() <= 352 && sizes[i].getHeight() <= 288)) {
+                    // MFHDR didn`t support CIF/QVGA
                     continue;
                 }
                 res.add(sizes[i].toString());

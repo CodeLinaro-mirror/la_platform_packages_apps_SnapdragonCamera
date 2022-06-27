@@ -1087,6 +1087,8 @@ public class SettingsActivity extends PreferenceActivity {
                 editor.putBoolean(title, isChecked);
                 editor.commit();
                 updateHdrRefOp();
+                mSettingsManager.updatePictureAndVideoSize();
+                updatePreference(SettingsManager.KEY_PICTURE_SIZE);
             }
         });
 
