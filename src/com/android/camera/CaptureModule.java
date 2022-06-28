@@ -1445,8 +1445,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (PersistUtil.isFacialMaskDetection() && mIsFacialMaskSupported) {
                         updateFacialMask(result);
                     }
-                } else {
-                    mUI.clearFacePoint();
                 }
                 updateT2tTrackerView(result);
             }
@@ -8078,6 +8076,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updateFacialMask(CaptureResult result) {
         byte[] facialMasks = null;
         int[] facialMaskInts = null;
+        int maskNums = 0;
         try {
             facialMasks = result.get(facialMaskResults);
         } catch (IllegalArgumentException e) {
@@ -8100,6 +8099,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             // }
 
             try {
+                maskNums = byteArray2Int(facialMasks, 0);
                 for (int i = 44; i < facialMasks.length; i += 4) {
                     facialMaskInts[j] = byteArray2Int(facialMasks, i);
                     Log.w(TAG, " onCaptureCompleted j :" + j + ", i :" + i + " facialMaskInts[j] :" + facialMaskInts[j]);
@@ -8110,14 +8110,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
 
-        if (facialMasks != null && facialMaskInts != null) {
-            try {
-                mUI.onFacialMaskDetection(facialMaskInts);
-            } catch(Exception e) {
-                Log.e(TAG, " updateFacialMask occur exception");
-            }
-        } else {
-            mUI.clearFacialMasks();
+        Log.w(TAG, " onCaptureCompleted maskNums :" + maskNums);
+        try {
+            mUI.onFacialMaskDetection(facialMaskInts, maskNums);
+        } catch(Exception e) {
+            Log.e(TAG, " updateFacialMask occur exception");
         }
     }
 
