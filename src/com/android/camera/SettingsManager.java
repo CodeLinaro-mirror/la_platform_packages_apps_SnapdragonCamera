@@ -744,7 +744,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch(IllegalArgumentException exception) {
             exception.printStackTrace();
         }
-
         filterPreferences(cameraId);
         initDependencyTable();
         initializeValueMap();
@@ -1562,12 +1561,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
 
-        if (videoQuality != null) {
-            if (filterUnsupportedOptions(videoQuality,
-                    getSupportedVideoSize(cameraId))) {
-                mFilteredKeys.add(videoQuality.getKey());
-            }
-        }
 
         if (videoDuration != null) {
             final SharedPreferences pref = mContext.getSharedPreferences(
