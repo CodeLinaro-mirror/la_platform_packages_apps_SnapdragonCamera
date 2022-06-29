@@ -1868,6 +1868,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     mSceneModeLabelRect.setVisibility(View.GONE);
                 }else{
                     if ( needShowInstructional() ) {
+                        if ( mSceneModeInstructionalDialog != null && mSceneModeInstructionalDialog.isShowing()) {
+                            mSceneModeInstructionalDialog.dismiss();
+                            mSceneModeInstructionalDialog = null;
+                        }
                         showSceneInstructionalDialog(mOrientation);
                     }
                     showSceneModeLabel();
