@@ -318,6 +318,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updateZslPreference();
                     updateLongShotPreference();
                     updatePictureFormatPreference();
+                    updateSwitchIDInModePreference(false);
                     if(mSettingsManager.isMultiCameraEnabled()){
                         recreate();
                     }
@@ -1934,7 +1935,8 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setValueIndex(idx);
             String cameraValue = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
             if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
-            pref.setEnabled((CaptureModule.MCXMODE && isBack) || (mSettingsManager.isAICameraOn() && mode == CaptureModule.CameraMode.VIDEO));
+            pref.setEnabled((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
+                    (mSettingsManager.isAICameraOn() && mode == CaptureModule.CameraMode.VIDEO));
         }
     }
 
