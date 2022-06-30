@@ -117,8 +117,8 @@ public class ProMode extends View {
             mMinExpTm = mExposureTime[0];
             mMaxExpTm = mExposureTime[1];
             setExposuretimeList();
-            initExpousreTime();
-        }else if(mExposureTime == null) initExpousreTime();
+        }
+        initExpousreTime();
         init(EXPOSURE_MODE);
         init(WHITE_BALANCE_MODE);
         init(ISO_MODE);
@@ -137,9 +137,13 @@ public class ProMode extends View {
             if (mExposurTime > mLongExpTm) mUI.closeFlashForPro(true);
         }
     }
-   private int getIndexOfValue(String str,List<String>valueList){
+   private int getIndexOfValue(String exposuretime,List<String>valueList){
+        long currenvalue = PersistUtil.strToLong(exposuretime,mLongExpTm);
         for (int i = 0;i < valueList.size();i++ ){
-            if (str.equals(valueList.get(i))) return i;
+            String str = valueList.get(i);
+            long value = PersistUtil.strToLong(str,mLongExpTm);
+            if (exposuretime.equals(str)) return i;
+            else if (value > currenvalue) return i-1;
         }
         return 0;
    }
@@ -260,9 +264,12 @@ public class ProMode extends View {
                 setSlideText("infinity", 0, stride);
                 setSlideText("macro", 1, stride);
             } else if (mMode == EXPOSURE_TIME_MODE && mExposureTime != null) {
-                int index = getIndexOfValue(mCurrentExposuretime,mExpTmList);
-                mExpTmSlider = (float) index/mExpTmList.size();
-                int stride = mCurveRight - mCurveLeft;
+                int index =0;
+                if (!mCurrentExposuretime.equals("auto") && !mCurrentExposuretime.equals("")) {
+                    index = getIndexOfValue(mCurrentExposuretime, mExpTmList);
+                }
+                mExpTmSlider = (float) index / mExpTmList.size();
+                int stride = mCurveRight - mCurveLeft;;
                 setSlideText("Auto", -1, stride);
                 for (int i = 0; i < mExposureTime.length; i++) {
                     setSlideText(getExposureTimeStr(mExposureTime[i]), i, stride);

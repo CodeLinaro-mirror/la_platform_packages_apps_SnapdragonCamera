@@ -2659,6 +2659,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mShutterButton != null) {
             mShutterButton.setEnabled(enabled);
         }
+        if(!enabled || !mModule.isLongExpTmCaptrure()) stopShutterAnim();
     }
     public void startShutterAnim(long totalProgress) {
         mCurrentProgress = 0;
@@ -2940,7 +2941,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
     public boolean getFaceUpdate(){
-       return mFaceUpdated ;
+        if(mFaceView != null && mFaceView.faceExists()) {
+            return mFaceUpdated;
+        }else return false;
     }
 
     private ArrayList<FocusIndicator> getFocusIndicator() {

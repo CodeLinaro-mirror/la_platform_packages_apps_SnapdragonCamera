@@ -802,7 +802,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     private AFView mAFRenderer;
     private boolean mIsDepthFocus = false;
     private boolean[] mTakingPicture = new boolean[MAX_NUM_CAM];
-    private boolean mIsLongExpTmCp = false;
     private long maxExpTime = 100000000;
     private long mLongExpTime = 1 ;
     private int mControlAFMode = CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
@@ -4336,15 +4335,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 warningToast("Camera is not ready yet to take a picture.");
                 return;
             }
-            if(mCurrentSceneMode.mode == CameraMode.PRO_MODE &&  mLongExpTime > maxExpTime) {
-                mIsLongExpTmCp = true;
-            }
             CaptureRequest.Builder captureBuilder = getRequestBuilder(
                 CameraDevice.TEMPLATE_STILL_CAPTURE, id, mSettingsManager.getPhysicalCameraId());
             if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE){
                 applySettingsForLockExposure(captureBuilder, id);
             }
-            if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) && !mIsLongExpTmCp) {
+            if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) && !isLongExpTmCaptrure()) {
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, true);
             } else {
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, false);
@@ -4541,12 +4537,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     captureStillPictureForCommon(captureBuilder, id);
                 }
-                double tmpValue = 1000000;
-                double time = mLongExpTime / tmpValue;
-                int expTime = new Double(time).intValue();
-                if (expTime > 1000) {
-                    mUI.startShutterAnim(expTime);
-                }
+               enableShutterAnimal(id);
             }
         } catch (CameraAccessException e) {
             Log.d(TAG, "Capture still picture has failed");
@@ -6116,8 +6107,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      */
     public void unlockFocus(int id) {
         Log.d(TAG, "unlockFocus " + id );
-        if(mIsLongExpTmCp) {
-            mIsLongExpTmCp = false;
+        if(isLongExpTmCaptrure()) {
             mUI.stopShutterAnim();
         }
         isFlashRequiredInDriver = false;
@@ -6188,11 +6178,28 @@ public class CaptureModule implements CameraModule, PhotoController,
                         Log.d(TAG, "image available then enable shutter button " );
                         mUI.enableShutter(true);
                     }
+                    if(isLongExpTmCaptrure()) {
+                        mUI.stopShutterAnim();
+                    }
                 }
             });
         }
     }
-
+   private void enableShutterAnimal(int id){
+       if (id == getMainCameraId()) {
+           mActivity.runOnUiThread(new Runnable() {
+               @Override
+               public void run() {
+                   if(isLongExpTmCaptrure()) {
+                       double tmpValue = 1000000;
+                       double time = mLongExpTime / tmpValue;
+                       int expTime = new Double(time).intValue();
+                           mUI.startShutterAnim(expTime);
+                   }
+               }
+           });
+       }
+   }
     private void enableShutterAndVideoOnUiThread(int id) {
         if (id == getMainCameraId()) {
             mActivity.runOnUiThread(new Runnable() {
@@ -6206,6 +6213,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mUI.enableVideo(false);
                     } else {
                         mUI.enableVideo(true);
+                    }
+                    if(isLongExpTmCaptrure()) {
+                        mUI.stopShutterAnim();
                     }
                 }
             });
@@ -7840,7 +7850,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             return false;
         }
     }
-
+    public boolean isLongExpTmCaptrure(){
+        Log.d(TAG,"mLongExpTime="+mLongExpTime+",maxExpTime="+maxExpTime);
+        if(mCurrentSceneMode.mode == CameraMode.PRO_MODE && isTakingPicture() && mLongExpTime >maxExpTime) return true;
+        else return false;
+    }
     public boolean isTakingPicture() {
         for (int i = 0; i < mTakingPicture.length; i++) {
             if (mTakingPicture[i]) return true;
@@ -12755,11 +12769,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if(mLongExpTime <= maxExpTime) {
                     previewExpTime = mLongExpTime;
                 }else if(mLongExpTime > maxExpTime){
-                    if(!mIsLongExpTmCp) previewExpTime = maxExpTime;
-                    else previewExpTime = mLongExpTime;
+                    if(!isLongExpTmCaptrure()) previewExpTime = maxExpTime;
+                    else if (isTakingPicture()) previewExpTime = mLongExpTime;
                 }
         }
-        Log.d(TAG,"applyIsoAndExposureTime-iso="+isovalue+",exposuretime="+exposuretime+",mIsLongExpTmCp="+mIsLongExpTmCp
+        Log.d(TAG,"applyIsoAndExposureTime-iso="+isovalue+",exposuretime="+exposuretime+",isLongExpTmCaptrure()="+isLongExpTmCaptrure()
         +",previewExpTime="+previewExpTime+",mLongExpTime="+mLongExpTime);
         if (!promode || (isovalue.equals("auto") && exposuretime.equals("auto"))) {
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);

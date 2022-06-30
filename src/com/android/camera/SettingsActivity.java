@@ -402,9 +402,22 @@ public class SettingsActivity extends PreferenceActivity {
                 if(mSettingsManager.KEY_FACE_DETECTION.equals(pref.getKey())){
                     updateT2TPreference();
                 }
+                if(mSettingsManager.KEY_SWITCH_CAMERA .equals(pref.getKey())){
+                    checkExposurTimeValue();
+                }
             }
         }
     };
+    private void checkExposurTimeValue(){
+        String exposuretime = mSettingsManager.getKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE);
+        long []mExposureTime = mSettingsManager.getExposureRangeValues();
+        if(exposuretime != null && !exposuretime.equals("") && !exposuretime.equals("auto")){
+            long exptime = PersistUtil.strToLong(exposuretime,100000000);
+            if(mExposureTime[1] < exptime){
+                mSettingsManager.setKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE,true,String.valueOf(mExposureTime[1]));
+            }
+        }
+    }
     private boolean isPrefEnabled(String key) {
         boolean result = false;
         String prefValue = mSettingsManager.getValue(key);
