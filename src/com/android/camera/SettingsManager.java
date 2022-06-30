@@ -674,6 +674,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     List<Size> sizes = Arrays.asList(streamConfigurationMap.getHighResolutionOutputSizes(format));
                     for (Size entry: sizes) {
                         Log.i(TAG,"add QCFA picture size:" + entry.toString());
+                        if (entry.getWidth() == 1920 && entry.getHeight() == 1080) {
+                            continue;
+                        }
                         res.add(entry);
                     }
                 }
@@ -681,6 +684,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     List<Size> sizes = Arrays.asList(streamConfigurationMap.getOutputSizes(format));
                     for (Size entry: sizes) {
                         Log.i(TAG,"add QCFA picture size:" + entry.toString());
+                        if (entry.getWidth() == 1920 && entry.getHeight() == 1080) {
+                            continue;
+                        }
                         res.add(entry);
                     }
                 }
