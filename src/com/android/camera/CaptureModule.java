@@ -4653,18 +4653,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     });
                 }
-            }
 
-            @Override
-            public void onCaptureProgressed(CameraCaptureSession session,
-                                            CaptureRequest request, CaptureResult partialResult) {
-                if (DEBUG)
-                    Log.d(TAG," onCaptureProgressed");
                 if (mBurstLimit) {
                     boolean burst_limit = "capture-limit".equals(String.valueOf(request.getTag()));
                     int burst_enable = -1;
                     try{
-                        burst_enable = partialResult.get(CaptureModule.multiframe_burst_enable);
+                        burst_enable = result.get(CaptureModule.multiframe_burst_enable);
                         if (DEBUG)
                             Log.d(TAG,"burst_enable ="+burst_enable);
                     } catch (IllegalArgumentException | NullPointerException e){
@@ -4680,6 +4674,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     }
                 }
+
+            }
+
+            @Override
+            public void onCaptureProgressed(CameraCaptureSession session,
+                                            CaptureRequest request, CaptureResult partialResult) {
+                if (DEBUG)
+                    Log.d(TAG," onCaptureProgressed");
             }
 
             @Override
