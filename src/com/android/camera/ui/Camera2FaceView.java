@@ -70,7 +70,7 @@ public class Camera2FaceView extends FaceView {
                     mStateSwitchPending = false;
                     mFaces = mPendingFaces;
                     mExFaces = mPendingExFaces;
-                    invalidate();
+                    postInvalidate();
                     break;
             }
         }
@@ -179,7 +179,7 @@ public class Camera2FaceView extends FaceView {
             Log.v(TAG, "Num of ex faces=" + mExFaces.length);
         }
         if (!mBlocked && (mFaces != null) && (mFaces.length > 0) && mCameraBound != null) {
-            invalidate();
+            postInvalidate();
         }
     }
 
@@ -190,7 +190,7 @@ public class Camera2FaceView extends FaceView {
         mMaskNums = maskNums;
         if (!mBlocked && (facialMasks != null) && (facialMasks.length > 0) &&
                 mCameraBound != null && maskNums > 0) {
-            invalidate();
+            postInvalidate();
         }
     }
 

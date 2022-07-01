@@ -8157,12 +8157,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mStickyFaces = faces;
                 mStickyExFaces = extendedFaces;
             }
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mUI.onFaceDetection(faces, extendedFaces);
-                }
-            });
+
+            mUI.onFaceDetection(faces, extendedFaces);
         }
     }
 
