@@ -99,6 +99,7 @@ public class FocusOverlayManager {
     public  interface FocusUI {
         public boolean hasFaces();
         public void clearFocus();
+        public void resetFocus();
         public void setFocusPosition(int x, int y);
         public void onFocusStarted();
         public void onFocusSucceeded(boolean timeOut);

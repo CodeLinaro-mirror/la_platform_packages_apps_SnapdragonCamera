@@ -279,6 +279,10 @@ public class TouchTrackFocusRenderer extends View implements FocusIndicator {
     public void clear() {
 
     }
+    @Override
+    public void reset() {
+
+    }
 
     public void setOrientation(int orientation) {
         mOrientation = orientation;

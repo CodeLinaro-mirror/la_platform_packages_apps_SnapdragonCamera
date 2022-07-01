@@ -21,4 +21,5 @@ public interface FocusIndicator {
     public void showSuccess(boolean timeout);
     public void showFail(boolean timeout);
     public void clear();
+    public void reset();
 }

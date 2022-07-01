@@ -265,7 +265,10 @@ public class TrackingFocusRenderer extends OverlayRenderer implements FocusIndic
     public void clear() {
 
     }
+    @Override
+    public void reset() {
 
+    }
     private class FocusRequestThread extends Thread {
         private boolean isRunning = true;
         private final static int FOCUS_DELAY = 1000;

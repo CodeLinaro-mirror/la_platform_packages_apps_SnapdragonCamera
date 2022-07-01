@@ -1270,6 +1270,10 @@ public class PhotoUI implements PieListener,
         }
         if (indicator != null) indicator.clear();
     }
+    @Override
+    public void resetFocus() {
+
+    }
 
     @Override
     public void setFocusPosition(int x, int y) {
