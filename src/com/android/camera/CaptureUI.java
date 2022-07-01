@@ -355,7 +355,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private int mOfflineDumpTriIndex = 0;
     private boolean mZoomIncrease = true;
     private boolean mShowFocusCircle = true;
-    private boolean mFaceUpdated =false;
+    private boolean mFaceUpdated = false;
 
 
     private boolean[] mSurfaceReady = {false,false,false,false};
@@ -2940,10 +2940,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mShowFocusCircle = false;
         }
     }
-    public boolean getFaceUpdate(){
+    public boolean isChangeFocus(){
         if(mFaceView != null && mFaceView.faceExists()) {
             return mFaceUpdated;
-        }else return false;
+        }
+        return false;
     }
 
     private ArrayList<FocusIndicator> getFocusIndicator() {
@@ -3023,6 +3024,17 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         ArrayList<FocusIndicator> indicators = getFocusIndicator();
         for (FocusIndicator indicator : indicators) {
             if (indicator != null) indicator.clear();
+        }
+        mIsTouchAF = false;
+    }
+    @Override
+    public void resetFocus() {
+        ArrayList<FocusIndicator> indicators = getFocusIndicator();
+        if(mFaceView != null && mFaceView.faceExists()) {
+            mFaceUpdated = true;
+        }
+        for (FocusIndicator indicator : indicators) {
+            if (indicator != null) indicator.reset();
         }
         mIsTouchAF = false;
     }
