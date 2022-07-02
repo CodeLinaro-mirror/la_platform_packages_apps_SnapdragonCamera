@@ -1052,7 +1052,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private Surface[] mPhysicalMediaSurfaces = new Surface[PHYSICAL_CAMERA_COUNT];
     private boolean mCameraModeSwitcherAllowed = true;
 
-    private static final int STATS_DATA = 768;
+    private static int STATS_DATA = 768;
     public static int statsdata[] = new int[STATS_DATA];
 
     private boolean mInTAF = false;
@@ -1681,12 +1681,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (histogramStats != null && mHiston) {
                     /*The first element in the array stores max hist value . Stats data begin
                     from second value*/
+                    STATS_DATA = histogramStats.length;
+                    statsdata = new int[STATS_DATA];
                     synchronized (statsdata) {
                         System.arraycopy(histogramStats, 0, statsdata, 0, STATS_DATA);
                     }
                     int binCount = result.get(CaptureModule.buckets);
                     int statsType = result.get(CaptureModule.stats_type);
-                    Log.i(TAG, "binCount:" + binCount + ",statsType:" + statsType);
+                    Log.i(TAG, "binCount:" + binCount + ",statsType:" + statsType + ",data length:" + histogramStats.length);
                     if (statsType == 6 && binCount == 256) {
                         updateRGBGraghViewVisibility(View.INVISIBLE);
                         updateGraghViewVisibility(View.VISIBLE);
@@ -13897,7 +13899,7 @@ class Camera2RGBGraphView extends View {
     private int mStart, mEnd;
     private CaptureModule mCaptureModule;
     private float scaled;
-    private static final int STATS_SIZE = 768;
+    private static int STATS_SIZE = 768;
     private static final String TAG = "Camera2RGBGraphView";
 
     public Camera2RGBGraphView(Context context, AttributeSet attrs) {
@@ -13936,7 +13938,6 @@ class Camera2RGBGraphView extends View {
             float graphwidth = mWidth - (2 * border);
             float left, top, right, bottom;
             float bargap = 0.0f;
-            float barwidth = graphwidth / STATS_SIZE;
 
             cavas.drawColor(0xFFAAAAAA);
             paint.setColor(Color.BLACK);
@@ -13950,6 +13951,9 @@ class Camera2RGBGraphView extends View {
                 cavas.drawLine(x, border, x, graphheight + border, paint);
             }
             synchronized(CaptureModule.statsdata) {
+                STATS_SIZE = CaptureModule.statsdata.length;
+                float barwidth = graphwidth / STATS_SIZE;
+                mEnd = CaptureModule.statsdata.length;
                 int maxValue = Integer.MIN_VALUE;
                 for ( int i = mStart ; i < mEnd ; i++ ) {
                     if ( maxValue < CaptureModule.statsdata[i] ) {
@@ -13958,7 +13962,7 @@ class Camera2RGBGraphView extends View {
                 }
                 mScale = ( float ) maxValue;
                 for(int i=mStart ; i < mEnd ; i++)  {
-                    scaled = (CaptureModule.statsdata[i]/mScale)*STATS_SIZE;
+                    scaled = (CaptureModule.statsdata[i]/mScale)*graphheight;
                     if(scaled >= (float)STATS_SIZE)
                         scaled = (float)STATS_SIZE;
                     left = (bargap * (i - mStart + 1)) + (barwidth * (i - mStart)) + border;
