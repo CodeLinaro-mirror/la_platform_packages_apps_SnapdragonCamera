@@ -463,7 +463,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             flashEnable =false;
          }
        if (getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("manual")){
-           return torchHDREnable && flashEnable;
+           String hdrmode = getVideoHdrMode();
+           if (hdrmode != null && !hdrmode.equals("off")) return torchHDREnable && flashEnable;
        }else if(getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("auto")){
             return  torchHDREnable && flashEnable && isTorchHdrTag;
        }
@@ -4359,6 +4360,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         }
                     }
                     Log.v(TAG, " getVideoHdrMode hdrmode:" + hdrmode.toString());
+                    if(hdrmode.toString().equals("")) return "off";
+                    else
                     return hdrmode.toString();
                 }
             }else{
