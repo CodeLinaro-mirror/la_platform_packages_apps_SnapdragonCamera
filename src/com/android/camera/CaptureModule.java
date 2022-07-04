@@ -4530,13 +4530,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mNumFramesArrived.incrementAndGet();
 
                 Log.d(TAG, "captureStillPictureForLongshot onCaptureCompleted: " + mNumFramesArrived.get() + " " + mShotNum);
-                if (mLongshotActive && mNumFramesArrived.get() >= mShotNum) {
-                    mLongshotActive = false;
-                    mHandler.post(() -> stopBurstShot());
-                    mUI.enableVideo(true);
-                    return;
-                }
-
                 if (mLongshotActive) {
                     checkAndPlayShutterSound(getMainCameraId());
                     mActivity.runOnUiThread(new Runnable() {
@@ -5284,10 +5277,24 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                                 Image image = reader.acquireNextImage();
                                 if ((mLongshotActive || mNumFramesArrived.get() > 0)) {
-                                    Log.d(TAG, "long shot image available num " + mNumImageArrived.incrementAndGet());
+                                    Log.d(TAG, "long shot image available num " + mNumImageArrived.get());
+                                    if (mNumImageArrived.get() < mShotNum &&
+                                            mActivity.getMediaSaveService().isQueueFull()) {
+                                        Log.w(TAG, "long shot image available, but queue is full");
+                                        image.close();
+                                        return;
+                                    }
+                                    mNumImageArrived.incrementAndGet();
                                     if (mNumImageArrived.get() > mShotNum) {
                                         image.close();
-                                        Log.d(TAG, "image arrived over limit");
+                                        Log.d(TAG, "long shot image available, image arrived over limit, mLongshotActive:" + mLongshotActive + ",isOver:" + (mNumFramesArrived.get() >= mShotNum));
+                                        if (mLongshotActive && mNumFramesArrived.get() >= mShotNum) {
+                                            mLongshotActive = false;
+                                            stopBurstShot();
+                                            mHandler.post(() -> {
+                                                mUI.enableVideo(true);
+                                            });
+                                        }
                                         return;
                                     }
 
@@ -8050,6 +8057,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         try {
             int id = getMainCameraId();
             enableShutterAndVideoOnUiThread(id);
+            if (mCaptureSession[id] == null) {
+                return;
+            }
             mCaptureSession[id].stopRepeating();
             mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                     .build(), mCaptureCallback, mCameraHandler);
