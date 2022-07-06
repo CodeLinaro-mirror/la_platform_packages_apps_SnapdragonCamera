@@ -802,6 +802,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private AFView mAFRenderer;
     private boolean mIsDepthFocus = false;
     private boolean[] mTakingPicture = new boolean[MAX_NUM_CAM];
+    private boolean mIsLongExpTmCp = false;
     private long maxExpTime = 100000000;
     private long mLongExpTime = 1 ;
     private int mControlAFMode = CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
@@ -4335,6 +4336,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 warningToast("Camera is not ready yet to take a picture.");
                 return;
             }
+            if (mCurrentSceneMode.mode == CameraMode.PRO_MODE && mLongExpTime > maxExpTime) {
+                mIsLongExpTmCp = true;
+            }
             CaptureRequest.Builder captureBuilder = getRequestBuilder(
                 CameraDevice.TEMPLATE_STILL_CAPTURE, id, mSettingsManager.getPhysicalCameraId());
             if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE){
@@ -5014,6 +5018,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             CaptureRequest request,
                                             CaptureFailure result) {
                     Log.d(TAG, "captureStillPictureForCommon onCaptureFailed: " + id);
+                    mTakingPicture[id] = false;
                 }
 
                 @Override
@@ -6108,6 +6113,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void unlockFocus(int id) {
         Log.d(TAG, "unlockFocus " + id );
         if(isLongExpTmCaptrure()) {
+            mIsLongExpTmCp = false;
             mUI.stopShutterAnim();
         }
         isFlashRequiredInDriver = false;
@@ -7852,7 +7858,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
     public boolean isLongExpTmCaptrure(){
         Log.d(TAG,"mLongExpTime="+mLongExpTime+",maxExpTime="+maxExpTime);
-        if(mCurrentSceneMode.mode == CameraMode.PRO_MODE && isTakingPicture() && mLongExpTime >maxExpTime) return true;
+        if(mCurrentSceneMode.mode == CameraMode.PRO_MODE && isTakingPicture() && mIsLongExpTmCp && mLongExpTime >maxExpTime) return true;
         else return false;
     }
     public boolean isTakingPicture() {
