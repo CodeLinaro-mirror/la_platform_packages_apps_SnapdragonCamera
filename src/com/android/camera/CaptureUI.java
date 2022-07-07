@@ -2946,7 +2946,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         return false;
     }
-
     private ArrayList<FocusIndicator> getFocusIndicator() {
         ArrayList<FocusIndicator> foucusList =new ArrayList<>();
         if (mModule.isTrackingFocusSettingOn()) {
@@ -3030,9 +3029,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     @Override
     public void resetFocus() {
         ArrayList<FocusIndicator> indicators = getFocusIndicator();
-        if(mFaceView != null && mFaceView.faceExists()) {
-            mFaceUpdated = true;
-        }
         for (FocusIndicator indicator : indicators) {
             if (indicator != null) indicator.reset();
         }
