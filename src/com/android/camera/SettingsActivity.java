@@ -1658,6 +1658,9 @@ public class SettingsActivity extends PreferenceActivity {
             if (mode == CaptureModule.CameraMode.VIDEO && isShowRTB) {
                 key.add("RTB");
                 value.add("rtb");
+            }else if (mode == CaptureModule.CameraMode.HFR ){
+                key.remove("SAT");
+                value.remove("sat");
             }
             pref.setEntries(key.toArray(new CharSequence[key.size()]));
             pref.setEntryValues(value.toArray(new CharSequence[value.size()]));
