@@ -919,14 +919,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 if (mZoomRenderer != null) {
                     mZoomRenderer.setZoom(zoomValue);
                 }
-                int zoomSig = Math.round(zoomValue*100) / 100;
-                int zoomFraction = Math.round(zoomValue*100) % 100;
-                String txt = "";
-                if (zoomFraction < 10) {
-                    txt = zoomSig + "." + "0" + zoomFraction + "x";
-                } else {
-                    txt = zoomSig + "." + zoomFraction + "x";
-                }
+                String txt = getZoomTxt(zoomValue);
                 if (mZoomValueText != null && !mIsZoomKeyChanged) {
                     mZoomValueText.setText(txt);
                 }
@@ -944,19 +937,23 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 if (mZoomRenderer != null) {
                     mZoomRenderer.setZoom(zoomValue);
                 }
-                int zoomSig = Math.round(zoomValue*100) / 100;
-                int zoomFraction = Math.round(zoomValue*100) % 100;
-                String txt = "";
-                if (zoomFraction < 10) {
-                    txt = zoomSig + "." + "0" + zoomFraction + "x";
-                } else {
-                    txt = zoomSig + "." + zoomFraction + "x";
-                }
+                String txt = getZoomTxt(zoomValue);
                 if (mZoomValueText != null) {
                     mZoomValueText.setText(txt);
                 }
             }
         });
+    }
+    private String getZoomTxt(float zoomValue) {
+        int zoomSig = Math.round(zoomValue * 100) / 100;
+        int zoomFraction = Math.round(zoomValue * 100) % 100;
+        String txt = "";
+        if (zoomFraction < 10) {
+            txt = zoomSig + "." + "0" + zoomFraction + "x";
+        } else {
+            txt = zoomSig + "." + zoomFraction + "x";
+        }
+        return txt;
     }
 
     private float getZoomValue(int progress,SeekBar seekBar){
@@ -1072,9 +1069,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
     public void updateZoomSeekBar(float zoomValue) {
-        int zoomSig = Math.round(zoomValue * 100) / 100;
-        int zoomFraction = Math.round(zoomValue * 100) % 100;
-        String txt = zoomSig + "." + zoomFraction + "x";
+        String txt = getZoomTxt(zoomValue);
         if (mZoomValueText != null) {
             mZoomValueText.setText(txt);
             mIsZoomKeyChanged =true;
