@@ -12819,8 +12819,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         final Integer afState = resultAFState;
         // Report state change when AF state has changed.
-        if(DEBUG) Log.d(TAG,"resultAFState="+resultAFState+",mLastResultAFState="+mLastResultAFState+",mUI.getFaceUpdate()="+mUI.getFaceUpdate()+",mIsDepthFocus="+mIsDepthFocus);
-        if ((resultAFState != mLastResultAFState || mUI.getFaceUpdate())&& mFocusStateListener != null) {
+        if(DEBUG) Log.d(TAG,"resultAFState="+resultAFState+",mLastResultAFState="+mLastResultAFState+",mIsDepthFocus="+mIsDepthFocus);
+        if ((resultAFState != mLastResultAFState || mUI.isChangeFocus())&& mFocusStateListener != null) {
             mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
