@@ -62,7 +62,7 @@ public class ProMode extends View {
     private static final int BLUE = 0xff4693fb;
     private static final int SELECTED_DOT_SIZE = 20;
     private static final int DOT_SIZE = 10;
-    private String TAG = "Promode";
+    private String TAG = "SnapCam_Promode";
     private static final int[] wbIcons = {R.drawable.auto, R.drawable.incandecent,
             R.drawable.fluorescent, R.drawable.sunlight, R.drawable.cloudy};
     private static final int[] wbIconsBlue = {R.drawable.auto_blue, R.drawable.incandecent_blue,
@@ -129,7 +129,7 @@ public class ProMode extends View {
         mCurrentExposuretime = mSettingsManager.getKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE);
         if (mCurrentExposuretime.equals("auto") || mCurrentExposuretime.equals("")) {
             mUI.updateProModeText(EXPOSURE_TIME_MODE, "Auto");
-            mUI.closeFlashForPro(false);
+           if(mExposureTime != null) mUI.closeFlashForPro(false);
         }
        else{
             long mExposurTime = PersistUtil.strToLong(mCurrentExposuretime, mLongExpTm);
@@ -306,6 +306,7 @@ public class ProMode extends View {
     }
         private String getExposureTimeStr (long exposuretime){
             double value = exposuretime / mExpTmConvert;
+
             if(value == 0){
                 return String.valueOf(value);
             }else if (value < 0.1) {
@@ -410,8 +411,10 @@ public class ProMode extends View {
             }else{
                 exposuretime = Math.round(exposuretime * 1.3);
             }
-            BigDecimal bigDecimal = new BigDecimal(exposuretime);
-            mExpTmList.add(String.valueOf(exposuretime));
+            if(exposuretime < mExposureTime[1]) {
+                BigDecimal bigDecimal = new BigDecimal(exposuretime);
+                mExpTmList.add(String.valueOf(exposuretime));
+            }
         }
         mExpTmList.add(String.valueOf(mExposureTime[1]));
     }

@@ -354,6 +354,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TextView mOfflineDumpTrigger;
     private int mOfflineDumpTriIndex = 0;
     private boolean mZoomIncrease = true;
+    private boolean mShowFocusCircle = true;
 
 
     private boolean[] mSurfaceReady = {false,false,false,false};
@@ -1330,7 +1331,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void enableZoomSeekBar(boolean enable) {
        if (mZoomSeekBar != null)
-           mZoomSeekBar.setEnabled(enable); 
+           mZoomSeekBar.setEnabled(enable);
+       if(mZoomValueText != null)
+           mZoomValueText.setEnabled(enable);
     }
 
     public boolean getZoomFixedSupport() {
@@ -1656,7 +1659,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             initVerticalEvBar();
         }
         setMakeupButtonIcon();
-        showSceneModeLabel();
         updateMenus();
         if(mModule.isTrackingFocusSettingOn()) {
             mTrackingFocusRenderer.setVisible(false);
@@ -1853,8 +1855,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mIsVideoUI || !mModule.getCameraModeSwitcherAllowed()
                 || !isSupportFrontCamera(mModule.getCurrenCameraMode())
                 || (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
-                    !mSettingsManager.isFrontIDHFRSupported())
-                || mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                    !mSettingsManager.isFrontIDHFRSupported())) {
             return;
         }
         mModule.setCameraModeSwitcherAllowed(false);
@@ -2235,8 +2236,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mFilterMenuStatus == FILTER_MENU_ON) {
             removeFilterMenu(true);
         }
-        //exit recording mode needs to refresh scene mode label.
-        showSceneModeLabel();
     }
 
     public void showRelatedIcons(CaptureModule.CameraMode mode) {
@@ -2289,7 +2288,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mSettingsManager.setValue(SettingsManager.KEY_COLOR_EFFECT,"0");
         }
         String maunalHDR = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_HDR);
-        if (maunalHDR != null && (maunalHDR.equals("manual"))) {
+        if (maunalHDR != null && (maunalHDR.equals("manual") || maunalHDR.equals("auto"))) {
             mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         }
     }
@@ -2647,8 +2646,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private void hideFrontBackSwither() {
         if (mFrontBackSwitcher != null &&
                 ((mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
-                !mSettingsManager.isFrontIDHFRSupported()) ||
-                        mSettingsManager.getQuadBayerSensorPrefEnabled())) {
+                !mSettingsManager.isFrontIDHFRSupported()))) {
             mFrontBackSwitcher.setVisibility(View.INVISIBLE);
         }
     }
@@ -2931,6 +2929,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void showRefocusToast(boolean show) {
         mCameraControls.showRefocusToast(show);
     }
+    public void showFocusCircle(boolean show){
+        if(show) mShowFocusCircle = true;
+        else {
+            if (mPieRenderer != null) {
+                mPieRenderer.clear();
+            }
+            mShowFocusCircle = false;
+        }
+    }
 
     private ArrayList<FocusIndicator> getFocusIndicator() {
         ArrayList<FocusIndicator> foucusList =new ArrayList<>();
@@ -2966,9 +2973,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
             foucusList.add(mFaceView);
         } else {
+            if(mShowFocusCircle)
             foucusList.add(mPieRenderer);
         }
-
         return foucusList;
     }
 
@@ -3319,7 +3326,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     if ( needShowInstructional() ) {
                         showSceneInstructionalDialog(mOrientation);
                     }
-                    showSceneModeLabel();
                     if(value.equals("18")) {//hdr
                         hideVerticalEv();
                     }

@@ -281,6 +281,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private float mAdrcGain = -1.0f;
     private float mDarkBoostGain = -1.0f;
     private int mExposureCount = -1;
+    private int mAECCameraId = -1;
 
     private long[] mAecFramecontrolExosureTime = new long[3];
     private float[] mAecFramecontrolLinearGain = new float[3];
@@ -438,10 +439,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.blink_detected", byte[].class);
     public static CaptureResult.Key<byte[]> blinkDegree =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.blink_degree", byte[].class);
-    public static CaptureResult.Key<byte[]> smileDegree =
-            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.smile_degree", byte[].class);
-    public static CaptureResult.Key<byte[]> smileConfidence =
-            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.smile_confidence", byte[].class);
     public static CaptureResult.Key<byte[]> gazeAngle =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.gaze_angle", byte[].class);
     public static CaptureResult.Key<int[]> gazeDirection =
@@ -450,9 +447,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CaptureResult.Key<byte[]> gazeDegree =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.gaze_degree",
                     byte[].class);
-    public static CaptureResult.Key<int[]> contourPoints =
-            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.contours",
-                    int[].class);
     public static CaptureResult.Key<int[]> contourPointsExtend =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.contour_results",
                     int[].class);
@@ -464,9 +458,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Byte.class);
     public static CaptureRequest.Key<Byte> facialContourEnable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.contour_enable",
-                    Byte.class);
-    public static CaptureRequest.Key<Byte> smileEnable =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.smile_enable",
                     Byte.class);
     public static CaptureRequest.Key<Byte> gazeEnable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.gaze_enable",
@@ -603,6 +594,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     //camera id && request id
     private static final CaptureResult.Key<Long> stats_visualizer_request_id =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECRequestID", Long.class);
+    private static final CaptureRequest.Key<Integer> request_aec_camera_id =
+            new CaptureRequest.Key<>("org.quic.camera2.statsconfigs.AECCameraID", Integer.class);
     private static final CaptureResult.Key<Integer> stats_visualizer_camera_id =
             new CaptureResult.Key<>("org.quic.camera2.statsconfigs.AECCameraID", Integer.class);
 
@@ -910,6 +903,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mExistAECFrameControlTag = true;
     private boolean mExistAECDarkGainTag = true;
     private boolean mExposureCountTag = true;
+    private boolean mAECCameraIdTag = true;
 
     private static final long SDCARD_SIZE_LIMIT = 4000 * 1024 * 1024L;
     private static final String sTempCropFilename = "crop-temp";
@@ -918,6 +912,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mIsVoiceTakePhote = false;
     private String mCropValue;
     private Uri mCurrentVideoUri;
+    private final Set<Uri> mUrisInvalid = new HashSet<>();
     private boolean mTempHoldVideoInVideoIntent = false;
     private boolean mCurrentSessionClosed = false;
     private ParcelFileDescriptor mVideoFileDescriptor;
@@ -3049,7 +3044,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     outputConfiguration.setDynamicRangeProfile(Long.parseLong(captureProfile));
                                 }
                             }
-                            if(s == mImageReader[id].getSurface() || s == mRawImageReader[id].getSurface()){
+                            Log.i(TAG," mImageReader[id] " + mImageReader[id] + "mRawImageReader[id] :" + mRawImageReader[id]);
+                            if(s == mImageReader[id].getSurface() || (mRawImageReader[id] != null &&
+                                    s == mRawImageReader[id].getSurface())) {
                                 String physicalCameraId = mSettingsManager.getQuadBayerPhysicalId(Integer.toString(getMainCameraId()));
                                 if(physicalCameraId != null){
                                     Log.i(TAG," set physical id " + physicalCameraId + "for image reader stream");
@@ -3632,12 +3629,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void reinit() {
-        if (mSettingsManager.getQuadBayerSensorCameraId() != -1) {
-            CURRENT_ID = mSettingsManager.getQuadBayerSensorCameraId();
-        } else {
-            CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
-            CURRENT_MODE = mCurrentSceneMode.mode;
-        }
+        CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
+        CURRENT_MODE = mCurrentSceneMode.mode;
         Log.d(TAG,"reinit: CURRENT_ID camera id " + CURRENT_ID);
         mSettingsManager.init();
     }
@@ -7759,10 +7752,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public int getMainCameraId() {
-        if (mSettingsManager.getQuadBayerSensorCameraId() != -1) {
-            return mSettingsManager.getQuadBayerSensorCameraId();
-        }
-
         if (CaptureModule.FRONT_ID != mCurrentSceneMode.getCurrentId()) {
             String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
             if (selectMode != null && selectMode.equals("single_rear_cameraid") && mSingleRearId != -1) {
@@ -7830,8 +7819,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         boolean bsgEnable = isBsgcDetecionOn();
         boolean contourEnable = isFacialContourOn();
         boolean facePointEnable = isFacePointOn();
-        byte[] smileDegreeArray = null;
-        byte[] smileConfidenceArray = null;
         try {
             if (bsgEnable) {
                 byte[] blinkDetectedArray = captureResult.get(blinkDetected);
@@ -7846,25 +7833,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 byte[] gazeAngleArray = captureResult.get(gazeAngle);
                 if (FD_DEBUG)
                     Log.d(FD_TAG,"gazeAngleArray="+Arrays.toString(gazeAngleArray));
-                try {
-                    smileDegreeArray = captureResult.get(smileDegree);
-                    if (FD_DEBUG)
-                        Log.d(FD_TAG,"smileDegreeArray="+Arrays.toString(smileDegreeArray));
-                    smileConfidenceArray = captureResult.get(smileConfidence);
-                    if (FD_DEBUG)
-                        Log.d(FD_TAG,"smileConfidenceArray="+Arrays.toString(smileConfidenceArray));
-                } catch (IllegalArgumentException e){
-                    Log.w(TAG, "getBsgcInfo", e.fillInStackTrace());
-                }
                 for (int i = 0; i < size; i++) {
                     ExtendedFace tmp = new ExtendedFace(faces[i].getId());
                     try {
-                        if (smileDegreeArray != null && i < smileDegreeArray.length) {
-                            tmp.setSmileDegree(smileDegreeArray[i]);
-                        }
-                        if (smileConfidenceArray != null && i < smileConfidenceArray.length) {
-                            tmp.setSmileConfidence(smileConfidenceArray[i]);
-                        }
                         if (gazeDirectionArray != null && (3 * i + 2) < gazeDirectionArray.length) {
                             tmp.setGazeDirection(gazeDirectionArray[3 * i], gazeDirectionArray[3 * i + 1], gazeDirectionArray[3 * i + 2]);
                         }
@@ -7885,9 +7856,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 String contourMode = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
                 int[] contour_all = null;
                 int[] contourPoints = null;
-                if ("0".equals(contourMode)) {
-                    contourPoints = captureResult.get(CaptureModule.contourPoints);
-                } else if ("1".equals(contourMode) || "2".equals(contourMode) || "3".equals(contourMode)) {
+                if ("1".equals(contourMode) || "2".equals(contourMode) || "3".equals(contourMode)) {
                     contourPoints = captureResult.get(CaptureModule.contourPointsExtend);
                     contour_all = captureResult.get(CaptureModule.contourPointsExtend);
                     int faceContour = PersistUtil.getPersistFaceContourHeaderSize();
@@ -10268,6 +10237,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                     mActivity.getMediaSaveService().updateVideo(videoUri, contentValues,
                             mOnVideoSavedListener, mContentResolver);
+                    Log.d(TAG, "remove invalid uri " + videoUri);
+                    mUrisInvalid.remove(videoUri);
                 }
             }
         }
@@ -10290,6 +10261,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             mActivity.getMediaSaveService().updateVideo(mCurrentVideoUri,
                     mCurrentVideoValues,
                     mOnVideoSavedListener, mContentResolver);
+            Log.d(TAG, "remove invalid uri " + mCurrentVideoUri);
+            mUrisInvalid.remove(mCurrentVideoUri);
         }
         mCurrentVideoValues = null;
     }
@@ -10376,6 +10349,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         try {
                             ParcelFileDescriptor parcelFileDescriptor = mContentResolver.openFileDescriptor(videoUri, "rw");
                             recorder.setOutputFile(parcelFileDescriptor.getFileDescriptor());
+                            Log.d(TAG, "add invalid uri " + videoUri);
+                            mUrisInvalid.add(videoUri);
                         } catch (IOException e) {
                             Log.e(TAG, "openFileDescriptor failed for " + videoUri, e);
                             releaseMediaRecorder();
@@ -11243,6 +11218,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mAudioEncoder = null;
         }
         cleanupEmptyFile();
+        deleteInvalidUri();
     }
     //------------------------------------------end-----------------------------------------
 
@@ -11476,8 +11452,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoFileDescriptor =
                         mContentResolver.openFileDescriptor(videoUri, "rw");
                 mCurrentVideoUri = videoUri;
+                Log.d(TAG, "add invalid uri " + mCurrentVideoUri);
+                mUrisInvalid.add(mCurrentVideoUri);
             } catch (java.io.FileNotFoundException ex) {
                 // invalid uri
+                Log.d(TAG, "remove invalid uri " + mCurrentVideoUri);
+                mUrisInvalid.remove(mCurrentVideoUri);
                 mContentResolver.delete(videoUri, null, null);
                 mCurrentVideoUri = null;
                 Log.e(TAG, ex.toString());
@@ -12825,6 +12805,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         float luxIndex = pref.getFloat(SettingsManager.KEY_AEC_LUX_INDEX, awbDefault);
         float adrcGain = pref.getFloat(SettingsManager.KEY_AEC_ADRC_GAIN, awbDefault);
         float darkBoostGain = pref.getFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, awbDefault);
+        int aecCameraId = pref.getInt(SettingsManager.KEY_WARM_START_AEC_CAMERA_ID, -1);
         if (rGain != awbDefault && gGain != awbDefault && gGain != bGain) {
             Float[] awbGains = {rGain, gGain, bGain};
             Float[] tcs = {tc0, tc1};
@@ -12876,6 +12857,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                         awbWarmStart_dark_boost_gain);
             }
         }
+        if (aecCameraId != -1) {
+            try {
+                request.set(request_aec_camera_id, aecCameraId);
+                result = true;
+            } catch (IllegalArgumentException e) {
+                Log.v(TAG, "applyAWBCCTAndAgain AECCameraId vendor tag missing:" +
+                        request_aec_camera_id);
+            }
+        }
         return result;
     }
 
@@ -12909,6 +12899,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             } catch (IllegalArgumentException | NullPointerException e) {
                 mExposureCountTag = false;
+                e.printStackTrace();
+            }
+
+            try {
+                if (mAECCameraIdTag) {
+                    mAECCameraId = captureResult.get(stats_visualizer_camera_id);
+                }
+            } catch (IllegalArgumentException | NullPointerException e) {
+                mAECCameraIdTag = false;
                 e.printStackTrace();
             }
 
@@ -12956,6 +12955,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_0, mAWBDecisionAfterTC[0]);
         editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_1, mAWBDecisionAfterTC[1]);
         editor.putInt(SettingsManager.KEY_WARM_START_EXPOSURE_COUNT, mExposureCount);
+        editor.putInt(SettingsManager.KEY_WARM_START_AEC_CAMERA_ID, mAECCameraId);
 
         if (mAECSensitivity.length == 3) {
             editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_0, mAECSensitivity[0]);
@@ -13157,7 +13157,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     } else {
                         bsgc_enable = 0;
                     }
-                    request.set(CaptureModule.smileEnable, bsgc_enable);
                     request.set(CaptureModule.gazeEnable, bsgc_enable);
                     request.set(CaptureModule.blinkEnable, bsgc_enable);
                 }
@@ -13489,7 +13488,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             updateLockAFAEVisibility();
         }
         if (mIsDepthFocus && !mInTAF) {
-            resultAFState = CaptureResult.CONTROL_AF_STATE_INACTIVE;
+            mUI.showFocusCircle(false);
+        }else{
+            mUI.showFocusCircle(true);
         }
         final Integer afState = resultAFState;
         // Report state change when AF state has changed.
@@ -14193,6 +14194,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void releaseMediaRecorder() {
         Log.v(TAG, "Releasing media recorder.");
+        deleteInvalidUri();
         cleanupEmptyFile();
         if (mMediaRecorder != null) {
             try{
@@ -14223,6 +14225,18 @@ public class CaptureModule implements CameraModule, PhotoController,
             mVideoFileDescriptor = null;
         }
         Arrays.fill(mPhysicalUris, null);
+    }
+
+    private void deleteInvalidUri() {
+        for (Uri uri : mUrisInvalid) {
+            if (uri != null) {
+                try {
+                    Log.d(TAG, "deleteInvalidUri " + uri);
+                    mContentResolver.delete(uri, null);
+                } catch (Exception e) {}
+            }
+        }
+        mUrisInvalid.clear();
     }
 
     private void showToast(String tips) {
@@ -14528,6 +14542,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else if (selectMode != null && selectMode.equals("sat") && mLogicalId != -1) {
                 cameraId = mLogicalId;
             }
+            String quadBayer =  mSettingsManager.getValue(SettingsManager.KEY_QUAD_BAYER_SENSOR);
+            if (quadBayer != null && !quadBayer.equals("-1")) {
+                cameraId = Integer.parseInt(quadBayer);
+            }
             return checkCameraId(cameraId);
         }
 
@@ -14552,6 +14570,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     return mSingleRearId;
                 } else if (selectMode != null && selectMode.equals("sat") && mLogicalId != -1) {
                     return mLogicalId;
+                }
+                String quadBayer = pref.getString(SettingsManager.KEY_QUAD_BAYER_SENSOR, null);
+                if (quadBayer != null && !quadBayer.equals("-1")) {
+                    return Integer.parseInt(quadBayer);
                 }
                 if (swithCameraId != -1) {
                     cameraId = swithCameraId;
