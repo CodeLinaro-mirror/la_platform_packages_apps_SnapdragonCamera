@@ -104,6 +104,7 @@ import android.graphics.Color;
 import android.util.AttributeSet;
 import android.util.Pair;
 
+import com.android.camera.app.CameraApp;
 import com.android.camera.data.Camera2ModeAdapter.OnItemClickListener;
 import com.android.camera.deepportrait.CamGLRenderObserver;
 import com.android.camera.deepportrait.CamGLRenderer;
@@ -6919,7 +6920,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
         }
-        reinit();
+        if(!CameraApp.isColdStart){
+            reinit();
+        }
+        CameraApp.isColdStart = false;
         mPaused = false;
         mStatsVisualEnable = mSettingsManager.getValue(
                 SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
