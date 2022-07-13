@@ -3361,8 +3361,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mPhysicalYuvReader[i].getSurface());
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
+                    setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 }
-                setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 outputConfigurations.add(configuration);
                 Log.d(TAG,"add output format=yuv physicalId="+id+" size="
                         +mPhysicalYuvReader[i].getWidth()+"x"+mPhysicalYuvReader[i].getHeight());
@@ -3379,8 +3379,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mPhysicalYuv10bitReader[i].getSurface());
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
+                    setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 }
-                setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 outputConfigurations.add(configuration);
                 Log.d(TAG,"add output format=yuv 10bit physicalId="+id+" size="
                         +mPhysicalYuv10bitReader[i].getWidth()+"x"+mPhysicalYuv10bitReader[i].getHeight());
@@ -3397,8 +3397,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mPhysicalRawReader[i].getSurface());
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
+                    setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 }
-                setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 outputConfigurations.add(configuration);
                 i++;
             }
@@ -3408,8 +3408,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 OutputConfiguration configuration = new OutputConfiguration(mPhysicalRawReader[i].getSurface());
                 if (!isLogicalId(id)) {
                     configuration.setPhysicalCameraId(id);
+                    setStreamUseCase(Integer.parseInt(id), SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV, configuration);
                 }
-                setStreamUseCase(Integer.parseInt(id), SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV, configuration);
                 outputConfigurations.add(configuration);
                 Log.d(TAG, "add raw output physicalId=" + id + " size="
                         + mPhysicalRawReader[i].getWidth() + "x" + mPhysicalRawReader[i].getHeight() + ",mPhysicalRawReader[i].getSurface()=" + mPhysicalRawReader[i].getSurface());
