@@ -8408,7 +8408,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updatePictureSize() {
         String pictureSize = mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE);
         int currentId = getMainCameraId();
-        int rawFormat = mSettingsManager.getRawFormat() != 0 ? mSettingsManager.getRawFormat() : ImageFormat.RAW10;
+        int rawFormat = mSettingsManager.getRawFormat() ;
         mPictureSize = parsePictureSize(pictureSize);
         if(PersistUtil.isRawReprocessQcfa()){
             mPictureSize = new Size(8000,6000);
@@ -8454,7 +8454,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (maxRawSize != null && (rawFormat == ImageFormat.RAW10 ||
                     (rawFormat == ImageFormat.RAW_SENSOR && isRawReprocess()))) {
                 mSupportedRawPictureSize = maxRawSize;
-            } else if ((maxRawSize == null || (rawFormat == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null) {
+            } else if ((mSupportedRawPictureSize == null || (rawFormat == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null) {
                 mSupportedRawPictureSize = rawSize[0];
                 Log.i(TAG, "rawSize: " + rawSize[0].toString());
             }
