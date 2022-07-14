@@ -4270,6 +4270,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else {
                 applyFlash(builder, id); //apply flash mode and AEmode for this temp builder
             }
+            if (mSettingsManager.isMaxConfigureSize(id, mVideoSize)) {
+                builder.set(CaptureRequest.SENSOR_PIXEL_MODE,
+                        CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
+                Log.v(TAG, " set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+            }
             if (mCurrentSceneMode.mode == CameraMode.HFR && isHighSpeedRateCapture()) {
                 List<CaptureRequest> tafBuilderList = isSSMEnabled() ?
                         createSSMBatchRequest(builder) :
