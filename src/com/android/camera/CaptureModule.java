@@ -8913,6 +8913,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 outConfigurations.add(new OutputConfiguration(mVideoRecordingSurface));
             }
             List<Surface> previewSurfaces = mUI.getPhysicalSurfaces();
+            if(previewSurfaces.size() != 0){
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mUI.hideSurfaceView();
+                    }
+                });
+            }
             for (int i=1;i < mUI.getPhysicalSurfaces().size();i++){
                 mVideoRecordRequestBuilder.addTarget(previewSurfaces.get(i));
             }
