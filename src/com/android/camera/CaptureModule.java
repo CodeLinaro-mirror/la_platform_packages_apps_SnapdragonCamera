@@ -1045,6 +1045,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private String mVideoFilename;
     private boolean mRecordingPausing = false;
     private boolean mRecordingStarted = false;
+    private boolean mRecordingStoped = true;
     private long mRecordingStartTime;
     private long mRecordingTotalTime;
     private long mRecordingPauseTime;
@@ -9091,6 +9092,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mStartRecPending = false;
             mIsRecordingVideo = false;
             mIsPreviewingVideo = true;
+            mRecordingStoped = true;
             Toast.makeText(mActivity,"Storage space is not enough",Toast.LENGTH_SHORT).show();
             return false;
         }
@@ -9099,6 +9101,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mRecordingPausing = false;
         mIsPreviewingVideo = false;
         mSSMCaptureCompleteFlag = false;
+        mRecordingStoped = false;
         checkAndPlayRecordSound(cameraId, true);
 
         try {
@@ -9127,6 +9130,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mStartRecPending = false;
                         mIsRecordingVideo = false;
                         mIsPreviewingVideo = true;
+                        mRecordingStoped = true;
                         warningToast("Please enable physical cameras of outputs first");
                         return false;
                     }
@@ -9262,6 +9266,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         releaseAudioFocus();
         mStartRecPending = false;
         mIsRecordingVideo = false;
+        mRecordingStoped = true;
         mUI.showUIafterRecording();
         mFrameProcessor.setVideoOutputSurface(null);
         if(mCameraModeSwitcherAllowed) {
@@ -9290,6 +9295,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.e(TAG, "Fail to initialize media recorder");
             mStartRecPending = false;
             mIsRecordingVideo = false;
+            mRecordingStoped = true;
             return false;
         }
 
@@ -9307,6 +9313,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             releaseAudioFocus();
             mStartRecPending = false;
             mIsRecordingVideo = false;
+            mRecordingStoped = true;
             return false;
         }
         if (isSSMEnabled() && !sendSSMRequestBuilder()) {
@@ -9320,6 +9327,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.v(TAG, "Unsupported Resolution according to target");
             mStartRecPending = false;
             mIsRecordingVideo = false;
+            mRecordingStoped = true;
             return false;
         }
         requestAudioFocus();
@@ -10048,6 +10056,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         closePreviewSession();
         mIsRecordingVideo = false;
         mIsPreviewingVideo = false;
+        mRecordingStoped = true;
         mHighSpeedCaptureRate = 0;
         // release media recorder
         if (PersistUtil.enableMediaRecorder()) {
@@ -10077,6 +10086,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         mStopRecPending = true;
         mRecordingPausing = false;
         mIsRecordingVideo = false;
+        mRecordingStoped = false;
+
         if (PersistUtil.enableMediaRecorder()) {
             mIsPreviewingVideo = true;
         } else {
@@ -10142,6 +10153,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mPhysicalUris[i] = null;
                     }
                 }
+            }catch (Exception e){
+                Log.w(TAG, " MediaRecoder stop exception=", e);
             }
         } else {
             setVideoState(VideoState.VIDEO_STOP);
@@ -10159,7 +10172,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             shouldAddToMediaStoreNow = true;
         }
-
+        mRecordingStoped = true;
         Log.d(TAG, "stopRecordingVideo done. Time=" +
                 (System.currentTimeMillis() - mStopRecordingTime) + "ms");
         AccessibilityUtils.makeAnnouncement(mUI.getVideoButton(),
@@ -11056,7 +11069,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void configureAACAudioEncoder(String encoder) throws IOException {
         int aacProfileLevel = mAudioFormat.getInteger(MediaFormat.KEY_AAC_PROFILE);
-
         switch(aacProfileLevel) {
             case MediaCodecInfo.CodecProfileLevel.AACObjectLC:
             {
@@ -11581,7 +11593,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onVideoButtonClick() {
         if (!isRecorderReady() || getCameraMode() == DUAL_MODE ||
         (getCurrenCameraMode() != CameraMode.VIDEO && getCurrenCameraMode() != CameraMode.HFR)) return;
-        if (!mIsRecordingVideo) {
+        if (!mIsRecordingVideo && mRecordingStoped) {
             if (!triggerVideoRecording(getMainCameraId())) {
                 // Show ui when start recording failed.
                 mUI.showUIafterRecording();
@@ -11594,6 +11606,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         } else if (mRecordingStarted) {
             stopRecordingVideo(getMainCameraId());
+        }else{
+            warningToast("recording has not ready.");
         }
     }
 
@@ -12541,6 +12555,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyZoomAndUpdate(int id, boolean instant, float targetZoom) {
+
         CaptureRequest.Builder captureRequest = mPreviewRequestBuilder[id];
         Log.i(TAG,"applyZoomAndUpdate, mRecordingPausing:" + mRecordingPausing + ", " + mZoomValue);
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
@@ -14229,6 +14244,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     @Override
     public void onInfo(MediaRecorder mr, int what, int extra) {
         if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
+            Log.w(TAG, " MediaRecorder MEDIA_RECORDER_INFO_MAX_DURATION_REACHED mIsRecordingVideo="+mIsRecordingVideo);
             if (mIsRecordingVideo) {
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
@@ -14238,6 +14254,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 });
             }
         } else if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
+            Log.w(TAG, " MediaRecorder MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED mIsRecordingVideo="+mIsRecordingVideo);
             mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
