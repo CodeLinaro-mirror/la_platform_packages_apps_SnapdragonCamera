@@ -4398,7 +4398,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         Size videoSize = parsePictureSize(videoSizeString);
         String rateValue = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-        if (rateValue == null || rateValue.substring(0, 3).equals("off")) {
+        if (rateValue == null || rateValue.equals("24") || rateValue.equals("30")) {
             Log.w(TAG, "KEY_VIDEO_HIGH_FRAME_RATE is null");
             return optimalSizeIndex;
         }
@@ -6088,6 +6088,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_SIZE, mVideoSnapshotThumbSize);
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_QUALITY, (byte)80);
             applyVideoSnapshot(captureBuilder, id);
+
             if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE) {
                 applySettingsForLockExposure(captureBuilder, id);
             }
@@ -6151,7 +6152,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (mSettingsManager.isMaxConfigureSize(id, mVideoSize)) {
                     captureBuilder.set(CaptureRequest.SENSOR_PIXEL_MODE,
                             CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
-                    Log.v(TAG, "VideoSnapshot builder set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+                    Log.i(TAG, " VideoSnapshot builder set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
                 }
 
                 Surface surface = getPreviewSurfaceForSession(id);
@@ -7739,7 +7740,7 @@ private boolean isDevOptionSetting(){
                 ((mCurrentSceneMode.mode == CameraMode.VIDEO ||
                         mCurrentSceneMode.mode == CameraMode.CINEMATIC) &&
                         !isVariableFPSEnabled())) {
-            Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(30, 30);
+            Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
             builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
         }
         applyAFRegions(builder, id);
@@ -7785,6 +7786,8 @@ private boolean isDevOptionSetting(){
         applyVideoFlash(builder, id);
         applyExposure(builder);
         applyAICameraSnapshot(builder);
+        Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
+        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
     }
 
     private void applySessionParameters(CaptureRequest.Builder builder){
@@ -10361,7 +10364,7 @@ private boolean isDevOptionSetting(){
             int height = Integer.parseInt(sourceStrArray[1]);
             mVideoSnapshotSize = new Size(width, height);
         }
-        Log.i(TAG, "updateVideoSnapshotSize final video snapShot size = " + mVideoSnapshotSize.toString());
+        Log.i(TAG, " updateVideoSnapshotSize final video snapShot size = " + mVideoSnapshotSize.toString());
         Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(getMainCameraId());
         mVideoSnapshotThumbSize = getOptimalPreviewSize(mVideoSnapshotSize, thumbSizes); // get largest thumb size
     }
@@ -10909,7 +10912,7 @@ private boolean isDevOptionSetting(){
                            CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
                    videoPrevConfig.addSensorPixelModeUsed(
                            CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
-                   Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT and " +
+                   Log.i(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT and " +
                            "SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
                }
                String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
@@ -11484,7 +11487,7 @@ private boolean isDevOptionSetting(){
         String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         Log.d(TAG,"framerate is ="+value);
         if (value == null) return;
-        if (value.equals("off")) {
+        if ( value.equals("24") || value.equals("30")) {
             mHighSpeedCapture = false;
             mHighSpeedCaptureRate = 0;
             mSuperSlomoCapture = false;
@@ -11525,6 +11528,10 @@ private boolean isDevOptionSetting(){
         }
         setTag(mVideoRecordRequestBuilder, "" + cameraId + "-" + getCurrenCameraMode().name());
         if (mHighSpeedCapture && !isVariableFPSEnabled()) {
+            mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                    mHighSpeedFPSRange);
+        } else {
+            mHighSpeedFPSRange = new Range( mProfile.videoFrameRate,  mProfile.videoFrameRate);
             mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                     mHighSpeedFPSRange);
         }
@@ -11583,7 +11590,7 @@ private boolean isDevOptionSetting(){
                 mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                         mHighSpeedFPSRange);
             } else {
-                mHighSpeedFPSRange = new Range(30, 30);
+                mHighSpeedFPSRange = new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
                 mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                         mHighSpeedFPSRange);
             }
@@ -13586,7 +13593,6 @@ private boolean isDevOptionSetting(){
                 .getHdrAnsMode(mSettingsManager.getValue(SettingsManager.KEY_HDR_ANS_MODE));
 
         boolean hfr = mHighSpeedCapture && !mHighSpeedRecordingMode;
-
         AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
         setDefaultHDRParameters(am);
         if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
@@ -13664,7 +13670,9 @@ private boolean isDevOptionSetting(){
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorder.setOutputFormat(mProfile.fileFormat);
         setVideoOutputFile(myExtras);
+        Log.i(TAG,"MediaRecorder.setVideoFrameRate:" + mProfile.videoFrameRate);
         mMediaRecorder.setVideoFrameRate(mProfile.videoFrameRate);
+        String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
         if (!mHighSpeedCapture) {
             updateBitrateForNonHFR(videoEncoder, mProfile.videoBitRate, videoHeight, videoWidth);
         }
@@ -13684,7 +13692,6 @@ private boolean isDevOptionSetting(){
         }
         mMediaRecorder.setMaxDuration(mMaxVideoDurationInMs);
 
-        Log.d(TAG, "Profile video frame rate: "+ mProfile.videoFrameRate);
         if (mCaptureTimeLapse) {
             double fps = 1000 / (double) mTimeBetweenTimeLapseFrameCaptureMs;
             mMediaRecorder.setCaptureRate(fps);
@@ -13692,10 +13699,11 @@ private boolean isDevOptionSetting(){
             mHighSpeedFPSRange = new Range(mHighSpeedCaptureRate, mHighSpeedCaptureRate);
             int fps = (int) mHighSpeedFPSRange.getUpper();
             int targetRate = mSuperSlomoCapture ? 30 : (mHighSpeedRecordingMode ? fps : 30);
-            mMediaRecorder.setCaptureRate(mSuperSlomoCapture ? 30 : fps);
+            int captureRate = mSuperSlomoCapture ? 30 : fps;
+            mMediaRecorder.setCaptureRate(captureRate);
             mMediaRecorder.setVideoFrameRate(targetRate);
             int scaledBitrate = mSettingsManager.getHighSpeedVideoEncoderBitRate(mProfile, targetRate, fps);
-            Log.i(TAG, "Capture rate: "+fps+", Target rate: "+targetRate+", Scaled video bitrate : " + scaledBitrate);
+            Log.i(TAG, "setCaptureRate: "+ captureRate +", setVideoFrameRate: "+targetRate+", Scaled video bitrate : " + scaledBitrate);
             mMediaRecorder.setVideoEncodingBitRate(scaledBitrate);
         }
 
