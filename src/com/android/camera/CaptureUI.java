@@ -131,6 +131,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private static final String[] STATS_EXTENSION_TITLE = {" RatioLongtoShort "," RatioLongtoSafe ",
             " RatioSafetoShort "," CompenADRCGain "," CompenDarkBoostGain "};
     private static final String[] STATS_NN_RESULT_TITLE = {" Width "," Height "," MapData "," NumROI "," ROIData "," ROIWeight "};
+    public static final String[] PERFORMANCE_DEBUG_TITLE = {" Flush "," Close Camera "," Open Camera ", " Setting Init "," Create Session ", " Request Time ",
+            " Snapshot latency ", " Shutter lag ", " Burst fps ", " Zoom latency ", " AF Convergence ", " AEC convergence ", " AWB Convergence "};
+
     private CameraActivity mActivity;
     private View mRootView;
     private View mPreviewCover;
@@ -346,6 +349,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     private View mStatsNNResult;
     private TextView mStatsNNResultText;
+
+    private View mPerformancDebugInfo;
+    private TextView mDebugPerformancText;
 
     private LinearLayout mZoomLinearLayout;
 
@@ -639,6 +645,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         mStatsAecIdsInfo = mRootView.findViewById(R.id.stats_camera_id_info);
         mStatsAecIdsText = mRootView.findViewById(R.id.stats_camera_id_text);
+
+        mPerformancDebugInfo = mRootView.findViewById(R.id.debug_performance_info);
+        mDebugPerformancText = mRootView.findViewById(R.id.debug_performance_text);
 
         mStatsNNResult = mRootView.findViewById(R.id.stats_nn_result_info);
         mStatsNNResultText= mRootView.findViewById(R.id.stats_nn_result_text);
@@ -1480,6 +1489,26 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                                  String.valueOf(statsNNRoiData[1]) +"," + String.valueOf(statsNNRoiData[2]) +"," + 
                                  String.valueOf(statsNNRoiData[3]) +" "+"\r\n" +
                                  STATS_NN_RESULT_TITLE[5]+String.valueOf(statsNNRoiWeight));
+    }
+
+    public void updatePerformanceDebugInfoText(long[] info) {
+        if (info == null)
+            return;
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < PERFORMANCE_DEBUG_TITLE.length; i++) {
+            if(info[i] != 0)stringBuilder.append(PERFORMANCE_DEBUG_TITLE[i]+info[i]).append("\r\n");
+        }
+        mDebugPerformancText.setText(stringBuilder.toString());
+    }
+
+    public void updatePerformanceDebugInfoVisibility(int visibility) {
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(mPerformancDebugInfo != null) {
+                    mPerformancDebugInfo.setVisibility(visibility);
+                }
+            }
+        });
     }
 
     public void updateAfdInfoText(String[] info) {

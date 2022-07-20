@@ -399,6 +399,24 @@
         </RelativeLayout>
 
         <LinearLayout
+            android:id="@+id/debug_performance_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="16dip"
+            android:layout_marginTop="430dip"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/debug_performance_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="#ffff00"
+                android:background="#60000000" />
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/stats_nn_result_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -955,4 +955,10 @@
         camera:key="pref_camera2_multi_cameras_key"
         camera:title="@string/pref_camera2_multi_cameras_title" />
 
+    <IconListPreference
+        camera:defaultValue="@string/setting_off_value"
+        camera:entries="@array/pref_camera2_camera2_entries"
+        camera:entryValues="@array/pref_camera2_camera2_entryvalues"
+        camera:key="pref_camera2_performance_debug_key"
+        camera:title="@string/pref_camera2_performance_debug_title"/>
 </PreferenceGroup>

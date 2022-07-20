@@ -1079,6 +1079,25 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private String mStatsVisualEnable;
     private String mStatsVisualizer;
+    //performance debug info
+    private String mPerformanceDebugEnable;
+    private long mOpenCameraLatency;
+    private long mSettingInitLatency;
+    private long mCreateSessionLatency;
+    private long mFirstRequestLatency;
+    private long mFlushLatency;
+    private long mCloseCameraLatency;
+    private long mSnapshotLatency;
+    private long mShutterLag;
+    private long mBurstStartTime = 0;
+    private long mBurstFps = 0;
+    private long mZoomLatency;
+    public static final HashMap<Long, Float> mZoomTimeMap = new HashMap<>();
+    public static final HashMap<Float, Rect> mZoomValueMap = new HashMap<>();
+    long mAFConvergence = 0;
+    long mAECConvergence = 0;
+    long mAWBConvergence = 0;
+    private static long[] mPerformanceDebugData = new long[CaptureUI.PERFORMANCE_DEBUG_TITLE.length];
 
     /*
      * MultiResolutionImageReader
@@ -1421,7 +1440,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             int id = getIdFromTag(result.getRequest().getTag());
             mVideoFrameNumber = result.getFrameNumber();
-
+            updatePerformanceUIInfo(result);
             if (id == getMainCameraId()) {
                 updateFocusStateChange(result);
                 updateAWBCCTAndgains(result);
@@ -1511,6 +1530,68 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     };
+
+    private void updatePerformanceUIInfo(TotalCaptureResult result){
+        if(mPerformanceDebugEnable != null && mPerformanceDebugEnable.equals("on")){
+            if(mFirstRequestLatency != 0) {
+                mFirstRequestLatency = System.currentTimeMillis() - mFirstRequestLatency;
+                updatePerformanceDebugAllValue();
+                mFirstRequestLatency = 0;
+            }
+            Float zoomValue = result.getRequest().get(CaptureRequest.CONTROL_ZOOM_RATIO);
+            synchronized (mPerformanceDebugData) {
+                if (!mUI.getZoomFixedSupport()) {
+                    Rect region = result.getRequest().get(CaptureRequest.SCALER_CROP_REGION);
+                    Iterator<Float> it = mZoomValueMap.keySet().iterator();
+                    while (it.hasNext()) {
+                        Float ele = it.next();
+                        if(mZoomValueMap.get(ele).left == region.left &&
+                                mZoomValueMap.get(ele).top == region.top &&
+                                mZoomValueMap.get(ele).bottom == region.bottom &&
+                                mZoomValueMap.get(ele).right == region.right) {
+                            zoomValue = ele;
+                            it.remove();
+                        }
+                    }
+                }
+                Iterator<Long> it = mZoomTimeMap.keySet().iterator();
+                while (it.hasNext()) {
+                    Long ele = it.next();
+                    if (Math.abs(zoomValue - mZoomTimeMap.get(ele)) < 0.01) {
+                        mZoomLatency = System.currentTimeMillis() - ele;
+                        updatePerformanceDebugValue(9, mZoomLatency);
+                        it.remove();
+                    }
+                }
+            }
+            Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
+            Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+            Integer awbState = result.get(CaptureResult.CONTROL_AWB_STATE);
+            if(afState == CaptureRequest.CONTROL_AF_STATE_PASSIVE_SCAN && mAFConvergence == 0){
+                mAFConvergence = System.currentTimeMillis();
+            }else if((afState == CaptureRequest.CONTROL_AF_STATE_PASSIVE_FOCUSED || afState == CaptureRequest.CONTROL_AF_STATE_PASSIVE_UNFOCUSED) && mAFConvergence != 0){
+                mAFConvergence = System.currentTimeMillis() - mAFConvergence;
+                updatePerformanceDebugValue(10, mAFConvergence);
+                mAFConvergence = 0;
+            }
+            if(aeState == CaptureRequest.CONTROL_AE_STATE_SEARCHING && mAECConvergence == 0){
+                mAECConvergence = System.currentTimeMillis();
+            }else if(aeState == CaptureRequest.CONTROL_AE_STATE_CONVERGED && mAECConvergence != 0){
+                mAECConvergence = System.currentTimeMillis() - mAECConvergence;
+                updatePerformanceDebugValue(11, mAECConvergence);
+                mAECConvergence = 0;
+            }
+            if(awbState == CaptureRequest.CONTROL_AWB_STATE_SEARCHING && mAWBConvergence == 0){
+                mAWBConvergence = System.currentTimeMillis();
+            }else if(awbState == CaptureRequest.CONTROL_AWB_STATE_CONVERGED && mAWBConvergence != 0){
+                mAWBConvergence = System.currentTimeMillis() - mAWBConvergence;
+                updatePerformanceDebugValue(12, mAWBConvergence);
+                mAWBConvergence = 0;
+            }
+        } else {
+            mUI.updatePerformanceDebugInfoVisibility(View.GONE);
+        }
+    }
 
     public int byteArray2Int(byte[] src, int offset) {
         int value;
@@ -1692,6 +1773,42 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void updatePerformanceDebugView() {
+        synchronized (mPerformanceDebugData) {
+            mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mUI.updatePerformanceDebugInfoVisibility(View.VISIBLE);
+                    mUI.updatePerformanceDebugInfoText(mPerformanceDebugData);
+                }
+            });
+        }
+    }
+    private void updatePerformanceDebugValue(int i, long value) {
+        synchronized (mPerformanceDebugData) {
+            mPerformanceDebugData[i] = value;
+            updatePerformanceDebugView();
+        }
+    }
+
+    private void updatePerformanceDebugAllValue() {
+        synchronized (mPerformanceDebugData) {
+            mPerformanceDebugData[0]=mFlushLatency;
+            mPerformanceDebugData[1]=mCloseCameraLatency;
+            mPerformanceDebugData[2]=mOpenCameraLatency;
+            mPerformanceDebugData[3]=mSettingInitLatency;
+            mPerformanceDebugData[4]=mCreateSessionLatency;
+            mPerformanceDebugData[5]=mFirstRequestLatency;
+            mPerformanceDebugData[6]=mSnapshotLatency;
+            mPerformanceDebugData[7]=mShutterLag;
+            mPerformanceDebugData[8]=mBurstFps;
+            mPerformanceDebugData[9]=mZoomLatency;
+            mPerformanceDebugData[10]=mAFConvergence;
+            mPerformanceDebugData[11]=mAECConvergence;
+            mPerformanceDebugData[12]=mAWBConvergence;
+            updatePerformanceDebugView();
+        }
+    }
     private void updateStatsView(String stats_visualizer,CaptureResult result) {
         int r, g, b, index;
         if (stats_visualizer.contains("2")) {
@@ -1998,6 +2115,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         @Override
         public void onOpened(CameraDevice cameraDevice) {
+            mOpenCameraLatency = System.currentTimeMillis() - mOpenCameraLatency;
+            mSettingInitLatency = System.currentTimeMillis();
             int id = Integer.parseInt(cameraDevice.getId());
             Log.d(TAG, "onOpened " + id);
             mCameraOpenCloseLock.release();
@@ -2053,6 +2172,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onClosed(CameraDevice cameraDevice) {
             int id = Integer.parseInt(cameraDevice.getId());
+            mCloseCameraLatency = System.currentTimeMillis() - mCloseCameraLatency;
             Log.d(TAG, "onClosed " + id);
             mCameraDevice[id] = null;
             mCameraOpenCloseLock.release();
@@ -2837,6 +2957,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     cameraCaptureSession == null) {
                                 return;
                             }
+                            mCreateSessionLatency = System.currentTimeMillis() - mCreateSessionLatency;
                             Log.i(TAG, "capturesession - onConfigured "+ id);
                             setCameraModeSwitcherAllowed(true);
                             // When the session is ready, we start displaying the preview.
@@ -2877,6 +2998,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 // Finally, we start displaying the camera preview.
                                 // for cases where we are in dual mode with mono preview off,
                                 // don't set repeating request for mono
+                                mFirstRequestLatency = System.currentTimeMillis();
                                 if(id == MONO_ID && !canStartMonoPreview()
                                         && getCameraMode() == DUAL_MODE) {
                                     mCaptureSession[id].capture(mPreviewRequestBuilder[id]
@@ -4652,7 +4774,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
 
                 mNumFramesArrived.incrementAndGet();
-
+                if(mPerformanceDebugEnable != null && mPerformanceDebugEnable.equals("on")){
+                    if (mNumFramesArrived.get() == 1) {
+                        mBurstStartTime = System.currentTimeMillis();
+                    }
+                    mBurstFps = ((System.currentTimeMillis() - mBurstStartTime)/mNumFramesArrived.get());
+                    updatePerformanceDebugValue(8, mBurstFps);
+                }
                 Log.d(TAG, "captureStillPictureForLongshot onCaptureCompleted: " + mNumFramesArrived.get() + " " + mShotNum);
                 if (mLongshotActive) {
                     checkAndPlayShutterSound(getMainCameraId());
@@ -4997,7 +5125,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 return;
             }
             mRawInputMeta =null;
+            mSnapshotLatency = System.currentTimeMillis();
             mCaptureSession[id].capture(captureBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureStarted (CameraCaptureSession session,
+                                              CaptureRequest request,
+                                              long timestamp,
+                                              long frameNumber){
+                    mShutterLag = System.currentTimeMillis() - mSnapshotLatency;
+                }
 
                 @Override
                 public void onCaptureCompleted(CameraCaptureSession session,
@@ -5200,9 +5336,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                     captureBuilder.addTarget(surface);
                 }
             }
-
+            mSnapshotLatency = System.currentTimeMillis();
             mCurrentSession.capture(captureBuilder.build(),
                     new CameraCaptureSession.CaptureCallback() {
+
+                        @Override
+                        public void onCaptureStarted (CameraCaptureSession session,
+                                                      CaptureRequest request,
+                                                      long timestamp,
+                                                      long frameNumber){
+                            mShutterLag = System.currentTimeMillis() - mSnapshotLatency;
+                        }
 
                         @Override
                         public void onCaptureCompleted(CameraCaptureSession session,
@@ -5402,6 +5546,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                         ImageAvailableListener listener = new ImageAvailableListener(i) {
                             @Override
                             public void onImageAvailable(ImageReader reader) {
+                                if(mSnapshotLatency != 0) {
+                                    mSnapshotLatency = System.currentTimeMillis() - mSnapshotLatency;
+                                }
+                                if(mPerformanceDebugEnable != null && mPerformanceDebugEnable.equals("on")){
+                                    updatePerformanceDebugValue(6, mSnapshotLatency);
+                                    updatePerformanceDebugValue(7, mShutterLag);
+                                }
                                 if (captureWaitImageReceive()) {
                                     mHandler.post(new Runnable() {
                                         @Override
@@ -6104,6 +6255,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 new ImageReader.OnImageAvailableListener() {
                     @Override
                     public void onImageAvailable(ImageReader reader) {
+                        if(mSnapshotLatency != 0) {
+                            mSnapshotLatency = System.currentTimeMillis() - mSnapshotLatency;
+                        }
+                        if(mPerformanceDebugEnable != null && mPerformanceDebugEnable.equals("on")){
+                            updatePerformanceDebugValue(6, mSnapshotLatency);
+                            updatePerformanceDebugValue(7, mShutterLag);
+                        }
                         Image image = reader.acquireNextImage();
                         mCaptureStartTime = System.currentTimeMillis();
                         mNamedImages.nameNewImage(mCaptureStartTime);
@@ -6437,7 +6595,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (mIntentMode != INTENT_MODE_VIDEO) {
                         try {
                             if (isAbortCapturesEnable() && mCaptureSession[i] != null) {
+                                mFlushLatency = System.currentTimeMillis();
                                 mCaptureSession[i].abortCaptures();
+                                mFlushLatency = System.currentTimeMillis() - mFlushLatency;
                                 Log.d(TAG, "Closing camera call abortCaptures ");
                             }
                             if (isSendRequestAfterFlushEnable() && mCaptureSession[i] != null) {
@@ -6449,6 +6609,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             e.printStackTrace();
                         }
                     }
+                    mCloseCameraLatency = System.currentTimeMillis();
                     mCameraDevice[i].close();
                     mCameraDevice[i] = null;
                     mCameraOpened[i] = false;
@@ -6844,6 +7005,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 throw new RuntimeException("Time out waiting to lock camera opening");
             }
             Log.d(TAG, "open is " + mCameraId[id] );
+            mOpenCameraLatency = System.currentTimeMillis();
             manager.openCamera(mCameraId[id], mStateCallback, mCameraHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -6859,6 +7021,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     @Override
     public void onPauseBeforeSuper() {
+        mShutterLag = 0;
+        mSnapshotLatency = 0;
+        mZoomLatency = 0;
+        mBurstFps = 0;
         cancelTouchFocus();
         mPaused = true;
         if (mSurfaceReadyLock.availablePermits() == 0) {
@@ -6869,7 +7035,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mLongshoting){
             if (mCurrentSession != null) {
                 try {
+                    mFlushLatency = System.currentTimeMillis();
                     mCurrentSession.abortCaptures();
+                    mFlushLatency = System.currentTimeMillis() - mFlushLatency;
                     mCurrentSession.stopRepeating();
                 } catch (CameraAccessException|IllegalStateException e) {
                     e.printStackTrace();
@@ -6883,12 +7051,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if (mCurrentSession != null) {
                 try {
+                    mFlushLatency = System.currentTimeMillis();
                     mCurrentSession.abortCaptures();
+                    mFlushLatency = System.currentTimeMillis() - mFlushLatency;
                     mCurrentSession.stopRepeating();
                 } catch (CameraAccessException|IllegalStateException e) {
                     e.printStackTrace();
                 }
             }
+            mSettingInitLatency = System.currentTimeMillis();
         }
         if (mIsPreviewingVideo && !mIsRecordingVideo) {
             exitVideoModule();
@@ -6984,6 +7155,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         mPaused = false;
         mStatsVisualEnable = mSettingsManager.getValue(
                 SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
+        mPerformanceDebugEnable = mSettingsManager.getValue(
+                SettingsManager.KEY_PERFORMANCE_DEBUG);
         mStatsVisualizer = mSettingsManager.getValue(
                 SettingsManager.KEY_STATS_VISUALIZER_VALUE);
         for (int i = 0; i < MAX_NUM_CAM; i++) {
@@ -8834,6 +9007,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onConfigured(CameraCaptureSession cameraCaptureSession) {
             Log.d(TAG, "mSessionListener session onConfigured");
+            mCreateSessionLatency = System.currentTimeMillis()- mCreateSessionLatency;
+
             setCameraModeSwitcherAllowed(true);
             if(!mSettingsManager.isLogicalEnable()){
                 mActivity.runOnUiThread(new Runnable() {
@@ -8893,6 +9068,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 mCaptureCallback, mCameraHandler);
                     }
                 }
+                mFirstRequestLatency = System.currentTimeMillis();
                 setVideoState(VideoState.VIDEO_PREVIEW);
                 enableVideoButton(true);
             } catch (CameraAccessException e) {
@@ -9049,11 +9225,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         getOptMode();
         setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
+        mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
         try {
             SessionConfiguration sessionConfig = new SessionConfiguration(
                     SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
                     new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
+            mCreateSessionLatency = System.currentTimeMillis();
             mCameraDevice[cameraId].createCaptureSession(sessionConfig);
         } catch (Exception e) {
             e.printStackTrace();
@@ -9095,7 +9273,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error");
             e.printStackTrace();
         }
+        mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
         try{
+            mCreateSessionLatency = System.currentTimeMillis();
             camera.createCaptureSession(sessionConfig);
         } catch (CameraAccessException e) {
             Log.e(TAG, "createCaptureSessionWithSessionConfiguration error");
@@ -9122,10 +9302,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         outConfigurations.add(videoPreviewConfig);
         outConfigurations.add(videoRecordConfig);
         setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
+        mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
         try {
             SessionConfiguration sessionConfig = new SessionConfiguration(optionMode,
                     outConfigurations, new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
+            mCreateSessionLatency = System.currentTimeMillis();
             mCameraDevice[cameraID].createCaptureSession(sessionConfig);
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -11946,6 +12128,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             mCropRegion[id] = cropRegion;
         }
         Log.d(TAG, "cropRegionForZoom  mCropRegion[id] " +  mCropRegion[id]);
+        synchronized (mPerformanceDebugData) {
+            mZoomValueMap.put(mZoomValue, mCropRegion[id]);
+        }
         return mCropRegion[id];
     }
 
@@ -12731,6 +12916,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     session.stopRepeating();
                 }
 
+                synchronized (mPerformanceDebugData) {
+                    mZoomTimeMap.put(System.currentTimeMillis(), mZoomValue);
+                }
                 if (session instanceof CameraConstrainedHighSpeedCaptureSession) {
                     List list = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
                             .createHighSpeedRequestList(captureRequest.build());
@@ -14037,6 +14225,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             mIsCloseCamera = false;
         }else{
             mIsCloseCamera = true;
+        }
+        if(!mIsCloseCamera){
+            mOpenCameraLatency = 0;
+            mCloseCameraLatency = 0;
         }
         onPauseBeforeSuper();
         onPauseAfterSuper(false);

@@ -271,6 +271,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_STATS_VISUALIZER_ENABLE = "pref_camera2_stats_visualizer_enable_key";
     public static final String KEY_STATS_VISUALIZER_VALUE = "pref_camera2_stats_visualizer_key";
     public static final String KEY_SINGLE_PHYSICAL_CAMERA = "pref_camera2_single_physical_camera_key";
+    public static final String KEY_PERFORMANCE_DEBUG = "pref_camera2_performance_debug_key";
 
     public static final HashMap<String, Integer> KEY_ISO_INDEX = new HashMap<String, Integer>();
     public static final String KEY_FD_SMILE = "pref_camera2_fd_smile_key";

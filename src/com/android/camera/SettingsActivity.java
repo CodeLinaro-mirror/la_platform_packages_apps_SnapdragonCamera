@@ -1291,6 +1291,15 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
+
+        if (!mDeveloperMenuEnabled) {
+            Preference p = findPreference(SettingsManager.KEY_PERFORMANCE_DEBUG);
+            if (p != null){
+                PreferenceGroup general = (PreferenceGroup)findPreference("general");
+                general.removePreference(p);
+            }
+        }
+
         final ArrayList<String> videoOnlyList = new ArrayList<String>() {
             {
                 add(SettingsManager.KEY_EIS_VALUE);
