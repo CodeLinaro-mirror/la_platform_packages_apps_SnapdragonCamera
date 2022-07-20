@@ -11783,11 +11783,19 @@ public class CaptureModule implements CameraModule, PhotoController,
         return mZoomValue;
     }
 
-    public Rect cropRegionForZoom(int id) {
+    public Rect cropRegionForZoom(int id, boolean isMaxPixelMode) {
         if (DEBUG) {
             Log.d(TAG, "cropRegionForZoom " + id);
         }
-        Rect activeRegion = mSettingsManager.getSensorActiveArraySize(id);
+        Rect activeRegion = null;
+        if (isMaxPixelMode) {
+            activeRegion = mSettingsManager.getSensorActiveMaxArraySize(id);
+            if (activeRegion == null) {
+                activeRegion = mSettingsManager.getSensorActiveArraySize(id);
+            }
+        } else {
+            activeRegion = mSettingsManager.getSensorActiveArraySize(id);
+        }
         Rect cropRegion = new Rect();
 
         int xCenter = activeRegion.width() / 2;
@@ -11818,7 +11826,13 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyZoomRatio(CaptureRequest.Builder request, float zoomValue, int id) {
         try {
-            cropRegionForZoom(id);
+            if (request.get(CaptureRequest.SENSOR_PIXEL_MODE) != null &&
+                    request.get(CaptureRequest.SENSOR_PIXEL_MODE) ==
+                            CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION) {
+                cropRegionForZoom(id, true);
+            } else {
+                cropRegionForZoom(id, false);
+            }
             request.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomValue);
         } catch(IllegalArgumentException e) {
             Log.v(TAG, " there is no vendorTag CONTROL_ZOOM_RATIO");
@@ -11829,7 +11843,13 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyZoom(CaptureRequest.Builder request, int id) {
         if (!mSupportZoomCapture) return;
-        request.set(CaptureRequest.SCALER_CROP_REGION, cropRegionForZoom(id));
+        if (request.get(CaptureRequest.SENSOR_PIXEL_MODE) != null &&
+                request.get(CaptureRequest.SENSOR_PIXEL_MODE) ==
+                CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION) {
+            request.set(CaptureRequest.SCALER_CROP_REGION, cropRegionForZoom(id, true));
+        } else {
+            request.set(CaptureRequest.SCALER_CROP_REGION, cropRegionForZoom(id, false));
+        }
     }
 
     private void applyInstantAEC(CaptureRequest.Builder request) {
@@ -13861,7 +13881,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (physical_id != null &&
                             !SettingsManager.LOGICAL_AND_PHYSICAL.equals(physical_id)) {
                         int id = Integer.valueOf(physical_id);
-                        cropRegionForZoom(id);
+                        cropRegionForZoom(id, false);
                         mUI.onStartFaceDetection(mDisplayOrientation,
                                 mSettingsManager.isFacingFront(getMainCameraId()),
                                 mCropRegion[id],
