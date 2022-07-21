@@ -1075,7 +1075,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private String mStatsVisualEnable;
     private String mStatsVisualizer;
     //performance debug info
-    private String mPerformanceDebugEnable;
+    public String mPerformanceDebugEnable;
     private long mOpenCameraLatency;
     private long mSettingInitLatency;
     private long mCreateSessionLatency;
@@ -1085,14 +1085,20 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mSnapshotLatency;
     private long mShutterLag;
     private long mBurstStartTime = 0;
-    private long mBurstFps = 0;
+    private float mBurstFps = 0;
     private long mZoomLatency;
+    private float mResultFPS = 0;
     public static final HashMap<Long, Float> mZoomTimeMap = new HashMap<>();
     public static final HashMap<Float, Rect> mZoomValueMap = new HashMap<>();
     long mAFConvergence = 0;
     long mAECConvergence = 0;
     long mAWBConvergence = 0;
-    private static long[] mPerformanceDebugData = new long[CaptureUI.PERFORMANCE_DEBUG_TITLE.length];
+    private static String[] mPerformanceDebugData = new String[CaptureUI.PERFORMANCE_DEBUG_TITLE.length];
+    private Camera2RequestGapGraphView mGapGraphView;
+    long mLastResultTime = 0;
+    long mLastFPSCountTime = 0;
+    long mCurrentFrameCount = 0;
+    public static List<Long> mPerformanceGapData = new ArrayList<>();
 
     /*
      * MultiResolutionImageReader
@@ -1551,7 +1557,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Long ele = it.next();
                     if (Math.abs(zoomValue - mZoomTimeMap.get(ele)) < 0.01) {
                         mZoomLatency = System.currentTimeMillis() - ele;
-                        updatePerformanceDebugValue(9, mZoomLatency);
+                        updatePerformanceDebugValue(9, Long.toString(mZoomLatency));
                         it.remove();
                     }
                 }
@@ -1563,28 +1569,61 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mAFConvergence = System.currentTimeMillis();
             }else if((afState == CaptureRequest.CONTROL_AF_STATE_PASSIVE_FOCUSED || afState == CaptureRequest.CONTROL_AF_STATE_PASSIVE_UNFOCUSED) && mAFConvergence != 0){
                 mAFConvergence = System.currentTimeMillis() - mAFConvergence;
-                updatePerformanceDebugValue(10, mAFConvergence);
+                updatePerformanceDebugValue(10, Long.toString(mAFConvergence));
                 mAFConvergence = 0;
             }
             if(aeState == CaptureRequest.CONTROL_AE_STATE_SEARCHING && mAECConvergence == 0){
                 mAECConvergence = System.currentTimeMillis();
             }else if(aeState == CaptureRequest.CONTROL_AE_STATE_CONVERGED && mAECConvergence != 0){
                 mAECConvergence = System.currentTimeMillis() - mAECConvergence;
-                updatePerformanceDebugValue(11, mAECConvergence);
+                updatePerformanceDebugValue(11, Long.toString(mAECConvergence));
                 mAECConvergence = 0;
             }
             if(awbState == CaptureRequest.CONTROL_AWB_STATE_SEARCHING && mAWBConvergence == 0){
                 mAWBConvergence = System.currentTimeMillis();
             }else if(awbState == CaptureRequest.CONTROL_AWB_STATE_CONVERGED && mAWBConvergence != 0){
                 mAWBConvergence = System.currentTimeMillis() - mAWBConvergence;
-                updatePerformanceDebugValue(12, mAWBConvergence);
+                updatePerformanceDebugValue(12, Long.toString(mAWBConvergence));
                 mAWBConvergence = 0;
             }
+            synchronized (mPerformanceGapData) {
+                if (mLastResultTime != 0) {
+                    if (mPerformanceGapData.size() > 100) {
+                        mPerformanceGapData.remove(0);
+                    }
+                    mPerformanceGapData.add(System.currentTimeMillis() - mLastResultTime);
+                }
+                mLastResultTime = System.currentTimeMillis();
+            }
+            calculateResultFPS();
+            updateGapGraghViewVisibility(View.VISIBLE);
+            updateGapGraghView();
         } else {
             mUI.updatePerformanceDebugInfoVisibility(View.GONE);
+            updateGapGraghViewVisibility(View.GONE);
         }
     }
 
+    private void calculateResultFPS(){
+        long currentTime = System.currentTimeMillis();
+        long elapsedTime;
+
+        if (0 == mLastFPSCountTime){
+            mLastFPSCountTime  = currentTime;
+            mCurrentFrameCount = 0;
+        }else{
+            mCurrentFrameCount++;
+        }
+        elapsedTime = currentTime - mLastFPSCountTime;
+
+        if (elapsedTime > (5 * 1000)){
+            float fps = mCurrentFrameCount * 1000 / (float) (elapsedTime);
+            mResultFPS = (float)(Math.round(fps*100))/100;
+            updatePerformanceDebugValue(13, Float.toString(mResultFPS));
+            mCurrentFrameCount = 0;
+            mLastFPSCountTime  = currentTime;
+        }
+    }
     public int byteArray2Int(byte[] src, int offset) {
         int value;
         value = (int) ((src[offset] & 0xFF)
@@ -1758,6 +1797,26 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void updateGapGraghView(){
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(mGapGraphView != null) {
+                    mGapGraphView.PreviewChanged();
+                }
+            }
+        });
+    }
+
+    private void updateGapGraghViewVisibility(final int visibility) {
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(mGapGraphView != null) {
+                    mGapGraphView.setVisibility(visibility);
+                }
+            }
+        });
+    }
+
     private void updatePerformanceDebugView() {
         synchronized (mPerformanceDebugData) {
             mActivity.runOnUiThread(new Runnable() {
@@ -1769,7 +1828,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             });
         }
     }
-    private void updatePerformanceDebugValue(int i, long value) {
+    private void updatePerformanceDebugValue(int i, String value) {
         synchronized (mPerformanceDebugData) {
             mPerformanceDebugData[i] = value;
             updatePerformanceDebugView();
@@ -1778,19 +1837,20 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void updatePerformanceDebugAllValue() {
         synchronized (mPerformanceDebugData) {
-            mPerformanceDebugData[0]=mFlushLatency;
-            mPerformanceDebugData[1]=mCloseCameraLatency;
-            mPerformanceDebugData[2]=mOpenCameraLatency;
-            mPerformanceDebugData[3]=mSettingInitLatency;
-            mPerformanceDebugData[4]=mCreateSessionLatency;
-            mPerformanceDebugData[5]=mFirstRequestLatency;
-            mPerformanceDebugData[6]=mSnapshotLatency;
-            mPerformanceDebugData[7]=mShutterLag;
-            mPerformanceDebugData[8]=mBurstFps;
-            mPerformanceDebugData[9]=mZoomLatency;
-            mPerformanceDebugData[10]=mAFConvergence;
-            mPerformanceDebugData[11]=mAECConvergence;
-            mPerformanceDebugData[12]=mAWBConvergence;
+            mPerformanceDebugData[0]=Long.toString(mFlushLatency);
+            mPerformanceDebugData[1]=Long.toString(mCloseCameraLatency);
+            mPerformanceDebugData[2]=Long.toString(mOpenCameraLatency);
+            mPerformanceDebugData[3]=Long.toString(mSettingInitLatency);
+            mPerformanceDebugData[4]=Long.toString(mCreateSessionLatency);
+            mPerformanceDebugData[5]=Long.toString(mFirstRequestLatency);
+            mPerformanceDebugData[6]=Long.toString(mSnapshotLatency);
+            mPerformanceDebugData[7]=Long.toString(mShutterLag);
+            mPerformanceDebugData[8]=Float.toString(mBurstFps);
+            mPerformanceDebugData[9]=Long.toString(mZoomLatency);
+            mPerformanceDebugData[10]=Long.toString(mAFConvergence);
+            mPerformanceDebugData[11]=Long.toString(mAECConvergence);
+            mPerformanceDebugData[12]=Long.toString(mAWBConvergence);
+            mPerformanceDebugData[13]=Float.toString(mResultFPS);
             updatePerformanceDebugView();
         }
     }
@@ -2667,6 +2727,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         mMFNRText = (TextView ) mRootView.findViewById(R.id.mfnr_text);
         mMfnrSeekBar = (SeekBar) mRootView.findViewById(R.id.mfnr_seekbar);
         mLockAFAEText = (TextView ) mRootView.findViewById(R.id.lock_af_ae_label);
+        mGapGraphView = (Camera2RequestGapGraphView) mRootView.findViewById(R.id.graph_view_gap);
+        if (mGapGraphView != null){
+            mGapGraphView.setCaptureModuleObject(this);
+        }
         mGraphViewR.setDataSection(0,256);
         mGraphViewGB.setDataSection(256,512);
         mGraphViewB.setDataSection(512,768);
@@ -4266,6 +4330,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(mRSStatson) {
                 updateRSStatsVisibility(View.INVISIBLE);
             }
+            if(mPerformanceDebugEnable.equals("on")){
+                updateGapGraghViewVisibility(View.INVISIBLE);
+            }
         } catch (CameraAccessException | IllegalStateException e) {
            Log.e(TAG,e);
         }
@@ -4341,6 +4408,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             if (mRSStatson) {
                 updateRSStatsVisibility(View.INVISIBLE);
+            }
+            if(mPerformanceDebugEnable.equals("on")){
+                updateGapGraghViewVisibility(View.INVISIBLE);
             }
         } catch (CameraAccessException | IllegalStateException e) {
             Log.e(TAG,e);
@@ -4744,8 +4814,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (mNumFramesArrived.get() == 1) {
                         mBurstStartTime = System.currentTimeMillis();
                     }
-                    mBurstFps = ((System.currentTimeMillis() - mBurstStartTime)/mNumFramesArrived.get());
-                    updatePerformanceDebugValue(8, mBurstFps);
+                    mBurstFps = (float)((System.currentTimeMillis() - mBurstStartTime)/mNumFramesArrived.get());
+                    updatePerformanceDebugValue(8, Float.toString(mBurstFps));
                 }
                 Log.d(TAG, "captureStillPictureForLongshot onCaptureCompleted: " + mNumFramesArrived.get() + " " + mShotNum);
                 if (mLongshotActive) {
@@ -5501,8 +5571,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     mSnapshotLatency = System.currentTimeMillis() - mSnapshotLatency;
                                 }
                                 if(mPerformanceDebugEnable != null && mPerformanceDebugEnable.equals("on")){
-                                    updatePerformanceDebugValue(6, mSnapshotLatency);
-                                    updatePerformanceDebugValue(7, mShutterLag);
+                                    updatePerformanceDebugValue(6, Long.toString(mSnapshotLatency));
+                                    updatePerformanceDebugValue(7, Long.toString(mShutterLag));
                                 }
                                 if (captureWaitImageReceive()) {
                                     mHandler.post(new Runnable() {
@@ -6201,8 +6271,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mSnapshotLatency = System.currentTimeMillis() - mSnapshotLatency;
                         }
                         if(mPerformanceDebugEnable != null && mPerformanceDebugEnable.equals("on")){
-                            updatePerformanceDebugValue(6, mSnapshotLatency);
-                            updatePerformanceDebugValue(7, mShutterLag);
+                            updatePerformanceDebugValue(6, Long.toString(mSnapshotLatency));
+                            updatePerformanceDebugValue(7, Long.toString(mShutterLag));
                         }
                         Image image = reader.acquireNextImage();
                         mCaptureStartTime = System.currentTimeMillis();
@@ -6959,6 +7029,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSnapshotLatency = 0;
         mZoomLatency = 0;
         mBurstFps = 0;
+        mPerformanceGapData.clear();
         cancelTouchFocus();
         mPaused = true;
         if (mSurfaceReadyLock.availablePermits() == 0) {
@@ -8412,6 +8483,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (oldOrientation != mOrientation) {
             mUI.onOrientationChanged();
             mUI.setOrientation(mOrientation, true);
+            if (mGapGraphView != null) {
+                mGapGraphView.setRotation(-mOrientation);
+            }
             if (mGraphViewR != null) {
                 mGraphViewR.setRotation(-mOrientation);
             }
@@ -8424,6 +8498,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         // need to re-initialize mGraphView to show histogram on rotate
+        mGapGraphView = (Camera2RequestGapGraphView) mRootView.findViewById(R.id.graph_view_gap);
         mGraphViewR  = (Camera2GraphView) mRootView.findViewById(R.id.graph_view_r);
         mGraphViewGB = (Camera2GraphView) mRootView.findViewById(R.id.graph_view_gb);
         mGraphViewB  = (Camera2GraphView) mRootView.findViewById(R.id.graph_view_b);
@@ -8433,6 +8508,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         mGraphViewR.setDataSection(0,256);
         mGraphViewGB.setDataSection(256,512);
         mGraphViewB.setDataSection(512,768);
+        if(mGapGraphView != null){
+            mGapGraphView.setAlpha(0.75f);
+            mGapGraphView.setCaptureModuleObject(this);
+            mGapGraphView.PreviewChanged();
+        }
         if(mGraphViewR != null){
             mGraphViewR.setAlpha(0.75f);
             mGraphViewR.setCaptureModuleObject(this);
@@ -14880,6 +14960,97 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public boolean getCameraModeSwitcherAllowed() {
         return mCameraModeSwitcherAllowed;
+    }
+}
+
+class Camera2RequestGapGraphView extends View {
+    private Bitmap  mBitmap;
+    private Paint   mPaint = new Paint();
+    private Paint   mPaintRect = new Paint();
+    private Canvas  mCanvas = new Canvas();
+    private float   mScale = (float)100;
+    private float   mWidth;
+    private float   mHeight;
+    private CaptureModule mCaptureModule;
+    private float scaled;
+    private static final int STATS_SIZE = 100;
+    private static final String TAG = "Camera2RequestGapGraphView";
+
+    public Camera2RequestGapGraphView(Context context, AttributeSet attrs) {
+        super(context,attrs);
+        mPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+        mPaintRect.setColor(0xFFFFFFFF);
+        mPaintRect.setStyle(Paint.Style.FILL);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565);
+        mCanvas.setBitmap(mBitmap);
+        mWidth = w;
+        mHeight = h;
+        super.onSizeChanged(w, h, oldw, oldh);
+    }
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if(mCaptureModule == null || (mCaptureModule.mPerformanceDebugEnable != null &&
+                mCaptureModule.mPerformanceDebugEnable.equals("off"))) {
+            Log.e(TAG, "returning as performance debug is off ");
+            return;
+        }
+
+        if (mBitmap != null) {
+            final Paint paint = mPaint;
+            final Canvas cavas = mCanvas;
+            final float border = 5;
+            float graphheight = mHeight - (2 * border);
+            float graphwidth = mWidth - (2 * border);
+            float left, top, right, bottom;
+            float bargap = 0.0f;
+            float barwidth = graphwidth / STATS_SIZE;
+
+            cavas.drawColor(0xFFAAAAAA);
+            paint.setColor(Color.BLACK);
+
+            for (int k = 0; k <= (graphheight / 32); k++) {
+                float y = (float) (32 * k) + border;
+                cavas.drawLine(border, y, graphwidth + border, y, paint);
+            }
+            for (int j = 0; j <= (graphwidth / 32); j++) {
+                float x = (float) (32 * j) + border;
+                cavas.drawLine(x, border, x, graphheight + border, paint);
+            }
+            synchronized(CaptureModule.mPerformanceGapData) {
+                for(int i=0 ; i < CaptureModule.mPerformanceGapData.size() ; i++)  {
+                    scaled = (CaptureModule.mPerformanceGapData.get(i)/mScale)*graphheight;
+                    left = (bargap * (i + 1)) + (barwidth * (i)) + border;
+                    top = graphheight + border;
+                    right = left + barwidth;
+                    bottom = top - scaled;
+                    Log.d(TAG,"i:" + i + ",value:" + CaptureModule.mPerformanceGapData.get(i) +
+                            ",left:" + left +",top:" +top+",right:" + right +",bottom:" + bottom);
+                    cavas.drawRect(left, top, right, bottom, mPaintRect);
+                }
+            }
+            canvas.drawBitmap(mBitmap, 0, 0, null);
+            paint.setColor(Color.RED);
+            paint.setTextSize(30);
+            cavas.drawLine(0, border, 3*border, border, paint);
+            canvas.drawText(Float.toString(mScale), 3*border, 20, paint);
+            cavas.drawLine(0, graphheight/4*3 + border, 3*border, graphheight/4*3 + border, paint);
+            canvas.drawText(Float.toString(mScale/4), 3*border, graphheight/4*3 + 15, paint);
+            cavas.drawLine(0, graphheight/2 + border, 3*border, graphheight/2 + border, paint);
+            canvas.drawText(Float.toString(mScale/2), 3*border, graphheight/2 + 15, paint);
+            cavas.drawLine(0, graphheight/4 + border, 3*border, graphheight/4 + border, paint);
+            canvas.drawText(Float.toString(mScale/4*3), 3*border, graphheight/4 + 15, paint);
+        }
+    }
+    public void PreviewChanged() {
+        invalidate();
+    }
+
+    public void setCaptureModuleObject(CaptureModule captureModule) {
+        mCaptureModule = captureModule;
     }
 }
 
