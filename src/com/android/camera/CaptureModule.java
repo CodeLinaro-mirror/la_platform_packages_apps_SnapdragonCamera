@@ -3956,7 +3956,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      */
     private void takePicture() {
         Log.d(TAG, "takePicture");
-        if(!getCameraModeSwitcherAllowed() || !mUI.isShutterEnabled() || mCurrentSessionClosed || mPreviewCaptureResult == null){
+        if(!getCameraModeSwitcherAllowed() || !mUI.isShutterEnabled() || mCurrentSessionClosed){
             Log.d(TAG, "mode switch not finished or shutter button is not enabled or session is closed, can not take snapshot");
             return;
         }
