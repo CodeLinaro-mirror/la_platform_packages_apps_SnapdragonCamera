@@ -194,6 +194,10 @@ public class FaceView extends View
         mFaces = null;
         invalidate();
     }
+    @Override
+    public void reset() {
+
+    }
 
     public void pause() {
         mPause = true;

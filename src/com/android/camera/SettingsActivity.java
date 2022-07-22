@@ -1588,7 +1588,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
         updateStoragePreference();
-        updateLongShotPreference();
         updateVideoHfrFpsPreference();
         updateEISPreference();
         updateT2TPreference();
@@ -1659,6 +1658,9 @@ public class SettingsActivity extends PreferenceActivity {
             if (mode == CaptureModule.CameraMode.VIDEO && isShowRTB) {
                 key.add("RTB");
                 value.add("rtb");
+            }else if (mode == CaptureModule.CameraMode.HFR ){
+                key.remove("SAT");
+                value.remove("sat");
             }
             pref.setEntries(key.toArray(new CharSequence[key.size()]));
             pref.setEntryValues(value.toArray(new CharSequence[value.size()]));
@@ -1974,17 +1976,14 @@ public class SettingsActivity extends PreferenceActivity {
         SwitchPreference longShot = (SwitchPreference) findPreference(
                 SettingsManager.KEY_LONGSHOT);
         if (longShot != null) {
-            if(isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)){
-                longShot.setEnabled(true);
-            } else {
-                if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
+                if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) && !isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)) {
                     mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
                     longShot.setEnabled(false);
-                } else {
+                    longShot.setChecked(false);
+                } else if(isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) && isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)) {
                     longShot.setEnabled(true);
                 }
             }
-        }
     }
     private void updatePictureFormatPreference(){
        ListPreference pictureFormatPref = (ListPreference)findPreference(SettingsManager.KEY_PICTURE_FORMAT);

@@ -465,4 +465,13 @@ public class Camera2FaceView extends FaceView {
         mExFaces = null;
         invalidate();
     }
+    @Override
+    public void reset() {
+        // Face indicator is displayed during preview. Do not clear the
+        // drawable.
+        mFaces = null;
+        mExFaces = null;
+        mColor = mFocusingColor;
+        invalidate();
+    }
 }
