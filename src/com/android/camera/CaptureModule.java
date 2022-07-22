@@ -9319,6 +9319,12 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void pauseVideoRecording() {
         Log.v(TAG, "pauseVideoRecording");
+        if(!PersistUtil.enableMediaRecorder()){
+            Bundle params = new Bundle();
+            params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 1);
+            mAudioEncoder.setParameters(params);
+            mVideoEncoder.setParameters(params);
+        }
         mRecordingPausing = true;
         mRecordingPauseTime = SystemClock.uptimeMillis();
         mRecordingTotalTime += mRecordingPauseTime - mRecordingStartTime;
@@ -9353,6 +9359,12 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void resumeVideoRecording() {
         Log.v(TAG, "resumeVideoRecording");
+        if(!PersistUtil.enableMediaRecorder()){
+            Bundle params = new Bundle();
+            params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 0);
+            mAudioEncoder.setParameters(params);
+            mVideoEncoder.setParameters(params);
+        }
         mRecordingPausing = false;
         mRecordingStartTime = SystemClock.uptimeMillis();
         mRecordingPausingTime += mRecordingStartTime - mRecordingPauseTime;
