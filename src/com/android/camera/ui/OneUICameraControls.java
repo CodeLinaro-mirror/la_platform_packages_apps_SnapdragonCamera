@@ -876,7 +876,7 @@ public class OneUICameraControls extends RotatableLayout {
 
     private void setProModeParameters() {
         int width = (mWidth > mHeight) ? mHeight : mWidth;
-        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(width / 5, width / 15);
+        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(width / 5, width / 10);
         for (TextView v : mProViews) {
             v.setLayoutParams(llp);
         }
@@ -889,7 +889,7 @@ public class OneUICameraControls extends RotatableLayout {
             return;
         }
         mProModeLayout.setVisibility(VISIBLE);
-        mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() - 100);
+        mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() - 90);
     }
     public void setModeEnable(int mode,boolean isEnable) {
         switch (mode) {

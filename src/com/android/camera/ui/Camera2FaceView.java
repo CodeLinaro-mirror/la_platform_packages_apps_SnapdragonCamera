@@ -60,6 +60,7 @@ public class Camera2FaceView extends FaceView {
     private float mZoom = 1.0f;
 
     private int[] mFacialMasks;
+    private int mMaskNums = 0;
 
     private Handler mHandler = new Handler() {
         @Override
@@ -69,7 +70,7 @@ public class Camera2FaceView extends FaceView {
                     mStateSwitchPending = false;
                     mFaces = mPendingFaces;
                     mExFaces = mPendingExFaces;
-                    invalidate();
+                    postInvalidate();
                     break;
             }
         }
@@ -178,25 +179,19 @@ public class Camera2FaceView extends FaceView {
             Log.v(TAG, "Num of ex faces=" + mExFaces.length);
         }
         if (!mBlocked && (mFaces != null) && (mFaces.length > 0) && mCameraBound != null) {
-            invalidate();
+            postInvalidate();
         }
     }
 
-    public void setFacialMasks(int[] facialMasks) {
-        mFacialMasks = facialMasks;
-        if (!mBlocked && (facialMasks != null) && (facialMasks.length > 0) && mCameraBound != null) {
-            invalidate();
+    public void setFacialMasks(int[] facialMasks, int maskNums) {
+        if (facialMasks != null) {
+            mFacialMasks = facialMasks;
         }
-    }
-
-    public void clearFacialMasks() {
-        mFacialMasks = null;
-        invalidate();
-    }
-
-    public void clearFacePoint() {
-        mFaces = null;
-        invalidate();
+        mMaskNums = maskNums;
+        if (!mBlocked && (facialMasks != null) && (facialMasks.length > 0) &&
+                mCameraBound != null && maskNums > 0) {
+            postInvalidate();
+        }
     }
 
     private boolean isFDRectOutOfBound(Rect faceRect) {
@@ -323,8 +318,11 @@ public class Camera2FaceView extends FaceView {
                 }
             }
 
-            if (mFacialMasks != null && mFacialMasks.length > 4) {
+            if (mMaskNums > 0 && mFacialMasks != null && mFacialMasks.length > 4) {
                 for (int i = 0; i < mFacialMasks.length; i += 4) {
+                    if (mMaskNums == 0) {
+                        break;
+                    }
                     if ((mFacialMasks[i+2] - mFacialMasks[i])  > 0 &&
                             (mFacialMasks[i+3] - mFacialMasks[i+1]) > 0) {
                         Rect faceMask = new Rect(mFacialMasks[i], mFacialMasks[i+1],
@@ -574,6 +572,15 @@ public class Camera2FaceView extends FaceView {
         // drawable.
         mFaces = null;
         mExFaces = null;
+        invalidate();
+    }
+    @Override
+    public void reset() {
+        // Face indicator is displayed during preview. Do not clear the
+        // drawable.
+        mFaces = null;
+        mExFaces = null;
+        mColor = mFocusingColor;
         invalidate();
     }
 }

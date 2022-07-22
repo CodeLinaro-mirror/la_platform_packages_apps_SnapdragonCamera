@@ -1056,6 +1056,11 @@ public class PieRenderer extends OverlayRenderer
         clear(false);
     }
 
+    @Override
+    public void reset() {
+
+    }
+
     private void startAnimation(long duration, boolean timeout,
             float toScale) {
         startAnimation(duration, timeout, mDialAngle,

@@ -92,6 +92,9 @@ public class VendorTagUtil {
     private static final CaptureRequest.Key<Integer> VIULL_ENALE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVIULL", Integer.class);
 
+    private static final CaptureRequest.Key<Float> targetZoom =
+            new CaptureRequest.Key<>("org.quic.camera.clickZoom.targetZoom", Float.class);
+
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
     private static final int MANUAL_WB_GAINS_MODE = 2;
@@ -307,6 +310,12 @@ public class VendorTagUtil {
     public static void setVIULLMode(CaptureRequest.Builder builder, int enable) {
         if (isSupported(builder, VIULL_ENALE)) {
             builder.set(VIULL_ENALE, enable);
+        }
+    }
+
+    public static void setTargetZoom(CaptureRequest.Builder builder, float value) {
+        if (isSupported(builder, targetZoom)) {
+            builder.set(targetZoom, value);
         }
     }
 }

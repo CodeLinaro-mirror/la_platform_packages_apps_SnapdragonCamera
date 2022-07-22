@@ -68,7 +68,7 @@ public class FocusStateListener {
                 break;
             case CaptureResult.CONTROL_AF_STATE_INACTIVE:
                 Log.d(TAG, "CONTROL_AF_STATE_INACTIVE clearFocus");
-                mUI.clearFocus();
+                mUI.resetFocus();
                 break;
         }
     }

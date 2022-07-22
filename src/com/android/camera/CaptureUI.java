@@ -355,6 +355,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private int mOfflineDumpTriIndex = 0;
     private boolean mZoomIncrease = true;
     private boolean mShowFocusCircle = true;
+    private boolean mFaceUpdated = false;
 
 
     private boolean[] mSurfaceReady = {false,false,false,false};
@@ -2658,6 +2659,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mShutterButton != null) {
             mShutterButton.setEnabled(enabled);
         }
+        if(!enabled || !mModule.isLongExpTmCaptrure()) stopShutterAnim();
     }
     public void startShutterAnim(long totalProgress) {
         mCurrentProgress = 0;
@@ -2938,7 +2940,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mShowFocusCircle = false;
         }
     }
-
+    public boolean isChangeFocus(){
+        if(mFaceView != null && mFaceView.faceExists()) {
+            return mFaceUpdated;
+        }
+        return false;
+    }
     private ArrayList<FocusIndicator> getFocusIndicator() {
         ArrayList<FocusIndicator> foucusList =new ArrayList<>();
         if (mModule.isTrackingFocusSettingOn()) {
@@ -2972,6 +2979,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mPieRenderer.clear();
             }
             foucusList.add(mFaceView);
+            mFaceUpdated = false;
+
         } else {
             if(mShowFocusCircle)
             foucusList.add(mPieRenderer);
@@ -3009,23 +3018,19 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mFaceView != null) mFaceView.clear();
     }
 
-    public void clearFacialMasks() {
-        if (mFaceView != null) {
-            mFaceView.clearFacialMasks();
-        }
-    }
-
-    public void clearFacePoint() {
-        if (mFaceView != null) {
-            mFaceView.clearFacePoint();
-        }
-    }
-
     @Override
     public void clearFocus() {
         ArrayList<FocusIndicator> indicators = getFocusIndicator();
         for (FocusIndicator indicator : indicators) {
             if (indicator != null) indicator.clear();
+        }
+        mIsTouchAF = false;
+    }
+    @Override
+    public void resetFocus() {
+        ArrayList<FocusIndicator> indicators = getFocusIndicator();
+        for (FocusIndicator indicator : indicators) {
+            if (indicator != null) indicator.reset();
         }
         mIsTouchAF = false;
     }
@@ -3088,6 +3093,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         mFaceView.setZoom(zoomValue);
         mFaceView.resume();
+        mFaceUpdated = true;
     }
 
     public void updateFaceViewCameraBound(Rect cameraBound) {
@@ -3118,8 +3124,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFaceView.setFaces(faces,extendedFaces);
     }
 
-    public void onFacialMaskDetection(int[] facialMasks) {
-        mFaceView.setFacialMasks(facialMasks);
+    public void onFacialMaskDetection(int[] facialMasks, int maskNums) {
+        mFaceView.setFacialMasks(facialMasks, maskNums);
     }
 
     public Point getSurfaceViewSize() {

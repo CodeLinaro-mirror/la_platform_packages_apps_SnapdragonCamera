@@ -129,7 +129,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
 	public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
     public static final int JPEG_FORMAT = 0;
     public static final int HEIF_FORMAT = 1;
-    public static final int DNG_FORMAT = 2;
     public static final String LOGICAL_AND_PHYSICAL = "99";
     public static final String SCENE_MODE_DUAL_STRING = "100";
     public static final String SCENE_MODE_SUNSET_STRING = "10";
@@ -464,7 +463,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             flashEnable =false;
          }
        if (getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("manual")){
-           return torchHDREnable && flashEnable;
+           String hdrmode = getVideoHdrMode();
+           if (hdrmode != null && !hdrmode.equals("off")) return torchHDREnable && flashEnable;
        }else if(getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("auto")){
             return  torchHDREnable && flashEnable && isTorchHdrTag;
        }
@@ -674,6 +674,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     List<Size> sizes = Arrays.asList(streamConfigurationMap.getHighResolutionOutputSizes(format));
                     for (Size entry: sizes) {
                         Log.i(TAG,"add QCFA picture size:" + entry.toString());
+                        if (entry.getWidth() == 1920 && entry.getHeight() == 1080) {
+                            continue;
+                        }
                         res.add(entry);
                     }
                 }
@@ -681,6 +684,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     List<Size> sizes = Arrays.asList(streamConfigurationMap.getOutputSizes(format));
                     for (Size entry: sizes) {
                         Log.i(TAG,"add QCFA picture size:" + entry.toString());
+                        if (entry.getWidth() == 1920 && entry.getHeight() == 1080) {
+                            continue;
+                        }
                         res.add(entry);
                     }
                 }
@@ -3149,6 +3155,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return true;
     }
 
+    private boolean isMfSHDREnable() {
+        final SharedPreferences pref = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext,
+                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        boolean isMfHDR = pref.getBoolean(KEY_MANUAL_MFHDR, false);
+        boolean isSHDR = pref.getBoolean(KEY_MANUAL_SHDR, false);
+        return isMfHDR || isSHDR;
+    }
+
     private List<String> getSupportedPictureSize(int cameraId) {
         if (cameraId > mCharacteristics.size())return null;
         StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
@@ -3158,6 +3173,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
         boolean isDeepportrait = getDeepportraitEnabled();
         boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
+        boolean isMfSHDREnabled = isMfSHDREnable();
 
         if (getQuadBayerSensorPrefEnabled()) {
             List<Size> qcfaSizes = getSupportedQCFAMaxPictureSizeList(Integer.toString(cameraId), ImageFormat.JPEG);
@@ -3194,6 +3210,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         (Math.min(sizes[i].getWidth(),sizes[i].getHeight()) < 720 ||
                         Math.max(sizes[i].getWidth(),sizes[i].getHeight()) <= 1024)) {
                     //some reslutions are not supported in deepportrait
+                    continue;
+                }
+
+                if (isMfSHDREnabled &&
+                        (sizes[i].getWidth() <= 352 && sizes[i].getHeight() <= 288)) {
+                    // MFHDR didn`t support CIF/QVGA
                     continue;
                 }
                 res.add(sizes[i].toString());
@@ -4344,6 +4366,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         }
                     }
                     Log.v(TAG, " getVideoHdrMode hdrmode:" + hdrmode.toString());
+                    if(hdrmode.toString().equals("")) return "off";
+                    else
                     return hdrmode.toString();
                 }
             }else{

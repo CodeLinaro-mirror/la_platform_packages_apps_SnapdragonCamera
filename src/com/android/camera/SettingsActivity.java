@@ -318,6 +318,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updateZslPreference();
                     updateLongShotPreference();
                     updatePictureFormatPreference();
+                    updateSwitchIDInModePreference(false);
                     if(mSettingsManager.isMultiCameraEnabled()){
                         recreate();
                     }
@@ -402,9 +403,22 @@ public class SettingsActivity extends PreferenceActivity {
                 if(mSettingsManager.KEY_FACE_DETECTION.equals(pref.getKey())){
                     updateT2TPreference();
                 }
+                if(mSettingsManager.KEY_SWITCH_CAMERA .equals(pref.getKey())){
+                    checkExposurTimeValue();
+                }
             }
         }
     };
+    private void checkExposurTimeValue(){
+        String exposuretime = mSettingsManager.getKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE);
+        long []mExposureTime = mSettingsManager.getExposureRangeValues();
+        if(exposuretime != null && !exposuretime.equals("") && !exposuretime.equals("auto")){
+            long exptime = PersistUtil.strToLong(exposuretime,100000000);
+            if(mExposureTime[1] < exptime){
+                mSettingsManager.setKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE,true,String.valueOf(mExposureTime[1]));
+            }
+        }
+    }
     private boolean isPrefEnabled(String key) {
         boolean result = false;
         String prefValue = mSettingsManager.getValue(key);
@@ -1057,7 +1071,7 @@ public class SettingsActivity extends PreferenceActivity {
             if (modes[i] == 1) {
                 listData.add(SettingsManager.KEY_MANUAL_SHDR);
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_SHDR).append("#");
-            } else if (modes[i] == 2 ) {
+            } else if (modes[i] == 2 && !mSettingsManager.isAIBokehMode()) {
                 listData.add(SettingsManager.KEY_MANUAL_MFHDR);
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_MFHDR).append("#");
             } else if (modes[i] == 3) {
@@ -1087,6 +1101,8 @@ public class SettingsActivity extends PreferenceActivity {
                 editor.putBoolean(title, isChecked);
                 editor.commit();
                 updateHdrRefOp();
+                mSettingsManager.updatePictureAndVideoSize();
+                updatePreference(SettingsManager.KEY_PICTURE_SIZE);
             }
         });
 
@@ -1919,7 +1935,8 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setValueIndex(idx);
             String cameraValue = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
             if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
-            pref.setEnabled((CaptureModule.MCXMODE && isBack) || (mSettingsManager.isAICameraOn() && mode == CaptureModule.CameraMode.VIDEO));
+            pref.setEnabled((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
+                    (mSettingsManager.isAICameraOn() && mode == CaptureModule.CameraMode.VIDEO));
         }
     }
 
