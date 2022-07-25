@@ -220,6 +220,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if(mode == CaptureModule.CameraMode.VIDEO) {
                     updateSwitchIDInModePreference(true);
                 }
+                updateViullPreference();
             }
             List<String> list = mSettingsManager.getDependentKeys(key);
             if (list != null) {
@@ -2212,6 +2213,13 @@ public class SettingsActivity extends PreferenceActivity {
 
         String videoHdrMode = mSettingsManager.getVideoHdrMode();
         if (videoHdrMode != null && videoHdrMode.toLowerCase().contains("mfhdr")) {
+            pref.setValue("0");
+            pref.setEnabled(false);
+            return;
+        }
+
+        String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
+        if ("HEVCProfileMain10HDR10Plus".equals(profile)) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;
