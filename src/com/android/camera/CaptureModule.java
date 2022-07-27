@@ -9000,6 +9000,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
     private void setTimeStamp(List<OutputConfiguration> outConfigurations,int timestamp){
         if(PersistUtil.isSetTimeStamp()){
+            if(CameraMode.VIDEO == mCurrentSceneMode.mode && mSettingsManager.getVideoFPS() > 30){
+                return;
+            }
             try{
                 Log.d(TAG,"setTimeStamp outConfigurations.size()="+outConfigurations.size());
                 for(int i = 0; i < outConfigurations.size(); i++) {
