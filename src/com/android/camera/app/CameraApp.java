@@ -28,6 +28,7 @@ public class CameraApp extends Application {
     private static long mMaxSystemMemory;
     public static boolean mIsLowMemoryDevice = false;
     private static final long LOW_MEMORY_DEVICE_THRESHOLD = 2L*1024*1024*1024;
+    public static boolean isColdStart;
     @Override
     public void onCreate() {
         super.onCreate();
@@ -43,6 +44,7 @@ public class CameraApp extends Application {
         UsageStatistics.initialize(this);
         CameraUtil.initialize(this);
         SDCard.initialize(this);
+        isColdStart = true;
     }
 
     public static CameraApp sInstance;

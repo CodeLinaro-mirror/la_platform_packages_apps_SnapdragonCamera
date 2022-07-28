@@ -104,6 +104,7 @@ import android.graphics.Color;
 import android.util.AttributeSet;
 import android.util.Pair;
 
+import com.android.camera.app.CameraApp;
 import com.android.camera.data.Camera2ModeAdapter.OnItemClickListener;
 import com.android.camera.deepportrait.CamGLRenderObserver;
 import com.android.camera.deepportrait.CamGLRenderer;
@@ -3361,8 +3362,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mPhysicalYuvReader[i].getSurface());
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
+                    setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 }
-                setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 outputConfigurations.add(configuration);
                 Log.d(TAG,"add output format=yuv physicalId="+id+" size="
                         +mPhysicalYuvReader[i].getWidth()+"x"+mPhysicalYuvReader[i].getHeight());
@@ -3379,8 +3380,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mPhysicalYuv10bitReader[i].getSurface());
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
+                    setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 }
-                setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 outputConfigurations.add(configuration);
                 Log.d(TAG,"add output format=yuv 10bit physicalId="+id+" size="
                         +mPhysicalYuv10bitReader[i].getWidth()+"x"+mPhysicalYuv10bitReader[i].getHeight());
@@ -3397,8 +3398,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mPhysicalRawReader[i].getSurface());
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
+                    setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 }
-                setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 outputConfigurations.add(configuration);
                 i++;
             }
@@ -3408,8 +3409,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 OutputConfiguration configuration = new OutputConfiguration(mPhysicalRawReader[i].getSurface());
                 if (!isLogicalId(id)) {
                     configuration.setPhysicalCameraId(id);
+                    setStreamUseCase(Integer.parseInt(id), SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV, configuration);
                 }
-                setStreamUseCase(Integer.parseInt(id), SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV, configuration);
                 outputConfigurations.add(configuration);
                 Log.d(TAG, "add raw output physicalId=" + id + " size="
                         + mPhysicalRawReader[i].getWidth() + "x" + mPhysicalRawReader[i].getHeight() + ",mPhysicalRawReader[i].getSurface()=" + mPhysicalRawReader[i].getSurface());
@@ -4269,6 +4270,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyVideoFlash(builder, id); //apply flash mode for video/HFR
             } else {
                 applyFlash(builder, id); //apply flash mode and AEmode for this temp builder
+            }
+            if (mSettingsManager.isMaxConfigureSize(id, mVideoSize)) {
+                builder.set(CaptureRequest.SENSOR_PIXEL_MODE,
+                        CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
+                Log.v(TAG, " set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
             }
             if (mCurrentSceneMode.mode == CameraMode.HFR && isHighSpeedRateCapture()) {
                 List<CaptureRequest> tafBuilderList = isSSMEnabled() ?
@@ -6925,7 +6931,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
         }
-        reinit();
+        if(!CameraApp.isColdStart){
+            reinit();
+        }
+        CameraApp.isColdStart = false;
         mPaused = false;
         mStatsVisualEnable = mSettingsManager.getValue(
                 SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
@@ -8011,8 +8020,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                         if (FD_DEBUG) {
                             Log.d(FD_TAG, "fd gender face_id " + face_id);
                         }
-                        int[] confidences = new int[2];
-                        for (int j = 0; j < 2; j++) {
+                        int genderCount = ExtendedFace.FDGenderIndex.values().length;
+                        int[] confidences = new int[genderCount];
+                        for (int j = 0; j < genderCount; j++) {
                             confidences[j] = byteArray2Int(genderArray, arrayIndex);
                             arrayIndex += 4;
                             if (FD_DEBUG) {
@@ -8409,7 +8419,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updatePictureSize() {
         String pictureSize = mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE);
         int currentId = getMainCameraId();
-        int rawFormat = mSettingsManager.getRawFormat() != 0 ? mSettingsManager.getRawFormat() : ImageFormat.RAW10;
+        int rawFormat = mSettingsManager.getRawFormat() ;
         mPictureSize = parsePictureSize(pictureSize);
         if(PersistUtil.isRawReprocessQcfa()){
             mPictureSize = new Size(8000,6000);
@@ -8455,7 +8465,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (maxRawSize != null && (rawFormat == ImageFormat.RAW10 ||
                     (rawFormat == ImageFormat.RAW_SENSOR && isRawReprocess()))) {
                 mSupportedRawPictureSize = maxRawSize;
-            } else if ((maxRawSize == null || (rawFormat == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null) {
+            } else if ((mSupportedRawPictureSize == null || (rawFormat == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null) {
                 mSupportedRawPictureSize = rawSize[0];
                 Log.i(TAG, "rawSize: " + rawSize[0].toString());
             }
@@ -13065,28 +13075,37 @@ public class CaptureModule implements CameraModule, PhotoController,
                 ComboPreferences.getLocalSharedPreferencesName(mActivity,
                         String.valueOf(CURRENT_ID)), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = pref.edit();
-        editor.putFloat(SettingsManager.KEY_AWB_RAGIN_VALUE, mRGain);
-        editor.putFloat(SettingsManager.KEY_AWB_GAGIN_VALUE, mGGain);
-        editor.putFloat(SettingsManager.KEY_AWB_BAGIN_VALUE, mBGain);
-        editor.putFloat(SettingsManager.KEY_AWB_CCT_VALUE, mCctAWB);
-        editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_0, mAWBDecisionAfterTC[0]);
-        editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_1, mAWBDecisionAfterTC[1]);
-        editor.putInt(SettingsManager.KEY_WARM_START_EXPOSURE_COUNT, mExposureCount);
-        editor.putInt(SettingsManager.KEY_WARM_START_AEC_CAMERA_ID, mAECCameraId);
-
-        if (mAECSensitivity.length == 3) {
-            editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_0, mAECSensitivity[0]);
-            editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_1, mAECSensitivity[1]);
-            editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_2, mAECSensitivity[2]);
+        if(mExistAWBVendorTag) {
+            editor.putFloat(SettingsManager.KEY_AWB_RAGIN_VALUE, mRGain);
+            editor.putFloat(SettingsManager.KEY_AWB_GAGIN_VALUE, mGGain);
+            editor.putFloat(SettingsManager.KEY_AWB_BAGIN_VALUE, mBGain);
+            editor.putFloat(SettingsManager.KEY_AWB_CCT_VALUE, mCctAWB);
+            editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_0, mAWBDecisionAfterTC[0]);
+            editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_1, mAWBDecisionAfterTC[1]);
         }
-        if (mAECLuxIndex != -1.0f) {
-            editor.putFloat(SettingsManager.KEY_AEC_LUX_INDEX, mAECLuxIndex);
+        if(mExposureCountTag) {
+            editor.putInt(SettingsManager.KEY_WARM_START_EXPOSURE_COUNT, mExposureCount);
         }
-        if (mAdrcGain != -1.0f) {
-            editor.putFloat(SettingsManager.KEY_AEC_ADRC_GAIN, mAdrcGain);
+        if(mAECCameraIdTag) {
+            editor.putInt(SettingsManager.KEY_WARM_START_AEC_CAMERA_ID, mAECCameraId);
         }
-        if (mDarkBoostGain != -1.0f) {
-            editor.putFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, mDarkBoostGain);
+        if (mExistAECWarmTag) {
+            if (mAECSensitivity.length == 3) {
+                editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_0, mAECSensitivity[0]);
+                editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_1, mAECSensitivity[1]);
+                editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_2, mAECSensitivity[2]);
+            }
+            if (mAECLuxIndex != -1.0f) {
+                editor.putFloat(SettingsManager.KEY_AEC_LUX_INDEX, mAECLuxIndex);
+            }
+        }
+        if (mExistAECDarkGainTag) {
+            if (mAdrcGain != -1.0f) {
+                editor.putFloat(SettingsManager.KEY_AEC_ADRC_GAIN, mAdrcGain);
+            }
+            if (mDarkBoostGain != -1.0f) {
+                editor.putFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, mDarkBoostGain);
+            }
         }
         editor.apply();
     }
