@@ -3005,7 +3005,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Log.d(TAG, " isDynamicRangeTenBitSupported HLG10Support :" + HLG10Support +
                     ", HDR10Support :" + HDR10Support + ", HDR10_PLUSSupport :" + HDR10_PLUSSupport);
             }
-        } catch (NoSuchFieldError error) {
+        } catch (NoSuchFieldError | IllegalArgumentException error) {
             Log.w(TAG, " No field REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES ");
         }
         return isSupported;
