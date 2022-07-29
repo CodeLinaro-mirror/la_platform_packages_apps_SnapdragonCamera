@@ -518,4 +518,11 @@ public class PersistUtil {
     public static boolean useTextureViewToPreview() {
         return getBoolean("persist.sys.camera.use_texture_view_to_preview", false);
     }
+
+    private static final int PERSIST_FOCUS_ASSIST_MODE_TIMEOUT =
+            getInt("persist.sys.camera.focus_assist_mode.timeout", 10000);
+
+    public static int getFocusAssistModeTimeout() {
+        return PERSIST_FOCUS_ASSIST_MODE_TIMEOUT;
+    }
 }

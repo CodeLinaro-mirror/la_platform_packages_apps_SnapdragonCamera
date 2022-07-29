@@ -23,11 +23,6 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
-/*
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
- */
 
 package com.android.camera;
 
@@ -45,8 +40,10 @@ import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -123,6 +120,7 @@ import com.android.camera.deepportrait.CamGLRenderer;
 import com.android.camera.deepportrait.DPImage;
 import com.android.camera.deepportrait.GLCameraPreview;
 import com.android.camera.exif.ExifInterface;
+import com.android.camera.gles.CameraRender;
 import com.android.camera.imageprocessor.filter.BlurbusterFilter;
 import com.android.camera.imageprocessor.filter.ChromaflashFilter;
 import com.android.camera.imageprocessor.filter.DeepPortraitFilter;
@@ -811,6 +809,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final CaptureRequest.Key<Float> blurChromaSuppressionV =
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionV", Float.class);
 
+    public static final CaptureResult.Key<Byte> focusAssistEnable =
+            new CaptureResult.Key<>("org.quic.camera.touchFocusAssist.touchFocusAssist", byte.class);
+
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_VENDOR_START = 0x10000;
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV = 0x10001;
     private static final int TIMESTAMP_BASE_SENSOR = OutputConfiguration.TIMESTAMP_BASE_SENSOR;
@@ -1195,6 +1196,14 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private long mIsoExposureTime;
     private int mIsoSensitivity;
+
+    private CameraRender mCameraRender;
+
+    private OutputConfiguration mFAOutputConfiguration;
+
+    private Surface mPreviewSurface;
+
+    private Surface mFASurface;
 
     private CamGLRenderer mRenderer;
     private boolean mDeepPortraitMode = false;
@@ -3365,6 +3374,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                             outputConfigurations.add(configuration);
                         }
                     }
+
+                    if (true) {
+                        for (OutputConfiguration configuration : outputConfigurations) {
+                            if (surface.equals(configuration.getSurface())) {
+                                Log.d(TAG, "enable preview surface output configuration sharing");
+                                configuration.enableSurfaceSharing();
+                                mFAOutputConfiguration = configuration;
+                            }
+                        }
+
+                    }
                 }
                 if(mChosenImageFormat == ImageFormat.YUV_420_888 || mChosenImageFormat == ImageFormat.PRIVATE) {
                     if (mPostProcessor.isZSLEnabled()) {
@@ -3952,6 +3972,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         mFocusStateListener = new FocusStateListener(mUI);
         mLocationManager = new LocationManager(mActivity, this);
+        mCameraRender = new CameraRender();
     }
 
     public void restoreCameraIds(){
@@ -4531,7 +4552,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(mLockAFAE == LOCK_AF_AE_STATE_NONE) {
                 Message message =
                         mCameraHandler.obtainMessage(CANCEL_TOUCH_FOCUS, id, 0, mCameraId[id]);
-                mCameraHandler.sendMessageDelayed(message, CANCEL_TOUCH_FOCUS_DELAY);
+                sendFocusCancelMsg(message);
             }
         } catch (CameraAccessException | IllegalStateException | IllegalArgumentException e) {
             Log.e(TAG,e);
@@ -7107,6 +7128,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mSurfaceReadyLock.release();
         }
         mToast = null;
+        onFocusAssistModeStop();
         mUI.onPause();
         if (mLongshoting){
             if (mCurrentSession != null) {
@@ -7756,6 +7778,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSettingsManager.unregisterListener(this);
         mSettingsManager.unregisterListener(mUI);
         mSettingsManager.destroyCaptureModule();
+        if (mCameraRender != null) {
+            mCameraRender.destroy();
+        }
     }
 
     @Override
@@ -7770,6 +7795,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     @Override
     public boolean onBackPressed() {
+        if (mIsInFocusAssistMode) {
+            onFocusAssistModeStop();
+            return true;
+        }
         return mUI.onBackPressed();
     }
 
@@ -8063,6 +8092,99 @@ public class CaptureModule implements CameraModule, PhotoController,
         return 0;
     }
 
+    private void configureFASurface() {
+        if (mIsInFocusAssistMode) {
+            return;
+        }
+        Log.d(TAG, "configureFASurface");
+        if (mFAOutputConfiguration != null && mCurrentSession != null) {
+            int id = mCurrentSceneMode.getCurrentId();
+            if (mFASurface != null) {
+                try {
+                    mFAOutputConfiguration.removeSurface(mFASurface);
+//                    mCaptureSession[id].updateOutputConfiguration(mFAOutputConfiguration);
+                } catch (IllegalArgumentException e) {
+                    Log.w(TAG, "", e.fillInStackTrace());
+                }
+            }
+            mCameraRender.setPreviewSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+            SurfaceTexture st = mCameraRender.getSurfaceTexture();
+            st.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+            mFASurface = new Surface(st);
+            mPreviewSurface = mFAOutputConfiguration.getSurface();
+            mFAOutputConfiguration.addSurface(mFASurface);
+            try {
+                mCaptureSession[id].updateOutputConfiguration(mFAOutputConfiguration);
+            } catch (CameraAccessException e) {
+                Log.w(TAG, "", e.fillInStackTrace());
+            }
+        }
+        /*mCameraHandler.post(() -> {
+
+        });*/
+    }
+
+    private boolean mIsInFocusAssistMode = false;
+
+    public void onFocusAssistStartPointChange(float xs, float ys) {
+        mCameraRender.setCropRegionStartPoint(xs, ys);
+    }
+
+    public PointF onFocusAssistCenter(final int x, final int y) {
+        int previewW = mPreviewSize.getHeight();
+        int previewH = mPreviewSize.getWidth();
+        float x_ = 1.0f * x / previewW;
+        float y_ = 1.0f - 1.0f * y / previewH;
+        float xs = Math.max(Math.min(x_, 0.75f) - 0.25f, 0f);
+        float ys = Math.max(Math.min(y_, 0.75f) - 0.25f, 0f);
+        onFocusAssistStartPointChange(xs, ys);
+        return new PointF(xs, ys);
+    }
+
+    public void onFocusAssistModeStart(final int x, final int y) {
+        Log.d(TAG, "onFocusAssistModeStart " + x + " " + y);
+        PointF start = onFocusAssistCenter(x, y);
+        mUI.showFocusAssistView(mCameraRender, start.x, start.y);
+        if (mFASurface != null && mPreviewSurface != null) {
+            int id = mCurrentSceneMode.getCurrentId();
+            mPreviewRequestBuilder[id].addTarget(mFASurface);
+            mPreviewRequestBuilder[id].removeTarget(mPreviewSurface);
+            try {
+                mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
+                        .build(), mCaptureCallback, mCameraHandler);
+            } catch (CameraAccessException e) {
+                Log.e(TAG, "onFocusAssistModeStart ", e.fillInStackTrace());
+            }
+        }
+        mIsInFocusAssistMode = true;
+    }
+
+    public void onFocusAssistModeStop() {
+        Log.d(TAG, "onFocusAssistModeStop " + mIsInFocusAssistMode);
+        if (!mIsInFocusAssistMode) {
+            return;
+        }
+        mUI.hideFocusAssistView();
+        int id = mCurrentSceneMode.getCurrentId();
+        if (mFASurface != null && mPreviewSurface != null && mPreviewRequestBuilder[id] != null) {
+            mPreviewRequestBuilder[id].addTarget(mPreviewSurface);
+            mPreviewRequestBuilder[id].removeTarget(mFASurface);
+            try {
+                mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
+                        .build(), mCaptureCallback, mCameraHandler);
+            } catch (CameraAccessException e) {
+                Log.e(TAG, "onFocusAssistModeStart ", e.fillInStackTrace());
+            }
+        }
+        mIsInFocusAssistMode = false;
+    }
+
+    public void onFocusAssistRefocus(float x, float y) {
+        Log.d(TAG, "onFocusAssistReFocus " + x + " " + y);
+        Point point = mUI.getPointInScreen((int)x, (int)y);
+        onSingleTapUp(null, point.x, point.y);
+    }
+
     @Override
     public void onSingleTapUp(View view, int x, int y) {
         if (mPaused || !mCamerasOpened || !mFirstTimeInitialized || !mAutoFocusRegionSupported
@@ -8091,6 +8213,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         mUI.setFocusPosition(x, y);
         mUI.showEvSeekbar(x, y);
+        configureFASurface();
+        int x_ = newXY[0];
+        int y_ = newXY[1];
+        mUI.setFocusPointInPreview(x_, y_);
         x = newXY[0];
         y = newXY[1];
         mInTAF = true;
@@ -14030,6 +14156,24 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mLastResultAFState = resultAFState;
         mLastIsDepthFocus = mIsDepthFocus;
+        if (resultAFState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED) {
+            checkTouchFocusAssistEnable(result);
+        }
+    }
+
+    private void checkTouchFocusAssistEnable(CaptureResult result) {
+        if (mIsInFocusAssistMode) {
+            return;
+        }
+        boolean enable = false;
+        try {
+            enable = result.get(focusAssistEnable) == 1;
+        } catch (Exception e) {}
+        if (enable) {
+            mHandler.post(() ->
+                mUI.showFocusAssistText()
+            );
+        }
     }
 
     private void setDisplayOrientation() {
@@ -14470,11 +14614,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }else{
                         Message message =
                                 mCameraHandler.obtainMessage(CANCEL_TOUCH_FOCUS);
-                        mCameraHandler.sendMessageDelayed(message, CANCEL_TOUCH_FOCUS_DELAY);
+                        sendFocusCancelMsg(message);
                     }
                     break;
             }
         }
+    }
+
+    private void sendFocusCancelMsg(Message message) {
+        if (CANCEL_TOUCH_FOCUS_DELAY <= 0) {
+            return;
+        }
+        mCameraHandler.sendMessageDelayed(message, CANCEL_TOUCH_FOCUS_DELAY);
     }
 
     private class MpoSaveHandler extends Handler {

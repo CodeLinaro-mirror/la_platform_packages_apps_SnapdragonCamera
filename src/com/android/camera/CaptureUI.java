@@ -26,6 +26,7 @@
 package com.android.camera;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -64,6 +65,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
+import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
 import android.view.ViewPropertyAnimator;
 import android.view.ViewStub;
@@ -86,6 +88,8 @@ import com.android.camera.ui.AutoFitSurfaceView;
 import com.android.camera.ui.AutoFitTextureView;
 import com.android.camera.ui.Camera2FaceView;
 import com.android.camera.ui.CameraControls;
+import com.android.camera.ui.FocusAssistImageView;
+import com.android.camera.ui.FocusAssistLayout;
 import com.android.camera.ui.MenuHelp;
 import com.android.camera.ui.OneUICameraControls;
 import com.android.camera.ui.CountDownView;
@@ -196,6 +200,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private int mTorchLen ;
     private int mTorchSection ;
     private TextView mEvValue;
+
+    private FocusAssistImageView mFAImageView;
+    private TextView mFocusAssistTextView;
+    private ViewStub mFAViewStub;
+    private FocusAssistLayout mFALayout;
+    private TextureView mFATextureView;
 
     private SurfaceHolder.Callback callbackMono = new SurfaceHolder.Callback() {
         // SurfaceHolder callbacks
@@ -402,6 +412,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private Allocation mMonoDummyOutputAllocation;
     private boolean mIsMonoDummyAllocationEverUsed = false;
     private boolean mIsTouchAF = false;
+
+    private Point mFocusPoint = new Point();
+    private Point mFocusPointInPreview = new Point();
 
     private int mScreenRatio = CameraUtil.RATIO_UNKNOWN;
     private int mTopMargin = 0;
@@ -3336,6 +3349,117 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return foucusList;
     }
 
+    public void showFocusAssistText() {
+//        Log.d(TAG, "showFocusAssistText");
+        if (mFocusAssistTextView == null) {
+            mFocusAssistTextView = mRootView.findViewById(R.id.focus_assist_tv);
+        }
+        mFocusAssistTextView.setOnClickListener(v -> {
+            Log.d(TAG, "Focus Assist TextView clicked");
+            hideFocusAssistText();
+            mModule.onFocusAssistModeStart(mFocusPointInPreview.x, mFocusPointInPreview.y);
+        });
+        float textSize = mFocusAssistTextView.getTextSize();
+        float offset = textSize * 2;
+        int circleSize = mPieRenderer.getSize() / 2;
+        mFocusAssistTextView.setX(mFocusPoint.x - circleSize);
+        mFocusAssistTextView.setY(mFocusPoint.y - circleSize - offset);
+        mFocusAssistTextView.setVisibility(View.VISIBLE);
+        if (mFAImageView == null) {
+            mFAImageView = mRootView.findViewById(R.id.focus_assist_iv);
+        }
+        FrameLayout.LayoutParams params =
+                new FrameLayout.LayoutParams(mPreviewHeight / 2, mPreviewWidth / 2);
+        int leftMargin = mFocusPoint.x - mPreviewHeight / 2 / 2;
+        int topMargin = mFocusPoint.y - mPreviewWidth / 2 / 2;
+        int[] surfaceViewLocation = new int[2];
+        mSurfaceView.getLocationInWindow(surfaceViewLocation);
+        if (leftMargin < surfaceViewLocation[0]) {
+            leftMargin = surfaceViewLocation[0];
+        } else if (leftMargin > (mPreviewHeight / 2 + surfaceViewLocation[0])) {
+            leftMargin = mPreviewHeight / 2 + surfaceViewLocation[0];
+        }
+        if (topMargin < surfaceViewLocation[1]) {
+            topMargin = surfaceViewLocation[1];
+        } else if (topMargin > (mPreviewWidth / 2 + surfaceViewLocation[1])) {
+            topMargin = mPreviewWidth / 2 + surfaceViewLocation[1];
+        }
+        params.leftMargin = leftMargin;
+        params.topMargin = topMargin;
+        mFAImageView.setLayoutParams(params);
+        mFAImageView.setVisibility(View.VISIBLE);
+    }
+
+    public void hideFocusAssistText() {
+        if (mFocusAssistTextView != null && mFocusAssistTextView.getVisibility() != View.GONE) {
+            mFocusAssistTextView.setVisibility(View.GONE);
+        }
+        if (mFAImageView != null && mFAImageView.getVisibility() != View.GONE) {
+            mFAImageView.setVisibility(View.GONE);
+        }
+    }
+
+    public void showFocusAssistView(TextureView.SurfaceTextureListener listener,
+                                    float cropRegionXs, float cropRegionYs) {
+        if (mFAViewStub == null) {
+            mFAViewStub = mRootView.findViewById(R.id.focus_assist_view_stub);
+            mFALayout = (FocusAssistLayout) mFAViewStub.inflate();
+        }
+        mFALayout.setListener(new FocusAssistLayout.Listener() {
+            @Override
+            public void onExit() {
+                mModule.onFocusAssistModeStop();
+            }
+
+            @Override
+            public void onFocus(float x, float y) {
+                mModule.onFocusAssistRefocus(x, y);
+            }
+
+            @Override
+            public void onStartPointChange(float xs, float ys) {
+                mModule.onFocusAssistStartPointChange(xs, ys);
+            }
+        });
+        mFALayout.setCropRegionStartPoint(cropRegionXs, cropRegionYs);
+        mFATextureView = new TextureView(mActivity);
+        FrameLayout.LayoutParams params =
+                new FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        Gravity.CENTER);
+        mFATextureView.setLayoutParams(params);
+        mFALayout.addView(mFATextureView, 0);
+        mFALayout.setPreviewTexSize(mPreviewHeight, mPreviewWidth);
+        mFALayout.setVisibility(View.VISIBLE);
+        mFATextureView.setSurfaceTextureListener(listener);
+        mFATextureView.setVisibility(View.VISIBLE);
+        Animator animator = ViewAnimationUtils.createCircularReveal(mFALayout, mFocusPoint.x,
+                mFocusPoint.y, 0f, 3000f);
+        animator.setDuration(1500L);
+        animator.start();
+    }
+
+    public void hideFocusAssistView() {
+        if (mFALayout != null) {
+            Animator animator = ViewAnimationUtils.createCircularReveal(mFALayout, mFocusPoint.x,
+                    mFocusPoint.y, mFALayout.getHeight(), 0f);
+            animator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    if (mFATextureView != null && mFALayout != null) {
+                        mFALayout.removeView(mFATextureView);
+                    }
+                    if (mFALayout != null) {
+                        mFALayout.setVisibility(View.GONE);
+                    }
+                }
+            });
+            animator.setDuration(1000L);
+            animator.start();
+        }
+    }
+
     public void showEvSeekbar(int x, int y) {
         if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE) return;
         initEvSeekBar();
@@ -3356,6 +3480,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mEvSeekBar.setVisibility(View.GONE);
             resetEv();
         }
+        hideFocusAssistText();
     }
     @Override
     public boolean hasFaces() {
@@ -3387,6 +3512,19 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void setFocusPosition(int x, int y) {
         mPieRenderer.setFocus(x, y);
         mIsTouchAF = true;
+        mFocusPoint = new Point(x, y);
+    }
+
+    public void setFocusPointInPreview(int x, int y) {
+        mFocusPointInPreview = new Point(x, y);
+    }
+
+    public Point getPointInScreen(int x, int y) {
+        int[] surfaceViewLocation = new int[2];
+        mSurfaceView.getLocationInWindow(surfaceViewLocation);
+        int surfaceViewX = surfaceViewLocation[0];
+        int surfaceViewY = surfaceViewLocation[1];
+        return new Point(surfaceViewX + x, surfaceViewY + y);
     }
 
     @Override
@@ -3584,6 +3722,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     @Override
     public void onSingleTapUp(View view, int x, int y) {
+        hideFocusAssistText();
         mModule.onSingleTapUp(view, x, y);
     }
 
