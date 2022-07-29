@@ -3993,7 +3993,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if(((getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) != null && getValue(SettingsManager.KEY_RAW_FORMAT_TYPE).equals("0")) ||
                 getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) == null) && (((getValue(SettingsManager.KEY_INSENSOR_ZOOM) != null &&
                 getValue(SettingsManager.KEY_INSENSOR_ZOOM).equals("0")) || getValue(SettingsManager.KEY_INSENSOR_ZOOM) == null)) &&
-                getVideoFPS() <= 60){
+                getVideoFPS() < 60){
              return true;
         }
         return false;

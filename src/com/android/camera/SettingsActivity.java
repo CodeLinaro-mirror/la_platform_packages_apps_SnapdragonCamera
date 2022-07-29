@@ -2097,6 +2097,11 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref != null) {
             if (pref.getEntries() != null && pref.getEntries().length == 1){
                 pref.setEnabled(false);
+            }else if(mode == CaptureModule.CameraMode.VIDEO){
+                if (mSettingsManager.isLimitedHDR()) {
+                    pref.setValue("off");
+                    pref.setEnabled(false);
+                }
             }
         }
     }
