@@ -6437,6 +6437,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mStopRecPending = true;
         boolean shouldAddToMediaStoreNow = false;
+
+        //send the EOS in advance
+        Log.d(TAG, "set eos before play record sound");
+        setEndOfStream(false, true);
+
         // Stop recording
         mUI.setSoundEffectsForRecording(true);
         checkAndPlayRecordSound(cameraId, false);
