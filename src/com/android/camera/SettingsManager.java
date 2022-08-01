@@ -2816,7 +2816,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public Rect getSensorActiveArraySize(int id) {
-        if(isMaxConfigureSize(id, getVideoSize())){
+        if (isMaxConfigureSize(id, getVideoSize())) {
             return getSensorActiveMaxArraySize(id);
         }
         return mCharacteristics.get(id).get(CameraCharacteristics
