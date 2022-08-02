@@ -3685,6 +3685,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSettingsManager = SettingsManager.getInstance();
         mSettingsManager.createCaptureModule(this);
         mSettingsManager.registerListener(this);
+        String facing = mSettingsManager.mPreferences.getGlobal().getString(mSettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
+        if (facing.equals("front")) {
+            CURRENT_ID = FRONT_ID;
+        }
         mFirstPreviewLoaded = false;
         Log.d(TAG, "init");
         for (int i = 0; i < MAX_NUM_CAM; i++) {
