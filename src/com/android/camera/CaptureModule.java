@@ -4712,11 +4712,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 aiDenoiserService.wantImagesNum(mCaptureRequestNum);
                 Log.i(TAG,"save jpeg for mfnr aide start");
                 byte[] yuv = getYUVFromImage(mAideFullImage);
+                int stride = mAideFullImage.getPlanes()[0].getRowStride();
                 mAideFullImage.close();
                 mAideFullImage = null;
                 enableShutterButtonOnMainThread(id);
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
-                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,mSupportedAide2Size.getWidth(), mSupportedAide2Size.getHeight(), mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
+                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,mSupportedAide2Size.getWidth(), mSupportedAide2Size.getHeight(), stride,
+                        mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
                 byte[] jpeg = aiDenoiserService.bitmapToJpeg(bitmap, orientation, mCaptureResult, quality);
                 mActivity.getMediaSaveService().addImage(
                         jpeg, title, 0L, null,
