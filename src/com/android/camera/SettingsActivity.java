@@ -213,6 +213,7 @@ public class SettingsActivity extends PreferenceActivity {
             }
             if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
                 updateRawInfoPref();
+                updateLongShotPreference();
             }
             if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)){
                 updateVideoMFHDRPreference();
@@ -256,12 +257,13 @@ public class SettingsActivity extends PreferenceActivity {
                     updateZslPreference();
                 }
 
-                if(pref.getKey().equals(SettingsManager.KEY_QUAD_BAYER_SENSOR)) {
+                if(pref.getKey().equals(SettingsManager.KEY_QUAD_BAYER_SENSOR) || pref.getKey().equals(SettingsManager.KEY_QCFA)) {
                     mSettingsManager.updatePictureAndVideoSize();
                     mSettingsManager.updateHDRSceneMode();
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                     updatePreference(SettingsManager.KEY_SCENE_MODE);
                     updateZslPreference();
+                    updateLongShotPreference();
                 }
 
                 if (pref.getKey().equals(SettingsManager.KEY_TONE_MAPPING)) {
@@ -1571,6 +1573,7 @@ public class SettingsActivity extends PreferenceActivity {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
+        updateLongShotPreference();
         updateZslPreference();
         updateVideoEncoderProfile();
         updateSwitchIDInModePreference(true);
@@ -1975,15 +1978,34 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateLongShotPreference() {
         SwitchPreference longShot = (SwitchPreference) findPreference(
                 SettingsManager.KEY_LONGSHOT);
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         if (longShot != null) {
-                if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) && !isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)) {
-                    mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
-                    longShot.setEnabled(false);
+            if(isPrefEnabled(SettingsManager.KEY_BURST_LIMIT) ){
+                longShot.setEnabled(true);
+            } else {
+                if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) ||
+                        mSettingsManager.getQcfaPrefEnabled()) {
                     longShot.setChecked(false);
-                } else if(isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) && isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)) {
+                    longShot.setEnabled(false);
+                } else {
                     longShot.setEnabled(true);
                 }
             }
+            if(mode == CaptureModule.CameraMode.RTB && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)){
+                longShot.setChecked(false);
+                longShot.setEnabled(false);
+            }
+            ListPreference rawFormat = (ListPreference)findPreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+            if(rawFormat != null) {
+                String value = rawFormat.getValue();
+                if (!"0".equals(value)) {
+                    longShot.setChecked(false);
+                    longShot.setEnabled(false);
+
+                }
+            }
+        }
     }
     private void updatePictureFormatPreference(){
        ListPreference pictureFormatPref = (ListPreference)findPreference(SettingsManager.KEY_PICTURE_FORMAT);
