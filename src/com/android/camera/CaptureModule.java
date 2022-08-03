@@ -8906,6 +8906,16 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (value != null && Boolean.parseBoolean(value)) {
             mStreamConfigOptMode = mStreamConfigOptMode | STREAM_CONFIG_MODE_FOVC;
         }
+
+        String valueFS2 = mSettingsManager.getValue(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
+        if (valueFS2 != null) {
+            int intValue = Integer.parseInt(valueFS2);
+            if (intValue == 1) {
+                mStreamConfigOptMode |= STREAM_CONFIG_MODE_FS2;
+                Log.v(TAG, "createRegularSession valueFS2 OptMode:" + mStreamConfigOptMode);
+            }
+        }
+
         if (DEBUG) {
             Log.v(TAG, "createRegularSession OptMode:" + mStreamConfigOptMode);
         }
