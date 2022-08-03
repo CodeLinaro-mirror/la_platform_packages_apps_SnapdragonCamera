@@ -245,6 +245,7 @@ public class SettingsActivity extends PreferenceActivity {
                     UpdateManualHDRSetting();
                 }
                 updateHdrRefOp();
+                updateQuadBayerPreference();
             }
 
             if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
@@ -316,6 +317,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updateZslPreference();
                     updateLongShotPreference();
                     updatePictureFormatPreference();
+                    updateVideoMFHDRPreference();
                     updateSwitchIDInModePreference(false);
                     if(mSettingsManager.isMultiCameraEnabled()){
                         recreate();
@@ -1141,6 +1143,7 @@ public class SettingsActivity extends PreferenceActivity {
             updateRawFormatPref();
             updateInSensorZoom();
             updateViullPreference();
+            updateQuadBayerPreference();
         }
     }
 
@@ -1724,6 +1727,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
         updateVideoMFHDRPreference();
+        updateQuadBayerPreference();
         updateStoragePreference();
         initializePhysicalPreferences();
         updatePhysicalPreferences();
@@ -1964,6 +1968,17 @@ public class SettingsActivity extends PreferenceActivity {
         }
         if(isHwMfnrDisabled() || (mSettingsManager.isHWMFNRSupport() && !isHwMfnrDisabled() && !mSettingsManager.isAIDE2Supported())){
             pref.setEnabled(false);
+        }
+    }
+    private void updateQuadBayerPreference(){
+        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_QUAD_BAYER_SENSOR);
+        if (pref == null) {
+            return;
+        }
+        pref.setEnabled(true);
+        if (mSettingsManager.isLimitedHDR()) {
+            pref.setEnabled(false);
+            pref.setValue("-1");
         }
     }
     private void updateVideoMFHDRPreference() {
@@ -2642,7 +2657,7 @@ public class SettingsActivity extends PreferenceActivity {
                         && !mSettingsManager.isSupportedHdr()){
                         viewHolder.checkBox.setSelected(false);
                         viewHolder.checkBox.setChecked(false);
-                        Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60 or enabled SaveRaw or inSensor zoom",
+                        Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60 or enabled SaveRaw or inSensor zoom or quadBayerSensor",
                             Toast.LENGTH_SHORT).show();
                         isChecked=false;
                     }
