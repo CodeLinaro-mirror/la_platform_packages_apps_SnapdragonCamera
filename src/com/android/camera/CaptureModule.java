@@ -11543,20 +11543,22 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mMediaRecorder.setInputSurface(mVideoRecordingSurface);
         prepareMediaRecorder();
-        mMediaRecorder.setOnErrorListener(this);
-        mMediaRecorder.setOnInfoListener(this);
+
     }
 
     private void prepareMediaRecorder() {
         try {
             mMediaRecorder.prepare();
+            mMediaRecorder.setOnErrorListener(this);
+            mMediaRecorder.setOnInfoListener(this);
         } catch (IOException e) {
-            Log.e(TAG, " prepare failed for " + mVideoFilename, e);
+            Log.e(TAG, "prepare failed for " + mVideoFilename, e);
             if (mCurrentVideoUri != null) {
                 mContentResolver.delete(mCurrentVideoUri, null);
                 mCurrentVideoUri = null;
             }
             releaseMediaRecorder();
+            mCaptureSession[getMainCameraId()] = null;
             quitVideoToPhotoWithError(e.getMessage());
         }
     }
