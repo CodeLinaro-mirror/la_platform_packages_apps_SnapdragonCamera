@@ -3323,6 +3323,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (cameraId > mCharacteristics.size())return null;
         List<String> res = new ArrayList<>();
         List<Size> videoSizes = new ArrayList<>();
+        Size videoSize = getVideoSize();
+        int[] maxHdrSize = null;
+        String cameravalue = getValue(KEY_SWITCH_CAMERA);
+        int switchedId = -1;
+        String hdrmode = getVideoHdrMode();
+        if(cameravalue != null && !cameravalue.equals("-1")){
+            switchedId = Integer.valueOf(cameravalue);
+        }
         Size[] maxSizes = null;
         if (cameraId == -1) return res;
         CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
@@ -3393,10 +3401,25 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         // Filter video size if Video High frame rate didn`t supported
                         continue;
                     }
-
+                    if(mode == CaptureModule.CameraMode.VIDEO && switchedId != -1) {
+                        try {
+                            maxHdrSize = mCharacteristics.get(switchedId).get(CaptureModule.hdrMaxResolution);
+                        } catch (IllegalArgumentException | NullPointerException e) {
+                            Log.w(TAG, "getHdrMaxResolution occurs exception");
+                        }
+                        if (maxHdrSize != null && (maxHdrSize[0] * maxHdrSize[1] < videoSizes.get(i).getWidth() * videoSizes.get(i).getHeight())
+                                && (hdrmode != null && !hdrmode.equals("off"))) {
+                            continue;
+                        }
+                    }
                     res.add(videoSizes.get(i).toString());
                 }
+
             }
+        }
+        if(hdrmode != null && !hdrmode.equals("off") && videoSize != null && maxHdrSize !=null &&
+                videoSize.getWidth() * videoSize.getHeight() > maxHdrSize[0] * maxHdrSize[1]) {
+            setValue(KEY_VIDEO_QUALITY,res.get(0) );
         }
         return res;
     }
@@ -4295,6 +4318,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public Size parsePictureSize(String value) {
+        if(value == null){
+            return null;
+        }
         int indexX = value.indexOf('x');
         int width = Integer.parseInt(value.substring(0, indexX));
         int height = Integer.parseInt(value.substring(indexX + 1));
