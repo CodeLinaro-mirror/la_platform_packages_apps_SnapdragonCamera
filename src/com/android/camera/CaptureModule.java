@@ -7978,14 +7978,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                             Arrays.toString(contour_all));
                 }
                 int[] landmarkPoints = new int[6 * faces.length];
-                for (int i = 0 ; i < faces.length; i++){
-                    landmarkPoints[6*i] = faces[i].getLeftEyePosition().x;
-                    landmarkPoints[6*i + 1] = faces[i].getLeftEyePosition().y;
-                    landmarkPoints[6*i + 2] = faces[i].getRightEyePosition().x;
-                    landmarkPoints[6*i + 3] = faces[i].getRightEyePosition().y;
-                    landmarkPoints[6*i + 4] = faces[i].getMouthPosition().x;
-                    landmarkPoints[6*i + 5] = faces[i].getMouthPosition().y;
+                try {
+                    for (int i = 0; i < faces.length; i++) {
+                        landmarkPoints[6 * i] = faces[i].getLeftEyePosition().x;
+                        landmarkPoints[6 * i + 1] = faces[i].getLeftEyePosition().y;
+                        landmarkPoints[6 * i + 2] = faces[i].getRightEyePosition().x;
+                        landmarkPoints[6 * i + 3] = faces[i].getRightEyePosition().y;
+                        landmarkPoints[6 * i + 4] = faces[i].getMouthPosition().x;
+                        landmarkPoints[6 * i + 5] = faces[i].getMouthPosition().y;
+                    }
+                } catch (Exception e) {
                 }
+
                 if (FD_DEBUG)
                     Log.d(FD_TAG,"landmarkPoints="+Arrays.toString(landmarkPoints));
 
