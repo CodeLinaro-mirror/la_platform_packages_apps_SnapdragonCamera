@@ -4793,6 +4793,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public Rect cropRegionForAideV2Zoom() {
         Rect originalCropRegion = new Rect();
         Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
+        int masterCamera = getMainCameraId();
         if(physical_ids != null && physical_ids.size() != 0){
             String physicalId = mMasterCameraId;
             for(Integer key : mAideActiveCameraIds.keySet()){
@@ -4802,23 +4803,22 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             Log.i(TAG,"frame number: " + mCaptureResult.getFrameNumber());
             CaptureResult physicalMetaData = mCaptureResult.getPhysicalCameraResults().get(physicalId);
+            masterCamera = Integer.parseInt(physicalId);
             originalCropRegion = physicalMetaData.get(CaptureResult.SCALER_CROP_REGION);
-            Log.i(TAG,"physicalCropRegion:" + originalCropRegion.toString());
         }else {
             originalCropRegion = mCaptureResult.get(CaptureResult.SCALER_CROP_REGION);
-            Log.i(TAG,"single crop region from hal:" + originalCropRegion.toString());
-            Log.i(TAG,"single crop region for preview:" + mCropRegion[getMainCameraId()].toString() + ",camerdId:" + getMainCameraId());
-            Rect activeRegion = mSettingsManager.getSensorActiveArraySize(getMainCameraId());
-            Log.i(TAG,"sensor active array:" + activeRegion.toString());
-            //map preview crop to aide yuv size
-            int left = originalCropRegion.left*mAideFullImage.getWidth()/activeRegion.width();
-            int right = originalCropRegion.right*mAideFullImage.getWidth()/activeRegion.width();
-            int top = originalCropRegion.top *mAideFullImage.getHeight()/activeRegion.height();
-            int bottom = originalCropRegion.bottom *mAideFullImage.getHeight()/activeRegion.height();
-            originalCropRegion.set(left, top, right, bottom);
-            Log.i(TAG,"single crop region map to yuv size:" + originalCropRegion.toString());
-
         }
+        Rect activeRegion = mSettingsManager.getSensorActiveArraySize(masterCamera);
+        Log.i(TAG,"crop region from hal:" + originalCropRegion.toString());
+        Log.i(TAG,"crop region for preview:" + mCropRegion[getMainCameraId()].toString());
+        Log.i(TAG,"mastercamera:" +masterCamera + ",sensor active array:" + activeRegion.toString());
+        //map preview crop to aide yuv size
+        int left = originalCropRegion.left*mAideFullImage.getWidth()/activeRegion.width();
+        int right = originalCropRegion.right*mAideFullImage.getWidth()/activeRegion.width();
+        int top = originalCropRegion.top *mAideFullImage.getHeight()/activeRegion.height();
+        int bottom = originalCropRegion.bottom *mAideFullImage.getHeight()/activeRegion.height();
+        originalCropRegion.set(left, top, right, bottom);
+        Log.i(TAG,"crop region map to yuv size:" + originalCropRegion.toString());
         //output yuv and final picture have the different resolution ratio
         Rect cropRegion = new Rect();
         if(originalCropRegion.right > mAideFullImage.getWidth() ||
