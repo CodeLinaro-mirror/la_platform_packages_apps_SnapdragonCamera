@@ -307,7 +307,7 @@ public class AIDenoiserService extends Service {
         srcImage = cropYuvImage(srcImage,mStrideY, mWidth, mHeight, rect);
         activity.getMediaSaveService().addRawImage(srcImage,"aftercrop","yuv");
         //after crop, the stride will change to width, srcWidth/srcHeight is cropped size
-        Bitmap bitmap = yuvToRgbAndResize(srcImage,rect.width(), rect.height(), pictureSize.getWidth(), pictureSize.getHeight(), format);
+        Bitmap bitmap = yuvToRgbAndResize(srcImage,rect.width(), rect.height(), rect.width(), pictureSize.getWidth(), pictureSize.getHeight(), format);
         srcImage = bitmapToJpeg(bitmap, orientation, captureResult, quality);
         Log.d(TAG,"test done");
         System.gc();
@@ -369,11 +369,11 @@ public class AIDenoiserService extends Service {
         return ret;
     }
 
-    public Bitmap yuvToRgbAndResize(byte[] srcImage,int srcWidth, int srcHeight, int dstWidth, int dstHeight, int format) {
-        ByteBuffer rgboutput = ByteBuffer.allocateDirect(srcWidth*srcHeight *3);
-        mAideUtil.nativeCvtYuvToRgb(srcImage, rgboutput.array(), srcWidth, srcHeight, srcWidth, format);
+    public Bitmap yuvToRgbAndResize(byte[] srcImage,int srcWidth, int srcHeight, int srcStride, int dstWidth, int dstHeight, int format) {
+        ByteBuffer rgboutput = ByteBuffer.allocateDirect(srcStride*srcHeight *3);
+        mAideUtil.nativeCvtYuvToRgb(srcImage, rgboutput.array(), srcWidth, srcHeight, srcStride, format);
         int[] colors = convertByteToColor(rgboutput.array());
-        Bitmap rgba = Bitmap.createBitmap(colors, 0, srcWidth, srcWidth, srcHeight, Bitmap.Config.ARGB_8888);
+        Bitmap rgba = Bitmap.createBitmap(colors, 0, srcStride, srcWidth, srcHeight, Bitmap.Config.ARGB_8888);
         float scaleWidth = ((float) dstWidth) / srcWidth;
         float scaleHeight = ((float) dstHeight) / srcHeight;
         Matrix matrix = new Matrix();
