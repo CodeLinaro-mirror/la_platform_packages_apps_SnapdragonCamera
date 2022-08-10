@@ -3685,7 +3685,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSettingsManager = SettingsManager.getInstance();
         mSettingsManager.createCaptureModule(this);
         mSettingsManager.registerListener(this);
-        mSettingsManager.init();
         mFirstPreviewLoaded = false;
         Log.d(TAG, "init");
         for (int i = 0; i < MAX_NUM_CAM; i++) {
@@ -3701,12 +3700,13 @@ public class CaptureModule implements CameraModule, PhotoController,
             module.mode = CameraMode.values()[i];
             mSceneCameraIds.add(module);
         }
+        initCameraIds();
+        mSettingsManager.init();
         mPostProcessor = new PostProcessor(mActivity, this);
         mFrameProcessor = new FrameProcessor(mActivity, this);
 
         mContentResolver = mActivity.getContentResolver();
         initModeByIntent();
-        initCameraIds();
         mUI = new CaptureUI(activity, this, parent);
         mUI.initializeControlByIntent();
 
