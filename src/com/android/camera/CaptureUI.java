@@ -991,12 +991,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 progress = (int)((zoomValue-1.0f)/(mZoomMaxValue - 1.0f)*(range-delta)+delta);
             }
         }
+
         seekBar.setProgress(progress);
     }
 
     public void enableZoomSeekBar(boolean enable) {
        if (mZoomSeekBar != null)
-           mZoomSeekBar.setEnabled(enable); 
+           mZoomSeekBar.setEnabled(enable);
+       if(mZoomSwitch != null){
+           mZoomSwitch.setEnabled(enable);
+       }
     }
 
     public boolean getZoomFixedSupport() {

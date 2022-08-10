@@ -4712,11 +4712,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 aiDenoiserService.wantImagesNum(mCaptureRequestNum);
                 Log.i(TAG,"save jpeg for mfnr aide start");
                 byte[] yuv = getYUVFromImage(mAideFullImage);
+                int stride = mAideFullImage.getPlanes()[0].getRowStride();
                 mAideFullImage.close();
                 mAideFullImage = null;
                 enableShutterButtonOnMainThread(id);
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
-                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,mSupportedAide2Size.getWidth(), mSupportedAide2Size.getHeight(), mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
+                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,mSupportedAide2Size.getWidth(), mSupportedAide2Size.getHeight(), stride,
+                        mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
                 byte[] jpeg = aiDenoiserService.bitmapToJpeg(bitmap, orientation, mCaptureResult, quality);
                 mActivity.getMediaSaveService().addImage(
                         jpeg, title, 0L, null,
@@ -4793,6 +4795,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public Rect cropRegionForAideV2Zoom() {
         Rect originalCropRegion = new Rect();
         Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
+        int masterCamera = getMainCameraId();
         if(physical_ids != null && physical_ids.size() != 0){
             String physicalId = mMasterCameraId;
             for(Integer key : mAideActiveCameraIds.keySet()){
@@ -4802,23 +4805,22 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             Log.i(TAG,"frame number: " + mCaptureResult.getFrameNumber());
             CaptureResult physicalMetaData = mCaptureResult.getPhysicalCameraResults().get(physicalId);
+            masterCamera = Integer.parseInt(physicalId);
             originalCropRegion = physicalMetaData.get(CaptureResult.SCALER_CROP_REGION);
-            Log.i(TAG,"physicalCropRegion:" + originalCropRegion.toString());
         }else {
             originalCropRegion = mCaptureResult.get(CaptureResult.SCALER_CROP_REGION);
-            Log.i(TAG,"single crop region from hal:" + originalCropRegion.toString());
-            Log.i(TAG,"single crop region for preview:" + mCropRegion[getMainCameraId()].toString() + ",camerdId:" + getMainCameraId());
-            Rect activeRegion = mSettingsManager.getSensorActiveArraySize(getMainCameraId());
-            Log.i(TAG,"sensor active array:" + activeRegion.toString());
-            //map preview crop to aide yuv size
-            int left = originalCropRegion.left*mAideFullImage.getWidth()/activeRegion.width();
-            int right = originalCropRegion.right*mAideFullImage.getWidth()/activeRegion.width();
-            int top = originalCropRegion.top *mAideFullImage.getHeight()/activeRegion.height();
-            int bottom = originalCropRegion.bottom *mAideFullImage.getHeight()/activeRegion.height();
-            originalCropRegion.set(left, top, right, bottom);
-            Log.i(TAG,"single crop region map to yuv size:" + originalCropRegion.toString());
-
         }
+        Rect activeRegion = mSettingsManager.getSensorActiveArraySize(masterCamera);
+        Log.i(TAG,"crop region from hal:" + originalCropRegion.toString());
+        Log.i(TAG,"crop region for preview:" + mCropRegion[getMainCameraId()].toString());
+        Log.i(TAG,"mastercamera:" +masterCamera + ",sensor active array:" + activeRegion.toString());
+        //map preview crop to aide yuv size
+        int left = originalCropRegion.left*mAideFullImage.getWidth()/activeRegion.width();
+        int right = originalCropRegion.right*mAideFullImage.getWidth()/activeRegion.width();
+        int top = originalCropRegion.top *mAideFullImage.getHeight()/activeRegion.height();
+        int bottom = originalCropRegion.bottom *mAideFullImage.getHeight()/activeRegion.height();
+        originalCropRegion.set(left, top, right, bottom);
+        Log.i(TAG,"crop region map to yuv size:" + originalCropRegion.toString());
         //output yuv and final picture have the different resolution ratio
         Rect cropRegion = new Rect();
         if(originalCropRegion.right > mAideFullImage.getWidth() ||
@@ -9319,6 +9321,12 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void pauseVideoRecording() {
         Log.v(TAG, "pauseVideoRecording");
+        if(!PersistUtil.enableMediaRecorder()){
+            Bundle params = new Bundle();
+            params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 1);
+            mAudioEncoder.setParameters(params);
+            mVideoEncoder.setParameters(params);
+        }
         mRecordingPausing = true;
         mRecordingPauseTime = SystemClock.uptimeMillis();
         mRecordingTotalTime += mRecordingPauseTime - mRecordingStartTime;
@@ -9353,6 +9361,12 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void resumeVideoRecording() {
         Log.v(TAG, "resumeVideoRecording");
+        if(!PersistUtil.enableMediaRecorder()){
+            Bundle params = new Bundle();
+            params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 0);
+            mAudioEncoder.setParameters(params);
+            mVideoEncoder.setParameters(params);
+        }
         mRecordingPausing = false;
         mRecordingStartTime = SystemClock.uptimeMillis();
         mRecordingPausingTime += mRecordingStartTime - mRecordingPauseTime;

@@ -17,6 +17,7 @@
 package com.android.camera;
 
 import android.hardware.camera2.CameraAccessException;
+import android.media.ExifInterface;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.view.Display;
@@ -101,7 +102,6 @@ import com.android.camera.data.LocalDataAdapter;
 import com.android.camera.data.LocalMediaObserver;
 import com.android.camera.data.MediaDetails;
 import com.android.camera.data.SimpleViewData;
-import com.android.camera.exif.ExifInterface;
 import com.android.camera.tinyplanet.TinyPlanetFragment;
 import com.android.camera.multi.MultiCameraModule;
 import com.android.camera.ui.ModuleSwitcher;
@@ -120,8 +120,12 @@ import com.android.camera.util.PhotoSphereHelper.PanoramaViewHelper;
 import com.android.camera.util.UsageStatistics;
 import org.codeaurora.snapcam.R;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import static com.android.camera.CameraManager.CameraOpenErrorCallback;
 
@@ -901,14 +905,41 @@ public class CameraActivity extends Activity
                 if (mOrientation != -1) {
                     orientation = mOrientation;
                 } else {
-                    ExifInterface exif = new ExifInterface();
+                    ExifInterface exif = null;
+                    int result = ExifInterface.ORIENTATION_NORMAL;
                     try {
                         if (mJpegData != null) {
-                            exif.readExif(mJpegData);
+                            exif = new ExifInterface(new ByteArrayInputStream(mJpegData));
+                            result = exif.getAttributeInt(
+                                    ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
                         } else {
-                            exif.readExif(path);
+                            InputStream is = null;
+                            try {
+                                is = new BufferedInputStream(new FileInputStream(path));
+                                exif = new ExifInterface(is);
+                                result = exif.getAttributeInt(
+                                        ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                            } catch (IOException e) {
+                                // ignore
+                            } finally {
+                                if (is != null) {
+                                    is.close();
+                                }
+                            }
                         }
-                        orientation = Exif.getOrientation(exif);
+                        switch (result) {
+                            case ExifInterface.ORIENTATION_ROTATE_90:
+                                orientation = 90;
+                                break;
+                            case ExifInterface.ORIENTATION_ROTATE_180:
+                                orientation = 180;
+                                break;
+                            case ExifInterface.ORIENTATION_ROTATE_270:
+                                orientation = 270;
+                                break;
+                            default:
+                                orientation = 0;
+                        }
                     } catch (IOException e) {
                         // ignore
                     }
@@ -1812,10 +1843,6 @@ public class CameraActivity extends Activity
         if (checkSelfPermission(Manifest.permission.CAMERA) ==
                         PackageManager.PERMISSION_GRANTED &&
                 checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
-                        PackageManager.PERMISSION_GRANTED &&
-                checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
-                        PackageManager.PERMISSION_GRANTED &&
-                checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) ==
                         PackageManager.PERMISSION_GRANTED) {
             hasCriticalPermission = true;
         } else {
