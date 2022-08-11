@@ -1312,7 +1312,6 @@ public class SettingsActivity extends PreferenceActivity {
                 //add(SettingsManager.KEY_VIDEO_HDR_VALUE);
                 add(SettingsManager.KEY_VIDEO_FLIP);
                 add(SettingsManager.KEY_PHYSICAL_CAMCORDER);
-                add(SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
                 for (String key: SettingsManager.KEY_PHYSICAL_VIDEO_SIZE)
                     add(key);
                 add(SettingsManager.KEY_AUDIO_RECORDING_MODE);
@@ -1446,6 +1445,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
+                        videoAddList.add(SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
                     } else {
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);

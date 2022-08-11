@@ -6825,9 +6825,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyInSensorZoom(builder);
         applyEnableStatsVisualizer(builder);
         applyShadingCorrection(builder);
+        applyOfflineDumpTrigger(builder);
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.HFR) {
-            applyOfflineDumpTrigger(builder);
             applyVideoEncoderProfile(builder);
         }
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
@@ -7817,9 +7817,16 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void updateOfflineDumpTriggerStatus(int trigger) {
         Log.v(TAG, "updateOfflineDumpTriggerStatus trigger :" + trigger
                 + ", mVideoFrameNumber :" + mVideoFrameNumber);
+        CaptureRequest.Builder mRequestBuilder = null;
+        if (getCurrenCameraMode() == CameraMode.DEFAULT) {
+            mRequestBuilder = mPreviewRequestBuilder[getMainCameraId()];
+        }
+        if (getCurrenCameraMode() == CameraMode.VIDEO) {
+            mRequestBuilder = mVideoRecordRequestBuilder;
+        }
         try {
-            mVideoRecordRequestBuilder.set(offline_dump_trigger_trigger, trigger);
-            mVideoRecordRequestBuilder.set(offline_dump_trigger_framenum, mVideoFrameNumber + 1);
+            mRequestBuilder.set(offline_dump_trigger_trigger, trigger);
+            mRequestBuilder.set(offline_dump_trigger_framenum, mVideoFrameNumber + 1);
         } catch (IllegalArgumentException e) {
             Log.v(TAG, EXCEPTION_LOG,"updateOfflineDumpTriggerStatus no vendorTag :" +
                     offline_dump_trigger_trigger);
@@ -7830,13 +7837,13 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
                 List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
                         .createHighSpeedRequestList(
-                                mVideoRecordRequestBuilder.build());
+                                mRequestBuilder.build());
                 mCurrentSession.captureBurst(requestList, mCaptureCallback, mCameraHandler);
             } else if (isSSMEnabled()) {
-                mCurrentSession.captureBurst(createSSMBatchRequest(mVideoRecordRequestBuilder),
+                mCurrentSession.captureBurst(createSSMBatchRequest(mRequestBuilder),
                         mCaptureCallback, mCameraHandler);
             } else {
-                mCurrentSession.capture(mVideoRecordRequestBuilder.build(), mCaptureCallback,
+                mCurrentSession.capture(mRequestBuilder.build(), mCaptureCallback,
                         mCameraHandler);
             }
         } catch (CameraAccessException e) {

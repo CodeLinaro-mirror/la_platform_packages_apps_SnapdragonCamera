@@ -723,7 +723,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mAFViewRender.setVisible(false);
         }
         mOfflineDumpTrigger = (TextView)mRootView.findViewById(R.id.offline_dump_trigger);
-        updateOfflineDumpTrigger(View.GONE);
         mOfflineDumpTrigger.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1357,7 +1356,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return false;
     }
 
-    public void updateOfflineDumpTrigger(int status) {
+    private void updateOfflineDumpTrigger(int status) {
         if (mOfflineDumpTrigger != null) {
             String offlineDumpTrigger = mSettingsManager.getValue(
                     SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
@@ -1729,6 +1728,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
             mModeSelectLayout.setVisibility(View.GONE);
         }
+
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEFAULT ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO) {
+            updateOfflineDumpTrigger(View.VISIBLE);
+        } else {
+            updateOfflineDumpTrigger(View.GONE);
+        }
     }
 
     public void initializeProMode(boolean promode) {
@@ -2033,7 +2039,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoButton.setImageResource(R.drawable.video_stop);
             mRecordingTimeView.setText("00:00");
             mRecordingTimeRect.setVisibility(View.VISIBLE);
-            updateOfflineDumpTrigger(View.VISIBLE);
             mMuteButton.setVisibility((mModule.isHSRMode() ||
                     mModule.getHighSpeedCaptureRate() < 60) ? View.VISIBLE : View.INVISIBLE);
             setMuteButtonResource(!mModule.isAudioMute());
@@ -2048,7 +2053,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoButton.setImageResource(R.drawable.video_capture);
             mRecordingTimeRect.setVisibility(View.GONE);
             mMuteButton.setVisibility(View.INVISIBLE);
-            updateOfflineDumpTrigger(View.GONE);
         }
     }
 
