@@ -499,7 +499,9 @@ public class Camera2FaceView extends FaceView {
                     if (mGenderEnable) {
                         int gender = exFace.getGender();
                         if (gender != -1) {
-                            String genderText = gender == 1 ? "Male" : "Female";
+                            ExtendedFace.FDGenderIndex genderIndex =
+                                    ExtendedFace.FDGenderIndex.values()[gender];
+                            String genderText = genderIndex.name();
                             canvas.drawText(genderText, mRect.left, mRect.top - mTextPaint.descent(), mTextPaint);
                         }
                     }
@@ -509,7 +511,9 @@ public class Camera2FaceView extends FaceView {
                         if (genderConfidence != null) {
                             for (int j =0; j < genderConfidence.length; j++) {
                                 try {
-                                    String genderText = (j == 1 ? "Male" : "Female") + " Confidence: " + genderConfidence[j];
+                                    ExtendedFace.FDGenderIndex genderIndex =
+                                            ExtendedFace.FDGenderIndex.values()[j];
+                                    String genderText = genderIndex.name() + " : " + genderConfidence[j];
                                     if (mFaceExpressionConfidencePaint != null) {
                                         float offset = mFaceExpressionConfidencePaint.getTextSize();
                                         canvas.drawText(genderText, mRect.left,

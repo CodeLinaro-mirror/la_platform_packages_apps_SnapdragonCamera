@@ -160,6 +160,7 @@ public class ExtendedFace {
 
 
     public enum FDExpressionIndex {
+        Uncertain,
         Surprise,
         Fear,
         Disgust,
@@ -167,6 +168,13 @@ public class ExtendedFace {
         Sad,
         Anger,
         Neutral,
+        ;
+    }
+
+    public enum FDGenderIndex {
+        Uncertain,
+        Female,
+        Male,
         ;
     }
 
