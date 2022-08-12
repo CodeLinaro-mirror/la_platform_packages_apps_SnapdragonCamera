@@ -3685,6 +3685,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSettingsManager = SettingsManager.getInstance();
         mSettingsManager.createCaptureModule(this);
         mSettingsManager.registerListener(this);
+        String facing = mSettingsManager.mPreferences.getGlobal().getString(mSettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
+        if (facing.equals("front")) {
+            CURRENT_ID = FRONT_ID;
+        }
         mFirstPreviewLoaded = false;
         Log.d(TAG, "init");
         for (int i = 0; i < MAX_NUM_CAM; i++) {
@@ -4637,13 +4641,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mNumFramesArrived.incrementAndGet();
 
                 Log.d(TAG, "captureStillPictureForLongshot onCaptureCompleted: " + mNumFramesArrived.get() + " " + mShotNum);
-                if (mLongshotActive && mNumFramesArrived.get() >= mShotNum) {
-                    mLongshotActive = false;
-                    mHandler.post(() -> stopBurstShot());
-                    mUI.enableVideo(true);
-                    return;
-                }
-
                 if (mLongshotActive) {
                     checkAndPlayShutterSound(getMainCameraId());
                     mActivity.runOnUiThread(new Runnable() {
@@ -5404,10 +5401,24 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                                 Image image = reader.acquireNextImage();
                                 if ((mLongshotActive || mNumFramesArrived.get() > 0)) {
-                                    Log.d(TAG, "long shot image available num " + mNumImageArrived.incrementAndGet());
+                                    Log.d(TAG, "long shot image available num " + mNumImageArrived.get());
+                                    if (mNumImageArrived.get() < mShotNum &&
+                                            mActivity.getMediaSaveService().isQueueFull()) {
+                                        Log.w(TAG, "long shot image available, but queue is full");
+                                        image.close();
+                                        return;
+                                    }
+                                    mNumImageArrived.incrementAndGet();
                                     if (mNumImageArrived.get() > mShotNum) {
                                         image.close();
-                                        Log.d(TAG, "image arrived over limit");
+                                        Log.d(TAG, "long shot image available, image arrived over limit");
+                                        if (mLongshotActive && mNumFramesArrived.get() >= mShotNum) {
+                                            mLongshotActive = false;
+                                            mHandler.post(() -> {
+                                                mUI.enableVideo(true);
+                                                stopBurstShot();
+                                            });
+                                        }
                                         return;
                                     }
                                 }
@@ -6929,6 +6940,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
+        }else if(facingOfIntentExtras == -1  && mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA) {
+            mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
+            mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         }
         if(!CameraApp.isColdStart){
             reinit();
@@ -7967,14 +7981,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                             Arrays.toString(contour_all));
                 }
                 int[] landmarkPoints = new int[6 * faces.length];
-                for (int i = 0 ; i < faces.length; i++){
-                    landmarkPoints[6*i] = faces[i].getLeftEyePosition().x;
-                    landmarkPoints[6*i + 1] = faces[i].getLeftEyePosition().y;
-                    landmarkPoints[6*i + 2] = faces[i].getRightEyePosition().x;
-                    landmarkPoints[6*i + 3] = faces[i].getRightEyePosition().y;
-                    landmarkPoints[6*i + 4] = faces[i].getMouthPosition().x;
-                    landmarkPoints[6*i + 5] = faces[i].getMouthPosition().y;
+                try {
+                    for (int i = 0; i < faces.length; i++) {
+                        landmarkPoints[6 * i] = faces[i].getLeftEyePosition().x;
+                        landmarkPoints[6 * i + 1] = faces[i].getLeftEyePosition().y;
+                        landmarkPoints[6 * i + 2] = faces[i].getRightEyePosition().x;
+                        landmarkPoints[6 * i + 3] = faces[i].getRightEyePosition().y;
+                        landmarkPoints[6 * i + 4] = faces[i].getMouthPosition().x;
+                        landmarkPoints[6 * i + 5] = faces[i].getMouthPosition().y;
+                    }
+                } catch (Exception e) {
                 }
+
                 if (FD_DEBUG)
                     Log.d(FD_TAG,"landmarkPoints="+Arrays.toString(landmarkPoints));
 
@@ -8407,6 +8425,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         try {
             int id = getMainCameraId();
             enableShutterAndVideoOnUiThread(id);
+            if (mCaptureSession[id] == null) {
+                return;
+            }
             mCaptureSession[id].stopRepeating();
             mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                     .build(), mCaptureCallback, mCameraHandler);
@@ -8885,6 +8906,16 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (value != null && Boolean.parseBoolean(value)) {
             mStreamConfigOptMode = mStreamConfigOptMode | STREAM_CONFIG_MODE_FOVC;
         }
+
+        String valueFS2 = mSettingsManager.getValue(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
+        if (valueFS2 != null) {
+            int intValue = Integer.parseInt(valueFS2);
+            if (intValue == 1) {
+                mStreamConfigOptMode |= STREAM_CONFIG_MODE_FS2;
+                Log.v(TAG, "createRegularSession valueFS2 OptMode:" + mStreamConfigOptMode);
+            }
+        }
+
         if (DEBUG) {
             Log.v(TAG, "createRegularSession OptMode:" + mStreamConfigOptMode);
         }
@@ -8990,6 +9021,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
     private void setTimeStamp(List<OutputConfiguration> outConfigurations,int timestamp){
         if(PersistUtil.isSetTimeStamp()){
+            if(CameraMode.VIDEO == mCurrentSceneMode.mode && mSettingsManager.getVideoFPS() > 30){
+                return;
+            }
             try{
                 Log.d(TAG,"setTimeStamp outConfigurations.size()="+outConfigurations.size());
                 for(int i = 0; i < outConfigurations.size(); i++) {
@@ -11522,20 +11556,22 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mMediaRecorder.setInputSurface(mVideoRecordingSurface);
         prepareMediaRecorder();
-        mMediaRecorder.setOnErrorListener(this);
-        mMediaRecorder.setOnInfoListener(this);
+
     }
 
     private void prepareMediaRecorder() {
         try {
             mMediaRecorder.prepare();
+            mMediaRecorder.setOnErrorListener(this);
+            mMediaRecorder.setOnInfoListener(this);
         } catch (IOException e) {
-            Log.e(TAG, " prepare failed for " + mVideoFilename, e);
+            Log.e(TAG, "prepare failed for " + mVideoFilename, e);
             if (mCurrentVideoUri != null) {
                 mContentResolver.delete(mCurrentVideoUri, null);
                 mCurrentVideoUri = null;
             }
             releaseMediaRecorder();
+            mCaptureSession[getMainCameraId()] = null;
             quitVideoToPhotoWithError(e.getMessage());
         }
     }

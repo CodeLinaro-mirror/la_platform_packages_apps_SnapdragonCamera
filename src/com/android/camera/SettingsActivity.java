@@ -1443,6 +1443,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
+                        videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
                     } else {
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
