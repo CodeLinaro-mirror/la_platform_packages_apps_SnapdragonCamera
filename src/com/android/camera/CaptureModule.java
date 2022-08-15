@@ -4371,7 +4371,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mState[i] = STATE_PREVIEW;
         }
         mLongshotActive = false;
-        if(!resumeFromRestartAll) {
+        if(!resumeFromRestartAll && !mUI.isPreviewReady()) {
             updatePreviewSurfaceReadyState(false);
         }
     }
@@ -6445,7 +6445,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         // Stop recording
         mUI.setSoundEffectsForRecording(true);
         checkAndPlayRecordSound(cameraId, false);
-        setEndOfStream(false, true);
         mFrameProcessor.setVideoOutputSurface(null);
         mFrameProcessor.onClose();
         if (mLiveShotInitHeifWriter != null) {
