@@ -428,4 +428,8 @@ public class PersistUtil {
     public static boolean getHardSwitchEnabled(){
         return getBoolean("persist.sys.camera.hard_switch_enable", true);
     }
+
+    public static int getPhysicalLiveShotNum() {
+        return  getInt("persist.sys.camera.physical_live_shot_num", -1);
+    }
 }
