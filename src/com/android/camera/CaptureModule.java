@@ -4472,9 +4472,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         mYUV10bitImageReader[id] != null) {
                                     captureBuilder.addTarget(mYUV10bitImageReader[id].getSurface());
                                 }
-                                if (mImageReader[id] != null && !isAIDE2Enabled() &&
-                                        (!(mYUV10bit || mYUV10BitWithMetadata) ||
-                                                mSettingsManager.isHeifHALEncoding())) {
+                                if (mImageReader[id] != null && !isAIDE2Enabled()) {
                                     captureBuilder.addTarget(mImageReader[id].getSurface());
                                 }
                             }
