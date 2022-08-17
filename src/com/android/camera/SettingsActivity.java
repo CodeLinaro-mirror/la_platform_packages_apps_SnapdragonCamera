@@ -160,7 +160,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updateMultiVideoFPSPreference();
                 }
                 if (key.equals(SettingsManager.KEY_PHYSICAL_CAMCORDER)) {
-                    updateMultiVideoEISPreference();
+                    updateEISPreference();
                 }
             }
             if (key.equals(SettingsManager.KEY_VIDEO_QUALITY)) {
@@ -1825,7 +1825,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateMultiResReprocess();
         updatePreviewStabilizationPreference();
         updateMultiVideoFPSPreference();
-        updateMultiVideoEISPreference();
         updateViullPreference();
         updateSelfieMirrorPreference();
     }
@@ -2028,32 +2027,6 @@ public class SettingsActivity extends PreferenceActivity {
                 pref.setEnabled(true);
             } else {
                 pref.setValue("off");
-                pref.setEnabled(false);
-            }
-        }
-    }
-
-    private void updateMultiVideoEISPreference() {
-        boolean changeEIS = true;
-        MultiSelectListPreference camCorderPref = (MultiSelectListPreference) findPreference(
-                SettingsManager.KEY_PHYSICAL_CAMCORDER);
-        if (camCorderPref != null) {
-            Set<String> camCorderSet = camCorderPref.getValues();
-            if (camCorderSet != null) {
-                for (String str : camCorderSet) {
-                    if (!"".equals(str)) {
-                        changeEIS &= false;
-                    }
-                }
-            }
-        }
-        ListPreference pref = (ListPreference)findPreference(
-                SettingsManager.KEY_EIS_VALUE);
-        if (pref != null) {
-            if (changeEIS) {
-                pref.setEnabled(true);
-            } else {
-                pref.setValue("disable");
                 pref.setEnabled(false);
             }
         }
@@ -2303,29 +2276,9 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateEISPreference() {
         ListPreference eisPref = (ListPreference)findPreference(
                 SettingsManager.KEY_EIS_VALUE);
-        String hdrValue = mSettingsManager.getValue(mSettingsManager.KEY_MANUAL_HDR);
         if (eisPref == null) return;
-        if (!mSettingsManager.isEISSupported(mSettingsManager.getVideoSize(),
-                mSettingsManager.getVideoFPS())) {
-            if (eisPref != null) {
-                eisPref.setValue("disable");
-                eisPref.setEnabled(false);
-            }
-            mSettingsManager.setValue(SettingsManager.KEY_EIS_VALUE, "disable");
-        } else {
-            if (eisPref != null) {
-                eisPref.setEnabled(true);
-            }
-        }
+        String hdrValue = mSettingsManager.getValue(mSettingsManager.KEY_MANUAL_HDR);
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-        ListPreference selectModePref = (ListPreference) findPreference(SettingsManager.KEY_SELECT_MODE);
-        if (selectModePref != null) {
-            if (selectModePref.getValue().equals("rtb") && mode == CaptureModule.CameraMode.VIDEO && !mSettingsManager.isAICameraOn()) {
-                if (eisPref != null) {
-                    eisPref.setEnabled(false);
-                }
-            }
-        }
         if (mSettingsManager.isAIBokehMode()) {
             //remove v2 case
             List<String> list = new ArrayList<String>(Arrays.asList("disable", "V3"));
@@ -2345,6 +2298,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         } else if (CaptureModule.CameraMode.VIDEO == mode) {
+            String defaultValue = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
             List<String> list = new ArrayList<String>(Arrays.asList("disable", "V2", "V3"));
             List<String> values = new ArrayList<String>(Arrays.asList("disable", "V2", "V3"));
             if (hdrValue != null && !hdrValue.equals("off")) {
@@ -2353,6 +2307,41 @@ public class SettingsActivity extends PreferenceActivity {
             }
             eisPref.setEntries(list.toArray(new CharSequence[list.size()]));
             eisPref.setEntryValues(values.toArray(new CharSequence[values.size()]));
+            eisPref.setValue(defaultValue);
+            mSettingsManager.setValue(SettingsManager.KEY_EIS_VALUE, defaultValue);
+        }
+        boolean changeEIS = true;
+        MultiSelectListPreference camCorderPref = (MultiSelectListPreference) findPreference(
+                SettingsManager.KEY_PHYSICAL_CAMCORDER);
+        if (camCorderPref != null) {
+            Set<String> camCorderSet = camCorderPref.getValues();
+            if (camCorderSet != null) {
+                for (String str : camCorderSet) {
+                    if (!"".equals(str)) {
+                        changeEIS &= false;
+                    }
+                }
+            }
+        }
+        if (!mSettingsManager.isEISSupported(mSettingsManager.getVideoSize(),
+                mSettingsManager.getVideoFPS()) || !changeEIS) {
+            if (eisPref != null) {
+                eisPref.setValue("disable");
+                eisPref.setEnabled(false);
+            }
+            mSettingsManager.setValue(SettingsManager.KEY_EIS_VALUE, "disable");
+        } else {
+            if (eisPref != null) {
+                eisPref.setEnabled(true);
+            }
+        }
+        ListPreference selectModePref = (ListPreference) findPreference(SettingsManager.KEY_SELECT_MODE);
+        if (selectModePref != null) {
+            if (selectModePref.getValue().equals("rtb") && mode == CaptureModule.CameraMode.VIDEO && !mSettingsManager.isAICameraOn()) {
+                if (eisPref != null) {
+                    eisPref.setEnabled(false);
+                }
+            }
         }
     }
 
