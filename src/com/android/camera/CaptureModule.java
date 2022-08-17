@@ -9141,6 +9141,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (isHighSpeedRateCapture()) {
                 //This should be not needed since setRepeatingBurst don't change
                 //Will remove it in next version
+                mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                 List<CaptureRequest> slowMoRequests  = mSuperSlomoCapture ?
                         createSSMBatchRequest(mVideoRecordRequestBuilder) :
                         ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
@@ -9368,11 +9369,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 return false;
             }
         } else {
-            mAudioEncoder.start();
-            mAudioRecord.startRecording();
             mVideoEncoder.start();
             //start threads of MediaCodec
             if (!mOnlyVideoEncoder){
+                mAudioEncoder.start();
+                mAudioRecord.startRecording();
                 startAudioDecoder();
                 startAudioEncoder();
             }
@@ -9895,7 +9896,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(!PersistUtil.enableMediaRecorder()){
             Bundle params = new Bundle();
             params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 1);
-            mAudioEncoder.setParameters(params);
+            if(!mOnlyVideoEncoder) {
+                mAudioEncoder.setParameters(params);
+            }
             mVideoEncoder.setParameters(params);
         }
         mRecordingPausing = true;
@@ -9936,7 +9939,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(!PersistUtil.enableMediaRecorder()){
             Bundle params = new Bundle();
             params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 0);
-            mAudioEncoder.setParameters(params);
+            if(!mOnlyVideoEncoder) {
+                mAudioEncoder.setParameters(params);
+            }
             mVideoEncoder.setParameters(params);
         }
         mRecordingPausing = false;
