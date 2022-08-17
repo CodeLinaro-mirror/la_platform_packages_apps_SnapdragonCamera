@@ -394,6 +394,9 @@ public class SettingsActivity extends PreferenceActivity {
                 if(mSettingsManager.KEY_SWITCH_CAMERA .equals(pref.getKey())){
                     checkExposurTimeValue();
                 }
+                if(mSettingsManager.KEY_EXTENDED_MAX_ZOOM .equals(pref.getKey())){
+                    updateZoomPreference();
+                }
             }
         }
     };
@@ -1699,7 +1702,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_EXPOSURE);
         updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         updatePreference(SettingsManager.KEY_VIDEO_ENCODER);
-        updatePreference(SettingsManager.KEY_ZOOM);
+        updatePreference(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
         updatePreference(SettingsManager.KEY_SWITCH_CAMERA);
         updatePreference(SettingsManager.KEY_QUAD_BAYER_SENSOR);
         updatePreference(SettingsManager.KEY_TONE_MAPPING);
@@ -1718,6 +1721,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoHfrFpsPreference();
         updateEISPreference();
         updateT2TPreference();
+        updateZoomPreference();
         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         updatePictureFormatPreference();
@@ -2333,6 +2337,31 @@ public class SettingsActivity extends PreferenceActivity {
                     t2TFocus.setEnabled(true);
                 }
             }
+        }
+    }
+
+    private void updateZoomPreference() {
+        ListPreference zoomPref = (ListPreference)findPreference(SettingsManager.KEY_ZOOM);
+        ListPreference extendMaxPref = (ListPreference)findPreference(
+                SettingsManager.KEY_EXTENDED_MAX_ZOOM);
+        int cameraId = mSettingsManager.getCurrentCameraId();
+        List<String> zoomLevelLists = mSettingsManager.getSupportedZoomLevel(cameraId);
+        if (extendMaxPref != null && extendMaxPref.getValue().equals("1")) {
+            int maxZoom = (int)mSettingsManager.getSupportedExtendedMaxZoom(cameraId);
+            zoomLevelLists.add(String.valueOf(maxZoom));
+        }
+        List<String> zoomEntriesLists = new ArrayList<String>();
+        for (int i = 0; i< zoomLevelLists.size(); i++) {
+            zoomEntriesLists.add(zoomLevelLists.get(i) + "x");
+        }
+        if(zoomPref != null) {
+            zoomPref.setEntries(zoomEntriesLists.toArray(new CharSequence[zoomEntriesLists.size()]));
+            zoomPref.setEntryValues(zoomLevelLists.toArray(new CharSequence[zoomLevelLists.size()]));
+            int idx = zoomPref.findIndexOfValue(zoomPref.getValue());
+            if (idx < 0) {
+                idx = 0;
+            }
+            zoomPref.setValueIndex(idx);
         }
     }
 

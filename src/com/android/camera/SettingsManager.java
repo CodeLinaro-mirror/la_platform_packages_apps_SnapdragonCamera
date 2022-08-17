@@ -3717,7 +3717,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
-    private List<String> getSupportedZoomLevel(int cameraId) {
+    public List<String> getSupportedZoomLevel(int cameraId) {
         float maxZoom = mCharacteristics.get(cameraId).get(CameraCharacteristics
                 .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
         ArrayList<String> supported = new ArrayList<String>();
