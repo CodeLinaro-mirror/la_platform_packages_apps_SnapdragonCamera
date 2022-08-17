@@ -4371,7 +4371,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mState[i] = STATE_PREVIEW;
         }
         mLongshotActive = false;
-        if(!resumeFromRestartAll) {
+        if(!resumeFromRestartAll && !mUI.isPreviewReady()) {
             updatePreviewSurfaceReadyState(false);
         }
     }
