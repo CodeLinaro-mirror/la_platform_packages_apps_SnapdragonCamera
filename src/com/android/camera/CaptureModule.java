@@ -9339,7 +9339,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(!PersistUtil.enableMediaRecorder()){
             Bundle params = new Bundle();
             params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 1);
-            mAudioEncoder.setParameters(params);
+            if(!mOnlyVideoEncoder) {
+                mAudioEncoder.setParameters(params);
+            }
             mVideoEncoder.setParameters(params);
         }
         mRecordingPausing = true;
@@ -9379,7 +9381,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(!PersistUtil.enableMediaRecorder()){
             Bundle params = new Bundle();
             params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 0);
-            mAudioEncoder.setParameters(params);
+            if(!mOnlyVideoEncoder) {
+                mAudioEncoder.setParameters(params);
+            }
             mVideoEncoder.setParameters(params);
         }
         mRecordingPausing = false;
