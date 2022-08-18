@@ -8344,11 +8344,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onConfigured(CameraCaptureSession cameraCaptureSession) {
             Log.d(TAG, "mSessionListener session onConfigured");
-            if(!PersistUtil.enableMediaRecorder() && !waitForAudioPrepare()){
-                enableVideoButton(true);
-                setCameraModeSwitcherAllowed(true);
-                Toast.makeText(mActivity, "Video Failed", Toast.LENGTH_SHORT).show();
-            }
             setCameraModeSwitcherAllowed(true);
             if(!mSettingsManager.isLogicalEnable()){
                 mActivity.runOnUiThread(new Runnable() {
