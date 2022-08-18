@@ -2279,8 +2279,7 @@ public class SettingsActivity extends PreferenceActivity {
                     pref.setEnabled(false);
                     return;
                 } else {
-                    pref.setValueIndex(1);
-                    pref.setEnabled(false);
+                    pref.setEnabled(true);
                     return;
                 }
             }
