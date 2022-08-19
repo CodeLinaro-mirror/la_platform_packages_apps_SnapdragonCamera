@@ -2968,7 +2968,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 } else {
                     if ((mSettingsManager.isMultiCameraEnabled() &&
-                            mSettingsManager.isLogicalEnable()) || (mSaveRaw && mRawReprocessType == 0 && isPhysicalRaw())) {
+                            mSettingsManager.isLogicalEnable()) || (mSaveRaw && mRawReprocessType == 0 && !isPhysicalRaw())) {
                         List<OutputConfiguration> physicalOutput =
                                 getPhysicalOutputConfiguration();
                         if (physicalOutput.size() != 0) {
@@ -2996,7 +2996,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK) )) {
                         list.remove(mImageReader[id].getSurface());
                     }
-                    if (mSaveRaw && mRawReprocessType == 0 && !isPhysicalRaw()) {
+                    if (mSaveRaw && mRawReprocessType == 0 && isPhysicalRaw()) {
                         list.add(mRawImageReader[id].getSurface());
                     }
 
@@ -3070,7 +3070,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
 
                     if (mRawReprocessType != 0) {
-
                         for (int i = 0; i < mRawCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mRAWImageReader[i].getSurface());
                             configuration.setPhysicalCameraId(mSettingsManager.getRawReprocessPhysicalId());
@@ -3739,7 +3738,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         facing != CameraCharacteristics.LENS_FACING_FRONT &&
                         mSingleRearId == -1){
                     mSingleRearId = camereIdIndex;
-                    Log.i(TAG, "mSingleRearId:" + camereIdIndex);
+                    Log.i(TAG, " mSingleRearId:" + camereIdIndex);
                 } else if (physical_ids != null && physical_ids.size() != 0 && MCXMODE
                         && mLogicalId == -1){
                     mLogicalId = camereIdIndex;
@@ -3791,6 +3790,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mCurrentSceneMode = mSceneCameraIds.get(index);
                     }
                 }
+
                 break;
             case TYPE_RTB:// RTB
                 removeList[CameraMode.RTB.ordinal()] = false;
@@ -4346,7 +4346,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     captureBuilder.addTarget(mImageReader[id].getSurface());
                                 }
                             }
-                            if (mSaveRaw && isPhysicalRaw() ){
+                            if (mSaveRaw && !isPhysicalRaw() ){
                                 addPhysicalCaptureTarget(captureBuilder);
                                 if(mSettingsManager.JPEG_FORMAT == mSettingsManager.getSavePictureFormat()) {
                                     captureBuilder.removeTarget(mImageReader[id].getSurface());
@@ -5426,20 +5426,19 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
     private boolean isPhysicalRaw() {
-
         if ((switchedCameraId || getMainCameraId() == 1 || isSingleCameraMode())) {
-            return false;
-        } else {
             return true;
+        } else {
+            return false;
         }
     }
     public int setInfoForDng(TotalCaptureResult mRawMeta){
         try{
             CameraCharacteristics characteristics;
             CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
-            if(!isPhysicalRaw())  characteristics= manager.getCameraCharacteristics(String.valueOf(getMainCameraId()));
+            if(isPhysicalRaw())  characteristics= manager.getCameraCharacteristics(String.valueOf(getMainCameraId()));
             else characteristics= manager.getCameraCharacteristics(String.valueOf(mActiveCameraIds.get(0)));
-            Log.d(TAG,"setInfoForDng mRawMeta="+mRawMeta+",characteristics="+characteristics);
+            Log.d(TAG,"setInfoForDng mRawMeta="+mRawMeta+",characteristics="+characteristics+",getMainCameraId()="+getMainCameraId());
             mActivity.getMediaSaveService().setCharacteristics(characteristics);
             mActivity.getMediaSaveService().setResult(mRawMeta);
         } catch (CameraAccessException e) {
@@ -7564,7 +7563,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mQuadBayerId != -1 && mSettingsManager.getQuadBayerSensorPrefEnabled()) {
             return mQuadBayerId;
         }
-
         if (CaptureModule.FRONT_ID != mCurrentSceneMode.getCurrentId()) {
             String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
             if (selectMode != null && selectMode.equals("single_rear_cameraid") && mSingleRearId != -1) {
@@ -7987,7 +7985,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void updatePictureSize() {
         String pictureSize = mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE);
-        int rawFormat = mSettingsManager.getRawFormat() != 0 ? mSettingsManager.getRawFormat() : ImageFormat.RAW10;
+        int rawFormat = mSettingsManager.getRawFormat();
         mPictureSize = parsePictureSize(pictureSize);
         if (PersistUtil.isRawReprocessQcfa()) {
             mPictureSize = new Size(8000, 6000);
@@ -8027,7 +8025,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (maxRawSize != null && (rawFormat == ImageFormat.RAW10 ||
                 (rawFormat == ImageFormat.RAW_SENSOR && isRawReprocess()))) {
             mSupportedRawPictureSize = maxRawSize;
-        } else if ((maxRawSize == null || (rawFormat == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null) {
+        } else if ((mSupportedRawPictureSize == null || (rawFormat == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null) {
             mSupportedRawPictureSize = rawSize[0];
             Log.i(TAG, "rawSize: " + rawSize[0].toString());
         }
