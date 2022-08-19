@@ -2560,6 +2560,38 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if ( videoEncoderProfilePref != null && videoEncoderPref != null ) {
             String videoEncoder = videoEncoderPref.getValue();
             videoEncoderProfilePref.reloadInitialEntriesAndEntryValues();
+            boolean isSupported = isDynamicRangeTenBitSupported();
+            Log.d(TAG, " isDynamicRangeTenBitSupported, isSupported : " + isSupported);
+            if (isSupported && !PersistUtil.isVideoEncoderProfileByVendorTag()) {
+                VIDEO_ENCODER_PROFILE_TABLE.clear();
+                try {
+                    DynamicRangeProfiles dynamicProfiles = mCharacteristics.get(
+                            getCurrentCameraId()).get(
+                                    CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES);
+                    if (dynamicProfiles != null) {
+                        Set<Long> profiles = dynamicProfiles.getSupportedProfiles();
+                        for (Long p : profiles) {
+                            Log.d(TAG, " testProfiles:" + p);
+                        }
+                        Set<String> profiles_string = new HashSet<>();
+                        if (profiles.contains(DynamicRangeProfiles.HLG10)) {
+                            profiles_string.add("HEVCProfileMain10");
+                            Log.d(TAG, " Ten bit HLG10 Supported");
+                        }
+                        if (profiles.contains(DynamicRangeProfiles.HDR10)) {
+                            profiles_string.add("HEVCProfileMain10HDR10");
+                            Log.d(TAG, " Ten bit HDR10 Supported");
+                        }
+                        if (profiles.contains(DynamicRangeProfiles.HDR10_PLUS)) {
+                            profiles_string.add("HEVCProfileMain10HDR10Plus");
+                            Log.d(TAG, " Ten bit HDR10_PLUS Supported");
+                        }
+                        VIDEO_ENCODER_PROFILE_TABLE.put("h265", profiles_string);
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "isDynamicRangeTenBitSupported", e.fillInStackTrace());
+                }
+            }
             if ( filterUnsupportedOptions(videoEncoderProfilePref,
                     getSupportedVideoEncoderProfile(videoEncoder)) ) {
                 mFilteredKeys.add(videoEncoderProfilePref.getKey());
@@ -2986,27 +3018,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT) {
                 Log.d(TAG, " isDynamicRangeTenBitSupported REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT ");
                 isSupported = true;
+                break;
             }
-        }
-        try {
-            DynamicRangeProfiles dynamicProfiles = mCharacteristics.get(getCurrentCameraId()).get(
-                    CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES);
-            Log.d(TAG, " isDynamicRangeTenBitSupported dynamicProfiles :" + dynamicProfiles +
-                    ", isSupported :" + isSupported);
-            if(dynamicProfiles != null) {
-                ArrayList<Long> testProfiles = new ArrayList<Long>(dynamicProfiles.getSupportedProfiles());
-                for (int i = 0; i < testProfiles.size(); i ++) {
-                    Log.d(TAG, " testProfiles i :" + testProfiles.get(i));
-
-                }
-                boolean HLG10Support = dynamicProfiles.isExtraLatencyPresent(DynamicRangeProfiles.HLG10);
-                boolean HDR10Support = dynamicProfiles.isExtraLatencyPresent(DynamicRangeProfiles.HDR10);
-                boolean HDR10_PLUSSupport = dynamicProfiles.isExtraLatencyPresent(DynamicRangeProfiles.HDR10_PLUS);
-                Log.d(TAG, " isDynamicRangeTenBitSupported HLG10Support :" + HLG10Support +
-                    ", HDR10Support :" + HDR10Support + ", HDR10_PLUSSupport :" + HDR10_PLUSSupport);
-            }
-        } catch (NoSuchFieldError | IllegalArgumentException error) {
-            Log.w(TAG, " No field REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES ");
         }
         return isSupported;
     }
