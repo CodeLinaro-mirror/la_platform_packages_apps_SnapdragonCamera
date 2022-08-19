@@ -2446,6 +2446,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             isFirstDefault = setUpLocalMode(i, characteristics, removeList,
                     isFirstDefault, cameraId);
         }
+        if (mCurrentSceneMode == null) {
+            int index = mIntentMode == INTENT_MODE_VIDEO ?
+                    CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
+            mCurrentModeIndex =  mNextModeIndex = index;
+            mCurrentSceneMode = mSceneCameraIds.get(index);
+        }
         for (int i = 0; i < removeList.length; i++) {
             if (!removeList[i]) {
                 continue;
