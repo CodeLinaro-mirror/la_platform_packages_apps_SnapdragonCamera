@@ -5426,7 +5426,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
     private boolean isPhysicalRaw() {
-        if ((switchedCameraId || getMainCameraId() == 1 || isSingleCameraMode())) {
+        if ((switchedCameraId || getMainCameraId() == 1 || isSingleCameraMode() || mSettingsManager.getQuadBayerSensorPrefEnabled())) {
             return true;
         } else {
             return false;
@@ -5437,7 +5437,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             CameraCharacteristics characteristics;
             CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
             if(isPhysicalRaw())  characteristics= manager.getCameraCharacteristics(String.valueOf(getMainCameraId()));
-            else characteristics= manager.getCameraCharacteristics(String.valueOf(mActiveCameraIds.get(0)));
+            else {
+                characteristics = manager.getCameraCharacteristics(String.valueOf(mActiveCameraIds.get(0)));
+                Log.d(TAG,"setInfoForDng mActiveCameraIds.get(0)="+mActiveCameraIds.get(0));
+            }
             Log.d(TAG,"setInfoForDng mRawMeta="+mRawMeta+",characteristics="+characteristics+",getMainCameraId()="+getMainCameraId());
             mActivity.getMediaSaveService().setCharacteristics(characteristics);
             mActivity.getMediaSaveService().setResult(mRawMeta);
@@ -6868,12 +6871,22 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.d(TAG,"updatePhysicalSize set Physical "+ id+ " capture size="+mPhysicalSizes[i].toString()
                          +" preview size="+mPhysicalPreviewSizes[i].toString());
 
-                Size[] rawSizes;
-                if(mSaveRaw) rawSizes  = mSettingsManager.getSupportedOutputSize(Integer.valueOf(id),
-                        mSettingsManager.getRawFormat() );
-                else rawSizes  = mSettingsManager.getSupportedOutputSize(Integer.valueOf(id),
-                        ImageFormat.RAW10 );
-                if (rawSizes != null){
+                Size[] rawSizes = null;
+                Size qcfaSize = null ;
+                if(mSaveRaw) {
+                    if(mSettingsManager.getQcfaPrefEnabled()){
+                         qcfaSize = mSettingsManager.getQCFARawSize(id, mSettingsManager.getRawFormat());
+                    }if(qcfaSize == null) {
+                        rawSizes = mSettingsManager.getSupportedOutputSize(Integer.valueOf(id),
+                                mSettingsManager.getRawFormat());
+                    }
+                }else {
+                    rawSizes = mSettingsManager.getSupportedOutputSize(Integer.valueOf(id),
+                            ImageFormat.RAW10);
+                }
+                if (qcfaSize != null){
+                    mPhysicalRawSizes[i] = qcfaSize;
+                }else if(rawSizes != null){
                     mPhysicalRawSizes[i] = rawSizes[0];
                 } else {
                     mPhysicalRawSizes[i] = mSupportedRawPictureSize;
@@ -8013,8 +8026,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mRawSize[0] = rawSize[0];
             }
         }
-
-        Size[] rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(), rawFormat);
+        mSupportedRawPictureSize = null;
+        if(mSettingsManager.getQcfaPrefEnabled() && isPhysicalRaw()){
+            mSupportedRawPictureSize = mSettingsManager.getQCFARawSize(String.valueOf(getMainCameraId()), mSettingsManager.getRawFormat());
+        }
+        if (mSupportedRawPictureSize == null){
+            Size[] rawSize = mSettingsManager.getSupportedOutputSize(getMainCameraId(), rawFormat);
         if ((rawSize == null || rawSize.length == 0 || rawFormat == 0)) {
             mSaveRaw = false;
         }
@@ -8023,15 +8040,16 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         Size maxRawSize = getMaxRawSize();
         if (maxRawSize != null && (rawFormat == ImageFormat.RAW10 ||
-                (rawFormat == ImageFormat.RAW_SENSOR && isRawReprocess()))) {
+                (rawFormat == ImageFormat.RAW_SENSOR && isRawReprocess()) || mSettingsManager.getQuadBayerSensorPrefEnabled())) {
             mSupportedRawPictureSize = maxRawSize;
         } else if ((mSupportedRawPictureSize == null || (rawFormat == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null) {
             mSupportedRawPictureSize = rawSize[0];
             Log.i(TAG, "rawSize: " + rawSize[0].toString());
         }
+    }
 
         if (mSupportedRawPictureSize != null) {
-            Log.i(TAG, " maxSIze: " + mSupportedRawPictureSize.toString());
+            Log.i(TAG, "maxSIze: " + mSupportedRawPictureSize.toString());
         }
         mPreviewSize = getOptimalPreviewSize(mPictureSize, prevSizes);
         Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(getMainCameraId());
@@ -8070,10 +8088,11 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private Size getMaxRawSize(){
         Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
+        int rawFormat = mSettingsManager.getRawFormat() != 0 ? mSettingsManager.getRawFormat() : ImageFormat.RAW10;
         List<Size> allRawSize = new ArrayList<>();
         if(physical_ids != null && physical_ids.size() != 0) {
             for (String physicalId : physical_ids){
-                Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(physicalId), ImageFormat.RAW10);
+                Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(physicalId),rawFormat);
                 if (rawSize != null && rawSize.length != 0) {
                     allRawSize.add(rawSize[0]);
                 }
@@ -10052,6 +10071,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (PersistUtil.enableMediaRecorder() && mMediaRecorder != null) {
                 mMediaRecorder.setOrientationHint(rotation);
             } else {
+                Log.d(TAG,"setOrientationHint rotation="+rotation);
                 mMuxer.setOrientationHint(rotation);
             }
         }
@@ -10337,8 +10357,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mSettingsManager != null) {
             String videoFlipValue = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_FLIP);
             Log.d(TAG, "video flip is " + videoFlipValue);
-            if (videoFlipValue != null && videoFlipValue.equals("1")) {
-                 mVideoFormat.setInteger("vendor.qti-ext-enc-preprocess-mirror.flip", 1);
+            if (videoFlipValue != null) {
+                 mVideoFormat.setInteger("vendor.qti-ext-enc-preprocess-mirror.flip", Integer.parseInt(videoFlipValue));
             }
         }
     }
