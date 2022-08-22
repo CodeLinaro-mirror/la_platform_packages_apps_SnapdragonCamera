@@ -309,7 +309,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private Map<String, Values> mValuesMap;
     private Context mContext;
     private PreferenceGroup mPreferenceGroup;
-    private ComboPreferences mPreferences;
+    public ComboPreferences mPreferences;
     private Map<String, Set<String>> mDependendsOnMap;
     private boolean mIsMonoCameraPresent = false;
     private boolean mIsFrontCameraPresent = false;

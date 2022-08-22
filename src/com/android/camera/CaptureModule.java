@@ -112,6 +112,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.util.AttributeSet;
 
+import com.android.camera.app.CameraApp;
 import com.android.camera.data.Camera2ModeAdapter.OnItemClickListener;
 import com.android.camera.deepportrait.CamGLRenderObserver;
 import com.android.camera.deepportrait.CamGLRenderer;
@@ -3602,6 +3603,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSettingsManager.createCaptureModule(this);
         mSettingsManager.registerListener(this);
         mSettingsManager.init();
+        String facing = mSettingsManager.mPreferences.getGlobal().getString(mSettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
+        if (facing.equals("front")) {
+            CURRENT_ID = FRONT_ID;
+        }
         mFirstPreviewLoaded = false;
         Log.d(TAG, "init");
         for (int i = 0; i < MAX_NUM_CAM; i++) {
@@ -6657,7 +6662,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
             mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         }
-        reinit();
+        if(!CameraApp.isColdStart){
+            reinit();
+        }
+        CameraApp.isColdStart = false;
         mPaused = false;
         mStatsVisualEnable = mSettingsManager.getValue(
                 SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
