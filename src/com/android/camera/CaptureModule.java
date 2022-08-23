@@ -5750,7 +5750,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             int count = ids.size();
             Iterator<String> iterator = ids.iterator();
             for (int i =0;i<count;i++){
-
                 mPhysicalSnapshotImageReaders[i] = ImageReader.newInstance(
                         mPhysicalVideoSnapshotSizes[i].getWidth(),
                         mPhysicalVideoSnapshotSizes[i].getHeight(),
@@ -5794,6 +5793,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             int count = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_CAMCORDER).size();
             int ret = 0;
+            int nums = PersistUtil.getPhysicalLiveShotNum();
+            if (nums > 0 && nums <= count) {
+                count = nums;
+            }
             for (int i =0;i<count;i++){
                 if (mPhysicalSnapshotImageReaders[i] != null){
                     builder.addTarget(mPhysicalSnapshotImageReaders[i].getSurface());
