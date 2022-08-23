@@ -1929,6 +1929,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (maunalHDR != null && (maunalHDR.equals("manual"))) {
             mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         }
+
+        String hvxShdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
+        String hvxMfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
+        if ((hvxShdr != null && (hvxShdr.equals("1"))) || (hvxMfhdr != null && (hvxMfhdr.equals("1")))) {
+            mFilterModeSwitcher.setVisibility(View.INVISIBLE);
+        }
     }
 
     public void addFilterMode() {
