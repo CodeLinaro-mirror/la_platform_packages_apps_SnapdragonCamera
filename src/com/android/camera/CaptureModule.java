@@ -3704,13 +3704,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             module.mode = CameraMode.values()[i];
             mSceneCameraIds.add(module);
         }
+        initModeByIntent();
         initCameraIds();
         mSettingsManager.init();
         mPostProcessor = new PostProcessor(mActivity, this);
         mFrameProcessor = new FrameProcessor(mActivity, this);
 
         mContentResolver = mActivity.getContentResolver();
-        initModeByIntent();
+
         mUI = new CaptureUI(activity, this, parent);
         mUI.initializeControlByIntent();
 
