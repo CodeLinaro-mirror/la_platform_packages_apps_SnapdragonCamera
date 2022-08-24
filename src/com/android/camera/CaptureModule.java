@@ -1996,6 +1996,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             initializePreviewConfiguration(id);
                             setDisplayOrientation();
                             updateFaceDetection();
+                            mFirstPreviewLoaded = false;
                             try {
                                 if (isBackCamera() && getCameraMode() == DUAL_MODE) {
                                     linkBayerMono(id);
@@ -4315,11 +4316,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mInitHeifWriter != null) {
             mInitHeifWriter.close();
         }
+        mUI.showPreviewCover();
         if(mIsCloseCamera) {
             closeCamera();
-            mUI.showPreviewCover();
-            mUI.hideSurfaceView();
-        }else{
+        } else {
             closeProcessors();
         }
         resetAudioMute();
@@ -4330,7 +4330,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         mZoomValue = 1f;
         mUI.updateZoomSeekBar(1.0f);
-        mFirstPreviewLoaded = false;
         if (isExitCamera && mIsCloseCamera) {
             stopBackgroundThread();
         }
@@ -4345,12 +4344,18 @@ public class CaptureModule implements CameraModule, PhotoController,
         mJpegImageData = null;
     }
 
+    @Override
     public void onResumeBeforeSuper() {
+        onResumeBeforeSuper(false);
+    }
+
+    public void onResumeBeforeSuper(boolean resumeFromRestartAll) {
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         Log.v(TAG, " onResumeBeforeSuper facingOfIntentExtras :" + facingOfIntentExtras +
                 ", FRONT_ID :" + FRONT_ID + ", mIntentMode :" + mIntentMode);
-        if (facingOfIntentExtras != -1 && (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA  || mIntentMode == INTENT_MODE_CAPTURE)) {
+        if (facingOfIntentExtras != -1 && (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA  || mIntentMode == INTENT_MODE_CAPTURE) &&
+            !resumeFromRestartAll) {
             if (facingOfIntentExtras == CameraUtil.FACING_FRONT) {
                 facingOfIntentExtras = FRONT_ID;
             }
@@ -4367,7 +4372,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mState[i] = STATE_PREVIEW;
         }
         mLongshotActive = false;
-        if(mIsCloseCamera) {
+        if(!resumeFromRestartAll && !mUI.isPreviewReady()) {
             updatePreviewSurfaceReadyState(false);
         }
     }
@@ -5592,6 +5597,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mCurrentSession = cameraCaptureSession;
             mCaptureSession[cameraId] = cameraCaptureSession;
             updateFaceDetection();
+            mFirstPreviewLoaded = false;
             // Create slow motion request list
             List<CaptureRequest> slowMoRequests = null;
             try {
@@ -6432,10 +6438,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mStopRecPending = true;
         boolean shouldAddToMediaStoreNow = false;
+
+        //send the EOS in advance
+        Log.d(TAG, "set eos before play record sound");
+        setEndOfStream(false, true);
+
         // Stop recording
         mUI.setSoundEffectsForRecording(true);
         checkAndPlayRecordSound(cameraId, false);
-        setEndOfStream(false, true);
         mFrameProcessor.setVideoOutputSurface(null);
         mFrameProcessor.onClose();
         if (mLiveShotInitHeifWriter != null) {
@@ -6475,6 +6485,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         keepScreenOnAwhile();
         // release media recorder
         releaseMediaRecorder();
+        resetAudioMute();
         releaseAudioFocus();
         mUI.showRecordingUI(false, false);
         mUI.enableShutter(true);
@@ -8263,8 +8274,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 case SettingsManager.KEY_MONO_ONLY:
                 case SettingsManager.KEY_CLEARSIGHT:
                 case SettingsManager.KEY_MONO_PREVIEW:
-                case SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE:
                 case SettingsManager.KEY_FORCE_AUX:
+                    if (count == 0) restartAll();
+                    return;
+                case SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE:
+                    mCurrentSceneMode.setSwithCameraId(-1);
                     if (count == 0) restartAll();
                     return;
                 case SettingsManager.KEY_VIDEO_FLASH_MODE:
@@ -8441,12 +8455,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             updateLockAFAEVisibility();
         }
         onPauseBeforeSuper();
-        if(!mIsCloseCamera){
-            mUI.showPreviewCover();
-        }
         onPauseAfterSuper(false);
         reinitSceneMode();
-        onResumeBeforeSuper();
+        onResumeBeforeSuper(true);
         onResumeAfterSuper(true);
         setRefocusLastTaken(false);
         mIsCloseCamera = true;
