@@ -2446,6 +2446,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             isFirstDefault = setUpLocalMode(i, characteristics, removeList,
                     isFirstDefault, cameraId);
         }
+        if (mCurrentSceneMode == null) {
+            int index = mIntentMode == INTENT_MODE_VIDEO ?
+                    CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
+            mCurrentModeIndex =  mNextModeIndex = index;
+            mCurrentSceneMode = mSceneCameraIds.get(index);
+        }
         for (int i = 0; i < removeList.length; i++) {
             if (!removeList[i]) {
                 continue;
@@ -4354,7 +4360,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         Log.v(TAG, " onResumeBeforeSuper facingOfIntentExtras :" + facingOfIntentExtras +
                 ", FRONT_ID :" + FRONT_ID + ", mIntentMode :" + mIntentMode);
-        if (facingOfIntentExtras != -1 && (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA  || mIntentMode == INTENT_MODE_CAPTURE)) {
+        if (facingOfIntentExtras != -1 && (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA  || mIntentMode == INTENT_MODE_CAPTURE) &&
+            !resumeFromRestartAll) {
             if (facingOfIntentExtras == CameraUtil.FACING_FRONT) {
                 facingOfIntentExtras = FRONT_ID;
             }
@@ -6445,7 +6452,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         // Stop recording
         mUI.setSoundEffectsForRecording(true);
         checkAndPlayRecordSound(cameraId, false);
-        setEndOfStream(false, true);
         mFrameProcessor.setVideoOutputSurface(null);
         mFrameProcessor.onClose();
         if (mLiveShotInitHeifWriter != null) {
@@ -8274,8 +8280,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 case SettingsManager.KEY_MONO_ONLY:
                 case SettingsManager.KEY_CLEARSIGHT:
                 case SettingsManager.KEY_MONO_PREVIEW:
-                case SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE:
                 case SettingsManager.KEY_FORCE_AUX:
+                    if (count == 0) restartAll();
+                    return;
+                case SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE:
+                    mCurrentSceneMode.setSwithCameraId(-1);
                     if (count == 0) restartAll();
                     return;
                 case SettingsManager.KEY_VIDEO_FLASH_MODE:
