@@ -26,6 +26,11 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+ /*
+  * Changes from Qualcomm Innovation Center are provided under the following license:
+  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+  * SPDX-License-Identifier: BSD-3-Clause-Clear
+  */
 
 package com.android.camera;
 
@@ -187,6 +192,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL =
             "pref_camera2_video_time_lapse_frame_interval_key";
     public static final String KEY_FACE_DETECTION = "pref_camera2_facedetection_key";
+    public static final String KEY_FACE_MASK = "pref_camera2_facemask_key";
     public static final String KEY_VIDEO_HIGH_FRAME_RATE = "pref_camera2_hfr_key";
     public static final String KEY_SELFIE_FLASH = "pref_selfie_flash_key";
     public static final String KEY_SHUTTER_SOUND = "pref_camera2_shutter_sound_key";
@@ -281,6 +287,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_FACIAL_CONTOUR = "pref_camera2_facial_contour_key";
     public static final String KEY_FACE_DETECTION_MODE = "pref_camera2_face_detection_mode";
     public static final String KEY_FD_SETTING = "pref_camera2_fd_setting_key";
+    public static final String KEY_FD_FL_SETTING = "pref_camera2_fd_fl_setting_key";
+    public static final String KEY_FD_FACIAL_SETTING = "pref_camera2_fd_facial_setting_key";
     public static final String KEY_ZSL = "pref_camera2_zsl_key";
     public static final String KEY_BURST_LIMIT = "pref_camera2_burst_limit_key";
     public static final String KEY_VIDEO_ENCODER_PROFILE = "pref_camera2_videoencoderprofile_key";
@@ -1685,6 +1693,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference hdrAnsMode = mPreferenceGroup.findPreference(KEY_HDR_ANS_MODE);
         ListPreference noiseReduction = mPreferenceGroup.findPreference(KEY_NOISE_REDUCTION);
         ListPreference faceDetection = mPreferenceGroup.findPreference(KEY_FACE_DETECTION);
+        ListPreference faceMask = mPreferenceGroup.findPreference(KEY_FACE_MASK);
         ListPreference instantAec = mPreferenceGroup.findPreference(KEY_INSTANT_AEC);
         ListPreference saturationLevel = mPreferenceGroup.findPreference(KEY_SATURATION_LEVEL);
         ListPreference antiBandingLevel = mPreferenceGroup.findPreference(KEY_ANTI_BANDING_LEVEL);
@@ -1900,6 +1909,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (faceDetection != null) {
             if (!isFaceDetectionSupported(cameraId) || !isCameraFDSupported()) {
                 removePreference(mPreferenceGroup, KEY_FACE_DETECTION);
+            }
+        }
+
+        if (faceMask != null) {
+            if (!isFaceDetectionSupported(cameraId) || !isCameraFDSupported()) {
+                removePreference(mPreferenceGroup, KEY_FACE_MASK);
             }
         }
 

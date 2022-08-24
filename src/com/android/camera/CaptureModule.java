@@ -17,6 +17,11 @@
  * limitations under the License.
  *
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
@@ -469,6 +474,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Byte.class);
     public static CaptureRequest.Key<Byte> blinkEnable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.blink_enable",
+                    Byte.class);
+    private static final CaptureRequest.Key<Byte> faceMaskEnable =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.face_mask_enable",
                     Byte.class);
     public static final CaptureRequest.Key<Byte> FACE_EXPRESSION_ENABLE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.face_expression_enable",
@@ -1486,7 +1494,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     } else {
                         updateFaceView(faces, null);
                     }
-                    if (PersistUtil.isFacialMaskDetection() && mIsFacialMaskSupported) {
+                    if (isFdMaskOn() && mIsFacialMaskSupported) {
                         updateFacialMask(result);
                     }
                 }
@@ -2599,6 +2607,12 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean isFdSmileOn(){
         String value = mSettingsManager.getValue(SettingsManager.KEY_FD_SMILE);
+        if (value == null) return false;
+        return  value.equals("enable");
+    }
+
+    private boolean isFdMaskOn(){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_FACE_MASK);
         if (value == null) return false;
         return  value.equals("enable");
     }
@@ -13596,6 +13610,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         String value = mSettingsManager.getValue(SettingsManager.KEY_FACE_DETECTION);
         String mode = mSettingsManager.getValue(SettingsManager.KEY_FACE_DETECTION_MODE);
         String facialContour = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
+        String facialMask = mSettingsManager.getValue(SettingsManager.KEY_FACE_MASK);
         Log.d(FD_TAG,FD_LOG,"face detection mode="+mode+" facialContour="+facialContour);
         boolean bsgc = isBsgcDetecionOn();
         if (value != null) {
@@ -13624,6 +13639,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                     request.set(CaptureModule.gazeEnable, bsgc_enable);
                     request.set(CaptureModule.blinkEnable, bsgc_enable);
                 }
+
+                Log.d(FD_TAG,FD_LOG,"face detection faceMask is ="+isFdMaskOn());
+                byte maskEnable;
+                if (isFdMaskOn()) {
+                    maskEnable = 1;
+                } else {
+                    maskEnable = 0;
+                }
+                request.set(CaptureModule.faceMaskEnable, maskEnable);
 
                 if (isGenderOn()) {
                     request.set(CaptureModule.GENDER_ENABLE, (byte)1);

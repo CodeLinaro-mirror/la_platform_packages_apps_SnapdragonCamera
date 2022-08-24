@@ -46,7 +46,11 @@ Not a contribution.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera;
 
@@ -132,8 +136,14 @@ public class SettingsActivity extends PreferenceActivity {
     private int privateCounter = 0;
     private final int DEVELOPER_MENU_TOUCH_COUNT = 10;
     private FdExpandListView fdExpandListView;
+    private FdExpandListView fdFLExpandListView;
+    private FdExpandListView fdFacialExpandListView;
     private ExpandableListView expandableListView = null;
     private FdExpandListViewAdapter expandableAdapter = null;
+    private ExpandableListView fdFLExpandableListView = null;
+    private FdExpandListViewAdapter fdFLExpandableAdapter = null;
+    private ExpandableListView fdFacialExpandableListView = null;
+    private FdExpandListViewAdapter fdFacialExpandableAdapter = null;
     private boolean mIsSingleCameraMode = false;
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
@@ -1214,14 +1224,14 @@ public class SettingsActivity extends PreferenceActivity {
                         if ( preference.getKey().equals(SettingsManager.KEY_RESTORE_DEFAULT) ) {
                             onRestoreDefaultSettingsClick();
                         }
-                        if( preference.getKey().equals(SettingsManager.KEY_FD_SETTING)){
+                        if( preference.getKey().equals(SettingsManager.KEY_FD_SETTING)) {
                             View listView = (SettingsActivity.this).getLayoutInflater().inflate(
                                     R.layout.expandlistview, null);
                             final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
                             alert.setTitle("FD Settings");
                             alert.setView(listView);
                             expandableListView = (ExpandableListView) listView.findViewById(R.id.main_expandablelistview);
-                            expandableAdapter = fdExpandListView.new FdExpandListViewAdapter(); //
+                            expandableAdapter = fdExpandListView.new FdExpandListViewAdapter();
                             expandableListView.setAdapter(expandableAdapter);
                             alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog,int id) {
@@ -1232,6 +1242,52 @@ public class SettingsActivity extends PreferenceActivity {
                                 @Override
                                 public void onDismiss(DialogInterface Dialog) {
                                     preference.setSummary(fdExpandListView.getFDSummery());
+                                }
+                            });
+                            alert.show();
+                        }
+
+                        if( preference.getKey().equals(SettingsManager.KEY_FD_FL_SETTING)) {
+                            View listView = (SettingsActivity.this).getLayoutInflater().inflate(
+                                    R.layout.expandlistview, null);
+                            final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
+                            alert.setTitle("FD FL Attributes");
+                            alert.setView(listView);
+                            fdFLExpandableListView = (ExpandableListView) listView.findViewById(R.id.main_expandablelistview);
+                            fdFLExpandableAdapter = fdFLExpandListView.new FdExpandListViewAdapter();
+                            fdFLExpandableListView.setAdapter(fdFLExpandableAdapter);
+                            alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,int id) {
+                                    dialog.cancel();
+                                }
+                            });
+                            alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                @Override
+                                public void onDismiss(DialogInterface Dialog) {
+                                    preference.setSummary(fdFLExpandListView.getFDSummery());
+                                }
+                            });
+                            alert.show();
+                        }
+
+                        if( preference.getKey().equals(SettingsManager.KEY_FD_FACIAL_SETTING)) {
+                            View listView = (SettingsActivity.this).getLayoutInflater().inflate(
+                                    R.layout.expandlistview, null);
+                            final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
+                            alert.setTitle("FD Facial Attributes");
+                            alert.setView(listView);
+                            fdFacialExpandableListView = (ExpandableListView) listView.findViewById(R.id.main_expandablelistview);
+                            fdFacialExpandableAdapter = fdFacialExpandListView.new FdExpandListViewAdapter();
+                            fdFacialExpandableListView.setAdapter(fdFacialExpandableAdapter);
+                            alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,int id) {
+                                    dialog.cancel();
+                                }
+                            });
+                            alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                @Override
+                                public void onDismiss(DialogInterface Dialog) {
+                                    preference.setSummary(fdFacialExpandListView.getFDSummery());
                                 }
                             });
                             alert.show();
@@ -1372,14 +1428,27 @@ public class SettingsActivity extends PreferenceActivity {
         Preference p = findPreference(SettingsManager.KEY_FD_SETTING);
         if(p != null) {
             fdExpandListView = new FdExpandListView(SettingsActivity.this);
-            fdExpandListView.initExpandData();
+            fdExpandListView.initFDSettingsData();
             p.setSummary(fdExpandListView.getFDSummery());
             removePreference(SettingsManager.KEY_FD_SMILE, developer);
             removePreference(SettingsManager.KEY_FD_GAZE, developer);
             removePreference(SettingsManager.KEY_FD_BLINK, developer);
             removePreference(SettingsManager.KEY_FACIAL_CONTOUR, developer);
             removePreference(SettingsManager.KEY_FACE_DETECTION_MODE, developer);
-            removePreference(SettingsManager.KEY_FACE_DETECTION_MODE, developer);
+            removePreference(SettingsManager.KEY_FD_GENDER, developer);
+            removePreference(SettingsManager.KEY_FD_FACE_EXPRESSION, developer);
+        }
+        Preference pdFL = findPreference(SettingsManager.KEY_FD_FL_SETTING);
+        if(pdFL != null) {
+            fdFLExpandListView = new FdExpandListView(SettingsActivity.this);
+            fdFLExpandListView.initFDFLData();
+            pdFL.setSummary(fdFLExpandListView.getFDSummery());
+        }
+        Preference fdFacial = findPreference(SettingsManager.KEY_FD_FACIAL_SETTING);
+        if(fdFacial != null) {
+            fdFacialExpandListView = new FdExpandListView(SettingsActivity.this);
+            fdFacialExpandListView.initFDFacialData();
+            fdFacial.setSummary(fdFacialExpandListView.getFDSummery());
         }
         if(!PersistUtil.isRawReprocessEnable() && developer != null){
             removePreference(SettingsManager.KEY_RAW_REPROCESS_TYPE, developer);
@@ -1431,6 +1500,8 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_FACE_DETECTION_MODE);
                         videoAddList.add(SettingsManager.KEY_FACIAL_CONTOUR);
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
+                        videoAddList.add(SettingsManager.KEY_FD_FL_SETTING);
+                        videoAddList.add(SettingsManager.KEY_FD_FACIAL_SETTING);
                         videoAddList.add(mSettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                         videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                         videoAddList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);

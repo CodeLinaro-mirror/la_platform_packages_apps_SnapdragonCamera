@@ -450,10 +450,6 @@ public class PersistUtil {
         return getBoolean("persist.sys.cameraapp.needaudio", true);
     }
 
-    public static boolean isFacialMaskDetection() {
-        return getBoolean("persist.sys.cameraapp.facialmaskdetection", false);
-    }
-
     public static boolean isVideoEncoderProfileByVendorTag() {
         return getBoolean("persist.sys.cameraapp.videoprofilevendortag", true);
     }

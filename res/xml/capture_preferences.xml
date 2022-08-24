@@ -26,7 +26,11 @@
      OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
      IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
-
+<!--
+    Changes from Qualcomm Innovation Center are provided under the following license:
+    Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+    SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
 <PreferenceGroup
     xmlns:camera="http://schemas.android.com/apk/res-auto"
     camera:title="@string/pref_camera_settings_category">
@@ -487,6 +491,13 @@
         camera:title="@string/pref_camera2_face_detection_mode_title"
         camera:entries="@array/pref_camera2_face_detection_entries"
         camera:entryValues="@array/pref_camera2_face_detection_entryvalues" />
+
+    <ListPreference
+        camera:key="pref_camera2_facemask_key"
+        camera:defaultValue="@string/pref_camera2_bsgc_default"
+        camera:title="@string/pref_camera_facemask_title"
+        camera:entries="@array/pref_camera2_bsgc_entries"
+        camera:entryValues="@array/pref_camera2_bsgc_entryvalues" />
 
     <ListPreference
         camera:key="pref_camera2_fd_gender_key"

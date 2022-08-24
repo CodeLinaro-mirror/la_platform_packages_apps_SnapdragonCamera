@@ -26,6 +26,11 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 package com.android.camera.ui;
 
 import android.content.Context;
@@ -570,6 +575,7 @@ public class Camera2FaceView extends FaceView {
         // drawable.
         mFaces = null;
         mExFaces = null;
+        mMaskNums = 0;
         invalidate();
     }
     @Override
@@ -579,6 +585,7 @@ public class Camera2FaceView extends FaceView {
         mFaces = null;
         mExFaces = null;
         mColor = mFocusingColor;
+        mMaskNums = 0;
         invalidate();
     }
 }
