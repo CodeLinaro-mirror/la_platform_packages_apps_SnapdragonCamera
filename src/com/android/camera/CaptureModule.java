@@ -1341,12 +1341,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.d(TAG, "shouldHideCover " + shouldHideCover +
                         ", request tag " + tag_ + ", curTag " + curTag);
                 if (shouldHideCover) {
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mUI.hidePreviewCover();
-                        }
-                    });
+                    mHandler.postDelayed(() -> {
+                        mUI.hidePreviewCover();
+                    }, 33L);
                     mFirstPreviewLoaded = true;
                 }
             }
