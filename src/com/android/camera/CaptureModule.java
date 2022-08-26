@@ -2127,7 +2127,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState ||
                         CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED == afState ||
                         CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED == afState ||
-                        (mLockRequestHashCode[id] == result.getRequest().hashCode() &&
+                        (mLockRequestHashCode[id] == mPreviewRequestBuilder[id].hashCode() &&
                                 afState == CaptureResult.CONTROL_AF_STATE_INACTIVE)) {
                     if(id == MONO_ID && getCameraMode() == DUAL_MODE && isBackCamera()) {
                         // in dual mode, mono AE dictated by bayer AE.
@@ -2137,7 +2137,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         else
                             mState[id] = STATE_WAITING_AE_LOCK;
                     } else {
-                        if ((mLockRequestHashCode[id] == result.getRequest().hashCode()) || (mLockRequestHashCode[id] == 0)) {
+                        if ((mLockRequestHashCode[id] == mPreviewRequestBuilder[id].hashCode()) || (mLockRequestHashCode[id] == 0)) {
 
                             // CONTROL_AE_STATE can be null on some devices
                             if(aeState == null || (aeState == CaptureResult
@@ -2148,7 +2148,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             }
                         }
                     }
-                } else if (mLockRequestHashCode[id] == result.getRequest().hashCode()){
+                } else if (mLockRequestHashCode[id] == mPreviewRequestBuilder[id].hashCode()){
                     Log.i(TAG, "AF lock request result received, but not focused");
                     mLockRequestHashCode[id] = 0;
                 } else if (mSettingsManager.isFixedFocus(id)) {
@@ -2169,7 +2169,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
                         aeState == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED ||
                         aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                    if ((mPrecaptureRequestHashCode[id] == result.getRequest().hashCode()) || (mPrecaptureRequestHashCode[id] == 0)) {
+                    if ((mPrecaptureRequestHashCode[id] ==  mPreviewRequestBuilder[id].hashCode()) || (mPrecaptureRequestHashCode[id] == 0)) {
                         if (mLongshotActive && isFlashOn(id)) {
                             checkAfAeStatesAndCapture(id);
                         } else {
@@ -2182,7 +2182,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     // AE Mode is OFF, the AE state is always CONTROL_AE_STATE_INACTIVE
                     // then begain capture and ignore lock AE.
                     checkAfAeStatesAndCapture(id);
-                } else if (mPrecaptureRequestHashCode[id] == result.getRequest().hashCode()) {
+                } else if (mPrecaptureRequestHashCode[id] ==  mPreviewRequestBuilder[id].hashCode()) {
                     Log.i(TAG, "AE trigger request result received, but not converged");
                     mPrecaptureRequestHashCode[id] = 0;
                 }
@@ -4130,7 +4130,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             // lock AF and Precapture
             applySettingsForLockAndPrecapture(builder, id);
             CaptureRequest request = builder.build();
-            mLockRequestHashCode[id] = request.hashCode();
+            mLockRequestHashCode[id] = mPreviewRequestBuilder[id].hashCode();
             mCaptureSession[id].capture(request, mCaptureCallback, mCameraHandler);
 
             // if flash is on, does not lock AE until the AE state is CONTROL_AE_STATE_CONVERGED.
@@ -4216,7 +4216,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             CaptureRequest request = builder.build();
             if (mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
-                mLockRequestHashCode[id] = request.hashCode();
+                mLockRequestHashCode[id] = mPreviewRequestBuilder[id].hashCode();
                 mCaptureSession[id].capture(request, mCaptureCallback, mCameraHandler);
             }else{
                 mLockRequestHashCode[id] = 0;
@@ -5272,7 +5272,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             applySettingsForPrecapture(builder, id);
             CaptureRequest request = builder.build();
-            mPrecaptureRequestHashCode[id] = request.hashCode();
+            mPrecaptureRequestHashCode[id] =  mPreviewRequestBuilder[id].hashCode();
 
             mState[id] = STATE_WAITING_PRECAPTURE;
             mCaptureSession[id].capture(request, mCaptureCallback, mCameraHandler);
@@ -6137,6 +6137,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         isFlashRequiredInDriver = false;
         if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id]) || mCurrentSceneMode.mode == CameraMode.VIDEO) {
             return;
+        }
+        if (mState[id] == STATE_WAITING_TOUCH_FOCUS) {
+            mCameraHandler.removeMessages(CANCEL_TOUCH_FOCUS, mCameraId[id]);
         }
         try {
             if (mUI.getCurrentProMode() != ProMode.MANUAL_MODE) {
