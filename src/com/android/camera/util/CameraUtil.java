@@ -804,7 +804,18 @@ public class CameraUtil {
         }
         return optimalSize;
     }
-
+    public static int getSize(String value) {
+        if (value == null) {
+            return 0;
+        }
+        String[] size = value.split("x");
+        if (size != null && size.length >= 2) {
+            int width = Integer.parseInt(size[0]);
+            int height = Integer.parseInt(size[1]);
+            return width * height;
+        }
+        return 0;
+    }
     public static void dumpParameters(Parameters parameters) {
         String flattened = parameters.flatten();
         StringTokenizer tokenizer = new StringTokenizer(flattened, ";");
