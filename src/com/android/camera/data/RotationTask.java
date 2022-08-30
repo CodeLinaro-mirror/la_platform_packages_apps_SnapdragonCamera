@@ -21,7 +21,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.provider.MediaStore.Images;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.data.LocalMediaData.PhotoData;
 import com.android.camera.exif.ExifInterface;

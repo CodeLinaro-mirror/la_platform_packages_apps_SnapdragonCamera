@@ -34,7 +34,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.exif.ExifTag;
 

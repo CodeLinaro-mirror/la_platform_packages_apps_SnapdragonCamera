@@ -22,7 +22,7 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.provider.Settings;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.OrientationEventListener;
 import android.view.Surface;
 

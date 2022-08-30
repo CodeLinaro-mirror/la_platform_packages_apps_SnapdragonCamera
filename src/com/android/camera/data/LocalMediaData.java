@@ -31,7 +31,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;

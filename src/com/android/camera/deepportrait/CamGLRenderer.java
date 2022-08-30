@@ -46,7 +46,7 @@ import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLSurfaceView.Renderer;
 import android.opengl.Matrix;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 
 public class CamGLRenderer implements Renderer

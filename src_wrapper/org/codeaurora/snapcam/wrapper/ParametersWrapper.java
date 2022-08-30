@@ -35,7 +35,7 @@ import java.lang.reflect.Method;
 
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 public class ParametersWrapper extends Wrapper{
     private final static String TAG = "ParametersWrapper";

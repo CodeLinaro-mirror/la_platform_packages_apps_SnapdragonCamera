@@ -36,7 +36,7 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.Face;
 import android.os.Handler;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 
 import com.android.camera.CaptureModule;

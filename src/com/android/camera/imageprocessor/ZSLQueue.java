@@ -31,7 +31,7 @@ package com.android.camera.imageprocessor;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.media.Image;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.CaptureModule;
 import com.android.camera.util.PersistUtil;
@@ -47,9 +47,6 @@ public class ZSLQueue {
     private int mMetaHead;
     private Object mLock = new Object();
     private CaptureModule mModule;
-    private static final boolean DEBUG_QUEUE  =
-            (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_LOG) ||
-            (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_ALL);
     private static final String TAG = "ZSLQueue";
 
     public ZSLQueue(CaptureModule module) {
@@ -170,7 +167,7 @@ public class ZSLQueue {
             }
         }
 
-        if(DEBUG_QUEUE) Log.d(TAG, "Meta: " + lastIndex + " " + metadata.get(CaptureResult.SENSOR_TIMESTAMP));
+        Log.d(TAG, "Meta: " + lastIndex + " " + metadata.get(CaptureResult.SENSOR_TIMESTAMP));
     }
 
     public ImageItem tryToGetMatchingItem() {

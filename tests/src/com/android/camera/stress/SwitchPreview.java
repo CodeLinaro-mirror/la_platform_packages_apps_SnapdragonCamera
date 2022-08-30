@@ -24,7 +24,7 @@ import android.provider.MediaStore;
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.LargeTest;
 import android.os.Environment;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;

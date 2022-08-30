@@ -24,7 +24,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.TypedValue;
 
 import com.android.camera.util.CameraUtil;

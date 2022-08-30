@@ -24,7 +24,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.View;
 
 import com.android.camera.SDCard;

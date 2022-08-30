@@ -25,7 +25,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 

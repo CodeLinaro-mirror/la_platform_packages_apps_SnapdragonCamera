@@ -27,7 +27,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
 
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.exif.JpegHeader;
 import com.android.camera.exif.OrderedDataOutputStream;

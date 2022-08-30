@@ -16,7 +16,7 @@
 
 package com.android.camera.exif;
 
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;

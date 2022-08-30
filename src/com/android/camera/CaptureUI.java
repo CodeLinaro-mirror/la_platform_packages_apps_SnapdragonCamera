@@ -46,7 +46,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 import android.view.Display;
 import android.view.Gravity;
@@ -227,12 +227,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         // SurfaceHolder callbacks
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            Log.v(TAG, "surfaceChanged: width =" + width + ", height = " + height);
+            Log.i(TAG, "surfaceChanged:size=" + width + "x" + height);
         }
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            Log.v(TAG, "surfaceCreated");
+            Log.i(TAG, "surfaceCreated");
             mSurfaceHolder = holder;
             previewUIReady();
             if(mTrackingFocusRenderer != null && mTrackingFocusRenderer.isVisible()) {
@@ -913,11 +913,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         final int min = minFrame;
         String mfnrFrame = mSettingsManager.getKeyValue(SettingsManager.KEY_CAPTURE_MFNR_FRAME);
         int frameValue = minFrame;
-        try {
-            frameValue = Integer.parseInt(mfnrFrame);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        frameValue = CameraUtil.strToInt(mfnrFrame,frameValue);
         final int section = 100 / length;
         int mProgress = (frameValue - minFrame) * section;
         mMfnrSeekBar.setProgress(mProgress);
@@ -995,7 +991,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             @Override
             public void onClick(View v) {
                 String keyLevel = mSettingsManager.getKeyValue(SettingsManager.KEY_TORCH_VALUE);
-                int currentValue = PersistUtil.strToInt(keyLevel, 3);
+                int currentValue = CameraUtil.strToInt(keyLevel, 3);
                 try {
                     if (mIsTorchOn) {
                         int currentLevel = manager.getTorchStrengthLevel(currentId);
@@ -1016,7 +1012,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 int index = progress / mTorchSection;
                 if (index > mTorchLen - 1 ) index = mTorchLen - 1;
                 String level = mSettingsManager.getKeyValue(SettingsManager.KEY_TORCH_VALUE);
-                int currentLevel = PersistUtil.strToInt(level,3);
+                int currentLevel = CameraUtil.strToInt(level,3);
                 if (currentLevel != index + 1) {
                     currentLevel = index + 1;
                     String str = String.valueOf(currentLevel);
@@ -1236,7 +1232,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mZoomRenderer.setZoomMin(zoomRatioRange[0]);
                 mZoomRenderer.setZoomMax(zoomRatioRange[1]);
             }
-            Log.v(TAG, "initZoomSeekBar min:" + zoomRatioRange[0] + ", max :" + zoomRatioRange[1]);
+            Log.i(TAG, "initZoomSeekBar min:" + zoomRatioRange[0] + ", max :" + zoomRatioRange[1]);
             mZoomSeekBar.setMax((int)((zoomRatioRange[1] -zoomRatioRange[0]) * 100));
             if (zoomRatioRange[0] > zoomMin) {
                 zoomMin = zoomRatioRange[0];
@@ -1685,7 +1681,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         initSceneModeHDR();
         initFilterModeButton();
         initFlashButton();
-        initZoomSeekBar();
         if(PersistUtil.showVerticalEvBar()) {
             initVerticalEvBar();
         }
@@ -2135,7 +2130,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         try {
             mSceneModeInstructionalDialog.show();
         }catch(Exception e) {
-            e.printStackTrace();
+            Log.w(TAG,e.toString());
             return;
         }
         if ( orientation != 0 ) {
@@ -2831,15 +2826,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
-    public void hidePhysicalSurfaces(){
-        Log.d(TAG,"hidePhysicalSurfaces");
-        for (SurfaceView view : mPhysicalViews){
-            if (view != null){
+    public void hidePhysicalSurfaces() {
+        for (SurfaceView view : mPhysicalViews) {
+            if (view != null && view.getVisibility() == View.VISIBLE) {
+                Log.d(TAG,"hidePhysicalSurfaces");
                 view.setVisibility(View.GONE);
             }
         }
 
-        for (int i=0;i < mSurfaceReady.length;i++){
+        for (int i = 0; i < mSurfaceReady.length; i++) {
             mSurfaceReady[i] = false;
         }
         mPreviewCount = 0;
@@ -3416,7 +3411,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showSurfaceView() {
-        Log.d(TAG, "showSurfaceView" + mPreviewWidth+" "+mPreviewHeight);
+        Log.d(TAG, "surfceView-setFixedSize = " + mPreviewWidth+"x"+mPreviewHeight);
         mSurfaceView.getHolder().setFixedSize(mPreviewWidth, mPreviewHeight);
         mSurfaceView.setAspectRatio(mPreviewHeight, mPreviewWidth);
         mSurfaceView.setVisibility(View.VISIBLE);
@@ -3438,7 +3433,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public boolean setPreviewSize(int width, int height) {
-        Log.d(TAG, "setPreviewSize " + width + " " + height);
+        Log.i(TAG, "setPreviewSize " + width + "x" + height);
         boolean changed = (width != mPreviewWidth) || (height != mPreviewHeight);
         mPreviewWidth = width;
         mPreviewHeight = height;
@@ -3534,7 +3529,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                         break;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.e(TAG,e);
                 }
             }
         }

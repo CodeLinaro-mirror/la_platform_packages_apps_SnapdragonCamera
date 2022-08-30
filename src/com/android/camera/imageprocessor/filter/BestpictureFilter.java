@@ -42,7 +42,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.BestpictureActivity;
 import com.android.camera.CameraActivity;

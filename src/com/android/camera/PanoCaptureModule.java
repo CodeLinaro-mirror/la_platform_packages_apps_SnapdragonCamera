@@ -45,7 +45,7 @@ import android.media.ImageReader;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Display;

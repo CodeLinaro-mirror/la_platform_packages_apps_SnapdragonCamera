@@ -33,7 +33,7 @@ import java.lang.reflect.Method;
 
 import android.hardware.Camera.Face;
 import android.os.Bundle;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 public class ExtendedFaceWrapper extends Wrapper{
     private final static String CLASS_NAME = "org.codeaurora.camera.ExtendedFace";

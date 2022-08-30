@@ -31,10 +31,11 @@ package com.android.camera.util;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 public class VendorTagUtil {
-    private static final String TAG = "VendorTagUtil";
+    private static final String TAG = "SnapCam_VendorTagUtil";
+    private static final int EXCEPTION_LOG = PersistUtil.CAMERA2_DEBUG_EXCEPTION;
 
     private static CaptureRequest.Key<Integer> CdsModeKey =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.CDS.cds_mode",
@@ -106,10 +107,10 @@ public class VendorTagUtil {
             builder.get(key);
         }catch(IllegalArgumentException exception){
             supported = false;
-            Log.d(TAG, "vendor tag " + key.getName() + " is not supported");
+            Log.w(TAG, EXCEPTION_LOG,"vendor tag " + key.getName() + " is not supported");
         }
         if ( supported ) {
-            Log.d(TAG, "vendor tag " + key.getName() + " is supported");
+            Log.d(TAG, EXCEPTION_LOG,"vendor tag " + key.getName() + " is supported");
         }
         return supported;
     }
@@ -253,7 +254,7 @@ public class VendorTagUtil {
             CaptureRequest.Builder builder = camera.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
             return isHDRVideoModeSupported(builder);
         }catch(CameraAccessException exception) {
-            exception.printStackTrace();
+            Log.w(TAG,EXCEPTION_LOG, exception.toString());
             return false;
         }
     }

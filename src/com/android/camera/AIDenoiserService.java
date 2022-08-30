@@ -40,7 +40,7 @@ import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.renderscript.ScriptIntrinsicResize;
 import android.renderscript.Type;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.os.SystemClock;
 
 import java.io.ByteArrayOutputStream;
@@ -77,7 +77,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.preference.PreferenceManager;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.widget.Toast;
 import android.renderscript.ScriptIntrinsicYuvToRGB;
 
@@ -114,9 +114,9 @@ import com.android.camera.imageprocessor.PostProcessor;
 import static com.android.camera.imageprocessor.PostProcessor.addExifTags;
 
 public class AIDenoiserService extends Service {
-
     private static class IntegerLock {
         private int value;
+
 
         public IntegerLock(int value) {
             this.value = value;
@@ -175,7 +175,7 @@ public class AIDenoiserService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.i(TAG,"onBind");
+        Log.d(TAG,"onBind");
         mAideUtil = new AideUtil();
         mHandlerThread = new HandlerThread("AideThread");
         mHandlerThread.start();
@@ -190,7 +190,7 @@ public class AIDenoiserService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.i(TAG,"service onDestory");
+        Log.d(TAG,"service onDestory");
         if (mHandlerThread != null) {
             mHandlerThread.quitSafely();
             try {

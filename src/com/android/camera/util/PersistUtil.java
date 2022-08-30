@@ -32,7 +32,7 @@ package com.android.camera.util;
 import android.graphics.Point;
 import android.media.MediaRecorder;
 import android.text.TextUtils;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import java.lang.reflect.Method;
 
@@ -40,9 +40,12 @@ public class PersistUtil {
 
     public static final int CAMERA2_DEBUG_DUMP_IMAGE = 1;
     public static final int CAMERA2_DEBUG_DUMP_LOG = 2;
-    public static final int CAMERA2_DEBUG_AUDIO = 3;
-    public static final int CAMERA2_DEBUG_VIDEO = 4;
-    public static final int CAMERA2_DEBUG_MEDIACODEC = 5;
+    public static final int CAMERA2_DEBUG_MEDIACODEC_AUDIO = 3;
+    public static final int CAMERA2_DEBUG_MEDIACODEC_VIDEO = 4;
+    public static final int CAMERA2_DEBUG_EXCEPTION = 5;
+    public static final int CAMERA2_DEBUG_FD = 6;
+
+    public static final int CAMERA2_DEBUG_BIGLOG = 10;
 
     public static final int CAMERA2_DEBUG_DUMP_ALL = 100;
     public static final int CAMERA2_DEV_OPTION_ALL = 100;
@@ -498,22 +501,7 @@ public class PersistUtil {
 
     public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }
     public static boolean showMFNRswitch(){return PERSIST_SHOW_MFNR_SWITCH;}
-    public static long strToLong(String str,long value) {
-        try {
-            long longStr = Long.parseLong(str);
-            return longStr;
-        } catch (NumberFormatException e) {
-            return value;
-        }
-    }
-    public static int strToInt(String str,int value) {
-        try {
-            int intStr = Integer.parseInt(str);
-            return intStr;
-        } catch (NumberFormatException e) {
-            return value;
-        }
-    }
+
     public static float getLuxIdxThreadhold(){
         return Float.parseFloat(PERSIST_CAMERA_LUX_IDX_THREADHOLD);
     }

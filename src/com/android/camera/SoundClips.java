@@ -22,7 +22,7 @@ import android.media.AudioManager;
 import android.media.MediaActionSound;
 import android.media.SoundPool;
 import android.os.Build;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import org.codeaurora.snapcam.R;
 import com.android.camera.util.ApiHelper;

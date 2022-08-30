@@ -32,7 +32,7 @@ import android.graphics.Rect;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Handler;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.CaptureModule;
 

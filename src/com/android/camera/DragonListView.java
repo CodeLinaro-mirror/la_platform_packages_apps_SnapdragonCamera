@@ -35,7 +35,7 @@ import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.support.annotation.FloatRange;
 import android.util.AttributeSet;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;

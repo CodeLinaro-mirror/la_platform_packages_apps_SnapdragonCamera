@@ -18,7 +18,7 @@ package com.android.camera;
 
 import android.app.Activity;
 import android.graphics.drawable.Drawable;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.widget.Toast;
 
 import com.android.camera.CameraPreference.OnPreferenceChangedListener;

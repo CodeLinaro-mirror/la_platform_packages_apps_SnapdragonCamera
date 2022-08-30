@@ -17,7 +17,7 @@
 package com.android.camera.data;
 
 import android.content.Context;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.SparseIntArray;
 
 import com.android.camera.exif.ExifInterface;

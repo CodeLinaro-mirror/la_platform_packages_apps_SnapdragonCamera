@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import android.app.Activity;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;

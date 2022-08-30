@@ -33,7 +33,7 @@ import android.graphics.SurfaceTexture;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.Gravity;
 import android.view.Display;
 import android.view.LayoutInflater;

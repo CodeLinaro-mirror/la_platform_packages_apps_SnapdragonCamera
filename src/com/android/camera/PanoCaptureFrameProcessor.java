@@ -42,7 +42,7 @@ import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.renderscript.ScriptIntrinsicYuvToRGB;
 import android.renderscript.Type;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 import android.view.Surface;
 

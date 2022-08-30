@@ -16,7 +16,7 @@
 
 package com.android.camera;
 
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.widget.Toast;
 import com.android.camera.ui.RotateTextToast;
 import org.codeaurora.snapcam.R;

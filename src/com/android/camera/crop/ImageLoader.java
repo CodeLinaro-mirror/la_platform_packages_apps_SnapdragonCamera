@@ -27,7 +27,7 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.provider.MediaStore;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.webkit.MimeTypeMap;
 
 import com.android.camera.exif.ExifInterface;

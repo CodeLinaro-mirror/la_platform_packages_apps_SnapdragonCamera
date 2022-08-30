@@ -34,7 +34,7 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.os.Handler;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Range;
 
 import com.android.camera.CaptureModule;

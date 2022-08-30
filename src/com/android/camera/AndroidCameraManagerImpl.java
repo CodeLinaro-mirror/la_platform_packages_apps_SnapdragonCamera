@@ -37,7 +37,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.SurfaceHolder;
 import com.android.camera.util.ApiHelper;
 import android.os.ConditionVariable;

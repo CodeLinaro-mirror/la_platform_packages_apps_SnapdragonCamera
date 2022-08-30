@@ -42,7 +42,7 @@ import android.hardware.Camera.Face;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.View;
 import android.view.MotionEvent;
 
@@ -58,9 +58,6 @@ import org.codeaurora.snapcam.wrapper.ExtendedFaceWrapper;
 
 public class AFView extends View implements FocusIndicator {
     protected static final String TAG = "snapcam_afview";
-    public static final boolean DEBUG =
-            (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_LOG) ||
-                    (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_ALL);
     private CameraActivity mActivity;
     private CaptureModule mModule;
     private int mInX = -1;
@@ -130,9 +127,7 @@ public class AFView extends View implements FocusIndicator {
         mStatus = STATUS_TRACKING;
         mRectActiveArray.set(rectInts[0], rectInts[1], rectInts[2],
                 rectInts[3]);
-        if (DEBUG) {
-            Log.v(TAG, "updateTrackerRect mRectActiveArray :" + mRectActiveArray);
-        }
+        Log.v(TAG, "updateTrackerRect mRectActiveArray :" + mRectActiveArray);
         putRegisteredCords();
     }
 

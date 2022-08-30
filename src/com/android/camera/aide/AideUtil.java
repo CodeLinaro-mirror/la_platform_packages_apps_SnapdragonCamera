@@ -30,10 +30,12 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.android.camera.aide;
 
 import java.nio.ByteBuffer;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.os.SystemClock;
 import com.android.camera.CameraActivity;
 import com.android.camera.CaptureModule;
+import com.android.camera.util.PersistUtil;
+
 import android.util.Size;
 import android.hardware.camera2.TotalCaptureResult;
 import android.graphics.Rect;
@@ -66,7 +68,7 @@ public class AideUtil {
     static {
         try {
             System.loadLibrary("jni_aidenoiserutil");
-            Log.i(TAG, "load jni_aidenoiserutil successfully");
+            Log.d(TAG, "load jni_aidenoiserutil successfully");
             mIsSupported = true;
         } catch (UnsatisfiedLinkError e) {
             mIsSupported = false;
@@ -74,7 +76,7 @@ public class AideUtil {
         }
         try {
             System.loadLibrary("jni_aidenoiserutilv2");
-            Log.i(TAG, "load libjni_aidenoiserutilv2 successfully");
+            Log.d(TAG, "load libjni_aidenoiserutilv2 successfully");
             mIsSupported2 = true;
         } catch (UnsatisfiedLinkError e) {
             Log.d(TAG, e.toString());

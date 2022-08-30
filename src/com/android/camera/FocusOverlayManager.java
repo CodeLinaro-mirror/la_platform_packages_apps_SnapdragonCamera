@@ -26,7 +26,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.UsageStatistics;

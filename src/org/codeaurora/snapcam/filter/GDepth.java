@@ -33,7 +33,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.hardware.Camera.Size;
 import android.util.Base64;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 
 import java.io.ByteArrayInputStream;

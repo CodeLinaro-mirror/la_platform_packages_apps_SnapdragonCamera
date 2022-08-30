@@ -18,7 +18,7 @@ package com.android.camera.ui;
 import android.content.Context;
 import android.content.res.Resources;
 import android.util.AttributeSet;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;

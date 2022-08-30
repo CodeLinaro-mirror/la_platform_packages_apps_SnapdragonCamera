@@ -39,7 +39,7 @@ import android.media.Image;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.os.Handler;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 
 import com.android.camera.CaptureModule;

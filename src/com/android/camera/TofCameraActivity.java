@@ -54,7 +54,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import android.util.Range;
 import android.util.Size;

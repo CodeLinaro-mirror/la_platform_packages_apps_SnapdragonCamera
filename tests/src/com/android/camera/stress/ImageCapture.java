@@ -23,7 +23,7 @@ import android.app.Instrumentation;
 import android.content.Intent;
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.LargeTest;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.KeyEvent;
 import android.app.Activity;
 
