@@ -2480,8 +2480,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public boolean isBackCamera() {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
-        if (value == null) return true;
+        String value = mSettingsManager.mPreferences.getGlobal().getString(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         return value.equals("rear");
     }
 
@@ -3792,10 +3791,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSettingsManager = SettingsManager.getInstance();
         mSettingsManager.createCaptureModule(this);
         mSettingsManager.registerListener(this);
-        String facing = mSettingsManager.mPreferences.getGlobal().getString(mSettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
-        if (facing.equals("front")) {
-            CURRENT_ID = FRONT_ID;
-        }
         mFirstPreviewLoaded = false;
         Log.d(TAG, "init");
         for (int i = 0; i < MAX_NUM_CAM; i++) {
@@ -3813,12 +3808,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         initModeByIntent();
         initCameraIds();
+        CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
+        CURRENT_MODE = mCurrentSceneMode.mode;
         mSettingsManager.init();
+        updateSettingDependencyId();
         mPostProcessor = new PostProcessor(mActivity, this);
         mFrameProcessor = new FrameProcessor(mActivity, this);
 
         mContentResolver = mActivity.getContentResolver();
-
         mUI = new CaptureUI(activity, this, parent);
         mUI.initializeControlByIntent();
 
@@ -3943,6 +3940,21 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void updateSettingDependencyId(){
+        List<String> supported = mSettingsManager.getSupportedVideoSize(mLogicalId);
+        if(!MCXMODE || supported.size() <= 0){
+            mSceneCameraIds.get(CameraMode.VIDEO.ordinal()).rearCameraId = mSingleRearId;
+        }
+        if (!mSettingsManager.isHFRSupported()) { // filter HFR mode
+            for (SceneModule sceneModule : mSceneCameraIds) {
+                if (sceneModule.mode.ordinal() == CameraMode.HFR.ordinal() ) {
+                    mSceneCameraIds.remove(sceneModule);
+                    break;
+                }
+            }
+        }
+    }
+
     private boolean setUpLocalMode(int camereIdIndex, CameraCharacteristics characteristics,
                                 boolean[] removeList, boolean isFirstDefault, String cameraId) {
         Byte type = 0;
@@ -3994,20 +4006,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                         isFirstDefault = false;
                     }
 
-                    int defaultId;
-                    List<String> supported = mSettingsManager.getSupportedVideoSize(mLogicalId);
-                    if (MCXMODE && supported.size() > 0) {
-                        defaultId = mLogicalId;
-                    } else {
+                    int defaultId = mLogicalId;
+                    if(!MCXMODE){
                         defaultId = mSingleRearId;
                     }
                     mSceneCameraIds.get(CameraMode.DEFAULT.ordinal()).rearCameraId = defaultId;
+                    //update video camera after setting init done
                     mSceneCameraIds.get(CameraMode.VIDEO.ordinal()).rearCameraId = defaultId;
                     mSceneCameraIds.get(CameraMode.PRO_MODE.ordinal()).rearCameraId = defaultId;
-                    if (mSettingsManager.isHFRSupported()) { // filter HFR mode
-                        removeList[CameraMode.HFR.ordinal()] = false;
-                        mSceneCameraIds.get(CameraMode.HFR.ordinal()).rearCameraId = mSingleRearId;
-                    }
+                    //default HFR is support, will remove after setting manager init
+                    removeList[CameraMode.HFR.ordinal()] = false;
+                    mSceneCameraIds.get(CameraMode.HFR.ordinal()).rearCameraId = mSingleRearId;
                     if (mCurrentSceneMode == null) {
                         int index = mIntentMode == INTENT_MODE_VIDEO ?
                                 CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
@@ -14868,7 +14877,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean isForceAUXOn(CameraMode mode) {
         if (mode == CameraMode.DEFAULT) {
-            String auxValue = mSettingsManager.getValue(SettingsManager.KEY_FORCE_AUX);
+            final SharedPreferences pref = mActivity.getSharedPreferences(
+                    ComboPreferences.getLocalSharedPreferencesName(mActivity,
+                            mSettingsManager.getNextPrepNameKey(mode)), Context.MODE_PRIVATE);
+            String auxValue = pref.getString(SettingsManager.KEY_FORCE_AUX, "off");
             return auxValue != null && auxValue.equals("on");
         }
         return false;
