@@ -4113,10 +4113,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         mFilteredKeys.add(pictureFormat.getKey());
                     }
                 }
+            } else {
+                filterPictureFormat();
             }
         }
     }
-    public void filterPicturFormat(){
+    public void filterPictureFormat(){
            ListPreference pictureFormat = mPreferenceGroup.findPreference(KEY_PICTURE_FORMAT);
            pictureFormat.reloadInitialEntriesAndEntryValues();
            if (pictureFormat != null){

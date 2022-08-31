@@ -2494,7 +2494,6 @@ public class SettingsActivity extends PreferenceActivity {
         CaptureModule.CameraMode mode =
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
        if(pictureFormatPref != null){
-            mSettingsManager.filterPicturFormat();
             updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
        }
         if (mSettingsManager.getQuadBayerSensorPrefEnabled() ||(CaptureModule.CameraMode.RTB == mode && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE))) {
