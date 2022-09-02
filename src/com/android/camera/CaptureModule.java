@@ -669,6 +669,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableStatsVisualizer", byte.class);
     public static final CaptureRequest.Key<Integer> insensor_zoom_feature =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableInsensorZoom", Integer.class);
+    private static final CaptureRequest.Key<Byte> xcfa_optimization =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableXCFAOptimization", byte.class);
     //HDRVideo MODE
     public static final CaptureRequest.Key<Integer> hdr_video_mode = new CaptureRequest.Key<>(
             "org.codeaurora.qcamera3.sessionParameters.HDRVideoMode", Integer.class);
@@ -6649,6 +6651,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyMFNRAIDEMode(builder);
         applyAICameraParam(builder);
         applyAICameraBlurModeParam(builder);
+        applyXCFAOptimization(builder);
     }
 
     private void applyAICameraParam(CaptureRequest.Builder builder){
@@ -6664,6 +6667,18 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(value != null &&  !value.equals("disable")){
             Log.i(TAG,"set applyAICameraBlurModeParam: " + value);
             VendorTagUtil.setAICameraBlurMode(builder, Integer.parseInt(value));
+        }
+    }
+
+    private void applyXCFAOptimization(CaptureRequest.Builder builder) {
+        byte value = 0;
+        if(mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+            value = 1;
+        }
+        try {
+            builder.set(CaptureModule.xcfa_optimization, value);
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "hal no vendorTag : " + xcfa_optimization);
         }
     }
 
