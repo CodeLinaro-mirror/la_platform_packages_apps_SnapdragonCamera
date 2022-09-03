@@ -1865,7 +1865,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mShutterButton.setVisibility(View.INVISIBLE);
             mModeSelectLayout.setVisibility(View.VISIBLE);
         }
-        mFilterModeSwitcher.setVisibility(View.VISIBLE);
+        String hvxShdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
+        String hvxMfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
+        if ((hvxShdr != null && (hvxShdr.equals("1"))) || (hvxMfhdr != null && (hvxMfhdr.equals("1")))) {
+            mFilterModeSwitcher.setVisibility(View.INVISIBLE);
+        }else{
+            mFilterModeSwitcher.setVisibility(View.VISIBLE);
+        }
         if (mFilterMenuStatus == FILTER_MENU_ON) {
             removeFilterMenu(true);
         }
