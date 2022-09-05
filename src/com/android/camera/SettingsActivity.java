@@ -1334,7 +1334,6 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_MANUAL_WB);
                 add(SettingsManager.KEY_AF_MODE);
                 add(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
-                add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
                 add(SettingsManager.KEY_FACE_DETECTION_MODE);
                 add(SettingsManager.KEY_FD_SMILE);
                 add(SettingsManager.KEY_FD_GAZE);
