@@ -129,7 +129,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
 	public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
     public static final int JPEG_FORMAT = 0;
     public static final int HEIF_FORMAT = 1;
-    public static final int DNG_FORMAT = 2;
     public static final String LOGICAL_AND_PHYSICAL = "99";
     public static final String SCENE_MODE_DUAL_STRING = "100";
     public static final String SCENE_MODE_SUNSET_STRING = "10";
@@ -310,7 +309,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private Map<String, Values> mValuesMap;
     private Context mContext;
     private PreferenceGroup mPreferenceGroup;
-    private ComboPreferences mPreferences;
+    public ComboPreferences mPreferences;
     private Map<String, Set<String>> mDependendsOnMap;
     private boolean mIsMonoCameraPresent = false;
     private boolean mIsFrontCameraPresent = false;
@@ -3372,6 +3371,52 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return false;
     }
 
+     public Size getQCFARawSize(String cameraId, int format) {
+                 List<Size> allSize = getSupportedQCFAMaxPictureSizeList(cameraId, format);
+                 allSize.sort((o1, o2) -> o2.getWidth() * o2.getHeight() - o1.getWidth() * o1.getHeight());
+                 if (allSize.size() != 0) {
+                         Size size = allSize.get(0);
+                         return size;
+                     } else
+                         return null;
+     }
+    public List<Size> getSupportedQCFAMaxPictureSizeList(String cameraId, int format) {
+        List<Size> res = new ArrayList<>();
+        CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
+        CameraCharacteristics characteristics;
+        try {
+            characteristics = manager.getCameraCharacteristics(cameraId);
+            StreamConfigurationMap streamConfigurationMap = characteristics.get(
+                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
+            if (streamConfigurationMap != null) {
+                if(streamConfigurationMap.getHighResolutionOutputSizes(format) !=null ){
+                    List<Size> sizes = Arrays.asList(streamConfigurationMap.getHighResolutionOutputSizes(format));
+                    for (Size entry: sizes) {
+                        if (entry.getWidth() == 1920 && entry.getHeight() == 1080) {
+                            continue;
+                        }
+                        res.add(entry);
+                    }
+                }
+                if(streamConfigurationMap.getOutputSizes(format) !=null ){
+                    List<Size> sizes = Arrays.asList(streamConfigurationMap.getOutputSizes(format));
+                    for (Size entry: sizes) {
+                        if (entry.getWidth() == 1920 && entry.getHeight() == 1080) {
+                            continue;
+                        }
+                        res.add(entry);
+                    }
+                }
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+        return res;
+    }
     public boolean getQuadBayerSensorPrefEnabled() {
         ListPreference quadBayerPref = mPreferenceGroup.findPreference(KEY_QUAD_BAYER_SENSOR);
         String value = quadBayerPref.getValue();
