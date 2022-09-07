@@ -3704,13 +3704,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             module.mode = CameraMode.values()[i];
             mSceneCameraIds.add(module);
         }
+        initModeByIntent();
         initCameraIds();
         mSettingsManager.init();
         mPostProcessor = new PostProcessor(mActivity, this);
         mFrameProcessor = new FrameProcessor(mActivity, this);
 
         mContentResolver = mActivity.getContentResolver();
-        initModeByIntent();
+
         mUI = new CaptureUI(activity, this, parent);
         mUI.initializeControlByIntent();
 
@@ -4472,9 +4473,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         mYUV10bitImageReader[id] != null) {
                                     captureBuilder.addTarget(mYUV10bitImageReader[id].getSurface());
                                 }
-                                if (mImageReader[id] != null && !isAIDE2Enabled() &&
-                                        (!(mYUV10bit || mYUV10BitWithMetadata) ||
-                                                mSettingsManager.isHeifHALEncoding())) {
+                                if (mImageReader[id] != null && !isAIDE2Enabled()) {
                                     captureBuilder.addTarget(mImageReader[id].getSurface());
                                 }
                             }
@@ -5945,8 +5944,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public static byte[] getYUVFromImage(Image image) {
         try{
-            int width = image.getWidth();
             int height = image.getHeight();
+            int stride = image.getPlanes()[0].getRowStride();
             ByteBuffer dataY= image.getPlanes()[0].getBuffer();
             ByteBuffer dataUV = image.getPlanes()[2].getBuffer();
             dataY.rewind();
@@ -5966,8 +5965,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private byte[] getYUV10BitFromImage(Image image) {
         try{
-            int width = image.getWidth();
             int height = image.getHeight();
+            int stride = image.getPlanes()[0].getRowStride();
             ByteBuffer dataY= image.getPlanes()[0].getBuffer();
             ByteBuffer dataUV = image.getPlanes()[1].getBuffer();
             dataY.rewind();
@@ -5976,9 +5975,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             dataY.get(bytesY);
             byte[] bytesUV = new byte[dataUV.remaining()];
             dataUV.get(bytesUV);
-            byte[] data = new byte[bytesY.length+bytesUV.length];
+            byte[] data = new byte[stride*height*3/2];
             System.arraycopy(bytesY,0,data,0,bytesY.length);
-            System.arraycopy(bytesUV,0,data,bytesY.length,bytesUV.length);
+            System.arraycopy(bytesUV,0,data,stride*height,bytesUV.length);
             return data;
         }catch (IllegalStateException e) {
             return null;
@@ -9143,6 +9142,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (isHighSpeedRateCapture()) {
                 //This should be not needed since setRepeatingBurst don't change
                 //Will remove it in next version
+                mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                 List<CaptureRequest> slowMoRequests  = mSuperSlomoCapture ?
                         createSSMBatchRequest(mVideoRecordRequestBuilder) :
                         ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
@@ -9370,11 +9370,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 return false;
             }
         } else {
-            mAudioEncoder.start();
-            mAudioRecord.startRecording();
             mVideoEncoder.start();
             //start threads of MediaCodec
             if (!mOnlyVideoEncoder){
+                mAudioEncoder.start();
+                mAudioRecord.startRecording();
                 startAudioDecoder();
                 startAudioEncoder();
             }
@@ -9897,7 +9897,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(!PersistUtil.enableMediaRecorder()){
             Bundle params = new Bundle();
             params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 1);
-            mAudioEncoder.setParameters(params);
+            if(!mOnlyVideoEncoder) {
+                mAudioEncoder.setParameters(params);
+            }
             mVideoEncoder.setParameters(params);
         }
         mRecordingPausing = true;
@@ -9938,7 +9940,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(!PersistUtil.enableMediaRecorder()){
             Bundle params = new Bundle();
             params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 0);
-            mAudioEncoder.setParameters(params);
+            if(!mOnlyVideoEncoder) {
+                mAudioEncoder.setParameters(params);
+            }
             mVideoEncoder.setParameters(params);
         }
         mRecordingPausing = false;
