@@ -2446,6 +2446,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             isFirstDefault = setUpLocalMode(i, characteristics, removeList,
                     isFirstDefault, cameraId);
         }
+        if (mCurrentSceneMode == null) {
+            int index = mIntentMode == INTENT_MODE_VIDEO ?
+                    CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
+            mCurrentModeIndex =  mNextModeIndex = index;
+            mCurrentSceneMode = mSceneCameraIds.get(index);
+        }
         for (int i = 0; i < removeList.length; i++) {
             if (!removeList[i]) {
                 continue;
@@ -6321,13 +6327,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             } else {
                 // is pause or stopRecord
+                // send endOfStream before stopRepeating in case of EIS V3 is enabled
+                try {
+                    mVideoRecordRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
+                } catch (IllegalArgumentException illegalArgumentException) {
+                    Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
+                }
+                Log.w(TAG, "sent org.quic.camera.recording.endOfStream");
                 if ((mMediaRecorderPausing || mStopRecPending) && (mCurrentSession != null)) {
                     mCurrentSession.stopRepeating();
-                    try {
-                        mVideoRecordRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
-                    } catch (IllegalArgumentException illegalArgumentException) {
-                        Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
-                    }
                     try {
                         if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
                             List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
@@ -6600,10 +6608,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 retriever.setDataSource(mVideoFilename);
                 duration = Long.valueOf(retriever.extractMetadata(
                         MediaMetadataRetriever.METADATA_KEY_DURATION));
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "cannot access the file");
+                retriever.release();
+            } catch (Exception e) {
+                Log.e(TAG, "cannot access the file: " + e);
             }
-            retriever.release();
 
             mActivity.getMediaSaveService().addVideo(mVideoFilename,
                     duration, mCurrentVideoValues,
@@ -9042,8 +9050,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             restartAll();
         }
         updateZoomSeekBarVisible();
-        mUI.updateZoomSeekBar(1.0f);
-        updateZoom();
         return 1;
     }
 
