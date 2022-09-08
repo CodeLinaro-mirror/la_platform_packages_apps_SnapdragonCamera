@@ -46,7 +46,11 @@ Not a contribution.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/*
+ *Changes from Qualcomm Innovation Center are provided under the following license:
+ *Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera;
 
@@ -70,6 +74,7 @@ import android.view.WindowManager;
 import android.util.Log;
 import android.util.Size;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -81,11 +86,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.text.InputType;
 import android.graphics.ImageFormat;
+import android.widget.ToggleButton;
+
 import org.codeaurora.snapcam.R;
+
 import com.android.camera.util.CameraUtil;
 import com.android.camera.ui.RotateTextToast;
 import com.android.camera.util.PersistUtil;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -345,6 +354,53 @@ public class SettingsActivity extends PreferenceActivity {
             }
             ZSLPref.setValueIndex(idx);
         }
+    }
+
+    private void updateSetPropOption() {
+        final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
+        LayoutInflater layoutInflater = LayoutInflater.from(this);
+        View dialog = layoutInflater.inflate(R.layout.setprop_dialog, null);
+        EditText tagName = dialog.findViewById(R.id.tagName);
+        EditText tagValue = dialog.findViewById(R.id.tagValue);
+        Button setProp = dialog.findViewById(R.id.setprop);
+        setProp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String tag = tagName.getText().toString();
+                String value = tagValue.getText().toString();
+                try {
+                    String cmd ="setprop "+  tag + " " +  value;
+                    Runtime.getRuntime().exec(cmd);
+                    Thread.sleep(200);//wait 200 then geprop will correct
+                    if(PersistUtil.get(tag, "xx").equals(value)) {
+                        mSettingsManager.setPerfValue(SettingsManager.KEY_PROP_NAME, tag);
+                        Toast.makeText(SettingsActivity.this, "Manual set prop successfully", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        ToggleButton uiToggle = dialog.findViewById(R.id.uiToggle);
+        uiToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                String value = "off";
+                if(isChecked){
+                    value = "on";
+                }
+                mSettingsManager.setPerfValue(SettingsManager.KEY_PROP_FLOATING, value);
+                uiToggle.setText(value);
+            }
+        });
+        alert.setView(dialog);
+        alert.setCancelable(false);
+        alert.setTitle("Manual SetProp");
+        alert.setPositiveButton("Done",new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+            }
+        });
+        alert.show();
     }
 
     private void UpdateManualExposureSettings() {
@@ -1103,6 +1159,13 @@ public class SettingsActivity extends PreferenceActivity {
                         if ( preference.getKey().equals(SettingsManager.KEY_RESTORE_DEFAULT) ) {
                             onRestoreDefaultSettingsClick();
                         }
+                        if(preference.getKey().equals(SettingsManager.KEY_SETPROP)){
+                            if(((SwitchPreference) preference).isChecked()) {
+                                updateSetPropOption();
+                            }else{
+                                mSettingsManager.setPerfValue(SettingsManager.KEY_PROP_FLOATING, "off");
+                            }
+                        }
 
                         if (preference.getKey().equals(SettingsManager.KEY_MANUAL_HDR)) {
                             String value = ((ListPreference) preference).getValue();
@@ -1299,6 +1362,7 @@ public class SettingsActivity extends PreferenceActivity {
                     videoAddList.add(SettingsManager.KEY_STATSNN_CONTROL);
                     videoAddList.add(SettingsManager.KEY_PDNET_TOGGLE);
                     videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
+                    videoAddList.add(SettingsManager.KEY_SETPROP);
                     addDeveloperOptions(developer, videoAddList);
                 }
                 if (mode != VIDEO) {

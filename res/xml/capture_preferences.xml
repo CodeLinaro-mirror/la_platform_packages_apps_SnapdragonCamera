@@ -26,6 +26,9 @@
      OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
      IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
+<!--Changes from Qualcomm Innovation Center are provided under the following license:-->
+<!--Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.-->
+<!--SPDX-License-Identifier: BSD-3-Clause-Clear-->
 
 <PreferenceGroup
     xmlns:camera="http://schemas.android.com/apk/res/org.codeaurora.snapcam"
@@ -865,4 +868,10 @@
         camera:key="pref_camera2_multi_cameras_key"
         camera:title="@string/pref_camera2_multi_cameras_title" />
 
+    <IconListPreference
+        camera:defaultValue="@string/setting_off_value"
+        camera:entries="@array/pref_camera2_camera2_entries"
+        camera:entryValues="@array/pref_camera2_camera2_entryvalues"
+        camera:key="pref_camera2_setprop_key"
+        camera:title="@string/pref_camera2_setprop_info"/>
 </PreferenceGroup>
