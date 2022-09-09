@@ -1203,7 +1203,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             Face[] faces = result.get(CaptureResult.STATISTICS_FACES);
             if (FD_DEBUG)
                 Log.d(FD_TAG, "onCaptureCompleted Detected Face size = " + Integer.toString(faces == null ? 0 : faces.length));
-            if (faces != null) {
+            if (faces != null && index >= 0) {
                 updateFaceView(faces, null, index);
             }
             waitEISAndStopMediaRecorder(id, result);
