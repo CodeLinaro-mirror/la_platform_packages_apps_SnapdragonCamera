@@ -4992,6 +4992,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             if(mSettingsManager.getPhysicalCameraId() != null){
                 int count = addPhysicalVideoCaptureTarget(captureBuilder);
+                Log.v(TAG, " captureVideoSnapshot add surface count :" + count);
                 if (mSettingsManager.isLogicalEnable()){
                     captureBuilder.addTarget(mVideoSnapshotImageReader.getSurface());
                 } else {
@@ -5027,6 +5028,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     }
                 } else {
+                    Log.d(TAG, " captureVideoSnapshot add mVideoSnapshotImageReader " );
                     captureBuilder.addTarget(mVideoSnapshotImageReader.getSurface());
                 }
 
@@ -5035,6 +5037,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         FrameProcessor.FILTER_MAKEUP) {
                     captureBuilder.addTarget(mFrameProcessor.getInputSurfaces().get(0));
                 } else {
+                    Log.d(TAG, " captureVideoSnapshot add preview surfaceView " );
                     captureBuilder.addTarget(surface);
                 }
             }
@@ -5793,11 +5796,17 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private int addPhysicalVideoCaptureTarget(CaptureRequest.Builder builder){
+        int ret = 0;
         if (mSettingsManager.getPhysicalFeatureEnableId(
                 SettingsManager.KEY_PHYSICAL_CAMCORDER) != null){
             int count = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_CAMCORDER).size();
-            int ret = 0;
+            for (int i =0; i < mPhysicalMediaRecorders.length; i++) {
+                if (mPhysicalMediaRecorders[i] != null) {
+                    builder.addTarget(mPhysicalMediaSurfaces[i]);
+                    ret++;
+                }
+            }
             int nums = PersistUtil.getPhysicalLiveShotNum();
             if (nums > 0 && nums <= count) {
                 count = nums;
