@@ -199,5 +199,10 @@
   "pref_camera2_picture_format_key":
   {
     "1":{"pref_camera2_auto_hdr_key":"disable"}
+  },
+  "pref_camera2_eis_key":
+  {
+    "disable": {},
+    "V3": {"pref_camera2_video_duration_key": "0"}
   }
 }
