@@ -1681,6 +1681,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         initSceneModeHDR();
         initFilterModeButton();
         initFlashButton();
+        initZoomSeekBar();
         if(PersistUtil.showVerticalEvBar()) {
             initVerticalEvBar();
         }
