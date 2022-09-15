@@ -502,7 +502,7 @@ public class SettingsActivity extends PreferenceActivity {
             linear.addView(ISOtext);
             alert.setView(linear);
             alert.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface Dialog,int id) {
+                public void onClick(DialogInterface dialog,int id) {
                     int newISO = -1;
                     String iso = ISOinput.getText().toString();
                     Log.v(TAG, "string iso length " + iso.length() + ", iso :" + iso);
@@ -525,7 +525,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             });
             alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface Dialog,int id) {
+                public void onClick(DialogInterface dialog,int id) {
                     editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
                     editor.apply();
                 }
@@ -542,7 +542,7 @@ public class SettingsActivity extends PreferenceActivity {
             linear.addView(ExpTimeText);
             alert.setView(linear);
             alert.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface Dialog,int id) {
+                public void onClick(DialogInterface dialog,int id) {
                     double newExpTime = -1;
                     String expTime = ExpTimeInput.getText().toString();
                     if (expTime.length() > 0) {
@@ -566,7 +566,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             });
             alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface Dialog,int id) {
+                public void onClick(DialogInterface dialog,int id) {
                     editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
                     editor.apply();
                 }
@@ -591,7 +591,7 @@ public class SettingsActivity extends PreferenceActivity {
             linear.addView(ExpTimeText);
             alert.setView(linear);
             alert.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface Dialog,int id) {
+                public void onClick(DialogInterface dialog,int id) {
                     int newISO = -1;
                     String iso = ISOinput.getText().toString();
                     Log.v(TAG, "string iso length " + iso.length() + ", iso :" + iso);
@@ -633,7 +633,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             });
             alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface Dialog,int id) {
+                public void onClick(DialogInterface dialog,int id) {
                     editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
                     editor.apply();
                 }
@@ -664,7 +664,7 @@ public class SettingsActivity extends PreferenceActivity {
         linear.addView(gainsText);
         alert.setView(linear);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface Dialog, int id) {
+            public void onClick(DialogInterface dialog, int id) {
                 float newGain = -1;
                 String gain = gainsInput.getText().toString();
                 Log.v(TAG, "string gain length " + gain.length() + ", gain :" + gain);
@@ -687,7 +687,7 @@ public class SettingsActivity extends PreferenceActivity {
             }
         });
         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface Dialog,int id) {
+            public void onClick(DialogInterface dialog,int id) {
                 editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
                 editor.apply();
             }
@@ -750,7 +750,7 @@ public class SettingsActivity extends PreferenceActivity {
         linear.addView(bGainValue);
         alert.setView(linear);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface Dialog, int id) {
+            public void onClick(DialogInterface dialog, int id) {
                 float rGain = -1.0f;
                 float gGain = -1.0f;
                 float bGain = -1.0f;
@@ -859,7 +859,7 @@ public class SettingsActivity extends PreferenceActivity {
             linear.addView(CCTtext);
             alert.setView(linear);
             alert.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface Dialog,int id) {
+                public void onClick(DialogInterface dialog,int id) {
                     int newCCT = -1;
                     String cct = CCTinput.getText().toString();
                     if (cct.length() > 0) {
@@ -958,7 +958,7 @@ public class SettingsActivity extends PreferenceActivity {
         linear.addView(fourthToneValue);
         alert.setView(linear);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface Dialog, int id) {
+            public void onClick(DialogInterface dialog, int id) {
                 float darkBoost = -1.0f;
                 float fourthTone = -1.0f;
                 String darkBoostStr = darkBoostInput.getText().toString();
@@ -1033,7 +1033,7 @@ public class SettingsActivity extends PreferenceActivity {
         linear.addView(toneMappingValue);
         alert.setView(linear);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface Dialog, int id) {
+            public void onClick(DialogInterface dialog, int id) {
                 float toneMapping = -1.0f;
                 String toneMappingStr = toneMappingInput.getText().toString();
                 if (toneMappingStr.length() > 0) {
@@ -1106,7 +1106,7 @@ public class SettingsActivity extends PreferenceActivity {
         alert.setTitle("MANUAL HDR Settings");
         alert.setView(listView);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface Dialog, int id) {
+            public void onClick(DialogInterface dialog, int id) {
             }
         });
         alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
@@ -1116,7 +1116,7 @@ public class SettingsActivity extends PreferenceActivity {
         });
         alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
-            public void onDismiss(DialogInterface Dialog) {
+            public void onDismiss(DialogInterface dialog) {
                 List<String> listData = adapter.getmDragDatas();
                 StringBuilder mixedHDROrder = new StringBuilder();
                 for (String item : listData) {
@@ -1230,7 +1230,7 @@ public class SettingsActivity extends PreferenceActivity {
                             });
                             alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
                                 @Override
-                                public void onDismiss(DialogInterface Dialog) {
+                                public void onDismiss(DialogInterface dialog) {
                                     preference.setSummary(fdExpandListView.getFDSummery());
                                 }
                             });
@@ -2574,7 +2574,7 @@ public class SettingsActivity extends PreferenceActivity {
         new AlertDialog.Builder(this)
                 .setMessage(R.string.pref_camera2_restore_default_hint)
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface Dialog, int which) {
+                    public void onClick(DialogInterface dialog, int which) {
                         restoreSettings();
                     }
                 })
