@@ -2262,8 +2262,13 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void initRepocessImageReader(int format) {
         int i = getMainCameraId();
-        mImageReader[i] = ImageReader.newInstance(mPictureSize.getWidth(),
-                mPictureSize.getHeight(), format, MAX_IMAGEREADERS + 2);
+        if (mPostProcessor.isZSLEnabled()) {
+            mImageReader[i] = ImageReader.newInstance(mSupportedMaxPictureSize.getWidth(),
+                    mSupportedMaxPictureSize.getHeight(), format, MAX_IMAGEREADERS + 2);
+        } else {
+            mImageReader[i] = ImageReader.newInstance(mPictureSize.getWidth(),
+                    mPictureSize.getHeight(), format, MAX_IMAGEREADERS + 2);
+        }
         if (mSaveRaw) {
             mRawImageReader[i] = ImageReader.newInstance(mSupportedRawPictureSize.getWidth(),
                     mSupportedRawPictureSize.getHeight(), mSettingsManager.getRawFormat(), MAX_IMAGEREADERS + 2);
