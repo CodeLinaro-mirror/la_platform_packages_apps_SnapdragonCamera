@@ -5224,13 +5224,16 @@ public class CaptureModule implements CameraModule, PhotoController,
         mRecordingTotalTime += SystemClock.uptimeMillis() - mRecordingStartTime;
         String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
         boolean noNeedEndofStreamWhenPause = value != null && value.equals("V3");
+        boolean noNeedEndofStreamInEISDG = PersistUtil.isEOSDisabled();
+
         // As EIS is not supported for HFR case (>=120 )
         // and FOVC also currently don’t require this for >=120 case
         // so use noNeedEndOfStreamInHFR to control
         boolean noNeedEndOfStreamInHFR = mHighSpeedCapture &&
                 ((int)mHighSpeedFPSRange.getUpper() >= HIGH_SESSION_MAX_FPS);
-        if (noNeedEndofStreamWhenPause || noNeedEndOfStreamInHFR) {
+        if (noNeedEndofStreamWhenPause || noNeedEndofStreamInEISDG || noNeedEndOfStreamInHFR) {
             try{
+                Log.v(TAG, "no need the EOS for EIS and HFR");
                 mMediaRecorder.pause();
             } catch (IllegalStateException e){
                 e.printStackTrace();
