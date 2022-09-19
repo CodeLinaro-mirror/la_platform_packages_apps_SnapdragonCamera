@@ -1404,7 +1404,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         float[] zoomRatioRange = mSettingsManager.getSupportedRatioZoomRange(
                 mModule.getMainCameraId());
         if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                isRTBModeInSelectMode()) {
+                (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
             zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                     mModule.getMainCameraId());
         }
@@ -1412,7 +1412,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             @Override
             public void onClick(View v) {
                 if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                        isRTBModeInSelectMode()){
+                        (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())){
                     float[] zoomRTBRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                            mModule.getMainCameraId());
                     if(zoomRTBRange[0] > 1 ) {
@@ -1654,7 +1654,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.VISIBLE);
         }
-        if(mFilterMenuStatus == FILTER_MENU_ON){
+        if(mFilterMenuStatus == FILTER_MENU_ON || mSettingsManager.isAICameraOn()){
             hideZoomSeekBar();
         }
     }
@@ -2036,7 +2036,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         float[] zoomRatioRange = mSettingsManager.getSupportedRatioZoomRange(
                 mModule.getMainCameraId());
         if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                isRTBModeInSelectMode()) {
+                (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
             zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                     mModule.getMainCameraId());
         }

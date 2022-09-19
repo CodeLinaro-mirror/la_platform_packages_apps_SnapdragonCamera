@@ -1017,11 +1017,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isAICameraOn(){
-        String value = getValue(KEY_AI_CAMERA);
+        String value = getPerfValue(KEY_AI_CAMERA);
         if(value != null && !value.equals("disable")){
             return Integer.parseInt(value) == 2;
         }
         return false;
+    }
+
+    public String getPerfValue(String key) {
+        SharedPreferences sp = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey()),
+                Context.MODE_PRIVATE);
+        return sp.getString(key, "disable");
     }
 
     public boolean isAICameraSnapshotEnabeld(){

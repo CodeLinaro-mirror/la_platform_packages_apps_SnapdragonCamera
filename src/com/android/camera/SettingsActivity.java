@@ -209,6 +209,9 @@ public class SettingsActivity extends PreferenceActivity {
                 updateEISPreference();
                 updatePdnetTogglePreference();
                 updateViullPreference();
+                if(mode == CaptureModule.CameraMode.VIDEO && mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID){
+                    recreate();
+                }
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
                 value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
@@ -396,8 +399,8 @@ public class SettingsActivity extends PreferenceActivity {
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                     updateViullPreference();
                 }
-                if (pref.getKey().equals(SettingsManager.KEY_AI_CAMERA)) {
-                    recreate();
+                if (pref.getKey().equals(SettingsManager.KEY_AI_CAMERA)){
+                    updateEISPreference();
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
                     updateVideoMFHDRPreference();
@@ -1676,8 +1679,9 @@ public class SettingsActivity extends PreferenceActivity {
         CaptureModule.CameraMode mode =
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-        Log.i(TAG,"isAICameraOn:" + mSettingsManager.isAICameraOn() + ",selectMode: " + selectMode);
-        if (mSettingsManager.isAICameraOn() && mode == VIDEO){
+        Log.d(TAG,"isAICameraOn:" + mSettingsManager.isAICameraOn() + ",selectMode: " + selectMode);
+        if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") && mode == VIDEO  &&
+                mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID){
             aiCameraList.add(SettingsManager.KEY_AI_CAMERA);
             aiCameraList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
             aiCameraList.add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
@@ -2411,8 +2415,6 @@ public class SettingsActivity extends PreferenceActivity {
         ListPreference eisPref = (ListPreference)findPreference(
                 SettingsManager.KEY_EIS_VALUE);
         if (eisPref == null) return;
-        String hdrValue = mSettingsManager.getValue(mSettingsManager.KEY_MANUAL_HDR);
-        CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         boolean changeEIS = true;
         MultiSelectListPreference camCorderPref = (MultiSelectListPreference) findPreference(
                 SettingsManager.KEY_PHYSICAL_CAMCORDER);
@@ -2444,15 +2446,6 @@ public class SettingsActivity extends PreferenceActivity {
             if (eisPref != null) {
                 eisPref.setEntries(list.toArray(new CharSequence[list.size()]));
                 eisPref.setEntryValues(values.toArray(new CharSequence[values.size()]));
-                String value = mSettingsManager.getValue(mSettingsManager.KEY_SELECT_MODE);
-                if (value != null && !value.equals("rtb")) {
-                    if (eisPref != null) {
-                        eisPref.setEnabled(false);
-                        eisPref.setValue("disable");
-                    }
-                } else {
-                    eisPref.setEnabled(true);
-                }
             }
         }
     }
