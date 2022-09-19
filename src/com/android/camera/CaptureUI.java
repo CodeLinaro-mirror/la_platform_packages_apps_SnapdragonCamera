@@ -1403,7 +1403,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.VISIBLE);
         }
-        if(mFilterMenuStatus == FILTER_MENU_ON){
+        if(mFilterMenuStatus == FILTER_MENU_ON || mSettingsManager.isAICameraOn()){
             hideZoomSeekBar();
         }
     }

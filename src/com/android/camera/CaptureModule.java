@@ -14802,8 +14802,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public void updateZoomSeekBarVisible() {
         if (mCurrentSceneMode.mode == CameraMode.PRO_MODE || mIsRTBCameraId ||
-                mCurrentSceneMode.mode == CameraMode.RTB || isRTBModeInSelectMode() ||
-                mSettingsManager.isAICameraOn()) {
+                mCurrentSceneMode.mode == CameraMode.RTB || isRTBModeInSelectMode()) {
             if (mCurrentSceneMode.mode == CameraMode.RTB || isRTBModeInSelectMode()) {
                 float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                         getMainCameraId());
