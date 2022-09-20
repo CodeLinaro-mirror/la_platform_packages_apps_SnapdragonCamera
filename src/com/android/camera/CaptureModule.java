@@ -6559,8 +6559,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mLongshoting){
             if (mCurrentSession != null) {
                 try {
-                    mCurrentSession.abortCaptures();
                     mCurrentSession.stopRepeating();
+                    mCurrentSession.abortCaptures();
                 } catch (CameraAccessException|IllegalStateException e) {
                     e.printStackTrace();
                 }
@@ -6576,8 +6576,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 public void run() {
                     if (mCurrentSession != null) {
                         try {
-                            mCurrentSession.abortCaptures();
                             mCurrentSession.stopRepeating();
+                            mCurrentSession.abortCaptures();
                             if (mIsPreviewingVideo && !mIsRecordingVideo) {
                                 closePreviewSession();
                             }
