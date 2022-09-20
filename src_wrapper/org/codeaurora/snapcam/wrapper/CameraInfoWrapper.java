@@ -34,7 +34,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import android.hardware.Camera.CameraInfo;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 public class CameraInfoWrapper extends Wrapper{
     private final static String TAG = "CameraInfo";

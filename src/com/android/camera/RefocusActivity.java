@@ -53,7 +53,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Build;
 import android.util.AttributeSet;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;

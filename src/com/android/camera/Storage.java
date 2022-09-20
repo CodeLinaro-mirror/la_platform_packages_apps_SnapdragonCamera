@@ -35,7 +35,7 @@ import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.MediaStore.MediaColumns;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.app.CameraApp;
 import com.android.camera.data.LocalData;
@@ -53,11 +53,12 @@ import android.graphics.BitmapRegionDecoder;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import com.android.camera.CameraActivity;
-
+import com.android.camera.util.CameraUtil;
+import com.android.camera.util.PersistUtil;
 
 
 public class Storage {
-    private static final String TAG = "CameraStorage";
+    private static final String TAG = "SnapCam_CameraStorage";
 
     public static final String DCIM =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
@@ -289,7 +290,7 @@ public class Storage {
             suffix = ".dng";
         }
         values.put(ImageColumns.DISPLAY_NAME, title + suffix);
-        Log.d(TAG, "getContentValuesForData title = " + title + ", path = " + path + ", suffix = " + suffix);
+        Log.i(TAG, "getContentValuesForData title = " + title + ", path = " + path + ", suffix = " + suffix);
         values.put(ImageColumns.DATE_TAKEN, date);
         // Clockwise rotation in degrees. 0, 90, 180, or 270.
         values.put(ImageColumns.ORIENTATION, orientation);
@@ -573,7 +574,7 @@ public class Storage {
             StatFs stat = new StatFs(DIRECTORY);
             return stat.getAvailableBlocks() * (long) stat.getBlockSize();
         } catch (Exception e) {
-            Log.i(TAG, "Failed to access external storage", e);
+            Log.w(TAG, "Failed to access external storage ="+ e);
         }
         return UNKNOWN_SIZE;
     }

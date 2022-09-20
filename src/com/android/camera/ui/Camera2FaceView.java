@@ -38,7 +38,7 @@ import android.hardware.camera2.params.Face;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.ExtendedFace;
 import com.android.camera.SettingsManager;
@@ -155,7 +155,7 @@ public class Camera2FaceView extends FaceView {
     }
 
     public void setFaces(Face[] faces, ExtendedFace[] extendedFaces) {
-        if (LOGV) Log.v(TAG, "Num of faces=" + faces.length);
+        Log.v(TAG, BIG_LOG,"Num of faces=" + faces.length);
         if (mPause) return;
         if (mFaces != null) {
             if ((faces.length > 0 && mFaces.length == 0)
@@ -175,8 +175,8 @@ public class Camera2FaceView extends FaceView {
         }
         mFaces = faces;
         mExFaces = extendedFaces;
-        if (LOGV && mExFaces != null) {
-            Log.v(TAG, "Num of ex faces=" + mExFaces.length);
+        if (mExFaces != null) {
+            Log.v(TAG, FD_LOG,"Num of ex faces=" + mExFaces.length);
         }
         if (!mBlocked && (mFaces != null) && (mFaces.length > 0) && mCameraBound != null) {
             postInvalidate();
@@ -259,9 +259,7 @@ public class Camera2FaceView extends FaceView {
                         2000f / mCameraBound.height());
             }
 
-            if (LOGV) {
-                Log.v(TAG, "onDraw w * H :" + mCameraBound.width() + " x " + mCameraBound.height());
-            }
+            Log.v(TAG, FD_LOG,"onDraw w * H :" + mCameraBound.width() + " x " + mCameraBound.height());
             Matrix bsgcTranslateMatrix = new Matrix();
             if(mZoomRationSupported && mPostZoomFov) {
                 bsgcTranslateMatrix.preTranslate(-mOriginalCameraBound.width() / 2f * mZoom,
@@ -279,12 +277,8 @@ public class Camera2FaceView extends FaceView {
             dx -= (rw - mUncroppedWidth) / 2;
             int dy = (getHeight() - mUncroppedHeight) / 2;
             dy -= (rh - mUncroppedHeight) / 2;
-            if (LOGV) {
-                Log.v(TAG, "onDraw mUncroppedWidth x height :" + mUncroppedWidth + " x " + mUncroppedHeight);
-                Log.v(TAG, "onDraw rw x rh :" + rw + " x " + rh);
-                Log.v(TAG, "onDraw dx * dy :" + dx + " x " + dy);
-            }
-
+                Log.v(TAG, FD_LOG,"onDraw mUncroppedWidth x height :" + mUncroppedWidth + " x " + mUncroppedHeight +
+                        " rw x rh :" + rw + " x " + rh + "onDraw dx * dy :" + dx + " x " + dy);
             Matrix pointTranslateMatrix = new Matrix();
             pointTranslateMatrix.postTranslate(dx,dy);
 
@@ -337,9 +331,9 @@ public class Camera2FaceView extends FaceView {
                             mRect.bottom = mRect.bottom - mCameraBound.top;
                         }
                         translateMatrix.mapRect(mRect);
-                        if (LOGV) CameraUtil.dumpRect(mRect, "Original Facial mask");
+                        CameraUtil.dumpRect(mRect, "Original Facial mask");
                         mMatrix.mapRect(mRect);
-                        if (LOGV) CameraUtil.dumpRect(mRect, "Transformed Facial mask");
+                        CameraUtil.dumpRect(mRect, "Transformed Facial mask");
                         mPaint.setColor(Color.BLUE);
                         mRect.offset(dx, dy);
                         canvas.drawRect(mRect, mPaint);
@@ -362,15 +356,15 @@ public class Camera2FaceView extends FaceView {
                     mRect.bottom = mRect.bottom - mCameraBound.top;
                 }
                 translateMatrix.mapRect(mRect);
-                if (LOGV) CameraUtil.dumpRect(mRect, "Original rect");
+                CameraUtil.dumpRect(mRect, "Original rect");
                 mMatrix.mapRect(mRect);
-                if (LOGV) CameraUtil.dumpRect(mRect, "Transformed rect");
+                CameraUtil.dumpRect(mRect, "Transformed rect");
                 mPaint.setColor(mColor);
                 mRect.offset(dx, dy);
                 canvas.drawRect(mRect, mPaint);
 
-                if (LOGV && mExFaces != null) {
-                    Log.v(TAG, "onDraw extendFaceSize " + extendFaceSize + ", mExFaces[" + i + "] " + mExFaces[i]);
+                if ( mExFaces != null) {
+                    Log.v(TAG, FD_LOG,"onDraw extendFaceSize " + extendFaceSize + ", mExFaces[" + i + "] " + mExFaces[i]);
                 }
 
                 if (i < extendFaceSize && mExFaces != null &&
@@ -521,7 +515,7 @@ public class Camera2FaceView extends FaceView {
                                                 mFaceExpressionConfidencePaint);
                                     }
                                 } catch (Exception e) {
-                                    Log.w(TAG, "", e.fillInStackTrace());
+                                    Log.w(TAG, ""+ e.fillInStackTrace());
                                 }
                             }
                         }
@@ -556,7 +550,7 @@ public class Camera2FaceView extends FaceView {
                                     float textSize = mFaceExpressionConfidencePaint.getTextSize();
                                     canvas.drawText(expressionInfoText, mRect.left, mRect.bottom + offset + textSize * (j + 1), mFaceExpressionConfidencePaint);
                                 } catch (Exception e) {
-                                    Log.w(TAG, "", e.fillInStackTrace());
+                                    Log.w(TAG, ""+ e.fillInStackTrace());
                                 }
                             }
 

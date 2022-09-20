@@ -35,7 +35,7 @@ import android.os.Message;
 import android.view.View;
 import android.view.KeyEvent;
 import android.view.OrientationEventListener;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import java.util.List;
 import java.util.ArrayList;

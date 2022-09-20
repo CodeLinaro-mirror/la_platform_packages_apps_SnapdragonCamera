@@ -55,7 +55,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.preference.PreferenceManager;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.widget.Toast;
 
 import com.android.camera.CameraActivity;
@@ -133,9 +133,6 @@ public class PostProcessor{
 
     private static boolean DEBUG_DUMP_FILTER_IMG =
             (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_IMAGE) ||
-            (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_ALL);
-    private static boolean DEBUG_ZSL =
-            (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_LOG) ||
             (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_ALL);
 
     private ZSLQueue mZSLQueue;
@@ -490,7 +487,7 @@ public class PostProcessor{
         ZSLQueue.ImageItem imageItem = mZSLQueue.tryToGetMatchingItem();
         if(mController.getPreviewCaptureResult() == null ||
                 mController.getPreviewCaptureResult().get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED) {
-            if(DEBUG_ZSL) Log.d(TAG, "Flash required image");
+            Log.d(TAG, "Flash required image");
             if (imageItem != null)
                 imageItem.closeImage();
             imageItem = null;
@@ -506,16 +503,16 @@ public class PostProcessor{
             imageItem = null;
         }
         if (imageItem != null) {
-            if(DEBUG_ZSL) Log.d(TAG,"Got the item from the queue");
+            Log.d(TAG, "Got the item from the queue");
             reprocessImage(imageItem.getImage(), imageItem.getMetadata());
             if (mSaveRaw && imageItem.getRawImage() != null) {
                 onRawImageToProcess(imageItem.getRawImage());
             }
             return true;
         } else {
-            if(DEBUG_ZSL) Log.d(TAG, "No good item in queue, register the request for the future");
+            Log.d(TAG,  "No good item in queue, register the request for the future");
             if(mController.isLongShotActive()) {
-                if(DEBUG_ZSL) Log.d(TAG, "Long shot active in ZSL");
+                Log.d(TAG,  "Long shot active in ZSL");
                 mPendingContinuousRequestCount = PersistUtil.getLongshotShotLimit();
                 return true;
             } else {
@@ -581,7 +578,7 @@ public class PostProcessor{
                     return;
                 }
             }
-            if (DEBUG_ZSL) Log.d(TAG, "reprocess Image request " + image.getTimestamp());
+            Log.d(TAG,  "reprocess Image request " + image.getTimestamp());
             CaptureRequest.Builder builder = null;
             try {
                 builder = mCameraDevice.createReprocessCaptureRequest(inputSettings);
@@ -751,10 +748,8 @@ public class PostProcessor{
             public void run() {
                 try {
                     mFilter.manualCapture(builder, captureSession, mCaptureCallback, handler);
-                } catch(IllegalStateException e) {
-                    Log.w(TAG, "Session is closed while taking manual pictures ");
-                } catch (CameraAccessException e) {
-                    e.printStackTrace();
+                } catch(IllegalStateException | CameraAccessException e) {
+                    Log.w(TAG, "exception="+e);
                 }
             }
         });
@@ -1333,7 +1328,7 @@ public class PostProcessor{
         @Override
         public void onImageAvailable(ImageReader reader) {
             final Image image = reader.acquireNextImage();
-            if(DEBUG_ZSL) Log.d(TAG, "ZSL image Reprocess is done "+image.getTimestamp());
+            Log.d(TAG,  "ZSL image Reprocess is done "+image.getTimestamp());
             mSavingHander.post(new Runnable() {
                 public void run() {
                     long captureStartTime = System.currentTimeMillis();

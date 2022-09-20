@@ -29,7 +29,7 @@
 package com.android.camera.util;
 
 import android.content.Context;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;

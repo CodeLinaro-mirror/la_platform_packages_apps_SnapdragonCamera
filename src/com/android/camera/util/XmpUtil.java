@@ -16,7 +16,7 @@
 
 package com.android.camera.util;
 
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.adobe.xmp.XMPException;
 import com.adobe.xmp.XMPMeta;

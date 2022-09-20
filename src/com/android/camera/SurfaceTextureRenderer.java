@@ -18,7 +18,7 @@ package com.android.camera;
 
 import android.graphics.SurfaceTexture;
 import android.os.Handler;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;

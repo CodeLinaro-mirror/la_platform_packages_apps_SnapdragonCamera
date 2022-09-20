@@ -42,7 +42,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -78,6 +78,7 @@ public class MultiCaptureModule implements MultiCamera {
     public static final boolean DEBUG =
             (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_LOG) ||
                     (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_ALL);
+    private static final int BIG_LOG = PersistUtil.CAMERA2_DEBUG_BIGLOG;
 
     private static final int WAIT_SURFACE = 0;
     private static final int OPEN_CAMERA = 1;
@@ -567,9 +568,7 @@ public class MultiCaptureModule implements MultiCamera {
         private void process(CaptureResult result) {
             Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
             Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-            if (DEBUG) {
-                Log.v(TAG, "process afState :" + afState + ", aeState :" + aeState);
-            }
+            Log.v(TAG, BIG_LOG,"process afState :" + afState + ", aeState :" + aeState);
         }
 
         @Override

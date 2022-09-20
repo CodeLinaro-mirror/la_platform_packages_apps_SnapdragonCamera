@@ -30,7 +30,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;

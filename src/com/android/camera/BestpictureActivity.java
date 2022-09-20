@@ -42,7 +42,7 @@ import android.os.Bundle;
 import android.support.v13.app.FragmentStatePagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;

@@ -26,7 +26,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.ImageColumns;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.exif.ExifInterface;
 

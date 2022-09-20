@@ -41,7 +41,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.os.Handler;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Range;
 
 import com.android.camera.CameraActivity;

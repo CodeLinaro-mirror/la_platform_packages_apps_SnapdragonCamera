@@ -40,7 +40,7 @@ import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.renderscript.Type;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.widget.Toast;

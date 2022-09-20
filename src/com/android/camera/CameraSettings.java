@@ -31,7 +31,7 @@ import android.hardware.Camera.Size;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import java.util.HashMap;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.util.ApiHelper;
 import com.android.camera.util.CameraUtil;

@@ -22,7 +22,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationProvider;
 import android.os.Bundle;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 /**
  * A class that handles everything about location.

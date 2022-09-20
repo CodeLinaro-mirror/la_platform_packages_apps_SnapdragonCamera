@@ -69,7 +69,7 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -130,7 +130,7 @@ public class CameraActivity extends Activity
         ActionBar.OnMenuVisibilityListener,
         ShareActionProvider.OnShareTargetSelectedListener {
 
-    private static final String TAG = "CAM_Activity";
+    private static final String TAG = "SnapCam_Activity";
 
     private static final String INTENT_ACTION_STILL_IMAGE_CAMERA_SECURE =
             "android.media.action.STILL_IMAGE_CAMERA_SECURE";
@@ -311,7 +311,7 @@ public class CameraActivity extends Activity
     private ServiceConnection mAideConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className, IBinder b) {
-            Log.i(TAG,"aide service connected");
+            Log.d(TAG,"aide service connected");
             mAIDenoiserService = ((AIDenoiserService.LocalBinder) b).getService();
         }
 
@@ -1348,7 +1348,7 @@ public class CameraActivity extends Activity
         } else if (mimeType.startsWith(PlaceholderManager.PLACEHOLDER_MIME_TYPE)) {
             mDataAdapter.addNewPhoto(cr, uri);
         } else {
-            android.util.Log.w(TAG, "Unknown new media with MIME type:"
+            Log.w(TAG, "Unknown new media with MIME type:"
                     + mimeType + ", uri:" + uri);
         }
     }
@@ -1377,7 +1377,7 @@ public class CameraActivity extends Activity
     }
 
     private void bindAIDenoiserService() {
-        Log.i(TAG,"bindAIDenoiserService");
+        Log.d(TAG,"bindAIDenoiserService");
         Intent intent = new Intent(this, AIDenoiserService.class);
         this.bindService(intent, mAideConnection, Context.BIND_AUTO_CREATE);
     }
@@ -1545,9 +1545,9 @@ public class CameraActivity extends Activity
         try {
             //Print version info here
             String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
-            Log.d(TAG, "snapdragoncamera_version: " + versionName);
+            Log.i(TAG, "snapdragoncamera_version: " + versionName);
         } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
+           Log.w(TAG,e.toString());
         }
         // Check if this is in the secure camera mode.
         Intent intent = getIntent();
@@ -1946,7 +1946,7 @@ public class CameraActivity extends Activity
         try {
             return manager.getCameraIdList().length > 0;
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+            Log.e(TAG,e);
             return false;
         }
     }

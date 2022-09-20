@@ -38,7 +38,7 @@ import android.os.Environment;
 import android.os.storage.StorageVolume;
 import android.os.storage.StorageManager;
 import android.provider.MediaStore;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import java.io.File;
 import java.util.List;

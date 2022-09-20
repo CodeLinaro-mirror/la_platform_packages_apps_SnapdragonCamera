@@ -34,7 +34,7 @@ import java.nio.ByteOrder;
 import android.graphics.Rect;
 import android.media.Image;
 import android.media.Image.Plane;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.CaptureRequest;

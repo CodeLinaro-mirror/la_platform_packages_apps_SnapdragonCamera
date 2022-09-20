@@ -35,7 +35,7 @@
 package com.android.camera;
 
 import android.content.Context;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.View;
 import android.widget.ListAdapter;
 import android.widget.ListView;

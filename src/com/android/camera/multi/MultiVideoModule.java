@@ -52,7 +52,7 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 import android.view.OrientationEventListener;
 import android.util.SparseIntArray;

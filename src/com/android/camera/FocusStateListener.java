@@ -30,7 +30,9 @@
 package com.android.camera;
 
 import android.hardware.camera2.CaptureResult;
-import android.util.Log;
+import com.android.camera.util.Log;
+
+import com.android.camera.util.PersistUtil;
 
 public class FocusStateListener {
     private static final String TAG = "SnapCam_FocusStateListe";

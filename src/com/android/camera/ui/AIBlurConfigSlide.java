@@ -41,7 +41,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.SettingsManager;
 

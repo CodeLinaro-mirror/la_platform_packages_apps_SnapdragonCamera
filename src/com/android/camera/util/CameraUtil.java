@@ -51,7 +51,7 @@ import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.OrientationEventListener;
@@ -102,7 +102,7 @@ import static android.content.Context.MODE_PRIVATE;
  * Collection of utility functions used in this package.
  */
 public class CameraUtil {
-    private static final String TAG = "Util";
+    private static final String TAG = "SnapCam_Util";
 
     // For calculate the best fps range for still image capture.
     private final static int MAX_PREVIEW_FPS_TIMES_1000 = 400000;
@@ -168,7 +168,9 @@ public class CameraUtil {
     public static final String KEY_DELETE = "delete";
     public static final String KEY_DELETE_ALL = "delete_all";
     public static int sScreenWidth;
-
+    private static long mStartTime;
+    private static String mStartStr;
+    private static final int FD_LOG = PersistUtil.CAMERA2_DEBUG_FD;
     public static boolean isSupported(String value, List<String> supported) {
         return supported == null ? false : supported.indexOf(value) >= 0;
     }
@@ -209,7 +211,7 @@ public class CameraUtil {
 
     private static final String EXTRAS_USE_FRONT_CAMERA=
             "com.google.assistant.extra.USE_FRONT_CAMERA";
-
+    private static final int EXCEPTION_LOG = PersistUtil.CAMERA2_DEBUG_EXCEPTION;
     private static float sPixelDensity = 1;
     private static ImageFileNamer sImageFileNamer;
 
@@ -473,6 +475,15 @@ public class CameraUtil {
         }
         return 0;
     }
+    public static void setStartTime(String str){
+        mStartTime = System.currentTimeMillis();
+        mStartStr = str;
+        Log.i(TAG,str +" -------------start to count time-------------");
+    };
+    public static void printTime(String str){
+     Log.i(TAG,mStartStr +"------------------> " + str+" --------- end count time is : "+ (System.currentTimeMillis() - mStartTime) + "ms");
+    }
+
 
     /**
      * Calculate the default orientation of the device based on the width and
@@ -804,7 +815,18 @@ public class CameraUtil {
         }
         return optimalSize;
     }
-
+    public static int getSize(String value) {
+        if (value == null) {
+            return 0;
+        }
+        String[] size = value.split("x");
+        if (size != null && size.length >= 2) {
+            int width = Integer.parseInt(size[0]);
+            int height = Integer.parseInt(size[1]);
+            return width * height;
+        }
+        return 0;
+    }
     public static void dumpParameters(Parameters parameters) {
         String flattened = parameters.flatten();
         StringTokenizer tokenizer = new StringTokenizer(flattened, ";");
@@ -929,7 +951,7 @@ public class CameraUtil {
     }
 
     public static void dumpRect(RectF rect, String msg) {
-        Log.v(TAG, msg + "=(" + rect.left + "," + rect.top
+        Log.v(TAG, FD_LOG,msg + "=(" + rect.left + "," + rect.top
                 + "," + rect.right + "," + rect.bottom + ")");
     }
 
@@ -1535,9 +1557,27 @@ public class CameraUtil {
         try {
             return Bitmap.createBitmap(bm, 0, 0, bm.getWidth(), bm.getHeight(), m, true);
         } catch (OutOfMemoryError ex) {
-            ex.printStackTrace();
+           Log.e(TAG,ex);
         }
         return null;
+    }
+    public static long strToLong(String str,long value) {
+        try {
+            long longStr = Long.parseLong(str);
+            return longStr;
+        } catch (NumberFormatException e) {
+            Log.w(TAG,EXCEPTION_LOG,"str="+str+"e="+e);
+            return value;
+        }
+    }
+    public static int strToInt(String str,int value) {
+        try {
+            int intStr = Integer.parseInt(str);
+            return intStr;
+        } catch (NumberFormatException e) {
+            Log.w(TAG,EXCEPTION_LOG,"str="+str+"e="+e);
+            return value;
+        }
     }
 
     public static class ImageAndMultiResStreamInfo {

@@ -69,7 +69,7 @@ import android.preference.PreferenceScreen;
 import android.preference.SwitchPreference;
 import android.view.Window;
 import android.view.WindowManager;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
@@ -187,6 +187,7 @@ public class SettingsActivity extends PreferenceActivity {
                 updatePreference(SettingsManager.KEY_VIDEO_DURATION);
                 updateVideoMFHDRPreference();
                 updateViullPreference();
+                updateVsrPreference();
             } else if (key.equals(SettingsManager.KEY_SELECT_MODE)) {
                 value = ((ListPreference) p).getValue();
                 CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
@@ -244,6 +245,7 @@ public class SettingsActivity extends PreferenceActivity {
                     UpdateManualHDRSetting();
                 }
                 updateHdrRefOp();
+                updateQuadBayerPreference();
             }
 
             if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
@@ -315,6 +317,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updateZslPreference();
                     updateLongShotPreference();
                     updatePictureFormatPreference();
+                    updateVideoMFHDRPreference();
                     updateSwitchIDInModePreference(false);
                     if(mSettingsManager.isMultiCameraEnabled()){
                         recreate();
@@ -373,6 +376,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updateRawInfoPref();
                 }
                 if(pref.getKey().equals(SettingsManager.KEY_VSR)){
+                    updateVideoHfrFpsPreference();
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                     updateViullPreference();
@@ -394,6 +398,9 @@ public class SettingsActivity extends PreferenceActivity {
                 if(mSettingsManager.KEY_SWITCH_CAMERA .equals(pref.getKey())){
                     checkExposurTimeValue();
                 }
+                if(mSettingsManager.KEY_EXTENDED_MAX_ZOOM .equals(pref.getKey())){
+                    updateZoomPreference();
+                }
             }
         }
     };
@@ -401,7 +408,7 @@ public class SettingsActivity extends PreferenceActivity {
         String exposuretime = mSettingsManager.getKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE);
         long []mExposureTime = mSettingsManager.getExposureRangeValues();
         if(exposuretime != null && !exposuretime.equals("") && !exposuretime.equals("auto")){
-            long exptime = PersistUtil.strToLong(exposuretime,100000000);
+            long exptime = CameraUtil.strToLong(exposuretime,100000000);
             if(mExposureTime[1] < exptime){
                 mSettingsManager.setKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE,true,String.valueOf(mExposureTime[1]));
             }
@@ -446,7 +453,7 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void UpdateManualExposureSettings() {
-        //dismiss all popups first, because we need to show edit dialog
+        //dismiss all popups first, because we need to show edit Dialog
         int cameraId = mSettingsManager.getCurrentCameraId();
         final SharedPreferences pref = SettingsActivity.this.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(SettingsActivity.this,
@@ -494,7 +501,7 @@ public class SettingsActivity extends PreferenceActivity {
             linear.addView(ISOtext);
             alert.setView(linear);
             alert.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog,int id) {
+                public void onClick(DialogInterface Dialog,int id) {
                     int newISO = -1;
                     String iso = ISOinput.getText().toString();
                     Log.v(TAG, "string iso length " + iso.length() + ", iso :" + iso);
@@ -517,7 +524,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             });
             alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog,int id) {
+                public void onClick(DialogInterface Dialog,int id) {
                     editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
                     editor.apply();
                 }
@@ -534,7 +541,7 @@ public class SettingsActivity extends PreferenceActivity {
             linear.addView(ExpTimeText);
             alert.setView(linear);
             alert.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog,int id) {
+                public void onClick(DialogInterface Dialog,int id) {
                     double newExpTime = -1;
                     String expTime = ExpTimeInput.getText().toString();
                     if (expTime.length() > 0) {
@@ -558,7 +565,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             });
             alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog,int id) {
+                public void onClick(DialogInterface Dialog,int id) {
                     editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
                     editor.apply();
                 }
@@ -583,7 +590,7 @@ public class SettingsActivity extends PreferenceActivity {
             linear.addView(ExpTimeText);
             alert.setView(linear);
             alert.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog,int id) {
+                public void onClick(DialogInterface Dialog,int id) {
                     int newISO = -1;
                     String iso = ISOinput.getText().toString();
                     Log.v(TAG, "string iso length " + iso.length() + ", iso :" + iso);
@@ -625,7 +632,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             });
             alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog,int id) {
+                public void onClick(DialogInterface Dialog,int id) {
                     editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
                     editor.apply();
                 }
@@ -656,7 +663,7 @@ public class SettingsActivity extends PreferenceActivity {
         linear.addView(gainsText);
         alert.setView(linear);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
+            public void onClick(DialogInterface Dialog, int id) {
                 float newGain = -1;
                 String gain = gainsInput.getText().toString();
                 Log.v(TAG, "string gain length " + gain.length() + ", gain :" + gain);
@@ -679,7 +686,7 @@ public class SettingsActivity extends PreferenceActivity {
             }
         });
         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog,int id) {
+            public void onClick(DialogInterface Dialog,int id) {
                 editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
                 editor.apply();
             }
@@ -742,7 +749,7 @@ public class SettingsActivity extends PreferenceActivity {
         linear.addView(bGainValue);
         alert.setView(linear);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
+            public void onClick(DialogInterface Dialog, int id) {
                 float rGain = -1.0f;
                 float gGain = -1.0f;
                 float bGain = -1.0f;
@@ -851,7 +858,7 @@ public class SettingsActivity extends PreferenceActivity {
             linear.addView(CCTtext);
             alert.setView(linear);
             alert.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog,int id) {
+                public void onClick(DialogInterface Dialog,int id) {
                     int newCCT = -1;
                     String cct = CCTinput.getText().toString();
                     if (cct.length() > 0) {
@@ -950,7 +957,7 @@ public class SettingsActivity extends PreferenceActivity {
         linear.addView(fourthToneValue);
         alert.setView(linear);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
+            public void onClick(DialogInterface Dialog, int id) {
                 float darkBoost = -1.0f;
                 float fourthTone = -1.0f;
                 String darkBoostStr = darkBoostInput.getText().toString();
@@ -1025,7 +1032,7 @@ public class SettingsActivity extends PreferenceActivity {
         linear.addView(toneMappingValue);
         alert.setView(linear);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
+            public void onClick(DialogInterface Dialog, int id) {
                 float toneMapping = -1.0f;
                 String toneMappingStr = toneMappingInput.getText().toString();
                 if (toneMappingStr.length() > 0) {
@@ -1098,7 +1105,7 @@ public class SettingsActivity extends PreferenceActivity {
         alert.setTitle("MANUAL HDR Settings");
         alert.setView(listView);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
+            public void onClick(DialogInterface Dialog, int id) {
             }
         });
         alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
@@ -1108,7 +1115,7 @@ public class SettingsActivity extends PreferenceActivity {
         });
         alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
-            public void onDismiss(DialogInterface dialog) {
+            public void onDismiss(DialogInterface Dialog) {
                 List<String> listData = adapter.getmDragDatas();
                 StringBuilder mixedHDROrder = new StringBuilder();
                 for (String item : listData) {
@@ -1136,6 +1143,7 @@ public class SettingsActivity extends PreferenceActivity {
             updateRawFormatPref();
             updateInSensorZoom();
             updateViullPreference();
+            updateQuadBayerPreference();
         }
     }
 
@@ -1221,7 +1229,7 @@ public class SettingsActivity extends PreferenceActivity {
                             });
                             alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
                                 @Override
-                                public void onDismiss(DialogInterface dialog) {
+                                public void onDismiss(DialogInterface Dialog) {
                                     preference.setSummary(fdExpandListView.getFDSummery());
                                 }
                             });
@@ -1286,6 +1294,15 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
+
+        if (!mDeveloperMenuEnabled) {
+            Preference p = findPreference(SettingsManager.KEY_PERFORMANCE_DEBUG);
+            if (p != null){
+                PreferenceGroup general = (PreferenceGroup)findPreference("general");
+                general.removePreference(p);
+            }
+        }
+
         final ArrayList<String> videoOnlyList = new ArrayList<String>() {
             {
                 add(SettingsManager.KEY_EIS_VALUE);
@@ -1320,7 +1337,6 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_MANUAL_WB);
                 add(SettingsManager.KEY_AF_MODE);
                 add(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
-                add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
                 add(SettingsManager.KEY_FACE_DETECTION_MODE);
                 add(SettingsManager.KEY_FD_SMILE);
                 add(SettingsManager.KEY_FD_GAZE);
@@ -1699,7 +1715,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_EXPOSURE);
         updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         updatePreference(SettingsManager.KEY_VIDEO_ENCODER);
-        updatePreference(SettingsManager.KEY_ZOOM);
+        updatePreference(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
         updatePreference(SettingsManager.KEY_SWITCH_CAMERA);
         updatePreference(SettingsManager.KEY_QUAD_BAYER_SENSOR);
         updatePreference(SettingsManager.KEY_TONE_MAPPING);
@@ -1711,6 +1727,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
         updateVideoMFHDRPreference();
+        updateQuadBayerPreference();
         updateStoragePreference();
         initializePhysicalPreferences();
         updatePhysicalPreferences();
@@ -1718,6 +1735,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateVideoHfrFpsPreference();
         updateEISPreference();
         updateT2TPreference();
+        updateZoomPreference();
         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         updatePictureFormatPreference();
@@ -1789,7 +1807,7 @@ public class SettingsActivity extends PreferenceActivity {
             versionName = versionName.substring(0, index);
             findPreference("version_info").setSummary(versionName);
         } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
+            Log.w(TAG,e.toString());
         }
 
         updateLongShotPreference();
@@ -1952,6 +1970,17 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setEnabled(false);
         }
     }
+    private void updateQuadBayerPreference(){
+        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_QUAD_BAYER_SENSOR);
+        if (pref == null) {
+            return;
+        }
+        pref.setEnabled(true);
+        if (mSettingsManager.isLimitedHDR()) {
+            pref.setEnabled(false);
+            pref.setValue("-1");
+        }
+    }
     private void updateVideoMFHDRPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
         if (pref == null) {
@@ -2041,9 +2070,10 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateVideoHfrFpsPreference() {
         ListPreference pref = (ListPreference)findPreference(
                 SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-        if (pref != null) {
-            pref.setEnabled(true);
+        if (pref == null) {
+            return;
         }
+        pref.setEnabled(true);
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode)getIntent().getSerializableExtra(
                 CAMERA_MODULE);
         if (mode == CaptureModule.CameraMode.VIDEO) {
@@ -2061,6 +2091,14 @@ public class SettingsActivity extends PreferenceActivity {
                     pref.setEnabled(false);
                 }
             }
+        }
+        String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        String fps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
+        int size = CameraUtil.getSize(videoSize);
+        if (vsr != null && vsr.equals("1") && size >= 3840*2160 ){
+            pref.setValue("off");
+            pref.setEnabled(false);
         }
     }
 
@@ -2104,7 +2142,9 @@ public class SettingsActivity extends PreferenceActivity {
          ListPreference Vieopref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_QUALITY);
          if(Vieopref != null){
              String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-             if(videoSize != null && videoSize.toString().equals("7680x4320")){
+             String fps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+             int size = CameraUtil.getSize(videoSize);
+             if(size >= 7680*4320 || (size >= 3840*2160 && fps != null && !fps.equals("off")) ){
                  pref.setValue("0");
                  pref.setEnabled(false);
                  return;
@@ -2336,6 +2376,31 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
 
+    private void updateZoomPreference() {
+        ListPreference zoomPref = (ListPreference)findPreference(SettingsManager.KEY_ZOOM);
+        ListPreference extendMaxPref = (ListPreference)findPreference(
+                SettingsManager.KEY_EXTENDED_MAX_ZOOM);
+        int cameraId = mSettingsManager.getCurrentCameraId();
+        List<String> zoomLevelLists = mSettingsManager.getSupportedZoomLevel(cameraId);
+        if (extendMaxPref != null && extendMaxPref.getValue().equals("1")) {
+            int maxZoom = (int)mSettingsManager.getSupportedExtendedMaxZoom(cameraId);
+            zoomLevelLists.add(String.valueOf(maxZoom));
+        }
+        List<String> zoomEntriesLists = new ArrayList<String>();
+        for (int i = 0; i< zoomLevelLists.size(); i++) {
+            zoomEntriesLists.add(zoomLevelLists.get(i) + "x");
+        }
+        if(zoomPref != null) {
+            zoomPref.setEntries(zoomEntriesLists.toArray(new CharSequence[zoomEntriesLists.size()]));
+            zoomPref.setEntryValues(zoomLevelLists.toArray(new CharSequence[zoomLevelLists.size()]));
+            int idx = zoomPref.findIndexOfValue(zoomPref.getValue());
+            if (idx < 0) {
+                idx = 0;
+            }
+            zoomPref.setValueIndex(idx);
+        }
+    }
+
     private void updateRawFormatPref() {
         ListPreference rawFormatPref = (ListPreference)findPreference(
                 SettingsManager.KEY_RAW_FORMAT_TYPE);
@@ -2452,7 +2517,6 @@ public class SettingsActivity extends PreferenceActivity {
         CaptureModule.CameraMode mode =
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
        if(pictureFormatPref != null){
-            mSettingsManager.filterPicturFormat();
             updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
        }
         if (mSettingsManager.getQuadBayerSensorPrefEnabled() ||(CaptureModule.CameraMode.RTB == mode && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE))) {
@@ -2527,7 +2591,7 @@ public class SettingsActivity extends PreferenceActivity {
         new AlertDialog.Builder(this)
                 .setMessage(R.string.pref_camera2_restore_default_hint)
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void onClick(DialogInterface Dialog, int which) {
                         restoreSettings();
                     }
                 })
@@ -2593,7 +2657,7 @@ public class SettingsActivity extends PreferenceActivity {
                         && !mSettingsManager.isSupportedHdr()){
                         viewHolder.checkBox.setSelected(false);
                         viewHolder.checkBox.setChecked(false);
-                        Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60 or enabled SaveRaw or inSensor zoom",
+                        Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60 or enabled SaveRaw or inSensor zoom or quadBayerSensor",
                             Toast.LENGTH_SHORT).show();
                         isChecked=false;
                     }

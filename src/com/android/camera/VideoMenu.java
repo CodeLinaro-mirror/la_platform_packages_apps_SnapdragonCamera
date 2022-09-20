@@ -23,7 +23,7 @@ import android.content.res.Resources;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.preference.PreferenceManager;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;

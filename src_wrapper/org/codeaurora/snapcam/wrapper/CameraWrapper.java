@@ -43,7 +43,7 @@ import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.ShutterCallback;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.SurfaceHolder;
 
 public class CameraWrapper extends Wrapper{

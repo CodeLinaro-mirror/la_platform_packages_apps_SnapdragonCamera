@@ -29,7 +29,7 @@
 
 package com.android.camera.deepportrait;
 import android.opengl.GLES30;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 public class CamRenderShader
 {

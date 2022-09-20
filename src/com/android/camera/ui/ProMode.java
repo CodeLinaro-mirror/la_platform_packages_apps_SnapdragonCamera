@@ -37,12 +37,14 @@ import android.graphics.Path;
 import android.graphics.PathMeasure;
 import android.graphics.Point;
 import android.util.AttributeSet;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
 import com.android.camera.SettingsManager;
 import java.util.List;
@@ -132,16 +134,16 @@ public class ProMode extends View {
            if(mExposureTime != null) mUI.closeFlashForPro(false);
         }
        else{
-            long mExposurTime = PersistUtil.strToLong(mCurrentExposuretime, mLongExpTm);
+            long mExposurTime = CameraUtil.strToLong(mCurrentExposuretime, mLongExpTm);
             mUI.updateProModeText(EXPOSURE_TIME_MODE, getExposureTimeStr(mExposurTime));
             if (mExposurTime > mLongExpTm) mUI.closeFlashForPro(true);
         }
     }
    private int getIndexOfValue(String exposuretime,List<String>valueList){
-        long currenvalue = PersistUtil.strToLong(exposuretime,mLongExpTm);
+        long currenvalue = CameraUtil.strToLong(exposuretime,mLongExpTm);
         for (int i = 0;i < valueList.size();i++ ){
             String str = valueList.get(i);
-            long value = PersistUtil.strToLong(str,mLongExpTm);
+            long value = CameraUtil.strToLong(str,mLongExpTm);
             if (exposuretime.equals(str)) return i;
             else if (value > currenvalue) return i-1;
         }
@@ -436,7 +438,7 @@ public class ProMode extends View {
             int index =(int) (slider * mExpTmList.size());
             if (index > mExpTmList.size() -1 ) index = mExpTmList.size() -1;
             String valuestr = mExpTmList.get(index);
-            Long value =PersistUtil.strToLong(valuestr,mLongExpTm);
+            Long value =CameraUtil.strToLong(valuestr,mLongExpTm);
             mUI.updateProModeText(mMode, getExposureTimeStr(value));
             mSettingsManager.setKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE,forceNotify,valuestr);
             mAutoText.setTextColor(Color.WHITE);
@@ -479,7 +481,7 @@ public class ProMode extends View {
             if (mCurrentExposuretime != null && !mCurrentExposuretime.equals("auto") && !mCurrentExposuretime.equals("")) {
                 if (index > 0) resetEV();
                 else {
-                    long mExposurTime = PersistUtil.strToLong(mCurrentExposuretime, mLongExpTm);
+                    long mExposurTime = CameraUtil.strToLong(mCurrentExposuretime, mLongExpTm);
                     if (mExposurTime > mLongExpTm) mUI.closeFlashForPro(true);
                     else mUI.closeFlashForPro(false);
                     mUI.setModeEnable(EXPOSURE_MODE, true);

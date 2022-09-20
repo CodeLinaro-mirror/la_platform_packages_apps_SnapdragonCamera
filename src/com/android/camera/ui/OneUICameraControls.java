@@ -36,7 +36,7 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.RelativeLayout;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 import com.android.camera.CaptureModule;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;

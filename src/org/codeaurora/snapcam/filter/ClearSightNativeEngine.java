@@ -39,7 +39,7 @@ import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.media.Image;
 import android.media.Image.Plane;
-import android.util.Log;
+import com.android.camera.util.Log;
 
 public class ClearSightNativeEngine {
     private static final boolean DEBUG = false;

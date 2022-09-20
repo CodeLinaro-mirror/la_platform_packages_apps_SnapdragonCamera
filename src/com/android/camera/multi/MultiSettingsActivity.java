@@ -49,7 +49,7 @@ import android.preference.SwitchPreference;
 import android.util.ArraySet;
 import android.view.Window;
 import android.view.WindowManager;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 import android.widget.Toast;
 

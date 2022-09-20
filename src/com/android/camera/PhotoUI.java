@@ -37,7 +37,7 @@ import android.hardware.Camera;
 import android.hardware.Camera.Face;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;

@@ -163,6 +163,7 @@ public class ComboPreferences implements
                 || key.equals(SettingsManager.KEY_FORCE_AUX)
                 || key.equals(SettingsManager.KEY_CAMERA_SAVEPATH)
                 || key.equals(SettingsManager.KEY_FACE_DETECTION)
+                || key.equals(SettingsManager.KEY_PERFORMANCE_DEBUG)
                 || key.equals(SettingsManager.KEY_RECORD_LOCATION)
                 || key.equals(SettingsManager.KEY_CLEARSIGHT);
     }

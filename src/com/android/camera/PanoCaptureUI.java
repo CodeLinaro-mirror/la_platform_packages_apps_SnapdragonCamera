@@ -28,7 +28,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.DisplayMetrics;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 import android.view.Gravity;
 import android.view.LayoutInflater;

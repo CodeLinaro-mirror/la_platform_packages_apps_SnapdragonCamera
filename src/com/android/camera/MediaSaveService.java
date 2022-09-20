@@ -37,7 +37,7 @@ import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
 import android.provider.MediaStore.Video;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.widget.Toast;
 
 import com.android.camera.exif.ExifInterface;
@@ -349,13 +349,13 @@ public void setCameraActivity(CameraActivity activity){
                 out = resolver.openOutputStream(uri);
                 MpoInterface.writeMpo(mpo, out);
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG,e.toString());
             } finally {
                 if (out != null) {
                     try {
                         out.close();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Log.e(TAG,e.toString());
                     }
                 }
             }

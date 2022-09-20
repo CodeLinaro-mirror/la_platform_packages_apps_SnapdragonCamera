@@ -982,6 +982,7 @@
         <item>@string/pref_camera_zoom_entry_8x</item>
         <item>@string/pref_camera_zoom_entry_9x</item>
         <item>@string/pref_camera_zoom_entry_10x</item>
+        <item>@string/pref_camera_zoom_entry_100x</item>
     </string-array>
 
     <string-array name="pref_camera_zoom_entryvalues" translatable="false">
@@ -996,6 +997,7 @@
         <item>8</item>
         <item>9</item>
         <item>10</item>
+        <item>100</item>
     </string-array>
 
     <string-array name="pref_camera_tone_mapping_entries" translatable="false">

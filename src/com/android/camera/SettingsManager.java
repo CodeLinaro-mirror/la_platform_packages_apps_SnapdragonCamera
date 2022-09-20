@@ -55,7 +55,7 @@ import android.media.MediaRecorder;
 import android.media.CamcorderProfile;
 import android.preference.PreferenceManager;
 import android.util.ArraySet;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Range;
 import android.util.Rational;
 import android.util.Size;
@@ -108,11 +108,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final int SCENE_MODE_AUTO_INT = 0;
     public static final int SCENE_MODE_NIGHT_INT = 5;
     public static final int SCENE_MODE_HDR_INT = 18;
-
-    public static final boolean DEBUG =
-            (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_LOG) ||
-            (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_ALL);
-
+    private static final int EXCEPTION_LOG = PersistUtil.CAMERA2_DEBUG_EXCEPTION;
+    private static final int BIG_LOG = PersistUtil.CAMERA2_DEBUG_BIGLOG;
     // Custom-Scenemodes start from 100
     public static final int SCENE_MODE_CUSTOM_START = 100;
     public static final int SCENE_MODE_DUAL_INT = SCENE_MODE_CUSTOM_START;
@@ -271,6 +268,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_STATS_VISUALIZER_ENABLE = "pref_camera2_stats_visualizer_enable_key";
     public static final String KEY_STATS_VISUALIZER_VALUE = "pref_camera2_stats_visualizer_key";
     public static final String KEY_SINGLE_PHYSICAL_CAMERA = "pref_camera2_single_physical_camera_key";
+    public static final String KEY_PERFORMANCE_DEBUG = "pref_camera2_performance_debug_key";
 
     public static final HashMap<String, Integer> KEY_ISO_INDEX = new HashMap<String, Integer>();
     public static final String KEY_FD_SMILE = "pref_camera2_fd_smile_key";
@@ -400,11 +398,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
             String[] cameraIdList = manager.getCameraIdList();
             boolean isFirstBackCameraId = true;
             boolean isRearCameraPresent = false;
+            Log.d(TAG,"cameraIdList size ="+cameraIdList.length);
             for (int i = 0; i < cameraIdList.length; i++) {
                 String cameraId = cameraIdList[i];
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
-                Log.d(TAG,"cameraIdList size ="+cameraIdList.length);
                 byte monoOnly = 0;
                 try {
                     monoOnly = characteristics.get(CaptureModule.MetaDataMonoOnlyKey);
@@ -436,7 +434,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 initPrepNameKeys(CameraCharacteristics.LENS_FACING_FRONT);
             }
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+            Log.e(TAG,e.toString());
         }
 
         mDependency = parseJson("dependency.json");
@@ -453,7 +451,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             try {
             if(mResult.get(CaptureModule.isTorchHdr) > 0 ) isTorchHdrTag = true;
             }catch (Exception e) {
-                e.printStackTrace();
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
          String flashValue = getValue(KEY_FLASH_MODE);
@@ -477,7 +475,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     = manager.getCameraCharacteristics(String.valueOf(cameraId));
             mCharacteristics.set(cameraId, characteristics);
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+            Log.e(TAG,e.toString());
         }
     }
 
@@ -611,7 +609,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public void init() {
-        Log.d(TAG, "SettingsManager init : " + CaptureModule.CURRENT_ID);
+        Log.i(TAG, "SettingsManager init current camera id : " + CaptureModule.CURRENT_ID);
         final int cameraId = getInitialCameraId();
         reloadCharacteristics(cameraId);
         setLocalIdAndInitialize(cameraId);
@@ -691,12 +689,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     }
                 }
             }
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (NullPointerException e) {
-            e.printStackTrace();
+        } catch (CameraAccessException | IllegalArgumentException| NullPointerException e) {
+           Log.w(TAG,e.toString());
         }
         return res;
     }
@@ -834,7 +828,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 mExtendedHFRSize = mCharacteristics.get(cameraId).get(CaptureModule.hfrFpsTable);
             }
         } catch(IllegalArgumentException exception) {
-            exception.printStackTrace();
+            Log.w(TAG,EXCEPTION_LOG,exception.toString());
         }
 
         filterPreferences(cameraId);
@@ -864,10 +858,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
             supportted =
                     (mCharacteristics.get(mCameraId).get(CaptureModule.swmctf) == 1);
         } catch (IllegalArgumentException | NullPointerException e) {
-            Log.d(TAG, "swmctf no vendor tag");
+            Log.d(TAG, EXCEPTION_LOG,"swmctf no vendor tag: "+e);
             supportted = true;
         }
-        Log.i(TAG,"isSwMctfSupported:" + supportted);
+        Log.d(TAG,"isSwMctfSupported:" + supportted);
         return supportted;
     }
 
@@ -899,7 +893,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             isBurstShotSupported = mCharacteristics.get(mCameraId).get(CaptureModule.is_burstshot_supported) == 1 ? true : false;
         } catch (IllegalArgumentException | NullPointerException e) {
-            Log.e(TAG, "isBurstShotSupported no vendor tag");
+            Log.w(TAG, EXCEPTION_LOG,"isBurstShotSupported no vendor tag");
         }
         return isBurstShotSupported;
     }
@@ -909,7 +903,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             maxBurstShotFPS = mCharacteristics.get(mCameraId).get(CaptureModule.max_burstshot_fps);
         } catch (IllegalArgumentException e) {
-            Log.e(TAG, "getmaxBurstShotFPS no vendorTag maxBurstShotFPS:");
+            Log.w(TAG, EXCEPTION_LOG,"getmaxBurstShotFPS no vendorTag maxBurstShotFPS:");
         }
         return maxBurstShotFPS;
     }
@@ -919,7 +913,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             maxPreviewSize = mCharacteristics.get(mCameraId).get(CaptureModule.max_preview_size);
         } catch (IllegalArgumentException e) {
-            Log.e(TAG, "getMaxPreviewSize no vendorTag max_preview_size:");
+            Log.w(TAG,EXCEPTION_LOG, "getMaxPreviewSize no vendorTag max_preview_size:");
         }
         int[] hdrMaxSize = getHdrMaxResolution();
         if(isMfhdrEnabled() && hdrMaxSize != null){
@@ -936,7 +930,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             maxHdrSize = mCharacteristics.get(mCameraId).get(CaptureModule.hdrMaxResolution);
         } catch(IllegalArgumentException | NullPointerException e) {
-            Log.w(TAG, "getHdrMaxResolution occurs exception");
+            Log.w(TAG, EXCEPTION_LOG,"getHdrMaxResolution occurs exception");
         }
         return maxHdrSize;
     }
@@ -959,7 +953,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             isLiveshotSizeSameAsVideoSize = mCharacteristics.get(mCameraId).get(CaptureModule.is_liveshot_size_same_as_video) == 1 ? true : false;
         } catch (IllegalArgumentException | NullPointerException e) {
-            Log.e(TAG, "isLiveshotSizeSameAsVideoSize no vendorTag isLiveshotSizeSameAsVideoSize:");
+            Log.w(TAG, EXCEPTION_LOG,"isLiveshotSizeSameAsVideoSize no vendorTag isLiveshotSizeSameAsVideoSize:");
         }
         return isLiveshotSizeSameAsVideoSize;
     }
@@ -1185,7 +1179,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             sensorModeTable = mCharacteristics.get(cameraId).get(CaptureModule.sensorModeTable);
         } catch (IllegalArgumentException exception) {
-            exception.printStackTrace();
+            Log.w(TAG,EXCEPTION_LOG,exception.toString());
         }
         return sensorModeTable;
     }
@@ -1196,7 +1190,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             highSpeedVideoConfigs = mCharacteristics.get(cameraId).get(
                     CaptureModule.highSpeedVideoConfigs);
         } catch (IllegalArgumentException exception) {
-            exception.printStackTrace();
+            Log.w(TAG,EXCEPTION_LOG,exception.toString());
         }
         return highSpeedVideoConfigs;
     }
@@ -1288,12 +1282,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 int[] inputformats = multiResolutionMap.getInputFormats();
                 for (int format : inputformats) {
                     formats.add("" + format);
-                    Log.i(TAG, "input format:" + format);
+                    Log.d(TAG, "input format:" + format);
                 }
             }
         }
         return formats;
     }
+
 
     public List<String> getSupportedMultiResReprocessOutput() {
         List<String> formats = new ArrayList<>();
@@ -2264,7 +2259,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 return null;
             }
         } catch(IllegalArgumentException e) {
-            Log.w(TAG, "Supported exposure range modes occur IllegalArgumentException.");
+            Log.w(TAG, EXCEPTION_LOG,"Supported exposure range modes occur IllegalArgumentException.");
         }
         return wbRange;
     }
@@ -2278,7 +2273,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 return null;
             }
         } catch(IllegalArgumentException e) {
-            Log.w(TAG, "Supported gains range modes occur IllegalArgumentException.");
+            Log.w(TAG, EXCEPTION_LOG,"Supported gains range modes occur IllegalArgumentException.");
         }
         return rgbRange;
     }
@@ -2293,7 +2288,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 return null;
             }
         } catch(IllegalArgumentException e) {
-            Log.w(TAG, "IllegalArgumentException Supported exposure range modes is null.");
+            Log.w(TAG, EXCEPTION_LOG,"IllegalArgumentException Supported exposure range modes is null.");
         }
         return exposureRange;
     }
@@ -2326,7 +2321,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             result[0] = range.getLower();
             result[1] = range.getUpper();
         } catch(IllegalArgumentException e) {
-            Log.w(TAG, "IllegalArgumentException Supported iso range is null.");
+            Log.w(TAG, EXCEPTION_LOG,"IllegalArgumentException Supported iso range is null.");
         }
         return result;
     }
@@ -2377,11 +2372,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     }
                 }
             } catch(IllegalArgumentException e) {
-                Log.e(TAG, "buildCameraId no vendorTag :" + CaptureModule.logical_camera_type);
+                Log.w(TAG, EXCEPTION_LOG,"buildCameraId no vendorTag :" + CaptureModule.logical_camera_type);
             }
             fullEntries[i] = cameraIdString;
             fullEntryValues[i] = "" + i;
-            Log.d(TAG,"add "+fullEntries[i]+"="+ fullEntryValues[i]);
+            Log.i(TAG,"add "+fullEntries[i]+"="+ fullEntryValues[i]);
         }
         fullEntries[numOfCameras] = "disable";
         fullEntryValues[numOfCameras] = "" + -1;
@@ -2391,7 +2386,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isMcxQcfaMode(){
-        Log.i(TAG,"isMultiCameraEnabled:" + isMultiCameraEnabled() + ",getQuadBayerSensorPrefEnabled:" + getQuadBayerSensorPrefEnabled());
+        Log.d(TAG,"isMultiCameraEnabled:" + isMultiCameraEnabled() + ",getQuadBayerSensorPrefEnabled:" + getQuadBayerSensorPrefEnabled());
         if(isMultiCameraEnabled() && getQuadBayerSensorPrefEnabled()){
             return true;
         }
@@ -2411,7 +2406,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         isLogicalCamera = true;
                     }
                 }
-                Log.i(TAG,"start for camera id :" + cameraIdList[i] + ",isLogicalCamera:" + isLogicalCamera);
+                Log.d(TAG,"start for camera id :" + cameraIdList[i] + ",isLogicalCamera:" + isLogicalCamera);
                 if(isLogicalCamera) {
                     Set<String> physicalIds = mCharacteristics.get(Integer.parseInt(cameraIdList[i])).getPhysicalCameraIds();
                     if (physicalIds != null) {
@@ -2420,7 +2415,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                             try {
                                 characteristics = manager.getCameraCharacteristics(physicalId);
                             } catch (CameraAccessException e) {
-                                e.printStackTrace();
+                                Log.w(TAG,e.toString());
                                 continue;
                             }
                             int[] physicalCapabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
@@ -2879,7 +2874,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             isSupported = (mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.isAIDE2Supported)) == 1;
             Log.i(TAG,"isAIDE2Supported: " + isSupported);
         } catch (IllegalArgumentException e) {
-            Log.w(TAG, "cannot find vendor tag: " +
+            Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
                     CaptureModule.isAIDE2Supported.toString());
         }
         return isSupported;
@@ -2891,7 +2886,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             //set "CustomNoiseReduction" only if MFNRType is 1 i.e; for Lahaina, set "isSWMFEnabled" only if MFNRType is 2 i.e; for Mannar..
             isSupported = (mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.MFNRType)) == 1;
         } catch (IllegalArgumentException e) {
-            Log.w(TAG, "cannot find vendor tag: " +
+            Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
                     CaptureModule.MFNRType.toString());
         }
         return isSupported;
@@ -2913,7 +2908,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 return null;
             }
         } catch(IllegalArgumentException e) {
-            Log.w(TAG, " IllegalArgumentException Supported MFNRFrame range is null.e="+e);
+            Log.w(TAG, EXCEPTION_LOG," IllegalArgumentException Supported MFNRFrame range is null.e="+e);
         }
         return range;
     }
@@ -3000,7 +2995,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             result = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_swcapability_vsr);
         } catch (Exception e) {
-            Log.w(TAG, "cannot find vendor tag: " +
+            Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
                     CaptureModule.support_swcapability_vsr.toString());
         }
         if (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEFAULT) {
@@ -3030,10 +3025,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
             result = mCharacteristics.get(getCurrentCameraId()).get(
                     CaptureModule.support_insensor_zoom);
         } catch (IllegalArgumentException e) {
-            Log.w(TAG, "cannot find vendor tag: " +
+            Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
                     CaptureModule.support_insensor_zoom.toString());
         }
-        Log.v(TAG, " isInSensorZoomSupported result :" + result);
+        Log.d(TAG, " isInSensorZoomSupported result :" + result);
         //return (result == 1);
         return true;
     }
@@ -3080,7 +3075,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 isFDRenderingInVideoUISupported = mCharacteristics.get(mCameraId).get(CaptureModule.is_FD_Rendering_In_Video_UI_Supported) == 1;
             } catch (IllegalArgumentException | NullPointerException e) {
                 isFDRenderingInVideoUISupported = true;
-                Log.e(TAG, "isFDRenderingInVideoUISupported no vendorTag isFDRenderingInVideoUISupported:");
+                Log.w(TAG, EXCEPTION_LOG,"isFDRenderingInVideoUISupported no vendorTag isFDRenderingInVideoUISupported:");
             }
         }
         return isFDRenderingInVideoUISupported;
@@ -3116,10 +3111,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             byte fastModeSupport = mCharacteristics.get(id).get(CaptureModule.fs_mode_support);
             result = (fastModeSupport == 1);
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch(NullPointerException e) {
-            Log.w(TAG, "Supported fs_mode_support is null.");
+        } catch (IllegalArgumentException | NullPointerException e) {
+            Log.w(TAG, "Supported fs_mode_support exception="+e);
         }
         return result;
     }
@@ -3128,10 +3121,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         boolean result = true;
         try {
             byte fastModeSupport = mCharacteristics.get(id).get(CaptureModule.fs_mode_support);
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch(NullPointerException e) {
-            Log.w(TAG, "Supported fs_mode_support is null.");
+        } catch (IllegalArgumentException | NullPointerException e) {
+            Log.w(TAG, "Supported fs_mode_support exception="+e);
         }
         return result;
     }
@@ -3600,7 +3591,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Log.w(TAG, "Supported ISO range is null.");
             }
         } catch (IllegalArgumentException e) {
-            Log.w(TAG, "IllegalArgumentException Supported ISO_AVAILABLE_MODES is wrong.");
+            Log.w(TAG, EXCEPTION_LOG,"IllegalArgumentException Supported ISO_AVAILABLE_MODES is wrong.");
         }
 
         return supportedIso;
@@ -3642,15 +3633,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         MediaCodecInfo[] codecInfos = list.getCodecInfos();
         for (MediaCodecInfo info: codecInfos) {
             if (!info.isEncoder() || info.getName().contains("google")) continue;
-            if(DEBUG)Log.d(TAG,"name="+info.getName());
+            Log.d(TAG,BIG_LOG,"name="+info.getName());
             if (info.getSupportedTypes().length > 0 && info.getSupportedTypes()[0] != null){
                 for (String t : info.getSupportedTypes()){
-                    if(DEBUG)Log.d(TAG,"type="+t);
+                    Log.d(TAG,BIG_LOG,"type="+t);
                 }
                 int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
                 if (type != -1){
                     str = SettingTranslation.getVideoEncoder(type);
-                    if(DEBUG)Log.d(TAG,"type="+type+" str="+str);
+                    Log.d(TAG,BIG_LOG,"type="+type+" str="+str);
                     if (isCurrentVideoResolutionSupportedByEncoder(info)) {
                         supported.add(str);
                     }
@@ -3717,7 +3708,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
-    private List<String> getSupportedZoomLevel(int cameraId) {
+    public List<String> getSupportedZoomLevel(int cameraId) {
         float maxZoom = mCharacteristics.get(cameraId).get(CameraCharacteristics
                 .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
         ArrayList<String> supported = new ArrayList<String>();
@@ -3755,12 +3746,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
             result[0] = range.getLower();
             result[1] = range.getUpper();
             Log.v(TAG, " RatioZoom min :"+ result[0] + ", zoom max :" + result[1]);
-        } catch(IllegalArgumentException e) {
+        } catch(IllegalArgumentException | NoSuchFieldError e) {
             result = null;
-            Log.w(TAG, "getSupportedRatioZoomRange occurs IllegalArgumentException");
-        } catch(NoSuchFieldError e) {
-            result = null;
-            Log.w(TAG, "getSupportedRatioZoomRange NoSuchFieldError CONTROL_ZOOM_RATIO_RANGE");
+            Log.w(TAG, EXCEPTION_LOG," CONTROL_ZOOM_RATIO_RANGE error="+e);
         }
         return result;
     }
@@ -3786,13 +3774,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
             result[0] = range.getLower();
             result[1] = range.getUpper();
             Log.v(TAG, " boken RatioZoom min :" + result[0] + ", zoom max :" + result[1]);
-        } catch(IllegalArgumentException e) {
+        } catch(IllegalArgumentException | NoSuchFieldError e) {
             result = null;
-            Log.w(TAG, "getSupportedBokenRatioZoomRange occurs IllegalArgumentException");
-        } catch(NoSuchFieldError e) {
-            result = null;
-            Log.w(TAG, "getSupportedBokenRatioZoomRange NoSuchFieldError " +
-                    "CONTROL_AVAILABLE_EXTENDED_SCENE_MODE_ZOOM_RATIO_RANGES");
+            Log.w(TAG, ""+e);
         }
         return result;
     }
@@ -3801,12 +3785,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         float maxZoom = -1f;
         try {
             maxZoom = mCharacteristics.get(cameraId).get(CaptureModule.extended_max_zoom);
-        } catch(IllegalArgumentException e) {
+        } catch(IllegalArgumentException | NullPointerException e) {
             maxZoom = -1;
-            Log.w(TAG, "getSupportedExtendedMaxZoom occurs IllegalArgumentException");
-        } catch(NullPointerException e) {
-            maxZoom = -1;
-            Log.w(TAG, "getSupportedExtendedMaxZoom occurs NullPointerException");
+            Log.w(TAG, " occurs Exception:"+e);
         }
         return maxZoom;
     }
@@ -3845,7 +3826,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
             }
         } catch(IllegalArgumentException e) {
-            Log.w(TAG, "Supported instant aec modes is null.");
+            Log.w(TAG, EXCEPTION_LOG,"Supported instant aec modes is null.");
         }
 
         return  modes;
@@ -4006,7 +3987,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if(((getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) != null && getValue(SettingsManager.KEY_RAW_FORMAT_TYPE).equals("0")) ||
                 getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) == null) && (((getValue(SettingsManager.KEY_INSENSOR_ZOOM) != null &&
                 getValue(SettingsManager.KEY_INSENSOR_ZOOM).equals("0")) || getValue(SettingsManager.KEY_INSENSOR_ZOOM) == null)) &&
-                getVideoFPS() < 60){
+                getVideoFPS() < 60 && !getQuadBayerSensorPrefEnabled()){
              return true;
         }
         return false;
@@ -4019,7 +4000,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         getCurrentPrepNameKey()), Context.MODE_PRIVATE);
         String value = pref.getString(SettingsManager.KEY_SELECT_MODE, null);
         boolean isAIBokeh = isAICameraEnabled && value != null && value.equals("rtb");
-        Log.i(TAG,"isAIBokehMode:" + isAICameraEnabled + ",value:" + value);
+        Log.d(TAG,"isAIBokehMode:" + isAICameraEnabled + ",value:" + value);
         return isAIBokeh;
     }
 
@@ -4027,7 +4008,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ArrayList<String> ret = new ArrayList<String>();
         ret.add("off");
         int modes[] = isManualHDRSupported();
-        Log.v(TAG, "getSupportedManualHDR modes :" + modes);
         if (modes != null) {
             for (int mode : modes) {
                 Log.v(TAG, "getSupportedManualHDR support mode :" + mode);
@@ -4113,10 +4093,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         mFilteredKeys.add(pictureFormat.getKey());
                     }
                 }
+            } else {
+                filterPictureFormat();
             }
         }
     }
-    public void filterPicturFormat(){
+    public void filterPictureFormat(){
            ListPreference pictureFormat = mPreferenceGroup.findPreference(KEY_PICTURE_FORMAT);
            pictureFormat.reloadInitialEntriesAndEntryValues();
            if (pictureFormat != null){
@@ -4191,11 +4173,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             is.close();
             json = new String(buffer, "UTF-8");
             return new JSONObject(json);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        } catch (JSONException e) {
-            e.printStackTrace();
+        } catch (IOException | JSONException ex) {
+            Log.e(TAG,ex.toString());
             return null;
         }
     }
@@ -4205,9 +4184,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             return mDependency.getJSONObject(key);
         } catch (JSONException e) {
-            if (DEBUG) {
-                Log.w(TAG, "getDependencyMapForKey JSONException No value for:" + key);
-            }
+            Log.w(TAG,EXCEPTION_LOG,"getDependencyMapForKey JSONException No value for:" + key);
             return null;
         }
     }
@@ -4221,9 +4198,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             return dependencyMap.getJSONObject(value);
         } catch (JSONException e) {
-            if (DEBUG) {
-                Log.w(TAG, "getDependencyList JSONException No value for:" + key);
-            }
+            Log.w(TAG, EXCEPTION_LOG,"getDependencyList JSONException No value for:" + key);
             return null;
         }
     }
@@ -4323,7 +4298,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         SettingsManager.VideoEisConfig config = getVideoEisConfig(videoSize,fps);
         if (config != null) {
             Size liveShotSize = config.getMaxLiveShotSize();
-            Log.d(TAG,"videoSize="+videoSize.toString()+" fps="+fps+ " liveShotSize="+liveShotSize.toString());
+            Log.i(TAG,"videoSize="+videoSize.toString()+" fps="+fps+ " liveShotSize="+liveShotSize.toString());
             return liveShotSize;
         } else {
             return null;

@@ -46,7 +46,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.util.Size;
 import android.view.Display;
 import android.view.Gravity;
@@ -131,6 +131,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private static final String[] STATS_EXTENSION_TITLE = {" RatioLongtoShort "," RatioLongtoSafe ",
             " RatioSafetoShort "," CompenADRCGain "," CompenDarkBoostGain "};
     private static final String[] STATS_NN_RESULT_TITLE = {" Width "," Height "," MapData "," NumROI "," ROIData "," ROIWeight "};
+    public static final String[] PERFORMANCE_DEBUG_TITLE = {" Flush "," Close Camera "," Open Camera ", " Setting Init "," Create Session ", " Request Time ",
+            " Snapshot latency ", " Shutter lag ", " Burst fps ", " Zoom latency ", " AF Convergence ", " AEC convergence ", " AWB Convergence "};
+
     private CameraActivity mActivity;
     private View mRootView;
     private View mPreviewCover;
@@ -224,12 +227,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         // SurfaceHolder callbacks
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            Log.v(TAG, "surfaceChanged: width =" + width + ", height = " + height);
+            Log.i(TAG, "surfaceChanged:size=" + width + "x" + height);
         }
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            Log.v(TAG, "surfaceCreated");
+            Log.i(TAG, "surfaceCreated");
             mSurfaceHolder = holder;
             previewUIReady();
             if(mTrackingFocusRenderer != null && mTrackingFocusRenderer.isVisible()) {
@@ -347,6 +350,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private View mStatsNNResult;
     private TextView mStatsNNResultText;
 
+    private View mPerformancDebugInfo;
+    private TextView mDebugPerformancText;
+
     private LinearLayout mZoomLinearLayout;
 
     private int mZoomIndex = 0;
@@ -361,6 +367,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private boolean[] mSurfaceReady = {false,false,false,false};
     private SurfaceView[] mPhysicalViews = new SurfaceView[CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private SurfaceHolder[] mPhysicalHolders = new SurfaceHolder[CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
+    List<Surface> mPreviewSurfaces = new ArrayList<>();
     private int mPreviewCount = 0;
     int mPreviewWidth;
     int mPreviewHeight;
@@ -639,6 +646,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mStatsAecIdsInfo = mRootView.findViewById(R.id.stats_camera_id_info);
         mStatsAecIdsText = mRootView.findViewById(R.id.stats_camera_id_text);
 
+        mPerformancDebugInfo = mRootView.findViewById(R.id.debug_performance_info);
+        mDebugPerformancText = mRootView.findViewById(R.id.debug_performance_text);
+
         mStatsNNResult = mRootView.findViewById(R.id.stats_nn_result_info);
         mStatsNNResultText= mRootView.findViewById(R.id.stats_nn_result_text);
 
@@ -903,11 +913,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         final int min = minFrame;
         String mfnrFrame = mSettingsManager.getKeyValue(SettingsManager.KEY_CAPTURE_MFNR_FRAME);
         int frameValue = minFrame;
-        try {
-            frameValue = Integer.parseInt(mfnrFrame);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        frameValue = CameraUtil.strToInt(mfnrFrame,frameValue);
         final int section = 100 / length;
         int mProgress = (frameValue - minFrame) * section;
         mMfnrSeekBar.setProgress(mProgress);
@@ -985,7 +991,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             @Override
             public void onClick(View v) {
                 String keyLevel = mSettingsManager.getKeyValue(SettingsManager.KEY_TORCH_VALUE);
-                int currentValue = PersistUtil.strToInt(keyLevel, 3);
+                int currentValue = CameraUtil.strToInt(keyLevel, 3);
                 try {
                     if (mIsTorchOn) {
                         int currentLevel = manager.getTorchStrengthLevel(currentId);
@@ -1006,7 +1012,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 int index = progress / mTorchSection;
                 if (index > mTorchLen - 1 ) index = mTorchLen - 1;
                 String level = mSettingsManager.getKeyValue(SettingsManager.KEY_TORCH_VALUE);
-                int currentLevel = PersistUtil.strToInt(level,3);
+                int currentLevel = CameraUtil.strToInt(level,3);
                 if (currentLevel != index + 1) {
                     currentLevel = index + 1;
                     String str = String.valueOf(currentLevel);
@@ -1226,7 +1232,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mZoomRenderer.setZoomMin(zoomRatioRange[0]);
                 mZoomRenderer.setZoomMax(zoomRatioRange[1]);
             }
-            Log.v(TAG, "initZoomSeekBar min:" + zoomRatioRange[0] + ", max :" + zoomRatioRange[1]);
+            Log.i(TAG, "initZoomSeekBar min:" + zoomRatioRange[0] + ", max :" + zoomRatioRange[1]);
             mZoomSeekBar.setMax((int)((zoomRatioRange[1] -zoomRatioRange[0]) * 100));
             if (zoomRatioRange[0] > zoomMin) {
                 zoomMin = zoomRatioRange[0];
@@ -1479,6 +1485,26 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                                  String.valueOf(statsNNRoiData[1]) +"," + String.valueOf(statsNNRoiData[2]) +"," + 
                                  String.valueOf(statsNNRoiData[3]) +" "+"\r\n" +
                                  STATS_NN_RESULT_TITLE[5]+String.valueOf(statsNNRoiWeight));
+    }
+
+    public void updatePerformanceDebugInfoText(long[] info) {
+        if (info == null)
+            return;
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < PERFORMANCE_DEBUG_TITLE.length; i++) {
+            if(info[i] != 0)stringBuilder.append(PERFORMANCE_DEBUG_TITLE[i]+info[i]).append("\r\n");
+        }
+        mDebugPerformancText.setText(stringBuilder.toString());
+    }
+
+    public void updatePerformanceDebugInfoVisibility(int visibility) {
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(mPerformancDebugInfo != null) {
+                    mPerformancDebugInfo.setVisibility(visibility);
+                }
+            }
+        });
     }
 
     public void updateAfdInfoText(String[] info) {
@@ -2105,7 +2131,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         try {
             mSceneModeInstructionalDialog.show();
         }catch(Exception e) {
-            e.printStackTrace();
+            Log.w(TAG,e.toString());
             return;
         }
         if ( orientation != 0 ) {
@@ -2737,14 +2763,17 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
-    public List<Surface> getPhysicalSurfaces(){
-        List<Surface> previewSurfaces = new ArrayList<>();
+    public void buildPhysicalSurfaces(){
+        mPreviewSurfaces.clear();
         for (int i = 0; i< mPreviewCount; i++){
             if (mPhysicalViews[i] != null && mPhysicalViews[i].getVisibility() == View.VISIBLE){
-                previewSurfaces.add(mPhysicalHolders[i].getSurface());
+                mPreviewSurfaces.add(mPhysicalHolders[i].getSurface());
             }
         }
-        return previewSurfaces;
+    }
+
+    public List<Surface> getPhysicalSurfaces(){
+        return mPreviewSurfaces;
     }
 
     public void initPhysicalSurfaces(Size logicalPreviewSize,Size[] physicalPreviewSizes){
@@ -2798,18 +2827,25 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
-    public void hidePhysicalSurfaces(){
-        Log.d(TAG,"hidePhysicalSurfaces");
-        for (SurfaceView view : mPhysicalViews){
-            if (view != null){
+    public void hidePhysicalSurfaces() {
+        for (SurfaceView view : mPhysicalViews) {
+            if (view != null && view.getVisibility() == View.VISIBLE) {
+                Log.d(TAG,"hidePhysicalSurfaces");
                 view.setVisibility(View.GONE);
             }
         }
 
-        for (int i=0;i < mSurfaceReady.length;i++){
+        for (int i = 0; i < mSurfaceReady.length; i++) {
             mSurfaceReady[i] = false;
         }
         mPreviewCount = 0;
+    }
+
+    public void hideLogicalSurface(){
+        Log.d(TAG,"hideLogicalSurface");
+        if (mPhysicalViews[0] != null){
+            mPhysicalViews[0].setVisibility(View.INVISIBLE);
+        }
     }
 
     public Surface getMonoDummySurface() {
@@ -3376,7 +3412,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showSurfaceView() {
-        Log.d(TAG, "showSurfaceView" + mPreviewWidth+" "+mPreviewHeight);
+        Log.d(TAG, "surfceView-setFixedSize = " + mPreviewWidth+"x"+mPreviewHeight);
         mSurfaceView.getHolder().setFixedSize(mPreviewWidth, mPreviewHeight);
         mSurfaceView.setAspectRatio(mPreviewHeight, mPreviewWidth);
         mSurfaceView.setVisibility(View.VISIBLE);
@@ -3398,7 +3434,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public boolean setPreviewSize(int width, int height) {
-        Log.d(TAG, "setPreviewSize " + width + " " + height);
+        Log.i(TAG, "setPreviewSize " + width + "x" + height);
         boolean changed = (width != mPreviewWidth) || (height != mPreviewHeight);
         mPreviewWidth = width;
         mPreviewHeight = height;
@@ -3494,7 +3530,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                         break;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.e(TAG,e);
                 }
             }
         }

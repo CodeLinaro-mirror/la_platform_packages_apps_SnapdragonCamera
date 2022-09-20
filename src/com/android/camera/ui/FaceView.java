@@ -28,7 +28,7 @@ import android.hardware.Camera.Face;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
-import android.util.Log;
+import com.android.camera.util.Log;
 import android.view.View;
 
 import com.android.camera.PhotoUI;
@@ -40,10 +40,9 @@ import org.codeaurora.snapcam.wrapper.ExtendedFaceWrapper;
 public class FaceView extends View
     implements FocusIndicator, Rotatable,
     PhotoUI.SurfaceTextureSizeChangedListener {
-    protected static final String TAG = "CAM_FaceView";
-    protected static final boolean LOGV =
-            (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_LOG) ||
-                    (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_ALL);
+    protected static final String TAG = "SnapCam_FaceView";
+    public static final int FD_LOG = PersistUtil.CAMERA2_DEBUG_FD;
+    public static final int BIG_LOG = PersistUtil.CAMERA2_DEBUG_BIGLOG;
     // The value for android.hardware.Camera.setDisplayOrientation.
     protected int mDisplayOrientation;
     // The orientation compensation for the face indicator to make it look
@@ -122,7 +121,7 @@ public class FaceView extends View
     }
 
     public void setFaces(Face[] faces) {
-        if (LOGV) Log.v(TAG, "Num of faces=" + faces.length);
+        Log.v(TAG, BIG_LOG,"Num of faces=" + faces.length);
         if (mPause) return;
         if (mFaces != null) {
             if ((faces.length > 0 && mFaces.length == 0)
@@ -148,7 +147,7 @@ public class FaceView extends View
 
     public void setDisplayOrientation(int orientation) {
         mDisplayOrientation = orientation;
-        if (LOGV) Log.v(TAG, "mDisplayOrientation=" + orientation);
+        Log.v(TAG, FD_LOG,"mDisplayOrientation=" + orientation);
     }
 
     @Override
@@ -159,7 +158,7 @@ public class FaceView extends View
 
     public void setMirror(boolean mirror) {
         mMirror = mirror;
-        if (LOGV) Log.v(TAG, "mMirror=" + mirror);
+        Log.v(TAG, FD_LOG,"mMirror=" + mirror);
     }
 
     public boolean faceExists() {
@@ -242,9 +241,9 @@ public class FaceView extends View
 
                 // Transform the coordinates.
                 mRect.set(mFaces[i].rect);
-                if (LOGV) CameraUtil.dumpRect(mRect, "Original rect");
+                CameraUtil.dumpRect(mRect, "Original rect");
                 mMatrix.mapRect(mRect);
-                if (LOGV) CameraUtil.dumpRect(mRect, "Transformed rect");
+                CameraUtil.dumpRect(mRect, "Transformed rect");
                 mPaint.setColor(mColor);
                 mRect.offset(dx, dy);
                 canvas.drawOval(mRect, mPaint);
