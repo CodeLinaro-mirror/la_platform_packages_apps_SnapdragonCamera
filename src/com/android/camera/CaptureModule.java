@@ -2136,7 +2136,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState ||
                         CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED == afState ||
                         CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED == afState ||
-                        (mLockRequestHashCode[id] == result.getRequest().hashCode() &&
+                        (mLockRequestHashCode[id] == mPreviewRequestBuilder[id].hashCode() &&
                                 afState == CaptureResult.CONTROL_AF_STATE_INACTIVE)) {
                     if(id == MONO_ID && getCameraMode() == DUAL_MODE && isBackCamera()) {
                         // in dual mode, mono AE dictated by bayer AE.
@@ -2146,7 +2146,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         else
                             mState[id] = STATE_WAITING_AE_LOCK;
                     } else {
-                        if ((mLockRequestHashCode[id] == result.getRequest().hashCode()) || (mLockRequestHashCode[id] == 0)) {
+                        if ((mLockRequestHashCode[id] == mPreviewRequestBuilder[id].hashCode()) || (mLockRequestHashCode[id] == 0)) {
 
                             // CONTROL_AE_STATE can be null on some devices
                             if(aeState == null || (aeState == CaptureResult
@@ -2157,7 +2157,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             }
                         }
                     }
-                } else if (mLockRequestHashCode[id] == result.getRequest().hashCode()){
+                } else if (mLockRequestHashCode[id] == mPreviewRequestBuilder[id].hashCode()){
                     Log.i(TAG, "AF lock request result received, but not focused");
                     mLockRequestHashCode[id] = 0;
                 } else if (mSettingsManager.isFixedFocus(id)) {
@@ -2178,7 +2178,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
                         aeState == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED ||
                         aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                    if ((mPrecaptureRequestHashCode[id] == result.getRequest().hashCode()) || (mPrecaptureRequestHashCode[id] == 0)) {
+                    if ((mPrecaptureRequestHashCode[id] ==  mPreviewRequestBuilder[id].hashCode()) || (mPrecaptureRequestHashCode[id] == 0)) {
                         if (mLongshotActive && isFlashOn(id)) {
                             checkAfAeStatesAndCapture(id);
                         } else {
@@ -2191,7 +2191,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     // AE Mode is OFF, the AE state is always CONTROL_AE_STATE_INACTIVE
                     // then begain capture and ignore lock AE.
                     checkAfAeStatesAndCapture(id);
-                } else if (mPrecaptureRequestHashCode[id] == result.getRequest().hashCode()) {
+                } else if (mPrecaptureRequestHashCode[id] ==  mPreviewRequestBuilder[id].hashCode()) {
                     Log.i(TAG, "AE trigger request result received, but not converged");
                     mPrecaptureRequestHashCode[id] = 0;
                 }
@@ -2376,8 +2376,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public boolean isBackCamera() {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
-        if (value == null) return true;
+        String value = mSettingsManager.mPreferences.getGlobal().getString(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         return value.equals("rear");
     }
 
@@ -3565,12 +3564,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void reinit() {
-        if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
-            CURRENT_ID = mQuadBayerId;
-        } else {
-            CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
-            CURRENT_MODE = mCurrentSceneMode.mode;
-        }
+        CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
+        CURRENT_MODE = mCurrentSceneMode.mode;
         Log.d(TAG,"reinit: CURRENT_ID camera id " + CURRENT_ID);
         mSettingsManager.init();
     }
@@ -3598,11 +3593,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSettingsManager = SettingsManager.getInstance();
         mSettingsManager.createCaptureModule(this);
         mSettingsManager.registerListener(this);
-        mSettingsManager.init();
-        String facing = mSettingsManager.mPreferences.getGlobal().getString(mSettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
-        if (facing.equals("front")) {
-            CURRENT_ID = FRONT_ID;
-        }
         mFirstPreviewLoaded = false;
         Log.d(TAG, "init");
         for (int i = 0; i < MAX_NUM_CAM; i++) {
@@ -3624,6 +3614,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         mContentResolver = mActivity.getContentResolver();
         initModeByIntent();
         initCameraIds();
+        CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
+        CURRENT_MODE = mCurrentSceneMode.mode;
+        mSettingsManager.init();
+        updateSettingDependencyId();
         mUI = new CaptureUI(activity, this, parent);
         mUI.initializeControlByIntent();
 
@@ -3713,6 +3707,21 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void updateSettingDependencyId(){
+        List<String> supported = mSettingsManager.getSupportedVideoSize(mLogicalId);
+        if(!MCXMODE || supported.size() <= 0){
+            mSceneCameraIds.get(CameraMode.VIDEO.ordinal()).rearCameraId = mSingleRearId;
+        }
+        if (!mSettingsManager.isHFRSupported()) { // filter HFR mode
+            for (SceneModule sceneModule : mSceneCameraIds) {
+                if (sceneModule.mode.ordinal() == CameraMode.HFR.ordinal() ) {
+                    mSceneCameraIds.remove(sceneModule);
+                    break;
+                }
+            }
+        }
+    }
+
     private boolean setUpLocalMode(int camereIdIndex, CameraCharacteristics characteristics,
                                 boolean[] removeList, boolean isFirstDefault, String cameraId) {
         Byte type = 0;
@@ -3766,20 +3775,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                         isFirstDefault = false;
                     }
 
-                    int defaultId;
-                    List<String> supported = mSettingsManager.getSupportedVideoSize(mLogicalId);
-                    if (MCXMODE && supported.size() > 0) {
-                        defaultId = mLogicalId;
-                    } else {
+                    int defaultId = mLogicalId;
+                    if(!MCXMODE){
                         defaultId = mSingleRearId;
                     }
                     mSceneCameraIds.get(CameraMode.DEFAULT.ordinal()).rearCameraId = defaultId;
+                    //update video camera after setting init done
                     mSceneCameraIds.get(CameraMode.VIDEO.ordinal()).rearCameraId = defaultId;
                     mSceneCameraIds.get(CameraMode.PRO_MODE.ordinal()).rearCameraId = defaultId;
-                    if (mSettingsManager.isHFRSupported()) { // filter HFR mode
-                        removeList[CameraMode.HFR.ordinal()] = false;
-                        mSceneCameraIds.get(CameraMode.HFR.ordinal()).rearCameraId = mSingleRearId;
-                    }
+                    //default HFR is support, will remove after setting manager init
+                    removeList[CameraMode.HFR.ordinal()] = false;
+                    mSceneCameraIds.get(CameraMode.HFR.ordinal()).rearCameraId = mSingleRearId;
                     if (mCurrentSceneMode == null) {
                         int index = mIntentMode == INTENT_MODE_VIDEO ?
                                 CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
@@ -4007,7 +4013,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             // lock AF and Precapture
             applySettingsForLockAndPrecapture(builder, id);
             CaptureRequest request = builder.build();
-            mLockRequestHashCode[id] = request.hashCode();
+            mLockRequestHashCode[id] = mPreviewRequestBuilder[id].hashCode();
             mCaptureSession[id].capture(request, mCaptureCallback, mCameraHandler);
 
             // if flash is on, does not lock AE until the AE state is CONTROL_AE_STATE_CONVERGED.
@@ -4094,7 +4100,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             CaptureRequest request = builder.build();
             if (mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
-                mLockRequestHashCode[id] = request.hashCode();
+                mLockRequestHashCode[id] = mPreviewRequestBuilder[id].hashCode();
                 mCaptureSession[id].capture(request, mCaptureCallback, mCameraHandler);
             }else{
                 mLockRequestHashCode[id] = 0;
@@ -5118,7 +5124,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             applySettingsForPrecapture(builder, id);
             CaptureRequest request = builder.build();
-            mPrecaptureRequestHashCode[id] = request.hashCode();
+            mPrecaptureRequestHashCode[id] =  mPreviewRequestBuilder[id].hashCode();
 
             mState[id] = STATE_WAITING_PRECAPTURE;
             mCaptureSession[id].capture(request, mCaptureCallback, mCameraHandler);
@@ -5870,6 +5876,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         isFlashRequiredInDriver = false;
         if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id]) || mCurrentSceneMode.mode == CameraMode.VIDEO) {
             return;
+        }
+        if (mState[id] == STATE_WAITING_TOUCH_FOCUS) {
+            mCameraHandler.removeMessages(CANCEL_TOUCH_FOCUS, mCameraId[id]);
         }
         try {
             if (mUI.getCurrentProMode() != ProMode.MANUAL_MODE) {
@@ -6660,7 +6669,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
-        }else if(facingOfIntentExtras == -1  && mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA){
+        }else if(facingOfIntentExtras == -1  && mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA
+                && !resumeFromRestartAll){
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
             mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         }
@@ -13900,6 +13910,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else if (selectMode != null && selectMode.equals("sat") && mLogicalId != -1) {
                     return mLogicalId;
                 }
+                String quadBayer = pref.getString(SettingsManager.KEY_QUAD_BAYER_SENSOR, null);
+                if(quadBayer != null && quadBayer.equals("1")) {
+                    return mQuadBayerId;
+                }
                 if (swithCameraId != -1) {
                     cameraId = swithCameraId;
                 }
@@ -13940,7 +13954,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean isForceAUXOn(CameraMode mode) {
         if (mode == CameraMode.DEFAULT) {
-            String auxValue = mSettingsManager.getValue(SettingsManager.KEY_FORCE_AUX);
+            final SharedPreferences pref = mActivity.getSharedPreferences(
+                    ComboPreferences.getLocalSharedPreferencesName(mActivity,
+                            mSettingsManager.getNextPrepNameKey(mode)), Context.MODE_PRIVATE);
+            String auxValue = pref.getString(SettingsManager.KEY_FORCE_AUX, "off");
             return auxValue != null && auxValue.equals("on");
         }
         return false;
