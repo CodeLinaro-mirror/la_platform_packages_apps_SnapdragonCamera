@@ -289,6 +289,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long[] mAecFramecontrolExosureTime = new long[3];
     private float[] mAecFramecontrolLinearGain = new float[3];
     private float[] mAecFramecontrolSensitivity = new float[3];
+    private int[] mAFDWarmStart = new int[4];
+    private int mAntiBandingMode = -1;
     private float mAecFramecontrolLuxIndex = -1.0f;
 
     public static final int MAX_LOGICAL_PHYSICAL_CAMERA_COUNT = 4;
@@ -542,6 +544,17 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public static CaptureRequest.Key<Integer> statsVisualizerOptionMask =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.statsVisualizerOptionMask", Integer.class);
+    //AFD warm start
+    private static CaptureRequest.Key<int[]> afd_warm_start_request =
+            new CaptureRequest.Key<>("org.quic.camera.afdData.AFDWarmStart", int[].class);
+    private static CaptureRequest.Key<Integer> anti_banding_mode_request =
+            new CaptureRequest.Key<>("org.quic.camera.afdData.AntiBandingMode", Integer.class);
+
+    private static CaptureResult.Key<int[]> afd_warm_start_result =
+            new CaptureResult.Key<>("org.quic.camera.afdData.AFDWarmStart", int[].class);
+    private static CaptureResult.Key<Integer> anti_banding_mode_result =
+            new CaptureResult.Key<>("org.quic.camera.afdData.AntiBandingMode", Integer.class);
+
     //AFD infos
     private static final CaptureResult.Key<Integer> afd_hnum =
             new CaptureResult.Key<>("org.quic.camera.afdData.HNum", Integer.class);
@@ -902,6 +915,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mExistAECWarmTag = true;
     private boolean mExistAECFrameControlTag = true;
     private boolean mExistAECDarkGainTag = true;
+    private boolean mExistAFDWarmStartTag = true;
+    private boolean mExistAntiBandingModeag = true;
     private boolean mExposureCountTag = true;
     private boolean mAECCameraIdTag = true;
 
@@ -1445,6 +1460,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateFocusStateChange(result);
                 updateAWBCCTAndgains(result);
                 updateAECGainAndExposure(result);
+                updateAFDWarmStartData(result);
                 String physical_id = mSettingsManager.getSinglePhysicalCamera();
                 Face[] faces;
                 if (physical_id != null &&
@@ -13150,6 +13166,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         float adrcGain = pref.getFloat(SettingsManager.KEY_AEC_ADRC_GAIN, awbDefault);
         float darkBoostGain = pref.getFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, awbDefault);
         int aecCameraId = pref.getInt(SettingsManager.KEY_WARM_START_AEC_CAMERA_ID, -1);
+        int afdWarmStart0 = pref.getInt(SettingsManager.KEY_AFD_WARM_START_ + "0", -1);
+        int afdWarmStart1 = pref.getInt(SettingsManager.KEY_AFD_WARM_START_ + "1", -1);
+        int afdWarmStart2 = pref.getInt(SettingsManager.KEY_AFD_WARM_START_ + "2", -1);
+        int afdWarmStart3 = pref.getInt(SettingsManager.KEY_AFD_WARM_START_ + "3", -1);
+        int antBandingMode = pref.getInt(SettingsManager.KEY_ANT_BANDING_MODE, -1);
         if (rGain != awbDefault && gGain != awbDefault && gGain != bGain) {
             Float[] awbGains = {rGain, gGain, bGain};
             Float[] tcs = {tc0, tc1};
@@ -13208,6 +13229,25 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (IllegalArgumentException e) {
                 Log.v(TAG, "applyAWBCCTAndAgain AECCameraId vendor tag missing:" +
                         request_aec_camera_id);
+            }
+        }
+        if (afdWarmStart0 != -1) {
+            int[] afdWarmStarts = {afdWarmStart0, afdWarmStart1, afdWarmStart2, afdWarmStart3};
+            try {
+                request.set(afd_warm_start_request, afdWarmStarts);
+                result = true;
+            } catch (IllegalArgumentException e) {
+                Log.v(TAG, "applyAWBCCTAndAgain afd_warm_start_request vendor tag missing:" +
+                        afd_warm_start_request);
+            }
+        }
+        if (antBandingMode != -1) {
+            try {
+                request.set(anti_banding_mode_request, antBandingMode);
+                result = true;
+            } catch (IllegalArgumentException e) {
+                Log.v(TAG, "applyAWBCCTAndAgain anti_banding_mode_request vendor tag missing:" +
+                        anti_banding_mode_request);
             }
         }
         return result;
@@ -13287,6 +13327,29 @@ public class CaptureModule implements CameraModule, PhotoController,
         return result;
     }
 
+    private boolean updateAFDWarmStartData(CaptureResult captureResult) {
+        if (captureResult != null) {
+            try {
+                if (mExistAFDWarmStartTag) {
+                    mAFDWarmStart = captureResult.get(afd_warm_start_result);
+                }
+            } catch (IllegalArgumentException|NullPointerException e) {
+                mExistAFDWarmStartTag = false;
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
+            }
+
+            try {
+                if (mExistAntiBandingModeag) {
+                    mAntiBandingMode = captureResult.get(anti_banding_mode_result);
+                }
+            } catch (IllegalArgumentException|NullPointerException e) {
+                mExistAntiBandingModeag = false;
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
+            }
+        }
+        return mExistAFDWarmStartTag && mExistAntiBandingModeag;
+    }
+
     public void writeXMLForWarmAwb() {
         final SharedPreferences pref = mActivity.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mActivity,
@@ -13322,6 +13385,18 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if (mDarkBoostGain != -1.0f) {
                 editor.putFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, mDarkBoostGain);
+            }
+        }
+        if (mExistAFDWarmStartTag) {
+            if (mAFDWarmStart != null) {
+                for (int i = 0; i < mAFDWarmStart.length; i ++) {
+                    editor.putInt(SettingsManager.KEY_AFD_WARM_START_ + i, mAFDWarmStart[i]);
+                }
+            }
+        }
+        if (mExistAntiBandingModeag) {
+            if (mAntiBandingMode != -1) {
+                editor.putInt(SettingsManager.KEY_ANT_BANDING_MODE, mAntiBandingMode);
             }
         }
         editor.apply();
