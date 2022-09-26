@@ -645,7 +645,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Set<String> ids = mQuadBayerIds.get(cameraId);
                 if(ids != null){
                     for(String x: ids){
-                        Log.i(TAG,"physical id: " + x);
+                        Log.d(TAG,"physical id: " + x);
                     }
                     return ids;
                 }
@@ -663,7 +663,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (getQuadBayerPhysicalId(cameraId) != null) cameraId = getQuadBayerPhysicalId(cameraId);
         }
         try {
-            Log.i(TAG,"getSupportedQCFAMaxPictureSizeList for :" + cameraId);
+            Log.d(TAG,"getSupportedQCFAMaxPictureSizeList for :" + cameraId);
             characteristics = manager.getCameraCharacteristics(cameraId);
             StreamConfigurationMap streamConfigurationMap = characteristics.get(
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
@@ -671,7 +671,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if(streamConfigurationMap.getHighResolutionOutputSizes(format) !=null ){
                     List<Size> sizes = Arrays.asList(streamConfigurationMap.getHighResolutionOutputSizes(format));
                     for (Size entry: sizes) {
-                        Log.i(TAG,"add QCFA picture size:" + entry.toString());
+                        Log.d(TAG,"add QCFA picture size:" + entry.toString());
                         if (entry.getWidth() == 1920 && entry.getHeight() == 1080) {
                             continue;
                         }
@@ -681,7 +681,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if(streamConfigurationMap.getOutputSizes(format) !=null ){
                     List<Size> sizes = Arrays.asList(streamConfigurationMap.getOutputSizes(format));
                     for (Size entry: sizes) {
-                        Log.i(TAG,"add QCFA picture size:" + entry.toString());
+                        Log.d(TAG,"add QCFA picture size:" + entry.toString());
                         if (entry.getWidth() == 1920 && entry.getHeight() == 1080) {
                             continue;
                         }
@@ -694,8 +694,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return res;
     }
-    public Size getQCFARawSize(String cameraId, int format) {
-        List<Size> allSize = getSupportedQCFAMaxPictureSizeList(cameraId, ImageFormat.RAW10);
+    public Size getQCFASize(String cameraId, int format) {
+        List<Size> allSize = getSupportedQCFAMaxPictureSizeList(cameraId, format);
         allSize.sort((o1, o2) -> o2.getWidth() * o2.getHeight() - o1.getWidth() * o1.getHeight());
         if (allSize.size() != 0) {
             Size size = allSize.get(0);
@@ -1366,7 +1366,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (id == null || "".equals(id))
             return null;
         String physical_id = id.trim();
-        Log.i(TAG,"getRawReprocessPhysicalId: " + physical_id);
+        Log.d(TAG,"getRawReprocessPhysicalId: " + physical_id);
         return physical_id;
     }
 
@@ -2872,7 +2872,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         boolean isSupported = false;
         try {
             isSupported = (mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.isAIDE2Supported)) == 1;
-            Log.i(TAG,"isAIDE2Supported: " + isSupported);
+            Log.d(TAG,"isAIDE2Supported: " + isSupported);
         } catch (IllegalArgumentException e) {
             Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
                     CaptureModule.isAIDE2Supported.toString());
@@ -3450,7 +3450,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } else if (CameraSettings.VIDEO_ENCODER_BITRATE.containsKey(key)) {
             bitRate = CameraSettings.VIDEO_ENCODER_BITRATE.get(key);
         } else {
-            Log.i(TAG, "No pre-defined bitrate for "+key);
+            Log.d(TAG, "No pre-defined bitrate for "+key);
             bitRate = (profile.videoBitRate * targetRate) / profile.videoFrameRate;
             return (int)bitRate;
         }
