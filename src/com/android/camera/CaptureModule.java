@@ -3207,6 +3207,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             String physical_id = mSettingsManager.getSinglePhysicalCamera();
                             OutputConfiguration out = new OutputConfiguration(s);
                             if (physical_id != null) {
+                                mUI.buildPhysicalSurfaces();
                                 boolean enableLogical =
                                         SettingsManager.LOGICAL_AND_PHYSICAL.equals(physical_id);
                                 if (!enableLogical)

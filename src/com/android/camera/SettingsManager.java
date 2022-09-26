@@ -1250,6 +1250,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public String getSinglePhysicalCamera(){
+        if (getPhysicalCameraId() != null) {
+            return null;
+        }
         String id = getValue(KEY_SINGLE_PHYSICAL_CAMERA);
         if (!"logical".equals(id) && id != null)
             return id;
