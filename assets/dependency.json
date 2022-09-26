@@ -191,7 +191,7 @@
   {
     "1":{"pref_camera2_manual_exp_key":"off",
          "pref_camera2_selfiemirror_key":"off"},
-    "0":{"pref_camera2_ai_denoiser_key":"0"}
+    "0":{}
   },
   "pref_camera2_ai_denoiser_key":
   {
@@ -284,11 +284,7 @@
          "pref_camera2_longshot_key":"off"},
     "0": {}
   },
-  "pref_camera2_qcfa_key":
-  {
-    "enable":{"pref_camera2_longshot_key":"off"},
-    "disable": {}
-  },
+
 
   "pref_camera2_multiresimagereader_key":
   {
