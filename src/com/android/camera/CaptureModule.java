@@ -6854,7 +6854,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onVideoButtonClick() {
         if (PersistUtil.isTraceEnable())
             Trace.beginSection("onVideoButtonClick recording");
-        if (!isRecorderReady() || getCameraMode() == DUAL_MODE) return;
+        if (!isRecorderReady() || getCameraMode() == DUAL_MODE ||
+            (getCurrenCameraMode() != CameraMode.VIDEO && getCurrenCameraMode() != CameraMode.HFR)) return;
 
         if (!mIsRecordingVideo) {
             if (!startRecordingVideo(getMainCameraId())) {
