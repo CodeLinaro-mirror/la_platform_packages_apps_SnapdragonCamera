@@ -10012,7 +10012,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "cannot access the file");
             }
-            retriever.release();
+            try {
+                retriever.release();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             mCurrentVideoValues.put(MediaStore.Video.Media.DURATION, duration);
             if (ApiHelper.isAndroidROrHigher()) {

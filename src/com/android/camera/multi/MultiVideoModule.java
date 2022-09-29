@@ -1585,7 +1585,11 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         } catch (IllegalArgumentException e) {
             Log.e(TAG, "cannot access the file");
         }
-        retriever.release();
+        try {
+            retriever.release();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         mActivity.getMediaSaveService().addVideo(mVideoFilenames[id],
                 duration, mCurrentVideoValues[id],
                 mOnVideoSavedListener, mContentResolver);
