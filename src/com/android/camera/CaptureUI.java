@@ -131,8 +131,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private static final String[] STATS_EXTENSION_TITLE = {" RatioLongtoShort "," RatioLongtoSafe ",
             " RatioSafetoShort "," CompenADRCGain "," CompenDarkBoostGain "};
     private static final String[] STATS_NN_RESULT_TITLE = {" Width "," Height "," MapData "," NumROI "," ROIData "," ROIWeight "};
-    public static final String[] PERFORMANCE_DEBUG_TITLE = {" Flush "," Close Camera "," Open Camera ", " Setting Init "," Create Session ", " Request Time ",
-            " Snapshot latency ", " Shutter lag ", " Burst fps ", " Zoom latency ", " AF Convergence ", " AEC convergence ", " AWB Convergence "};
+    public static final String[] PERFORMANCE_DEBUG_TITLE = {" Flush "," Close "," Open ", " Setup "," Configure ", " Preview ",
+            " Snapshot ", " Shutter ", " Burst fps ", " Zoom ", " AF ", " AEC ", " AWB ", " Preview fps "};
 
     private CameraActivity mActivity;
     private View mRootView;
@@ -723,7 +723,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mAFViewRender.setVisible(false);
         }
         mOfflineDumpTrigger = (TextView)mRootView.findViewById(R.id.offline_dump_trigger);
-        updateOfflineDumpTrigger(View.GONE);
         mOfflineDumpTrigger.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1357,7 +1356,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return false;
     }
 
-    public void updateOfflineDumpTrigger(int status) {
+    private void updateOfflineDumpTrigger(int status) {
         if (mOfflineDumpTrigger != null) {
             String offlineDumpTrigger = mSettingsManager.getValue(
                     SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
@@ -1403,7 +1402,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.VISIBLE);
         }
-        if(mFilterMenuStatus == FILTER_MENU_ON){
+        if(mFilterMenuStatus == FILTER_MENU_ON || mSettingsManager.isAICameraOn()){
             hideZoomSeekBar();
         }
     }
@@ -1487,12 +1486,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                                  STATS_NN_RESULT_TITLE[5]+String.valueOf(statsNNRoiWeight));
     }
 
-    public void updatePerformanceDebugInfoText(long[] info) {
+    public void updatePerformanceDebugInfoText(String[] info) {
         if (info == null)
             return;
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < PERFORMANCE_DEBUG_TITLE.length; i++) {
-            if(info[i] != 0)stringBuilder.append(PERFORMANCE_DEBUG_TITLE[i]+info[i]).append("\r\n");
+            if(!info[i].equals("0") && !info[i].equals("0.0"))stringBuilder.append(PERFORMANCE_DEBUG_TITLE[i]+info[i]).append("\r\n");
         }
         mDebugPerformancText.setText(stringBuilder.toString());
     }
@@ -1728,6 +1727,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         hideFrontBackSwither();
         if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
             mModeSelectLayout.setVisibility(View.GONE);
+        }
+
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEFAULT ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO) {
+            updateOfflineDumpTrigger(View.VISIBLE);
+        } else {
+            updateOfflineDumpTrigger(View.GONE);
         }
     }
 
@@ -2033,7 +2039,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoButton.setImageResource(R.drawable.video_stop);
             mRecordingTimeView.setText("00:00");
             mRecordingTimeRect.setVisibility(View.VISIBLE);
-            updateOfflineDumpTrigger(View.VISIBLE);
             mMuteButton.setVisibility((mModule.isHSRMode() ||
                     mModule.getHighSpeedCaptureRate() < 60) ? View.VISIBLE : View.INVISIBLE);
             setMuteButtonResource(!mModule.isAudioMute());
@@ -2048,7 +2053,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoButton.setImageResource(R.drawable.video_capture);
             mRecordingTimeRect.setVisibility(View.GONE);
             mMuteButton.setVisibility(View.INVISIBLE);
-            updateOfflineDumpTrigger(View.GONE);
         }
     }
 
