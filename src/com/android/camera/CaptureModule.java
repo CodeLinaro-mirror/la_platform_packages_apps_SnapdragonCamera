@@ -4364,9 +4364,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             !resumeFromRestartAll) {
             if (facingOfIntentExtras == CameraUtil.FACING_FRONT) {
                 facingOfIntentExtras = FRONT_ID;
-                mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "front");
-            } else {
-                mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
             }
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
         }
