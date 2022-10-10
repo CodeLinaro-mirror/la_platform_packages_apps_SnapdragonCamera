@@ -843,6 +843,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
     private void initAICameraSeekBar(){
         mAICameraSeekBar = (SeekBar) mRootView.findViewById(R.id.aicamera_seekbar);
+        mAICameraSeekBar.setProgress(50);
+        mModule.updateAIStrengthValue(64);
         mAICameraSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progresValue, boolean fromUser) {

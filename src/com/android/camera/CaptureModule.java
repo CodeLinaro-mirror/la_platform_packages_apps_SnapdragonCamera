@@ -3012,6 +3012,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             }
                             mCreateSessionLatency = System.currentTimeMillis() - mCreateSessionLatency;
                             Log.i(TAG, "capturesession - onConfigured "+ id);
+                            mCurrentSessionClosed = false;
                             setCameraModeSwitcherAllowed(true);
                             // When the session is ready, we start displaying the preview.
                             mCaptureSession[id] = cameraCaptureSession;
@@ -3076,7 +3077,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                             } catch (CameraAccessException | IllegalStateException | IllegalArgumentException e) {
                               Log.e(TAG,"createSession exception= "+ e);
                             }
-                            mCurrentSessionClosed = false;
                         }
 
                         @Override
@@ -12947,7 +12947,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyAICameraStrength(){
-        if (mCurrentSessionClosed) return;
+        if (mPreviewRequestBuilder[getMainCameraId()] == null || mCaptureSession[getMainCameraId()] == null) return;
         if(mSettingsManager.isAICameraOn()) {
             Log.d(TAG, "applyAICameraStrength: " + mAIStrengthValue);
             try {
@@ -12960,7 +12960,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyAIBlurConfigs(CaptureRequest.Builder builder){
-        if (!mIsRecordingVideo && !mIsPreviewingVideo || mCurrentSessionClosed) return;
+        if (!mIsRecordingVideo && !mIsPreviewingVideo || builder == null) return;
         applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
         applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
         applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
