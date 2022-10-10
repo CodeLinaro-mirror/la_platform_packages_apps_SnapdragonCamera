@@ -204,9 +204,6 @@ public class SettingsActivity extends PreferenceActivity {
                 updateEISPreference();
                 updatePdnetTogglePreference();
                 updateViullPreference();
-                if(mode == CaptureModule.CameraMode.VIDEO && mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID){
-                    recreate();
-                }
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
                 value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
@@ -2042,10 +2039,6 @@ public class SettingsActivity extends PreferenceActivity {
                 key = new ArrayList<String>(Arrays.asList("Default", "RTB"));
                 value = new ArrayList<String>(Arrays.asList( "default", "rtb"));
             }
-            if (mSettingsManager.getAICameraValue().equals("1")){
-                key.remove("RTB");
-                value.remove("rtb");
-            }
             pref.setEntries(key.toArray(new CharSequence[key.size()]));
             pref.setEntryValues(value.toArray(new CharSequence[value.size()]));
             int idx = pref.findIndexOfValue(pref.getValue());;
@@ -2055,8 +2048,15 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setValueIndex(idx);
             String cameraValue = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
             if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
-            pref.setEnabled((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
-                    (mode == CaptureModule.CameraMode.VIDEO));
+            boolean perfEnable = false;
+            if((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
+                    ((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID || !CaptureModule.MCXMODE) && mSettingsManager.isAICameraOn() && (mode == CaptureModule.CameraMode.VIDEO))){
+                perfEnable = true;
+            }
+            if(!perfEnable){
+                pref.setValue("0");
+            }
+            pref.setEnabled(perfEnable);
         }
     }
 

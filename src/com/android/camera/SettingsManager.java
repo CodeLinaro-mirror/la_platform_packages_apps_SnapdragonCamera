@@ -1023,11 +1023,25 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isAICameraOn(){
-        String value = getPerfValue(KEY_AI_CAMERA);
-        if(value != null && !value.equals("disable")){
-            return Integer.parseInt(value) == 2;
+        String value = getValue(KEY_AI_CAMERA);
+        if( CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO ||
+                CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.DEFAULT) {
+            if (value != null && !value.equals("disable")) {
+                return Integer.parseInt(value) == 2;
+            }
         }
         return false;
+    }
+
+    public boolean isAICameraDisable(){
+        String value = getValue(KEY_AI_CAMERA);
+        if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO ||
+                CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.DEFAULT) {
+            if (value != null && !value.equals("disable") && Integer.parseInt(value) != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public String getPerfValue(String key) {
@@ -4103,8 +4117,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 ComboPreferences.getLocalSharedPreferencesName(mContext,
                         getCurrentPrepNameKey()), Context.MODE_PRIVATE);
         String value = pref.getString(SettingsManager.KEY_SELECT_MODE, null);
-        boolean isAIBokeh = isAICameraEnabled && value != null && value.equals("rtb");
-        Log.d(TAG,"isAIBokehMode:" + isAICameraEnabled + ",value:" + value);
+        boolean isAIBokeh = isAICameraOn() && value != null && value.equals("rtb");
+        Log.d(TAG,"isAIBokehMode:" + isAICameraOn() + ",value:" + value);
         return isAIBokeh;
     }
 
