@@ -17,6 +17,12 @@
      limitations under the License.
 -->
 
+<!--
+    Changes from Qualcomm Innovation Center are provided under the following license:
+    Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+    SPDX-License-Identifier: BSD-3-Clause-Clear
+ -->
+
 <!-- This layout is shared by phone and tablet in both landscape and portrait
  orientation. The purpose of having this layout is to eventually not manually
  recreate views when the orientation changes, by migrating the views that do not
@@ -34,49 +40,12 @@
         android:layout_height="match_parent"
         android:id="@+id/mdp_preivew_frame"
         android:layout_gravity="center_vertical|center_horizontal">
-        <com.android.camera.ui.AutoFitSurfaceView
-            android:id="@+id/mdp_preview_content"
+
+        <ViewStub
+            android:id="@+id/preview_view_stub"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center" />
-        <com.android.camera.ui.AutoFitSurfaceView
-            android:layout_width="300dp"
-            android:layout_height="300dp"
-	        android:id="@+id/mdp_preview_content_mono"
-            android:visibility="gone"/>
-        <GridLayout
-            android:layout_gravity="center"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/grid_preview"
-            android:rowCount="2"
-            android:columnCount="2"
-            android:orientation="horizontal">
-            <SurfaceView
-                android:layout_rowWeight="1"
-                android:layout_columnWeight="1"
-                android:layout_gravity="center"
-                android:id="@+id/mdp_preview_physical_0"
-                android:visibility="gone"/>
-            <SurfaceView
-                android:layout_rowWeight="1"
-                android:layout_columnWeight="1"
-                android:layout_gravity="center"
-                android:id="@+id/mdp_preview_physical_1"
-                android:visibility="gone"/>
-            <SurfaceView
-                android:layout_rowWeight="1"
-                android:layout_columnWeight="1"
-                android:layout_gravity="center"
-                android:id="@+id/mdp_preview_physical_2"
-                android:visibility="gone"/>
-            <SurfaceView
-                android:layout_rowWeight="1"
-                android:layout_columnWeight="1"
-                android:layout_gravity="center"
-                android:id="@+id/mdp_preview_physical_3"
-                android:visibility="gone"/>
-        </GridLayout>
+            android:layout_height="match_parent" />
+
         <LinearLayout
             android:orientation="vertical" android:layout_width="match_parent"
             android:layout_height="match_parent"

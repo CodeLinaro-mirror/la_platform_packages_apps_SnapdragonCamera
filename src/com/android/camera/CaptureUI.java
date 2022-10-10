@@ -17,6 +17,12 @@
  * limitations under the License.
  */
 
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.camera;
 
 import android.animation.Animator;
@@ -27,12 +33,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.SurfaceTexture;
 import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Camera.Face;
 import android.os.AsyncTask;
@@ -48,6 +53,8 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import com.android.camera.util.Log;
 import android.util.Size;
+import android.util.SparseArray;
+import android.util.SparseBooleanArray;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -55,14 +62,17 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewPropertyAnimator;
+import android.view.ViewStub;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
+import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -73,6 +83,7 @@ import android.widget.TextView;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;
 import com.android.camera.data.Camera2ModeAdapter;
 import com.android.camera.ui.AutoFitSurfaceView;
+import com.android.camera.ui.AutoFitTextureView;
 import com.android.camera.ui.Camera2FaceView;
 import com.android.camera.ui.CameraControls;
 import com.android.camera.ui.MenuHelp;
@@ -99,6 +110,9 @@ import com.android.camera.ui.VerticalSeekBar;
 import android.hardware.camera2.CameraAccessException;
 import org.codeaurora.snapcam.R;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -138,6 +152,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private View mRootView;
     private View mPreviewCover;
     private CaptureModule mModule;
+
+    private final Object mSurfaceTextureLock = new Object();
+    private SurfaceTexture mSurfaceTexture;
+    private AutoFitTextureView mTextureView;
     private AutoFitSurfaceView mSurfaceView;
     private AutoFitSurfaceView mSurfaceViewMono;
     private SurfaceHolder mSurfaceHolder;
@@ -222,7 +240,129 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
-    private SurfaceHolder.Callback callback = new SurfaceHolder.Callback() {
+    private class PhysicalSurfaceTextureListener implements TextureView.SurfaceTextureListener,
+            View.OnLayoutChangeListener {
+
+        private final int mIndex;
+        private boolean mUpdateBufferSizeOnNextSurfaceTextureUpdate = false;
+
+        public PhysicalSurfaceTextureListener(int index) {
+            mIndex = index;
+        }
+
+        private void updateBufferSize(SurfaceTexture surfaceTexture) {
+            if (mIndex != 0) {
+                surfaceTexture.setDefaultBufferSize(mPhysicalPreviewSizes.get(mIndex).getWidth(), mPhysicalPreviewSizes.get(mIndex).getHeight());
+            } else {
+                surfaceTexture.setDefaultBufferSize(mLogicalPreviewSize.getWidth(), mLogicalPreviewSize.getHeight());
+            }
+        }
+
+        @Override
+        public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
+            Log.i(TAG, "PhysicalSurfaceTextureListener::onSurfaceTextureAvailable width =" + width + ", height = " + height + ", mIndex " + mIndex);
+            updateBufferSize(surfaceTexture);
+            mPhysicalTextureViewReady.put(mIndex, true);
+            checkSurfaceReady();
+        }
+
+        @Override
+        public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
+            Log.i(TAG, "PhysicalSurfaceTextureListener::onSurfaceTextureSizeChanged width =" + width + ", height = " + height + ", mIndex " + mIndex);
+            updateBufferSize(surfaceTexture);
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surfaceTexture) {
+            Log.i(TAG, "PhysicalSurfaceTextureListener::onSurfaceTextureDestroyed, mIndex " + mIndex);
+            mPhysicalTextureViewReady.put(mIndex, false);
+            return true;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surfaceTexture) {
+            if (mUpdateBufferSizeOnNextSurfaceTextureUpdate) {
+                mUpdateBufferSizeOnNextSurfaceTextureUpdate = false;
+                Log.i(TAG, "PhysicalSurfaceTextureListener::onSurfaceTextureUpdated, mIndex " + mIndex);
+                updateBufferSize(surfaceTexture);
+                mPhysicalTextureViewReady.put(mIndex, true);
+                checkSurfaceReady();
+            }
+        }
+
+        @Override
+        public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+            mUpdateBufferSizeOnNextSurfaceTextureUpdate = true;
+        }
+    }
+
+    private final TextureView.SurfaceTextureListener mSurfaceTextureListener = new TextureView.SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
+            Log.i(TAG, "onSurfaceTextureAvailable width =" + width + ", height = " + height);
+            synchronized (mSurfaceTextureLock) {
+                mSurfaceTexture = surfaceTexture;
+                mSurfaceTexture.setDefaultBufferSize(mPreviewWidth, mPreviewHeight);
+            }
+            previewUIReady();
+            setSurfaceDim();
+        }
+
+        @Override
+        public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
+            Log.i(TAG, "onSurfaceTextureSizeChanged: width =" + width + ", height = " + height);
+            synchronized (mSurfaceTextureLock) {
+                if (mSurfaceTexture != null) {
+                    mSurfaceTexture.setDefaultBufferSize(mPreviewWidth, mPreviewHeight);
+                }
+            }
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surfaceTexture) {
+            Log.i(TAG, "onSurfaceTextureDestroyed");
+            synchronized (mSurfaceTextureLock) {
+                mSurfaceTexture = null;
+            }
+            if (mDeepZoomModeRect != null) {
+                mDeepZoomModeRect.setVisibility(View.GONE);
+            }
+            previewUIDestroyed();
+            return true;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surfaceTexture) {
+            if (mUpdateBufferSizeOnNextSurfaceTextureUpdate) {
+                Log.i(TAG, "onSurfaceTextureUpdated update buffer size " + mPreviewWidth+ " " + mPreviewHeight);
+                mUpdateBufferSizeOnNextSurfaceTextureUpdate = false;
+                previewUIReady();
+                synchronized (mSurfaceTextureLock) {
+                    mSurfaceTexture.setDefaultBufferSize(mPreviewWidth, mPreviewHeight);
+                }
+            }
+        }
+    };
+
+    private void setSurfaceDim() {
+        if(mTrackingFocusRenderer != null && mTrackingFocusRenderer.isVisible()) {
+            mTrackingFocusRenderer.setSurfaceDim(mTextureView.getLeft(), mTextureView.getTop(), mTextureView.getRight(), mTextureView.getBottom());
+        }
+        if(mT2TFocusRenderer != null && mT2TFocusRenderer.isShown()) {
+            mT2TFocusRenderer.setSurfaceDim(mTextureView.getLeft(), mTextureView.getTop(),
+                    mTextureView.getRight(), mTextureView.getBottom());
+        }
+        if(mStatsNNFocusRenderer != null && mStatsNNFocusRenderer.isShown()) {
+            mStatsNNFocusRenderer.setSurfaceDim(mTextureView.getLeft(), mTextureView.getTop(),
+                    mTextureView.getRight(), mTextureView.getBottom());
+        }
+        if(mAFViewRender != null && mAFViewRender.isShown()) {
+            mAFViewRender.setSurfaceDim(mTextureView.getLeft(), mTextureView.getTop(),
+                    mTextureView.getRight(), mTextureView.getBottom());
+        }
+    }
+
+    private final SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
 
         // SurfaceHolder callbacks
         @Override
@@ -235,21 +375,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             Log.i(TAG, "surfaceCreated");
             mSurfaceHolder = holder;
             previewUIReady();
-            if(mTrackingFocusRenderer != null && mTrackingFocusRenderer.isVisible()) {
-                mTrackingFocusRenderer.setSurfaceDim(mSurfaceView.getLeft(), mSurfaceView.getTop(), mSurfaceView.getRight(), mSurfaceView.getBottom());
-            }
-            if(mT2TFocusRenderer != null && mT2TFocusRenderer.isShown()) {
-                mT2TFocusRenderer.setSurfaceDim(mSurfaceView.getLeft(), mSurfaceView.getTop(),
-                        mSurfaceView.getRight(), mSurfaceView.getBottom());
-            }
-            if(mStatsNNFocusRenderer != null && mStatsNNFocusRenderer.isShown()) {
-                mStatsNNFocusRenderer.setSurfaceDim(mSurfaceView.getLeft(), mSurfaceView.getTop(),
-                        mSurfaceView.getRight(), mSurfaceView.getBottom());
-            }
-            if(mAFViewRender != null && mAFViewRender.isShown()) {
-                mAFViewRender.setSurfaceDim(mSurfaceView.getLeft(), mSurfaceView.getTop(),
-                        mSurfaceView.getRight(), mSurfaceView.getBottom());
-            }
+            setSurfaceDim();
         }
 
         @Override
@@ -363,6 +489,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private boolean mShowFocusCircle = true;
     private boolean mFaceUpdated = false;
 
+    private GridLayout mPhysicalPreviewContainer;
+
+    private final SparseArray<TextureView> mPhysicalTextureViews = new SparseArray<>(CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT);
+    private final SparseBooleanArray mPhysicalTextureViewReady = new SparseBooleanArray(CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT);
+
+    private Size mLogicalPreviewSize;
+    private SparseArray<Size> mPhysicalPreviewSizes = new SparseArray<>(CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT);
 
     private boolean[] mSurfaceReady = {false,false,false,false};
     private SurfaceView[] mPhysicalViews = new SurfaceView[CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
@@ -378,24 +511,25 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
 
     private void previewUIReady() {
-        if((mSurfaceHolder != null && mSurfaceHolder.getSurface().isValid())) {
-            if (mSettingsManager.getPhysicalCameraId() == null &&
-                    mSettingsManager.getSinglePhysicalCamera() == null){
-                mModule.onPreviewUIReady();
-            } else {
-                checkSurfaceReady();
-            }
-            if ((mIsVideoUI || mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL)
-                    && mThumbnail != null && mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA){
-                mThumbnail.setVisibility(View.INVISIBLE);
-                mThumbnail = null;
-                mActivity.updateThumbnail(mThumbnail);
-            } else if (!mIsVideoUI &&(mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL || mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA)){
-                if (mThumbnail == null)
-                    mThumbnail = (ImageView) mRootView.findViewById(R.id.preview_thumb);
-                mActivity.updateThumbnail(mThumbnail);
-            }
+        if (mSettingsManager.getPhysicalCameraId() == null &&
+                mSettingsManager.getSinglePhysicalCamera() == null) {
+            mModule.onPreviewUIReady();
+        } else {
+            checkSurfaceReady();
         }
+
+        if ((mIsVideoUI || mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL)
+                && mThumbnail != null && mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA) {
+            mThumbnail.setVisibility(View.INVISIBLE);
+            mThumbnail = null;
+            mActivity.updateThumbnail(mThumbnail);
+        } else if (!mIsVideoUI && (mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL
+                || mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA)) {
+            if (mThumbnail == null)
+                mThumbnail = (ImageView) mRootView.findViewById(R.id.preview_thumb);
+            mActivity.updateThumbnail(mThumbnail);
+        }
+
     }
 
     private void checkSurfaceReady(){
@@ -405,13 +539,27 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         } else {
             mPreviewCount = mSettingsManager.getPhysicalCameraId().size()+1;
         }
-        Log.d(TAG,"checkSurfaceReady SurfaceReady="+ Arrays.toString(mSurfaceReady));
-        for (int i = 0; i< mPreviewCount; i++){
-            if (!mSurfaceReady[i])
+
+        Log.i(TAG, "mPreviewCount " + mPreviewCount);
+
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            Log.d(TAG,"checkSurfaceReady SurfaceReady="+ Arrays.toString(mSurfaceReady));
+            for (int i = 0; i< mPreviewCount; i++){
+                if (!mSurfaceReady[i])
+                    return;
+            }
+            if(physical_id != null && !mSurfaceHolder.getSurface().isValid()){
                 return;
-        }
-        if(physical_id != null && !mSurfaceHolder.getSurface().isValid()){
-            return;
+            }
+        } else {
+            Log.d(TAG,"checkSurfaceReady SurfaceReady="+ mPhysicalTextureViewReady);
+            for (int i = 0; i< mPreviewCount; i++){
+                if (!mPhysicalTextureViewReady.get(i))
+                    return;
+            }
+            if(physical_id != null && !mTextureView.isAvailable()){
+                return;
+            }
         }
         mModule.onPreviewUIReady();
     }
@@ -470,6 +618,111 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return mDisplaySize;
     }
 
+    public static final boolean USE_TEXTURE_VIEW_TO_PREVIEW = PersistUtil.useTextureViewToPreview();
+
+    private void initPreviewContentView() {
+        Log.d(TAG, "initPreviewContentView");
+        ViewStub stub = mRootView.findViewById(R.id.preview_view_stub);
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            stub.setLayoutResource(R.layout.preview_surface_views);
+            stub.inflate();
+            // display the view
+            mSurfaceView = mRootView.findViewById(R.id.mdp_preview_content);
+            mSurfaceHolder = mSurfaceView.getHolder();
+            mSurfaceHolder.addCallback(mSurfaceHolderCallback);
+            mSurfaceView.addOnLayoutChangeListener(mOnPreviewLayoutChangeListener);
+
+            mSurfaceViewMono = mRootView.findViewById(R.id.mdp_preview_content_mono);
+            mSurfaceViewMono.setZOrderMediaOverlay(true);
+            mSurfaceHolderMono = mSurfaceViewMono.getHolder();
+            mSurfaceHolderMono.addCallback(callbackMono);
+        } else {
+            stub.setLayoutResource(R.layout.preview_texture_views);
+            stub.inflate();
+            mTextureView = mRootView.findViewById(R.id.preview_texture_view);
+            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+            mTextureView.addOnLayoutChangeListener(mOnPreviewLayoutChangeListener);
+        }
+    }
+
+    private boolean mUpdateBufferSizeOnNextSurfaceTextureUpdate = false;
+
+    private final View.OnLayoutChangeListener mOnPreviewLayoutChangeListener = new View.OnLayoutChangeListener() {
+        @Override
+        public void onLayoutChange(View view, int left, int top, int right, int bottom,
+                                   int oldLeft, int oldTop, int oldRight, int oldBottom) {
+            Log.d(TAG, "onLayoutChange, " + left + " " + top + " " + right + " " + bottom + ", " +
+                    oldLeft + " " + oldTop + " " + oldRight + " " + oldBottom);
+            int width = right - left;
+            int height = bottom - top;
+            if (USE_TEXTURE_VIEW_TO_PREVIEW) {
+                mUpdateBufferSizeOnNextSurfaceTextureUpdate = true;
+                synchronized (mSurfaceTextureLock) {
+                    if (mSurfaceTexture != null) {
+                        mSurfaceTexture.setDefaultBufferSize(mPreviewWidth, mPreviewHeight);
+                    }
+                }
+            }
+            if (mFaceView != null) {
+                mFaceView.onSurfaceTextureSizeChanged(width, height);
+            }
+            if (mStatsNNFocusRenderer != null) {
+                mStatsNNFocusRenderer.onSurfaceTextureSizeChanged(width, height);
+            }
+            if (mT2TFocusRenderer != null) {
+                mT2TFocusRenderer.onSurfaceTextureSizeChanged(width, height);
+            }
+            if (mAFViewRender != null) {
+                mAFViewRender.onSurfaceTextureSizeChanged(width, height);
+            }
+        }
+    };
+
+    public boolean isPreviewSurfaceValid() {
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            return mSurfaceHolder != null && mSurfaceHolder.getSurface().isValid();
+        } else {
+            return false;
+        }
+    }
+
+    private void initPreviewContentViewForPhysicalCamera() {
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            mPhysicalPreviewContainer = mRootView.findViewById(R.id.grid_preview);
+            mPhysicalViews[0] = mRootView.findViewById(R.id.mdp_preview_physical_0);
+            mPhysicalHolders[0] = mPhysicalViews[0].getHolder();
+            mPhysicalHolders[0].addCallback(new PhysicalCallBack(0));
+            mPhysicalViews[1] = mRootView.findViewById(R.id.mdp_preview_physical_1);
+            mPhysicalHolders[1] = mPhysicalViews[1].getHolder();
+            mPhysicalHolders[1].addCallback(new PhysicalCallBack(1));
+            mPhysicalViews[2] = mRootView.findViewById(R.id.mdp_preview_physical_2);
+            mPhysicalHolders[2] = mPhysicalViews[2].getHolder();
+            mPhysicalHolders[2].addCallback(new PhysicalCallBack(2));
+            mPhysicalViews[3] = mRootView.findViewById(R.id.mdp_preview_physical_3);
+            mPhysicalHolders[3] = mPhysicalViews[3].getHolder();
+            mPhysicalHolders[3].addCallback(new PhysicalCallBack(3));
+        } else {
+            mPhysicalPreviewContainer = mRootView.findViewById(R.id.grid_preview_texture_views);
+            mPhysicalTextureViews.put(0, mRootView.findViewById(R.id.physical_preview_texture_view_0));
+            PhysicalSurfaceTextureListener physicalSurfaceTextureListener_0 = new PhysicalSurfaceTextureListener(0);
+            mPhysicalTextureViews.get(0).setSurfaceTextureListener(physicalSurfaceTextureListener_0);
+            mPhysicalTextureViews.get(0).addOnLayoutChangeListener(physicalSurfaceTextureListener_0);
+            mPhysicalTextureViews.put(1, mRootView.findViewById(R.id.physical_preview_texture_view_1));
+            PhysicalSurfaceTextureListener physicalSurfaceTextureListener_1 = new PhysicalSurfaceTextureListener(1);
+            mPhysicalTextureViews.get(1).setSurfaceTextureListener(physicalSurfaceTextureListener_1);
+            mPhysicalTextureViews.get(1).addOnLayoutChangeListener(physicalSurfaceTextureListener_1);
+            mPhysicalTextureViews.put(2, mRootView.findViewById(R.id.physical_preview_texture_view_2));
+            PhysicalSurfaceTextureListener physicalSurfaceTextureListener_2 = new PhysicalSurfaceTextureListener(2);
+            mPhysicalTextureViews.get(2).setSurfaceTextureListener(physicalSurfaceTextureListener_2);
+            mPhysicalTextureViews.get(2).addOnLayoutChangeListener(physicalSurfaceTextureListener_2);
+            mPhysicalTextureViews.put(3, mRootView.findViewById(R.id.physical_preview_texture_view_3));
+            PhysicalSurfaceTextureListener physicalSurfaceTextureListener_3 = new PhysicalSurfaceTextureListener(3);
+            mPhysicalTextureViews.get(3).setSurfaceTextureListener(physicalSurfaceTextureListener_3);
+            mPhysicalTextureViews.get(3).addOnLayoutChangeListener(physicalSurfaceTextureListener_3);
+        }
+    }
+
+
     public CaptureUI(CameraActivity activity, final CaptureModule module, View parent) {
         mActivity = activity;
         mModule = module;
@@ -479,49 +732,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mActivity.getLayoutInflater().inflate(R.layout.capture_module,
                 (ViewGroup) mRootView, true);
         mPreviewCover = mRootView.findViewById(R.id.preview_cover);
-        // display the view
-        mSurfaceView = (AutoFitSurfaceView) mRootView.findViewById(R.id.mdp_preview_content);
-        mSurfaceHolder = mSurfaceView.getHolder();
-        mSurfaceHolder.addCallback(callback);
-        mSurfaceView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-            @Override
-            public void onLayoutChange(View v, int left, int top, int right,
-                                       int bottom, int oldLeft, int oldTop, int oldRight,
-                                       int oldBottom) {
-                int width = right - left;
-                int height = bottom - top;
-                if (mFaceView != null) {
-                    mFaceView.onSurfaceTextureSizeChanged(width, height);
-                }
-                if (mStatsNNFocusRenderer != null) {
-                    mStatsNNFocusRenderer.onSurfaceTextureSizeChanged(width, height);
-                }
-                if (mT2TFocusRenderer != null) {
-                    mT2TFocusRenderer.onSurfaceTextureSizeChanged(width, height);
-                }
-                if (mAFViewRender != null) {
-                    mAFViewRender.onSurfaceTextureSizeChanged(width, height);
-                }
-            }
-        });
 
-        mSurfaceViewMono = (AutoFitSurfaceView) mRootView.findViewById(R.id.mdp_preview_content_mono);
-        mSurfaceViewMono.setZOrderMediaOverlay(true);
-        mSurfaceHolderMono = mSurfaceViewMono.getHolder();
-        mSurfaceHolderMono.addCallback(callbackMono);
+        initPreviewContentView();
+
         mGridLineView = (LinearLayout) mRootView.findViewById(R.id.grid_line);
-        mPhysicalViews[0] = (SurfaceView) mRootView.findViewById(R.id.mdp_preview_physical_0);
-        mPhysicalHolders[0] = mPhysicalViews[0].getHolder();
-        mPhysicalHolders[0].addCallback(new PhysicalCallBack(0));
-        mPhysicalViews[1] = (SurfaceView) mRootView.findViewById(R.id.mdp_preview_physical_1);
-        mPhysicalHolders[1] = mPhysicalViews[1].getHolder();
-        mPhysicalHolders[1].addCallback(new PhysicalCallBack(1));
-        mPhysicalViews[2] = (SurfaceView) mRootView.findViewById(R.id.mdp_preview_physical_2);
-        mPhysicalHolders[2] = mPhysicalViews[2].getHolder();
-        mPhysicalHolders[2].addCallback(new PhysicalCallBack(2));
-        mPhysicalViews[3] = (SurfaceView) mRootView.findViewById(R.id.mdp_preview_physical_3);
-        mPhysicalHolders[3] = mPhysicalViews[3].getHolder();
-        mPhysicalHolders[3].addCallback(new PhysicalCallBack(3));
+
+        initPreviewContentViewForPhysicalCamera();
 
         mProgressBar = (ProgressBar) mRootView.findViewById(R.id.progress_bar);
         mRenderOverlay = (RenderOverlay) mRootView.findViewById(R.id.render_overlay);
@@ -2746,6 +2962,22 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return mSurfaceHolder;
     }
 
+    public Surface getPreviewSurface() {
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            return mSurfaceHolder.getSurface();
+        } else {
+            synchronized (mSurfaceTextureLock) {
+                if (mSurfaceTexture != null) {
+                    Surface surface = new Surface(mSurfaceTexture);
+                    return surface;
+                } else {
+                    Log.w(TAG, "getPreviewSurface return null");
+                    return null;
+                }
+            }
+        }
+    }
+
     private class MonoDummyListener implements Allocation.OnBufferAvailableListener {
         ScriptIntrinsicYuvToRGB yuvToRgbIntrinsic;
         public MonoDummyListener(ScriptIntrinsicYuvToRGB yuvToRgbIntrinsic) {
@@ -2773,10 +3005,19 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void buildPhysicalSurfaces(){
         mPreviewSurfaces.clear();
         for (int i = 0; i< mPreviewCount; i++){
-            if (mPhysicalViews[i] != null && mPhysicalViews[i].getVisibility() == View.VISIBLE){
-                mPreviewSurfaces.add(mPhysicalHolders[i].getSurface());
+            if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+                if (mPhysicalViews[i] != null && mPhysicalViews[i].getVisibility() == View.VISIBLE) {
+                    mPreviewSurfaces.add(mPhysicalHolders[i].getSurface());
+                }
+            } else {
+                if (mPhysicalTextureViews.get(i) != null &&
+                        mPhysicalTextureViews.get(i).getVisibility() == View.VISIBLE &&
+                        mPhysicalTextureViews.get(i).getSurfaceTexture() != null) {
+                    mPreviewSurfaces.add(new Surface(mPhysicalTextureViews.get(i).getSurfaceTexture()));
+                }
             }
         }
+        Log.i(TAG, "buildPhysicalSurfaces " + mPreviewSurfaces.size());
     }
 
     public List<Surface> getPhysicalSurfaces(){
@@ -2791,67 +3032,129 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (physical_id != null) {
             physicalIds = mSettingsManager.getAllPhysicalCameraId();
             mPreviewCount = mSettingsManager.getAllPhysicalCameraId().size()+1;
-            mSurfaceView.setZOrderMediaOverlay(true);
         } else {
             physicalIds = mSettingsManager.getPhysicalCameraId();
             mPreviewCount = mSettingsManager.getPhysicalCameraId().size()+1;
-            mSurfaceView.setZOrderMediaOverlay(false);
         }
 
         Log.d(TAG,"initPhysicalSurfaces count="+mPreviewCount);
 
-        mPhysicalHolders[0] = mPhysicalViews[0].getHolder();
-        Size logicalPreview;
-        if (logicalPreviewSize != null){
-            logicalPreview = new Size(logicalPreviewSize.getHeight(),logicalPreviewSize.getWidth());
-        } else {
-            logicalPreview = new Size(mPreviewHeight/2,mPreviewWidth/2);
-        }
-        mPhysicalHolders[0].setFixedSize(logicalPreview.getWidth(),logicalPreview.getHeight());
-        Log.d(TAG,"logical surface "+0+" preview size="+logicalPreview.toString());
-        mPhysicalViews[0].setVisibility(View.VISIBLE);
+        Log.d(TAG, "initPhysicalSurfaces, logicalPreviewSize " + logicalPreviewSize
+                + ", physicalPreviewSizes " + Arrays.toString(physicalPreviewSizes));
 
-        int i = 1;
-        for (String id : physicalIds){
-            if (mPhysicalViews[i] != null){
-                mPhysicalHolders[i] = mPhysicalViews[i].getHolder();
-                Size preview;
-                int physicalSizeIndex = mModule.getIndexByPhysicalId(id);
-                if (physicalSizeIndex < physicalPreviewSizes.length
-                        && physicalPreviewSizes[physicalSizeIndex] != null){
-                      preview = new Size(physicalPreviewSizes[physicalSizeIndex].getHeight(),
-                                physicalPreviewSizes[physicalSizeIndex].getWidth());
-                } else if(physical_id != null){
-                    preview = new Size(mPreviewHeight,mPreviewWidth);
-                } else {
-                    preview = new Size(mPreviewHeight/2,mPreviewWidth/2);
-                }
-                Log.d(TAG,"physical surface "+i+" preview size="+preview.toString());
-                mPhysicalHolders[i].setFixedSize(preview.getWidth(),preview.getHeight());
-                mPhysicalViews[i].setVisibility(View.VISIBLE);
-            }
-            i++;
+        if (logicalPreviewSize != null){
+            mLogicalPreviewSize = new Size(logicalPreviewSize.getHeight(),logicalPreviewSize.getWidth());
+        } else {
+            mLogicalPreviewSize = new Size(mPreviewHeight/2,mPreviewWidth/2);
         }
+        Log.d(TAG, "logical surface " + 0 + " preview size=" + mLogicalPreviewSize.toString());
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            mPhysicalPreviewContainer.setVisibility(View.VISIBLE);
+            mSurfaceView.setZOrderMediaOverlay(physical_id != null);
+            mPhysicalHolders[0] = mPhysicalViews[0].getHolder();
+            mPhysicalHolders[0].setFixedSize(mLogicalPreviewSize.getWidth(), mLogicalPreviewSize.getHeight());
+            mPhysicalViews[0].setVisibility(View.VISIBLE);
+            int i = 1;
+            for (String id : physicalIds) {
+                if (mPhysicalViews[i] != null) {
+                    mPhysicalHolders[i] = mPhysicalViews[i].getHolder();
+                    Size preview;
+                    int physicalSizeIndex = mModule.getIndexByPhysicalId(id);
+                    if (physicalSizeIndex < physicalPreviewSizes.length
+                            && physicalPreviewSizes[physicalSizeIndex] != null) {
+                        preview = new Size(physicalPreviewSizes[physicalSizeIndex].getHeight(),
+                                physicalPreviewSizes[physicalSizeIndex].getWidth());
+                    } else if (physical_id != null) {
+                        preview = new Size(mPreviewHeight, mPreviewWidth);
+                    } else {
+                        preview = new Size(mPreviewHeight / 2, mPreviewWidth / 2);
+                    }
+                    Log.d(TAG, "physical surface " + i + " preview size=" + preview.toString());
+                    mPhysicalHolders[i].setFixedSize(preview.getWidth(), preview.getHeight());
+                    mPhysicalViews[i].setVisibility(View.VISIBLE);
+                }
+                i++;
+            }
+        } else {
+            mPhysicalPreviewContainer.setVisibility(View.VISIBLE);
+            TextureView textureView0 = mPhysicalTextureViews.get(0);
+            if (textureView0 != null) {
+                if (physical_id == null) {
+                    GridLayout.LayoutParams glp = (GridLayout.LayoutParams) textureView0.getLayoutParams();
+                    glp.width = mLogicalPreviewSize.getWidth();
+                    glp.height = mLogicalPreviewSize.getHeight();
+                    textureView0.setLayoutParams(glp);
+                } else {
+                    mTextureView.bringToFront();
+                }
+                textureView0.setVisibility(View.VISIBLE);
+            }
+            int i = 1;
+            for (String id : physicalIds) {
+                TextureView textureView = mPhysicalTextureViews.get(i);
+                if (textureView != null) {
+                    Size preview;
+                    int physicalSizeIndex = mModule.getIndexByPhysicalId(id);
+                    if (physicalSizeIndex < physicalPreviewSizes.length
+                            && physicalPreviewSizes[physicalSizeIndex] != null) {
+                        preview = new Size(physicalPreviewSizes[physicalSizeIndex].getHeight(),
+                                physicalPreviewSizes[physicalSizeIndex].getWidth());
+                    } else if (physical_id != null) {
+                        preview = new Size(mPreviewHeight, mPreviewWidth);
+                    } else {
+                        preview = new Size(mPreviewHeight / 2, mPreviewWidth / 2);
+                    }
+                    Log.d(TAG, "physical surface " + i + " preview size=" + preview.toString());
+                    GridLayout.LayoutParams glp = (GridLayout.LayoutParams) textureView.getLayoutParams();
+                    if (physical_id == null) {
+                        glp.width = preview.getWidth();
+                        glp.height = preview.getHeight();
+                    } else {
+                        glp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+                        glp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                    }
+                    textureView.setLayoutParams(glp);
+                    textureView.setVisibility(View.VISIBLE);
+                    mPhysicalPreviewSizes.put(i, preview);
+                }
+                i++;
+            }
+        }
+
     }
 
     public void hidePhysicalSurfaces() {
-        for (SurfaceView view : mPhysicalViews) {
-            if (view != null && view.getVisibility() == View.VISIBLE) {
-                Log.d(TAG,"hidePhysicalSurfaces");
-                view.setVisibility(View.GONE);
+        Log.d(TAG,"hidePhysicalSurfaces");
+        mPhysicalPreviewContainer.setVisibility(View.GONE);
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            for (SurfaceView view : mPhysicalViews){
+                if (view != null){
+                    view.setVisibility(View.GONE);
+                }
             }
-        }
-
-        for (int i = 0; i < mSurfaceReady.length; i++) {
-            mSurfaceReady[i] = false;
+            Arrays.fill(mSurfaceReady, false);
+        } else {
+            for (int i =0; i < mPhysicalTextureViews.size(); i++) {
+                TextureView textureView = mPhysicalTextureViews.get(i);
+                if (textureView != null) {
+                    textureView.setVisibility(View.GONE);
+                }
+                mPhysicalTextureViewReady.put(i, false);
+            }
         }
         mPreviewCount = 0;
     }
 
     public void hideLogicalSurface(){
         Log.d(TAG,"hideLogicalSurface");
-        if (mPhysicalViews[0] != null){
-            mPhysicalViews[0].setVisibility(View.INVISIBLE);
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            if (mPhysicalViews[0] != null) {
+                mPhysicalViews[0].setVisibility(View.INVISIBLE);
+            }
+        } else {
+            if (mPhysicalTextureViews.get(0) != null) {
+                mPhysicalTextureViews.get(0).setVisibility(View.INVISIBLE);
+            }
         }
     }
 
@@ -2887,10 +3190,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showPreviewCover() {
+        Log.i(TAG, "showPreviewCover");
         mPreviewCover.setVisibility(View.VISIBLE);
     }
 
     public void hidePreviewCover() {
+        Log.i(TAG, "hidePreviewCover");
         // Hide the preview cover if need.
         if (mPreviewCover.getVisibility() != View.GONE) {
             mPreviewCover.setVisibility(View.GONE);
@@ -2961,7 +3266,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mMonoDummyOutputAllocation.destroy();
             mMonoDummyOutputAllocation = null;
         }
-        mSurfaceViewMono.setVisibility(View.GONE);
+        if (mSurfaceViewMono != null) {
+            mSurfaceViewMono.setVisibility(View.GONE);
+        }
     }
 
     public boolean collapseCameraControls() {
@@ -3173,7 +3480,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public Point getSurfaceViewSize() {
         Point point = new Point();
-        if (mSurfaceView != null) point.set(mSurfaceView.getWidth(), mSurfaceView.getHeight());
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            if (mSurfaceView != null)
+                point.set(mSurfaceView.getWidth(), mSurfaceView.getHeight());
+        } else {
+            if (mTextureView != null) {
+                point.set(mTextureView.getWidth(), mTextureView.getHeight());
+            }
+        }
         return point;
     }
 
@@ -3290,13 +3604,23 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         int x = xy[0];
         int y = xy[1];
         int[] surfaceViewLocation = new int[2];
-        mSurfaceView.getLocationInWindow(surfaceViewLocation);
+        int width = 0;
+        int height =0;
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            mSurfaceView.getLocationInWindow(surfaceViewLocation);
+            width = mSurfaceView.getWidth();
+            height = mSurfaceView.getHeight();
+        } else {
+            mTextureView.getLocationInWindow(surfaceViewLocation);
+            width = mTextureView.getWidth();
+            height= mTextureView.getHeight();
+        }
         int surfaceViewX = surfaceViewLocation[0];
         int surfaceViewY = surfaceViewLocation[1];
         xy[0] = x - surfaceViewX;
         xy[1] = y - surfaceViewY;
-        return (x > surfaceViewX) && (x < surfaceViewX + mSurfaceView.getWidth())
-                && (y > surfaceViewY) && (y < surfaceViewY + mSurfaceView.getHeight());
+        return (x > surfaceViewX) && (x < surfaceViewX + width)
+                && (y > surfaceViewY) && (y < surfaceViewY + height);
     }
 
     public void onPreviewFocusChanged(boolean previewFocused) {
@@ -3415,14 +3739,24 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void hideSurfaceView() {
-        mSurfaceView.setVisibility(View.INVISIBLE);
+        Log.d(TAG, "hideSurfaceView");
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            mSurfaceView.setVisibility(View.GONE);
+        } else {
+            mTextureView.setVisibility(View.GONE);
+        }
     }
 
     public void showSurfaceView() {
-        Log.d(TAG, "surfceView-setFixedSize = " + mPreviewWidth+"x"+mPreviewHeight);
-        mSurfaceView.getHolder().setFixedSize(mPreviewWidth, mPreviewHeight);
-        mSurfaceView.setAspectRatio(mPreviewHeight, mPreviewWidth);
-        mSurfaceView.setVisibility(View.VISIBLE);
+        Log.d(TAG, "surfaceView-setFixedSize = " + mPreviewWidth+"x"+mPreviewHeight);
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            mSurfaceView.getHolder().setFixedSize(mPreviewWidth, mPreviewHeight);
+            mSurfaceView.setAspectRatio(mPreviewHeight, mPreviewWidth);
+            mSurfaceView.setVisibility(View.VISIBLE);
+        } else {
+            mTextureView.setAspectRatio(mPreviewHeight, mPreviewWidth);
+            mTextureView.setVisibility(View.VISIBLE);
+        }
         mIsVideoUI = false;
     }
     public void hideGridLineView() {
@@ -3436,12 +3770,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             int height = getScreenWidth() * mPreviewWidth / mPreviewHeight;
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(getScreenWidth(), height);
             mGridLineView.setLayoutParams(params);
-            mGridLineView.setY(mSurfaceView.getTop());
+            int top = 0;
+            if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+                top = mSurfaceView.getTop();
+            } else {
+                top = mTextureView.getTop();
+            }
+            mGridLineView.setY(top);
         }
     }
 
     public boolean setPreviewSize(int width, int height) {
-        Log.i(TAG, "setPreviewSize " + width + "x" + height);
+        Log.i(TAG, "setPreviewSize " + width + "x" + height + ", old " + mPreviewWidth + "x" + mPreviewHeight);
         boolean changed = (width != mPreviewWidth) || (height != mPreviewHeight);
         mPreviewWidth = width;
         mPreviewHeight = height;

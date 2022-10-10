@@ -18,6 +18,12 @@
  *
  */
 
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.camera;
 
 import android.app.Activity;
@@ -3122,7 +3128,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     };
 
             Surface surface = null;
-            if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getSinglePhysicalCamera() != null || isClearSightOn()) {
+            if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getSinglePhysicalCamera() != null || isClearSightOn()
+                || CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW) {
                 try {
                     waitForPreviewSurfaceReady();
                 } catch (RuntimeException e) {
@@ -3131,7 +3138,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
             if(mPaused) return;
-            if(mUI.getSurfaceHolder() == null){
+            if(!CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW && mUI.getSurfaceHolder() == null){
                 mUI.setSurfaceHolder();
             }
             surface = getPreviewSurfaceForSession(id);
@@ -3232,7 +3239,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                     for (Surface s : list) {
                         if (s == surface) {
-                            if(s.isValid()) {
+                            if(CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW || s.isValid()) {
                                 String physical_id = mSettingsManager.getSinglePhysicalCamera();
                                 OutputConfiguration out = new OutputConfiguration(s);
                                 if (physical_id != null) {
@@ -7218,7 +7225,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mState[i] = STATE_PREVIEW;
         }
         mLongshotActive = false;
-        if(!resumeFromRestartAll) {
+        if(!resumeFromRestartAll && !mUI.isPreviewSurfaceValid()) {
             updatePreviewSurfaceReadyState(false);
         }
     }
@@ -13712,10 +13719,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (getCameraMode() == DUAL_MODE && id == MONO_ID) {
                 return mUI.getMonoDummySurface();
             } else {
-                return mUI.getSurfaceHolder().getSurface();
+                return mUI.getPreviewSurface();
             }
         } else {
-            return mUI.getSurfaceHolder().getSurface();
+            return mUI.getPreviewSurface();
         }
     }
 
