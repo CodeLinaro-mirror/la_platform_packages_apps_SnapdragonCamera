@@ -6338,7 +6338,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                 Log.w(TAG, "sent org.quic.camera.recording.endOfStream");
                 if ((mMediaRecorderPausing || mStopRecPending) && (mCurrentSession != null)) {
-                    mCurrentSession.stopRepeating();
                     try {
                         if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
                             List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
@@ -6357,6 +6356,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                     Log.d(TAG, "Set endofstream TAG is done from APP");
                 }
+                try {
+                    Thread.sleep(33);
+                } catch(InterruptedException e) {
+                }
+                mCurrentSession.stopRepeating();
                 if (!isStopRecord) {
                     //is pause record
                     mMediaRecorder.pause();
