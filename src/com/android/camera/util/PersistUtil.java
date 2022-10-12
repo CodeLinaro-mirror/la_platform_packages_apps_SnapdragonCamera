@@ -127,6 +127,8 @@ public class PersistUtil {
             SystemProperties.get("persist.sys.camera.display.lmax", "");
     private static final int PERSIST_BURST_PREVIEW_REQUEST_NUMS =
             SystemProperties.getInt("persist.sys.camera.burst.preview.nums", 0);
+    private static final boolean PERSIST_DISABLE_EOS =
+            SystemProperties.getBoolean("persist.sys.camera.eos.disable", false);
 
     public static int getMemoryLimit() {
         return PERSIST_MEMORY_LIMIT;
@@ -327,5 +329,9 @@ public class PersistUtil {
 
     public static int isBurstShotFpsNums() {
         return PERSIST_BURST_PREVIEW_REQUEST_NUMS;
+    }
+
+    public static boolean isEOSDisabled() {
+        return PERSIST_DISABLE_EOS;
     }
 }
