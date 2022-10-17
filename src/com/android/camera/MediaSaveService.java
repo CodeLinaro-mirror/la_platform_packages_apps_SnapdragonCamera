@@ -71,7 +71,7 @@ public class MediaSaveService extends Service {
                                    PersistUtil.getSaveTaskMemoryLimitInMb();
 
     private static final int SAVE_TASK_MEMORY_LIMIT = SAVE_TASK_MEMORY_LIMIT_IN_MB * 1024 * 1024;
-    private static final String TAG = "CAM_" + MediaSaveService.class.getSimpleName();
+    private static final String TAG = "SnapCam_" + MediaSaveService.class.getSimpleName();
 
     private final IBinder mBinder = new LocalBinder();
     private Listener mListener;

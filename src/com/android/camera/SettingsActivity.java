@@ -141,7 +141,7 @@ public class SettingsActivity extends PreferenceActivity {
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                               String key) {
             Preference p = findPreference(key);
-            Log.i(TAG, "onSharedPreferenceChanged key:" + key);
+            Log.d(TAG, "onSharedPreferenceChanged key:" + key);
             if (p == null || null == key) return;
             String value;
             if (p instanceof SwitchPreference) {
@@ -226,7 +226,7 @@ public class SettingsActivity extends PreferenceActivity {
             List<String> list = mSettingsManager.getDependentKeys(key);
             if (list != null) {
                 for (String dependentKey : list) {
-                    Log.i(TAG, "onSharedPreferenceChanged dependentKey:" + dependentKey);
+                    Log.d(TAG, "onSharedPreferenceChanged dependentKey:" + dependentKey);
                     updatePreferenceButton(dependentKey);
                 }
             }
@@ -901,7 +901,7 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void updateToneMappingSettings() {
-        Log.i(TAG,"updateToneMappingSettings");
+        Log.d(TAG,"updateToneMappingSettings");
         final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
         LinearLayout linear = new LinearLayout(SettingsActivity.this);
         linear.setOrientation(1);
@@ -1586,7 +1586,7 @@ public class SettingsActivity extends PreferenceActivity {
         CaptureModule.CameraMode mode =
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-        Log.i(TAG,"isAICameraOn:" + mSettingsManager.isAICameraOn() + ",selectMode: " + selectMode);
+        Log.d(TAG,"isAICameraOn:" + mSettingsManager.isAICameraOn() + ",selectMode: " + selectMode);
         ListPreference selectModePref = (ListPreference) findPreference(
                 SettingsManager.KEY_SELECT_MODE);
         if (selectModePref != null && selectModePref.getValue().equals("rtb") && mode == VIDEO  &&
