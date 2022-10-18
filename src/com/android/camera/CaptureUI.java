@@ -867,6 +867,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         showFirstTimeHelp();
     }
 
+    public void setSurfaceHolder(){
+        mSurfaceHolder = mSurfaceView.getHolder();
+    }
     private void initZoomSeekBar() {
         mZoomLinearLayout = (LinearLayout) mRootView.findViewById(R.id.zoom_linearlayout);
         mZoomValueText = (TextView) mRootView.findViewById(R.id.zoom_value_text);
@@ -2422,7 +2425,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void buildPhysicalSurfaces(){
-        Log.d(TAG, Log.getStackTraceString(new Throwable()));
         mPreviewSurfaces.clear();
         for (int i = 0; i< mPreviewCount; i++){
             Log.i(TAG,"i: " + i + ",visible:" + mPhysicalViews[i].getVisibility());
@@ -2432,7 +2434,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
     public List<Surface> getPhysicalSurfaces(){
-        Log.d(TAG, Log.getStackTraceString(new Throwable()));
         return mPreviewSurfaces;
     }
 
