@@ -779,6 +779,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         showFirstTimeHelp();
     }
 
+    public void setSurfaceHolder(){
+        mSurfaceHolder = mSurfaceView.getHolder();
+    }
     private void initZoomSeekBar() {
         mZoomLinearLayout = (LinearLayout) mRootView.findViewById(R.id.zoom_linearlayout);
         mZoomValueText = (TextView) mRootView.findViewById(R.id.zoom_value_text);
@@ -2271,6 +2274,13 @@ public void updateFlashValue(){
             mSurfaceReady[i] = false;
         }
         mPreviewCount = 0;
+    }
+
+    public void hideLogicalSurface(){
+        Log.d(TAG,"hideLogicalSurface");
+            if (mPhysicalViews[0] != null) {
+                mPhysicalViews[0].setVisibility(View.INVISIBLE);
+        }
     }
 
     public Surface getMonoDummySurface() {
