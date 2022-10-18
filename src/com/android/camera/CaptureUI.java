@@ -1143,6 +1143,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         seekBar.setProgress(progress);
     }
 
+    public void setSurfaceHolder(){
+        mSurfaceHolder = mSurfaceView.getHolder();
+    }
     private void initZoomSeekBar() {
         mZoomLinearLayout = (LinearLayout) mRootView.findViewById(R.id.zoom_linearlayout);
         mZoomValueText = (TextView) mRootView.findViewById(R.id.zoom_value_text);
