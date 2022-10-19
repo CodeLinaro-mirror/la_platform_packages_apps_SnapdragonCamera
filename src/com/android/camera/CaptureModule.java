@@ -1030,7 +1030,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     private ImageReader[] mAideDs4ImageReader = new ImageReader[PHYSICAL_CAMERA_COUNT];
     private Image mAideFullImage;
     private Image mAideDownImage;
-    private Size mSupportedAide2Size;
     private Size[] mRawSize = new Size[mRawCount];
     private ImageReader[] mRAWImageReader = new ImageReader[mRawCount];
     private HeifWriter mInitHeifWriter;
@@ -1679,13 +1678,18 @@ public class CaptureModule implements CameraModule, PhotoController,
         try {
             byte[] param = result.get(HWMFNRandAIDE2TuningParams);
             if(param != null){
+                for(int i =0;i<param.length; i++){
+                    Log.d(TAG,"getHWMFandAIDETuningParams, i:" + i + ",value:" + param[i]);
+                }
                 denoiseStrengthParam = byteArray2float(param, 0);
                 color_saturation = byteArray2float(param, 4);
                 tone = byteArray2float(param, 8);
                 detail_enhancement = byteArray2float(param, 12);
                 mEnhancefactor = byteArray2float(param, 16);
                 mGainThresholdY = param[20];
-                mGainThresholdUV =  param[24];
+                mGainThresholdUV =  param[21];
+                Log.d(TAG,"denoiseStrengthParam:" + denoiseStrengthParam + ",color_saturation:" + color_saturation + ",tone:" + tone
+                +"detail_enhancement:" + detail_enhancement + ",mEnhancefactor:" + mEnhancefactor +",mGainThresholdY:" + mGainThresholdY + ",mGainThresholdUV:" + mGainThresholdUV);
             }
         } catch (IllegalArgumentException e) {
             Log.d(TAG, EXCEPTION_LOG,"no SWMFandAIDETuningParams");
@@ -5158,14 +5162,21 @@ public class CaptureModule implements CameraModule, PhotoController,
             int quality = getQualityNumber(mSettingsManager.getValue(SettingsManager.KEY_JPEG_QUALITY));
             unlockFocus(id);
             enableShutterButtonOnMainThread(id);
+            AIDenoiserService aiDenoiserService = mActivity.getAIDenoiserService();
+            String format = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_FORMAT);
             if(mAideAECLuxIndex < lux_index_threadhold){//low light only do HWMFNR and no need to crop
-                mActivity.getAIDenoiserService().wantImagesNum(mCaptureRequestNum);
+                aiDenoiserService.wantImagesNum(mCaptureRequestNum);
+                Size yuvSize = new Size(mAideFullImage.getWidth(), mAideFullImage.getHeight());
+                Log.i(TAG,"save jpeg for mfnr aide start, yuv size:" + yuvSize.toString());
                 byte[] yuv = getYUVFromImage(mAideFullImage);
+                int stride = mAideFullImage.getPlanes()[0].getRowStride();
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
-                byte[] jpeg = mActivity.getAIDenoiserService().nv21ToJpeg(yuv, orientation, mCaptureResult, mSupportedAide2Size, quality, mAideFullImage.getPlanes()[0].getRowStride());
+                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,yuvSize.getWidth(), yuvSize.getHeight(), stride,
+                        mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
+                byte[] jpeg = aiDenoiserService.bitmapToJpeg(bitmap, orientation, mCaptureResult, quality);
                 mActivity.getMediaSaveService().addImage(
                         jpeg, title, 0L, null,
-                        mSupportedAide2Size.getWidth(),mSupportedAide2Size.getHeight(),
+                        mPictureSize.getWidth(),mPictureSize.getHeight(),
                         orientation, null, getMediaSavedListener(),
                         mActivity.getContentResolver(), "jpeg");
                 mActivity.updateThumbnail(jpeg);
@@ -5173,7 +5184,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 return;
             }
             Log.d(TAG,"wait " + mCaptureRequestNum + " YUVs");
-            mActivity.getAIDenoiserService().wantImagesNum(mCaptureRequestNum);
+            aiDenoiserService.wantImagesNum(mCaptureRequestNum);
             Rect cropRegion = cropRegionForAideV2Zoom();
             //getimagedata
             int[] inputFrameDim = {mAideFullImage.getWidth(), mAideFullImage.getHeight(), mAideFullImage.getPlanes()[0].getRowStride(), mAideFullImage.getPlanes()[2].getRowStride()};
@@ -5212,17 +5223,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             mAideDownImage.close();
             mAideDownImage = null;
             namedEntity = null;
-            String format = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_FORMAT);
             //process aidev2
             Log.d(TAG, " mAideV2CaptureCallback, start to call aide lib");
             synchronized (mAideLock) {
                 if (TRACE_DEBUG) Trace.beginSection("aide2 process");
-                mActivity.getAIDenoiserService().startAideV2Process(aideV2Args.getsrcInputY(), aideV2Args.getsrcInputUV(), aideV2Args.getsrcDsInputY(),aideV2Args.getsrcDsInputUV(),
+                aiDenoiserService.startAideV2Process(aideV2Args.getsrcInputY(), aideV2Args.getsrcInputUV(), aideV2Args.getsrcDsInputY(),aideV2Args.getsrcDsInputUV(),
                         aideV2Args.getInputFrameDim(), aideV2Args.getdownFrameDim(), 100000, 100, aideV2Args.getdenoiseStrengthParam(), aideV2Args.getadrcGain(), aideV2Args.getrGain(),
                         aideV2Args.getbGain(), aideV2Args.getgGain(), Integer.parseInt(format), Integer.parseInt(mode), mEnhancefactor, mGainThresholdY, mGainThresholdUV);
                 if (TRACE_DEBUG) Trace.endSection();
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
-                byte[] srcImage = mActivity.getAIDenoiserService().generateAideV2Image(mActivity, aideV2Args.getorientation(), aideV2Args.getpictureSize(), aideV2Args.getcropRegion(), aideV2Args.getcaptureResult(), aideV2Args.getquality());
+                byte[] srcImage = aiDenoiserService.generateAideV2Image(mActivity, aideV2Args.getorientation(), aideV2Args.getpictureSize(), aideV2Args.getcropRegion(), aideV2Args.getcaptureResult(), aideV2Args.getquality(), Integer.parseInt(format));
                 mActivity.getMediaSaveService().addImage(
                         srcImage, aideV2Args.gettitle(), 0L, null,
                         aideV2Args.getpictureSize().getWidth(),
@@ -5237,23 +5247,39 @@ public class CaptureModule implements CameraModule, PhotoController,
     public Rect cropRegionForAideV2Zoom() {
         Rect originalCropRegion = new Rect();
         Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
+        int masterCamera = getMainCameraId();
         if(physical_ids != null && physical_ids.size() != 0){
             String physicalId = mMasterCameraId;
             for(Integer key : mAideActiveCameraIds.keySet()){
                 if(mAideActiveCameraIds.get(key)){
-                   physicalId = Integer.toString(key);
+                    physicalId = Integer.toString(key);
                 }
             }
             Log.d(TAG,"frame number: " + mCaptureResult.getFrameNumber());
             CaptureResult physicalMetaData = mCaptureResult.getPhysicalCameraResults().get(physicalId);
+            masterCamera = Integer.parseInt(physicalId);
             originalCropRegion = physicalMetaData.get(CaptureResult.SCALER_CROP_REGION);
-            Log.d(TAG,"physicalCropRegion:" + originalCropRegion.toString());
         }else {
             originalCropRegion = mCaptureResult.get(CaptureResult.SCALER_CROP_REGION);
-            Log.d(TAG,"single crop region:" + originalCropRegion.toString());
         }
+        Rect activeRegion = mSettingsManager.getSensorActiveArraySize(masterCamera);
+        Log.d(TAG,"crop region from hal:" + originalCropRegion.toString());
+        Log.d(TAG,"crop region for preview:" + mCropRegion[getMainCameraId()].toString());
+        Log.d(TAG,"mastercamera:" +masterCamera + ",sensor active array:" + activeRegion.toString());
+        //map preview crop to aide yuv size
+        int left = originalCropRegion.left*mAideFullImage.getWidth()/activeRegion.width();
+        int right = originalCropRegion.right*mAideFullImage.getWidth()/activeRegion.width();
+        int top = originalCropRegion.top *mAideFullImage.getHeight()/activeRegion.height();
+        int bottom = originalCropRegion.bottom *mAideFullImage.getHeight()/activeRegion.height();
+        originalCropRegion.set(left, top, right, bottom);
+        Log.d(TAG,"crop region map to yuv size:" + originalCropRegion.toString());
         //output yuv and final picture have the different resolution ratio
         Rect cropRegion = new Rect();
+        if(originalCropRegion.right > mAideFullImage.getWidth() ||
+                originalCropRegion.bottom > mAideFullImage.getHeight()){
+            originalCropRegion.right = mAideFullImage.getWidth();
+            originalCropRegion.bottom = mAideFullImage.getHeight();
+        }
         int width = originalCropRegion.width();
         int height = originalCropRegion.height();
         Log.d(TAG, "cropRegionForAideV2Zoom  width: " +  width + ",height:" + height);
@@ -5261,6 +5287,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             width = mAideFullImage.getWidth();
             height = mAideFullImage.getHeight();
         }
+
         float aideRatio = (float) mAideFullImage.getWidth() / mAideFullImage.getHeight();
         float pictureRatio = (float) mPictureSize.getWidth() / mPictureSize.getHeight();
         if(aideRatio > pictureRatio){
@@ -5269,8 +5296,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             height = width * mPictureSize.getHeight() /mPictureSize.getWidth();
         }
         Log.d(TAG, "cropRegionForAideV2Zoom current ratio width: " +  width + ",height:" + height);
-        int xCenter = mAideFullImage.getWidth() / 2;
-        int yCenter = mAideFullImage.getHeight() / 2;
+        int xCenter = originalCropRegion.width() / 2 + originalCropRegion.left;
+        int yCenter = originalCropRegion.height() / 2 + originalCropRegion.top;
         int xDelta = (int) (width / 2);
         int yDelta = (int) (height / 2);
         cropRegion.set(xCenter - xDelta, yCenter - yDelta, xCenter + xDelta, yCenter + yDelta);
@@ -5885,8 +5912,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 Iterator<String> iterator = physical_ids.iterator();
                                 for (String id : physical_ids){
                                     final String pyhsicalId = iterator.next();
-                                    Log.d(TAG,"create aide images, id:" + id + ",:mSupportedAide2Size:" + mSupportedAide2Size.toString());
-                                    mAideFullImageReader[getIndexByPhysicalId(id)] = ImageReader.newInstance(mSupportedAide2Size.getWidth(),mSupportedAide2Size.getHeight(),ImageFormat.YUV_420_888,MAX_IMAGEREADERS);
+                                    Size fullYuvSize = getFullYUVSize(Integer.parseInt(pyhsicalId));
+                                    Log.i(TAG,"create aide images, id:" + id + ",:fullYuvSize:" + fullYuvSize.toString());
+                                    mAideFullImageReader[getIndexByPhysicalId(id)] = ImageReader.newInstance(fullYuvSize.getWidth(),fullYuvSize.getHeight(),ImageFormat.YUV_420_888,MAX_IMAGEREADERS);
                                     mAideFullImageReader[getIndexByPhysicalId(id)].setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
                                         @Override
                                         public void onImageAvailable(ImageReader reader) {
@@ -5895,11 +5923,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                 mAideFullImage = reader.acquireNextImage();
                                                 byte[] yuv = getYUVFromImage(mAideFullImage);
                                                 mActivity.getMediaSaveService().addRawImage(yuv,"fullyuv","yuv");
-                                                mActivity.getAIDenoiserService().increment();
                                             }
+                                            mActivity.getAIDenoiserService().increment();
                                         }
                                     }, mImageAvailableHandler);
-                                    mAideDs4ImageReader[getIndexByPhysicalId(id)] = ImageReader.newInstance(getDsxYUVSize().getWidth(),getDsxYUVSize().getHeight(),ImageFormat.YUV_420_888,MAX_IMAGEREADERS);
+                                    mAideDs4ImageReader[getIndexByPhysicalId(id)] = ImageReader.newInstance(getDsxYUVSize(fullYuvSize).getWidth(),getDsxYUVSize(fullYuvSize).getHeight(),ImageFormat.YUV_420_888,MAX_IMAGEREADERS);
                                     mAideDs4ImageReader[getIndexByPhysicalId(id)].setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
                                         @Override
                                         public void onImageAvailable(ImageReader reader) {
@@ -5912,8 +5940,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     }, mImageAvailableHandler);
                                 }
                             }else {
-                                Log.d(TAG,"create aide images for single, id:" + getMainCameraId() + ",:mSupportedAide2Size:" + mSupportedAide2Size.toString());
-                                mAideFullImageReader[getMainCameraId()] = ImageReader.newInstance(mSupportedAide2Size.getWidth(),mSupportedAide2Size.getHeight(),ImageFormat.YUV_420_888,MAX_IMAGEREADERS);
+                                Size fullYuvSize = getFullYUVSize(getMainCameraId());
+                                Log.i(TAG,"create aide images for single, id:" + getMainCameraId() + ",:fullYuvSize:" + fullYuvSize.toString());
+                                mAideFullImageReader[getMainCameraId()] = ImageReader.newInstance(fullYuvSize.getWidth(),fullYuvSize.getHeight(),ImageFormat.YUV_420_888,MAX_IMAGEREADERS);
                                 mAideFullImageReader[getMainCameraId()].setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
                                     @Override
                                     public void onImageAvailable(ImageReader reader) {
@@ -5924,7 +5953,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         mActivity.getAIDenoiserService().increment();
                                     }
                                 }, mImageAvailableHandler);
-                                mAideDs4ImageReader[getMainCameraId()] = ImageReader.newInstance(getDsxYUVSize().getWidth(),getDsxYUVSize().getHeight(),ImageFormat.YUV_420_888,MAX_IMAGEREADERS);
+                                mAideDs4ImageReader[getMainCameraId()] = ImageReader.newInstance(getDsxYUVSize(fullYuvSize).getWidth(),getDsxYUVSize(fullYuvSize).getHeight(),ImageFormat.YUV_420_888,MAX_IMAGEREADERS);
                                 mAideDs4ImageReader[getMainCameraId()].setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
                                     @Override
                                     public void onImageAvailable(ImageReader reader) {
@@ -6009,12 +6038,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
        return null;
     }
-    private Size getDsxYUVSize(){
+    private Size getDsxYUVSize(Size fullSize){
         Size dsxYuvSize;
-        float a = mSupportedAide2Size.getWidth()/1008;
-        float b = mSupportedAide2Size.getHeight()/756;
+        float a = fullSize.getWidth()/1008;
+        float b = fullSize.getHeight()/756;
         float factor = a >b ? a : b;
-        //dsxYuvSize = new Size((int)(mSupportedAide2Size.getWidth()/factor), (int)(mSupportedAide2Size.getHeight()/factor));
         if(a>b){
             dsxYuvSize = new Size(1008, 566);
         }else if (a < b){
@@ -8930,36 +8958,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         mPreviewSize = getOptimalPreviewSize(mPictureSize, prevSizes);
         Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(currentId);
         mPictureThumbSize = getOptimalPreviewSize(mPictureSize, thumbSizes); // get largest thumb size
-        if(isAIDE2Enabled()){
-            getMaxAide2Size();
-        }
     }
 
-    private void getMaxAide2Size(){
-        List<Size> maxSizes = new ArrayList<>();
-        Set<String> allPhysicalIds = mSettingsManager.getAllPhysicalCameraId();
-        if(allPhysicalIds != null && allPhysicalIds.size() != 0){
-            for (String physicalId : allPhysicalIds) {
-                Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(Integer.parseInt(physicalId), ImageFormat.YUV_420_888);
-                List<Size> yuvSizeList = Arrays.asList(yuvSizes);
-                yuvSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
-                maxSizes.add(yuvSizeList.get(0));
-                Size[] rawSizes = mSettingsManager.getSupportedOutputSize(Integer.parseInt(physicalId),ImageFormat.RAW10);
-                List<Size> rawSizeList = Arrays.asList(rawSizes);
-                rawSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
-                //maxSizes.add(rawSizeList.get(0));
-                Log.d(TAG,"getMaxAide2Size, physicalId:" + physicalId + ",yuv max:" + yuvSizeList.get(0) +",raw max:" +rawSizeList.get(0) );
-            }
-            maxSizes.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
-            mSupportedAide2Size = maxSizes.get(maxSizes.size()-1);
-        }else {
-            Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.YUV_420_888);
-            List<Size> yuvSizeList = Arrays.asList(yuvSizes);
-            yuvSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
-            mSupportedAide2Size = yuvSizeList.get(0);
-            Log.d(TAG,"getMaxAide2Size for single camera id:" + getMainCameraId() + ",yuv max:" + yuvSizeList.get(0));
-        }
-        Log.d(TAG,"getMaxAide2Size, mSupportedAide2Size: " + mSupportedAide2Size.toString());
+    private Size getFullYUVSize(int id){
+        Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(id, ImageFormat.YUV_420_888);
+        List<Size> yuvSizeList = Arrays.asList(yuvSizes);
+        yuvSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
+        return yuvSizeList.get(0);
     }
 
     private Size getMaxRawSize(){
