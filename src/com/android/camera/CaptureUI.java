@@ -1307,6 +1307,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void hideUIwhileRecording() {
+        if (mModule.getCurrenCameraMode() != CaptureModule.CameraMode.VIDEO
+                 && mModule.getCurrenCameraMode() != CaptureModule.CameraMode.HFR) return;
         mCameraControls.setVideoMode(true);
         mModeSelectLayout.setVisibility(View.INVISIBLE);
         mSceneModeLabelRect.setVisibility(View.INVISIBLE);
@@ -1329,6 +1331,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showUIafterRecording() {
+        if (mModule.getCurrenCameraMode() != CaptureModule.CameraMode.VIDEO
+                && mModule.getCurrenCameraMode() != CaptureModule.CameraMode.HFR) return;
         mCameraControls.setVideoMode(false);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
         mSettingsIcon.setVisibility(View.VISIBLE);
