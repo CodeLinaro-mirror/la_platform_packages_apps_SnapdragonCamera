@@ -2350,13 +2350,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                             lockExposure(id);
                         }
                     }
-                } else if (aeState == null ||
-                        aeState == CaptureResult.CONTROL_AE_STATE_INACTIVE ||
+                } else if (aeState == CaptureResult.CONTROL_AE_STATE_INACTIVE ||
                         aeState == CaptureResult.CONTROL_AE_STATE_LOCKED) {
-                    // AE Mode is OFF, the AE state is always CONTROL_AE_STATE_INACTIVE
-                    // then begain capture and ignore lock AE.
-                    checkAfAeStatesAndCapture(id);
-                } else if (mPrecaptureRequestHashCode[id] ==  result.getRequest().hashCode()) {
+                    if ((mPrecaptureRequestHashCode[id] ==  result.getRequest().hashCode()) || (mPrecaptureRequestHashCode[id] == 0)) {
+                        // AE Mode is OFF, the AE state is always CONTROL_AE_STATE_INACTIVE
+                        // then begain capture and ignore lock AE.
+                        checkAfAeStatesAndCapture(id);
+                    }
+                }
+                if (mPrecaptureRequestHashCode[id] ==  result.getRequest().hashCode()) {
                     Log.i(TAG, "AE trigger request result received, but not converged");
                     mPrecaptureRequestHashCode[id] = 0;
                 }
