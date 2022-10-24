@@ -604,14 +604,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.afData.isLCRSW", Byte.class);
     private static final CaptureResult.Key<Integer> lenspos =
             new CaptureResult.Key<>("org.quic.camera.afData.lenspos", Integer.class);
-    private static final CaptureResult.Key<Integer> roix_start =
-            new CaptureResult.Key<>("org.quic.camera.afData.roixstart", Integer.class);
-    private static final CaptureResult.Key<Integer> roiy_start =
-            new CaptureResult.Key<>("org.quic.camera.afData.roiystart", Integer.class);
-    private static final CaptureResult.Key<Integer> roix_end =
-            new CaptureResult.Key<>("org.quic.camera.afData.roixend", Integer.class);
-    private static final CaptureResult.Key<Integer> roiy_end =
-            new CaptureResult.Key<>("org.quic.camera.afData.roiyend", Integer.class);
+    public static final CaptureResult.Key<byte[]> autofocusroi =
+            new CaptureResult.Key<>("org.quic.camera.afData.autofocusroi", byte[].class);
     private static final CaptureResult.Key<int[]> rsStats =
             new CaptureResult.Key<>("org.quic.camera.afData.rsStats", int[].class);
     //camera id && request id
@@ -2189,11 +2183,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 afinfo_data[4] = Byte.toString(result.get(isLCRHW));
                 afinfo_data[5] = Byte.toString(result.get(isLCRSW));
                 afinfo_data[6] = Integer.toString(result.get(lenspos));
-                mAFRoi[0] = result.get(roix_start);
-                mAFRoi[1] = result.get(roiy_start);
-                mAFRoi[2] = result.get(roix_end);
-                mAFRoi[3] = result.get(roiy_end);
-                Log.i(TAG,"mAFRoi[0]:" + mAFRoi[0] +"mAFRoi[1]:" + mAFRoi[1] +"mAFRoi[2]:" + mAFRoi[2] + "mAFRoi[3]:" + mAFRoi[3]);
+                byte[] roi = result.get(autofocusroi);
+                //autofocusroi is left,top,width, height, transfer to left,top,right, bottom
+                mAFRoi[0] = byteArray2Int(roi, 0);
+                mAFRoi[1] = byteArray2Int(roi, 4);
+                mAFRoi[2] = byteArray2Int(roi, 0) + byteArray2Int(roi, 8);
+                mAFRoi[3] = byteArray2Int(roi, 4) + byteArray2Int(roi, 12);
+                Log.d(TAG,"mAFRoi[0]:" + mAFRoi[0] +"mAFRoi[1]:" + mAFRoi[1] +"mAFRoi[2]:" + mAFRoi[2] + "mAFRoi[3]:" + mAFRoi[3]);
             }catch (NullPointerException|IllegalArgumentException e){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
@@ -8376,14 +8372,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         Log.d(TAG, "onLongPress " + x + " " + y);
-        mClickPosition[0] = x;
-        mClickPosition[1] = y;
         int[] newXY = {x, y};
         if (mUI.isOverControlRegion(newXY)) return;
         if (!mUI.isOverSurfaceView(newXY)) return;
+        mClickPosition[0] = x;
+        mClickPosition[1] = y;
         mUI.hideFlashButton();
         if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE){
-            Log.i(TAG,"set af lock start");
+            Log.d(TAG,"set af lock start");
             applyIsAfLock(false);
             mLockAFAE = LOCK_AF_AE_STATE_START;
             applySettingsForUnlockExposure(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()], mCurrentSceneMode.getCurrentId());
@@ -8395,6 +8391,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyIsAfLock(true);
             mUI.setFocusPosition(x, y);
             mUI.showEvSeekbar(x,y);
+            x = newXY[0];
+            y = newXY[1];
             mUI.onFocusStarted();
             triggerFocusAtPoint(x, y, mCurrentSceneMode.getCurrentId());
             lockExposure(mCurrentSceneMode.getCurrentId());
@@ -14258,17 +14256,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         Point p = mUI.getSurfaceViewSize();
         int width = p.x;
         int height = p.y;
-        if (width * mCropRegion[id].width() != height * mCropRegion[id].height()) {
-            Point displayPoint = mUI.getDisplaySize();
-            if (width >= displayPoint.x) {
-                height = width * mCropRegion[id].width() / mCropRegion[id].height();
-            }
-            if (height >= displayPoint.y) {
-                width = height * mCropRegion[id].height() / mCropRegion[id].width();
-            }
-        }
-        x += (width - p.x) / 2;
-        y += (height - p.y) / 2;
         mAFRegions[id] = afaeRectangle(x, y, width, height, 1f, mCropRegion[id], id);
         mAERegions[id] = afaeRectangle(x, y, width, height, 1.5f, mCropRegion[id], id);
         mCameraHandler.removeMessages(CANCEL_TOUCH_FOCUS, mCameraId[id]);
@@ -14336,12 +14323,19 @@ public class CaptureModule implements CameraModule, PhotoController,
         boolean postZoomFov = mUI.getZoomFixedSupport() && PersistUtil.isCameraPostZoomFOV();
         if (postZoomFov) {
             cropRegion = mOriginalCropRegion[id];
+            if (mOriginalCropRegion[id].width() * width < mOriginalCropRegion[id].height() * height) {
+                int heightNew = mOriginalCropRegion[id].width() * width / height;
+                cropRegion = new Rect(0, 0 , mOriginalCropRegion[id].width(), heightNew);
+            }else if(mOriginalCropRegion[id].width() * width > mOriginalCropRegion[id].height() * height){
+                int widthNew = mOriginalCropRegion[id].height() * height / width;
+                cropRegion = new Rect(0, 0 , widthNew, mOriginalCropRegion[id].height());
+            }
         }
-
-        matrix2.preTranslate(-mOriginalCropRegion[id].width() / 2f,
-                -mOriginalCropRegion[id].height() / 2f);
-        matrix2.postScale(2000f / mOriginalCropRegion[id].width(),
-                2000f / mOriginalCropRegion[id].height());
+        Log.d(TAG,"width:" + width + ",height:" + height + ",mOriginalCropRegion[id]:" +mOriginalCropRegion[id].toString() + ",rect1:" + cropRegion.toString());
+        matrix2.preTranslate(-cropRegion.width() / 2f,
+                -cropRegion.height() / 2f);
+        matrix2.postScale(2000f / cropRegion.width(),
+                2000f / cropRegion.height());
         matrix2.invert(matrix2);
 
         matrix1.mapRect(meteringRegionF);
@@ -14364,15 +14358,21 @@ public class CaptureModule implements CameraModule, PhotoController,
                     ", bottom :" + meteringRegion.bottom +" cropRegion left :" + cropRegion.left + ", top:" +
                     cropRegion.top + " right :" + cropRegion.right +
                     ", bottom :" + cropRegion.bottom);
+        int offsetY = 0;
+        int offsetX = 0;
+        offsetY = (mOriginalCropRegion[id].height()- cropRegion.height())/2;
+        offsetX = (mOriginalCropRegion[id].width()- cropRegion.width())/2;
+        meteringRegion = new Rect((int) meteringRegionF.left + offsetX, (int) (meteringRegionF.top + offsetY),
+                (int) meteringRegionF.right + offsetX, (int) (meteringRegionF.bottom + offsetY));
 
-        meteringRegion.left = CameraUtil.clamp(meteringRegion.left, cropRegion.left,
-                cropRegion.right);
-        meteringRegion.top = CameraUtil.clamp(meteringRegion.top, cropRegion.top,
-                cropRegion.bottom);
-        meteringRegion.right = CameraUtil.clamp(meteringRegion.right, cropRegion.left,
-                cropRegion.right);
-        meteringRegion.bottom = CameraUtil.clamp(meteringRegion.bottom, cropRegion.top,
-                cropRegion.bottom);
+        meteringRegion.left = CameraUtil.clamp(meteringRegion.left, mOriginalCropRegion[id].left,
+                mOriginalCropRegion[id].right);
+        meteringRegion.top = CameraUtil.clamp(meteringRegion.top, mOriginalCropRegion[id].top,
+                mOriginalCropRegion[id].bottom);
+        meteringRegion.right = CameraUtil.clamp(meteringRegion.right, mOriginalCropRegion[id].left,
+                mOriginalCropRegion[id].right);
+        meteringRegion.bottom = CameraUtil.clamp(meteringRegion.bottom, mOriginalCropRegion[id].top,
+                mOriginalCropRegion[id].bottom);
         Log.v(TAG, " modify meteringRegion left :" + meteringRegion.left +
                     ", top:" + meteringRegion.top + " right :" + meteringRegion.right +
                     ", bottom :" + meteringRegion.bottom);
