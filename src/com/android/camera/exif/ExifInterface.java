@@ -149,6 +149,10 @@ public class ExifInterface {
         defineTag(IfdId.TYPE_IFD_EXIF, (short) 0x8824);
     public static final int TAG_ISO_SPEED_RATINGS =
         defineTag(IfdId.TYPE_IFD_EXIF, (short) 0x8827);
+    public static final int TAG_SENSITIVITY =
+            defineTag(IfdId.TYPE_IFD_EXIF, (short) 0x8830);
+    public static final int TAG_ISO_SPEED =
+        defineTag(IfdId.TYPE_IFD_EXIF, (short) 0x8833);
     public static final int TAG_OECF =
         defineTag(IfdId.TYPE_IFD_EXIF, (short) 0x8828);
     public static final int TAG_EXIF_VERSION =
@@ -2035,6 +2039,22 @@ public class ExifInterface {
         }
     }
 
+    public void addSENSITIVITY(int value) {
+        ExifTag t;
+        t = buildTag(ExifInterface.TAG_SENSITIVITY, value);
+        if(t != null) {
+            setTag(t);
+        }
+    }
+
+    public void addISOSPEED(int value) {
+        ExifTag t;
+        t = buildTag(ExifInterface.TAG_ISO_SPEED, value);
+        if(t != null) {
+            setTag(t);
+        }
+    }
+
     public boolean addOrientationTag(int orientation) {
         int value = Orientation.TOP_LEFT;
         if(orientation == 90) {
@@ -2293,6 +2313,10 @@ public class ExifInterface {
         mTagInfo.put(ExifInterface.TAG_SPECTRAL_SENSITIVITY,
                 exifFlags | ExifTag.TYPE_ASCII << 16 | ExifTag.SIZE_UNDEFINED);
         mTagInfo.put(ExifInterface.TAG_ISO_SPEED_RATINGS,
+                exifFlags | ExifTag.TYPE_UNSIGNED_SHORT << 16 | ExifTag.SIZE_UNDEFINED);
+        mTagInfo.put(ExifInterface.TAG_SENSITIVITY,
+                exifFlags | ExifTag.TYPE_UNSIGNED_SHORT << 16 | ExifTag.SIZE_UNDEFINED);
+        mTagInfo.put(ExifInterface.TAG_ISO_SPEED,
                 exifFlags | ExifTag.TYPE_UNSIGNED_SHORT << 16 | ExifTag.SIZE_UNDEFINED);
         mTagInfo.put(ExifInterface.TAG_OECF,
                 exifFlags | ExifTag.TYPE_UNDEFINED << 16 | ExifTag.SIZE_UNDEFINED);
