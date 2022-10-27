@@ -4018,7 +4018,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         if (isAutoHDRSupported()){
-            if(isSupportedHdr() && !isAIBokehMode()){
+            if(!isAIBokehMode()){
                 ret.add("auto");
             }
         }

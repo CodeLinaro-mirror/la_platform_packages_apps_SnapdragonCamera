@@ -2086,7 +2086,8 @@ public class SettingsActivity extends PreferenceActivity {
             if (pref.getEntries() != null && pref.getEntries().length == 1){
                 pref.setEnabled(false);
             }else if(mode == CaptureModule.CameraMode.VIDEO){
-                if (mSettingsManager.isLimitedHDR()) {
+                String hdrmode = mSettingsManager.getVideoHdrMode();
+                if(hdrmode.toLowerCase().contains("mfhdr")) {
                     pref.setValue("off");
                     pref.setEnabled(false);
                 }
