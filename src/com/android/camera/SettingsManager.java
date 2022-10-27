@@ -2408,7 +2408,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         isLogicalCamera = true;
                     }
                 }
-                Log.d(TAG,"start for camera id :" + cameraIdList[i] + ",isLogicalCamera:" + isLogicalCamera);
+                Log.d(TAG," start for camera id :" + cameraIdList[i] + ",isLogicalCamera:" + isLogicalCamera);
                 if(isLogicalCamera) {
                     Set<String> physicalIds = mCharacteristics.get(Integer.parseInt(cameraIdList[i])).getPhysicalCameraIds();
                     if (physicalIds != null) {
@@ -2431,7 +2431,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     }
                     if(quadBayerPhysicalIds != null && quadBayerPhysicalIds.size() != 0) {
                         mQuadBayerIds.put(cameraIdList[i], quadBayerPhysicalIds);
-                        ids.add(cameraIdList[i]);
+                        if(isMultiCameraEnabled()) {
+                            ids.add(cameraIdList[i]);
+                        }
                     }
                 }else{
                     if(!isMultiCameraEnabled()) {
