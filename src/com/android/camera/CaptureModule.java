@@ -145,10 +145,12 @@ import com.android.camera.aide.AideUtil.*;
 import org.codeaurora.snapcam.R;
 import org.codeaurora.snapcam.filter.ClearSightImageProcessor;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
@@ -3012,6 +3014,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             }
                             mCreateSessionLatency = System.currentTimeMillis() - mCreateSessionLatency;
                             Log.i(TAG, "capturesession - onConfigured "+ id);
+                            mCurrentSessionClosed = false;
                             setCameraModeSwitcherAllowed(true);
                             // When the session is ready, we start displaying the preview.
                             mCaptureSession[id] = cameraCaptureSession;
@@ -3076,7 +3079,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                             } catch (CameraAccessException | IllegalStateException | IllegalArgumentException e) {
                               Log.e(TAG,"createSession exception= "+ e);
                             }
-                            mCurrentSessionClosed = false;
                         }
 
                         @Override
@@ -9975,6 +9977,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyVideoFlash(CaptureRequest.Builder builder, int id) {
+        if(setFlashOn(builder)){
+            return;
+        }
         if (mSettingsManager.isFlashSupported(id)) {
             String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_FLASH_MODE);
             if (value == null) return;
@@ -9983,7 +9988,27 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
+    }
 
+    private String readFile(String path) {
+        String prop = "";
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(path));
+            prop = reader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return prop;
+    }
+
+    private boolean setFlashOn(CaptureRequest.Builder builder){
+        if(((readFile("/sys/devices/soc0/soc_id").equals("600")) || (readFile("/sys/devices/soc0/soc_id").equals("601"))) && (!isBackCamera())){
+            Log.d(TAG,"Set flash torch");
+            builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+            return true;
+        }
+        return false;
     }
 
     private void applyNoiseReduction(CaptureRequest.Builder builder) {
@@ -12947,7 +12972,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyAICameraStrength(){
-        if (mCurrentSessionClosed) return;
+        if (mPreviewRequestBuilder[getMainCameraId()] == null || mCaptureSession[getMainCameraId()] == null) return;
         if(mSettingsManager.isAICameraOn()) {
             Log.d(TAG, "applyAICameraStrength: " + mAIStrengthValue);
             try {
@@ -12960,7 +12985,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyAIBlurConfigs(CaptureRequest.Builder builder){
-        if (!mIsRecordingVideo && !mIsPreviewingVideo || mCurrentSessionClosed) return;
+        if (!mIsRecordingVideo && !mIsPreviewingVideo || builder == null) return;
         applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
         applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
         applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
@@ -13417,6 +13442,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setFlashMode(CaptureRequest.Builder request, String flashMode) {
+        if(setFlashOn(request)){
+            return;
+        }
         if (request == null || flashMode == null || isIsoAndE()) return;
         boolean isCaptureBurst = isCaptureBrustMode();
         switch (flashMode) {
@@ -13567,6 +13595,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyFlash(CaptureRequest.Builder request, int id) {
+        if(setFlashOn(request)){
+            return;
+        }
         if (mSettingsManager.isFlashSupported(id)) {
             String value = mSettingsManager.getValue(mCurrentSceneMode.mode == CameraMode.PRO_MODE ?
                     SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
