@@ -1975,6 +1975,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void initializeBlurConfigSlide(boolean blurmode) {
         mCameraControls.setBlurMode(blurmode);
+        mCameraControls.setVisbleFocusDisLayout(!mSettingsManager.isAIBokehMode());
     }
 
     // called from onResume but only the first time
