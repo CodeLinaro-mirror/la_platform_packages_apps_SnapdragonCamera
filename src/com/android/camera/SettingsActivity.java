@@ -357,6 +357,7 @@ public class SettingsActivity extends PreferenceActivity {
                        }
                    }
                     updateViullPreference();
+                    updateVideoMFHDRPreference();
                 }
 
                 if (pref.getKey().equals(SettingsManager.KEY_MANUAL_HDR) ||
@@ -2001,6 +2002,10 @@ public class SettingsActivity extends PreferenceActivity {
                 pref.setValue("off");
                 pref.setEnabled(false);
             }
+        }
+        if(mSettingsManager.getValueIndex(SettingsManager.KEY_SCENE_MODE) == 1 ){
+            pref.setValue("off");
+            pref.setEnabled(false);
         }
     }
 
