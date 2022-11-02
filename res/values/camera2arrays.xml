@@ -26,6 +26,11 @@
      OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
      IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
+<!--
+    Changes from Qualcomm Innovation Center are provided under the following license:
+    Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+    SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
 
 <resources>
     <string-array name="pref_camera2_camera2_entries" translatable="true">
@@ -1393,6 +1398,18 @@ for time lapse recording -->
         <item>@string/pref_camera2_eis_entry_value_disable</item>
         <item>@string/pref_camera2_eis_entry_value_v2enable</item>
         <item>@string/pref_camera2_eis_entry_value_v3enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_eis_horizon_level_control_entries" translatable="false">
+        <item>@string/pref_camera2_eis_horizon_level_control_entry_0</item>
+        <item>@string/pref_camera2_eis_horizon_level_control_entry_1</item>
+        <item>@string/pref_camera2_eis_horizon_level_control_entry_2</item>
+    </string-array>
+
+    <string-array name="pref_camera2_eis_horizon_level_control_entryvalues" translatable="false">
+        <item>@string/pref_camera2_eis_horizon_level_control_entry_value_0</item>
+        <item>@string/pref_camera2_eis_horizon_level_control_entry_value_1</item>
+        <item>@string/pref_camera2_eis_horizon_level_control_entry_value_2</item>
     </string-array>
 
     <string-array name="pref_camera2_preview_stabilization_entries" translatable="false">

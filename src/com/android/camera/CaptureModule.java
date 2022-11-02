@@ -693,6 +693,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableInsensorZoom", Integer.class);
     private static final CaptureRequest.Key<Byte> xcfa_optimization =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableXCFAOptimization", byte.class);
+    private static final CaptureRequest.Key<float[]> horizon_level_control =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.HorizonLevelControl", float[].class);
     //HDRVideo MODE
     public static final CaptureRequest.Key<Integer> hdr_video_mode = new CaptureRequest.Key<>(
             "org.codeaurora.qcamera3.sessionParameters.HDRVideoMode", Integer.class);
@@ -6876,6 +6878,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mCurrentSceneMode.mode == CameraMode.HFR) {
             applyOfflineDumpTrigger(builder);
             applyVideoEncoderProfile(builder);
+            applyEISHorizonLevelControl(builder);
         }
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.DEFAULT) {
@@ -10067,6 +10070,45 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         } else {
             applyVideoEncoderProfileByVendorTag(builder);
+        }
+    }
+
+    private void applyEISHorizonLevelControl(CaptureRequest.Builder builder) {
+        boolean enabled = true;
+        boolean isTuningControl = false;
+        String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE);
+        String level = mSettingsManager.getValue(SettingsManager.KEY_EIS_HORIZON_LEVEL_CONTROL);
+        if (value != null) {
+            enabled = value.equals(mActivity.getResources().getString(
+                    R.string.pref_camera2_eis_horizon_level_control_entry_value_1));
+            if (value.equals(mActivity.getResources().getString(
+                    R.string.pref_camera2_eis_horizon_level_control_entry_value_2))) {
+                isTuningControl = true;
+            }
+        } else {
+            enabled = false;
+            isTuningControl = true;
+        }
+
+        Log.d(TAG, "applyEISHorizonLevelControl value:" + value + " level: " + level +
+                " isTuningControl :" + isTuningControl);
+        if (isTuningControl) {
+            return;
+        }
+
+        float[] eisHorizonLevels = new float[2];
+        if(level!= null && !isEISDisable() && enabled) {
+            eisHorizonLevels[0] = 1f;
+            eisHorizonLevels[1] = Float.parseFloat(level);
+        } else {
+            eisHorizonLevels[0] = 0f;
+            eisHorizonLevels[1] = 0f;
+        }
+        Log.d(TAG, "applyEISHorizonLevelControl eisHorizonLevels :" + eisHorizonLevels[0] + " and " + eisHorizonLevels[1]);
+        try {
+            builder.set(CaptureModule.horizon_level_control, eisHorizonLevels);
+        } catch (IllegalArgumentException | UnsupportedOperationException e) {
+            Log.w(TAG, EXCEPTION_LOG,"applyEISHorizonLevelControl hal no vendorTag : " + horizon_level_control);
         }
     }
 

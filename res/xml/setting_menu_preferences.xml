@@ -716,6 +716,15 @@
             android:summary="%s"/>
 
         <ListPreference
+            android:key="pref_camera2_eis_horizon_level_enable_key"
+            android:defaultValue="@string/pref_camera2_eis_horizon_level_control_entry_value_2"
+            android:title="@string/pref_camera2_eis_horizon_level_control_title"
+            android:entries="@array/pref_camera2_eis_horizon_level_control_entries"
+            android:entryValues="@array/pref_camera2_eis_horizon_level_control_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
             android:key="pref_camera2_photo_eis_key"
             android:defaultValue="@string/pref_camera2_photo_eis_default"
             android:title="@string/pref_camera2_photo_eis_title"
