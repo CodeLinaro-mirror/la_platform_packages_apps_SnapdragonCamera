@@ -2180,6 +2180,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
     private boolean showHDRScene() {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
+        String hdrmode = mSettingsManager.getVideoHdrMode();
         if (value == null || mSettingsManager.getQuadBayerSensorPrefEnabled()) return false;
         CaptureModule.CameraMode currentMode = mModule.getCurrenCameraMode();
         if (CaptureModule.CameraMode.DEFAULT != currentMode && CaptureModule.CameraMode.RTB != currentMode && CaptureModule.CameraMode.SAT != currentMode) {
@@ -2189,6 +2190,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             String mfnrValue = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
             if (mfnrValue != null && !mfnrValue.equals("disable") && Integer.parseInt(mfnrValue) == 1)
                 return false;
+        }
+        if(hdrmode != null && !hdrmode.equals("off")){
+            return false;
         }
         return true;
     }
