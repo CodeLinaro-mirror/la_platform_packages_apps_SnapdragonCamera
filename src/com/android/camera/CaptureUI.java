@@ -27,6 +27,8 @@ package com.android.camera;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -42,6 +44,8 @@ import android.graphics.SurfaceTexture;
 import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Camera.Face;
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
@@ -52,6 +56,8 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+
+import com.android.camera.gles.CameraRender;
 import com.android.camera.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
@@ -60,6 +66,7 @@ import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.PixelCopy;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -71,6 +78,7 @@ import android.view.ViewPropertyAnimator;
 import android.view.ViewStub;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
@@ -3399,6 +3407,74 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+    private void animateFAImageIn() {
+
+        FocusAssistImageView imageView = new FocusAssistImageView(mActivity);
+        imageView.setLayoutParams(mFAImageView.getLayoutParams());
+        ((ViewGroup)mRootView).addView(imageView);
+
+        final Rect startBounds = new Rect();
+        final Rect finalBounds = new Rect();
+        final Point globalOffset = new Point();
+
+        mFAImageView.getGlobalVisibleRect(startBounds);
+
+        Bitmap bitmap = Bitmap.createBitmap(startBounds.width(), startBounds.height(), Bitmap.Config.ARGB_8888);
+
+        mSurfaceView.getGlobalVisibleRect(finalBounds, globalOffset);
+
+        final Rect cropRect = new Rect(startBounds);
+        cropRect.offset(-globalOffset.x, -globalOffset.y);
+
+        PixelCopy.request(mSurfaceView, cropRect, bitmap, copyResult -> {
+            Log.d(TAG, "PixelCopy " + copyResult);
+            if (copyResult == PixelCopy.SUCCESS) {
+                imageView.setBitmap(bitmap);
+            }
+        }, new Handler(Looper.getMainLooper()));
+
+        imageView.setPivotX(0.5f);
+        imageView.setPivotY(0.5f);
+
+        AnimatorSet set = new AnimatorSet();
+        set.play(ObjectAnimator.ofFloat(imageView, View.X,
+                        startBounds.left, finalBounds.left))
+                .with(ObjectAnimator.ofFloat(imageView, View.Y,
+                        startBounds.top, finalBounds.top))
+                .with(ObjectAnimator.ofFloat(imageView, View.SCALE_X,
+                        1f, 2f))
+                .with(ObjectAnimator.ofFloat(imageView,
+                        View.SCALE_Y, 1f, 2f));
+        set.setDuration(500L);
+        set.setInterpolator(new DecelerateInterpolator());
+        set.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                Animator animator = ObjectAnimator.ofFloat(mFALayout, View.ALPHA, 0f, 1f);
+                animator.setDuration(500L);
+                animator.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        ((ViewGroup)mRootView).removeView(imageView);
+                    }
+                });
+                animator.start();
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                ((ViewGroup)mRootView).removeView(imageView);
+            }
+
+            @Override
+            public void onAnimationStart(Animator animation) {
+            }
+        });
+        set.start();
+
+
+    }
+
     public void showFocusAssistView(TextureView.SurfaceTextureListener listener,
                                     float cropRegionXs, float cropRegionYs) {
         if (mFAViewStub == null) {
@@ -3434,29 +3510,101 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFALayout.setVisibility(View.VISIBLE);
         mFATextureView.setSurfaceTextureListener(listener);
         mFATextureView.setVisibility(View.VISIBLE);
-        Animator animator = ViewAnimationUtils.createCircularReveal(mFALayout, mFocusPoint.x,
-                mFocusPoint.y, 0f, 3000f);
-        animator.setDuration(1500L);
+
+        mFALayout.setAlpha(0f);
+        animateFAImageIn();
+    }
+
+    private void animateFAImageOut() {
+        CameraRender cameraRender = mModule.getCameraRender();
+        if (cameraRender == null) {
+            Log.w(TAG, "CameraRender is null when animateFAImageOut");
+            if (mFATextureView != null && mFALayout != null) {
+                mFALayout.removeView(mFATextureView);
+            }
+            if (mFALayout != null) {
+                mFALayout.setVisibility(View.GONE);
+            }
+            return;
+        }
+        Rect viewport = cameraRender.getViewport();
+
+        FocusAssistImageView imageView = new FocusAssistImageView(mActivity);
+        FrameLayout.LayoutParams params =
+                new FrameLayout.LayoutParams(viewport.width(), viewport.height());
+        params.leftMargin = viewport.left;
+        params.topMargin = viewport.top;
+        imageView.setLayoutParams(params);
+        ((ViewGroup)mRootView).addView(imageView);
+
+        final Rect startBounds = new Rect();
+        final Rect finalBounds = new Rect();
+        final Point globalOffset = new Point();
+
+        mFAImageView.getGlobalVisibleRect(finalBounds);
+
+        mSurfaceView.getGlobalVisibleRect(startBounds, globalOffset);
+
+        Bitmap bitmap = Bitmap.createBitmap(startBounds.width(), startBounds.height(), Bitmap.Config.ARGB_8888);
+
+        PixelCopy.request(new Surface(cameraRender.getDisplaySurfaceTexture()), viewport, bitmap, copyResult -> {
+            Log.d(TAG, "PixelCopy " + copyResult);
+            if (copyResult == PixelCopy.SUCCESS) {
+                imageView.setBitmap(bitmap);
+            }
+        }, new Handler(Looper.getMainLooper()));
+
+        imageView.setPivotX(0.5f);
+        imageView.setPivotY(0.5f);
+
+        AnimatorSet set = new AnimatorSet();
+        set.play(ObjectAnimator.ofFloat(imageView, View.X,
+                startBounds.left, finalBounds.left))
+                .with(ObjectAnimator.ofFloat(imageView, View.Y,
+                        startBounds.top, finalBounds.top))
+                .with(ObjectAnimator.ofFloat(imageView, View.SCALE_X,
+                        1f, 0.5f))
+                .with(ObjectAnimator.ofFloat(imageView,
+                        View.SCALE_Y, 1, 0.5f));
+        set.setDuration(500L);
+        set.setInterpolator(new DecelerateInterpolator());
+        set.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                ((ViewGroup)mRootView).removeView(imageView);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                ((ViewGroup)mRootView).removeView(imageView);
+            }
+
+            @Override
+            public void onAnimationStart(Animator animation) {
+
+            }
+        });
+
+        Animator animator = ObjectAnimator.ofFloat(mFALayout, View.ALPHA, 1f, 0f);
+        animator.setDuration(500L);
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                if (mFATextureView != null && mFALayout != null) {
+                    mFALayout.removeView(mFATextureView);
+                }
+                if (mFALayout != null) {
+                    mFALayout.setVisibility(View.GONE);
+                }
+                set.start();
+            }
+        });
         animator.start();
     }
 
     public void hideFocusAssistView() {
         if (mFALayout != null) {
-            Animator animator = ViewAnimationUtils.createCircularReveal(mFALayout, mFocusPoint.x,
-                    mFocusPoint.y, mFALayout.getHeight(), 0f);
-            animator.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    if (mFATextureView != null && mFALayout != null) {
-                        mFALayout.removeView(mFATextureView);
-                    }
-                    if (mFALayout != null) {
-                        mFALayout.setVisibility(View.GONE);
-                    }
-                }
-            });
-            animator.setDuration(1000L);
-            animator.start();
+            animateFAImageOut();
         }
     }
 

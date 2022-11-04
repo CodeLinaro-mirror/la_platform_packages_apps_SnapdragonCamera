@@ -8124,6 +8124,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         });*/
     }
 
+    public CameraRender getCameraRender() {
+        return mCameraRender;
+    }
+
     private boolean mIsInFocusAssistMode = false;
     private boolean mWasInFocusAssistMode = false;
 

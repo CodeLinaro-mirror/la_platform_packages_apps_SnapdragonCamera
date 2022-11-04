@@ -20,6 +20,7 @@
 
 package com.android.camera.gles;
 
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.GLES20;
@@ -54,6 +55,10 @@ public class CameraRender implements TextureView.SurfaceTextureListener {
 
     public CameraRender() {
         init();
+    }
+
+    public SurfaceTexture getDisplaySurfaceTexture() {
+        return mSurfaceTexture;
     }
 
     public SurfaceTexture getSurfaceTexture() {
@@ -141,6 +146,10 @@ public class CameraRender implements TextureView.SurfaceTextureListener {
 //        Log.i(TAG, "onSurfaceTextureUpdated");
     }
 
+    public Rect getViewport() {
+        return mHandler.mViewport;
+    }
+
 
     private static class RenderHandler extends Handler implements SurfaceTexture.OnFrameAvailableListener {
 
@@ -161,6 +170,8 @@ public class CameraRender implements TextureView.SurfaceTextureListener {
 
         private int mTexW;
         private int mTexH;
+
+        public Rect mViewport = new Rect();
 
         private boolean mInit = false;
 
@@ -348,6 +359,8 @@ public class CameraRender implements TextureView.SurfaceTextureListener {
             Log.d(TAG, "surfaceAvailable " + width + " " + height);
             mWidth = width;
             mHeight = height;
+            int diff = mHeight - mTexH;
+            mViewport.set(0, diff / 2, mWidth,  diff / 2 + mTexH);
             CameraRender outer = mOuter.get();
             EglBase eglBase = mEglBase;
             SurfaceTexture surfaceTexture = outer.mSurfaceTexture;

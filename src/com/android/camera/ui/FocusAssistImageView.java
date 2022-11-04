@@ -40,6 +40,7 @@ public class FocusAssistImageView extends ImageView {
 
     public void setBitmap(Bitmap bitmap) {
         this.mBitmap = bitmap;
+        invalidate();
     }
 
 
