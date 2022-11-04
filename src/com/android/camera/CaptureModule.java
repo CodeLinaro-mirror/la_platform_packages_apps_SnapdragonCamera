@@ -8455,7 +8455,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public void restartAll() {
         int nextCameraId = getNextScreneModeId(mNextModeIndex);
-        Log.d(TAG, "restart all CURRENT_ID :" + CURRENT_ID + " nextCameraId :" + nextCameraId);
+        Log.d(TAG, "restart all CURRENT_ID :" + CURRENT_ID + " nextCameraId :" + nextCameraId+",mpaused="+mPaused);
+        if(mPaused){
+            return;
+        }
         if(CURRENT_ID == nextCameraId && mCameraDevice[nextCameraId] != null){
             mIsCloseCamera = false;
         }else{
