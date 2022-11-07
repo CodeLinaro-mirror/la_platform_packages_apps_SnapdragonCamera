@@ -9287,21 +9287,25 @@ public class CaptureModule implements CameraModule, PhotoController,
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
         sessionConfig.setSessionParameters(initialRequest.build());
+        boolean supported = false;
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
         try{
-            boolean supported = camera.isSessionConfigurationSupported(sessionConfig);
+            supported = camera.isSessionConfigurationSupported(sessionConfig);
             Log.i(TAG, "  result :" + supported);
         } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
             Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error ="+ e);
         }
-        mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
-        try{
-            mCreateSessionLatency = System.currentTimeMillis();
-            camera.createCaptureSession(sessionConfig);
-        } catch (CameraAccessException e) {
-            Log.e(TAG, " error:",e);
+        if(supported) {
+            //only create session when configure is supported
+            mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
+            try {
+                mCreateSessionLatency = System.currentTimeMillis();
+                camera.createCaptureSession(sessionConfig);
+            } catch (CameraAccessException e) {
+                Log.e(TAG, " error:", e);
+            }
         }
     }
 
