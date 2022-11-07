@@ -17,6 +17,12 @@
  * limitations under the License.
  */
 
+/*
+*Changes from Qualcomm Innovation Center are provided under the following license:
+*Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+*SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.camera;
 
 import android.animation.Animator;
@@ -97,6 +103,7 @@ import com.android.camera.util.PersistUtil;
 
 import org.codeaurora.snapcam.R;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -325,6 +332,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     private TextView mZoomSwitch;
     private int mZoomIndex = 0;
+    private TextView mPropSwitch;
 
     private TextView mOfflineDumpTrigger;
     private int mOfflineDumpTriIndex = 0;
@@ -811,7 +819,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 }
             });
         }
-
+        mPropSwitch = (TextView ) mRootView.findViewById(R.id.prop_switch);
+        initPropSwitch();
+        showPropSwitch();
         mActivity.getWindowManager().getDefaultDisplay().getSize(mDisplaySize);
         mScreenRatio = CameraUtil.determineRatio(mDisplaySize.x, mDisplaySize.y);
         if (mScreenRatio == CameraUtil.RATIO_16_9) {
@@ -1381,6 +1391,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
             mModeSelectLayout.setVisibility(View.GONE);
         }
+        showPropSwitch();
     }
 
     public void initializeProMode(boolean promode) {
@@ -1603,6 +1614,42 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+    public void showPropSwitch(){
+        if(mPropSwitch != null){
+            String value = mSettingsManager.getValue(SettingsManager.KEY_SETPROP);
+            if (value != null && value.equals("on") && mSettingsManager.getPerfValue(SettingsManager.KEY_PROP_FLOATING).equals("on")) {
+                mPropSwitch.setVisibility(View.VISIBLE);
+                if(PersistUtil.get(mSettingsManager.getPerfValue(SettingsManager.KEY_PROP_NAME), "xx").equals("true")){
+                    mPropSwitch.setText("PropON");
+                }else{
+                    mPropSwitch.setText("PropOFF");
+                }
+            }else{
+                mPropSwitch.setVisibility(View.INVISIBLE);
+            }
+        }
+    }
+
+    public void initPropSwitch(){
+        mPropSwitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String newValue ="true";
+                if(PersistUtil.get(mSettingsManager.getPerfValue(SettingsManager.KEY_PROP_NAME), "xx").equals("true")){
+                    newValue = "false";
+                    mPropSwitch.setText("PropOFF");
+                }else{
+                    mPropSwitch.setText("PropON");
+                }
+                try {
+                    String cmd ="setprop "+  mSettingsManager.getPerfValue(SettingsManager.KEY_PROP_NAME) + " " +  newValue;
+                    Runtime.getRuntime().exec(cmd);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
     private void initFilterModeButton() {
         mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         String value = mSettingsManager.getValue(SettingsManager.KEY_COLOR_EFFECT);

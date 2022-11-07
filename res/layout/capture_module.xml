@@ -16,6 +16,9 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
+<!--Changes from Qualcomm Innovation Center are provided under the following license:-->
+<!--Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.-->
+<!--SPDX-License-Identifier: BSD-3-Clause-Clear-->
 
 <!-- This layout is shared by phone and tablet in both landscape and portrait
  orientation. The purpose of having this layout is to eventually not manually
@@ -438,6 +441,22 @@
         android:id="@+id/render_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <TextView
+        android:id="@+id/prop_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="70dip"
+        android:layout_marginLeft="70dip"
+        android:clickable="true"
+        android:textColor="@android:color/white"
+        android:alpha="0.7"
+        android:background="#D3D3D3"
+        android:textSize="13sp"
+        android:gravity="center"
+        android:text="Prop OFF"
+        android:visibility="gone"
+        />
 
     <TextView
         android:id="@+id/zoom_switch"

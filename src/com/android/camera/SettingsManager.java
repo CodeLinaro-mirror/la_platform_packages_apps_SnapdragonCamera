@@ -26,6 +26,11 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+ /*
+ *Changes from Qualcomm Innovation Center are provided under the following license:
+ *Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera;
 
@@ -298,7 +303,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_RAWINFO_TYPE = "pref_camera2_rawinfo_type_key";
     public static final String KEY_RAW_FORMAT_TYPE = "pref_camera2_raw_format_key";
     public static final String KEY_ML_VIDEO = "pref_camera2_mlvideo_key";
-
+    public static final String KEY_SETPROP = "pref_camera2_setprop_key";
+    public static final String KEY_PROP_NAME = "pref_camera2_prop_name";
+    public static final String KEY_PROP_FLOATING = "pref_camera2_prop_floating";
     public static final String KEY_TORCH_HDR_VALUE= "pref_camera2_torch_hdr_key";
     private static final String TAG = "SnapCam_SettingsManager";
 
@@ -3826,6 +3833,21 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 ComboPreferences.getGlobalSharedPreferencesName(mContext),
                 Context.MODE_PRIVATE);
         return sp.getBoolean(SettingsManager.KEY_DEVELOPER_MENU, false);
+    }
+    public String getPerfValue(String key) {
+        SharedPreferences sp = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey()),
+                Context.MODE_PRIVATE);
+        return sp.getString(key, "xx");
+    }
+
+    public void setPerfValue(String key, String value) {
+        SharedPreferences sp = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey()),
+                Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putString(key, value);
+        editor.apply();
     }
 
     private HashMap<String,VideoEisConfig> getVideoEisConfigs(int cameraId) {
