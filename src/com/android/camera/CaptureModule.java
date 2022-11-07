@@ -8565,21 +8565,26 @@ public class CaptureModule implements CameraModule, PhotoController,
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
         sessionConfig.setSessionParameters(initialRequest.build());
+        boolean supported = false;
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
         try{
-            boolean supported = camera.isSessionConfigurationSupported(sessionConfig);
-            Log.v(TAG, " createCaptureSessionWithSessionConfiguration result :" + supported);
+            supported = camera.isSessionConfigurationSupported(sessionConfig);
+            Log.i(TAG, "  result :" + supported);
         } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
             Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error");
             e.printStackTrace();
         }
-        try{
-            camera.createCaptureSession(sessionConfig);
-        } catch (CameraAccessException e) {
-            Log.e(TAG, "createCaptureSessionWithSessionConfiguration error");
-            e.printStackTrace();
+        if(supported) {
+            //only create session when configure is supported
+            try {
+                camera.createCaptureSession(sessionConfig);
+            } catch (CameraAccessException e) {
+                Log.e(TAG, " error:", e);
+            }
+        } else {
+            warningToast("Session combination is not supported.");
         }
     }
 
