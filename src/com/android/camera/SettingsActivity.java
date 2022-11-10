@@ -250,6 +250,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 updateHdrRefOp();
                 updateQuadBayerPreference();
+                updateVsrPreference();
             }
 
             if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
@@ -385,6 +386,7 @@ public class SettingsActivity extends PreferenceActivity {
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                     updateViullPreference();
+                    updateVideoMFHDRPreference();
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_AI_CAMERA)){
                     updateEISPreference();
@@ -1992,24 +1994,35 @@ public class SettingsActivity extends PreferenceActivity {
             return;
         }
         int[] modes = mSettingsManager.isManualHDRSupported();
-        pref.setEnabled(false);
+        pref.setEnabled(true);
         if (modes != null && modes.length >= 1 && mSettingsManager.getRawFormat() == 0) {
             pref.setEnabled(true);
             mSettingsManager.filterVideoMaunalHDRModes(modes);
             updatePreference(SettingsManager.KEY_MANUAL_HDR);
         } else {
             pref.setEnabled(false);
+            pref.setValue("off");
+            return;
         }
         ListPreference eisPref = (ListPreference)findPreference(SettingsManager.KEY_EIS_VALUE);
         if(mSettingsManager.isAICameraOn()) {
             if (eisPref != null && eisPref.getValue() != null && eisPref.getValue().equals("disable")) {
                 pref.setValue("off");
                 pref.setEnabled(false);
+                return;
             }
         }
-        if(mSettingsManager.getValueIndex(SettingsManager.KEY_SCENE_MODE) == 1 ){
+        if(mSettingsManager.getValueIndex(SettingsManager.KEY_SCENE_MODE) == 1 ) {
             pref.setValue("off");
             pref.setEnabled(false);
+            return;
+        }
+        String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
+        if(mSettingsManager.getValueIndex(SettingsManager.KEY_SCENE_MODE) == 1 ||
+                (vsr != null && vsr.equals("1"))){
+            pref.setValue("off");
+            pref.setEnabled(false);
+            return;
         }
     }
 
@@ -2159,6 +2172,12 @@ public class SettingsActivity extends PreferenceActivity {
                  pref.setEnabled(false);
                  return;
              }
+         }
+        String hdrmode = mSettingsManager.getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")){
+             pref.setValue("0");
+             pref.setEnabled(false);
+             return;
          }
          pref.setEnabled(true);
     }
