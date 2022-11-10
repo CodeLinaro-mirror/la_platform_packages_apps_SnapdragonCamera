@@ -2249,7 +2249,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         public void onClosed(CameraDevice cameraDevice) {
             int id = Integer.parseInt(cameraDevice.getId());
             mCloseCameraLatency = System.currentTimeMillis() - mCloseCameraLatency;
-            Log.d(TAG, "onClosed " + id);
+            Log.i(TAG, "onClosed " + id);
             mCameraDevice[id] = null;
             mCameraOpenCloseLock.release();
             mCamerasOpened = false;
@@ -5265,7 +5265,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 public void onCaptureBufferLost(CameraCaptureSession session,
                                                 CaptureRequest request, Surface target,
                                                 long frameNumber) {
-                    Log.d(TAG, "captureStillPictureForCommon onCaptureBufferLost: frameNumber is "
+                    Log.i(TAG, "captureStillPictureForCommon onCaptureBufferLost: frameNumber is "
                             + frameNumber);
                     if (!mPaused && isOnCaptureBufferLostHintOn()) {
                         showToast("Capture failed: buffer lost!");
@@ -5441,21 +5441,21 @@ public class CaptureModule implements CameraModule, PhotoController,
                         public void onCaptureCompleted(CameraCaptureSession session,
                                                        CaptureRequest request,
                                                        TotalCaptureResult result) {
-                            Log.d(TAG, "captureVideoSnapshot onCaptureCompleted: " + id);
+                            Log.i(TAG, "captureVideoSnapshot onCaptureCompleted: " + id);
                         }
 
                         @Override
                         public void onCaptureFailed(CameraCaptureSession session,
                                                     CaptureRequest request,
                                                     CaptureFailure result) {
-                            Log.d(TAG, "captureVideoSnapshot onCaptureFailed: " + id);
+                            Log.i(TAG, "captureVideoSnapshot onCaptureFailed: " + id);
                         }
 
                         @Override
                         public void onCaptureBufferLost(CameraCaptureSession session,
                                                         CaptureRequest request, Surface target,
                                                         long frameNumber) {
-                            Log.d(TAG, "captureVideoshot onCaptureBufferLost: frameNumber is "
+                            Log.i(TAG, "captureVideoshot onCaptureBufferLost: frameNumber is "
                                     + frameNumber);
                             if (!mPaused && isOnCaptureBufferLostHintOn()) {
                                 showToast("Capture failed: buffer lost!");
@@ -5465,7 +5465,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         @Override
                         public void onCaptureSequenceCompleted(CameraCaptureSession session, int
                                 sequenceId, long frameNumber) {
-                            Log.d(TAG, "captureVideoSnapshot onCaptureSequenceCompleted: " + id);
+                            Log.i(TAG, "captureVideoSnapshot onCaptureSequenceCompleted: " + id);
                             if (mSettingsManager.isHeifWriterEncoding()) {
                                 if (mLiveShotImage != null) {
                                     try {
@@ -8990,7 +8990,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             .StateCallback() {
         @Override
         public void onConfigured(CameraCaptureSession cameraCaptureSession) {
-            Log.d(TAG, "recordingVideo session onConfigured");
+            Log.i(TAG, "recordingVideo session onConfigured");
             setCameraModeSwitcherAllowed(true);
             int cameraId = getMainCameraId();
             mCurrentSession = cameraCaptureSession;
@@ -9021,6 +9021,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
             setCameraModeSwitcherAllowed(true);
+            Log.i(TAG, " session mCCSSateCallback failed");
             Toast.makeText(mActivity, "Video Failed", Toast.LENGTH_SHORT).show();
         }
     };
@@ -9115,6 +9116,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
             enableVideoButton(true);
             setCameraModeSwitcherAllowed(true);
+            Log.i(TAG, "mSessionListener session failed");
             Toast.makeText(mActivity, "Video Failed", Toast.LENGTH_SHORT).show();
         }
     };
