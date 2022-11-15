@@ -1,6 +1,9 @@
 #
 # Copyright (C) 2013 Google Inc.
 #
+# Changes from Qualcomm Innovation Center are provided under the following license:
+# Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
 
 # The version code scheme for the package apk is:
 #      Mmbbbtad
@@ -40,7 +43,7 @@
 # base_version_build is 3 digits and auto-increment for fixing CR.
 base_version_major := 2
 base_version_minor := 07
-base_version_build := 130
+base_version_build := 131
 
 #####################################################
 #####################################################
