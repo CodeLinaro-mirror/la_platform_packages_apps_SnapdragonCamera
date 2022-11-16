@@ -1920,7 +1920,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void onCameraOpened(int cameraId) {
         mGestures.setCaptureUI(this);
-        if (mModule.isDeepZoom()) {
+        if (mModule.isDeepZoom() ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC) {
             mGestures.setZoomEnabled(false);
         } else {
             mGestures.setZoomEnabled(mSettingsManager.isZoomSupported(cameraId));
@@ -2283,7 +2284,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             if (highspeed) {
                 mFlashButton.setVisibility(View.GONE);
             } else {
-                if (mModule.isAFLocked()){
+                if (mModule.isAFLocked() ||
+                        mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC){
                     hideFlashButton();
                 } else {
                     mFlashButton.init(true);
@@ -2298,7 +2300,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         } else {
             mFlashButton.setVisibility(View.VISIBLE);
 //            mSettingsManager.setValue(SettingsManager.KEY_VIDEO_FLASH_MODE, "off");
-            if (mModule.isAFLocked()){
+            if (mModule.isAFLocked() ||
+                    mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC){
                 hideFlashButton();
             } else {
                 mFlashButton.init(true);
@@ -2560,6 +2563,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mVideoButton.setVisibility(View.VISIBLE);
                 mFilterModeSwitcher.setVisibility(View.VISIBLE);
                 mShutterButton.setVisibility(View.INVISIBLE);
+                break;
+            case CINEMATIC:
+                mVideoButton.setVisibility(View.VISIBLE);
+                mFilterModeSwitcher.setVisibility(View.VISIBLE);
+                mShutterButton.setVisibility(View.INVISIBLE);
+                if (!DEV_LEVEL_ALL) {
+                    mFrontBackSwitcher.setVisibility(View.INVISIBLE);
+                }
                 break;
             case PRO_MODE:
                 mFilterModeSwitcher.setVisibility(View.INVISIBLE);

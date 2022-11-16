@@ -33,11 +33,11 @@
 
     <TextView
         android:id="@+id/mode_text"
-        android:layout_width="65dp"
+        android:layout_width="68dp"
         android:layout_height="32dp"
         android:gravity="center"
         android:layout_gravity="center"
-        android:textSize="16sp"
+        android:textSize="15sp"
         android:textColor="@color/mode_text_selector"/>
 
 </FrameLayout>

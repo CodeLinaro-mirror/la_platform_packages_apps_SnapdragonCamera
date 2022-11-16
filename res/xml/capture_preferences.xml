@@ -866,6 +866,13 @@
         camera:entryValues="@array/pref_camera2_statsnn_control_entryvalues" />
 
     <ListPreference
+        camera:key="pref_camera2_cinematic_debug_key"
+        camera:defaultValue="@string/pref_camera2_cinematic_debug_default"
+        camera:title="@string/pref_camera2_cinematic_debug_title"
+        camera:entries="@array/pref_camera2_statsnn_control_entries"
+        camera:entryValues="@array/pref_camera2_statsnn_control_entryvalues" />
+
+    <ListPreference
         camera:key="pref_camera2_pdnet_toggle_key"
         camera:defaultValue="@string/pref_camera2_pdnet_toggle_default"
         camera:title="@string/pref_camera2_pdnet_toggle_title"

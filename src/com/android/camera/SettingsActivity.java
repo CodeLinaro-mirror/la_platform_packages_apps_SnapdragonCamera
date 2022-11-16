@@ -1487,6 +1487,7 @@ public class SettingsActivity extends PreferenceActivity {
             case DEFAULT:
                 removePreferenceGroup("video", parentPre);
                 if (mDeveloperMenuEnabled && developer != null) {
+                    removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
                     if (!DEV_LEVEL_ALL) {
                         removePreference(SettingsManager.KEY_SWITCH_CAMERA, developer);
                     }
@@ -1557,6 +1558,23 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if (mode != VIDEO) {
                     removePreference(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
+                }
+                break;
+            case CINEMATIC:
+                removePreferenceGroup("photo", parentPre);
+                removePreference(SettingsManager.KEY_NOISE_REDUCTION, videoPre);
+                removePreference(SettingsManager.KEY_VIDEO_ENCODER, videoPre);
+                removePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE, videoPre);
+                removePreference(SettingsManager.KEY_AUDIO_ENCODER, videoPre);
+                removePreference(SettingsManager.KEY_VIDEO_ROTATION, videoPre);
+                removePreference(SettingsManager.KEY_VIDEO_DURATION, videoPre);
+                removePreference(SettingsManager.KEY_PICTURE_FORMAT, videoPre);
+                removePreference(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
+                if (mDeveloperMenuEnabled) {
+                    ArrayList<String> cinematicList = new ArrayList<>();
+                    cinematicList.add(SettingsManager.KEY_STATSNN_CONTROL);
+                    cinematicList.add(SettingsManager.KEY_CINEMATIC_DEBUG);
+                    addDeveloperOptions(developer, cinematicList);
                 }
                 break;
             case RTB:
@@ -1838,6 +1856,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         updatePictureFormatPreference();
         updateLongShotPreference();
+        updateCinematicOptions();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
@@ -2184,18 +2203,18 @@ public class SettingsActivity extends PreferenceActivity {
         pref.setEnabled(true);
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode)getIntent().getSerializableExtra(
                 CAMERA_MODULE);
-        if (mode == CaptureModule.CameraMode.VIDEO) {
+        if (mode == CaptureModule.CameraMode.VIDEO || mode == CaptureModule.CameraMode.CINEMATIC) {
             pref.setDialogTitle("Video FrameRate");
             pref.setTitle("Video FrameRate");
         }
         mSettingsManager.filterHFROptions();
         updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         if (pref != null) {
-            if (pref.getEntries() != null && pref.getEntries().length == 1){
+            if (pref.getEntries() != null && pref.getEntries().length == 1) {
                 pref.setEnabled(false);
-            }else if(mode == CaptureModule.CameraMode.VIDEO){
+            } else if (mode == CaptureModule.CameraMode.VIDEO) {
                 String hdrmode = mSettingsManager.getVideoHdrMode();
-                if(hdrmode.toLowerCase().contains("mfhdr")) {
+                if (hdrmode.toLowerCase().contains("mfhdr")) {
                     pref.setValue("off");
                     pref.setEnabled(false);
                 }
@@ -2641,6 +2660,26 @@ public class SettingsActivity extends PreferenceActivity {
                 longShot.setEnabled(false);
             }
         }
+    }
+
+    private void updateCinematicOptions() {
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        if (mode == CaptureModule.CameraMode.CINEMATIC) {
+            String t2t = mLocalSharedPref.getString(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "on");
+            String statsNN = mLocalSharedPref.getString(SettingsManager.KEY_STATSNN_CONTROL, "1");
+            SwitchPreference t2TFocus = (SwitchPreference) findPreference(
+                    SettingsManager.KEY_TOUCH_TRACK_FOCUS);
+            ListPreference statsNNPref = (ListPreference) findPreference(
+                    SettingsManager.KEY_STATSNN_CONTROL);
+            if (t2t.equals("on")) {
+                t2TFocus.setChecked(true);
+            }
+            if (statsNNPref != null) {
+                statsNNPref.setValue(statsNN);
+            }
+        }
+
     }
 
     private void updatePreference(String key) {

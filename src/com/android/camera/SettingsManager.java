@@ -299,6 +299,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String MAUNAL_ABSOLUTE_ISO_VALUE = "absolute";
     public static final String KEY_SELECT_MODE = "pref_camera2_select_mode_key";
     public static final String KEY_STATSNN_CONTROL = "pref_camera2_statsnn_control_key";
+    public static final String KEY_CINEMATIC_DEBUG = "pref_camera2_cinematic_debug_key";
     public static final String KEY_PDNET_TOGGLE = "pref_camera2_pdnet_toggle_key";
     public static final String KEY_RAW_CB_INFO = "pref_camera2_raw_cb_info_key";
     public static final String KEY_QLL = "pref_camera2_qll_key";
@@ -2550,7 +2551,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference hfrPref = mPreferenceGroup.findPreference(KEY_VIDEO_HIGH_FRAME_RATE);
         if (hfrPref != null) {
             CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
-            if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO) {
+            if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO ||
+                    mode == CaptureModule.CameraMode.CINEMATIC) {
                 ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
                 hfrPref.reloadInitialEntriesAndEntryValues();
                 mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
@@ -2756,7 +2758,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         ArrayList<String> supported = new ArrayList<String>();
-        if(mode == CaptureModule.CameraMode.VIDEO) {
+        if(mode == CaptureModule.CameraMode.VIDEO || mode == CaptureModule.CameraMode.CINEMATIC) {
             supported.add("off");
         }
         ListPreference videoEncoder = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
@@ -2797,6 +2799,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         if (videoCapabilities != null) {
                             if (videoCapabilities.areSizeAndRateSupported(
                                     videoSize.getWidth(), videoSize.getHeight(), (int) r.getUpper())) {
+                                if (mode == CaptureModule.CameraMode.CINEMATIC && (int)r.getUpper() >= 60) {
+                                    break;
+                                }
                                 if(mode == CaptureModule.CameraMode.HFR && (int)r.getUpper() < 120){
                                     break;
                                 }
@@ -2830,6 +2835,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         if (videoCapabilities != null) {
                             if (videoCapabilities.areSizeAndRateSupported(
                                     videoSize.getWidth(), videoSize.getHeight(), mExtendedHFRSize[i + 2])) {
+                                if (mode == CaptureModule.CameraMode.CINEMATIC &&
+                                        mExtendedHFRSize[i + 2] >= 60) {
+                                    break;
+                                }
                                 if(mode == CaptureModule.CameraMode.HFR &&
                                         mExtendedHFRSize[i + 2] < 120){
                                     break;
@@ -3432,6 +3441,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (CameraSettings.VIDEO_QUALITY_TABLE.containsKey(videoSizes.get(i).toString())) {
                 Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(videoSizes.get(i).toString());
                 if (profile != null && CamcorderProfile.hasProfile(cameraId, profile)) {
+                    if (mode == CaptureModule.CameraMode.CINEMATIC &&
+                            !(videoSizes.get(i).toString().equals("1920x1080") ||
+                                    videoSizes.get(i).toString().equals("1280x720"))) {
+                        //Video size should be 1080P and 720P in CINEMATIC mode
+                        continue;
+                    }
                     if (mode != CaptureModule.CameraMode.HFR && isEISV3Enabled && Math.min(videoSizes.get(i).getWidth(),videoSizes.get(i).getHeight()) < 720) {
                         //video size should't be larger than 720p when EIS V3 is enabled
                         continue;

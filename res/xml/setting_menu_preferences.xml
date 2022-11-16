@@ -965,6 +965,15 @@
             android:summary="%s"/>
 
         <ListPreference
+            android:key="pref_camera2_cinematic_debug_key"
+            android:defaultValue="@string/pref_camera2_cinematic_debug_default"
+            android:title="@string/pref_camera2_cinematic_debug_title"
+            android:entries="@array/pref_camera2_statsnn_control_entries"
+            android:entryValues="@array/pref_camera2_statsnn_control_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
             android:key="pref_camera2_pdnet_toggle_key"
             android:defaultValue="@string/pref_camera2_pdnet_toggle_default"
             android:title="@string/pref_camera2_pdnet_toggle_title"
