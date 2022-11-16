@@ -1883,12 +1883,7 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref == null) {
             return;
         }
-        if (!PersistUtil.enableMediaRecorder()) {
-            pref.setEnabled(false);
-            pref.setValue("off");
-        } else {
-            updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-        }
+        updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
     }
 
     private void updateTimeLapsePreference() {
