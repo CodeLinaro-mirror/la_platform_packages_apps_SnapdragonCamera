@@ -18,6 +18,12 @@
  *
  */
 
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.camera;
 
 import android.app.Activity;
@@ -1019,6 +1025,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int[] mLockRequestHashCode = new int[MAX_NUM_CAM];
     private final Handler mHandler = new MainHandler();
     private CameraCaptureSession mCurrentSession;
+    private OutputConfiguration mPreviewOutputConfiguration;
     private Size mPreviewSize;
     private Size mPictureSize;
     private Size mVideoPreviewSize;
@@ -2350,13 +2357,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                             lockExposure(id);
                         }
                     }
-                } else if (aeState == null ||
-                        aeState == CaptureResult.CONTROL_AE_STATE_INACTIVE ||
+                } else if (aeState == CaptureResult.CONTROL_AE_STATE_INACTIVE ||
                         aeState == CaptureResult.CONTROL_AE_STATE_LOCKED) {
-                    // AE Mode is OFF, the AE state is always CONTROL_AE_STATE_INACTIVE
-                    // then begain capture and ignore lock AE.
-                    checkAfAeStatesAndCapture(id);
-                } else if (mPrecaptureRequestHashCode[id] ==  result.getRequest().hashCode()) {
+                    if ((mPrecaptureRequestHashCode[id] ==  result.getRequest().hashCode()) || (mPrecaptureRequestHashCode[id] == 0)) {
+                        // AE Mode is OFF, the AE state is always CONTROL_AE_STATE_INACTIVE
+                        // then begain capture and ignore lock AE.
+                        checkAfAeStatesAndCapture(id);
+                    }
+                }
+                if (mPrecaptureRequestHashCode[id] ==  result.getRequest().hashCode()) {
                     Log.i(TAG, "AE trigger request result received, but not converged");
                     mPrecaptureRequestHashCode[id] = 0;
                 }
@@ -3015,6 +3024,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mCreateSessionLatency = System.currentTimeMillis() - mCreateSessionLatency;
                             Log.i(TAG, "capturesession - onConfigured "+ id);
                             mCurrentSessionClosed = false;
+                            if(mPreviewOutputConfiguration != null) {
+                                mPreviewOutputConfiguration.addSurface(getPreviewSurfaceForSession(id));
+                                try {
+                                    List<OutputConfiguration> finalizeOutputConfigs = new ArrayList<>();
+                                    finalizeOutputConfigs.add(mPreviewOutputConfiguration);
+                                    cameraCaptureSession.finalizeOutputConfigurations(finalizeOutputConfigs);
+                                } catch (Exception e) {
+                                    Log.e(TAG, "finalizeOutputConfigurations with exception:" + e.toString());
+                                }
+                            }
                             setCameraModeSwitcherAllowed(true);
                             // When the session is ready, we start displaying the preview.
                             mCaptureSession[id] = cameraCaptureSession;
@@ -3038,7 +3057,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     mUI.updateGridLine();
                                 }
                             });
-                            if(!mSettingsManager.isLogicalEnable()){
+                            if(!mSettingsManager.isLogicalEnable() && mSettingsManager.getSinglePhysicalCamera() == null){
                                 mActivity.runOnUiThread(new Runnable() {
                                     public void run() {
                                         mUI.hideLogicalSurface();
@@ -3101,13 +3120,19 @@ public class CaptureModule implements CameraModule, PhotoController,
                     };
 
             Surface surface = null;
-            try {
-                waitForPreviewSurfaceReady();
-            } catch (RuntimeException e) {
-                Log.v(TAG,
-                        "createSession: normal status occur Time out waiting for surface ");
+            if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getSinglePhysicalCamera() != null || isClearSightOn()
+                || CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW) {
+                try {
+                    waitForPreviewSurfaceReady();
+                } catch (RuntimeException e) {
+                    Log.v(TAG,
+                            "createSession: normal status occur Time out waiting for surface ");
+                }
             }
             if(mPaused) return;
+            if(!CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW && mUI.getSurfaceHolder() == null){
+                mUI.setSurfaceHolder();
+            }
             surface = getPreviewSurfaceForSession(id);
 
             if(id == getMainCameraId()) {
@@ -3206,41 +3231,49 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                     for (Surface s : list) {
                         if (s == surface) {
-                            String physical_id = mSettingsManager.getSinglePhysicalCamera();
-                            OutputConfiguration out = new OutputConfiguration(s);
-                            if (physical_id != null) {
-                                mUI.buildPhysicalSurfaces();
-                                boolean enableLogical =
-                                        SettingsManager.LOGICAL_AND_PHYSICAL.equals(physical_id);
-                                if (!enableLogical)
-                                    out.setPhysicalCameraId(physical_id);
-                                outputConfigurations.add(out);
-                                List<Surface> physicalSurfaces = mUI.getPhysicalSurfaces();
-                                Set<String> allPhysicalIds =
-                                        mSettingsManager.getAllPhysicalCameraId();
-                                int i = 1;
-                                for (String physical : allPhysicalIds) {
-                                    if (!physical_id.equals(physical)) {
-                                        OutputConfiguration o = new OutputConfiguration(
-                                                physicalSurfaces.get(i));
-                                        o.setPhysicalCameraId(physical);
-                                        outputConfigurations.add(o);
-                                        mPreviewRequestBuilder[id].addTarget(physicalSurfaces.get(i));
-                                        i++;
+                            if(CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW || s.isValid()) {
+                                String physical_id = mSettingsManager.getSinglePhysicalCamera();
+                                OutputConfiguration out = new OutputConfiguration(s);
+                                if (physical_id != null) {
+                                     mUI.buildPhysicalSurfaces();
+                                     boolean enableLogical =
+                                             SettingsManager.LOGICAL_AND_PHYSICAL.equals(physical_id);
+                                     if (!enableLogical)
+                                         out.setPhysicalCameraId(physical_id);
+                                     outputConfigurations.add(out);
+                                     List<Surface> physicalSurfaces = mUI.getPhysicalSurfaces();
+                                     Set<String> allPhysicalIds =
+                                             mSettingsManager.getAllPhysicalCameraId();
+                                     int i = 1;
+                                     for (String physical : allPhysicalIds) {
+                                         if (!physical_id.equals(physical)) {
+                                             OutputConfiguration o = new OutputConfiguration(
+                                                     physicalSurfaces.get(i));
+                                             o.setPhysicalCameraId(physical);
+                                             outputConfigurations.add(o);
+                                             mPreviewRequestBuilder[id].addTarget(physicalSurfaces.get(i));
+                                             i++;
+                                         }
+                                     }
+                                } else {
+                                    if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                                        out.addSensorPixelModeUsed(
+                                                CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
+                                        Log.v(TAG, "OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT");
                                     }
+                                    String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
+                                    Log.v(TAG, "OutputConfiguration set previewProfile==null? :" + (previewProfile == null));
+                                    if (previewProfile != null && !previewProfile.equals("0")) {
+                                        out.setDynamicRangeProfile(Long.parseLong(previewProfile));
+                                    }
+                                    outputConfigurations.add(out);
                                 }
-                            } else {
-                                if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
-                                    out.addSensorPixelModeUsed(
-                                            CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
-                                    Log.v(TAG, "OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT");
-                                }
-                                String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
-                                Log.v(TAG, "OutputConfiguration set previewProfile==null? :" + (previewProfile==null));
-                                if (previewProfile != null && !previewProfile.equals("0")) {
-                                    out.setDynamicRangeProfile(Long.parseLong(previewProfile));
-                                }
-                                outputConfigurations.add(out);
+                            }else{
+                                mPreviewOutputConfiguration = new OutputConfiguration(
+                                        new android.util.Size(mPreviewSize.getWidth(), mPreviewSize.getHeight()),
+                                        SurfaceHolder.class);
+                                Log.v(TAG, "add mPreviewOutputConfiguration");
+                                outputConfigurations.add(mPreviewOutputConfiguration);
                             }
                         } else {
                             OutputConfiguration outputConfiguration = new OutputConfiguration(s);
@@ -7136,7 +7169,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mUI.getGLCameraPreview().onPause();
         }
         mUI.hidePhysicalSurfaces();
-
+        mPreviewOutputConfiguration = null;
         mZoomValue = 1f;
         mUI.updateZoomSeekBar(1.0f);
         if (isExitCamera && mIsCloseCamera) {
@@ -7195,7 +7228,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mState[i] = STATE_PREVIEW;
         }
         mLongshotActive = false;
-        if(!resumeFromRestartAll) {
+        if(!resumeFromRestartAll && !mUI.isPreviewSurfaceValid()) {
             updatePreviewSurfaceReadyState(false);
         }
     }
@@ -9007,7 +9040,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.i(TAG, "mSessionListener session onConfigured");
             mCreateSessionLatency = System.currentTimeMillis()- mCreateSessionLatency;
             setCameraModeSwitcherAllowed(true);
-            if(!mSettingsManager.isLogicalEnable()){
+            if(!mSettingsManager.isLogicalEnable() && mSettingsManager.getSinglePhysicalCamera() == null){
                 mActivity.runOnUiThread(new Runnable() {
                     public void run() {
                         mUI.hideLogicalSurface();
@@ -12986,12 +13019,14 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyAIBlurConfigs(CaptureRequest.Builder builder){
         if (!mIsRecordingVideo && !mIsPreviewingVideo || builder == null) return;
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_LUMA, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAU, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAV, builder);
+        if(mSettingsManager.isAICameraOn()) {
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_LUMA, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAU, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAV, builder);
+        }
     }
 
     private void applyAIBlurConfig(String key, CaptureRequest.Builder builder){
@@ -13664,10 +13699,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (getCameraMode() == DUAL_MODE && id == MONO_ID) {
                 return mUI.getMonoDummySurface();
             } else {
-                return mUI.getSurfaceHolder().getSurface();
+                return mUI.getPreviewSurface();
             }
         } else {
-            return mUI.getSurfaceHolder().getSurface();
+            return mUI.getPreviewSurface();
         }
     }
 

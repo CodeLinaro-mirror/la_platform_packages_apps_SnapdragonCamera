@@ -152,6 +152,7 @@ public class OneUICameraControls extends RotatableLayout {
     private TextView mBlurLuma;
     private TextView mBlurChromaU;
     private TextView mBlurChromaV;
+    private LinearLayout mAIDisLayout;
 
     public OneUICameraControls(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -357,6 +358,7 @@ public class OneUICameraControls extends RotatableLayout {
         mBlurChromaU = (TextView) findViewById(R.id.blur_chromaU_text);
         mBlurChromaV = (TextView) findViewById(R.id.blur_chromaV_text);
         mAIBlurSlide = (AIBlurConfigSlide) findViewById(R.id.aiblur_slide);
+        mAIDisLayout = (LinearLayout) findViewById(R.id.blur_focus_distance_linear_layout);
         mAIBlurSlide.initialize(this);
         mAIBlurViews = new TextView[]{
                 mBlurShape, mBlurShapeText, mBlurStrength,mBlurStrengthText,mBlurFocusDistance,mBlurFocusDistanceText,
@@ -950,6 +952,10 @@ public class OneUICameraControls extends RotatableLayout {
         initializeAIBlurSlide(mBlurModeOn);
         mAIBlurSlide.reinit();
         resetAIBlurConfigIcons();
+    }
+
+    public void setVisbleFocusDisLayout(boolean show){
+        mAIDisLayout.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
     }
 
     private void resetAIBlurConfigIcons() {
