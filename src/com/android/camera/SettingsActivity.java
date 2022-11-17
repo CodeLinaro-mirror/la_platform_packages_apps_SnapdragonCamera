@@ -479,6 +479,7 @@ public class SettingsActivity extends PreferenceActivity {
         int cameraId = mSettingsManager.getCurrentCameraId();
         int[] isoRange = mSettingsManager.getIsoRangeValues(cameraId);
         float[] gainsRange = new float[2];
+        gainsInput.setInputType(InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_CLASS_NUMBER);
         gainsRange[0] = 1.0f;
         gainsRange[1] = (float) isoRange[1]/isoRange[0];
         float currentGains = pref.getFloat(SettingsManager.KEY_MANUAL_GAINS_VALUE, -1.0f);
