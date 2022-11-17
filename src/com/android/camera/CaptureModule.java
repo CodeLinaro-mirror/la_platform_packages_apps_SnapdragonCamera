@@ -4106,7 +4106,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mSceneCameraIds.get(CameraMode.RTB.ordinal()).rearCameraId = camereIdIndex;
                 }
                 if (physical_ids != null && physical_ids.size() == 0 &&
-                        facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        facing == CameraCharacteristics.LENS_FACING_FRONT && CaptureModule.FRONT_ID != -1) {
                     CaptureModule.FRONT_ID = camereIdIndex;
                     Log.d(TAG,"FRONT_ID:" + camereIdIndex);
                     mSceneCameraIds.get(CameraMode.DEFAULT.ordinal()).frontCameraId = camereIdIndex;
