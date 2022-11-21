@@ -9081,6 +9081,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             List<CaptureRequest> slowMoRequests = null;
             try {
                 setUpVideoCaptureRequestBuilder(cameraId);
+                if (mPaused || mCurrentSession == null || mCameraDevice[cameraId] == null) {
+                    return;
+                }
+                applyAICameraStrength();
                 if (isHighSpeedRateCapture()) {
                     slowMoRequests = mSuperSlomoCapture ?
                             createSSMBatchRequest(mVideoRecordRequestBuilder) :
@@ -9847,7 +9851,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyBEStats(builder);
         applyPdnetToggle(builder);
         applyAWBCCTAndAgain(builder);
-        applyAICameraStrength();
         applyAIBlurConfigs(builder);
         applyExposure(builder);
     }
@@ -13045,8 +13048,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             try {
                 mPreviewRequestBuilder[getMainCameraId()].set(CaptureModule.AICameraStrength, mAIStrengthValue);
                 mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
-            } catch (CameraAccessException| IllegalArgumentException e) {
-                Log.e(TAG, "Camera Access Exception in applyAICameraStrength, apply failed");
+            } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException e) {
+                Log.e(TAG, "Camera Access Exception in applyAICameraStrength, apply failed e="+e);
             }
         }
     }
