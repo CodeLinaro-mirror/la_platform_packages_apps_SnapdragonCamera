@@ -13220,13 +13220,17 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyAIBlurConfigs(CaptureRequest.Builder builder){
-        if (!mIsRecordingVideo && !mIsPreviewingVideo || mCurrentSessionClosed) return;
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_LUMA, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAU, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAV, builder);
+        if (!mIsRecordingVideo && !mIsPreviewingVideo || builder == null) return;
+        String mode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        boolean isBokehMode = mode != null && mode.equals("rtb");
+        if(isBokehMode) {
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_LUMA, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAU, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAV, builder);
+        }
     }
 
     private void applyAIBlurConfig(String key, CaptureRequest.Builder builder){
