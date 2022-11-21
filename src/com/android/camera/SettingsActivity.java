@@ -2001,7 +2001,7 @@ public class SettingsActivity extends PreferenceActivity {
             return;
         }
         ListPreference eisPref = (ListPreference)findPreference(SettingsManager.KEY_EIS_VALUE);
-        if(mSettingsManager.isAICameraOn()) {
+        if(mSettingsManager.isAIBokehMode()) {
             if (eisPref != null && eisPref.getValue() != null && eisPref.getValue().equals("disable")) {
                 pref.setValue("off");
                 pref.setEnabled(false);
@@ -2358,7 +2358,7 @@ public class SettingsActivity extends PreferenceActivity {
                 eisPref.setEnabled(true);
             }
         }
-        if (mSettingsManager.isAICameraOn()) {
+        if (mSettingsManager.isAIBokehMode()) {
             //remove v2 case
             List<String> list = new ArrayList<String>(Arrays.asList("disable", "V3"));
             List<String> values = new ArrayList<String>(Arrays.asList("disable", "V3"));
