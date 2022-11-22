@@ -9306,6 +9306,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (CameraAccessException e) {
                 Log.e(TAG, " error:", e);
             }
+        } else {
+            warningToast("Session combination is not supported.");
         }
     }
 
