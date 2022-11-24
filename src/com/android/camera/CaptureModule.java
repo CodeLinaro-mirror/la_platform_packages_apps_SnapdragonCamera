@@ -828,6 +828,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private StateNNTrackFocusRenderer mStateNNFocusRenderer;
     private AFView mAFRenderer;
     private boolean mIsDepthFocus = false;
+    private boolean mLastIsDepthFocus = false;
     private boolean[] mTakingPicture = new boolean[MAX_NUM_CAM];
     private boolean mIsLongExpTmCp = false;
     private long maxExpTime = 100000000;
@@ -14013,7 +14014,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         final Integer afState = resultAFState;
         // Report state change when AF state has changed.
         Log.d(TAG,BIG_LOG,"resultAFState="+resultAFState+",mLastResultAFState="+mLastResultAFState+",mIsDepthFocus="+mIsDepthFocus);
-        if ((resultAFState != mLastResultAFState || mUI.isChangeFocus())&& mFocusStateListener != null) {
+        if ((resultAFState != mLastResultAFState
+                || mUI.isChangeFocus()
+                || (!mIsDepthFocus && mLastIsDepthFocus))
+                && mFocusStateListener != null) {
             mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -14022,6 +14026,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             });
         }
         mLastResultAFState = resultAFState;
+        mLastIsDepthFocus = mIsDepthFocus;
     }
 
     private void setDisplayOrientation() {
