@@ -339,7 +339,7 @@ public class CameraRender implements TextureView.SurfaceTextureListener {
             mCameraTexture.setOnFrameAvailableListener(this);
             if (DEBUG_DISPLAY_REGION) {
                 mDisplayRegionRect = new Basic2d(new BasicDrawable(BasicDrawable.SHAPE.BASIC_RECTANGLE));
-                mDisplayRegionRect.setColor(0.9f, 1.0f, 1.0f);
+                mDisplayRegionRect.setColor(1.0f, 0.1f, 0.1f);
                 mDisplayRegionProgram = new FlatShadedProgram();
             }
         }

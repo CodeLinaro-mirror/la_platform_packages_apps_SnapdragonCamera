@@ -22,7 +22,17 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="10dp"
+        android:textSize="25dp"
         android:text="Focus Assist"/>
+
+    <TextView
+        android:id="@+id/focus_assist_help_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="50dp"
+        android:textSize="15dp"
+        android:text="Check if Focus is Accurate and Click Again if Needed"/>
 
     <Button
         android:id="@+id/focus_assist_close_button"

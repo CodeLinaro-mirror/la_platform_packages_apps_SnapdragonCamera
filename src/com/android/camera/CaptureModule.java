@@ -8125,6 +8125,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private boolean mIsInFocusAssistMode = false;
+    private boolean mWasInFocusAssistMode = false;
 
     public void onFocusAssistStartPointChange(float xs, float ys) {
         mCameraRender.setCropRegionStartPoint(xs, ys);
@@ -8157,6 +8158,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
         mIsInFocusAssistMode = true;
+        mWasInFocusAssistMode = false;
     }
 
     public void onFocusAssistModeStop() {
@@ -8165,6 +8167,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         mUI.hideFocusAssistView();
+        mUI.hideFocusAssistText();
         int id = mCurrentSceneMode.getCurrentId();
         if (mFASurface != null && mPreviewSurface != null && mPreviewRequestBuilder[id] != null) {
             mPreviewRequestBuilder[id].addTarget(mPreviewSurface);
@@ -8177,6 +8180,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
         mIsInFocusAssistMode = false;
+        mWasInFocusAssistMode = true;
     }
 
     public void onFocusAssistRefocus(float x, float y) {
@@ -8192,6 +8196,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed) {
             return;
         }
+        mUI.hideFocusAssistText();
         Log.d(TAG, "onSingleTapUp " + x + " " + y);
         if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE) {
             mLockAFAE = LOCK_AF_AE_STATE_NONE;
@@ -8221,7 +8226,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         y = newXY[1];
         mInTAF = true;
         mUI.onFocusStarted();
-        triggerFocusAtPoint(x, y, getMainCameraId());
+        if (mIsInFocusAssistMode)
+            triggerFocusAtPointFA(x, y, getMainCameraId());
+        else
+            triggerFocusAtPoint(x, y, getMainCameraId());
 
     }
 
@@ -14038,6 +14046,33 @@ public class CaptureModule implements CameraModule, PhotoController,
         autoFocusTrigger(id);
     }
 
+    public void triggerFocusAtPointFA(float x, float y, int id) {
+        Log.d(TAG, "triggerFocusAtPoint " + x + " " + y + " " + id);
+        if (mCropRegion[id] == null) {
+            Log.d(TAG, "crop region is null at " + id);
+            mInTAF = false;
+            return;
+        }
+        Point p = mUI.getSurfaceViewSize();
+        int width = p.x;
+        int height = p.y;
+        if (width * mCropRegion[id].width() != height * mCropRegion[id].height()) {
+            Point displayPoint = mUI.getDisplaySize();
+            if (width >= displayPoint.x) {
+                height = width * mCropRegion[id].width() / mCropRegion[id].height();
+            }
+            if (height >= displayPoint.y) {
+                width = height * mCropRegion[id].height() / mCropRegion[id].width();
+            }
+        }
+        x += (width - p.x) / 2;
+        y += (height - p.y) / 2;
+        mAFRegions[id] = afaeRectangle(x, y, width, height, 0.5f, mCropRegion[id], id);
+        mAERegions[id] = afaeRectangle(x, y, width, height, 1.5f, mCropRegion[id], id);
+        mCameraHandler.removeMessages(CANCEL_TOUCH_FOCUS, mCameraId[id]);
+        autoFocusTrigger(id);
+    }
+
     private void cancelTouchFocus(int id) {
         if(mPaused)
             return;
@@ -14156,7 +14191,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mLastResultAFState = resultAFState;
         mLastIsDepthFocus = mIsDepthFocus;
-        if (resultAFState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED) {
+        if (resultAFState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED && !mWasInFocusAssistMode) {
             checkTouchFocusAssistEnable(result);
         }
     }
@@ -14626,6 +14661,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         mCameraHandler.sendMessageDelayed(message, CANCEL_TOUCH_FOCUS_DELAY);
+        mWasInFocusAssistMode = false;
     }
 
     private class MpoSaveHandler extends Handler {

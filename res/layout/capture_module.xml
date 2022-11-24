@@ -598,6 +598,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Focus Assist"
+        android:textColor="@android:color/black"
+        android:textSize="18dp"
+        android:background="@android:color/holo_blue_light"
         android:visibility="gone"
         android:clickable="true"/>
 

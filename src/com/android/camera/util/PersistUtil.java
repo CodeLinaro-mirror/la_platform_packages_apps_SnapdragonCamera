@@ -93,7 +93,7 @@ public class PersistUtil {
     private static final boolean PERSIST_CAMERA_ZSL =
             getBoolean("persist.sys.camera.zsl.disabled", false);
     private static final int PERSIST_CAMERA_CANCEL_TOUCHFOCUS_DELAY =
-            getInt("persist.sys.camera.focus_delay", 5000);
+            getInt("persist.sys.camera.focus_delay", 12000);
     private static final int PERSIST_CAMERA_DEBUG =
             getInt("persist.sys.camera.debug", 0);
     private static final boolean PERSIST_CAMERA_FD_DEBUG =
@@ -520,7 +520,7 @@ public class PersistUtil {
     }
 
     private static final int PERSIST_FOCUS_ASSIST_MODE_TIMEOUT =
-            getInt("persist.sys.camera.focus_assist_mode.timeout", 10000);
+            getInt("persist.sys.camera.focus_assist_mode.timeout", 8000);
 
     public static int getFocusAssistModeTimeout() {
         return PERSIST_FOCUS_ASSIST_MODE_TIMEOUT;
