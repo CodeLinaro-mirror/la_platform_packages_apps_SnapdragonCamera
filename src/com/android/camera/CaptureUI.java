@@ -1563,9 +1563,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public boolean getZoomFixedSupport() {
-        return mZoomRatioSupport && CaptureModule.MCXMODE &&
-                (mModule.getCurrenCameraMode() != CaptureModule.CameraMode.HFR ||
-                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR && !mModule.isHighSpeedRateCapture());
+        return mZoomRatioSupport && CaptureModule.MCXMODE;
     }
 
     private boolean isRTBModeInSelectMode() {
