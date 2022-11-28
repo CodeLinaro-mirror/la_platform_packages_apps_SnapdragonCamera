@@ -1448,6 +1448,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
                         videoAddList.add(SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
+                        videoAddList.add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                     } else {
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
@@ -1627,6 +1628,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if(mSettingsManager.isMcxQcfaMode() && mSettingsManager.getQuadBayerPhysicalList() != null){
                     maxSize = mSettingsManager.getQuadBayerPhysicalList().size();
                 }
+                add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 for(String id : SettingsManager.KEY_PHYSICAL_SIZE){
                     if(i < maxSize) {
                         add(id);
@@ -1644,6 +1646,7 @@ public class SettingsActivity extends PreferenceActivity {
                 for(String id : SettingsManager.KEY_PHYSICAL_VIDEO_SIZE){
                     add(id);
                 }
+                add(SettingsManager.KEY_OVERRIDE_RESOURCE);
             }
         };
 
@@ -1656,6 +1659,7 @@ public class SettingsActivity extends PreferenceActivity {
                 addDeveloperOptions(developer,multiCameraPhotoList);
             } else {
                 multiCameraPhotoList.remove(SettingsManager.KEY_ZSL);
+                multiCameraPhotoList.remove(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 for (String removeKey : multiCameraPhotoList){
                     removePreference(removeKey,developer);
                 }

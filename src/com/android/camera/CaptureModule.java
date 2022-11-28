@@ -6901,6 +6901,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyAICameraParam(builder);
         applyAICameraBlurModeParam(builder);
         applyXCFAOptimization(builder);
+        applyOverrideResuorceParam(builder);
     }
 
     private void applyAICameraParam(CaptureRequest.Builder builder){
@@ -6909,6 +6910,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.d(TAG,"set applyeAiCameraTag: " + value);
             VendorTagUtil.setAICamera(builder, Integer.parseInt(value));
         }
+    }
+
+    private void applyOverrideResuorceParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
+        Log.i(TAG,"applyOverrideResuorceParam, value:" + value);
+        VendorTagUtil.enableOverrideResuorce(builder, (byte)(value != null && value.equals("on") ? 0x01 : 0x00));
     }
 
     private void applyAICameraBlurModeParam(CaptureRequest.Builder builder){
@@ -9328,7 +9335,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                     new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
             mCreateSessionLatency = System.currentTimeMillis();
-            mCameraDevice[cameraId].createCaptureSession(sessionConfig);
+            String overrideResource = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
+            boolean supported = true;
+            if(overrideResource == null || overrideResource.equals("off")) {
+                supported = mCameraDevice[cameraId].isSessionConfigurationSupported(sessionConfig);
+            }
+            if(supported) {
+                mCameraDevice[cameraId].createCaptureSession(sessionConfig);
+            }else{
+                warningToast("Stream combination is not supported.");
+            }
         } catch (Exception e) {
             Log.e(TAG,e);
         }
@@ -9359,15 +9375,19 @@ public class CaptureModule implements CameraModule, PhotoController,
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
         sessionConfig.setSessionParameters(initialRequest.build());
-        boolean supported = false;
+        boolean supported = true;
+        String overrideResource = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
-        try{
-            supported = camera.isSessionConfigurationSupported(sessionConfig);
-            Log.i(TAG, "  result :" + supported);
-        } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
-            Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error ="+ e);
+        if(overrideResource == null || overrideResource.equals("off")){
+            try {
+                supported = camera.isSessionConfigurationSupported(sessionConfig);
+                Log.i(TAG, "  result :" + supported);
+            } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error");
+                e.printStackTrace();
+            }
         }
         if(supported) {
             //only create session when configure is supported
@@ -9379,7 +9399,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.e(TAG, " error:", e);
             }
         } else {
-            warningToast("Session combination is not supported.");
+            warningToast("Stream combination is not supported.");
         }
     }
 

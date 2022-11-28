@@ -329,6 +329,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_CAPTURE_PROFILE= "pref_camera2_captrue_profile_key";
 
     public static final String KEY_TORCH_HDR_VALUE= "pref_camera2_torch_hdr_key";
+    public static final String KEY_OVERRIDE_RESOURCE = "pref_camera2_override_resource_key";
     private static final String TAG = "SnapCam_SettingsManager";
 
     private static SettingsManager sInstance;
