@@ -1722,6 +1722,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_LOWLIGHT_BOOST);
                         videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
                         videoAddList.add(SettingsManager.KEY_C2PA);
+                        videoAddList.add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                     } else {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
@@ -2013,9 +2014,11 @@ public class SettingsActivity extends PreferenceActivity {
                 multiCameraPhotoList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                 multiCameraPhotoList.add(SettingsManager.KEY_PHOTO_EIS_VALUE);
                 multiCameraPhotoList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
+                multiCameraPhotoList.add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 addDeveloperOptions(developer,multiCameraPhotoList);
             } else {
                 multiCameraPhotoList.remove(SettingsManager.KEY_ZSL);
+                multiCameraPhotoList.remove(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 for (String removeKey : multiCameraPhotoList){
                     removePreference(removeKey,developer);
                 }
@@ -2025,6 +2028,7 @@ public class SettingsActivity extends PreferenceActivity {
                 multiCameraVideoList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                 multiCameraVideoList.add(SettingsManager.KEY_EIS_VALUE);
                 multiCameraVideoList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
+                multiCameraVideoList.add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 addDeveloperOptions(developer,multiCameraVideoList);
             } else {
                 for (String removeKey : multiCameraVideoList){

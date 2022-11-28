@@ -8044,6 +8044,7 @@ private boolean isDevOptionSetting(){
         applyDepthMode(builder);
         applyITofTuningSet(builder);
         applyDcgModes(builder);
+        applyOverrideResuorceParam(builder);
         setSessionParamFromFile(builder);
     }
 
@@ -8109,6 +8110,12 @@ private boolean isDevOptionSetting(){
         int value = mSettingsManager.getDcgMode();
         Log.d(TAG,"set applyDcgModes: " + value);
         VendorTagUtil.enableDcgMode(builder, value);
+    }
+
+    private void applyOverrideResuorceParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
+        Log.i(TAG,"applyOverrideResuorceParam, value:" + value);
+        VendorTagUtil.enableOverrideResuorce(builder, (byte)(value != null && value.equals("on") ? 0x01 : 0x00));
     }
 
     private void applyeHardSwitchParam(CaptureRequest.Builder builder){
@@ -11468,7 +11475,7 @@ private boolean isDevOptionSetting(){
                 if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession -- call createCaptureSession");
                 mCameraDevice[cameraId].createCaptureSession(sessionConfig);
                 if (TRACE_DEBUG) Trace.endSection();
-            }else{
+            }else {
                 setCameraModeSwitcherAllowed(true);
             }
         } catch (Exception e) {
@@ -11532,7 +11539,7 @@ private boolean isDevOptionSetting(){
             if (TRACE_DEBUG) Trace.endSection();
         }
 
-      boolean sessionSupported = checkSessionSupported(sessionConfig);
+        boolean sessionSupported = checkSessionSupported(sessionConfig);
 
         if(sessionSupported) {
             try {
@@ -11549,6 +11556,7 @@ private boolean isDevOptionSetting(){
     private boolean checkSessionSupported(SessionConfiguration sessionConfig) {
         String cameraId = String.valueOf(getMainCameraId());
         boolean session_supported = true;
+        String overrideResource = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
         CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
         try {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
@@ -11565,7 +11573,9 @@ private boolean isDevOptionSetting(){
         try {
             CameraDeviceSetup cameraDeviceSetup = manager.getCameraDeviceSetup(cameraId);
             if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession -- isSessionConfigurationSupported");
-            session_supported = cameraDeviceSetup.isSessionConfigurationSupported(sessionConfig);
+            if(overrideResource == null || overrideResource.equals("off")) {
+                session_supported = cameraDeviceSetup.isSessionConfigurationSupported(sessionConfig);
+            }
             if (TRACE_DEBUG) Trace.endSection();
             Log.i(TAG, " isSessionConfigurationSupported :" + session_supported + ",cameraid is " + cameraId);
         } catch (CameraAccessException | IllegalArgumentException e) {

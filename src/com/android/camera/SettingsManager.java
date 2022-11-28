@@ -384,6 +384,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_DCG_BIT_TAG = "pref_camera2_dcg_bit_tag_key";
     public static final String KEY_C2PA = "pref_camera2_c2pa_key";
 
+    public static final String KEY_OVERRIDE_RESOURCE = "pref_camera2_override_resource_key";
     private static final String TAG = "SnapCam_SettingsManager";
     private static final boolean TRACE_DEBUG = PersistUtil.getTraceDebug();
 
