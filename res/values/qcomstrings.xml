@@ -1718,6 +1718,10 @@
     <string name="pref_camera2_torch_hdr_entry_value_enable" translatable="false">1</string>
     <string name="pref_camera2_torch_hdr_entry_value_disable" translatable="false">0</string>
 
+    <!-- OverrideResourceCostValidation  -->
+    <string name="pref_camera2_override_resource_title" translatable="true">Override Resource</string>
+    <string name="pref_camera2_override_resource_default" translatable="false">off</string>
+
     <!-- ML Video -->
     <string name="pref_camera2_ml_video_title" translatable="true">VideoRetouch</string>
     <string name="pref_camera2_ml_video_default" translatable="false">off</string>

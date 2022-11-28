@@ -1356,6 +1356,7 @@ public class SettingsActivity extends PreferenceActivity {
                             videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         }
                         videoAddList.add(SettingsManager.KEY_MANUAL_WB);
+                        videoAddList.add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                     } else {
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
@@ -1485,6 +1486,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_PHYSICAL_HDR);
                 add(SettingsManager.KEY_PHYSICAL_MFNR);
                 add(SettingsManager.KEY_ZSL);
+                add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 for(String id : SettingsManager.KEY_PHYSICAL_SIZE){
                     add(id);
                 }
@@ -1498,6 +1500,7 @@ public class SettingsActivity extends PreferenceActivity {
                 for(String id : SettingsManager.KEY_PHYSICAL_VIDEO_SIZE){
                     add(id);
                 }
+                add(SettingsManager.KEY_OVERRIDE_RESOURCE);
             }
         };
 
@@ -1507,6 +1510,7 @@ public class SettingsActivity extends PreferenceActivity {
                 addDeveloperOptions(developer,multiCameraPhotoList);
             } else {
                 multiCameraPhotoList.remove(SettingsManager.KEY_ZSL);
+                multiCameraPhotoList.remove(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 for (String removeKey : multiCameraPhotoList){
                     removePreference(removeKey,developer);
                 }
