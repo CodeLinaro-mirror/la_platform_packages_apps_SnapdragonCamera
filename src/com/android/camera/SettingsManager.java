@@ -4004,11 +4004,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return ret;
     }
-    public boolean isSupportedHdr(){
+    public boolean isSupportedMixHdr(){
         if(((getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) != null && getValue(SettingsManager.KEY_RAW_FORMAT_TYPE).equals("0")) ||
                 getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) == null) && (((getValue(SettingsManager.KEY_INSENSOR_ZOOM) != null &&
-                getValue(SettingsManager.KEY_INSENSOR_ZOOM).equals("0")) || getValue(SettingsManager.KEY_INSENSOR_ZOOM) == null)) &&
-                getVideoFPS() < 60 && !getQuadBayerSensorPrefEnabled()){
+                getValue(SettingsManager.KEY_INSENSOR_ZOOM).equals("0")) || getValue(SettingsManager.KEY_INSENSOR_ZOOM) == null))
+                && !getQuadBayerSensorPrefEnabled()){
              return true;
         }
         return false;
@@ -4035,7 +4035,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         if (isAutoHDRSupported()){
-            if(!isAIBokehMode()){
+            if(isSupportedMixHdr() && !isAIBokehMode()){
                 ret.add("auto");
             }
         }
