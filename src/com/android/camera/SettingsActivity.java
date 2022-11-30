@@ -2413,20 +2413,22 @@ public class SettingsActivity extends PreferenceActivity {
                     pref.setEnabled(false);
                     return;
                 } else {
-                    pref.setValueIndex(1);
-                    pref.setEnabled(false);
+                    pref.setEnabled(true);
                     return;
                 }
             }
         } else {
             String value = mSettingsManager.getValue(SettingsManager.KEY_PHOTO_EIS_VALUE);
             if (value != null) {
-                if (!value.equals("V2")) {
-                    pref.setValueIndex(0);
+                if (value.equals("V2")) {
+                    pref.setValueIndex(1);
                     pref.setEnabled(false);
                     return;
+                } else if ("dynamic".equals(value)) {
+                    pref.setEnabled(true);
+                    return;
                 } else {
-                    pref.setValueIndex(1);
+                    pref.setValueIndex(0);
                     pref.setEnabled(false);
                     return;
                 }

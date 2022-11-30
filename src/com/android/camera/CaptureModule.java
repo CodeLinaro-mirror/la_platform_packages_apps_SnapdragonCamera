@@ -309,9 +309,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     /** Add for EIS and FOVC Configuration */
     private int mStreamConfigOptMode = 0;
-    private static final int STREAM_CONFIG_MODE_QTIEIS_REALTIME = 0xF004;
-    private static final int STREAM_CONFIG_MODE_QTIEIS_LOOKAHEAD = 0xF008;
-    private static final int STREAM_CONFIG_MODE_QTIEIS_DYNAMIC_MARGIN = 0xF100;
     private static final int STREAM_CONFIG_MODE_FOVC = 0xF010;
     private static final int STREAM_CONFIG_MODE_ZZHDR  = 0xF002;
     private static final int STREAM_CONFIG_MODE_FS2    =  0xF040;
@@ -6969,7 +6966,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyFaceDetection(builder);
         applyColorEffect(builder);
         applyVideoFlash(builder, id);
-        applyVideoEIS(builder);
         applyExposure(builder);
         applyAICameraSnapshot(builder);
     }
@@ -7019,23 +7015,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyVideoEncoderProfile(builder);
             }
         }
-        if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
-                mCurrentSceneMode.mode == CameraMode.CINEMATIC ||
-                mCurrentSceneMode.mode == CameraMode.DEFAULT) {
-            if (!mSettingsManager.isMultiCameraEnabled()) {
-                applyVSR(builder);
-            }
-            applyPreviewStabilization(builder);
-        }
         if (mCurrentSceneMode.mode == CameraMode.DEFAULT
                 || mCurrentSceneMode.mode == CameraMode.VIDEO
                 || mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             if (!mSettingsManager.isMultiCameraEnabled()) {
                 applyVIULL(builder);
                 applyVSR(builder);
-                applyPreviewStabilization(builder);
                 applyEISHorizonLevelEnable(builder);
             }
+            applyEIS(builder);
         }
         if (mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             applyEnableCinematic(builder);
@@ -7125,43 +7113,38 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyCommonSettings(CaptureRequest.Builder builder, int id) {
-        if (mSettingsManager.isMultiCameraEnabled()) {
-            applyPhotoEIS(builder);
+        builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
+        builder.set(CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
+        applyAfModes(builder);
+        applyFaceDetection(builder);
+        applyTouchTrackFocus(builder);
+        applyWhiteBalance(builder);
+        applyExposure(builder);
+        applyIsoAndExposureTime(builder);
+        applyColorEffect(builder);
+        applySceneMode(builder);
+        Log.d(TAG, " applyCommonSettings ZoomFixedSupport: " + mUI.getZoomFixedSupport() + ", mZoomValue :" + mZoomValue);
+        if (mUI.getZoomFixedSupport()) {
+            applyZoomRatio(builder, mZoomValue, id);
         } else {
-            builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
-            builder.set(CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
-            applyAfModes(builder);
-            applyFaceDetection(builder);
-            applyTouchTrackFocus(builder);
-            applyWhiteBalance(builder);
-            applyExposure(builder);
-            applyIsoAndExposureTime(builder);
-            applyColorEffect(builder);
-            applySceneMode(builder);
-            Log.d(TAG, " applyCommonSettings ZoomFixedSupport: " + mUI.getZoomFixedSupport() + ", mZoomValue :" + mZoomValue);
-            if (mUI.getZoomFixedSupport()) {
-                applyZoomRatio(builder, mZoomValue, id);
-            } else {
-                applyZoom(builder, id);
-            }
-            applyInstantAEC(builder);
-            applySaturationLevel(builder);
-            applyAntiBandingLevel(builder);
-            applySharpnessControlModes(builder);
-            applyExposureMeteringModes(builder);
-            applyHistogram(builder);
-            applyAWBCCTAndAgain(builder);
-            applyBGStats(builder);
-            applyBEStats(builder);
-            applyWbColorTemperature(builder);
-            applyToneMapping(builder);
-            applyLivePreview(builder);
-            applyPdnetToggle(builder);
-            applyPhotoEIS(builder);
-            applyAICameraStrength();
-            applyTargetZoom(builder, 0f);
-            applyInStantZoom(builder);
+            applyZoom(builder, id);
         }
+        applyInstantAEC(builder);
+        applySaturationLevel(builder);
+        applyAntiBandingLevel(builder);
+        applySharpnessControlModes(builder);
+        applyExposureMeteringModes(builder);
+        applyHistogram(builder);
+        applyAWBCCTAndAgain(builder);
+        applyBGStats(builder);
+        applyBEStats(builder);
+        applyWbColorTemperature(builder);
+        applyToneMapping(builder);
+        applyLivePreview(builder);
+        applyPdnetToggle(builder);
+        applyAICameraStrength();
+        applyTargetZoom(builder, 0f);
+        applyInStantZoom(builder);
     }
 
     /**
@@ -9563,16 +9546,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 opMode |= STREAM_CONFIG_MODE_FS2;
             }
         }
-        String value = mSettingsManager.getValue(SettingsManager.KEY_PHOTO_EIS_VALUE);
 
-        mStreamConfigOptMode = 0;
-        if (value != null) {
-            if (value.equals("V2")) {
-                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
-            } else if (value.equals("dynamic")) {
-                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_DYNAMIC_MARGIN ;
-            }
-        }
         Log.i(TAG, "  opMode: " + opMode + ",mStreamConfigOptMode: " + mStreamConfigOptMode);
         createCaptureSessionWithSessionConfiguration(mCameraDevice[cameraId], opMode | mStreamConfigOptMode, outConfigurations, inputConfig, listener, handler, initialRequest);
     }
@@ -10170,7 +10144,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyVideoFlash(mVideoRecordRequestBuilder, cameraId);
             applyFaceDetection(mVideoRecordRequestBuilder);
             applyZoom(mVideoRecordRequestBuilder, cameraId);
-            applyVideoEIS(mVideoRecordRequestBuilder);
             applyVideoHDR(mVideoRecordRequestBuilder);
             applyTouchTrackFocus(mVideoRecordRequestBuilder);
             applyToneMapping(mVideoRecordRequestBuilder);
@@ -10244,38 +10217,33 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyVideoCommentSettings(CaptureRequest.Builder builder, int cameraId) {
-        if (mSettingsManager.isMultiCameraEnabled()) {
-            applyVideoEIS(builder);
-        } else {
-            if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
-                builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
-                builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-            }else{
-                lockAfAeForRequestBuilder(builder, cameraId);
-            }
-            applyAntiBandingLevel(builder);
-            applyNoiseReduction(builder);
-            applyColorEffect(builder);
-            applyVideoFlash(builder, cameraId);
-            applyFaceDetection(builder);
-            if (mUI.getZoomFixedSupport()) {
-                applyZoomRatio(builder, mZoomValue, cameraId);
-            } else {
-                applyZoom(builder, cameraId);
-            }
-            applyVideoEIS(builder);
-            applyVideoHDR(builder);
-            applyTouchTrackFocus(builder);
-            applyToneMapping(builder);
-            applyHistogram(builder);
-            applyBGStats(builder);
-            applyBEStats(builder);
-            applyPdnetToggle(builder);
-            applyAWBCCTAndAgain(builder);
-            applyAIBlurConfigs(builder);
-            applyExposure(builder);
-            applyInStantZoom(builder);
+        if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
+            builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
+            builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+        }else{
+            lockAfAeForRequestBuilder(builder, cameraId);
         }
+        applyAntiBandingLevel(builder);
+        applyNoiseReduction(builder);
+        applyColorEffect(builder);
+        applyVideoFlash(builder, cameraId);
+        applyFaceDetection(builder);
+        if (mUI.getZoomFixedSupport()) {
+            applyZoomRatio(builder, mZoomValue, cameraId);
+        } else {
+            applyZoom(builder, cameraId);
+        }
+        applyVideoHDR(builder);
+        applyTouchTrackFocus(builder);
+        applyToneMapping(builder);
+        applyHistogram(builder);
+        applyBGStats(builder);
+        applyBEStats(builder);
+        applyPdnetToggle(builder);
+        applyAWBCCTAndAgain(builder);
+        applyAIBlurConfigs(builder);
+        applyExposure(builder);
+        applyInStantZoom(builder);
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
@@ -12681,7 +12649,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         return intValue;
     }
 
-    private void applyPreviewStabilization(CaptureRequest.Builder request) {
+    private void applyEIS(CaptureRequest.Builder request) {
         String key = SettingsManager.KEY_PHOTO_EIS_VALUE;
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
@@ -12689,102 +12657,39 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         String value = mSettingsManager.getValue(key);
 
-        Log.d(TAG, "applyPreviewStabilization EISV select: " + value);
+        Log.d(TAG,  "applyEIS key: " + key + ", value: " + value);
         boolean previewStabilizationOn = false;
         if (value != null) {
-            if (value.equals("V2")) {
+            if (value.equals("V2") || value.equals("dynamic")) {
                 previewStabilizationOn = "enable".equals(mSettingsManager.
-                        getValue(SettingsManager.KEY_PREVIEW_STABILIZATION))
-                        && mSettingsManager.isVideoPreviewStabilizationSupported();
-                if (previewStabilizationOn) {
-                    try {
-                        Log.d(TAG,  "applyPreviewStabilization PREVIEW_STABILIZATION");
-                        request.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-                                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION);
-                    } catch (IllegalArgumentException e) {
-                        Log.w(TAG, e.toString());
-                    }
+                        getValue(SettingsManager.KEY_PREVIEW_STABILIZATION));
+                if (mCurrentSceneMode.mode == CameraMode.VIDEO) {
+                    previewStabilizationOn &= mSettingsManager.isVideoPreviewStabilizationSupported();
                 }
             }
             if (!previewStabilizationOn) {
                 try {
                     applyVideoStabilization(request, value.equals("disable"));
-                } catch (IllegalArgumentException e) {
-                    Log.w(TAG,EXCEPTION_LOG, e.toString());
-                }
-            }
-        }
-    }
-
-    private void applyVideoEIS(CaptureRequest.Builder request) {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
-
-        Log.d(TAG,  "applyVideoEIS EISV select: " + value);
-        mStreamConfigOptMode = 0;
-        boolean previewStabilizationOn = false;
-        if (value != null) {
-            if (value.equals("V2")) {
-                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
-                previewStabilizationOn = "enable".equals(mSettingsManager.
-                        getValue(SettingsManager.KEY_PREVIEW_STABILIZATION))
-                         && mSettingsManager.isVideoPreviewStabilizationSupported();
-                if (previewStabilizationOn) {
-                    try {
-                        Log.d(TAG,  "applyVideoEIS PREVIEW_STABILIZATION");
-                        request.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-                                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION);
-                        request.set(CaptureModule.eis_mode, (byte) 0x01);
-                    } catch (IllegalArgumentException e) {
-                       Log.w(TAG,EXCEPTION_LOG,e.toString());
+                    if (value.equals("V2")) {
+                        VendorTagUtil.setEISModeForSessionParameter(request, 1);// EISModeRealTime == 1
+                    } else if (value.equals("V3")) {
+                        VendorTagUtil.setEISModeForSessionParameter(request, 0);// EISModeLookAhead == 0
+                    } else if (value.equals("dynamic")) {
+                        VendorTagUtil.setEISModeForSessionParameter(request, 2);// EISModeDynamicMargin == 2
                     }
-                }
-            } else if (value.equals("V3")) {
-                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_LOOKAHEAD;
-            }
-            if (!previewStabilizationOn) {
-                byte byteValue = (byte) (value.equals("disable") ? 0x00 : 0x01);
-                try {
-                    applyVideoStabilization(request, value.equals("disable"));
-                    request.set(CaptureModule.eis_mode, byteValue);
                 } catch (IllegalArgumentException e) {
-                    Log.w(TAG,EXCEPTION_LOG,e.toString());
+                    Log.w(TAG, EXCEPTION_LOG, e.toString());
                 }
-            }
-        }
-    }
-
-    private void applyPhotoEIS(CaptureRequest.Builder request) {
-        if (!mSettingsManager.isDeveloperEnabled()) {
-            return;//don't apply if not in dev mode
-        }
-        String value = mSettingsManager.getValue(SettingsManager.KEY_PHOTO_EIS_VALUE);
-
-        Log.d(TAG, "applyPhotoEIS EISV select: " + value);
-        mStreamConfigOptMode = 0;
-        boolean previewStabilizationOn = false;
-        if (value != null) {
-            if (value.equals("V2")) {
-                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
-                previewStabilizationOn = "enable".equals(mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_STABILIZATION));
-                if (previewStabilizationOn) {
-                    try {
-                        Log.d(TAG,  "applyPhotoEIS PREVIEW_STABILIZATION");
-                        request.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-                                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION);
-                        request.set(CaptureModule.eis_mode, (byte) 0x01);
-                    } catch (IllegalArgumentException e) {
-                        Log.w(TAG,EXCEPTION_LOG,e.toString());
+            } else {
+                try {
+                    Log.d(TAG, "applyEIS PREVIEW_STABILIZATION");
+                    request.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+                            CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION);
+                    if (value.equals("dynamic")) {
+                        VendorTagUtil.setEISModeForSessionParameter(request, 2);// EISModeDynamicMargin == 2
                     }
-                }
-            } else if (value.equals("dynamic")) {
-                mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_DYNAMIC_MARGIN;
-            }
-            if (!previewStabilizationOn) {
-                try {
-                    applyVideoStabilization(request, value.equals("disable"));
-                    request.set(CaptureModule.eis_mode, (byte) 0x00); //set EISV3Enable 0 at photo mode
                 } catch (IllegalArgumentException e) {
-                    Log.w(TAG,EXCEPTION_LOG,e.toString());
+                    Log.w(TAG, e.toString());
                 }
             }
         }
