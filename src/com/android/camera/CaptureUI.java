@@ -3381,7 +3381,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         int leftMargin = mFocusPoint.x - mPreviewHeight / 2 / 2;
         int topMargin = mFocusPoint.y - mPreviewWidth / 2 / 2;
         int[] surfaceViewLocation = new int[2];
-        mSurfaceView.getLocationInWindow(surfaceViewLocation);
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            mSurfaceView.getLocationInWindow(surfaceViewLocation);
+        } else {
+            mTextureView.getLocationInWindow(surfaceViewLocation);
+        }
         if (leftMargin < surfaceViewLocation[0]) {
             leftMargin = surfaceViewLocation[0];
         } else if (leftMargin > (mPreviewHeight / 2 + surfaceViewLocation[0])) {
@@ -3421,17 +3425,29 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         Bitmap bitmap = Bitmap.createBitmap(startBounds.width(), startBounds.height(), Bitmap.Config.ARGB_8888);
 
-        mSurfaceView.getGlobalVisibleRect(finalBounds, globalOffset);
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            mSurfaceView.getGlobalVisibleRect(finalBounds, globalOffset);
+        } else {
+            mTextureView.getGlobalVisibleRect(finalBounds, globalOffset);
+        }
+
 
         final Rect cropRect = new Rect(startBounds);
         cropRect.offset(-globalOffset.x, -globalOffset.y);
 
-        PixelCopy.request(mSurfaceView, cropRect, bitmap, copyResult -> {
-            Log.d(TAG, "PixelCopy " + copyResult);
-            if (copyResult == PixelCopy.SUCCESS) {
-                imageView.setBitmap(bitmap);
-            }
-        }, new Handler(Looper.getMainLooper()));
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            PixelCopy.request(mSurfaceView, cropRect, bitmap, copyResult -> {
+                Log.d(TAG, "PixelCopy " + copyResult);
+                if (copyResult == PixelCopy.SUCCESS) {
+                    imageView.setBitmap(bitmap);
+                }
+            }, new Handler(Looper.getMainLooper()));
+        } else {
+            Bitmap bitmap1 = mTextureView.getBitmap();
+            Bitmap bitmap2 = Bitmap.createBitmap(bitmap1,
+                    cropRect.left, cropRect.top, cropRect.width(), cropRect.height());
+            imageView.setBitmap(bitmap2);
+        }
 
         imageView.setPivotX(0.5f);
         imageView.setPivotY(0.5f);
@@ -3543,7 +3559,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         mFAImageView.getGlobalVisibleRect(finalBounds);
 
-        mSurfaceView.getGlobalVisibleRect(startBounds, globalOffset);
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            mSurfaceView.getGlobalVisibleRect(startBounds, globalOffset);
+        } else {
+            mTextureView.getGlobalVisibleRect(startBounds, globalOffset);
+        }
 
         Bitmap bitmap = Bitmap.createBitmap(startBounds.width(), startBounds.height(), Bitmap.Config.ARGB_8888);
 
@@ -3669,7 +3689,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public Point getPointInScreen(int x, int y) {
         int[] surfaceViewLocation = new int[2];
-        mSurfaceView.getLocationInWindow(surfaceViewLocation);
+        if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+            mSurfaceView.getLocationInWindow(surfaceViewLocation);
+        } else {
+            mTextureView.getLocationInWindow(surfaceViewLocation);
+        }
         int surfaceViewX = surfaceViewLocation[0];
         int surfaceViewY = surfaceViewLocation[1];
         return new Point(surfaceViewX + x, surfaceViewY + y);

@@ -3305,6 +3305,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 mPreviewOutputConfiguration = new OutputConfiguration(
                                         new android.util.Size(mPreviewSize.getWidth(), mPreviewSize.getHeight()),
                                         SurfaceHolder.class);
+                                mPreviewOutputConfiguration.enableSurfaceSharing();
+                                mFAOutputConfiguration = mPreviewOutputConfiguration;
                                 Log.v(TAG, "add mPreviewOutputConfiguration");
                                 outputConfigurations.add(mPreviewOutputConfiguration);
                             }
@@ -3375,7 +3377,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     }
 
-                    if (true) {
+                    if (CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW) {
                         for (OutputConfiguration configuration : outputConfigurations) {
                             if (surface.equals(configuration.getSurface())) {
                                 Log.d(TAG, "enable preview surface output configuration sharing");
@@ -8093,7 +8095,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void configureFASurface() {
-        if (mIsInFocusAssistMode) {
+        if (!isTouchFocusAssistSupported() || mIsInFocusAssistMode) {
             return;
         }
         Log.d(TAG, "configureFASurface");
@@ -14195,9 +14197,15 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mLastResultAFState = resultAFState;
         mLastIsDepthFocus = mIsDepthFocus;
-        if (resultAFState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED && !mWasInFocusAssistMode) {
+
+        if (resultAFState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED &&
+                !mWasInFocusAssistMode && isTouchFocusAssistSupported()) {
             checkTouchFocusAssistEnable(result);
         }
+    }
+
+    private boolean isTouchFocusAssistSupported() {
+        return (mCurrentSceneMode.mode == CameraMode.DEFAULT) && isBackCamera();
     }
 
     private void checkTouchFocusAssistEnable(CaptureResult result) {
