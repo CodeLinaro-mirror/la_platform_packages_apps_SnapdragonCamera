@@ -105,6 +105,8 @@ import java.util.Set;
 import java.lang.StringBuilder;
 import com.android.camera.util.PersistUtil;
 
+import com.android.camera.CameraActivity;
+
 
 public class SettingsManager implements ListMenu.SettingsListener {
     public static final int RESOURCE_TYPE_THUMBNAIL = 0;
@@ -877,7 +879,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return isLiveshotSizeSameAsVideoSize;
     }
 
-    private Size parseSize(String value) {
+    public Size parseSize(String value) {
         int indexX = value.indexOf('x');
         int width = Integer.parseInt(value.substring(0, indexX));
         int height = Integer.parseInt(value.substring(indexX + 1));
@@ -2724,14 +2726,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         Size[] sizes = map.getOutputSizes(ImageFormat.JPEG);
         List<String> res = new ArrayList<>();
-
         boolean isDeepportrait = getDeepportraitEnabled();
         boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
-
-        if (getQcfaPrefEnabled() && getIsSupportedQcfa(cameraId)) {
-            res.add(getSupportedQcfaDimension(cameraId));
-        }
-
         if (getQuadBayerSensorPrefEnabled()) {
             Size qcfaMaxSize = getSupportedQCFAMaxPictureSize();
             if (qcfaMaxSize != null) {

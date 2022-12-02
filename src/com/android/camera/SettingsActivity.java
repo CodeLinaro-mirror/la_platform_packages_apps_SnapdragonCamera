@@ -121,7 +121,6 @@ public class SettingsActivity extends PreferenceActivity {
     private int privateCounter = 0;
     private final int DEVELOPER_MENU_TOUCH_COUNT = 10;
     private boolean mIsSingleCameraMode = false;
-
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
@@ -250,8 +249,7 @@ public class SettingsActivity extends PreferenceActivity {
                     UpdateManualExposureSettings();
                 }
 
-                if (pref.getKey().equals(SettingsManager.KEY_QCFA)  ||
-                        pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT) ||
+                if ( pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT) ||
                         pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
@@ -264,6 +262,7 @@ public class SettingsActivity extends PreferenceActivity {
 
                 if(pref.getKey().equals(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
                     updateZslPreference();
+                    updateAIDEPreference();
                 }
 
                 if(pref.getKey().equals(SettingsManager.KEY_QUAD_BAYER_SENSOR) || pref.getKey().equals(SettingsManager.KEY_QCFA)) {
@@ -272,6 +271,11 @@ public class SettingsActivity extends PreferenceActivity {
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                     updatePreference(SettingsManager.KEY_SCENE_MODE);
                     updateZslPreference();
+                    updateLongShotPreference();
+                    updateAIDEPreference();
+                }
+                if(pref.getKey().equals(SettingsManager.KEY_PICTURE_SIZE)){
+                    updateQcfaPreference();
                     updateLongShotPreference();
                 }
 
@@ -314,6 +318,9 @@ public class SettingsActivity extends PreferenceActivity {
                         pref.getKey().equals(SettingsManager.KEY_HVX_SHDR)){
                     updateEISPreference();
                     updateHvxDependencyPref();
+                }
+                if(pref.getKey().equals(SettingsManager.KEY_AI_DENOISER)){
+                    updateQcfaPreference();
                 }
             }
         }
@@ -1659,6 +1666,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateEISPreference();
         updateT2TPreference();
         updatePictureFormatPreference();
+        updateQcfaPreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1763,9 +1771,33 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref == null) {
             return;
         }
-        if(isHwMfnrDisabled() || (mSettingsManager.isHWMFNRSupport() && !isHwMfnrDisabled() && !mSettingsManager.isAIDE2Supported())){
+        if(isHwMfnrDisabled() || (mSettingsManager.isHWMFNRSupport() && !isHwMfnrDisabled() && !mSettingsManager.isAIDE2Supported())
+        ||(mSettingsManager.getQcfaPrefEnabled() || mSettingsManager.getQuadBayerSensorPrefEnabled())){
+            pref.setEnabled(false);
+            pref.setValue("0");
+        }else{
+            pref.setEnabled(true);
+        }
+    }
+    private void updateQcfaPreference(){
+        ListPreference pref = (ListPreference)findPreference(
+                SettingsManager.KEY_QCFA);
+        String aide = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER);
+        if(pref == null){
+            return;
+        }else if(aide != null &&  !aide.equals("disable")&& Integer.parseInt(aide) == 1 ){
+            pref.setEnabled(false);
+            pref.setValue("disable");
+        }else{
+            Size pictureSize = mSettingsManager.parseSize(mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE));
+            if(pictureSize.getWidth()*pictureSize.getHeight() > 17000000){
+                pref.setValue("enable");
+            }else{
+                pref.setValue("disable");
+            }
             pref.setEnabled(false);
         }
+
     }
     private void updateVideoMFHDRPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
@@ -2044,29 +2076,29 @@ public class SettingsActivity extends PreferenceActivity {
                 SettingsManager.KEY_LONGSHOT);
         CaptureModule.CameraMode mode =
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        Size pictureSize = mSettingsManager.parseSize(mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE));
         if (longShot != null) {
-            if(isPrefEnabled(SettingsManager.KEY_BURST_LIMIT) ){
+            if (isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)) {
                 longShot.setEnabled(true);
             } else {
                 if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) ||
-                        mSettingsManager.getQcfaPrefEnabled()) {
+                        pictureSize.getWidth() * pictureSize.getHeight() >= 64000000) {
                     longShot.setChecked(false);
                     longShot.setEnabled(false);
                 } else {
                     longShot.setEnabled(true);
                 }
             }
-            if(mode == CaptureModule.CameraMode.RTB && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)){
+            if (mode == CaptureModule.CameraMode.RTB && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
                 longShot.setChecked(false);
                 longShot.setEnabled(false);
             }
-            ListPreference rawFormat = (ListPreference)findPreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
-            if(rawFormat != null) {
+            ListPreference rawFormat = (ListPreference) findPreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+            if (rawFormat != null) {
                 String value = rawFormat.getValue();
                 if (!"0".equals(value)) {
                     longShot.setChecked(false);
                     longShot.setEnabled(false);
-
                 }
             }
         }
