@@ -2925,7 +2925,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
      */
     public void enableShutter(boolean enabled) {
         if (mShutterButton != null) {
-            mShutterButton.setEnabled(enabled);
+            mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mShutterButton.setEnabled(enabled);
+                }
+            });
         }
         if(!enabled || !mModule.isLongExpTmCaptrure()) stopShutterAnim();
     }
