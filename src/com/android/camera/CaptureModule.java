@@ -2446,6 +2446,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             isFirstDefault = setUpLocalMode(i, characteristics, removeList,
                     isFirstDefault, cameraId);
         }
+        if (mCurrentSceneMode == null) {
+            int index = mIntentMode == INTENT_MODE_VIDEO ?
+                    CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
+            mCurrentModeIndex =  mNextModeIndex = index;
+            mCurrentSceneMode = mSceneCameraIds.get(index);
+        }
         for (int i = 0; i < removeList.length; i++) {
             if (!removeList[i]) {
                 continue;
@@ -4354,9 +4360,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         Log.v(TAG, " onResumeBeforeSuper facingOfIntentExtras :" + facingOfIntentExtras +
                 ", FRONT_ID :" + FRONT_ID + ", mIntentMode :" + mIntentMode);
-        if (facingOfIntentExtras != -1 && (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA  || mIntentMode == INTENT_MODE_CAPTURE)) {
+        if (facingOfIntentExtras != -1 && (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA  || mIntentMode == INTENT_MODE_CAPTURE) &&
+            !resumeFromRestartAll) {
             if (facingOfIntentExtras == CameraUtil.FACING_FRONT) {
                 facingOfIntentExtras = FRONT_ID;
+                mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "front");
+            } else {
+                mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
             }
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
         }
@@ -4371,7 +4381,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mState[i] = STATE_PREVIEW;
         }
         mLongshotActive = false;
-        if(!resumeFromRestartAll) {
+        if(!resumeFromRestartAll && !mUI.isPreviewReady()) {
             updatePreviewSurfaceReadyState(false);
         }
     }
@@ -6320,13 +6330,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             } else {
                 // is pause or stopRecord
+                // send endOfStream before stopRepeating in case of EIS V3 is enabled
+                try {
+                    mVideoRecordRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
+                } catch (IllegalArgumentException illegalArgumentException) {
+                    Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
+                }
+                Log.w(TAG, "sent org.quic.camera.recording.endOfStream");
                 if ((mMediaRecorderPausing || mStopRecPending) && (mCurrentSession != null)) {
                     mCurrentSession.stopRepeating();
-                    try {
-                        mVideoRecordRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
-                    } catch (IllegalArgumentException illegalArgumentException) {
-                        Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
-                    }
                     try {
                         if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
                             List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
@@ -6437,10 +6449,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mStopRecPending = true;
         boolean shouldAddToMediaStoreNow = false;
+
+        //send the EOS in advance
+        Log.d(TAG, "set eos before play record sound");
+        setEndOfStream(false, true);
+
         // Stop recording
         mUI.setSoundEffectsForRecording(true);
         checkAndPlayRecordSound(cameraId, false);
-        setEndOfStream(false, true);
         mFrameProcessor.setVideoOutputSurface(null);
         mFrameProcessor.onClose();
         if (mLiveShotInitHeifWriter != null) {
@@ -6595,10 +6611,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 retriever.setDataSource(mVideoFilename);
                 duration = Long.valueOf(retriever.extractMetadata(
                         MediaMetadataRetriever.METADATA_KEY_DURATION));
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "cannot access the file");
+                retriever.release();
+            } catch (Exception e) {
+                Log.e(TAG, "cannot access the file: " + e);
             }
-            retriever.release();
 
             mActivity.getMediaSaveService().addVideo(mVideoFilename,
                     duration, mCurrentVideoValues,
@@ -6838,7 +6854,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onVideoButtonClick() {
         if (PersistUtil.isTraceEnable())
             Trace.beginSection("onVideoButtonClick recording");
-        if (!isRecorderReady() || getCameraMode() == DUAL_MODE) return;
+        if (!isRecorderReady() || getCameraMode() == DUAL_MODE ||
+            (getCurrenCameraMode() != CameraMode.VIDEO && getCurrenCameraMode() != CameraMode.HFR)) return;
 
         if (!mIsRecordingVideo) {
             if (!startRecordingVideo(getMainCameraId())) {
@@ -8269,8 +8286,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 case SettingsManager.KEY_MONO_ONLY:
                 case SettingsManager.KEY_CLEARSIGHT:
                 case SettingsManager.KEY_MONO_PREVIEW:
-                case SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE:
                 case SettingsManager.KEY_FORCE_AUX:
+                    if (count == 0) restartAll();
+                    return;
+                case SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE:
+                    mCurrentSceneMode.setSwithCameraId(-1);
                     if (count == 0) restartAll();
                     return;
                 case SettingsManager.KEY_VIDEO_FLASH_MODE:
@@ -8435,7 +8455,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public void restartAll() {
         int nextCameraId = getNextScreneModeId(mNextModeIndex);
-        Log.d(TAG, "restart all CURRENT_ID :" + CURRENT_ID + " nextCameraId :" + nextCameraId);
+        Log.d(TAG, "restart all CURRENT_ID :" + CURRENT_ID + " nextCameraId :" + nextCameraId+",mpaused="+mPaused);
+        if(mPaused){
+            return;
+        }
         if(CURRENT_ID == nextCameraId && mCameraDevice[nextCameraId] != null){
             mIsCloseCamera = false;
         }else{
@@ -9034,8 +9057,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             restartAll();
         }
         updateZoomSeekBarVisible();
-        mUI.updateZoomSeekBar(1.0f);
-        updateZoom();
         return 1;
     }
 

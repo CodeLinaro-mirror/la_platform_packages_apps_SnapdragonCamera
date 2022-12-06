@@ -156,6 +156,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     };
 
+
+    private boolean mPreviewReady = false;
+
+    public boolean isPreviewReady() {
+        return mPreviewReady;
+    }
+
     private SurfaceHolder.Callback callback = new SurfaceHolder.Callback() {
 
         // SurfaceHolder callbacks
@@ -169,6 +176,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             Log.v(TAG, "surfaceCreated");
             mSurfaceHolder = holder;
             previewUIReady();
+            mPreviewReady = true;
             if(mTrackingFocusRenderer != null && mTrackingFocusRenderer.isVisible()) {
                 mTrackingFocusRenderer.setSurfaceDim(mSurfaceView.getLeft(), mSurfaceView.getTop(), mSurfaceView.getRight(), mSurfaceView.getBottom());
             }
@@ -186,6 +194,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mDeepZoomModeRect.setVisibility(View.GONE);
             }
             previewUIDestroyed();
+            mPreviewReady = false;
         }
     };
 
@@ -1298,6 +1307,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void hideUIwhileRecording() {
+        if (mModule.getCurrenCameraMode() != CaptureModule.CameraMode.VIDEO
+                 && mModule.getCurrenCameraMode() != CaptureModule.CameraMode.HFR) return;
         mCameraControls.setVideoMode(true);
         mModeSelectLayout.setVisibility(View.INVISIBLE);
         mSceneModeLabelRect.setVisibility(View.INVISIBLE);
@@ -1320,6 +1331,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showUIafterRecording() {
+        if (mModule.getCurrenCameraMode() != CaptureModule.CameraMode.VIDEO
+                && mModule.getCurrenCameraMode() != CaptureModule.CameraMode.HFR) return;
         mCameraControls.setVideoMode(false);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
         mSettingsIcon.setVisibility(View.VISIBLE);
