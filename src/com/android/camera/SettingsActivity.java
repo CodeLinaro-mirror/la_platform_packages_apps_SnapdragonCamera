@@ -2090,7 +2090,8 @@ public class SettingsActivity extends PreferenceActivity {
             if (pref.getEntries() != null && pref.getEntries().length == 1){
                 pref.setEnabled(false);
             }else if(mode == CaptureModule.CameraMode.VIDEO){
-                if (mSettingsManager.isLimitedHDR()) {
+                String hdrmode = mSettingsManager.getVideoHdrMode();
+                if(hdrmode.toLowerCase().contains("mfhdr")) {
                     pref.setValue("off");
                     pref.setEnabled(false);
                 }
@@ -2636,8 +2637,9 @@ public class SettingsActivity extends PreferenceActivity {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     String title = String.valueOf(buttonView.getTag());
+                    String fpsStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
                     if((title.equalsIgnoreCase("mfhdr") || title.equalsIgnoreCase("qhdr")) && isChecked
-                        && !mSettingsManager.isSupportedHdr()){
+                        && (!mSettingsManager.isSupportedMixHdr() || (fpsStr != null && !fpsStr.equals("off")))){
                         viewHolder.checkBox.setSelected(false);
                         viewHolder.checkBox.setChecked(false);
                         Toast.makeText(SettingsActivity.this, "Donnot support "+title+" when Video FPS >=60 or enabled SaveRaw or inSensor zoom or quadBayerSensor",
