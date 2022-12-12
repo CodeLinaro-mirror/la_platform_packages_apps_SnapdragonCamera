@@ -3307,6 +3307,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         SurfaceHolder.class);
                                 mPreviewOutputConfiguration.enableSurfaceSharing();
                                 mFAOutputConfiguration = mPreviewOutputConfiguration;
+                                mFASurfaceConfigured = false;
                                 Log.v(TAG, "add mPreviewOutputConfiguration");
                                 outputConfigurations.add(mPreviewOutputConfiguration);
                             }
@@ -3377,12 +3378,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     }
 
-                    if (CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW) {
+                    if (CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW || surface != null) {
                         for (OutputConfiguration configuration : outputConfigurations) {
                             if (surface.equals(configuration.getSurface())) {
                                 Log.d(TAG, "enable preview surface output configuration sharing");
                                 configuration.enableSurfaceSharing();
                                 mFAOutputConfiguration = configuration;
+                                mFASurfaceConfigured = false;
                             }
                         }
 
@@ -8094,8 +8096,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         return 0;
     }
 
+    private boolean mFASurfaceConfigured = false;
     private void configureFASurface() {
         if (!isTouchFocusAssistSupported() || mIsInFocusAssistMode) {
+            return;
+        }
+        if (mFASurfaceConfigured) {
             return;
         }
         Log.d(TAG, "configureFASurface");
@@ -8117,13 +8123,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             mFAOutputConfiguration.addSurface(mFASurface);
             try {
                 mCaptureSession[id].updateOutputConfiguration(mFAOutputConfiguration);
+                mFASurfaceConfigured = true;
             } catch (CameraAccessException e) {
                 Log.w(TAG, "", e.fillInStackTrace());
+                mFASurfaceConfigured = false;
             }
         }
-        /*mCameraHandler.post(() -> {
-
-        });*/
     }
 
     public CameraRender getCameraRender() {
@@ -8224,7 +8229,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         mUI.setFocusPosition(x, y);
         mUI.showEvSeekbar(x, y);
-        configureFASurface();
         int x_ = newXY[0];
         int y_ = newXY[1];
         mUI.setFocusPointInPreview(x_, y_);
@@ -14198,6 +14202,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mLastResultAFState = resultAFState;
         mLastIsDepthFocus = mIsDepthFocus;
 
+        Log.d(TAG, BIG_LOG, "resultAFState " + resultAFState + " mWasInFocusAssistMode " + mWasInFocusAssistMode);
         if (resultAFState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED &&
                 !mWasInFocusAssistMode && isTouchFocusAssistSupported()) {
             checkTouchFocusAssistEnable(result);
@@ -14217,9 +14222,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             enable = result.get(focusAssistEnable) == 1;
         } catch (Exception e) {}
         if (enable) {
-            mHandler.post(() ->
-                mUI.showFocusAssistText()
-            );
+            mHandler.post(() -> {
+                configureFASurface();
+                mUI.showFocusAssistText();
+            });
         }
     }
 
@@ -14669,11 +14675,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void sendFocusCancelMsg(Message message) {
+        mWasInFocusAssistMode = false;
         if (CANCEL_TOUCH_FOCUS_DELAY <= 0) {
             return;
         }
         mCameraHandler.sendMessageDelayed(message, CANCEL_TOUCH_FOCUS_DELAY);
-        mWasInFocusAssistMode = false;
     }
 
     private class MpoSaveHandler extends Handler {
