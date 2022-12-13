@@ -140,6 +140,10 @@ public class SettingsActivity extends PreferenceActivity {
             } else if (p instanceof MultiSelectListPreference) {
                 Set<String> valueSet = ((MultiSelectListPreference)p).getValues();
                 mSettingsManager.setValue(key,valueSet);
+                if (key.equals(SettingsManager.KEY_PHYSICAL_CAMERA) ||
+                        key.equals(SettingsManager.KEY_PHYSICAL_CAMCORDER)) {
+                    updateMultiVideoFPSPreference();
+                }
             }
             if (key.equals(SettingsManager.KEY_VIDEO_QUALITY)) {
                 updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
@@ -1671,6 +1675,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateT2TPreference();
         updatePictureFormatPreference();
         updateQcfaPreference();
+        updateMultiVideoFPSPreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1842,6 +1847,49 @@ public class SettingsActivity extends PreferenceActivity {
         }else{
             updateSwitchIDInModePreference(true);
             if(videoPref != null) videoPref.setEnabled(true);
+        }
+    }
+
+    private void updateMultiVideoFPSPreference() {
+        boolean changeFPS = true;
+        MultiSelectListPreference physicalCameraPref = (MultiSelectListPreference) findPreference(
+                SettingsManager.KEY_PHYSICAL_CAMERA);
+        if (physicalCameraPref != null) {
+            Set<String> physicalCameraSet = physicalCameraPref.getValues();
+            if (physicalCameraSet != null) {
+                for (String str : physicalCameraSet) {
+                    if ("logical".equals(str)) {
+                        changeFPS &= true;
+                    } else {
+                        if(!"".equals(str)) {
+                            changeFPS &= false;
+                        }
+                    }
+                }
+            }
+        }
+        MultiSelectListPreference camCorderPref = (MultiSelectListPreference) findPreference(
+                SettingsManager.KEY_PHYSICAL_CAMCORDER);
+        if (camCorderPref != null) {
+            Set<String> camCorderSet = camCorderPref.getValues();
+            if (camCorderSet != null) {
+                for (String str : camCorderSet) {
+                    if (!"".equals(str)) {
+                        changeFPS &= false;
+                    }
+                }
+            }
+        }
+        ListPreference pref = (ListPreference)findPreference(
+                SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        if (pref != null) {
+            if (changeFPS) {
+                pref.setEnabled(true);
+            } else {
+                pref.setValue("off");
+                pref.setEnabled(false);
+                mSettingsManager.setValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, "off");
+            }
         }
     }
 
