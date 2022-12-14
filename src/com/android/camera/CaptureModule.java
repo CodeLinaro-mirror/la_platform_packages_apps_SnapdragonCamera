@@ -6924,7 +6924,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyVSR(builder);
             applyPreviewStabilization(builder);
         }
-        if (mCurrentSceneMode.mode == CameraMode.VIDEO) {
+        if (mCurrentSceneMode.mode == CameraMode.DEFAULT
+                || mCurrentSceneMode.mode == CameraMode.VIDEO) {
             applyVIULL(builder);
         }
         applyNumHDRExposure(builder);

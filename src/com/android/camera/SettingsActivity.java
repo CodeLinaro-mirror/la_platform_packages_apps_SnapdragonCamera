@@ -1393,7 +1393,6 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_HDR_WNR_MODE);
                 add(SettingsManager.KEY_HDR_ANS_MODE);
                 add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
-                add(SettingsManager.KEY_VIULL);
             }
         };
         final ArrayList<String> multiCameraSettingList = new ArrayList<String>() {
@@ -1535,6 +1534,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
+                        videoAddList.add(SettingsManager.KEY_VIULL);
                     } else {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
@@ -2343,7 +2343,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-        if ("HEVCProfileMain10HDR10Plus".equals(profile)) {
+        if (!"off".equals(profile)) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;
