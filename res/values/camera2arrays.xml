@@ -1200,6 +1200,7 @@ for time lapse recording -->
         <item>V1</item>
         <item>V2</item>
         <item>V3</item>
+        <item>V4</item>
     </string-array>
 
     <string-array name="pref_camera2_facial_contour_entryvalues" translatable="false">
@@ -1207,6 +1208,7 @@ for time lapse recording -->
         <item>1</item>
         <item>2</item>
         <item>3</item>
+        <item>4</item>
     </string-array>
 
     <string-array name="pref_camera2_fd_gender_entryvalues" translatable="false">
