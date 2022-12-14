@@ -31,6 +31,7 @@ import android.animation.Animator;
 import android.annotation.TargetApi;
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -72,6 +73,7 @@ import android.os.PowerManager.WakeLock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import com.android.camera.util.Log;
+import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -94,16 +96,31 @@ import com.android.camera.app.PlaceholderManager;
 import com.android.camera.app.PanoramaStitchingManager;
 import com.android.camera.crop.CropActivity;
 import com.android.camera.data.CameraDataAdapter;
+import com.android.camera.data.CameraFilmstripDataAdapter;
 import com.android.camera.data.CameraPreviewData;
+import com.android.camera.data.FilmstripItem;
+import com.android.camera.data.FilmstripItemData;
+import com.android.camera.data.FilmstripItemType;
+import com.android.camera.data.FilmstripContentObserver;
+import com.android.camera.data.FixedLastProxyAdapter;
 import com.android.camera.data.FixedFirstDataAdapter;
 import com.android.camera.data.FixedLastDataAdapter;
+import com.android.camera.data.GlideFilmstripManager;
+import com.android.camera.data.PhotoItemFactory;
+import com.android.camera.data.PlaceholderItem;
+import com.android.camera.data.VideoItemFactory;
+import com.android.camera.data.PhotoDataFactory;
+import com.android.camera.data.VideoDataFactory;
 import com.android.camera.data.InProgressDataWrapper;
 import com.android.camera.data.LocalData;
 import com.android.camera.data.LocalDataAdapter;
 import com.android.camera.data.LocalMediaObserver;
+import com.android.camera.data.LocalFilmstripDataAdapter;
 import com.android.camera.data.MediaDetails;
 import com.android.camera.data.SimpleViewData;
 import com.android.camera.tinyplanet.TinyPlanetFragment;
+import com.android.camera.filmstrip.FilmstripController;
+import com.android.camera.filmstrip.FilmstripContentPanel;
 import com.android.camera.multi.MultiCameraModule;
 import com.android.camera.ui.ModuleSwitcher;
 import com.android.camera.ui.DetailsDialog;
@@ -111,14 +128,19 @@ import com.android.camera.ui.FilmStripView;
 import com.android.camera.ui.FilmStripView.ImageData;
 import com.android.camera.ui.PanoCaptureProcessView;
 import com.android.camera.ui.RotateTextToast;
+import com.android.camera.util.AndroidContext;
 import com.android.camera.util.ApiHelper;
 import com.android.camera.util.CameraUtil;
+import com.android.camera.util.Callback;
 import com.android.camera.util.GcamHelper;
 import com.android.camera.util.IntentHelper;
 import com.android.camera.util.PersistUtil;
 import com.android.camera.util.PhotoSphereHelper;
 import com.android.camera.util.PhotoSphereHelper.PanoramaViewHelper;
+import com.android.camera.util.ReleaseHelper;
 import com.android.camera.util.UsageStatistics;
+import com.android.camera.widget.FilmstripView;
+import com.android.camera.widget.Preloader;
 import org.codeaurora.snapcam.R;
 import com.android.camera.app.CameraApp;
 import android.hardware.camera2.CaptureResult;
@@ -128,6 +150,10 @@ import android.view.View;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import com.google.common.base.Optional;
+import com.google.common.logging.eventprotos.MediaInteraction;
+import com.google.common.logging.eventprotos.NavigationChange;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -256,6 +282,24 @@ public class CameraActivity extends Activity
     private String mThumbnailPath;
     public SettingsManager mSettingsManager;
 
+    /**
+     * This data adapter is used by FilmStripView.
+     */
+    private VideoItemFactory mVideoItemFactory;
+    private PhotoItemFactory mPhotoItemFactory;
+    private LocalFilmstripDataAdapter mFilmstripDataAdapter;
+    private Preloader<Integer, AsyncTask> mPreloader;
+    private FilmstripController mFilmstripController;
+    private CaptureUI mUI;
+    /** Whether the filmstrip fully covers the preview. */
+    private boolean mFilmstripCoversPreview = false;
+    private boolean mFilmstripVisible;
+    private FilmstripContentObserver mLocalImagesObserver;
+    private FilmstripContentObserver mLocalVideosObserver;
+
+    /** Load metadata for 10 items ahead of our current. */
+    private static final int FILMSTRIP_PRELOAD_AHEAD_ITEMS = 10;
+
     private final int DEFAULT_SYSTEM_UI_VISIBILITY = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
     private boolean mPendingDeletion = false;
@@ -380,6 +424,180 @@ public class CameraActivity extends Activity
         }
     };
 
+    private final CaptureUI.BottomPanel.Listener mMyFilmstripBottomControlListener =
+            new CaptureUI.BottomPanel.Listener() {
+
+                /**
+                 * If the current photo is a photo sphere, this will launch the
+                 * Photo Sphere panorama viewer.
+                 */
+                @Override
+                public void onExternalViewer() {
+                    final FilmstripItem data = getCurrentLocalData();
+                    if (data == null) {
+                        Log.w(TAG, "Cannot open null data.");
+                        return;
+                    }
+                    final Uri contentUri = data.getData().getUri();
+                    if (contentUri == Uri.EMPTY) {
+                        Log.w(TAG, "Cannot open empty URL.");
+                        return;
+                    }
+
+                    if (data.getMetadata().isUsePanoramaViewer()) {
+                        mPanoramaViewHelper.showPanorama(CameraActivity.this, contentUri);
+                    } else if (data.getMetadata().isHasRgbzData()) {
+                        mPanoramaViewHelper.showRgbz(contentUri);
+                        if (true) {
+                            mUI.clearClingForViewer(
+                                    CaptureUI.BottomPanel.VIEWER_REFOCUS);
+                        }
+                    }
+                }
+
+                @Override
+                public void onEdit() {
+                    FilmstripItem data = getCurrentLocalData();
+                    if (data == null) {
+                        Log.w(TAG, "Cannot edit null data.");
+                        return;
+                    }
+                    final int currentDataId = getCurrentDataId();
+                    UsageStatistics.instance().mediaInteraction(fileNameFromAdapterAtIndex(
+                                currentDataId),
+                            MediaInteraction.InteractionType.EDIT,
+                            NavigationChange.InteractionCause.BUTTON,
+                            fileAgeFromAdapterAtIndex(currentDataId));
+                    launchEditor(data);
+                }
+
+                @Override
+                public void onTinyPlanet() {
+                    FilmstripItem data = getCurrentLocalData();
+                    if (data == null) {
+                        Log.w(TAG, "Cannot edit tiny planet on null data.");
+                        return;
+                    }
+                    launchTinyPlanetEditor(data);
+                }
+
+                @Override
+                public void onDelete() {
+                    final int currentDataId = getCurrentDataId();
+                    UsageStatistics.instance().mediaInteraction(fileNameFromAdapterAtIndex(
+                                currentDataId),
+                            MediaInteraction.InteractionType.DELETE,
+                            NavigationChange.InteractionCause.BUTTON,
+                            fileAgeFromAdapterAtIndex(currentDataId));
+                    removeItemAt(currentDataId);
+                }
+
+                @Override
+                public void onShare() {
+                    final FilmstripItem data = getCurrentLocalData();
+                    if (data == null) {
+                        Log.w(TAG, "Cannot share null data.");
+                        return;
+                    }
+
+                    final int currentDataId = getCurrentDataId();
+                    UsageStatistics.instance().mediaInteraction(fileNameFromAdapterAtIndex(
+                                currentDataId),
+                            MediaInteraction.InteractionType.SHARE,
+                            NavigationChange.InteractionCause.BUTTON,
+                            fileAgeFromAdapterAtIndex(currentDataId));
+                    // If applicable, show release information before this item
+                    // is shared.
+                    if (ReleaseHelper.shouldShowReleaseInfoDialogOnShare(data)) {
+                        ReleaseHelper.showReleaseInfoDialog(CameraActivity.this,
+                                new Callback<Void>() {
+                                    @Override
+                                    public void onCallback(Void result) {
+                                        share(data);
+                                    }
+                                });
+                    } else {
+                        share(data);
+                    }
+                }
+
+                private void share(FilmstripItem data) {
+                    Intent shareIntent = getShareIntentByData(data);
+                    if (shareIntent != null) {
+                        try {
+                            launchActivityByIntent(shareIntent);
+                            mUI.getFilmstripBottomControls().setShareEnabled(false);
+                        } catch (ActivityNotFoundException ex) {
+                            // Nothing.
+                        }
+                    }
+                }
+
+                private int getCurrentDataId() {
+                    return mFilmstripController.getCurrentAdapterIndex();
+                }
+
+                private FilmstripItem getCurrentLocalData() {
+                    return mFilmstripDataAdapter.getItemAt(getCurrentDataId());
+                }
+
+                /**
+                 * Sets up the share intent and NFC properly according to the
+                 * data.
+                 *
+                 * @param item The data to be shared.
+                 */
+                private Intent getShareIntentByData(final FilmstripItem item) {
+                    Intent intent = null;
+                    final Uri contentUri = item.getData().getUri();
+                    final String msgShareTo = getResources().getString(R.string.share_to);
+
+                    if (item.getMetadata().isPanorama360() &&
+                          item.getData().getUri() != Uri.EMPTY) {
+                        intent = new Intent(Intent.ACTION_SEND);
+                        intent.setType(FilmstripItemData.MIME_TYPE_PHOTOSPHERE);
+                        intent.putExtra(Intent.EXTRA_STREAM, contentUri);
+                    } else if (item.getAttributes().canShare()) {
+                        final String mimeType = item.getData().getMimeType();
+                        intent = getShareIntentFromType(mimeType);
+                        if (intent != null) {
+                            intent.putExtra(Intent.EXTRA_STREAM, contentUri);
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        }
+                        intent = Intent.createChooser(intent, msgShareTo);
+                    }
+                    return intent;
+                }
+
+                /**
+                 * Get the share intent according to the mimeType
+                 *
+                 * @param mimeType The mimeType of current data.
+                 * @return the video/image's ShareIntent or null if mimeType is
+                 *         invalid.
+                 */
+                private Intent getShareIntentFromType(String mimeType) {
+                    // Lazily create the intent object.
+                    Intent intent = new Intent(Intent.ACTION_SEND);
+                    if (mimeType.startsWith("video/")) {
+                        intent.setType("video/*");
+                    } else {
+                        if (mimeType.startsWith("image/")) {
+                            intent.setType("image/*");
+                        } else {
+                            Log.w(TAG, "unsupported mimeType " + mimeType);
+                        }
+                    }
+                    return intent;
+                }
+
+                @Override
+                public void onProgressErrorClicked() {
+                    FilmstripItem data = getCurrentLocalData();
+                    updateBottomControlsByData(data);
+                }
+            };
+
     private void registerSDcardMountedReceiver() {
         // filter for SDcard status
         IntentFilter filter = new IntentFilter(Intent.ACTION_MEDIA_MOUNTED);
@@ -430,6 +648,30 @@ public class CameraActivity extends Activity
 
         File localFile = new File(localData.getPath());
         return localFile.getName();
+    }
+
+    public Context getAndroidContext() {
+        return CameraActivity.this;
+    }
+
+    private String fileNameFromAdapterAtIndex(int index) {
+        final FilmstripItem filmstripItem = mFilmstripDataAdapter.getItemAt(index);
+        if (filmstripItem == null) {
+            return "";
+        }
+
+        File localFile = new File(filmstripItem.getData().getFilePath());
+        return localFile.getName();
+    }
+
+    private float fileAgeFromAdapterAtIndex(int index) {
+        final FilmstripItem filmstripItem = mFilmstripDataAdapter.getItemAt(index);
+        if (filmstripItem == null) {
+            return 0;
+        }
+
+        File localFile = new File(filmstripItem.getData().getFilePath());
+        return 0.001f * (System.currentTimeMillis() - localFile.lastModified());
     }
 
     private FilmStripView.Listener mFilmStripListener =
@@ -564,7 +806,7 @@ public class CameraActivity extends Activity
                                     CameraActivity.this.setSystemBarsVisibility(false);
 
                                     if (mPendingDeletion) {
-                                        performDeletion();
+                                        performDeleted();
                                     }
                                 } else {
                                     updateActionBarMenu(dataID);
@@ -671,6 +913,9 @@ public class CameraActivity extends Activity
      * will be sent after a timeout to hide the action bar.
      */
     private void setSystemBarsVisibility(boolean visible, boolean hideLater) {
+        if (mUI.getFilmstripLayout().getVisibility() == View.VISIBLE) {
+            return;
+        }
         mMainHandler.removeMessages(HIDE_ACTION_BAR);
 
         View decorView = getWindow().getDecorView();
@@ -823,13 +1068,12 @@ public class CameraActivity extends Activity
     public void updateThumbnail(boolean videoOnly) {
         // Only handle OnDataInserted if it's video.
         // Photo and Panorama have their own way of updating thumbnail.
-        if (!videoOnly || (mCurrentModule instanceof VideoModule) ||
+        if ((!videoOnly || (mCurrentModule instanceof VideoModule) ||
                 (mCurrentModule instanceof MultiCameraModule) ||
-                ((mCurrentModule instanceof CaptureModule) && videoOnly)) {
-            LocalDataAdapter adapter = getDataAdapter();
-            ImageData img = adapter.getImageData(1);
+                ((mCurrentModule instanceof CaptureModule) && videoOnly)) && mFilmstripDataAdapter != null) {
+            FilmstripItem img = mFilmstripDataAdapter.getItemAt(0);
             if(img != null) {
-                String path = getPathFromUri(img.getContentUri());
+                String path = getPathFromUri(img.getData().getUri());
                 if (path != null && path.equals(mThumbnailPath) && !path.contains("heic")) {
                     return;
                 }
@@ -854,12 +1098,14 @@ public class CameraActivity extends Activity
             if (mJpegData != null)
                 return decodeImageCenter(null);
 
-            LocalDataAdapter adapter = getDataAdapter();
-            ImageData img = adapter.getImageData(1);
+            if (mFilmstripDataAdapter == null) {
+                return null;
+            }
+            FilmstripItem img = mFilmstripDataAdapter.getItemAt(0);
             if (img == null) {
                 return null;
             }
-            Uri uri = img.getContentUri();
+            Uri uri = img.getData().getUri();
             String path = getPathFromUri(uri);
             if (path == null) {
                 return null;
@@ -871,7 +1117,7 @@ public class CameraActivity extends Activity
                 if(path.endsWith(Storage.DNG_POSTFIX)){
                     isDng = true;
                 }
-                if (img.isPhoto()) {
+                if (img.getData().getMimeType().contains("image")) {
                     return decodeImageCenter(path);
                 } else {
                     return ThumbnailUtils
@@ -1146,6 +1392,36 @@ public class CameraActivity extends Activity
         return true;
     }
 
+    private void showDetailsDialog(int index) {
+        final FilmstripItem data = mFilmstripDataAdapter.getItemAt(index);
+        if (data == null) {
+            return;
+        }
+        Optional<MediaDetails> details = data.getMediaDetails();
+        if (!details.isPresent()) {
+            return;
+        }
+        Dialog detailDialog = DetailsDialog.create(CameraActivity.this, details.get());
+        detailDialog.show();
+    }
+
+    /**
+     * Show or hide action bar items depending on current data type.
+     */
+    private void updateActionBarMenu(FilmstripItem data) {
+        if (mActionBarMenu == null) {
+            return;
+        }
+
+        MenuItem detailsMenuItem = mActionBarMenu.findItem(R.id.action_details);
+        if (detailsMenuItem == null) {
+            return;
+        }
+
+        boolean showDetails = data.getAttributes().hasDetailedCaptureInfo();
+        detailsMenuItem.setVisible(showDetails);
+    }
+
     /**
      * According to the data type, make the menu items for supported operations
      * visible.
@@ -1352,19 +1628,32 @@ public class CameraActivity extends Activity
     public AIDenoiserService getAIDenoiserService() {
         return mAIDenoiserService;
     }
+
     public void notifyNewMedia(Uri uri) {
         ContentResolver cr = getContentResolver();
         String mimeType = cr.getType(uri);
+        FilmstripItem newData = null;
         if (mimeType == null) {
             Log.e(TAG, "mimeType is NULL");
             return;
         }
+
         if (mimeType.startsWith("video/")) {
             sendBroadcast(new Intent(CameraUtil.ACTION_NEW_VIDEO, uri));
             mDataAdapter.addNewVideo(cr, uri);
+            newData = mVideoItemFactory.queryContentUri(uri);
+            if (newData == null) {
+                Log.e(TAG, "Can't find video data in content resolver:" + uri);
+                return;
+            }
         } else if (mimeType.startsWith("image/")) {
             CameraUtil.broadcastNewPicture(this, uri);
             mDataAdapter.addNewPhoto(cr, uri);
+            newData = mPhotoItemFactory.queryContentUri(uri);
+            if (newData == null) {
+                Log.e(TAG, "Can't find photo data in content resolver:" + uri);
+                return;
+            }
         } else if (mimeType.startsWith("application/stitching-preview")) {
             mDataAdapter.addNewPhoto(cr, uri);
         } else if (mimeType.startsWith(PlaceholderManager.PLACEHOLDER_MIME_TYPE)) {
@@ -1372,6 +1661,69 @@ public class CameraActivity extends Activity
         } else {
             Log.w(TAG, "Unknown new media with MIME type:"
                     + mimeType + ", uri:" + uri);
+        }
+
+        // We are preloading the metadata for new video since we need the
+        // rotation info for the thumbnail.
+        new AsyncTask<FilmstripItem, Void, FilmstripItem>() {
+            @Override
+            protected FilmstripItem doInBackground(FilmstripItem... params) {
+                FilmstripItem data = params[0];
+                //MetadataLoader.loadMetadata(getAndroidContext(), data);
+                return data;
+            }
+
+            @Override
+            protected void onPostExecute(final FilmstripItem data) {
+                // TODO: Figure out why sometimes the data is aleady there.
+                mFilmstripDataAdapter.addOrUpdate(data);
+                updateThumbnail(true);
+            }
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, newData);
+    }
+
+    private void preloadFilmstripItems() {
+        if (mFilmstripDataAdapter == null) {
+            mFilmstripDataAdapter = new CameraFilmstripDataAdapter(this,
+                    mPhotoItemFactory, mVideoItemFactory);
+            //mFilmstripDataAdapter.setLocalDataListener(mFilmstripItemListener);
+            mPreloader = new Preloader<Integer, AsyncTask>(FILMSTRIP_PRELOAD_AHEAD_ITEMS, mFilmstripDataAdapter,
+                    mFilmstripDataAdapter);
+            if (!mSecureCamera) {
+                mFilmstripController.setDataAdapter(mFilmstripDataAdapter);
+                if (!isCaptureIntent()) {
+                    mFilmstripDataAdapter.requestLoad(new Callback<Void>() {
+                        @Override
+                        public void onCallback(Void result) {
+                            //fillTemporarySessions();
+                        }
+                    });
+                }
+            } else {
+                // Put a lock placeholder as the last image by setting its date to
+                // 0.
+                ImageView v = (ImageView) this.getLayoutInflater().inflate(
+                        R.layout.secure_album_placeholder, null);
+                v.setTag(R.id.mediadata_tag_viewtype, FilmstripItemType.SECURE_ALBUM_PLACEHOLDER.ordinal());
+                v.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        CameraActivity.this.finish();
+                    }
+                });
+                v.setContentDescription("Unlock to Camera");
+                mFilmstripDataAdapter = new FixedLastProxyAdapter(
+                        this,
+                        mFilmstripDataAdapter,
+                        new PlaceholderItem(
+                                v,
+                                FilmstripItemType.SECURE_ALBUM_PLACEHOLDER,
+                                v.getDrawable().getIntrinsicWidth(),
+                                v.getDrawable().getIntrinsicHeight()));
+                // Flush out all the original data.
+                mFilmstripDataAdapter.clear();
+                mFilmstripController.setDataAdapter(mFilmstripDataAdapter);
+            }
         }
     }
 
@@ -1450,13 +1802,9 @@ public class CameraActivity extends Activity
         switch (item.getItemId()) {
             case android.R.id.home:
                 // ActionBar's Up/Home button was clicked
-                try {
-                    startActivity(IntentHelper.getGalleryIntent(this));
-                    return true;
-                } catch (ActivityNotFoundException e) {
-                    Log.w(TAG, "Failed to launch gallery activity, closing");
-                    finish();
-                }
+                mUI.hideBottomControls();
+                mUI.onBackPressed();
+                return true;
             case R.id.action_delete:
                 UsageStatistics.onEvent(UsageStatistics.COMPONENT_CAMERA,
                         UsageStatistics.ACTION_DELETE, null, 0,
@@ -1508,6 +1856,7 @@ public class CameraActivity extends Activity
                 return true;
             }
             case R.id.action_details:
+                showDetailsDialog(mFilmstripController.getCurrentAdapterIndex());
                 (new AsyncTask<Void, Void, MediaDetails>() {
                     @Override
                     protected MediaDetails doInBackground(Void... params) {
@@ -1572,6 +1921,9 @@ public class CameraActivity extends Activity
         } catch (PackageManager.NameNotFoundException e) {
            Log.w(TAG,e.toString());
         }
+        // Android context must be the first item initialized.
+        Context context = getApplicationContext();
+        AndroidContext.initialize(context);
         // Check if this is in the secure camera mode.
         Intent intent = getIntent();
         String action = intent.getAction();
@@ -1668,6 +2020,8 @@ public class CameraActivity extends Activity
 
         mActionBar = getActionBar();
         mActionBar.addOnMenuVisibilityListener(this);
+        // set actionbar background to 100% or 50% transparent
+        mActionBar.setBackgroundDrawable(new ColorDrawable(0x00000000));
 
         if (ApiHelper.HAS_ROTATION_ANIMATION) {
             setRotationAnimation();
@@ -1740,6 +2094,16 @@ public class CameraActivity extends Activity
             mFilmStripView.setDataAdapter(mDataAdapter);
         }
 
+        mLocalImagesObserver = new FilmstripContentObserver();
+        mLocalVideosObserver = new FilmstripContentObserver();
+
+        getContentResolver().registerContentObserver(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true,
+                mLocalImagesObserver);
+        getContentResolver().registerContentObserver(
+              MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true,
+              mLocalVideosObserver);
+
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         mDeveloperMenuEnabled = prefs.getBoolean(CameraSettings.KEY_DEVELOPER_MENU, false);
 
@@ -1762,6 +2126,20 @@ public class CameraActivity extends Activity
             registerAutoTestReceiver();
         }
         bindAIDenoiserService();
+
+        ContentResolver appContentResolver = this.getContentResolver();
+        GlideFilmstripManager glideManager = new GlideFilmstripManager(this);
+        mPhotoItemFactory = new PhotoItemFactory(this, glideManager, appContentResolver,
+                new PhotoDataFactory());
+        mVideoItemFactory = new VideoItemFactory(this, glideManager, appContentResolver,
+                new VideoDataFactory());
+        mFilmstripController = ((FilmstripView) rootLayout.findViewById(R.id.filmstrip_view)).getController();
+        mFilmstripController.setImageGap(
+                this.getResources().getDimensionPixelSize(R.dimen.camera_film_strip_gap));
+        if (mUI != null) {
+            mUI.getFilmstripContentPanel().setFilmstripListener(mFilmstripListener);
+        }
+        preloadFilmstripItems();
     }
 
     private void setRotationAnimation() {
@@ -1795,7 +2173,8 @@ public class CameraActivity extends Activity
             // users can click the undo button to bring back the image that they
             // chose to delete.
             if (mPendingDeletion && !mIsUndoingDeletion) {
-                 performDeletion();
+                //performDeletion();
+                performDeleted();
             }
         }
         return result;
@@ -1808,12 +2187,19 @@ public class CameraActivity extends Activity
             return;
         }
         // Delete photos that are pending deletion
+        performDeleted();
         performDeletion();
         mOrientationListener.disable();
         mCurrentModule.onPauseBeforeSuper();
         super.onPause();
         mCurrentModule.onPauseAfterSuper();
 
+        mLocalImagesObserver.setForegroundChangeListener(null);
+        mLocalImagesObserver.setActivityPaused(true);
+        mLocalVideosObserver.setActivityPaused(true);
+        if (mPreloader != null) {
+            mPreloader.cancelAllLoads();
+        }
         mPaused = true;
     }
 
@@ -1933,20 +2319,46 @@ public class CameraActivity extends Activity
         mCurrentModule.onResumeAfterSuper();
         setSwipingEnabled(true);
 
+        // hide the up affordance for L devices, it's not very Materially
+        mActionBar.setDisplayShowHomeEnabled(false);
+
         if (mResetToPreviewOnResume) {
             // Go to the preview on resume.
             mFilmStripView.getController().goToFirstItem();
         }
+        // The share button might be disabled to avoid double tapping.
+        mUI.getFilmstripBottomControls().setShareEnabled(true);
         // Default is showing the preview, unless disabled by explicitly
         // starting an activity we want to return from to the filmstrip rather
         // than the preview.
         mResetToPreviewOnResume = true;
 
+        mLocalImagesObserver.setActivityPaused(false);
+        mLocalVideosObserver.setActivityPaused(false);
+
+        mFilmstripDataAdapter.requestLoad(new Callback<Void>() {
+            @Override
+            public void onCallback(Void result) {
+                //fillTemporarySessions();
+                updateThumbnail(false);
+            }
+        });
         if (!mSecureCamera) {
             // If it's secure camera, requestLoad() should not be called
             // as it will load all the data.
             mDataAdapter.requestLoad(getContentResolver());
             mThumbnailDrawable = null;
+            mLocalImagesObserver.setForegroundChangeListener(
+                    new FilmstripContentObserver.ChangeListener() {
+                @Override
+                public void onChange() {
+                    mFilmstripDataAdapter.requestLoadNewPhotos();
+                }
+            });
+        }
+        FilmstripItem item = mFilmstripDataAdapter.getItemAt(mFilmstripController.getCurrentAdapterIndex());
+        if (item != null) {
+            mFilmstripDataAdapter.refresh(item.getData().getUri());
         }
     }
 
@@ -2015,6 +2427,12 @@ public class CameraActivity extends Activity
             mCurrentModule.onDestroy();
         }
         unbindAIDenoiserService();
+        if (mLocalImagesObserver != null) {
+            getContentResolver().unregisterContentObserver(mLocalImagesObserver);
+        }
+        if (mLocalVideosObserver != null) {
+            getContentResolver().unregisterContentObserver(mLocalVideosObserver);
+        }
         super.onDestroy();
     }
 
@@ -2276,6 +2694,10 @@ public class CameraActivity extends Activity
                 if(mCaptureModule == null) {
                     mCaptureModule = new CaptureModule();
                     mCaptureModule.init(this, mCameraCaptureModuleRootView);
+                    mUI = new CaptureUI(this, mCaptureModule, mCameraRootFrame, mCameraCaptureModuleRootView);
+                    mUI.setFilmstripBottomControlsListener(mMyFilmstripBottomControlListener);
+                    mUI.initializeControlByIntent();
+                    mCaptureModule.onCreateAfterSuper();
                 } else {
                     mCaptureModule.reinit();
                 }
@@ -2347,6 +2769,41 @@ public class CameraActivity extends Activity
         }
     }
 
+    public void launchEditor(FilmstripItem data) {
+        Intent intent = new Intent(Intent.ACTION_EDIT)
+                .setDataAndType(data.getData().getUri(), data.getData().getMimeType())
+                .setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        try {
+            launchActivityByIntent(intent);
+        } catch (ActivityNotFoundException e) {
+            final String msgEditWith = getResources().getString(R.string.edit_with);
+            launchActivityByIntent(Intent.createChooser(intent, msgEditWith));
+        }
+    }
+
+    public void launchActivityByIntent(Intent intent) {
+        // Starting from L, we prefer not to start edit activity within camera's task.
+        mResetToPreviewOnResume = false;
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
+        startActivity(intent);
+    }
+
+    /**
+     * Launch the tiny planet editor.
+     *
+     * @param data The data must be a 360 degree stereographically mapped
+     *            panoramic image. It will not be modified, instead a new item
+     *            with the result will be added to the filmstrip.
+     */
+    public void launchTinyPlanetEditor(FilmstripItem data) {
+        TinyPlanetFragment fragment = new TinyPlanetFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(TinyPlanetFragment.ARGUMENT_URI, data.getData().getUri().toString());
+        bundle.putString(TinyPlanetFragment.ARGUMENT_TITLE, data.getData().getTitle());
+        fragment.setArguments(bundle);
+        fragment.show(getFragmentManager(), "tiny_planet");
+    }
+
     /**
      * Launch the tiny planet editor.
      *
@@ -2385,9 +2842,17 @@ public class CameraActivity extends Activity
         mFilmStripListener.onCurrentDataCentered(currentId);
     }
 
+    private void performDeleted() {
+        if (!mPendingDeletion) {
+            return;
+        }
+        hideUndoDeletionBar(false);
+        mFilmstripDataAdapter.executeDeletion();
+    }
+
     public void showUndoDeletionBar() {
         if (mPendingDeletion) {
-            performDeletion();
+            performDeleted();
         }
         Log.v(TAG, "showing undo bar");
         mPendingDeletion = true;
@@ -2399,7 +2864,13 @@ public class CameraActivity extends Activity
             button.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    mDataAdapter.undoDataRemoval();
+                    mFilmstripDataAdapter.undoDeletion();
+                    // Fix for b/21666018: When undoing a delete in Fullscreen
+                    // mode, just flip
+                    // back to the filmstrip to force a refresh.
+                    if (mFilmstripController.inFullScreen()) {
+                        mFilmstripController.goToFilmstrip();
+                    }
                     hideUndoDeletionBar(true);
                 }
             });
@@ -2580,4 +3051,265 @@ public class CameraActivity extends Activity
                     R.string.cannot_connect_camera);
         }
     }
+
+    /**
+     * Call this whenever the mode drawer or filmstrip change the visibility
+     * state.
+     */
+    private void updatePreviewVisibility() {
+        boolean visibility = !mPaused;
+        updatePreviewRendering(visibility);
+    }
+
+    private void updatePreviewRendering(boolean visibility) {
+        if (visibility) {
+            mUI.resumePreviewRendering();
+        } else {
+            mUI.pausePreviewRendering();
+        }
+    }
+
+    /**
+     * If 'visible' is false, this hides the action bar. Also maintains
+     * lights-out at all times.
+     *
+     * @param visible is false, this hides the action bar and filmstrip bottom
+     *            controls.
+     */
+    private void setFilmstripUiVisibility(boolean visible) {
+        mUI.getFilmstripBottomControls().setVisible(visible);
+        if (visible != mActionBar.isShowing()) {
+            if (visible) {
+                mActionBar.show();
+                mUI.showBottomControls();
+            } else {
+                mActionBar.hide();
+                mUI.hideBottomControls();
+            }
+        }
+        mFilmstripCoversPreview = visible;
+        updatePreviewVisibility();
+    }
+
+    /**
+     * Updates the visibility of the filmstrip bottom controls and action bar.
+     */
+    private void updateUiByData(final int index) {
+        final FilmstripItem currentData = mFilmstripDataAdapter.getItemAt(index);
+        if (currentData == null) {
+            Log.w(TAG, "Current data ID not found.");
+            hideSessionProgress();
+            return;
+        }
+        updateActionBarMenu(currentData);
+
+        /* Bottom controls. */
+        updateBottomControlsByData(currentData);
+
+        //setNfcBeamPushUriFromData(currentData);
+
+        if (!mFilmstripDataAdapter.isMetadataUpdatedAt(index)) {
+            mFilmstripDataAdapter.updateMetadataAt(index);
+        }
+    }
+
+    private void hideSessionProgress() {
+        mUI.getFilmstripBottomControls().hideProgress();
+    }
+
+    private void removeItemAt(int index) {
+        mFilmstripDataAdapter.removeAt(index);
+        if (mFilmstripDataAdapter.getTotalNumber() > 0) {
+            showUndoDeletionBar();
+        } else {
+            // If camera preview is the only view left in filmstrip,
+            // no need to show undo bar.
+            mPendingDeletion = true;
+            performDeleted();
+            if (mFilmstripVisible) {
+                mUI.getFilmstripContentPanel().animateHide();
+            }
+        }
+    }
+
+    /**
+     * Updates the bottom controls based on the data.
+     */
+    private void updateBottomControlsByData(final FilmstripItem currentData) {
+
+        final CaptureUI.BottomPanel filmstripBottomPanel =
+                mUI.getFilmstripBottomControls();
+        filmstripBottomPanel.showControls();
+        filmstripBottomPanel.setEditButtonVisibility(
+                currentData.getAttributes().canEdit());
+        filmstripBottomPanel.setShareButtonVisibility(
+              currentData.getAttributes().canShare());
+        filmstripBottomPanel.setDeleteButtonVisibility(
+                currentData.getAttributes().canDelete());
+
+        /* View button */
+
+        // We need to add this to a separate DB.
+        final int viewButtonVisibility;
+        if (currentData.getMetadata().isUsePanoramaViewer()) {
+            viewButtonVisibility = CaptureUI.BottomPanel.VIEWER_PHOTO_SPHERE;
+        } else if (currentData.getMetadata().isHasRgbzData()) {
+            viewButtonVisibility = CaptureUI.BottomPanel.VIEWER_REFOCUS;
+        } else {
+            viewButtonVisibility = CaptureUI.BottomPanel.VIEWER_NONE;
+        }
+
+        filmstripBottomPanel.setTinyPlanetEnabled(
+                currentData.getMetadata().isPanorama360());
+        filmstripBottomPanel.setViewerButtonVisibility(viewButtonVisibility);
+    }
+
+
+    public CaptureUI getCaptureUI() {
+        return mUI;
+    }
+
+    private final FilmstripContentPanel.Listener mFilmstripListener =
+            new FilmstripContentPanel.Listener() {
+
+                @Override
+                public void onSwipeOut() {
+                }
+
+                @Override
+                public void onSwipeOutBegin() {
+                    mActionBar.hide();
+                    mUI.hideBottomControls();
+                    mFilmstripCoversPreview = false;
+                    updatePreviewVisibility();
+                }
+
+                @Override
+                public void onFilmstripHidden() {
+                    mFilmstripVisible = false;
+                    CameraActivity.this.setFilmstripUiVisibility(false);
+                    // When the user hide the filmstrip (either swipe out or
+                    // tap on back key) we move to the first item so next time
+                    // when the user swipe in the filmstrip, the most recent
+                    // one is shown.
+                    mFilmstripController.goToFirstItem();
+                    updateThumbnail(false);
+                }
+
+                @Override
+                public void onFilmstripShown() {
+                    mFilmstripVisible = true;
+                    updateUiByData(mFilmstripController.getCurrentAdapterIndex());
+                }
+
+                @Override
+                public void onFocusedDataLongPressed(int adapterIndex) {
+                    // Do nothing.
+                }
+
+                @Override
+                public void onFocusedDataPromoted(int adapterIndex) {
+                    removeItemAt(adapterIndex);
+                }
+
+                @Override
+                public void onFocusedDataDemoted(int adapterIndex) {
+                    removeItemAt(adapterIndex);
+                }
+
+                @Override
+                public void onEnterFullScreenUiShown(int adapterIndex) {
+                    if (mFilmstripVisible) {
+                        CameraActivity.this.setFilmstripUiVisibility(true);
+                    }
+                }
+
+                @Override
+                public void onLeaveFullScreenUiShown(int adapterIndex) {
+                    // Do nothing.
+                }
+
+                @Override
+                public void onEnterFullScreenUiHidden(int adapterIndex) {
+                    if (mFilmstripVisible) {
+                        CameraActivity.this.setFilmstripUiVisibility(false);
+                    }
+                }
+
+                @Override
+                public void onLeaveFullScreenUiHidden(int adapterIndex) {
+                    // Do nothing.
+                }
+
+                @Override
+                public void onEnterFilmstrip(int adapterIndex) {
+                    if (mFilmstripVisible) {
+                        CameraActivity.this.setFilmstripUiVisibility(true);
+                    }
+                }
+
+                @Override
+                public void onLeaveFilmstrip(int adapterIndex) {
+                    // Do nothing.
+                }
+
+                @Override
+                public void onDataReloaded() {
+                    if (!mFilmstripVisible) {
+                        return;
+                    }
+                    updateUiByData(mFilmstripController.getCurrentAdapterIndex());
+                }
+
+                @Override
+                public void onDataUpdated(int adapterIndex) {
+                    if (!mFilmstripVisible) {
+                        return;
+                    }
+                    updateUiByData(mFilmstripController.getCurrentAdapterIndex());
+                }
+
+                @Override
+                public void onEnterZoomView(int adapterIndex) {
+                    if (mFilmstripVisible) {
+                        CameraActivity.this.setFilmstripUiVisibility(false);
+                    }
+                }
+
+                @Override
+                public void onZoomAtIndexChanged(int adapterIndex, float zoom) {
+                    final FilmstripItem filmstripItem = mFilmstripDataAdapter.getItemAt(adapterIndex);
+                    if (filmstripItem == null) return;
+                    long ageMillis = System.currentTimeMillis()
+                          - filmstripItem.getData().getLastModifiedDate().getTime();
+
+                    // Do not log if items is to old or does not have a path (which is
+                    // being used as a key).
+                    if (TextUtils.isEmpty(filmstripItem.getData().getFilePath()) ||
+                            ageMillis > 0) {
+                        return;
+                    }
+               }
+
+                @Override
+                public void onDataFocusChanged(final int prevIndex, final int newIndex) {
+                    if (!mFilmstripVisible) {
+                        return;
+                    }
+                    // TODO: This callback is UI event callback, should always
+                    // happen on UI thread. Find the reason for this
+                    // runOnUiThread() and fix it.
+                    CameraActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            updateUiByData(newIndex);
+                        }
+                    });
+                }
+
+                @Override
+                public void onScroll(int firstVisiblePosition, int visibleItemCount, int totalItemCount) {
+                    mPreloader.onScroll(null /*absListView*/, firstVisiblePosition, visibleItemCount, totalItemCount);
+                }
+            };
 }

@@ -8,8 +8,13 @@ ifneq ($(strip $(SOONG_CONFIG_qticamera_apk)),true)
 LOCAL_STATIC_JAVA_LIBRARIES := android-support-v13
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v4
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-recyclerview
+LOCAL_STATIC_JAVA_LIBRARIES += androidx.heifwriter_heifwriter
 LOCAL_STATIC_JAVA_LIBRARIES += xmp_toolkit
 LOCAL_STATIC_JAVA_LIBRARIES += androidx.heifwriter_heifwriter
+LOCAL_STATIC_JAVA_LIBRARIES += glide
+LOCAL_STATIC_JAVA_LIBRARIES += guava
+
+LOCAL_USES_LIBRARIES := org.apache.http.legacy
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src)
 LOCAL_SRC_FILES += $(call all-java-files-under, src_pd)

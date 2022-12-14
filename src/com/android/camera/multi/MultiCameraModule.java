@@ -314,6 +314,10 @@ public class MultiCameraModule implements CameraModule, PhotoController {
     }
 
     @Override
+    public void onCreateAfterSuper() {
+    }
+
+    @Override
     public void onPreviewFocusChanged(boolean previewFocused) {
 
     }

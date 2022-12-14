@@ -56,6 +56,15 @@ public class ApiHelper {
     public static final boolean HAS_RESUME_SUPPORTED =
             Build.VERSION.SDK_INT > Build.VERSION_CODES.M;
 
+    public static final boolean IS_NEXUS_4 = "mako".equalsIgnoreCase(Build.DEVICE);
+    public static final boolean IS_NEXUS_5 = "LGE".equalsIgnoreCase(Build.MANUFACTURER)
+            && "hammerhead".equalsIgnoreCase(Build.DEVICE);
+    public static final boolean IS_NEXUS_6 = "motorola".equalsIgnoreCase(Build.MANUFACTURER)
+            && "shamu".equalsIgnoreCase(Build.DEVICE);
+    public static final boolean IS_NEXUS_9 = "htc".equalsIgnoreCase(Build.MANUFACTURER)
+            && ("flounder".equalsIgnoreCase(Build.DEVICE)
+                 || "flounder_lte".equalsIgnoreCase(Build.DEVICE));
+
     public static int getIntFieldIfExists(Class<?> klass, String fieldName,
             Class<?> obj, int defaultVal) {
         try {
@@ -87,5 +96,10 @@ public class ApiHelper {
 
     public static boolean isAndroidROrHigher() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
+    }
+
+    public static boolean isLOrHigher() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                || "L".equals(Build.VERSION.CODENAME) || "LOLLIPOP".equals(Build.VERSION.CODENAME);
     }
 }

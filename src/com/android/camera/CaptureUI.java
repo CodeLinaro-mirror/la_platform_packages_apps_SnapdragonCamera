@@ -91,8 +91,10 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.android.camera.app.FilmstripBottomPanel;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;
 import com.android.camera.data.Camera2ModeAdapter;
+import com.android.camera.filmstrip.FilmstripContentPanel;
 import com.android.camera.ui.AutoFitSurfaceView;
 import com.android.camera.ui.AutoFitTextureView;
 import com.android.camera.ui.Camera2FaceView;
@@ -118,6 +120,8 @@ import com.android.camera.ui.AFView;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.deepportrait.GLCameraPreview;
 import com.android.camera.util.PersistUtil;
+import com.android.camera.widget.Cling;
+import com.android.camera.widget.FilmstripLayout;
 import android.hardware.camera2.CameraCharacteristics;
 import com.android.camera.ui.VerticalSeekBar;
 import android.hardware.camera2.CameraAccessException;
@@ -165,6 +169,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private View mRootView;
     private View mPreviewCover;
     private CaptureModule mModule;
+    private final FrameLayout mCameraRootView;
 
     private final Object mSurfaceTextureLock = new Object();
     private SurfaceTexture mSurfaceTexture;
@@ -183,6 +188,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TouchTrackFocusRenderer mT2TFocusRenderer;
     private StateNNTrackFocusRenderer mStatsNNFocusRenderer;
     private ImageView mThumbnail;
+    private final FilmstripLayout mFilmstripLayout;
+    private final FilmstripBottomPanel mFilmstripBottomControls;
+    private final FilmstripContentPanel mFilmstripPanel;
     private Camera2FaceView mFaceView;
     private Point mDisplaySize = new Point();
     private SelfieFlashView mSelfieView;
@@ -759,10 +767,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
 
-    public CaptureUI(CameraActivity activity, final CaptureModule module, View parent) {
+    public CaptureUI(CameraActivity activity, final CaptureModule module, FrameLayout rootView, View parent) {
         mActivity = activity;
         mModule = module;
         mRootView = parent;
+        mCameraRootView = rootView;
         mSettingsManager = SettingsManager.getInstance();
         mSettingsManager.registerListener(this);
         mActivity.getLayoutInflater().inflate(R.layout.capture_module,
@@ -916,6 +925,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
 
+        mFilmstripLayout = (FilmstripLayout) rootView.findViewById(R.id.filmstrip_layout);
+        mFilmstripBottomControls = new FilmstripBottomPanel(
+                (ViewGroup) rootView.findViewById(R.id.filmstrip_bottom_panel));
+        mFilmstripPanel = (FilmstripContentPanel) rootView.findViewById(R.id.filmstrip_layout);
         mExitBestMode.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -2836,8 +2849,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             @Override
             public void onClick(View v) {
                 if (!CameraControls.isAnimating() && !mModule.isTakingPicture() &&
-                        !mModule.isRecordingVideo())
-                    mActivity.gotoGallery();
+                        !mModule.isRecordingVideo()) {
+                    //mActivity.gotoGallery();
+                    mFilmstripLayout.showFilmstrip();
+                    showBottomControls();
+                }
             }
         });
         if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
@@ -3005,7 +3021,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return false;
     }
 
+    public FilmstripLayout getFilmstripLayout() {
+        return mFilmstripLayout;
+    }
+
     public boolean onBackPressed() {
+        if (mFilmstripLayout.getVisibility() == View.VISIBLE) {
+            return mFilmstripLayout.onBackPressed();
+        }
         if (handleBackKeyOnMenu()) return true;
         if (mPieRenderer != null && mPieRenderer.showsItems()) {
             mPieRenderer.hide();
@@ -4319,7 +4342,233 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mThumbnail.setSoundEffectsEnabled(enabled);
         }
     }
+
     public OneUICameraControls getmCameraControls(){
         return mCameraControls;
+    }
+
+    public FilmstripContentPanel getFilmstripContentPanel() {
+        return mFilmstripPanel;
+    }
+
+    /**
+     * Call to stop the preview from being rendered. Sets the entire capture
+     * root view to invisible which includes the preview plus focus indicator
+     * and any other auxiliary views for capture modes.
+     */
+    public void pausePreviewRendering() {
+        mCameraRootView.setVisibility(View.INVISIBLE);
+    }
+
+    /**
+     * Call to begin rendering the preview and auxiliary views again.
+     */
+    public void resumePreviewRendering() {
+        mCameraRootView.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * @return The {@link com.android.camera.app.CameraAppUI.BottomPanel} on the
+     * bottom of the filmstrip.
+     */
+    public BottomPanel getFilmstripBottomControls() {
+        return mFilmstripBottomControls;
+    }
+
+    public void showBottomControls() {
+        mFilmstripBottomControls.show();
+    }
+
+    public void hideBottomControls() {
+        mFilmstripBottomControls.hide();
+    }
+
+    /**
+     * @param listener The listener for bottom controls.
+     */
+    public void setFilmstripBottomControlsListener(BottomPanel.Listener listener) {
+        mFilmstripBottomControls.setListener(listener);
+    }
+
+    /**
+     * Clears the listeners for the cling and remove it from the view hierarchy.
+     *
+     * @param viewerType defines which viewer the cling is for.
+     */
+    public void clearClingForViewer(int viewerType) {
+        Cling clingToBeRemoved = mFilmstripBottomControls.getClingForViewer(viewerType);
+        if (clingToBeRemoved == null) {
+            // No cling is created for the specific viewer type.
+            return;
+        }
+        mFilmstripBottomControls.clearClingForViewer(viewerType);
+        clingToBeRemoved.setVisibility(View.GONE);
+        mCameraRootView.removeView(clingToBeRemoved);
+    }
+
+    /**
+     * The bottom controls on the filmstrip.
+     */
+    public static interface BottomPanel {
+        /** Values for the view state of the button. */
+        public final int VIEWER_NONE = 0;
+        public final int VIEWER_PHOTO_SPHERE = 1;
+        public final int VIEWER_REFOCUS = 2;
+        public final int VIEWER_OTHER = 3;
+
+        /**
+         * Sets a new or replaces an existing listener for bottom control events.
+         */
+        void setListener(Listener listener);
+
+        /**
+         * Sets cling for external viewer button.
+         */
+        void setClingForViewer(int viewerType, Cling cling);
+
+        /**
+         * Clears cling for external viewer button.
+         */
+        void clearClingForViewer(int viewerType);
+
+        /**
+         * Returns a cling for the specified viewer type.
+         */
+        Cling getClingForViewer(int viewerType);
+
+        /**
+         * Set if the bottom controls are visible.
+         * @param visible {@code true} if visible.
+         */
+        void setVisible(boolean visible);
+
+        /**
+         * @param visible Whether the button is visible.
+         */
+        void setEditButtonVisibility(boolean visible);
+
+        /**
+         * @param enabled Whether the button is enabled.
+         */
+        void setEditEnabled(boolean enabled);
+
+        /**
+         * Sets the visibility of the view-photosphere button.
+         *
+         * @param state one of {@link #VIEWER_NONE}, {@link #VIEWER_PHOTO_SPHERE},
+         *            {@link #VIEWER_REFOCUS}.
+         */
+        void setViewerButtonVisibility(int state);
+
+        /**
+         * @param enabled Whether the button is enabled.
+         */
+        void setViewEnabled(boolean enabled);
+
+        /**
+         * @param enabled Whether the button is enabled.
+         */
+        void setTinyPlanetEnabled(boolean enabled);
+
+        /**
+         * @param visible Whether the button is visible.
+         */
+        void setDeleteButtonVisibility(boolean visible);
+
+        /**
+         * @param enabled Whether the button is enabled.
+         */
+        void setDeleteEnabled(boolean enabled);
+
+        /**
+         * @param visible Whether the button is visible.
+         */
+        void setShareButtonVisibility(boolean visible);
+
+        /**
+         * @param enabled Whether the button is enabled.
+         */
+        void setShareEnabled(boolean enabled);
+
+        /**
+         * Sets the texts for progress UI.
+         *
+         * @param text The text to show.
+         */
+        void setProgressText(CharSequence text);
+
+        /**
+         * Sets the progress.
+         *
+         * @param progress The progress value. Should be between 0 and 100.
+         */
+        void setProgress(int progress);
+
+        /**
+         * Replaces the progress UI with an error message.
+         */
+        void showProgressError(CharSequence message);
+
+        /**
+         * Hide the progress error message.
+         */
+        void hideProgressError();
+
+        /**
+         * Shows the progress.
+         */
+        void showProgress();
+
+        /**
+         * Hides the progress.
+         */
+        void hideProgress();
+
+        /**
+         * Shows the controls.
+         */
+        void showControls();
+
+        /**
+         * Hides the controls.
+         */
+        void hideControls();
+
+        /**
+         * Classes implementing this interface can listen for events on the bottom
+         * controls.
+         */
+        public static interface Listener {
+            /**
+             * Called when the user pressed the "view" button to e.g. view a photo
+             * sphere or RGBZ image.
+             */
+            public void onExternalViewer();
+
+            /**
+             * Called when the "edit" button is pressed.
+             */
+            public void onEdit();
+
+            /**
+             * Called when the "tiny planet" button is pressed.
+             */
+            public void onTinyPlanet();
+
+            /**
+             * Called when the "delete" button is pressed.
+             */
+            public void onDelete();
+
+            /**
+             * Called when the "share" button is pressed.
+             */
+            public void onShare();
+
+            /**
+             * Called when the progress error message is clicked.
+             */
+            public void onProgressErrorClicked();
+        }
     }
 }

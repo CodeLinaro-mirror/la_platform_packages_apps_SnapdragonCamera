@@ -611,6 +611,11 @@ public class PhotoModule
             mPreferences.getString(CameraSettings.KEY_CAMERA_SAVEPATH, "0").equals("1"));
     }
 
+    @Override
+    public void onCreateAfterSuper() {
+
+    }
+
     private void initializeControlByIntent() {
         mUI.initializeControlByIntent();
         if (mIsImageCaptureIntent) {

@@ -407,6 +407,28 @@ public class CameraUtil {
         }
     }
 
+    /**
+     * Shows custom error dialog. Designed specifically
+     * for the scenario where the camera cannot be attached.
+     * @deprecated Use {@link FatalErrorHandler} instead.
+     */
+    @Deprecated
+    public static void showError(final Activity activity, final int dialogMsgId, final int feedbackMsgId,
+                                 final boolean finishActivity, final Exception ex) {
+        final DialogInterface.OnClickListener buttonListener =
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (finishActivity) {
+                            activity.finish();
+                        }
+                    }
+                };
+
+        TypedValue out = new TypedValue();
+        activity.getTheme().resolveAttribute(android.R.attr.alertDialogIcon, out, true);
+    }
+
     private static void throwIfCameraDisabled(Activity activity) throws CameraDisabledException {
         // Check if device policy has disabled the camera.
         DevicePolicyManager dpm = (DevicePolicyManager) activity.getSystemService(
@@ -975,6 +997,49 @@ public class CameraUtil {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Calculates a new dimension to fill the bound with the original aspect
+     * ratio preserved.
+     *
+     * @param imageWidth The original width.
+     * @param imageHeight The original height.
+     * @param imageRotation The clockwise rotation in degrees of the image which
+     *            the original dimension comes from.
+     * @param boundWidth The width of the bound.
+     * @param boundHeight The height of the bound.
+     * @returns The final width/height stored in Point.x/Point.y to fill the
+     *          bounds and preserve image aspect ratio.
+     */
+    public static Point resizeToFill(int imageWidth, int imageHeight, int imageRotation,
+            int boundWidth, int boundHeight) {
+        if (imageRotation % 180 != 0) {
+            // Swap width and height.
+            int savedWidth = imageWidth;
+            imageWidth = imageHeight;
+            imageHeight = savedWidth;
+        }
+
+        Point p = new Point();
+        p.x = boundWidth;
+        p.y = boundHeight;
+
+        // In some cases like automated testing, image height/width may not be
+        // loaded, to avoid divide by zero fall back to provided bounds.
+        if (imageWidth != 0 && imageHeight != 0) {
+            if (imageWidth * boundHeight > boundWidth * imageHeight) {
+                p.y = imageHeight * p.x / imageWidth;
+            } else {
+                p.x = imageWidth * p.y / imageHeight;
+            }
+        } else {
+            Log.w(TAG, "zero width/height, falling back to bounds (w|h|bw|bh):"
+                    + imageWidth + "|" + imageHeight + "|" + boundWidth + "|"
+                    + boundHeight);
+        }
+
+        return p;
     }
 
     public static void dumpRect(RectF rect, String msg) {

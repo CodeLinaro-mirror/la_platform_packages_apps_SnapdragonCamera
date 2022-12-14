@@ -107,9 +107,9 @@ import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.FrameLayout;
 import android.graphics.Paint;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -1310,6 +1310,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             new MediaSaveService.OnMediaSavedListener() {
                 @Override
                 public void onMediaSaved(Uri uri) {
+                    Log.d(TAG, "mOnVideoSavedListener onMediaSaved uri :" + uri);
                     if (uri != null) {
                         mActivity.notifyNewMedia(uri);
                     }
@@ -1320,6 +1321,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             new MediaSaveService.OnMediaSavedListener() {
                 @Override
                 public void onMediaSaved(Uri uri) {
+                    Log.d(TAG, "onMediaSaved uri :" + uri + ", mLongshotActive :" + mLongshotActive);
                     if (mLongshotActive) {
                         if (mediaSaveNotifyThread == null) {
                             mediaSaveNotifyThread = new MediaSaveNotifyThread(uri);
@@ -4326,13 +4328,16 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(mPostProcessor.isJniAPISupported())
             mPostProcessor.nativeEnablePerfLock();
         mFrameProcessor = new FrameProcessor(mActivity, this);
-
         mContentResolver = mActivity.getContentResolver();
-        mUI = new CaptureUI(activity, this, parent);
-        mUI.initializeControlByIntent();
-        mFocusStateListener = new FocusStateListener(mUI);
         mLocationManager = new LocationManager(mActivity, this);
         mCameraRender = new CameraRender();
+    }
+
+    @Override
+    public void onCreateAfterSuper() {
+        mUI = mActivity.getCaptureUI();
+        mUI.initializeControlByIntent();
+        mFocusStateListener = new FocusStateListener(mUI);
     }
 
     public void restoreCameraIds(){
@@ -6204,7 +6209,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                 String.valueOf(timeStamp),"yuv");
                                         image.close();
                                     } else {
-                                        if (image.getFormat() != ImageFormat.HEIC && exif != null) {
+                                        if (exif != null) {
                                             orientation = CameraUtil.getOrientation(exif);
                                         }
                                         if (mIntentMode != CaptureModule.INTENT_MODE_NORMAL &&
@@ -6227,9 +6232,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             if (mLongshotActive) {
                                                 mLastJpegData = bytes;
                                             } else {
-                                                if (imageFormat != ImageFormat.HEIC){
+                                                //if (imageFormat != ImageFormat.HEIC){
                                                     mActivity.updateThumbnail(bytes);
-                                                }
+                                                //}
                                             }
                                         }
                                         image.close();
