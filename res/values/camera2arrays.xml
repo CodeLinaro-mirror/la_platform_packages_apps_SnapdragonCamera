@@ -1143,6 +1143,15 @@ for time lapse recording -->
         <item>@string/pref_camera2_anti_banding_level_entry_auto</item>
     </string-array>
 
+    <string-array name="pref_camera2_hfr_buffermode_entries" translatable="true">
+        <item>@string/pref_camera2_hfr_batch_mode</item>
+        <item>@string/pref_camera2_hfr_superbuffer_mode</item>
+    </string-array>
+    <string-array name="pref_camera2_hfr_buffermode_entryvalues" translatable="true">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+
     <string-array name="pref_camera2_saturation_level_entryvalues" translatable="false">
         <item>0</item>
         <item>1</item>

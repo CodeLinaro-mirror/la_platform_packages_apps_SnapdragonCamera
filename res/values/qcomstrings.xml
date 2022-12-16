@@ -1194,6 +1194,11 @@
     <string name="pref_camera2_saturation_level_entry_9" translatable="true">Level 9</string>
     <string name="pref_camera2_saturation_level_entry_10" translatable="true">Level 10</string>
 
+    <string name="pref_camera2_hfr_buffermode_title" translatable="true">HFR Buffer Mode</string>
+    <string name="pref_camera2_hfr_buffermode_default" translatable="true">0</string>
+    <string name="pref_camera2_hfr_batch_mode" translatable="true">Batch Mode</string>
+    <string name="pref_camera2_hfr_superbuffer_mode" translatable="true">Superbuffer Mode</string>
+
     <string name="pref_camera2_anti_banding_level_title" translatable="true">Anti Banding Level</string>
     <string name="pref_camera2_anti_banding_level_default" translatable="false">3</string>
     <string name="pref_camera2_anti_banding_level_entry_off" translatable="true">Off</string>
@@ -1205,6 +1210,9 @@
     <string name="pref_camera2_hdr_default" translatable="false">disable</string>
     <string name="pref_camera2_hdr_entry_enable" translatable="true">Enable</string>
     <string name="pref_camera2_hdr_entry_disable" translatable="true">Disable</string>
+
+
+
 
     <string name="pref_camera2_auto_hdr_title" translatable="true">HDR Scene Detection</string>
     <string name="pref_camera2_auto_hdr_default" translatable="false">disable</string>

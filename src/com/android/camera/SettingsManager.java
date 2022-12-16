@@ -340,6 +340,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_PREVIEW_PROFILE= "pref_camera2_preview_profile_key";
     public static final String KEY_CAPTURE_PROFILE= "pref_camera2_captrue_profile_key";
 
+    public static final String KEY_HFR_BUFFER_MODE = "pref_camera2_hfr_buffermode_key";
+
     public static final String KEY_TORCH_HDR_VALUE= "pref_camera2_torch_hdr_key";
     private static final String TAG = "SnapCam_SettingsManager";
 
@@ -362,6 +364,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private int mFrontCamId = -1;
     private Set<String> mFilteredKeys;
     private int[] mExtendedHFRSize;//An array of pairs (fps, maxW, maxH)
+    private int[] mSuperBufferSize;
     private Map<String,VideoEisConfig> mVideoEisConfigs;
     private ArrayList<String> mPrepNameKeys;
     private Map<String, Set<String>> mQuadBayerIds = new HashMap<>();
@@ -861,7 +864,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         filterHFROptions();
         filterVideoEncoderProfileOptions();
     }
-
 
     public boolean isFDRenderingAtPreview(){
         boolean isFDRenderingInUI = false;
@@ -1962,7 +1964,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
         // filter dynamic lists.
         // These list can be changed run-time
-        filterHFROptions();
         filterVideoEncoderOptions();
         if (!mIsFrontCameraPresent || !isFacingFront(mCameraId)) {
             removePreference(mPreferenceGroup, KEY_SELFIE_FLASH);
@@ -2729,6 +2730,22 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return supported;
     }
 
+    public boolean isSupportedSuperBuffer(int cameraId){
+       boolean isSupported = false;
+        try {
+            if (mCharacteristics.size() > 0) {
+                mSuperBufferSize = mCharacteristics.get(cameraId).get(CaptureModule.superBufferTable);
+                if (mSuperBufferSize != null && mSuperBufferSize.length >= 5) {
+                    isSupported = true;
+                }
+            }
+        } catch(IllegalArgumentException exception) {
+            Log.w(TAG,EXCEPTION_LOG,exception.toString());
+            return isSupported;
+        }
+        return isSupported;
+    }
+
     private List<String> getSupportedHFRForAutoTest(String videoSizeStr) {
         ArrayList<String> supported = new ArrayList<String>();
         ListPreference videoEncoder = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
@@ -2817,6 +2834,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         boolean findVideoEncoder = false;
         if (mCharacteristics.size() > 0) {
             mExtendedHFRSize = mCharacteristics.get(cameraId).get(CaptureModule.hfrFpsTable);
+            String buffermode = getValue(KEY_HFR_BUFFER_MODE);
+            if(mode == CaptureModule.CameraMode.HFR && buffermode != null && buffermode.equals("1")) {
+                try {
+                    mSuperBufferSize = mCharacteristics.get(cameraId).get(CaptureModule.superBufferTable);
+                } catch (IllegalArgumentException exception) {
+                    Log.w(TAG, EXCEPTION_LOG,exception.toString());
+                    setValue(KEY_HFR_BUFFER_MODE,"0");
+                }
+            }
         }
         if (videoSizeStr != null) {
             Size videoSize = parseSize(videoSizeStr);
@@ -2838,6 +2864,29 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if (findVideoEncoder) break;
             }
 
+            if (mode == CaptureModule.CameraMode.HFR && getValue(KEY_HFR_BUFFER_MODE) != null && getValue(KEY_HFR_BUFFER_MODE).equals("1") &&
+                    mSuperBufferSize != null && mSuperBufferSize.length >= 5) {
+                for (int i = 0; i < mSuperBufferSize.length; i += 5) {
+                    String item = "hfr" + mSuperBufferSize[i + 2];
+                    if(mSuperBufferSize[i+2] == mSuperBufferSize[i + 3]) {
+                        if (videoCapabilities != null) {
+                            if (videoCapabilities.areSizeAndRateSupported(
+                                    videoSize.getWidth(), videoSize.getHeight(), mSuperBufferSize[i + 2])) {
+                                if(mSuperBufferSize[i + 2] < 120){
+                                    break;
+                                }
+                                supported.add(item);
+                                supported.add("hsr" + mSuperBufferSize[i + 2]);
+                                if (PersistUtil.isSSMEnabled() && !above1080p) {
+                                    supported.add("2x_" + mSuperBufferSize[i + 2]);
+                                    supported.add("4x_" + mSuperBufferSize[i + 2]);
+                                }
+                            }
+                        }
+                    }
+                }
+                return supported;
+            }
             try {
                 Range[] range = getSupportedHighSpeedVideoFPSRange(cameraId, videoSize);
                 String rate;
@@ -2866,7 +2915,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                     supported.add("4x_" + rate);
                                 }
                             } else {
-                                Log.d(TAG, "The " + videoSize.getWidth() + "x" + videoSize.getHeight()
+                                Log.d(TAG, " The " + videoSize.getWidth() + "x" + videoSize.getHeight()
                                         + "@fps" + r.getUpper() + " is not supported.");
                             }
                         }
@@ -2908,7 +2957,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
             }
         }
-        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported+",mCaptureModule.getVideoHdrMode()="+getVideoHdrMode());
+        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported);
         return supported;
     }
 

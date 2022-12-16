@@ -37,6 +37,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Camera;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -186,6 +187,14 @@ import org.json.JSONObject;
 import androidx.annotation.NonNull;
 import androidx.heifwriter.HeifWriter;
 
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.Executor;
 
 public class CaptureModule implements CameraModule, PhotoController,
         MediaSaveService.Listener, ClearSightImageProcessor.Callback,
@@ -504,6 +513,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("com.qti.chi.superslowmotionfrc.CaptureStart", Integer.class);
     public static CaptureRequest.Key<Integer> ssmInterpFactor =
             new CaptureRequest.Key<>("com.qti.chi.superslowmotionfrc.InterpolationFactor", Integer.class);
+
+    public static final CameraCharacteristics.Key<int[]> superBufferTable =
+            new CameraCharacteristics.Key<>("org.quic.camera2.customhfrfps.info.CustomHFRConfigurations", int[].class);
+    public static CaptureRequest.Key<Integer> outputBufferComb =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.HALOutputBufferCombined", Integer.class);
 
     public static final CameraCharacteristics.Key<int[]> hfrFpsTable =
             new CameraCharacteristics.Key<>("org.quic.camera2.customhfrfps.info.CustomHFRFpsTable", int[].class);
@@ -1753,8 +1767,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (mCurrentSceneMode.mode == CameraMode.HFR && mCurrentSession != null &&
                         mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
                     if (mCurrentSession != null) {
-                        List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                                .createHighSpeedRequestList(mPreviewRequestBuilder[id].build());
+                        List requestList = getHighSpeedList ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession,
+                                mPreviewRequestBuilder[id]);
                         mCurrentSession.setRepeatingBurst(requestList, mCaptureCallback,
                                 mCameraHandler);
                     }
@@ -4004,7 +4018,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!checkSessionAndBuilder(session, mVideoRecordRequestBuilder)) {
                     return;
                 }
-                List requestList = session.createHighSpeedRequestList(mVideoRecordRequestBuilder.build());
+
+                List requestList =getHighSpeedList(session,mVideoRecordRequestBuilder);
                 session.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
             } else {
                 mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
@@ -4695,8 +4710,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (mCurrentSceneMode.mode == CameraMode.HFR && isHighSpeedRateCapture()) {
                 List<CaptureRequest> tafBuilderList = isSSMEnabled() ?
                         createSSMBatchRequest(builder) :
-                        ((CameraConstrainedHighSpeedCaptureSession) mCaptureSession[id])
-                        .createHighSpeedRequestList(builder.build());
+                        getHighSpeedList((CameraConstrainedHighSpeedCaptureSession) mCaptureSession[id],builder);
                 mCaptureSession[id].captureBurst(tafBuilderList, mCaptureCallback, mCameraHandler);
             } else {
                 mCaptureSession[id].capture(builder.build(), mCaptureCallback, mCameraHandler);
@@ -6638,8 +6652,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     applySettingsForLockExposure(builder, id);
                 }
                 if (mCaptureSession[id] instanceof CameraConstrainedHighSpeedCaptureSession) {
-                    List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                            .createHighSpeedRequestList(builder.build());
+                    List requestList = getHighSpeedList ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession,
+                            builder);
                     mCaptureSession[id].captureBurst(requestList, mCaptureCallback, mCameraHandler);
                 } else {
                     mCaptureSession[id].capture(builder.build(), mCaptureCallback, mCameraHandler);
@@ -6964,8 +6978,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (isHighSpeedRateCapture()) {
                 List<CaptureRequest> slowMoRequests = mSuperSlomoCapture ?
                     createSSMBatchRequest(mVideoRecordRequestBuilder) :
-                    ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession).
-                        createHighSpeedRequestList(mVideoRecordRequestBuilder.build());
+                        getHighSpeedList((CameraConstrainedHighSpeedCaptureSession) mCurrentSession,
+                                mVideoRecordRequestBuilder);
                 mCaptureSession[id].setRepeatingBurst(slowMoRequests, mCaptureCallback,
                         mCameraHandler);
             } else {
@@ -8208,9 +8222,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         try {
             if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
-                List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                        .createHighSpeedRequestList(
-                                mVideoRecordRequestBuilder.build());
+                List requestList = getHighSpeedList((CameraConstrainedHighSpeedCaptureSession) mCurrentSession,
+                                mVideoRecordRequestBuilder);
                 mCurrentSession.captureBurst(requestList, mCaptureCallback, mCameraHandler);
             } else if (isSSMEnabled()) {
                 mCurrentSession.captureBurst(createSSMBatchRequest(mVideoRecordRequestBuilder),
@@ -9576,7 +9589,184 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.e(TAG, "limit preview fps failed.");
         }
     }
+    private List<CaptureRequest> getHighSpeedList(CameraConstrainedHighSpeedCaptureSession session,CaptureRequest.Builder builder) throws CameraAccessException {
+        List<CaptureRequest> highrequest = null;
+        CaptureRequest request = builder.build();
+        if (request == null) {
+            throw new IllegalArgumentException("Input capture request must not be null");
+        }
+        String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
+        if(buffermode != null && buffermode.equals("1")){
+            highrequest = createMyHighSpeedRequestList(request);
+        }else{
+            highrequest = session.createHighSpeedRequestList(request);
+        }
+        return highrequest;
+    }
+    private boolean surfaceForHwVideoEncoder(Surface sur){
+        try {
+            Class SurfaceUtilsClass = Class.forName("android.hardware.camera2.utils.SurfaceUtils");
+            Method isSurfaceForHwMethod = SurfaceUtilsClass.getDeclaredMethod(
+                    "isSurfaceForHwVideoEncoder", Surface.class);
+            isSurfaceForHwMethod.setAccessible(true);
+            boolean isHwSur = (boolean) isSurfaceForHwMethod.invoke(SurfaceUtilsClass, sur);
+            return isHwSur;
+        }catch(Exception e){
+            Log.e(TAG,"Failed to invoke SurfaceUtils e="+e);
+        }
+        return false;
+    }
+    private Collection<Surface> getRequestTargets(CaptureRequest request){
+        try {
+            Class CaptureReqestClass = Class.forName("android.hardware.camera2.CaptureRequest");
+            Method getTargetMethod = CaptureReqestClass.getDeclaredMethod("getTargets");
+            getTargetMethod.setAccessible(true);
+            Collection<Surface> surs = (Collection<Surface>) getTargetMethod.invoke(request);
+            return surs;
+        }catch(Exception e){
+        Log.e(TAG,"e="+e);
+            return null;
+        }
 
+    }
+    private void setCHSRequestList(CaptureRequest.Builder builder,boolean value){
+        try{
+        Class CaptureReqestBuilderClass = Class.forName("android.hardware.camera2.CaptureRequest$Builder");
+        Method setRequestListMethod = CaptureReqestBuilderClass.getDeclaredMethod
+                ("setPartOfCHSRequestList",boolean.class);
+        setRequestListMethod.setAccessible(true);
+        //Object obj = CaptureReqestClass.getConstructor().newInstance();
+        setRequestListMethod.invoke(builder,value);
+        }catch(Exception e){
+            Log.e(TAG,"e="+e);
+        }
+    }
+    private Object getMetadataObj(Object cpy){
+        try{
+        Class CameraMetadataClass = Class.forName("android.hardware.camera2.impl.CameraMetadataNative");
+        Object obj = CameraMetadataClass.getConstructor(CameraMetadataClass).newInstance(CameraMetadataClass.cast(cpy));
+        return obj;
+        }catch(Exception e){
+            Log.e(TAG,"e="+e);
+            return null;
+        }
+    }
+     private Object getNativeCopyObj(CaptureRequest request){
+        try{
+         Class CaptureReqestClass = Class.forName("android.hardware.camera2.CaptureRequest");
+         //Class CameraMetadataClass = Class.forName("android.hardware.camera2.impl.CameraMetadataNative");
+         Method getNativeCpMethod = CaptureReqestClass.getDeclaredMethod("getNativeCopy");
+         getNativeCpMethod.setAccessible(true);
+         Object obj = getNativeCpMethod.invoke(request);
+         return obj;
+        }catch(Exception e){
+            Log.e(TAG,"e="+e);
+            return null;
+        }
+     }
+     private String getLogicalCameraId(CaptureRequest request){
+        try{
+         Class CaptureReqestClass = Class.forName("android.hardware.camera2.CaptureRequest");
+         Method getLogicalIdMethod = CaptureReqestClass.getDeclaredMethod("getLogicalCameraId");
+         getLogicalIdMethod.setAccessible(true);
+         String id =(String)getLogicalIdMethod.invoke(request);
+         return id;
+        }catch(Exception e){
+            Log.e(TAG,"e="+e);
+            return null;
+        }
+     }
+     private CaptureRequest.Builder requestBuilder(Object meta,boolean reprocess,int sessionid,String cameraid,Set<String>cameraidset){
+        try{
+         Class CameraMetadataClass = Class.forName("android.hardware.camera2.impl.CameraMetadataNative");
+         Class CaptureReqestBuilderClass = Class.forName("android.hardware.camera2.CaptureRequest$Builder");
+         CaptureRequest.Builder builder = (CaptureRequest.Builder)CaptureReqestBuilderClass.getConstructor(CameraMetadataClass,boolean.class,
+                 int.class,String.class,Set.class).newInstance(meta,reprocess,sessionid,cameraid,cameraidset);
+         return builder;
+        }catch(Exception e){
+            Log.e(TAG,"e="+e);
+            return null;
+        }
+     }
+    private List<CaptureRequest> createMyHighSpeedRequestList(CaptureRequest request)
+            throws CameraAccessException {
+        if (request == null) {
+            throw new IllegalArgumentException("Input capture request must not be null");
+        }
+        int requestListSize = 1;
+        Collection<Surface> outputSurfaces = getRequestTargets(request);//request.getTargets();
+        List<CaptureRequest> requestList = new ArrayList<CaptureRequest>();
+
+        // Prepare the Request builders: need carry over the request controls.
+        // First, create a request builder that will only include preview or recording target.
+        //CameraMetadataNative requestMetadata = new CameraMetadataNative(request.getNativeCopy());
+        // Note that after this step, the requestMetadata is mutated (swapped) and can not be used
+        // for next request builder creation.
+ /*       CaptureRequest.Builder singleTargetRequestBuilder = new CaptureRequest.Builder(
+                getMetadataObj(getNativeCopyObj(request)), *//*reprocess*//*false, -1,
+                getLogicalCameraId(request), *//*physicalCameraIdSet*//* null);*/
+
+        CaptureRequest.Builder singleTargetRequestBuilder = requestBuilder(getMetadataObj(getNativeCopyObj(request)), false, -1,
+                getLogicalCameraId(request),null);
+        // Carry over userTag, as native metadata doesn't have this field.
+        singleTargetRequestBuilder.setTag(request.getTag());
+        // Overwrite the capture intent to make sure a good value is set.
+        Iterator<Surface> iterator = outputSurfaces.iterator();
+        Surface firstSurface = iterator.next();
+        Surface secondSurface = null;
+
+        if (outputSurfaces.size() == 1 && surfaceForHwVideoEncoder(firstSurface)) {
+            singleTargetRequestBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT,
+                    CaptureRequest.CONTROL_CAPTURE_INTENT_PREVIEW);
+        } else {
+            // Video only, or preview + video
+            singleTargetRequestBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT,
+                    CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD);
+        }
+        setCHSRequestList(singleTargetRequestBuilder,true);
+       // singleTargetRequestBuilder.setPartOfCHSRequestList(/*partOfCHSList*/true);//keep
+
+        // Second, Create a request builder that will include both preview and recording targets.
+        CaptureRequest.Builder doubleTargetRequestBuilder = null;
+        if (outputSurfaces.size() == 2) {
+            // Have to create a new copy, the original one was mutated after a new
+            // CaptureRequest.Builder creation.
+           // requestMetadata = new CameraMetadataNative(request.getNativeCopy());
+/*            doubleTargetRequestBuilder = new CaptureRequest.Builder(
+                    getMetadataObj(getNativeCopyObj(request)), *//*reprocess*//*false, -1,
+                    getLogicalCameraId(request), *//*physicalCameraIdSet*//*null);*/
+
+            doubleTargetRequestBuilder = requestBuilder(getMetadataObj(getNativeCopyObj(request)),false,-1, getLogicalCameraId(request),null);
+            doubleTargetRequestBuilder.setTag(request.getTag());
+            doubleTargetRequestBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT,
+                    CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD);
+            doubleTargetRequestBuilder.addTarget(firstSurface);
+            secondSurface = iterator.next();
+            doubleTargetRequestBuilder.addTarget(secondSurface);
+            setCHSRequestList(doubleTargetRequestBuilder,true);
+            //doubleTargetRequestBuilder.setPartOfCHSRequestList(/*partOfCHSList*/true);
+            // Make sure singleTargetRequestBuilder contains only recording surface for
+            // preview + recording case.
+            Surface recordingSurface = firstSurface;
+            if (!surfaceForHwVideoEncoder(recordingSurface)) {
+                recordingSurface = secondSurface;
+            }
+            singleTargetRequestBuilder.addTarget(recordingSurface);
+        } else {
+            // Single output case: either recording or preview.
+            singleTargetRequestBuilder.addTarget(firstSurface);
+        }
+        // Generate the final request list.
+        for (int i = 0; i < requestListSize; i++) {
+            if (i == 0 && doubleTargetRequestBuilder != null) {
+                // First request should be recording + preview request
+                requestList.add(doubleTargetRequestBuilder.build());
+            } else {
+                requestList.add(singleTargetRequestBuilder.build());
+            }
+        }
+        return Collections.unmodifiableList(requestList);
+    }
     private final CameraCaptureSession.StateCallback mSessionListener = new CameraCaptureSession
             .StateCallback() {
         @Override
@@ -9616,8 +9806,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (isHighSpeedRateCapture()) {
                     slowMoRequests = mSuperSlomoCapture ?
                             createSSMBatchRequest(mVideoRecordRequestBuilder) :
-                            ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession).
-                                    createHighSpeedRequestList(mVideoRecordRequestBuilder.build());
+                    getHighSpeedList((CameraConstrainedHighSpeedCaptureSession) mCurrentSession,mVideoRecordRequestBuilder);
                     mCurrentSession.setRepeatingBurst(slowMoRequests, mCaptureCallback,
                             mCameraHandler);
                 } else {
@@ -9874,6 +10063,16 @@ public class CaptureModule implements CameraModule, PhotoController,
         setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
         mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
         try {
+            String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
+            if(buffermode != null && buffermode.equals("1")) {
+                mVideoRecordRequestBuilder.set(CaptureModule.outputBufferComb, 1);
+            }else{
+                mVideoRecordRequestBuilder.set(CaptureModule.outputBufferComb, 0);
+            }
+        }catch (IllegalArgumentException e){
+            Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
+        }
+        try {
             SessionConfiguration sessionConfig = new SessionConfiguration(optionMode,
                     outConfigurations, new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
@@ -9938,8 +10137,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                 List<CaptureRequest> slowMoRequests  = mSuperSlomoCapture ?
                         createSSMBatchRequest(mVideoRecordRequestBuilder) :
-                        ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                                .createHighSpeedRequestList(mVideoRecordRequestBuilder.build());
+                        getHighSpeedList((CameraConstrainedHighSpeedCaptureSession) mCurrentSession,
+                                mVideoRecordRequestBuilder);
                 mCurrentSession.setRepeatingBurst(slowMoRequests, mCaptureCallback,
                         mCameraHandler);
             } else {
@@ -10457,8 +10656,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else {
                 CameraCaptureSession session = mCaptureSession[id];
                 if (session instanceof CameraConstrainedHighSpeedCaptureSession) {
-                    List list = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                            .createHighSpeedRequestList(builder.build());
+                    List list = getHighSpeedList((CameraConstrainedHighSpeedCaptureSession)session,builder);
                     ((CameraConstrainedHighSpeedCaptureSession) session).setRepeatingBurst(list
                             , mCaptureCallback, mCameraHandler);
                 } else if (isSSMEnabled()) {
@@ -10570,7 +10768,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
                 CameraConstrainedHighSpeedCaptureSession session =
                         (CameraConstrainedHighSpeedCaptureSession) mCurrentSession;
-                List requestList = session.createHighSpeedRequestList(captureRequest);
+                List requestList = getHighSpeedList(session,mVideoRecordRequestBuilder);
                 session.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
             } else if (isSSMEnabled()) {
                 mCurrentSession.setRepeatingBurst(createSSMBatchRequest(mIsRecordingVideo ?
@@ -11143,9 +11341,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         try {
             mCurrentSession.stopRepeating();
             if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
-                List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                        .createHighSpeedRequestList(
-                        mVideoRecordRequestBuilder.build());
+                List requestList = getHighSpeedList((CameraConstrainedHighSpeedCaptureSession)mCurrentSession,
+                        mVideoRecordRequestBuilder);
                 mCurrentSession.captureBurst(requestList, mCaptureCallback, mCameraHandler);
             } else if (!isSSMEnabled()){
                 mCurrentSession.capture(mVideoRecordRequestBuilder.build(), mCaptureCallback,
@@ -13508,8 +13705,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mZoomTimeMap.put(System.currentTimeMillis(), mZoomValue);
                 }
                 if (session instanceof CameraConstrainedHighSpeedCaptureSession) {
-                    List list = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                            .createHighSpeedRequestList(captureRequest.build());
+                    List list = getHighSpeedList((CameraConstrainedHighSpeedCaptureSession) session
+                            ,captureRequest);
                     if(!instant) {
                         ((CameraConstrainedHighSpeedCaptureSession) session).setRepeatingBurst(list
                                 , mCaptureCallback, mCameraHandler);
@@ -14443,9 +14640,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (mCurrentSceneMode.mode == CameraMode.HFR && mCurrentSession != null &&
                         mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
                     if (mCurrentSession != null) {
-                        List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                                .createHighSpeedRequestList(
-                                mPreviewRequestBuilder[id].build());
+                        List requestList = getHighSpeedList(
+                                (CameraConstrainedHighSpeedCaptureSession) mCurrentSession,
+                                mPreviewRequestBuilder[id]);
                         mCurrentSession.setRepeatingBurst(requestList, mCaptureCallback,
                                 mCameraHandler);
                     }
@@ -14802,9 +14999,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (checkSessionAndBuilder(mCaptureSession[BAYER_ID],
                         mPreviewRequestBuilder[BAYER_ID])) {
                     if (mIsRecordingVideo && mHighSpeedCapture) {
-                        List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCaptureSession[BAYER_ID])
-                                .createHighSpeedRequestList(
-                                mPreviewRequestBuilder[BAYER_ID].build());
+                        List requestList =getHighSpeedList((CameraConstrainedHighSpeedCaptureSession) mCaptureSession[BAYER_ID],
+                                mPreviewRequestBuilder[BAYER_ID]);
                         mCaptureSession[BAYER_ID].setRepeatingBurst(requestList, mCaptureCallback,
                                 mCameraHandler);
                     } else {
@@ -14850,9 +15046,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (checkSessionAndBuilder(mCaptureSession[cameraId],
                         mPreviewRequestBuilder[cameraId])) {
                     if (mCaptureSession[cameraId] instanceof CameraConstrainedHighSpeedCaptureSession) {
-                        List<CaptureRequest> list = ((CameraConstrainedHighSpeedCaptureSession)
-                                mCaptureSession[cameraId]).createHighSpeedRequestList(
-                                        mPreviewRequestBuilder[cameraId].build());
+                        List<CaptureRequest> list = getHighSpeedList((CameraConstrainedHighSpeedCaptureSession)
+                                mCaptureSession[cameraId],
+                                        mPreviewRequestBuilder[cameraId]);
                         mCaptureSession[cameraId].setRepeatingBurst(list, mCaptureCallback,
                                 mCameraHandler);
                     } else if (isSSMEnabled()) {

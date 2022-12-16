@@ -109,6 +109,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.android.camera.CaptureModule.CameraMode.DEFAULT;
+import static com.android.camera.CaptureModule.CameraMode.HFR;
 import static com.android.camera.CaptureModule.CameraMode.RTB;
 import static com.android.camera.CaptureModule.CameraMode.SAT;
 import static com.android.camera.CaptureModule.CameraMode.VIDEO;
@@ -287,7 +288,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if (pref == null) continue;
                 pref.setEnabled(enabled);
 
-                Log.v(TAG, "onSettingsChanged key :" + state.key + ", enabled :" + enabled);
+                Log.i(TAG, "onSettingsChanged key :" + state.key + ", enabled :" + enabled);
 
                 if (pref.getKey().equals(SettingsManager.KEY_MANUAL_EXPOSURE)) {
                     UpdateManualExposureSettings();
@@ -344,7 +345,6 @@ public class SettingsActivity extends PreferenceActivity {
                 }
 
                 if (pref.getKey().equals(SettingsManager.KEY_VIDEO_QUALITY) ||
-                        pref.getKey().equals(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE) ||
                         pref.getKey().equals(SettingsManager.KEY_SELECT_MODE)){
                     updateEISPreference();
                     updateVideoVariableFpsPreference();
@@ -355,6 +355,9 @@ public class SettingsActivity extends PreferenceActivity {
                         mSettingsManager.filterVideoEncoderProfileOptions();
                         updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
                     }
+                }
+                if(pref.getKey().equals(SettingsManager.KEY_HFR_BUFFER_MODE)){
+                    updateVideoHfrFpsPreference();
                 }
 
                 if (pref.getKey().equals(SettingsManager.KEY_SCENE_MODE)) {
@@ -1543,6 +1546,11 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if (mode != VIDEO) {
                     removePreference(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
+                    if(mode == HFR && !mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())){
+                        removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
+                    }
+                }else {
+                    removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
                 }
                 break;
             case CINEMATIC:
@@ -1555,6 +1563,7 @@ public class SettingsActivity extends PreferenceActivity {
                 removePreference(SettingsManager.KEY_VIDEO_DURATION, videoPre);
                 removePreference(SettingsManager.KEY_PICTURE_FORMAT, videoPre);
                 removePreference(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
+                removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> cinematicList = new ArrayList<>();
                     cinematicList.add(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC);
@@ -1941,8 +1950,20 @@ public class SettingsActivity extends PreferenceActivity {
         updateMultiVideoFPSPreference();
         updateViullPreference();
         updateCinematicOptions(fromRestore);
+        updateHfrBufferMode();
     }
-
+    public void updateHfrBufferMode(){
+        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_HFR_BUFFER_MODE);
+        if(pref == null){
+            return;
+        }
+        if (mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())){
+                pref.setEnabled(true);
+            }else{
+                pref.setEnabled(false);
+                pref.setValue("0");
+            }
+    }
     private void updateAudioEncoderPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_AUDIO_ENCODER);
         String hdr_mode = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_RECORDING_MODE);
