@@ -10893,6 +10893,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void updateBitrateForNonHFR(int videoEncoder, int bitRate, int height, int width) {
         MediaCodecList allCodecs = new MediaCodecList(MediaCodecList.ALL_CODECS);
+        if(PersistUtil.getBitRate() != -1){
+            bitRate = PersistUtil.getBitRate();
+        }
         for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
             if (!info.isEncoder() || info.getName().contains("google")) continue;
             for (String type : info.getSupportedTypes()) {
@@ -11362,6 +11365,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             mVideoFormat.setInteger(MediaFormat.KEY_OPERATING_RATE, fps);
             Log.i(TAG, "Capture rate: "+fps+", Target rate: "+targetRate);
             int scaledBitrate = mSettingsManager.getHighSpeedVideoEncoderBitRate(mProfile, targetRate, fps);
+            if(PersistUtil.getBitRate() != -1){
+                scaledBitrate = PersistUtil.getBitRate();
+            }
             Log.i(TAG, "Scaled video bitrate : " + scaledBitrate);
             mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, scaledBitrate);
         }
