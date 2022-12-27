@@ -2904,7 +2904,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     };
 
             Surface surface = null;
-            if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getSinglePhysicalCamera() != null || isClearSightOn()) {
+            if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getSinglePhysicalCamera() != null || isClearSightOn() || needYUVStream()) {
                 try {
                     waitForPreviewSurfaceReady();
                 } catch (RuntimeException e) {
@@ -7077,7 +7077,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         if(mPostProcessor.isZSLEnabled() && !isActionImageCapture()) {
             mChosenImageFormat = ImageFormat.PRIVATE;
-        } else if(mPostProcessor.isFilterOn() || getFrameFilters().size() != 0 || mPostProcessor.isSelfieMirrorOn()) {
+        } else if(needYUVStream()) {
             mChosenImageFormat = ImageFormat.YUV_420_888;
         } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {
             mChosenImageFormat = ImageFormat.HEIC;
@@ -7086,6 +7086,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         setUpCameraOutputs(mChosenImageFormat);
 
+    }
+
+    private boolean needYUVStream() {
+        if (mPostProcessor.isFilterOn() || getFrameFilters().size() != 0 || mPostProcessor.isSelfieMirrorOn()) {
+            return true;
+        }
+        return false;
     }
 
     private void loadSoundPoolResource() {
