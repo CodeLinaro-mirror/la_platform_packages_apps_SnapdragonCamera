@@ -1644,7 +1644,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 removePreference(mPreferenceGroup, KEY_HVX_MFHDR);
             }
         }
-
+        updatePictureAndVideoSize();
         // filter dynamic lists.
         // These list can be changed run-time
         filterHFROptions();
