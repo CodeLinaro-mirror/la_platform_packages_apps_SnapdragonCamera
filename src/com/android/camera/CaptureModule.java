@@ -12029,13 +12029,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                         if (PersistUtil.enableMediaRecorder() && mIsPreviewingVideo) {
                             mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
                         }
-                    }
-                    if (instant) {
-                        session.capture(captureRequest
-                                .build(), mCaptureCallback, mCameraHandler);
-                    } else {
-                        session.setRepeatingRequest(captureRequest
-                                .build(), mCaptureCallback, mCameraHandler);
+                    }else {
+                        if (instant) {
+                            session.capture(captureRequest
+                                    .build(), mCaptureCallback, mCameraHandler);
+                        } else {
+                            session.setRepeatingRequest(captureRequest
+                                    .build(), mCaptureCallback, mCameraHandler);
+                        }
                     }
                 }
             }
