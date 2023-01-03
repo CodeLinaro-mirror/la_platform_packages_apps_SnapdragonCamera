@@ -4830,7 +4830,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         } catch (IllegalArgumentException e) {
             if (mSettingsManager.isMultiCameraEnabled()) {
                 String errorMsg = e.getMessage();
-                if (errorMsg != null && errorMsg.contains("Invalid physical camera id")){
+                if (errorMsg != null && (errorMsg.contains("Invalid physical camera id")||
+                    (errorMsg.contains("unconfigured Input/Output Surface")))){
                     warningToast("Please enable physical cameras of outputs first");
                     unlockFocus(id);
                 }
