@@ -2227,7 +2227,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         public void onClosed(CameraDevice cameraDevice) {
             int id = Integer.parseInt(cameraDevice.getId());
             mCloseCameraLatency = System.currentTimeMillis() - mCloseCameraLatency;
-            Log.d(TAG, "onClosed " + id);
+            Log.i(TAG, "onClosed " + id);
             mCameraDevice[id] = null;
             mCameraOpenCloseLock.release();
             mCamerasOpened = false;
@@ -3121,7 +3121,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             Surface surface = null;
             if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getSinglePhysicalCamera() != null || isClearSightOn()
-                || CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW) {
+                || CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW || needYUVStream()) {
                 try {
                     waitForPreviewSurfaceReady();
                 } catch (RuntimeException e) {
@@ -5329,7 +5329,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void captureVideoSnapshot(final int id) {
-        Log.d(TAG, "captureVideoSnapshot cameraid = " + id);
+        Log.i(TAG, "captureVideoSnapshot cameraid = " + id);
         try {
             if (null == mActivity || null == mCameraDevice[id] || mCurrentSession == null) {
                 warningToast("Camera is not ready yet to take a video snapshot.");
@@ -5430,21 +5430,21 @@ public class CaptureModule implements CameraModule, PhotoController,
                         public void onCaptureCompleted(CameraCaptureSession session,
                                                        CaptureRequest request,
                                                        TotalCaptureResult result) {
-                            Log.d(TAG, "captureVideoSnapshot onCaptureCompleted: " + id);
+                            Log.i(TAG, "captureVideoSnapshot onCaptureCompleted: " + id);
                         }
 
                         @Override
                         public void onCaptureFailed(CameraCaptureSession session,
                                                     CaptureRequest request,
                                                     CaptureFailure result) {
-                            Log.d(TAG, "captureVideoSnapshot onCaptureFailed: " + id);
+                            Log.i(TAG, "captureVideoSnapshot onCaptureFailed: " + id);
                         }
 
                         @Override
                         public void onCaptureBufferLost(CameraCaptureSession session,
                                                         CaptureRequest request, Surface target,
                                                         long frameNumber) {
-                            Log.d(TAG, "captureVideoshot onCaptureBufferLost: frameNumber is "
+                            Log.i(TAG, "captureVideoshot onCaptureBufferLost: frameNumber is "
                                     + frameNumber);
                             if (!mPaused && isOnCaptureBufferLostHintOn()) {
                                 showToast("Capture failed: buffer lost!");
@@ -5454,7 +5454,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         @Override
                         public void onCaptureSequenceCompleted(CameraCaptureSession session, int
                                 sequenceId, long frameNumber) {
-                            Log.d(TAG, "captureVideoSnapshot onCaptureSequenceCompleted: " + id);
+                            Log.i(TAG, "captureVideoSnapshot onCaptureSequenceCompleted: " + id);
                             if (mSettingsManager.isHeifWriterEncoding()) {
                                 if (mLiveShotImage != null) {
                                     try {
@@ -7561,7 +7561,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         if(mPostProcessor.isZSLEnabled() && !isActionImageCapture()) {
             mChosenImageFormat = ImageFormat.PRIVATE;
-        } else if(mPostProcessor.isFilterOn() || getFrameFilters().size() != 0 || mPostProcessor.isSelfieMirrorOn()) {
+        } else if(needYUVStream()) {
             mChosenImageFormat = ImageFormat.YUV_420_888;
         } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {
             mChosenImageFormat = ImageFormat.HEIC;
@@ -7571,6 +7571,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         setUpCameraOutputs(mChosenImageFormat);
     }
 
+    private boolean needYUVStream() {
+        if (mPostProcessor.isFilterOn() || getFrameFilters().size() != 0 || mPostProcessor.isSelfieMirrorOn()) {
+            return true;
+        }
+        return false;
+    }
     private void loadSoundPoolResource() {
         String timer = mSettingsManager.getValue(SettingsManager.KEY_TIMER);
         int seconds = Integer.parseInt(timer);
@@ -9065,6 +9071,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             List<CaptureRequest> slowMoRequests = null;
             try {
                 setUpVideoCaptureRequestBuilder(cameraId);
+                if (mPaused || mCurrentSession == null || mCameraDevice[cameraId] == null) {
+                    return;
+                }
+                applyAICameraStrength();
                 if (isHighSpeedRateCapture()) {
                     slowMoRequests = mSuperSlomoCapture ?
                             createSSMBatchRequest(mVideoRecordRequestBuilder) :
@@ -9287,21 +9297,27 @@ public class CaptureModule implements CameraModule, PhotoController,
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
         sessionConfig.setSessionParameters(initialRequest.build());
+        boolean supported = false;
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
         try{
-            boolean supported = camera.isSessionConfigurationSupported(sessionConfig);
+            supported = camera.isSessionConfigurationSupported(sessionConfig);
             Log.i(TAG, "  result :" + supported);
         } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
             Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error ="+ e);
         }
-        mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
-        try{
-            mCreateSessionLatency = System.currentTimeMillis();
-            camera.createCaptureSession(sessionConfig);
-        } catch (CameraAccessException e) {
-            Log.e(TAG, " error:",e);
+        if(supported) {
+            //only create session when configure is supported
+            mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
+            try {
+                mCreateSessionLatency = System.currentTimeMillis();
+                camera.createCaptureSession(sessionConfig);
+            } catch (CameraAccessException e) {
+                Log.e(TAG, " error:", e);
+            }
+        } else {
+            warningToast("Session combination is not supported.");
         }
     }
 
@@ -9830,7 +9846,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyBEStats(builder);
         applyPdnetToggle(builder);
         applyAWBCCTAndAgain(builder);
-        applyAICameraStrength();
         applyAIBlurConfigs(builder);
         applyExposure(builder);
     }
@@ -13011,8 +13026,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             try {
                 mPreviewRequestBuilder[getMainCameraId()].set(CaptureModule.AICameraStrength, mAIStrengthValue);
                 mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
-            } catch (CameraAccessException| IllegalArgumentException e) {
-                Log.e(TAG, "Camera Access Exception in applyAICameraStrength, apply failed");
+            } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException e) {
+                Log.e(TAG, "Camera Access Exception in applyAICameraStrength, apply failed e="+e);
             }
         }
     }

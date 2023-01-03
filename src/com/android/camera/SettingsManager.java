@@ -26,6 +26,12 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+ /*
+  * Changes from Qualcomm Innovation Center are provided under the following license:
+  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+  * SPDX-License-Identifier: BSD-3-Clause-Clear
+  */
+
 
 package com.android.camera;
 
@@ -3984,11 +3990,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return ret;
     }
-    public boolean isSupportedHdr(){
+    public boolean isSupportedMixHdr(){
         if(((getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) != null && getValue(SettingsManager.KEY_RAW_FORMAT_TYPE).equals("0")) ||
                 getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) == null) && (((getValue(SettingsManager.KEY_INSENSOR_ZOOM) != null &&
                 getValue(SettingsManager.KEY_INSENSOR_ZOOM).equals("0")) || getValue(SettingsManager.KEY_INSENSOR_ZOOM) == null)) &&
-                getVideoFPS() < 60 && !getQuadBayerSensorPrefEnabled()){
+                !getQuadBayerSensorPrefEnabled()){
              return true;
         }
         return false;
@@ -4015,7 +4021,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         if (isAutoHDRSupported()){
-            if(isSupportedHdr() && !isAIBokehMode()){
+            if(isSupportedMixHdr() && !isAIBokehMode()){
                 ret.add("auto");
             }
         }
