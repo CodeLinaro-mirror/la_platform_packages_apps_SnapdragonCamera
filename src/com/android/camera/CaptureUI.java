@@ -363,20 +363,32 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     };
 
     private void setSurfaceDim() {
+        int left;
+        int top;
+        int right;
+        int bottom;
+        if (USE_TEXTURE_VIEW_TO_PREVIEW) {
+            left = mTextureView.getLeft();
+            top = mTextureView.getTop();
+            right = mTextureView.getRight();
+            bottom = mTextureView.getBottom();
+        } else {
+            left = mSurfaceView.getLeft();
+            top = mSurfaceView.getTop();
+            right = mSurfaceView.getRight();
+            bottom = mSurfaceView.getBottom();
+        }
         if(mTrackingFocusRenderer != null && mTrackingFocusRenderer.isVisible()) {
-            mTrackingFocusRenderer.setSurfaceDim(mTextureView.getLeft(), mTextureView.getTop(), mTextureView.getRight(), mTextureView.getBottom());
+            mTrackingFocusRenderer.setSurfaceDim(left, top, right, bottom);
         }
         if(mT2TFocusRenderer != null && mT2TFocusRenderer.isShown()) {
-            mT2TFocusRenderer.setSurfaceDim(mTextureView.getLeft(), mTextureView.getTop(),
-                    mTextureView.getRight(), mTextureView.getBottom());
+            mT2TFocusRenderer.setSurfaceDim(left, top, right, bottom);
         }
         if(mStatsNNFocusRenderer != null && mStatsNNFocusRenderer.isShown()) {
-            mStatsNNFocusRenderer.setSurfaceDim(mTextureView.getLeft(), mTextureView.getTop(),
-                    mTextureView.getRight(), mTextureView.getBottom());
+            mStatsNNFocusRenderer.setSurfaceDim(left, top, right, bottom);
         }
         if(mAFViewRender != null && mAFViewRender.isShown()) {
-            mAFViewRender.setSurfaceDim(mTextureView.getLeft(), mTextureView.getTop(),
-                    mTextureView.getRight(), mTextureView.getBottom());
+            mAFViewRender.setSurfaceDim(left, top, right, bottom);
         }
     }
 
