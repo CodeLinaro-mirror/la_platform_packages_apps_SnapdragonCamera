@@ -99,9 +99,9 @@ public class SettingTranslation {
         VIDEO_ENCODER_PROFILE_TABLE.put("HEVCProfileMain10",
                 MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10);
         VIDEO_ENCODER_PROFILE_TABLE.put("HEVCProfileMain10HDR10",
-                MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10);
+                MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10HDR10);
         VIDEO_ENCODER_PROFILE_TABLE.put("HEVCProfileMain10HDR10Plus",
-                MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10);
+                MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10HDR10Plus);
         VIDEO_ENCODER_TYPE_TABLE.put(MediaFormat.MIMETYPE_VIDEO_AVC,
                 MediaRecorder.VideoEncoder.H264);
         VIDEO_ENCODER_TYPE_TABLE.put(MediaFormat.MIMETYPE_VIDEO_H263,
