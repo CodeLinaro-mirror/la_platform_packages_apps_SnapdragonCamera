@@ -228,13 +228,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private void previewUIReady() {
         if((mSurfaceHolder != null && mSurfaceHolder.getSurface().isValid())) {
             mModule.onPreviewUIReady();
-            if ((mIsVideoUI || mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL)
+            if ((mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL)
                     && mThumbnail != null){
                 mThumbnail.setVisibility(View.INVISIBLE);
                 mThumbnail = null;
                 mActivity.updateThumbnail(mThumbnail);
-            } else if (!mIsVideoUI &&
-                    mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL){
+            } else if (mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL){
                 if (mThumbnail == null)
                     mThumbnail = (ImageView) mRootView.findViewById(R.id.preview_thumb);
                 mActivity.updateThumbnail(mThumbnail);
@@ -1805,7 +1804,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public boolean setPreviewSize(int width, int height) {
-        Log.d(TAG, "setPreviewSize " + width + " " + height);
+        Log.d(TAG, "setPreviewSize " + width + " " + height+",mPreviewWidth="+mPreviewWidth+",mPreviewHeight="+mPreviewHeight);
         boolean changed = (width != mPreviewWidth) || (height != mPreviewHeight);
         mPreviewWidth = width;
         mPreviewHeight = height;
