@@ -140,6 +140,10 @@ public class SettingsActivity extends PreferenceActivity {
             } else if (p instanceof MultiSelectListPreference) {
                 Set<String> valueSet = ((MultiSelectListPreference)p).getValues();
                 mSettingsManager.setValue(key,valueSet);
+                if (key.equals(SettingsManager.KEY_PHYSICAL_CAMERA) ||
+                        key.equals(SettingsManager.KEY_PHYSICAL_CAMCORDER)) {
+                    updateMultiVideoFPSPreference();
+                }
             }
             if (key.equals(SettingsManager.KEY_VIDEO_QUALITY)) {
                 updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
@@ -1356,6 +1360,7 @@ public class SettingsActivity extends PreferenceActivity {
                             videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         }
                         videoAddList.add(SettingsManager.KEY_MANUAL_WB);
+                        videoAddList.add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                     } else {
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
@@ -1485,6 +1490,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_PHYSICAL_HDR);
                 add(SettingsManager.KEY_PHYSICAL_MFNR);
                 add(SettingsManager.KEY_ZSL);
+                add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 for(String id : SettingsManager.KEY_PHYSICAL_SIZE){
                     add(id);
                 }
@@ -1498,6 +1504,7 @@ public class SettingsActivity extends PreferenceActivity {
                 for(String id : SettingsManager.KEY_PHYSICAL_VIDEO_SIZE){
                     add(id);
                 }
+                add(SettingsManager.KEY_OVERRIDE_RESOURCE);
             }
         };
 
@@ -1507,6 +1514,7 @@ public class SettingsActivity extends PreferenceActivity {
                 addDeveloperOptions(developer,multiCameraPhotoList);
             } else {
                 multiCameraPhotoList.remove(SettingsManager.KEY_ZSL);
+                multiCameraPhotoList.remove(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 for (String removeKey : multiCameraPhotoList){
                     removePreference(removeKey,developer);
                 }
@@ -1667,6 +1675,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateT2TPreference();
         updatePictureFormatPreference();
         updateQcfaPreference();
+        updateMultiVideoFPSPreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1838,6 +1847,49 @@ public class SettingsActivity extends PreferenceActivity {
         }else{
             updateSwitchIDInModePreference(true);
             if(videoPref != null) videoPref.setEnabled(true);
+        }
+    }
+
+    private void updateMultiVideoFPSPreference() {
+        boolean changeFPS = true;
+        MultiSelectListPreference physicalCameraPref = (MultiSelectListPreference) findPreference(
+                SettingsManager.KEY_PHYSICAL_CAMERA);
+        if (physicalCameraPref != null) {
+            Set<String> physicalCameraSet = physicalCameraPref.getValues();
+            if (physicalCameraSet != null) {
+                for (String str : physicalCameraSet) {
+                    if ("logical".equals(str)) {
+                        changeFPS &= true;
+                    } else {
+                        if(!"".equals(str)) {
+                            changeFPS &= false;
+                        }
+                    }
+                }
+            }
+        }
+        MultiSelectListPreference camCorderPref = (MultiSelectListPreference) findPreference(
+                SettingsManager.KEY_PHYSICAL_CAMCORDER);
+        if (camCorderPref != null) {
+            Set<String> camCorderSet = camCorderPref.getValues();
+            if (camCorderSet != null) {
+                for (String str : camCorderSet) {
+                    if (!"".equals(str)) {
+                        changeFPS &= false;
+                    }
+                }
+            }
+        }
+        ListPreference pref = (ListPreference)findPreference(
+                SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        if (pref != null) {
+            if (changeFPS) {
+                pref.setEnabled(true);
+            } else {
+                pref.setValue("off");
+                pref.setEnabled(false);
+                mSettingsManager.setValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, "off");
+            }
         }
     }
 
