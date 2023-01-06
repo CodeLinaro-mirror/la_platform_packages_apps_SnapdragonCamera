@@ -6356,6 +6356,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyVideoFlash(builder, id);
         applyVideoEIS(builder);
         applyExposure(builder);
+        applyNoiseReduction(builder);
     }
 
     private void applySessionParameters(CaptureRequest.Builder builder){
