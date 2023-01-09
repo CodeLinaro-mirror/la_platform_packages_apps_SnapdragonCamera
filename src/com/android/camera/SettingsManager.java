@@ -3140,7 +3140,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isFlashSupported(int id) {
-        return mCharacteristics.get(id).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) &&
+        return isFlashAvailable(id) &&
                 mValuesMap.get(KEY_FLASH_MODE) != null &&
                 isSupportedForMode();
     }
