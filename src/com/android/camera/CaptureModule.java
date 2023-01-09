@@ -8347,6 +8347,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.d(TAG, "recordingVideo session onConfigured");
             setCameraModeSwitcherAllowed(true);
             int cameraId = getMainCameraId();
+            if (mPaused || null == mCameraDevice[cameraId]) {
+                mCaptureSession[cameraId] = null;
+                mCurrentSession = null;
+                Log.d(TAG, "camera has been closed, return it");
+                return;
+            }
             mCurrentSession = cameraCaptureSession;
             mCaptureSession[cameraId] = cameraCaptureSession;
             //APP could  check if  afState is anything other than INACTIVE , it should change the focus circle and skip the passive transient state.
@@ -8407,9 +8413,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 });
             }
-            int cameraId = getMainCameraId();
-            mCurrentSession = cameraCaptureSession;
-            mCaptureSession[cameraId] = cameraCaptureSession;
             //APP could  check if  afState is anything other than INACTIVE , it should change the focus circle and skip the passive transient state.
             if (mLastResultAFState != CaptureResult.CONTROL_AF_STATE_INACTIVE && mFocusStateListener != null) {
                 mActivity.runOnUiThread(new Runnable() {
@@ -8419,14 +8422,19 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 });
             }
+            int cameraId = getMainCameraId();
+            if (mPaused || null == mCameraDevice[cameraId]) {
+                mCaptureSession[cameraId] = null;
+                mCurrentSession = null;
+                Log.d(TAG, "camera has been closed, return it");
+                return;
+            }
+            mCurrentSession = cameraCaptureSession;
+            mCaptureSession[cameraId] = cameraCaptureSession;
             updateFaceDetection();
             mFirstPreviewLoaded = false;
             // Create slow motion request list
             List<CaptureRequest> slowMoRequests = null;
-            if(mCameraDevice[cameraId] == null){
-                Log.d(TAG, "camera has been closed, return it");
-                return;
-            }
             try {
                 setUpVideoCaptureRequestBuilder(cameraId);
                 if (isHighSpeedRateCapture()) {
