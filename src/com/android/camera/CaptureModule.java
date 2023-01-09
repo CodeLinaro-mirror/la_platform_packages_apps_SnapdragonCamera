@@ -3308,8 +3308,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         new android.util.Size(mPreviewSize.getWidth(), mPreviewSize.getHeight()),
                                         SurfaceHolder.class);
                                 mPreviewOutputConfiguration.enableSurfaceSharing();
-                                mFAOutputConfiguration = mPreviewOutputConfiguration;
-                                mFASurfaceConfigured = false;
+                                if (isTouchFocusAssistSupported()) {
+                                    mFAOutputConfiguration = mPreviewOutputConfiguration;
+                                    mFASurfaceConfigured = false;
+                                }
                                 Log.v(TAG, "add mPreviewOutputConfiguration");
                                 outputConfigurations.add(mPreviewOutputConfiguration);
                             }
@@ -3380,7 +3382,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     }
 
-                    if (CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW || surface != null) {
+                    if (isTouchFocusAssistSupported() &&
+                            (CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW || surface != null)) {
                         for (OutputConfiguration configuration : outputConfigurations) {
                             if (surface.equals(configuration.getSurface())) {
                                 Log.d(TAG, "enable preview surface output configuration sharing");
@@ -8170,6 +8173,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public void onFocusAssistModeStart(final int x, final int y) {
         Log.d(TAG, "onFocusAssistModeStart " + x + " " + y);
+        if (!isTouchFocusAssistSupported()) {
+            return;
+        }
         PointF start = onFocusAssistCenter(x, y);
         mUI.showFocusAssistView(mCameraRender, start.x, start.y);
         if (mFASurface != null && mPreviewSurface != null) {
@@ -8189,11 +8195,11 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public void onFocusAssistModeStop() {
         Log.d(TAG, "onFocusAssistModeStop " + mIsInFocusAssistMode);
+        mUI.hideFocusAssistText();
         if (!mIsInFocusAssistMode) {
             return;
         }
         mUI.hideFocusAssistView();
-        mUI.hideFocusAssistText();
         int id = mCurrentSceneMode.getCurrentId();
         if (mFASurface != null && mPreviewSurface != null && mPreviewRequestBuilder[id] != null) {
             mPreviewRequestBuilder[id].addTarget(mPreviewSurface);
