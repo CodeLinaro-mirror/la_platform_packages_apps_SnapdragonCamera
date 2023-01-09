@@ -13038,7 +13038,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyAIBlurConfigs(CaptureRequest.Builder builder){
         if (!mIsRecordingVideo && !mIsPreviewingVideo || builder == null) return;
-        if(mSettingsManager.isAICameraOn()) {
+        String mode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        boolean isBokehMode = mode != null && mode.equals("rtb");
+        if(isBokehMode) {
             applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
             applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
             applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
