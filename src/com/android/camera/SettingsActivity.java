@@ -278,6 +278,9 @@ public class SettingsActivity extends PreferenceActivity {
             if(key.equals(SettingsManager.KEY_INSENSOR_ZOOM)){
                 updateVideoMFHDRPreference();
             }
+            if (SettingsManager.KEY_PREVIEW_PROFILE.equals(key)) {
+                updateViullPreference();
+            }
         }
     };
 
@@ -2344,6 +2347,13 @@ public class SettingsActivity extends PreferenceActivity {
 
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
         if (!"off".equals(profile)) {
+            pref.setValue("0");
+            pref.setEnabled(false);
+            return;
+        }
+
+        String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
+        if (!"0".equals(previewProfile)) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;
