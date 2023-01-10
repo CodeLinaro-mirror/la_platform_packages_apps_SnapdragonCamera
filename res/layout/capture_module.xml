@@ -593,4 +593,26 @@
                 android:src="@drawable/ic_menu_cancel_holo_light" />
         </com.android.camera.ui.RotatableLayout>
     </FrameLayout>
+
+    <TextView android:id="@+id/focus_assist_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Focus Assist"
+        android:textColor="@android:color/black"
+        android:textSize="18dp"
+        android:background="@android:color/holo_blue_light"
+        android:visibility="gone"
+        android:clickable="true"/>
+
+    <com.android.camera.ui.FocusAssistImageView
+        android:id="@+id/focus_assist_iv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"/>
+
+    <ViewStub
+        android:id="@+id/focus_assist_view_stub"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout="@layout/focus_assist_layout" />
 </merge>

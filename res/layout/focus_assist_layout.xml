@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
+<com.android.camera.ui.FocusAssistLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/focus_assist_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:visibility="gone"
+    android:background="@color/default_background">
+
+    <!--<TextureView
+        android:id="@+id/focus_assist_texture_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />-->
+
+    <TextView
+        android:id="@+id/focus_assist_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:textSize="25dp"
+        android:text="Focus Assist"/>
+
+    <TextView
+        android:id="@+id/focus_assist_help_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="50dp"
+        android:textSize="15dp"
+        android:text="Check if Focus is Accurate and Click Again if Needed"/>
+
+    <Button
+        android:id="@+id/focus_assist_close_button"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_gravity="start"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/icon_x" />
+
+</com.android.camera.ui.FocusAssistLayout>
