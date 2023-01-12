@@ -209,7 +209,6 @@ public class SettingsActivity extends PreferenceActivity {
                 updateEISPreference();
                 updatePdnetTogglePreference();
                 updateViullPreference();
-                updateVideoMFHDRPreference();
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
                 value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
@@ -2111,13 +2110,6 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setEnabled(false);
             return;
         }
-        String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-        int size = CameraUtil.getSize(videoSize);
-        String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-        if((size >= 3840*2160) && (selectMode == null || (selectMode.equals("default") ||
-                selectMode.equals("sat")))){
-            pref.setValue("off");
-        }
     }
 
     private void updateMultiVideoFPSPreference() {
@@ -2860,14 +2852,8 @@ public class SettingsActivity extends PreferenceActivity {
         }
         private boolean isNotSupportedHdr(String hdr){
             String fpsStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-            String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-            int size = CameraUtil.getSize(videoSize);
-            String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-            Log.i(TAG,"isNotSupportedHdr ,title="+hdr);
             if((hdr.equalsIgnoreCase("mfhdr") || hdr.equalsIgnoreCase("qhdr"))
-                    && (!mSettingsManager.isSupportedMixHdr() || (fpsStr != null && !fpsStr.equals("off"))
-                    || ((size >= 3840*2160) && (selectMode == null || (selectMode.equals("default") ||
-                    selectMode.equals("sat")))))){
+                    && (!mSettingsManager.isSupportedMixHdr() || (fpsStr != null && !fpsStr.equals("off")))){
                 return true;
             }
             return  false;
