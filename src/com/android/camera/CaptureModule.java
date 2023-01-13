@@ -8142,7 +8142,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             try {
                 mCaptureSession[id].updateOutputConfiguration(mFAOutputConfiguration);
                 mFASurfaceConfigured = true;
-            } catch (CameraAccessException e) {
+            } catch (Exception e) {
                 Log.w(TAG, "", e.fillInStackTrace());
                 mFASurfaceConfigured = false;
             }
@@ -14244,7 +14244,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private boolean isTouchFocusAssistSupported() {
-        return (mCurrentSceneMode.mode == CameraMode.DEFAULT) && isBackCamera();
+        return (mCurrentSceneMode.mode == CameraMode.DEFAULT) && isBackCamera() && !isHDREnable();
     }
 
     private void checkTouchFocusAssistEnable(CaptureResult result) {
