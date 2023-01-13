@@ -8237,7 +8237,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onSingleTapUp(View view, int x, int y) {
         if (mPaused || !mCamerasOpened || !mFirstTimeInitialized || !mAutoFocusRegionSupported
                 || !mAutoExposureRegionSupported || !isTouchToFocusAllowed()
-                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed) {
+                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed
+                || mSettingsManager.getPhysicalCameraId() != null) {
             return;
         }
         mUI.hideFocusAssistText();
