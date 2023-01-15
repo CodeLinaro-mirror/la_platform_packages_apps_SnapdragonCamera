@@ -10519,7 +10519,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void onButtonPause() {
-        if (!isRecorderReady())
+        if (!isRecorderReady() || !isRecordingVideo())
             return;
         pauseVideoRecording();
     }
