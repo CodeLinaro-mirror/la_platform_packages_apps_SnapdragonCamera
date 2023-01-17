@@ -156,7 +156,8 @@
   },
   "pref_camera2_longshot_key":
   {
-    "on":{"pref_camera2_flashmode_key":"off"},
+    "on":{"pref_camera2_flashmode_key":"off",
+          "pref_camera2_video_flashmode_key": "off"},
     "off":{}
   },
   "pref_camera2_zsl_key":
