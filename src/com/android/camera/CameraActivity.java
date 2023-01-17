@@ -344,6 +344,13 @@ public class CameraActivity extends Activity
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "SDcard status changed, update storage space");
+            if (intent != null && Intent.ACTION_MEDIA_UNMOUNTED.equals(intent.getAction())) {
+                Log.w(TAG, "SDCard unmounted");
+                if (Storage.isSaveSDCard()) {
+                    mSettingsManager.setValue(SettingsManager.KEY_CAMERA_SAVEPATH, "0");
+                    Storage.setSaveSDCard(false);
+                }
+            }
             updateStorageSpaceAndHint();
         }
     };
@@ -1784,11 +1791,7 @@ public class CameraActivity extends Activity
         if (checkSelfPermission(Manifest.permission.CAMERA) ==
                         PackageManager.PERMISSION_GRANTED &&
                 checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
-                        PackageManager.PERMISSION_GRANTED &&
-                checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
-                        PackageManager.PERMISSION_GRANTED &&
-                checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) ==
-                        PackageManager.PERMISSION_GRANTED) {
+                        PackageManager.PERMISSION_GRANTED ) {
             hasCriticalPermission = true;
         } else {
             hasCriticalPermission = false;
@@ -2000,6 +2003,10 @@ public class CameraActivity extends Activity
 
     protected long updateStorageSpace() {
         synchronized (mStorageSpaceLock) {
+            if (Storage.isSaveSDCard() && !SDCard.instance().isWriteable()) {
+                mSettingsManager.setValue(SettingsManager.KEY_CAMERA_SAVEPATH, "0");
+                Storage.setSaveSDCard(false);
+            }
             mStorageSpaceBytes = Storage.getAvailableSpace();
             if (Storage.switchSavePath()) {
                 mStorageSpaceBytes = Storage.getAvailableSpace();
