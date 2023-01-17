@@ -54,10 +54,8 @@ import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnDismissListener;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.ImageFormat;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.MultiSelectListPreference;
@@ -71,13 +69,10 @@ import android.view.Window;
 import android.view.WindowManager;
 import com.android.camera.util.Log;
 import android.util.Size;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -88,18 +83,13 @@ import android.text.InputType;
 
 import org.codeaurora.snapcam.R;
 import com.android.camera.util.CameraUtil;
-import com.android.camera.CaptureModule.CameraMode;
 import com.android.camera.ui.RotateTextToast;
 import com.android.camera.util.PersistUtil;
-import com.android.camera.DragonListView;
-
-import org.codeaurora.snapcam.R;
 
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -405,6 +395,12 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if(mSettingsManager.KEY_EXTENDED_MAX_ZOOM .equals(pref.getKey())){
                     updateZoomPreference();
+                }
+
+                if(pref.getKey().equals(SettingsManager.KEY_HVX_MFHDR) ||
+                        pref.getKey().equals(SettingsManager.KEY_HVX_SHDR)){
+                    updateEISPreference();
+                    updateHvxDependencyPref();
                 }
             }
         }
@@ -1315,6 +1311,8 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_VARIABLE_FPS);
                 //add(SettingsManager.KEY_VIDEO_HDR_VALUE);
                 add(SettingsManager.KEY_VIDEO_FLIP);
+                add(SettingsManager.KEY_HVX_SHDR);
+                add(SettingsManager.KEY_HVX_MFHDR);
                 add(SettingsManager.KEY_PHYSICAL_CAMCORDER);
                 for (String key: SettingsManager.KEY_PHYSICAL_VIDEO_SIZE)
                     add(key);
@@ -1454,6 +1452,8 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
+                        videoAddList.remove(SettingsManager.KEY_HVX_SHDR);
+                        videoAddList.remove(SettingsManager.KEY_HVX_MFHDR);
                     }
                     videoAddList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     videoAddList.add(SettingsManager.KEY_TONE_MAPPING);
@@ -1731,6 +1731,8 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
         updatePreference(SettingsManager.KEY_PREVIEW_PROFILE);
         updatePreference(SettingsManager.KEY_CAPTURE_PROFILE);
+        updatePreference(SettingsManager.KEY_HVX_SHDR);
+        updatePreference(SettingsManager.KEY_HVX_MFHDR);
         updateMultiPreference(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
         updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
@@ -1838,6 +1840,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateMultiVideoFPSPreference();
         updateViullPreference();
         updateSelfieMirrorPreference();
+        updateHvxDependencyPref();
     }
 
     private void updateAudioEncoderPreference() {
@@ -2068,6 +2071,22 @@ public class SettingsActivity extends PreferenceActivity {
                 pref.setValue("off");
                 pref.setEnabled(false);
             }
+        }
+    }
+
+    private void updateHvxDependencyPref() {
+        ListPreference hvx_mfhdr = (ListPreference)findPreference(SettingsManager.KEY_HVX_MFHDR);
+        ListPreference hvx_shdr = (ListPreference)findPreference(SettingsManager.KEY_HVX_SHDR);
+        ListPreference videoPref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_QUALITY);
+        ListPreference selectModePref = (ListPreference)findPreference(SettingsManager.KEY_SELECT_MODE);
+        if((hvx_mfhdr != null && hvx_mfhdr.getValue().equals("1"))|| (hvx_shdr != null && hvx_shdr.getValue().equals("1"))){
+            selectModePref.setValue("single_rear_cameraid");
+            selectModePref.setEnabled(false);
+            videoPref.setValue("1920x1080");
+            videoPref.setEnabled(false);
+        }else{
+            if(selectModePref != null) selectModePref.setEnabled(true);
+            if(videoPref != null) videoPref.setEnabled(true);
         }
     }
 
@@ -2365,6 +2384,19 @@ public class SettingsActivity extends PreferenceActivity {
             if (eisPref != null) {
                 eisPref.setEntries(list.toArray(new CharSequence[list.size()]));
                 eisPref.setEntryValues(values.toArray(new CharSequence[values.size()]));
+            }
+            ListPreference hvx_shdr = (ListPreference)findPreference(
+                    SettingsManager.KEY_HVX_SHDR);
+            ListPreference hvx_mfhdr = (ListPreference)findPreference(
+                    SettingsManager.KEY_HVX_MFHDR);
+            if(eisPref != null) {
+                if ((hvx_shdr != null && Integer.valueOf(hvx_shdr.getValue()) > 0) ||
+                        (hvx_mfhdr != null && Integer.valueOf(hvx_mfhdr.getValue()) > 0)) {
+                    eisPref.setValue("V3");
+                    eisPref.setEnabled(false);
+                } else {
+                    eisPref.setEnabled(true);
+                }
             }
         }
     }
