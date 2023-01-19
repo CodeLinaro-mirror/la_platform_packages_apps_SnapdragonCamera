@@ -3140,7 +3140,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isFlashSupported(int id) {
-        return mCharacteristics.get(id).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) &&
+        return isFlashAvailable(id) &&
                 mValuesMap.get(KEY_FLASH_MODE) != null &&
                 isSupportedForMode();
     }
@@ -3392,7 +3392,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (CameraSettings.VIDEO_QUALITY_TABLE.containsKey(videoSizes.get(i).toString())) {
                 Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(videoSizes.get(i).toString());
                 if (profile != null && CamcorderProfile.hasProfile(cameraId, profile)) {
-                    if (isEISV3Enabled && Math.min(videoSizes.get(i).getWidth(),videoSizes.get(i).getHeight()) < 720) {
+                    if (mode != CaptureModule.CameraMode.HFR && isEISV3Enabled && Math.min(videoSizes.get(i).getWidth(),videoSizes.get(i).getHeight()) < 720) {
                         //video size should't be larger than 720p when EIS V3 is enabled
                         continue;
                     }

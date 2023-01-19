@@ -1380,6 +1380,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 return;
             }
             int id = getIdFromTag(result.getRequest().getTag());
+            if (id == getMainCameraId()) {
+                mPreviewCaptureResult = result;
+            }
             if (!mFirstPreviewLoaded) {
                 String tag_ = String.valueOf(result.getRequest().getTag());
                 int mainCameraId = getMainCameraId();
@@ -1392,11 +1395,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mUI.hidePreviewCover();
                     }, 33L);
                     mFirstPreviewLoaded = true;
+                    mUI.enableShutter(true);
                 }
             }
-            if (id == getMainCameraId()) {
-                mPreviewCaptureResult = result;
-            }
+
             updateCaptureStateMachine(id, result);
             Integer ssmStatus = result.get(ssmCaptureComplete);
             if (ssmStatus != null) {
@@ -3007,6 +3009,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         List<Surface> list = new LinkedList<Surface>();
         mState[id] = STATE_PREVIEW;
         mControlAFMode = CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
+        mUI.enableShutter(false);
         try {
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilder[id] = getRequestBuilder(id);
@@ -6473,6 +6476,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 public void run() {
                     mUI.stopSelfieFlash();
                     if (!captureWaitImageReceive()) {
+
                         mUI.enableShutter(true);
                     }
                     if (mDeepPortraitMode) {
@@ -7596,6 +7600,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(mCurrentSceneMode.mode == CameraMode.VIDEO){
             enableVideoButton(false);//disable the video button before media recorder is ready
         }
+        mUI.enableShutter(false);
         mHighSpeedCapture = false;
         if(!MCXMODE) {
             checkRTBCameraId();
@@ -7652,7 +7657,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mActivity.updateStorageSpaceAndHint();
             }
         });
-        mUI.enableShutter(true);
         setProModeVisible();
         seBlurConfigSlideVisible();
         updateZoom();
@@ -13034,7 +13038,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyAIBlurConfigs(CaptureRequest.Builder builder){
         if (!mIsRecordingVideo && !mIsPreviewingVideo || builder == null) return;
-        if(mSettingsManager.isAICameraOn()) {
+        String mode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        boolean isBokehMode = mode != null && mode.equals("rtb");
+        if(isBokehMode) {
             applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
             applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
             applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
@@ -13726,6 +13732,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         mActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if(!full && (!getCameraModeSwitcherAllowed() || mCurrentSessionClosed || mPreviewCaptureResult == null)){
+                    return;
+                }
                 mUI.enableShutter(!full);
             }
         });
