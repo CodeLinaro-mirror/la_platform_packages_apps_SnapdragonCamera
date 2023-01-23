@@ -2904,7 +2904,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     };
 
             Surface surface = null;
-            if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getSinglePhysicalCamera() != null || isClearSightOn()) {
+            if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getSinglePhysicalCamera() != null || isClearSightOn() || needYUVStream()) {
                 try {
                     waitForPreviewSurfaceReady();
                 } catch (RuntimeException e) {
@@ -6356,6 +6356,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyVideoFlash(builder, id);
         applyVideoEIS(builder);
         applyExposure(builder);
+        applyNoiseReduction(builder);
     }
 
     private void applySessionParameters(CaptureRequest.Builder builder){
@@ -7077,7 +7078,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         if(mPostProcessor.isZSLEnabled() && !isActionImageCapture()) {
             mChosenImageFormat = ImageFormat.PRIVATE;
-        } else if(mPostProcessor.isFilterOn() || getFrameFilters().size() != 0 || mPostProcessor.isSelfieMirrorOn()) {
+        } else if(needYUVStream()) {
             mChosenImageFormat = ImageFormat.YUV_420_888;
         } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {
             mChosenImageFormat = ImageFormat.HEIC;
@@ -7086,6 +7087,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         setUpCameraOutputs(mChosenImageFormat);
 
+    }
+
+    private boolean needYUVStream() {
+        if (mPostProcessor.isFilterOn() || getFrameFilters().size() != 0 || mPostProcessor.isSelfieMirrorOn()) {
+            return true;
+        }
+        return false;
     }
 
     private void loadSoundPoolResource() {
@@ -12022,13 +12030,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                         if (PersistUtil.enableMediaRecorder() && mIsPreviewingVideo) {
                             mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
                         }
-                    }
-                    if (instant) {
-                        session.capture(captureRequest
-                                .build(), mCaptureCallback, mCameraHandler);
-                    } else {
-                        session.setRepeatingRequest(captureRequest
-                                .build(), mCaptureCallback, mCameraHandler);
+                    }else {
+                        if (instant) {
+                            session.capture(captureRequest
+                                    .build(), mCaptureCallback, mCameraHandler);
+                        } else {
+                            session.setRepeatingRequest(captureRequest
+                                    .build(), mCaptureCallback, mCameraHandler);
+                        }
                     }
                 }
             }
