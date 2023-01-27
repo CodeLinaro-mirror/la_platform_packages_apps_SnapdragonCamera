@@ -511,6 +511,11 @@ public class PersistUtil {
     public static int getPhysicalLiveShotNum() {
         return getInt("persist.sys.camera.physical_live_shot_num", -1);
     }
+
+    public static int getBitRate() {
+        return getInt("persist.sys.camera.bit_rate", -1);
+    }
+
     public static boolean getHardSwitchEnabled(){
         return getBoolean("persist.sys.camera.hard_switch_enable", false);
     }

@@ -2585,8 +2585,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public boolean isBackCamera() {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
-        if (value == null) return true;
+        String value = mSettingsManager.mPreferences.getGlobal().getString(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         return value.equals("rear");
     }
 
@@ -3309,8 +3308,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         new android.util.Size(mPreviewSize.getWidth(), mPreviewSize.getHeight()),
                                         SurfaceHolder.class);
                                 mPreviewOutputConfiguration.enableSurfaceSharing();
-                                mFAOutputConfiguration = mPreviewOutputConfiguration;
-                                mFASurfaceConfigured = false;
+                                if (isTouchFocusAssistSupported()) {
+                                    mFAOutputConfiguration = mPreviewOutputConfiguration;
+                                    mFASurfaceConfigured = false;
+                                }
                                 Log.v(TAG, "add mPreviewOutputConfiguration");
                                 outputConfigurations.add(mPreviewOutputConfiguration);
                             }
@@ -3381,7 +3382,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     }
 
-                    if (CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW || surface != null) {
+                    if (isTouchFocusAssistSupported() &&
+                            (CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW || surface != null)) {
                         for (OutputConfiguration configuration : outputConfigurations) {
                             if (surface.equals(configuration.getSurface())) {
                                 Log.d(TAG, "enable preview surface output configuration sharing");
@@ -3947,10 +3949,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSettingsManager = SettingsManager.getInstance();
         mSettingsManager.createCaptureModule(this);
         mSettingsManager.registerListener(this);
-        String facing = mSettingsManager.mPreferences.getGlobal().getString(mSettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
-        if (facing.equals("front")) {
-            CURRENT_ID = FRONT_ID;
-        }
         mFirstPreviewLoaded = false;
         Log.d(TAG, "init");
         for (int i = 0; i < MAX_NUM_CAM; i++) {
@@ -3968,12 +3966,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         initModeByIntent();
         initCameraIds();
+        CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
+        CURRENT_MODE = mCurrentSceneMode.mode;
         mSettingsManager.init();
+        updateSettingDependencyId();
         mPostProcessor = new PostProcessor(mActivity, this);
         mFrameProcessor = new FrameProcessor(mActivity, this);
 
         mContentResolver = mActivity.getContentResolver();
-
         mUI = new CaptureUI(activity, this, parent);
         mUI.initializeControlByIntent();
 
@@ -4099,6 +4099,21 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void updateSettingDependencyId(){
+        List<String> supported = mSettingsManager.getSupportedVideoSize(mLogicalId);
+        if(!MCXMODE || supported.size() <= 0){
+            mSceneCameraIds.get(CameraMode.VIDEO.ordinal()).rearCameraId = mSingleRearId;
+        }
+        if (!mSettingsManager.isHFRSupported()) { // filter HFR mode
+            for (SceneModule sceneModule : mSceneCameraIds) {
+                if (sceneModule.mode.ordinal() == CameraMode.HFR.ordinal() ) {
+                    mSceneCameraIds.remove(sceneModule);
+                    break;
+                }
+            }
+        }
+    }
+
     private boolean setUpLocalMode(int camereIdIndex, CameraCharacteristics characteristics,
                                 boolean[] removeList, boolean isFirstDefault, String cameraId) {
         Byte type = 0;
@@ -4150,20 +4165,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                         isFirstDefault = false;
                     }
 
-                    int defaultId;
-                    List<String> supported = mSettingsManager.getSupportedVideoSize(mLogicalId);
-                    if (MCXMODE && supported.size() > 0) {
-                        defaultId = mLogicalId;
-                    } else {
+                    int defaultId = mLogicalId;
+                    if(!MCXMODE){
                         defaultId = mSingleRearId;
                     }
                     mSceneCameraIds.get(CameraMode.DEFAULT.ordinal()).rearCameraId = defaultId;
+                    //update video camera after setting init done
                     mSceneCameraIds.get(CameraMode.VIDEO.ordinal()).rearCameraId = defaultId;
                     mSceneCameraIds.get(CameraMode.PRO_MODE.ordinal()).rearCameraId = defaultId;
-                    if (mSettingsManager.isHFRSupported()) { // filter HFR mode
-                        removeList[CameraMode.HFR.ordinal()] = false;
-                        mSceneCameraIds.get(CameraMode.HFR.ordinal()).rearCameraId = mSingleRearId;
-                    }
+                    //default HFR is support, will remove after setting manager init
+                    removeList[CameraMode.HFR.ordinal()] = false;
+                    mSceneCameraIds.get(CameraMode.HFR.ordinal()).rearCameraId = mSingleRearId;
                     if (mCurrentSceneMode == null) {
                         int index = mIntentMode == INTENT_MODE_VIDEO ?
                                 CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
@@ -4821,7 +4833,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         } catch (IllegalArgumentException e) {
             if (mSettingsManager.isMultiCameraEnabled()) {
                 String errorMsg = e.getMessage();
-                if (errorMsg != null && errorMsg.contains("Invalid physical camera id")){
+                if (errorMsg != null && (errorMsg.contains("Invalid physical camera id")||
+                    (errorMsg.contains("unconfigured Input/Output Surface")))){
                     warningToast("Please enable physical cameras of outputs first");
                     unlockFocus(id);
                 }
@@ -6915,7 +6928,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyVSR(builder);
             applyPreviewStabilization(builder);
         }
-        if (mCurrentSceneMode.mode == CameraMode.VIDEO) {
+        if (mCurrentSceneMode.mode == CameraMode.DEFAULT
+                || mCurrentSceneMode.mode == CameraMode.VIDEO) {
             applyVIULL(builder);
         }
         applyNumHDRExposure(builder);
@@ -8159,6 +8173,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public void onFocusAssistModeStart(final int x, final int y) {
         Log.d(TAG, "onFocusAssistModeStart " + x + " " + y);
+        if (!isTouchFocusAssistSupported()) {
+            return;
+        }
         PointF start = onFocusAssistCenter(x, y);
         mUI.showFocusAssistView(mCameraRender, start.x, start.y);
         if (mFASurface != null && mPreviewSurface != null) {
@@ -8178,11 +8195,11 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public void onFocusAssistModeStop() {
         Log.d(TAG, "onFocusAssistModeStop " + mIsInFocusAssistMode);
+        mUI.hideFocusAssistText();
         if (!mIsInFocusAssistMode) {
             return;
         }
         mUI.hideFocusAssistView();
-        mUI.hideFocusAssistText();
         int id = mCurrentSceneMode.getCurrentId();
         if (mFASurface != null && mPreviewSurface != null && mPreviewRequestBuilder[id] != null) {
             mPreviewRequestBuilder[id].addTarget(mPreviewSurface);
@@ -10893,6 +10910,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void updateBitrateForNonHFR(int videoEncoder, int bitRate, int height, int width) {
         MediaCodecList allCodecs = new MediaCodecList(MediaCodecList.ALL_CODECS);
+        if(PersistUtil.getBitRate() != -1){
+            bitRate = PersistUtil.getBitRate();
+        }
         for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
             if (!info.isEncoder() || info.getName().contains("google")) continue;
             for (String type : info.getSupportedTypes()) {
@@ -11362,6 +11382,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             mVideoFormat.setInteger(MediaFormat.KEY_OPERATING_RATE, fps);
             Log.i(TAG, "Capture rate: "+fps+", Target rate: "+targetRate);
             int scaledBitrate = mSettingsManager.getHighSpeedVideoEncoderBitRate(mProfile, targetRate, fps);
+            if(PersistUtil.getBitRate() != -1){
+                scaledBitrate = PersistUtil.getBitRate();
+            }
             Log.i(TAG, "Scaled video bitrate : " + scaledBitrate);
             mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, scaledBitrate);
         }
@@ -13203,13 +13226,17 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyAIBlurConfigs(CaptureRequest.Builder builder){
-        if (!mIsRecordingVideo && !mIsPreviewingVideo || mCurrentSessionClosed) return;
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_LUMA, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAU, builder);
-        applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAV, builder);
+        if (!mIsRecordingVideo && !mIsPreviewingVideo || builder == null) return;
+        String mode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        boolean isBokehMode = mode != null && mode.equals("rtb");
+        if(isBokehMode) {
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_LUMA, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAU, builder);
+            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAV, builder);
+        }
     }
 
     private void applyAIBlurConfig(String key, CaptureRequest.Builder builder){
@@ -15354,7 +15381,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean isForceAUXOn(CameraMode mode) {
         if (mode == CameraMode.DEFAULT) {
-            String auxValue = mSettingsManager.getValue(SettingsManager.KEY_FORCE_AUX);
+            final SharedPreferences pref = mActivity.getSharedPreferences(
+                    ComboPreferences.getLocalSharedPreferencesName(mActivity,
+                            mSettingsManager.getNextPrepNameKey(mode)), Context.MODE_PRIVATE);
+            String auxValue = pref.getString(SettingsManager.KEY_FORCE_AUX, "off");
             return auxValue != null && auxValue.equals("on");
         }
         return false;

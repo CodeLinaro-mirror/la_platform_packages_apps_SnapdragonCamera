@@ -278,6 +278,9 @@ public class SettingsActivity extends PreferenceActivity {
             if(key.equals(SettingsManager.KEY_INSENSOR_ZOOM)){
                 updateVideoMFHDRPreference();
             }
+            if (SettingsManager.KEY_PREVIEW_PROFILE.equals(key)) {
+                updateViullPreference();
+            }
         }
     };
 
@@ -1393,7 +1396,6 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_HDR_WNR_MODE);
                 add(SettingsManager.KEY_HDR_ANS_MODE);
                 add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
-                add(SettingsManager.KEY_VIULL);
             }
         };
         final ArrayList<String> multiCameraSettingList = new ArrayList<String>() {
@@ -1535,6 +1537,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
+                        videoAddList.add(SettingsManager.KEY_VIULL);
                     } else {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
@@ -2089,7 +2092,7 @@ public class SettingsActivity extends PreferenceActivity {
             return;
         }
         ListPreference eisPref = (ListPreference)findPreference(SettingsManager.KEY_EIS_VALUE);
-        if(mSettingsManager.isAICameraOn()) {
+        if(mSettingsManager.isAIBokehMode()) {
             if (eisPref != null && eisPref.getValue() != null && eisPref.getValue().equals("disable")) {
                 pref.setValue("off");
                 pref.setEnabled(false);
@@ -2343,7 +2346,14 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-        if ("HEVCProfileMain10HDR10Plus".equals(profile)) {
+        if (!"off".equals(profile)) {
+            pref.setValue("0");
+            pref.setEnabled(false);
+            return;
+        }
+
+        String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
+        if (!"0".equals(previewProfile)) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;
@@ -2449,7 +2459,7 @@ public class SettingsActivity extends PreferenceActivity {
                 eisPref.setEnabled(true);
             }
         }
-        if (mSettingsManager.isAICameraOn()) {
+        if (mSettingsManager.isAIBokehMode()) {
             //remove v2 case
             List<String> list = new ArrayList<String>(Arrays.asList("disable", "V3"));
             List<String> values = new ArrayList<String>(Arrays.asList("disable", "V3"));
