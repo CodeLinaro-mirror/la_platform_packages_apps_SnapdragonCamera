@@ -6719,10 +6719,22 @@ public class CaptureModule implements CameraModule, PhotoController,
         initModeByIntent();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
+        String action = mActivity.getIntent().getAction();
+        Bundle extra = mActivity.getIntent().getExtras();
+        boolean isVoiceQuery = false;
+        boolean noUiQuery = false;
+        if(extra != null ) {
+            try {
+                isVoiceQuery = (boolean) extra.getBoolean("isVoiceQuery");
+                noUiQuery = (boolean) extra.getBoolean("NoUiQuery");
+                Log.d(TAG,"action="+action+",NoUiQuery="+noUiQuery+",isVoiceQuery="+isVoiceQuery);
+            }catch (Exception e){
+            }
+        }
         if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
-        }else if(facingOfIntentExtras == -1  && mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA
-                && !resumeFromRestartAll){
+        }else if(facingOfIntentExtras == -1  && ((isVoiceQuery && noUiQuery)
+                || (action != null && action.equals(CameraUtil.GTS_TEST_ACTION))) && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
             mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         }
