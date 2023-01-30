@@ -13196,6 +13196,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else if (promode && !exposuretime.equals("auto") && isovalue.equals("auto")) {
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
             VendorTagUtil.setIsoExpPriority(request, previewExpTime);
+            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
         } else if (promode && !exposuretime.equals("auto") && !isovalue.equals("auto")) {
             int isoValue = Integer.parseInt(isovalue);
@@ -13206,6 +13207,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean setExposureTime(CaptureRequest.Builder request, String exposuretime) {
         long newExpTime = -1;
         try {
+            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             newExpTime = Long.parseLong(exposuretime);
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
             VendorTagUtil.setIsoExpPriority(request, newExpTime);
@@ -13218,6 +13220,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setIsoValue(CaptureRequest.Builder request, int isoValue, long longValue, boolean isManual) {
+        request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
         VendorTagUtil.setIsoExpPriority(request, longValue);
         VendorTagUtil.setUseIsoValues(request, isoValue);
