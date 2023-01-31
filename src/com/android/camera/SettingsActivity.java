@@ -1549,6 +1549,7 @@ public class SettingsActivity extends PreferenceActivity {
                     videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
+                    videoAddList.add(SettingsManager.KEY_INSTANT_ZOOM);
                     addDeveloperOptions(developer, videoAddList);
                 }
                 if (mode != VIDEO) {
@@ -1582,6 +1583,7 @@ public class SettingsActivity extends PreferenceActivity {
                     RTBList.add(SettingsManager.KEY_FD_SETTING);
                     RTBList.add(SettingsManager.KEY_FD_FL_SETTING);
                     RTBList.add(SettingsManager.KEY_FD_FACIAL_SETTING);
+                    RTBList.add(SettingsManager.KEY_INSTANT_ZOOM);
                     addDeveloperOptions(developer, RTBList);
                 }
                 break;

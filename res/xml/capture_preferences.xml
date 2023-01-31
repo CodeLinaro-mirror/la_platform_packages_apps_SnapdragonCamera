@@ -971,6 +971,13 @@
         camera:entryValues="@array/pref_camera2_insensor_zoom_entryvalues" />
 
     <ListPreference
+        camera:key="pref_camera2_instant_zoom_key"
+        camera:defaultValue="@string/setting_off_value"
+        camera:entries="@array/pref_camera2_camera2_entries"
+        camera:entryValues="@array/pref_camera2_camera2_entryvalues"
+        camera:title="@string/pref_camera2_instant_zoom_title" />
+
+    <ListPreference
         camera:key="pref_camera2_vsr_key"
         camera:defaultValue="@string/pref_camera2_vsr_default"
         camera:title="@string/pref_camera2_vsr_title"

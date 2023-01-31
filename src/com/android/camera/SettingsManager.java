@@ -317,6 +317,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AI_DENOISER_FORMAT = "pref_camera2_ai_denoiser_format_key";
     public static final String KEY_AI_DENOISER_MODE = "pref_camera2_ai_denoiser_mode_key";
     public static final String KEY_INSENSOR_ZOOM = "pref_camera2_insensor_zoom_key";
+    public static final String KEY_INSTANT_ZOOM = "pref_camera2_instant_zoom_key";
     public static final String KEY_VSR = "pref_camera2_vsr_key";
     public static final String KEY_VIULL = "pref_camera2_viull_key";
 
@@ -1735,6 +1736,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference multireprocess_input = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_INPUT);
         ListPreference multireprocess_output = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_OUTPUT);
         ListPreference ml_video = mPreferenceGroup.findPreference(KEY_ML_VIDEO);
+        ListPreference inStantZoom = mPreferenceGroup.findPreference(KEY_INSTANT_ZOOM);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -2047,6 +2049,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if(ml_video != null){
             if (!isMLVideoSupported()) {
                 mFilteredKeys.add(ml_video.getKey());
+            }
+        }
+
+        if (inStantZoom != null) {
+            if (!isInStantZoomSupported()) {
+                removePreference(mPreferenceGroup, KEY_INSTANT_ZOOM);
             }
         }
 
@@ -3093,6 +3101,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         Log.d(TAG,"isMLVideoSupported: " + isSupported);
         return isSupported;
+    }
+
+    public boolean isInStantZoomSupported() {
+        if (mCharacteristics.size() > 0) {
+            int[] availableOverrides = mCharacteristics.get(CaptureModule.CURRENT_ID).get(CameraCharacteristics
+                    .CONTROL_AVAILABLE_SETTINGS_OVERRIDES);
+            if (availableOverrides == null) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean isAutoExposureRegionSupported(int id) {

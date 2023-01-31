@@ -7119,6 +7119,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyPhotoEIS(builder);
         applyAICameraStrength();
         applyTargetZoom(builder, 0f);
+        applyInStantZoom(builder);
     }
 
     /**
@@ -10148,6 +10149,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyAWBCCTAndAgain(builder);
         applyAIBlurConfigs(builder);
         applyExposure(builder);
+        applyInStantZoom(builder);
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
@@ -12963,6 +12965,23 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         } catch (IllegalArgumentException e) {
             Log.v(TAG, EXCEPTION_LOG," applyInSensorZoom didn`t exist vendorTag :" + insensor_zoom_feature);
+        }
+    }
+
+    private void applyInStantZoom(CaptureRequest.Builder request) {
+        try {
+            String inStantZoom = mSettingsManager.getValue(
+                    SettingsManager.KEY_INSTANT_ZOOM);
+            Log.v(TAG, " applyInStantZoom inSensorZoom :" + inStantZoom);
+            if ("on".equals(inStantZoom)){
+                request.set(CaptureRequest.CONTROL_SETTINGS_OVERRIDE,
+                        CameraMetadata.CONTROL_SETTINGS_OVERRIDE_ZOOM);
+            }else {
+                request.set(CaptureRequest.CONTROL_SETTINGS_OVERRIDE,
+                        CameraMetadata.CONTROL_SETTINGS_OVERRIDE_OFF);
+            }
+        } catch (IllegalArgumentException e) {
+            Log.v(TAG, EXCEPTION_LOG," applyInStantZoom didn`t exist CONTROL_SETTINGS_OVERRIDE");
         }
     }
 
