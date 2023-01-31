@@ -2534,13 +2534,7 @@ public class SettingsActivity extends PreferenceActivity {
                 t2TFocus.setChecked(false);
                 mSettingsManager.setValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "off");
             } else {
-                if (faceDetection.isChecked()) {
-                    t2TFocus.setEnabled(false);
-                    t2TFocus.setChecked(false);
-                    mSettingsManager.setValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "off");
-                } else {
-                    t2TFocus.setEnabled(true);
-                }
+                t2TFocus.setEnabled(true);
             }
         }
     }
