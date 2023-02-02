@@ -302,5 +302,29 @@
   {
     "1":{"pref_camera2_picture_format_key":"0"},
     "0": {"pref_camera2_multiresimagereader_reprocess_key":"0"}
+  },
+  "pref_camera2_qll_key":
+  {
+    "1":{"pref_camera2_picture_format_key":"0",
+         "pref_camera2_flashmode_key":"off",
+         "pref_camera2_longshot_key":"off",
+         "pref_camera2_manual_exp_key":"off",
+         "pref_camera2_raw_format_key":"0",
+         "pref_camera2_ai_denoiser_key":"0",
+         "pref_camera2_ai_denoiser_format_key":"0",
+         "pref_camera2_ai_denoiser_mode_key":"0",
+         "pref_camera2_snapshot_hdrmode":"default",
+         "pref_camera2_viull_key":"0",
+         "pref_camera2_pdnet_toggle_key":"0",
+         "pref_camera2_insensor_zoom_key":"0",
+         "pref_camera2_quad_bayer_sensor_key":"-1",
+         "pref_camera2_tone_mapping_key":"off",
+         "pref_camera2_instant_aec_key":"0",
+         "pref_camera2_zsl_key":"disable",
+         "pref_camera2_manual_wb_key":"off",
+         "pref_camera2_exposure_metering_key":"1",
+         "pref_camera2_force_aux_key": "off"
+    },
+    "0": {}
   }
 }

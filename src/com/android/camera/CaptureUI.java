@@ -2215,6 +2215,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if(hdrmode != null && !hdrmode.equals("off")){
             return false;
         }
+        String qllStr = mSettingsManager.getValue(SettingsManager.KEY_QLL);
+        if (qllStr.equals("1")) {
+            return false;
+        }
         return true;
     }
     public void initSceneModeHDR() {

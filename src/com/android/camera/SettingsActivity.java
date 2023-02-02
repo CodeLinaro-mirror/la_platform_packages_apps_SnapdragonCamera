@@ -2331,6 +2331,13 @@ public class SettingsActivity extends PreferenceActivity {
             return;
         }
 
+        String qllStr = mSettingsManager.getValue(SettingsManager.KEY_QLL);
+        if (qllStr.equals("1")) {
+            pref.setValue("0");
+            pref.setEnabled(false);
+            return;
+        }
+
         pref.setEnabled(true);
 
     }
@@ -2543,15 +2550,19 @@ public class SettingsActivity extends PreferenceActivity {
                 SettingsManager.KEY_RAW_FORMAT_TYPE);
         ListPreference zslPref = (ListPreference)findPreference(
                 SettingsManager.KEY_ZSL);
-        if ((zslPref != null && zslPref.getValue().equals("app-zsl")) || mSettingsManager.isLimitedHDR()) {
+        ListPreference qllPref = (ListPreference)findPreference(
+                SettingsManager.KEY_QLL);
+        if ((zslPref != null && zslPref.getValue().equals("app-zsl")) ||
+                mSettingsManager.isLimitedHDR() ||
+                (qllPref != null && qllPref.getValue().equals("1"))) {
             if (rawFormatPref != null) {
                 rawFormatPref.setValue("0");
                 rawFormatPref.setEnabled(false);;
             }
-        }else{
+        } else {
             if(rawFormatPref != null)
                 rawFormatPref.setEnabled(true);
-            }
+        }
 
     }
     private void updateInSensorZoom(){
