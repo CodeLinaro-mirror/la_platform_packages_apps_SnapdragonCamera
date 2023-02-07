@@ -210,11 +210,15 @@
   {
     "0":{"pref_camera2_raw_reprocess_key":"0"},
     "10":{"pref_camera2_longshot_key":"off",
-           "pref_camera2_manualhdr_key":"off",
-           "pref_camera2_zsl_key":"hal-zsl"},
+          "pref_camera2_manualhdr_key":"off",
+          "pref_camera2_zsl_key":"hal-zsl"},
     "16":{"pref_camera2_longshot_key":"off",
           "pref_camera2_manualhdr_key":"off",
-          "pref_camera2_zsl_key":"hal-zsl"}
+          "pref_camera2_zsl_key":"hal-zsl"},
+    "54":{"pref_camera2_selfiemirror_key":"off",
+          "pref_camera2_longshot_key":"off"},
+    "99":{"pref_camera2_selfiemirror_key":"off",
+          "pref_camera2_longshot_key":"off"}
   },
   "pref_camera2_hdr_key":
   {
