@@ -78,8 +78,9 @@ public class FdExpandListView  {
 
     public void initFDSettingsData() {
         mFDIndex = 0;
-        mExpandKey.add("FD Face detection mode");
-        mExpandKey.add("FD mask detection");
+        mExpandKey.add("FD Face Detection Mode");
+        mExpandKey.add("FD Mask Detection");
+        mExpandKey.add("Upper Body Detection");
 
         List<String> list = new ArrayList<String>();
         CharSequence[] fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FACE_DETECTION_MODE);
@@ -94,6 +95,14 @@ public class FdExpandListView  {
             list.add(fdMaskEntry[i].toString());
         }
         mExpandMap.put((String) mExpandKey.get(1), list);
+
+        list = new ArrayList<String>();
+        CharSequence[] upperBodyDetectionEntry = mSettingsManager.getEntries(
+                mSettingsManager.KEY_UPPER_BODY_DETECTION);
+        for(int i = 0; i< upperBodyDetectionEntry.length;i++){
+            list.add(upperBodyDetectionEntry[i].toString());
+        }
+        mExpandMap.put((String) mExpandKey.get(2), list);
         list = null;
     }
 
@@ -156,6 +165,9 @@ public class FdExpandListView  {
                 case 1:
                     mSettingsManager.setValueIndex(mSettingsManager.KEY_FACE_MASK,child);
                     break;
+                case 2:
+                    mSettingsManager.setValueIndex(mSettingsManager.KEY_UPPER_BODY_DETECTION,child);
+                    break;
             }
         } else if (mFDIndex == 1) {
             switch(group) {
@@ -186,6 +198,9 @@ public class FdExpandListView  {
                 case 1:
                     mSettingsManager.setValueIndex(mSettingsManager.KEY_FACE_MASK,child);
                     break;
+                case 2:
+                    mSettingsManager.setValueIndex(mSettingsManager.KEY_UPPER_BODY_DETECTION,child);
+                    break;
             }
         }
     }
@@ -202,6 +217,10 @@ public class FdExpandListView  {
                 case 1:
                     fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FACE_MASK);
                     valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FACE_MASK);
+                    break;
+                case 2:
+                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_UPPER_BODY_DETECTION);
+                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_UPPER_BODY_DETECTION);
                     break;
             }
         } else if (mFDIndex == 1) {
@@ -239,6 +258,10 @@ public class FdExpandListView  {
                 case 1:
                     fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FACE_MASK);
                     valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FACE_MASK);
+                    break;
+                case 2:
+                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_UPPER_BODY_DETECTION);
+                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_UPPER_BODY_DETECTION);
                     break;
             }
         }

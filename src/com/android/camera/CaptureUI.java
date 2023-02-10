@@ -3815,6 +3815,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFaceView.setFacialMasks(facialMasks, maskNums);
     }
 
+    public void onUpperBodyDetection(int headNums, int[] headInts,
+                                     int[] torsoValidInts, int[] torsoInts) {
+        mFaceView.setUpperBodys(headNums, headInts, torsoValidInts, torsoInts);
+    }
+
     public Point getSurfaceViewSize() {
         Point point = new Point();
         if (!USE_TEXTURE_VIEW_TO_PREVIEW) {

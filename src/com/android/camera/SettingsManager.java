@@ -193,6 +193,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             "pref_camera2_video_time_lapse_frame_interval_key";
     public static final String KEY_FACE_DETECTION = "pref_camera2_facedetection_key";
     public static final String KEY_FACE_MASK = "pref_camera2_facemask_key";
+    public static final String KEY_UPPER_BODY_DETECTION = "pref_camera2_upper_body_detection_key";
     public static final String KEY_VIDEO_HIGH_FRAME_RATE = "pref_camera2_hfr_key";
     public static final String KEY_SELFIE_FLASH = "pref_selfie_flash_key";
     public static final String KEY_SHUTTER_SOUND = "pref_camera2_shutter_sound_key";

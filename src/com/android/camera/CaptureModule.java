@@ -280,6 +280,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mVideoFrameNumber = 0;
     private boolean mIsRTBCameraId = false;
     private boolean mIsFacialMaskSupported = true;
+    private boolean mIsUpperBodySupported = true;
 
     /** For temporary save warmstart gains and cct value*/
     private float mRGain = -1.0f;
@@ -463,6 +464,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static CaptureResult.Key<byte[]> facialMaskResults =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.mask_results",
                     byte[].class);
+    private static CaptureResult.Key<byte[]> upperbodyResults =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.upperbody_results",
+                    byte[].class);
     public static CaptureRequest.Key<Byte> facialContourVersion =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.contour_version",
                     Byte.class);
@@ -477,6 +481,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Byte.class);
     private static final CaptureRequest.Key<Byte> faceMaskEnable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.face_mask_enable",
+                    Byte.class);
+    private static final CaptureRequest.Key<Byte> upperBodyEnable =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.upperbody_enable",
                     Byte.class);
     public static final CaptureRequest.Key<Byte> FACE_EXPRESSION_ENABLE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.face_expression_enable",
@@ -1513,6 +1520,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                     if (isFdMaskOn() && mIsFacialMaskSupported) {
                         updateFacialMask(result);
+                    }
+                    if (isUpperBodyDetectionOn() && mIsUpperBodySupported) {
+                        updateUpperBodyDetection(result);
                     }
                 }
                 updateT2tTrackerView(result);
@@ -2654,6 +2664,12 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean isFdMaskOn(){
         String value = mSettingsManager.getValue(SettingsManager.KEY_FACE_MASK);
+        if (value == null) return false;
+        return  value.equals("enable");
+    }
+
+    private boolean isUpperBodyDetectionOn(){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_UPPER_BODY_DETECTION);
         if (value == null) return false;
         return  value.equals("enable");
     }
@@ -8706,6 +8722,81 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void updateUpperBodyDetection(CaptureResult result) {
+        byte[] upperBodys = null;
+        int[] headInts = null;
+        int[] torsoValidInts = null;
+        int[] torsoInts = null;
+        int headNums = 0;
+        try {
+            upperBodys = result.get(upperbodyResults);
+        } catch (IllegalArgumentException e) {
+            mIsUpperBodySupported = false;
+            Log.w(TAG, "can`t get vendorTag upperbodyResults :" + upperbodyResults);
+        } catch (NullPointerException e) {
+            Log.w(TAG, "updateUpperBodyDetection upperBodys get NULL");
+        }
+        if (upperBodys != null) {
+            int size = upperBodys.length / 4;
+            headInts = new int[40];
+            torsoValidInts = new int[10];
+            torsoInts = new int[40];
+            Log.w(TAG, " updateUpperBodyDetection size :" + size);
+            int j = 0;
+            // why int i = 44
+            // struct FDMetadataUpperBodyResults
+            //{
+            //    UINT32       numHead; (4 byte)
+            //    INT32        linkedFaceId[FDMaxFaceCount];  (40 bytes)
+            //    FDROIRegion  headROI[FDMaxFaceCount];  (160 bytes)
+            //    BOOL         torsoValid[FDMaxFaceCount];  (40 bytes)
+            //    FDROIRegion  torsoROI[FDMaxFaceCount];  (160 bytes)
+            //}
+
+            try {
+                headNums = byteArray2Int(upperBodys, 0);
+                for (int i = 44; i < upperBodys.length; i += 4) {
+                    if (j == headInts.length) {
+                        break;
+                    }
+                    headInts[j] = byteArray2Int(upperBodys, i);
+                    Log.w(TAG, " updateUpperBodyDetection head j :" + j + ", i :" + i + " headInts[j] :" + headInts[j]);
+                    j++;
+                }
+
+                j = 0;
+                for (int i = 204; i < upperBodys.length; i += 4) {
+                    if (j == torsoValidInts.length) {
+                        break;
+                    }
+                    torsoValidInts[j] = byteArray2Int(upperBodys, i);
+                    Log.w(TAG, " updateUpperBodyDetection torsoValid j :" + j + ", i :" + i + " torsoValidInts[j] :" + torsoValidInts[j]);
+                    j++;
+                }
+
+                j = 0;
+                for (int i = 244; i < upperBodys.length; i += 4) {
+                    if (j == torsoInts.length) {
+                        break;
+                    }
+                    torsoInts[j] = byteArray2Int(upperBodys, i);
+                    Log.w(TAG, " updateUpperBodyDetection torso j :" + j + ", i :" + i + " torsoInts[j] :" + torsoInts[j]);
+                    j++;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, " updateUpperBodyDetection byteArray2Int occur exception");
+                e.printStackTrace();
+            }
+        }
+
+        Log.w(TAG, " updateUpperBodyDetection headNums :" + headNums);
+        try {
+            mUI.onUpperBodyDetection(headNums, headInts, torsoValidInts, torsoInts);
+        } catch(Exception e) {
+            Log.e(TAG, " updateUpperBodyDetection occur exception");
+        }
+    }
+
     private void updateFaceView(final Face[] faces, final ExtendedFace[] extendedFaces) {
         mPreviewFaces = faces;
         mExFaces = extendedFaces;
@@ -14083,13 +14174,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
 
                 Log.d(FD_TAG,FD_LOG,"face detection faceMask is ="+isFdMaskOn());
-                byte maskEnable;
-                if (isFdMaskOn()) {
-                    maskEnable = 1;
-                } else {
-                    maskEnable = 0;
+                byte maskEnable = (byte)(isFdMaskOn() ? 1 : 0);
+                try {
+                    request.set(CaptureModule.faceMaskEnable, maskEnable);
+                } catch (IllegalArgumentException e) {
                 }
-                request.set(CaptureModule.faceMaskEnable, maskEnable);
+
+                byte upperBodyEnabled = (byte)(isUpperBodyDetectionOn() ? 1 : 0);
+                try {
+                    request.set(CaptureModule.upperBodyEnable, upperBodyEnabled);
+                } catch (IllegalArgumentException e) {
+                }
 
                 if (isGenderOn()) {
                     request.set(CaptureModule.GENDER_ENABLE, (byte)1);
