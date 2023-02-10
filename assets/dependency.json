@@ -286,7 +286,8 @@
   },
   "pref_camera2_stats_visualizer_enable_key":
   {
-    "0": {"pref_camera2_stats_visualizer_key": ""}
+    "0": {"pref_camera2_stats_visualizer_key": ""},
+    "1": {"pref_camera2_performance_debug_key":"off"}
   },
   "pref_camera2_select_mode_key":
   {
