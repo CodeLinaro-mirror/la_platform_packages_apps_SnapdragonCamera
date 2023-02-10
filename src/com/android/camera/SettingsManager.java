@@ -1448,6 +1448,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference hvx_mfhdr = mPreferenceGroup.findPreference(KEY_HVX_MFHDR);
         ListPreference hvx_shdr = mPreferenceGroup.findPreference(KEY_HVX_SHDR);
         ListPreference ml_video = mPreferenceGroup.findPreference(KEY_ML_VIDEO);
+        ListPreference photoEis = mPreferenceGroup.findPreference(KEY_PHOTO_EIS_VALUE);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -1750,6 +1751,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (vsr != null) {
             if (!isVSRSupported()) {
                 removePreference(mPreferenceGroup, KEY_VSR);
+            }
+        }
+
+        if(photoEis != null){
+            if (!isPhotoEisSupported(cameraId)) {
+                removePreference(mPreferenceGroup, KEY_PHOTO_EIS_VALUE);
             }
         }
         ListPreference physicalRawReprocessPref = (ListPreference)mPreferenceGroup.findPreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
@@ -2534,6 +2541,23 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return result > 1;
         }
         return (result > 0);
+    }
+
+    public boolean isPhotoEisSupported(int id) {
+        boolean ret = false;
+        try{
+            if (mCharacteristics.size() >0){
+                byte isPhotoEISSupported = mCharacteristics.get(id).get(
+                        CaptureModule.isPhotoEISSupported);
+                Log.d(TAG,"isPhotoEISSupported:" + isPhotoEISSupported);
+                ret = isPhotoEISSupported == 1;
+            }
+        } catch(IllegalArgumentException|NullPointerException e){
+            Log.d(TAG, "cannot find vendor tag: " +
+                    CaptureModule.isPhotoEISSupported.toString());
+            e.printStackTrace();
+        }
+        return ret;
     }
 
     public boolean isInSensorZoomSupported() {
