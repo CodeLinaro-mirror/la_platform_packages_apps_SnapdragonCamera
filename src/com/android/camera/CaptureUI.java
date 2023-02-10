@@ -2292,8 +2292,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mRecordingTimeView.setText("00:00");
             mRecordingTimeRect.setVisibility(View.VISIBLE);
             updateOfflineDumpTrigger(View.VISIBLE);
-            mMuteButton.setVisibility((mModule.isHSRMode() ||
-                    mModule.getHighSpeedCaptureRate() < 60) ? View.VISIBLE : View.INVISIBLE);
+            mMuteButton.setVisibility(showMuteButton()? View.VISIBLE : View.INVISIBLE);
             setMuteButtonResource(!mModule.isAudioMute());
         } else {
             mFlashButton.setVisibility(View.VISIBLE);
@@ -2309,7 +2308,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             updateOfflineDumpTrigger(View.GONE);
         }
     }
-
+    private boolean showMuteButton(){
+        String audioSelected = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER);
+        if((mModule.isHSRMode() || mModule.getHighSpeedCaptureRate() < 60) &&
+                !audioSelected.equals("off")){
+            return  true;
+        }
+        return  false;
+    }
     private void setMuteButtonResource(boolean isUnMute) {
         if(isUnMute) {
             mMuteButton.setImageResource(R.drawable.ic_unmuted_button);
