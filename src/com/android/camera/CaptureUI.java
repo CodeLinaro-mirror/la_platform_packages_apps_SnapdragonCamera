@@ -58,6 +58,7 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 
 import com.android.camera.gles.CameraRender;
+import com.android.camera.ui.RotateTextView;
 import com.android.camera.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
@@ -210,7 +211,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TextView mEvValue;
 
     private FocusAssistImageView mFAImageView;
-    private TextView mFocusAssistTextView;
+    private RotateTextView mFocusAssistTextView;
     private ViewStub mFAViewStub;
     private FocusAssistLayout mFALayout;
     private TextureView mFATextureView;
@@ -3394,11 +3395,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             hideFocusAssistText();
             mModule.onFocusAssistModeStart(mFocusPointInPreview.x, mFocusPointInPreview.y);
         });
-        float textSize = mFocusAssistTextView.getTextSize();
-        float offset = textSize * 2;
         int circleSize = mPieRenderer.getSize() / 2;
-        mFocusAssistTextView.setX(mFocusPoint.x - circleSize);
-        mFocusAssistTextView.setY(mFocusPoint.y - circleSize - offset);
+        mFocusAssistTextView.setReferCircle(mFocusPoint.x, mFocusPoint.y, circleSize);
         mFocusAssistTextView.setVisibility(View.VISIBLE);
         if (mFAImageView == null) {
             mFAImageView = mRootView.findViewById(R.id.focus_assist_iv);
@@ -3427,6 +3425,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         params.topMargin = topMargin;
         mFAImageView.setLayoutParams(params);
         mFAImageView.setVisibility(View.VISIBLE);
+
+        Rect displayRegion = new Rect(surfaceViewLocation[0], surfaceViewLocation[1], mPreviewHeight, mPreviewWidth);
+        mFocusAssistTextView.setDisplayRegion(displayRegion);
+        if (mEvSeekBar != null) {
+            mFocusAssistTextView.setExtraOffset(0f, mEvSeekBar.getHeight());
+        }
+        mFocusAssistTextView.setOrientation(mOrientation, false);
     }
 
     public void hideFocusAssistText() {
@@ -3885,6 +3890,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mSceneModeInstructionalDialog.dismiss();
             mSceneModeInstructionalDialog = null;
             showSceneInstructionalDialog(orientation);
+        }
+
+        if (mFocusAssistTextView != null && mFocusAssistTextView.getVisibility() == View.VISIBLE) {
+            mFocusAssistTextView.setOrientation(orientation, animation);
         }
     }
 

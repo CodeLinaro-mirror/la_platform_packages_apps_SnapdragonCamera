@@ -594,7 +594,7 @@
         </com.android.camera.ui.RotatableLayout>
     </FrameLayout>
 
-    <TextView android:id="@+id/focus_assist_tv"
+    <com.android.camera.ui.RotateTextView android:id="@+id/focus_assist_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Focus Assist"
