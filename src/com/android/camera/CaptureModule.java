@@ -13420,8 +13420,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else if (promode && !exposuretime.equals("auto") && isovalue.equals("auto")) {
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
             VendorTagUtil.setIsoExpPriority(request, previewExpTime);
-            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
+            if(!mSettingsManager.isFlashSupported(getMainCameraId())){
+                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            }
         } else if (promode && !exposuretime.equals("auto") && !isovalue.equals("auto")) {
             int isoValue = Integer.parseInt(isovalue);
             setIsoAndExposureTime(request, isoValue, previewExpTime);
@@ -13431,11 +13433,14 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean setExposureTime(CaptureRequest.Builder request, String exposuretime) {
         long newExpTime = -1;
         try {
-            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             newExpTime = Long.parseLong(exposuretime);
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
             VendorTagUtil.setIsoExpPriority(request, newExpTime);
             request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
+            if(!mSettingsManager.isFlashSupported(getMainCameraId())) {
+                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            }
+
         } catch (NumberFormatException e) {
             Log.w(TAG, " Input expTime " + exposuretime + " is invalid");
             return false;
@@ -13444,7 +13449,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setIsoValue(CaptureRequest.Builder request, int isoValue, long longValue, boolean isManual) {
-        request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
         VendorTagUtil.setIsoExpPriority(request, longValue);
         VendorTagUtil.setUseIsoValues(request, isoValue);
@@ -13456,6 +13460,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, null);
         request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
+        if(!mSettingsManager.isFlashSupported(getMainCameraId())) {
+            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+        }
+
     }
 
     private void setIsoAndExposureTime(CaptureRequest.Builder request, int isoValue, long exposureTime) {
@@ -14429,7 +14437,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 case SettingsManager.KEY_VIDEO_FLASH_MODE:
                     switch (mCurrentSceneMode.mode) {
                         case PRO_MODE:
-
                             applyFlashForUIChange(mPreviewRequestBuilder[getMainCameraId()],
                                     getMainCameraId());
                             break;
