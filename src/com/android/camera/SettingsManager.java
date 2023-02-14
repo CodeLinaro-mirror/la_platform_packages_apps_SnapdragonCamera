@@ -2117,6 +2117,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         fullEntryValues.length);
                 physicalCamera.setEntries(newEntries);
                 physicalCamera.setEntryValues(newEntryValues);
+                if (isMcxQcfaMode()) {
+                    ArrayList<String> supported = new ArrayList<String>();
+                    supported.add(String.valueOf(cameraId));
+                    filterUnsupportedOptions(physicalCamera, supported);
+                }
+
                 //update for other options
                 fullEntryValues = physicalRawReprocessPref.getEntryValues();
                 fullEntries = physicalRawReprocessPref.getEntries();
@@ -2157,7 +2163,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 System.arraycopy(fullEntries, 0, newEntries, 1, fullEntries.length);
                 System.arraycopy(fullEntryValues, 0, newEntryValues, 1,
                         fullEntryValues.length);
-                if(!isMcxQcfaMode()) {
+                if (!isMcxQcfaMode()) {
                     physicalJpegCallback.setEntries(newEntries);
                     physicalJpegCallback.setEntryValues(newEntryValues);
                     physicalYuvCallback.setEntries(newEntries);
