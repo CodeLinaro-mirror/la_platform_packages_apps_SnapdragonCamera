@@ -423,6 +423,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
 
+    public static CameraCharacteristics.Key<Byte> support_hvx_shdr =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.hvxSHDRMode.hvxSHDRSupported", Byte.class);
+    public static final CameraCharacteristics.Key<Byte> hvxMFHDRSupported =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.hvxMFHDRMode.hvxMFHDRSupported", Byte.class);
+
     public static CameraCharacteristics.Key<Byte> logical_camera_type =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.logicalCameraType.logical_camera_type", Byte.class);
     public static CaptureRequest.Key<Integer> support_video_hdr_values =
@@ -666,6 +671,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableShadingCorrection", byte.class);
     public static final CaptureRequest.Key<Integer> mcxRawCbInfo =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.McxRawCallbackInfo", Integer.class);
+    public static final CaptureRequest.Key<Byte> enable_hvx_shdr =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHVXSHDRMode", Byte.class);
+    public static final CaptureRequest.Key<Byte> enable_hvx_mfhdr =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHVXMFHDRMode", byte.class);
     public static final CaptureRequest.Key<Byte> mctf =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMCTFwithReferenceFrame", byte.class);
     public static final CaptureRequest.Key<Byte> enable_statsvisualizer =
@@ -3741,6 +3750,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
             }
             mIsPreviewingVideo = true;
+
             if (isHighSpeedRateCapture()) {
                 if (PersistUtil.enableMediaRecorder() && (mVideoRecordingSurface != null)) {
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
@@ -4003,7 +4013,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCurrentSceneMode == null) {
             int index = mIntentMode == INTENT_MODE_VIDEO ?
                     CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
-
             mCurrentModeIndex =  mNextModeIndex = index;
             mCurrentSceneMode = mSceneCameraIds.get(index);
         }
@@ -6863,6 +6872,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(raw_ids != null && raw_ids.size() > 0){
             applyMcxRawCbInfo(builder);
         }
+        applyHvxShdr(builder);
+        applyHVXMFHDRMode(builder);
         applyFaceContourVersion(builder);
         applyExtendMaxZoom(builder);
         applyMctf(builder);
@@ -6932,6 +6943,38 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyMFNRAIDEMode(CaptureRequest.Builder builder){
         if (isAIDE2Enabled()) {
             VendorTagUtil.enableMFNRAIDEMode(builder, (byte)0x01);
+        }
+    }
+
+    private void applyHvxShdr(CaptureRequest.Builder request) {
+        if (!mSettingsManager.isHvxShdrSupported(getMainCameraId())){
+            return;
+        }
+        try{
+            byte value = 0;
+            String hvx_shdr = mSettingsManager.getValue(
+                    SettingsManager.KEY_HVX_SHDR);
+            if(hvx_shdr != null && Integer.valueOf(hvx_shdr) > 0)
+                value = 1;
+            request.set(CaptureModule.enable_hvx_shdr,value);
+        } catch (IllegalArgumentException|NullPointerException e) {
+
+        }
+    }
+
+    private void applyHVXMFHDRMode(CaptureRequest.Builder request){
+        if (!mSettingsManager.isHvxMFHDRSupported()){
+            return;
+        }
+        try{
+            byte value = 0;
+            String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
+            if(hvx_mfhdr != null && Integer.valueOf(hvx_mfhdr) > 0)
+                value = 1;
+            request.set(CaptureModule.enable_hvx_mfhdr, value);
+            request.set(CaptureModule.mctf, value);
+        } catch (IllegalArgumentException|NullPointerException e) {
+
         }
     }
 
@@ -7203,10 +7246,22 @@ public class CaptureModule implements CameraModule, PhotoController,
         initModeByIntent();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
+        String action = mActivity.getIntent().getAction();
+        Bundle extra = mActivity.getIntent().getExtras();
+        boolean isVoiceQuery = false;
+        boolean noUiQuery = false;
+        if(extra != null ) {
+            try {
+                isVoiceQuery = (boolean) extra.getBoolean("isVoiceQuery");
+                noUiQuery = (boolean) extra.getBoolean("NoUiQuery");
+                Log.d(TAG,"action="+action+",NoUiQuery="+noUiQuery+",isVoiceQuery="+isVoiceQuery);
+            }catch (Exception e){
+            }
+        }
         if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
-        }else if(facingOfIntentExtras == -1  && mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA
-                && !resumeFromRestartAll) {
+        }else if(facingOfIntentExtras == -1  && ((isVoiceQuery && noUiQuery)
+                || (action != null && action.equals(CameraUtil.GTS_TEST_ACTION))) && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
             mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         }
@@ -8847,7 +8902,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updateVideoSnapshotSize() {
         mVideoSnapshotSize = getMaxPictureSizeLiveshot(getMainCameraId(),mVideoSize.getWidth(),
                 mVideoSize.getHeight());
-        if(mSettingsManager.isLiveshotSizeSameAsVideoSize()){
+        String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
+        String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
+        if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || "1".equals(hvx_shdr) || "1".equals(hvx_mfhdr)){
             mVideoSnapshotSize = mVideoSize;
         }
         String videoSnapshot = PersistUtil.getVideoSnapshotSize();
@@ -9089,6 +9146,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
+
                     if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                         if (PersistUtil.enableMediaRecorder()) {
                             mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
@@ -10325,7 +10383,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void onButtonPause() {
-        if (!isRecorderReady())
+        if (!isRecorderReady() || !isRecordingVideo())
             return;
         pauseVideoRecording();
     }
@@ -12259,6 +12317,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
 
         Log.d(TAG,  "applyVideoEIS EISV select: " + value);
+        String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
+        if (hvx_shdr != null) {
+            if (Integer.valueOf(hvx_shdr) > 0){
+                value = "V3";
+            }
+        }
+
         mStreamConfigOptMode = 0;
         boolean previewStabilizationOn = false;
         if (value != null) {
