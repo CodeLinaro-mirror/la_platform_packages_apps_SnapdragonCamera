@@ -1399,7 +1399,7 @@ public class SettingsActivity extends PreferenceActivity {
             {
                 add(SettingsManager.KEY_SATURATION_LEVEL);
                 add(SettingsManager.KEY_ANTI_BANDING_LEVEL);
-                add(mSettingsManager.KEY_STATS_VISUALIZER_ENABLE);
+                add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                 add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                 add(SettingsManager.KEY_AUTO_HDR);
                 add(SettingsManager.KEY_MANUAL_EXPOSURE);
@@ -1519,8 +1519,6 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.add(SettingsManager.KEY_FD_FL_SETTING);
                         videoAddList.add(SettingsManager.KEY_FD_FACIAL_SETTING);
-                        videoAddList.add(mSettingsManager.KEY_STATS_VISUALIZER_ENABLE);
-                        videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                         videoAddList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                         videoAddList.add(SettingsManager.KEY_PHYSICAL_CAMERA);
                         videoAddList.add(SettingsManager.KEY_MANUAL_HDR);
@@ -1547,6 +1545,8 @@ public class SettingsActivity extends PreferenceActivity {
                     videoAddList.add(SettingsManager.KEY_STATSNN_CONTROL);
                     videoAddList.add(SettingsManager.KEY_PDNET_TOGGLE);
                     videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
+                    videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
+                    videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                     addDeveloperOptions(developer, videoAddList);
                 }
                 if (mode != VIDEO) {
