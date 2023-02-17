@@ -1398,7 +1398,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         public void onCaptureCompleted(CameraCaptureSession session,
                                        CaptureRequest request,
                                        TotalCaptureResult result) {
-            if("preview".equals(String.valueOf(result.getRequest().getTag()))){
+            if("preview".equals(String.valueOf(result.getRequest().getTag())) || mPaused){
                 return;
             }
             int id = getIdFromTag(result.getRequest().getTag());
@@ -3548,11 +3548,17 @@ public class CaptureModule implements CameraModule, PhotoController,
         Log.d(TAG, "setAFModeToPreview ,preview:" + mPreviewRequestBuilder[id].toString());
         try {
             if (isSSMEnabled() && (mIsPreviewingVideo || mIsRecordingVideo)) {
+                if (!checkSessionAndBuilder(mCaptureSession[id], mVideoRecordRequestBuilder)) {
+                    return;
+                }
                 mCaptureSession[id].setRepeatingBurst(createSSMBatchRequest(mVideoRecordRequestBuilder),
                         mCaptureCallback, mCameraHandler);
             } else if (mCaptureSession[id] instanceof CameraConstrainedHighSpeedCaptureSession) {
                 CameraConstrainedHighSpeedCaptureSession session =
                         (CameraConstrainedHighSpeedCaptureSession) mCaptureSession[id];
+                if (!checkSessionAndBuilder(session, mVideoRecordRequestBuilder)) {
+                    return;
+                }
                 List requestList = session.createHighSpeedRequestList(mVideoRecordRequestBuilder.build());
                 session.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
             } else {
