@@ -171,6 +171,9 @@ public class CameraUtil {
     private static long mStartTime;
     private static String mStartStr;
     private static final int FD_LOG = PersistUtil.CAMERA2_DEBUG_FD;
+
+    public static final String GTS_TEST_ACTION = "android.intent.action.VOICE_INTERACTION_GTS_TEST";
+
     public static boolean isSupported(String value, List<String> supported) {
         return supported == null ? false : supported.indexOf(value) >= 0;
     }

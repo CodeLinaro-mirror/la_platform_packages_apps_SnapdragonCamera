@@ -298,8 +298,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long[] mAecFramecontrolExosureTime = new long[3];
     private float[] mAecFramecontrolLinearGain = new float[3];
     private float[] mAecFramecontrolSensitivity = new float[3];
-    private int[] mAFDWarmStart = new int[4];
     private int mAntiBandingMode = -1;
+    private int mIsFickerDetected = -1;
     private float mAecFramecontrolLuxIndex = -1.0f;
 
     public static final int MAX_LOGICAL_PHYSICAL_CAMERA_COUNT = 4;
@@ -556,16 +556,15 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public static CaptureRequest.Key<Integer> statsVisualizerOptionMask =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.statsVisualizerOptionMask", Integer.class);
-    //AFD warm start
-    private static CaptureRequest.Key<int[]> afd_warm_start_request =
-            new CaptureRequest.Key<>("org.quic.camera.afdData.AFDWarmStart", int[].class);
     private static CaptureRequest.Key<Integer> anti_banding_mode_request =
             new CaptureRequest.Key<>("org.quic.camera.afdData.AntiBandingMode", Integer.class);
+    private static CaptureRequest.Key<Integer> isficker_detected_request =
+            new CaptureRequest.Key<>("org.quic.camera.afdData.IsFlickerDetected", Integer.class);
 
-    private static CaptureResult.Key<int[]> afd_warm_start_result =
-            new CaptureResult.Key<>("org.quic.camera.afdData.AFDWarmStart", int[].class);
     private static CaptureResult.Key<Integer> anti_banding_mode_result =
             new CaptureResult.Key<>("org.quic.camera.afdData.AntiBandingMode", Integer.class);
+    private static CaptureResult.Key<Integer> isficker_detected_result =
+            new CaptureResult.Key<>("org.quic.camera.afdData.IsFlickerDetected", Integer.class);
 
     //AFD infos
     private static final CaptureResult.Key<Integer> afd_hnum =
@@ -933,8 +932,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mExistAECWarmTag = true;
     private boolean mExistAECFrameControlTag = true;
     private boolean mExistAECDarkGainTag = true;
-    private boolean mExistAFDWarmStartTag = true;
-    private boolean mExistAntiBandingModeag = true;
+    private boolean mExistAntiBandingModeTag = true;
+    private boolean mExistIsFickerDetected = true;
     private boolean mExposureCountTag = true;
     private boolean mAECCameraIdTag = true;
 
@@ -1489,7 +1488,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateFocusStateChange(result);
                 updateAWBCCTAndgains(result);
                 updateAECGainAndExposure(result);
-                updateAFDWarmStartData(result);
+                updateAntiBandingMode(result);
+                updateIsFickerDetected(result);
                 String physical_id = mSettingsManager.getSinglePhysicalCamera();
                 Face[] faces;
                 if (physical_id != null &&
@@ -7258,10 +7258,22 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSettingsManager.createCaptureModule(this);
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
+        String action = mActivity.getIntent().getAction();
+        Bundle extra = mActivity.getIntent().getExtras();
+        boolean isVoiceQuery = false;
+        boolean noUiQuery = false;
+        if(extra != null ) {
+            try {
+                isVoiceQuery = (boolean) extra.getBoolean("isVoiceQuery");
+                noUiQuery = (boolean) extra.getBoolean("NoUiQuery");
+                Log.d(TAG,"action="+action+",NoUiQuery="+noUiQuery+",isVoiceQuery="+isVoiceQuery);
+            }catch (Exception e){
+            }
+        }
         if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
-        }else if(facingOfIntentExtras == -1  && mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA
-                && !resumeFromRestartAll) {
+        }else if(facingOfIntentExtras == -1  && ((isVoiceQuery && noUiQuery)
+                || (action != null && action.equals(CameraUtil.GTS_TEST_ACTION))) && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
             mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         }
@@ -8142,7 +8154,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             try {
                 mCaptureSession[id].updateOutputConfiguration(mFAOutputConfiguration);
                 mFASurfaceConfigured = true;
-            } catch (CameraAccessException e) {
+            } catch (Exception e) {
                 Log.w(TAG, "", e.fillInStackTrace());
                 mFASurfaceConfigured = false;
             }
@@ -8225,7 +8237,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onSingleTapUp(View view, int x, int y) {
         if (mPaused || !mCamerasOpened || !mFirstTimeInitialized || !mAutoFocusRegionSupported
                 || !mAutoExposureRegionSupported || !isTouchToFocusAllowed()
-                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed) {
+                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed
+                || mSettingsManager.getPhysicalCameraId() != null) {
             return;
         }
         mUI.hideFocusAssistText();
@@ -10507,7 +10520,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void onButtonPause() {
-        if (!isRecorderReady())
+        if (!isRecorderReady() || !isRecordingVideo())
             return;
         pauseVideoRecording();
     }
@@ -13320,6 +13333,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else if (promode && !exposuretime.equals("auto") && isovalue.equals("auto")) {
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
             VendorTagUtil.setIsoExpPriority(request, previewExpTime);
+            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
         } else if (promode && !exposuretime.equals("auto") && !isovalue.equals("auto")) {
             int isoValue = Integer.parseInt(isovalue);
@@ -13330,6 +13344,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean setExposureTime(CaptureRequest.Builder request, String exposuretime) {
         long newExpTime = -1;
         try {
+            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             newExpTime = Long.parseLong(exposuretime);
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
             VendorTagUtil.setIsoExpPriority(request, newExpTime);
@@ -13342,6 +13357,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setIsoValue(CaptureRequest.Builder request, int isoValue, long longValue, boolean isManual) {
+        request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
         VendorTagUtil.setIsoExpPriority(request, longValue);
         VendorTagUtil.setUseIsoValues(request, isoValue);
@@ -13451,6 +13467,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         int afdWarmStart2 = pref.getInt(SettingsManager.KEY_AFD_WARM_START_ + "2", -1);
         int afdWarmStart3 = pref.getInt(SettingsManager.KEY_AFD_WARM_START_ + "3", -1);
         int antBandingMode = pref.getInt(SettingsManager.KEY_ANT_BANDING_MODE, -1);
+        int isFickerDetected = pref.getInt(SettingsManager.KEY_IS_FICKER_DETECTED, -1);
         if (rGain != awbDefault && gGain != awbDefault && gGain != bGain) {
             Float[] awbGains = {rGain, gGain, bGain};
             Float[] tcs = {tc0, tc1};
@@ -13511,16 +13528,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                         request_aec_camera_id);
             }
         }
-        if (afdWarmStart0 != -1) {
-            int[] afdWarmStarts = {afdWarmStart0, afdWarmStart1, afdWarmStart2, afdWarmStart3};
-            try {
-                request.set(afd_warm_start_request, afdWarmStarts);
-                result = true;
-            } catch (IllegalArgumentException e) {
-                Log.v(TAG, "applyAWBCCTAndAgain afd_warm_start_request vendor tag missing:" +
-                        afd_warm_start_request);
-            }
-        }
         if (antBandingMode != -1) {
             try {
                 request.set(anti_banding_mode_request, antBandingMode);
@@ -13528,6 +13535,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (IllegalArgumentException e) {
                 Log.v(TAG, "applyAWBCCTAndAgain anti_banding_mode_request vendor tag missing:" +
                         anti_banding_mode_request);
+            }
+        }
+        if (isFickerDetected != -1) {
+            try {
+                request.set(isficker_detected_request, isFickerDetected);
+                result = true;
+            } catch (IllegalArgumentException e) {
+                Log.v(TAG, "applyAWBCCTAndAgain isficker_detected_request vendor tag missing:" +
+                        isficker_detected_request);
             }
         }
         return result;
@@ -13607,27 +13623,32 @@ public class CaptureModule implements CameraModule, PhotoController,
         return result;
     }
 
-    private boolean updateAFDWarmStartData(CaptureResult captureResult) {
+    private boolean updateAntiBandingMode(CaptureResult captureResult) {
         if (captureResult != null) {
             try {
-                if (mExistAFDWarmStartTag) {
-                    mAFDWarmStart = captureResult.get(afd_warm_start_result);
-                }
-            } catch (IllegalArgumentException|NullPointerException e) {
-                mExistAFDWarmStartTag = false;
-                Log.w(TAG,EXCEPTION_LOG,e.toString());
-            }
-
-            try {
-                if (mExistAntiBandingModeag) {
+                if (mExistAntiBandingModeTag) {
                     mAntiBandingMode = captureResult.get(anti_banding_mode_result);
                 }
             } catch (IllegalArgumentException|NullPointerException e) {
-                mExistAntiBandingModeag = false;
+                mExistAntiBandingModeTag = false;
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
-        return mExistAFDWarmStartTag && mExistAntiBandingModeag;
+        return mExistAntiBandingModeTag;
+    }
+
+    private boolean updateIsFickerDetected(CaptureResult captureResult) {
+        if (captureResult != null) {
+            try {
+                if (mExistIsFickerDetected) {
+                    mIsFickerDetected = captureResult.get(isficker_detected_result);
+                }
+            } catch (IllegalArgumentException|NullPointerException e) {
+                mExistIsFickerDetected = false;
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
+            }
+        }
+        return mExistIsFickerDetected;
     }
 
     public void writeXMLForWarmAwb() {
@@ -13667,16 +13688,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 editor.putFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, mDarkBoostGain);
             }
         }
-        if (mExistAFDWarmStartTag) {
-            if (mAFDWarmStart != null) {
-                for (int i = 0; i < mAFDWarmStart.length; i ++) {
-                    editor.putInt(SettingsManager.KEY_AFD_WARM_START_ + i, mAFDWarmStart[i]);
-                }
-            }
-        }
-        if (mExistAntiBandingModeag) {
+        if (mExistAntiBandingModeTag) {
             if (mAntiBandingMode != -1) {
                 editor.putInt(SettingsManager.KEY_ANT_BANDING_MODE, mAntiBandingMode);
+            }
+        }
+        if (mExistIsFickerDetected) {
+            if (mIsFickerDetected != -1) {
+                editor.putInt(SettingsManager.KEY_IS_FICKER_DETECTED, mIsFickerDetected);
             }
         }
         editor.apply();
@@ -14244,7 +14263,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private boolean isTouchFocusAssistSupported() {
-        return (mCurrentSceneMode.mode == CameraMode.DEFAULT) && isBackCamera();
+        return (mCurrentSceneMode.mode == CameraMode.DEFAULT) && isBackCamera() && !isHDREnable();
     }
 
     private void checkTouchFocusAssistEnable(CaptureResult result) {

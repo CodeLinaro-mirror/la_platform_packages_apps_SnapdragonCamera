@@ -1264,13 +1264,13 @@ for time lapse recording -->
     <string-array name="pref_camera2_zomm_switch_wide_entries" translatable="false">
         <item>0.65x</item>
         <item>1x</item>
-        <item>2x</item>
+        <item>2.5x</item>
     </string-array>
 
     <string-array name="pref_camera2_zomm_switch_wide_entryvalues" translatable="false">
         <item>0.65</item>
         <item>1.0</item>
-        <item>2.0</item>
+        <item>2.5</item>
     </string-array>
 
     <string-array name="pref_camera2_face_detection_entryvalues" translatable="false">
