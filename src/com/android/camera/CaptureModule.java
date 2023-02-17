@@ -13149,8 +13149,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyZoomAndUpdate(int id, boolean instant, float targetZoom) {
-
         CaptureRequest.Builder captureRequest = mPreviewRequestBuilder[id];
+        if (!checkSessionAndBuilder(mCaptureSession[id], captureRequest) || mCurrentSessionClosed
+                ||mPaused) {
+            return;
+        }
         Log.d(TAG,"applyZoomAndUpdate, mRecordingPausing:" + mRecordingPausing);
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         boolean isUseVideoPreview = true;
@@ -13176,9 +13179,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyZoom(captureRequest, id);
             }
         }
-        if (!checkSessionAndBuilder(mCaptureSession[id], captureRequest) || mCurrentSessionClosed) {
-            return;
-        }
+
         if (mState[id] == STATE_WAITING_TOUCH_FOCUS) {
             cancelTouchFocus(id);
         }
@@ -15199,7 +15200,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      * @return if it is high speed rate recording
      */
     public boolean isHighSpeedRateCapture() {
-        return mHighSpeedCapture && (int)mHighSpeedFPSRange.getUpper() > NORMAL_SESSION_MAX_FPS;
+        return mHighSpeedCapture && mHighSpeedFPSRange != null && (int)mHighSpeedFPSRange.getUpper() > NORMAL_SESSION_MAX_FPS;
     }
 
     public void onRenderComplete(DPImage dpimage, boolean isError) {
