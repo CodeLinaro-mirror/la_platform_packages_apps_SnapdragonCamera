@@ -1977,7 +1977,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         mZoomIncrease = true;
         mFaceView.initMode();
-        hideFrontBackSwither();
         if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
             mModeSelectLayout.setVisibility(View.GONE);
         }
@@ -2121,7 +2120,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             return;
 
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
-        hideFrontBackSwither();
         mFrontBackSwitcher.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -2132,9 +2130,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void switchFrontBackCamera() {
         if (mIsVideoUI || !mModule.getCameraModeSwitcherAllowed()
-                || !isSupportFrontCamera(mModule.getCurrenCameraMode())
-                || (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
-                    !mSettingsManager.isFrontIDHFRSupported())) {
+                || !isSupportFrontCamera(mModule.getCurrenCameraMode())) {
             return;
         }
         mModule.setCameraModeSwitcherAllowed(false);
@@ -2518,7 +2514,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void showUIafterRecording() {
         mCameraControls.setVideoMode(false);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
-        hideFrontBackSwither();
         mSettingsIcon.setVisibility(View.VISIBLE);
         mIsVideoUI = false;
         mPauseButton.setVisibility(View.INVISIBLE);
@@ -2537,7 +2532,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         //common settings
         mShutterButton.setVisibility(View.VISIBLE);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
-        hideFrontBackSwither();
         mMakeupButton.setVisibility(View.INVISIBLE);
         //settings for each mode
         switch (mode) {
@@ -2944,14 +2938,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void onOrientationChanged() {
-    }
-
-    private void hideFrontBackSwither() {
-        if (mFrontBackSwitcher != null &&
-                ((mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
-                !mSettingsManager.isFrontIDHFRSupported()))) {
-            mFrontBackSwitcher.setVisibility(View.INVISIBLE);
-        }
     }
 
     /**
