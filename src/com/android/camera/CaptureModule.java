@@ -3096,7 +3096,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (mRawReprocessType != 0) {
                         for (int i = 0; i < mRawCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mRAWImageReader[i].getSurface());
-                            configuration.setPhysicalCameraId(mSettingsManager.getRawReprocessPhysicalId());
+                            String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+                            if (!isLogicalId(physicalId)) {
+                                configuration.setPhysicalCameraId(physicalId);
+                            }
                             outputConfigurations.add(configuration);
                         }
                         for (int i = 0; i < mYUVCount; i++) {
@@ -3239,7 +3242,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private boolean isLogicalId(String id){
-        return id != null && id.contains("logical");
+        return id != null && (id.contains("logical") || id.contains("off"));
     }
 
     private List<OutputConfiguration> getPhysicalVideoOutputConfiguration() {
@@ -5324,8 +5327,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         if (mRawReprocessType != 0 ) {
                                             waitForRawMetaData();
                                             Log.i(TAG, "start reprocess-image");
-                                            if(mSettingsManager.getRawReprocessPhysicalId() != null) {
-                                                String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+                                            String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+                                            if(!isLogicalId(physicalId)) {
                                                 TotalCaptureResult physicalMetaData = mRawInputMeta.getPhysicalCameraTotalResults().get(physicalId);
                                                 mPostProcessor.reprocessImage(image, physicalMetaData);
                                             }else {
@@ -7012,7 +7015,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }else {
             mYUVCount = 0;
         }
-        if(mRawReprocessType != 0 && mSettingsManager.getRawReprocessPhysicalId() != null){
+        if(mRawReprocessType != 0){
             mRawCount = 1;
         } else{
             mRawCount = 0;
@@ -8106,7 +8109,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
         if (mRawCount == 1) {
-            Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(mSettingsManager.getRawReprocessPhysicalId()), rawFormat);
+            String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+            int id = (!isLogicalId(physicalId)) ? Integer.parseInt(physicalId) : getMainCameraId();
+            Size[] rawSize = mSettingsManager.getSupportedOutputSize(id, rawFormat);
             if (PersistUtil.isRawReprocessQcfa()) {
                 mRawSize[0] = new Size(8000, 6000);
             } else {
