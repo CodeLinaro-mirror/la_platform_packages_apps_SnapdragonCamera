@@ -291,7 +291,8 @@
       "pref_camera2_ai_camera_blurmode_key": "0"},
     "rtb": {"pref_camera2_pdnet_toggle_key": "0",
             "pref_camera2_extended_max_zoom_key": "0"},
-    "single_rear_cameraid" : { "pref_camera2_ai_camera_blurmode_key": "0"},
+    "single_rear_cameraid" : { "pref_camera2_ai_camera_blurmode_key": "0"，,
+                               "pref_camera2_physical_raw_reprocess_key":"off"},
     "default" : { "pref_camera2_ai_camera_blurmode_key": "0"}
   },
   "pref_camera2_multiresimagereader_key":
