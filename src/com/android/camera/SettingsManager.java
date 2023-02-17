@@ -2914,7 +2914,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                     "single_rear_cameraid") && mCaptureModule.getMcxMode())){
                         continue;
                     }
-                    if (!isEISDisabled && Math.min(sizes[i].getWidth(),sizes[i].getHeight()) < 720) {
+                    if (mode != CaptureModule.CameraMode.HFR && !isEISDisabled && Math.min(sizes[i].getWidth(),sizes[i].getHeight()) < 720) {
                         //video size should't be larger than 720p when EIS V3 is enabled
                         continue;
                     }
