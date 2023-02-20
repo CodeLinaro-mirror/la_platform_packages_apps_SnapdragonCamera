@@ -4244,7 +4244,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mPaused) {
             return;
         }
-        Log.d(TAG, "openCamera " + id);
+        Log.d(TAG, " openCamera " + id);
         CameraManager manager;
         try {
             manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
@@ -6615,7 +6615,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "cannot access the file");
             } finally {
-                retriever.release();
+                try {
+                    retriever.release();
+                } catch (Exception e) {
+                    // Ignore failures while cleaning up.
+                }
             }
 
             mCurrentVideoValues.put(MediaStore.Video.Media.DURATION, duration);
