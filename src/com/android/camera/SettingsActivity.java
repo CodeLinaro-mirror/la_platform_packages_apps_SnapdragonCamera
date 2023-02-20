@@ -199,13 +199,8 @@ public class SettingsActivity extends PreferenceActivity {
                 updateViullPreference();
                 updateVsrPreference();
             } else if (key.equals(SettingsManager.KEY_SELECT_MODE)) {
-                value = ((ListPreference) p).getValue();
-                CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-                if (value.equals("single_rear_cameraid") && mode == CaptureModule.CameraMode.VIDEO) {
-                    updateSwitchIDInModePreference(false);
-                } else {
-                    updateSwitchIDInModePreference(true);
-                }
+                CaptureModule.CameraMode mode = (CaptureModule.CameraMode)
+                        getIntent().getSerializableExtra(CAMERA_MODULE);
                 updateEISPreference();
                 updatePdnetTogglePreference();
                 updateViullPreference();
