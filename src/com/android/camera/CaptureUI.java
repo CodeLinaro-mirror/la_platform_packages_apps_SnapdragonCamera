@@ -1728,7 +1728,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void updateStatsNNResultText(byte statsNNWidth, byte statsNNHeight, byte statsNNMapdata, byte statsNNNumroi, int[] statsNNRoiData, int statsNNRoiWeight) {
-        mStatsAecText.setText(STATS_NN_RESULT_TITLE[0]+Byte.toString(statsNNWidth) +" " + "\r\n" +
+        mStatsNNResultText.setText(STATS_NN_RESULT_TITLE[0]+Byte.toString(statsNNWidth) +" " + "\r\n" +
                                  STATS_NN_RESULT_TITLE[1]+Byte.toString(statsNNHeight) +" " + "\r\n" +
                                  STATS_NN_RESULT_TITLE[2]+Byte.toString(statsNNMapdata) +" " + "\r\n" +
                                  STATS_NN_RESULT_TITLE[3]+Byte.toString(statsNNNumroi) +" " + "\r\n" +

@@ -1542,7 +1542,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else {
                 mUI.updateAECIdInfoVisibility(View.GONE);
             }
-            if (isSateNNFocusSettingOn()) {
+            if (isSateNNFocusSettingOn() && !mStatsVisualEnable.equals("1")) {
                 updateStatsNNView(result);
             } else {
                 mUI.updateStatsNNVisibility(View.GONE);
@@ -1804,7 +1804,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mUI.updateAECInfoVisibility(View.VISIBLE);
+                        mUI.updateStatsNNVisibility(View.VISIBLE);
                         mUI.updateStatsNNResultText(statsNNWidth, statsNNHeight, statsNNMapdata, statsNNNumroi, statsNNRoiData, statsNNRoiWeight);
                     }
                 });
