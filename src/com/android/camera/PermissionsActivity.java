@@ -29,11 +29,9 @@ public class PermissionsActivity extends Activity {
     private int mIndexPermissionRequestStorageRead;
     private boolean mShouldRequestCameraPermission;
     private boolean mShouldRequestMicrophonePermission;
-    private boolean mShouldRequestStoragePermission;
     private int mNumPermissionsToRequest;
     private boolean mFlagHasCameraPermission;
     private boolean mFlagHasMicrophonePermission;
-    private boolean mFlagHasStoragePermission;
     private boolean mCriticalPermissionDenied;
     private Intent mIntent;
     private boolean mIsReturnResult;
@@ -67,17 +65,6 @@ public class PermissionsActivity extends Activity {
         } else {
             mFlagHasMicrophonePermission = true;
         }
-
-        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            mNumPermissionsToRequest = mNumPermissionsToRequest + 2;
-            mShouldRequestStoragePermission = true;
-        } else {
-            mFlagHasStoragePermission = true;
-        }
-
         if (mNumPermissionsToRequest != 0) {
             buildPermissionsRequest();
         } else {
@@ -99,17 +86,7 @@ public class PermissionsActivity extends Activity {
             mIndexPermissionRequestMicrophone = permissionsRequestIndex;
             permissionsRequestIndex++;
         }
-        if (mShouldRequestStoragePermission) {
-            permissionsToRequest[permissionsRequestIndex] =
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE;
-            mIndexPermissionRequestStorageWrite = permissionsRequestIndex;
-            permissionsRequestIndex++;
-            permissionsToRequest[permissionsRequestIndex] =
-                    Manifest.permission.READ_EXTERNAL_STORAGE;
-            mIndexPermissionRequestStorageRead = permissionsRequestIndex;
-            permissionsRequestIndex++;
 
-        }
         requestPermissions(permissionsToRequest, PERMISSION_REQUEST_CODE);
     }
 
@@ -135,20 +112,7 @@ public class PermissionsActivity extends Activity {
                 mCriticalPermissionDenied = true;
             }
         }
-        if (mShouldRequestStoragePermission) {
-            if ((grantResults.length >= mIndexPermissionRequestStorageRead + 1) &&
-                (grantResults[mIndexPermissionRequestStorageWrite] ==
-                        PackageManager.PERMISSION_GRANTED) &&
-                    (grantResults[mIndexPermissionRequestStorageRead] ==
-                            PackageManager.PERMISSION_GRANTED)) {
-                mFlagHasStoragePermission = true;
-            } else {
-                mCriticalPermissionDenied = true;
-            }
-        }
-
-        if (mFlagHasCameraPermission && mFlagHasMicrophonePermission &&
-                mFlagHasStoragePermission) {
+        if (mFlagHasCameraPermission && mFlagHasMicrophonePermission) {
             handlePermissionsSuccess();
         } else if (mCriticalPermissionDenied) {
             handlePermissionsFailure();

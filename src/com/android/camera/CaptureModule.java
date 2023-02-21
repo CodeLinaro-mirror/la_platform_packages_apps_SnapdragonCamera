@@ -144,6 +144,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -616,6 +617,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mIsVoiceTakePhote = false;
     private String mCropValue;
     private Uri mCurrentVideoUri;
+    private final Set<Uri> mUrisInvalid = new HashSet<>();
     private boolean mTempHoldVideoInVideoIntent = false;
     private boolean mCurrentSessionClosed = false;
     private ParcelFileDescriptor mVideoFileDescriptor;
@@ -832,7 +834,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 public void onMediaSaved(Uri uri) {
                     if (uri != null) {
                         mActivity.notifyNewMedia(uri);
-                        mCurrentVideoUri = uri;
                     }
                 }
             };
@@ -4243,7 +4244,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mPaused) {
             return;
         }
-        Log.d(TAG, "openCamera " + id);
+        Log.d(TAG, " openCamera " + id);
         CameraManager manager;
         try {
             manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
@@ -6492,7 +6493,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             mMediaRecorder.reset();
         } catch (RuntimeException e) {
             Log.w(TAG, "MediaRecoder stop fail",  e);
-            if (mVideoFilename != null) deleteVideoFile(mVideoFilename);
+            if (mCurrentVideoUri != null) {
+                mContentResolver.delete(mCurrentVideoUri, null);
+                mCurrentVideoUri = null;
+            }
         }
         if (shouldAddToMediaStoreNow) {
             saveVideo();
@@ -6581,7 +6585,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             path = Storage.DIRECTORY + '/' + filename;
         }
-        mCurrentVideoValues = new ContentValues(9);
+        mCurrentVideoValues = new ContentValues(13);
         mCurrentVideoValues.put(MediaStore.Video.Media.TITLE, title);
         mCurrentVideoValues.put(MediaStore.Video.Media.DISPLAY_NAME, filename);
         mCurrentVideoValues.put(MediaStore.Video.Media.DATE_TAKEN, dateTaken);
@@ -6595,34 +6599,42 @@ public class CaptureModule implements CameraModule, PhotoController,
             mCurrentVideoValues.put(MediaStore.Video.Media.LATITUDE, loc.getLatitude());
             mCurrentVideoValues.put(MediaStore.Video.Media.LONGITUDE, loc.getLongitude());
         }
+        if (ApiHelper.isAndroidROrHigher()) {
+            mCurrentVideoValues.put(MediaStore.Video.Media.IS_PENDING, 1);
+            mCurrentVideoValues.put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Camera");
+        }
         mVideoFilename = path;
         return path;
     }
 
     private void saveVideo() {
-        if (mVideoFileDescriptor == null) {
-            File origFile = new File(mVideoFilename);
-            if (!origFile.exists() || origFile.length() <= 0) {
-                Log.e(TAG, "Invalid file");
-                mCurrentVideoValues = null;
-                return;
-            }
-
+        if (mVideoFileDescriptor != null && mCurrentVideoUri != null) {
             long duration = 0L;
             MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 
             try {
-                retriever.setDataSource(mVideoFilename);
-                duration = Long.valueOf(retriever.extractMetadata(
+                retriever.setDataSource(mVideoFileDescriptor.getFileDescriptor());
+                duration = Long.parseLong(retriever.extractMetadata(
                         MediaMetadataRetriever.METADATA_KEY_DURATION));
-                retriever.release();
-            } catch (Exception e) {
-                Log.e(TAG, "cannot access the file: " + e);
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG, "cannot access the file");
+            } finally {
+                try {
+                    retriever.release();
+                } catch (Exception e) {
+                    // Ignore failures while cleaning up.
+                }
             }
 
-            mActivity.getMediaSaveService().addVideo(mVideoFilename,
-                    duration, mCurrentVideoValues,
+            mCurrentVideoValues.put(MediaStore.Video.Media.DURATION, duration);
+            if (ApiHelper.isAndroidROrHigher()) {
+                mCurrentVideoValues.put(MediaStore.Video.Media.IS_PENDING, 0);
+            }
+            mActivity.getMediaSaveService().updateVideo(mCurrentVideoUri,
+                    mCurrentVideoValues,
                     mOnVideoSavedListener, mContentResolver);
+            Log.d(TAG, "remove invalid uri " + mCurrentVideoUri);
+            mUrisInvalid.remove(mCurrentVideoUri);
         }
         mCurrentVideoValues = null;
     }
@@ -6824,6 +6836,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             mMediaRecorder.prepare();
         } catch (IOException e) {
             Log.e(TAG, "prepare failed for " + mVideoFilename, e);
+            if (mCurrentVideoUri != null) {
+                mContentResolver.delete(mCurrentVideoUri, null);
+                mCurrentVideoUri = null;
+            }
             releaseMediaRecorder();
             throw new IOException(e);
         }
@@ -6833,8 +6849,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mIntentMode == CaptureModule.INTENT_MODE_VIDEO && myExtras != null) {
             Uri saveUri = (Uri) myExtras.getParcelable(MediaStore.EXTRA_OUTPUT);
             if (saveUri != null) {
+                Log.v(TAG, "setMediaRecorderOutputFile, extra uri " + saveUri);
                 try {
-                    mCurrentVideoUri = saveUri;
                     mVideoFileDescriptor =
                             mContentResolver.openFileDescriptor(saveUri, "rw");
                     mCurrentVideoUri = saveUri;
@@ -6844,14 +6860,44 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                 mMediaRecorder.setOutputFile(mVideoFileDescriptor.getFileDescriptor());
             } else {
-                String fileName = generateVideoFilename(mProfile.fileFormat);
-                Log.v(TAG, "New video filename: " + fileName);
-                mMediaRecorder.setOutputFile(fileName);
+                generateVideoOutputFile();
             }
         } else {
-            String fileName = generateVideoFilename(mProfile.fileFormat);
-            Log.v(TAG, "New video filename: " + fileName);
-            mMediaRecorder.setOutputFile(fileName);
+            generateVideoOutputFile();
+        }
+        if (mVideoFileDescriptor != null) {
+            mMediaRecorder.setOutputFile(mVideoFileDescriptor.getFileDescriptor());
+        } else {
+            File cacheDir = mActivity.getExternalCacheDir();
+            if (cacheDir != null) {
+                cacheDir.mkdirs();
+                String tmpFileName = cacheDir.getAbsolutePath() + "/tmp.mp4";
+                Log.d(TAG, "setOutputFile, tmp " + tmpFileName);
+                mMediaRecorder.setOutputFile(tmpFileName);
+            } else {
+                Log.e(TAG, "getExternalCacheDir return null");
+            }
+        }
+    }
+
+    private void generateVideoOutputFile() {
+        String fileName = generateVideoFilename(mProfile.fileFormat);
+        Uri videoTable = Storage.getVideoBaseUri();
+        Uri videoUri = mContentResolver.insert(videoTable, mCurrentVideoValues);
+        Log.i(TAG, "new Video filename: " + fileName + ", new video Uri: " + videoUri);
+        try {
+            mVideoFileDescriptor =
+                mContentResolver.openFileDescriptor(videoUri, "rw");
+            mCurrentVideoUri = videoUri;
+            Log.d(TAG, "add invalid uri " + mCurrentVideoUri);
+            mUrisInvalid.add(mCurrentVideoUri);
+        } catch (java.io.FileNotFoundException ex) {
+            // invalid uri
+            Log.d(TAG, "remove invalid uri " + mCurrentVideoUri);
+            mUrisInvalid.remove(mCurrentVideoUri);
+            mContentResolver.delete(videoUri, null, null);
+            mCurrentVideoUri = null;
+            Log.e(TAG, ex.toString());
         }
     }
 
@@ -8835,6 +8881,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void releaseMediaRecorder() {
         Log.v(TAG, "Releasing media recorder.");
+        deleteInvalidUri();
         cleanupEmptyFile();
         if (mMediaRecorder != null) {
             try{
@@ -8848,13 +8895,26 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void cleanupEmptyFile() {
-        if (mVideoFilename != null) {
-            File f = new File(mVideoFilename);
-            if (f.length() == 0 && f.delete()) {
-                Log.v(TAG, "Empty video file deleted: " + mVideoFilename);
-                mVideoFilename = null;
+        if (mVideoFileDescriptor != null) {
+            try {
+                mVideoFileDescriptor.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mVideoFileDescriptor = null;
+        }
+    }
+
+    private void deleteInvalidUri() {
+        for (Uri uri : mUrisInvalid) {
+            if (uri != null) {
+                try {
+                    Log.d(TAG, "deleteInvalidUri " + uri);
+                    mContentResolver.delete(uri, null);
+                } catch (Exception ex) {}
             }
         }
+        mUrisInvalid.clear();
     }
 
     private void showToast(String tips) {
