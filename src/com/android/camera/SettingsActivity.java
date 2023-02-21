@@ -400,6 +400,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updateViullPreference();
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_AI_CAMERA)){
+                    updateSwitchIDInModePreference(true);
                     updateEISPreference();
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
@@ -2021,6 +2022,10 @@ public class SettingsActivity extends PreferenceActivity {
             }else if (mode == CaptureModule.CameraMode.HFR ){
                 key.remove("SAT");
                 value.remove("sat");
+            }
+            if (mSettingsManager.isAICameraOn() && mode == CaptureModule.CameraMode.VIDEO && mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID) {
+                key.add("Single Rear AIbokeh");
+                value.add("single_rear_aibokeh");
             }
             if((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID || !CaptureModule.MCXMODE) && mode == CaptureModule.CameraMode.VIDEO){
                 key = new ArrayList<String>(Arrays.asList("Default", "RTB"));

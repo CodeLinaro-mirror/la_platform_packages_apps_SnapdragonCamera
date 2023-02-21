@@ -6904,7 +6904,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         Log.d(TAG,"selectMode : " +selectMode);
-        if(selectMode != null && selectMode.equals("rtb")){
+        if(selectMode != null && (selectMode.equals("rtb") || selectMode.equals("single_rear_aibokeh"))){
             builder.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE, CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS);
         }
         applyManualHDR(builder);
@@ -8330,7 +8330,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public int getMainCameraId() {
         if (CaptureModule.FRONT_ID != mCurrentSceneMode.getCurrentId()) {
             String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-            if (selectMode != null && selectMode.equals("single_rear_cameraid") && mSingleRearId != -1) {
+            if (selectMode != null && (selectMode.equals("single_rear_cameraid")|| selectMode.equals("single_rear_aibokeh")) && mSingleRearId != -1) {
                 return mSingleRearId;
             } else if (selectMode != null && selectMode.equals("sat") && mLogicalId != -1) {
                 return mLogicalId;
@@ -8343,7 +8343,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(CaptureModule.FRONT_ID==mCurrentSceneMode.getCurrentId())
             return true;
         String selectMode=mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-        if (selectMode!=null && selectMode.equals("single_rear_cameraid")
+        if (selectMode!=null && (selectMode.equals("single_rear_cameraid") || selectMode.equals("single_rear_aibokeh"))
                 || mSingleRearId == getMainCameraId()) {
             return true;
         } else {
@@ -13254,7 +13254,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyAIBlurConfigs(CaptureRequest.Builder builder){
         if (!mIsRecordingVideo && !mIsPreviewingVideo || builder == null) return;
         String mode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-        boolean isBokehMode = mode != null && mode.equals("rtb");
+        boolean isBokehMode = mode != null && (mode.equals("rtb") || mode.equals("single_rear_aibokeh"));
         if(isBokehMode) {
             applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_SHAPE, builder);
             applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
@@ -13267,7 +13267,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyAIBlurConfig(String key, CaptureRequest.Builder builder){
         String mode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-        boolean isBokehMode = mode != null && mode.equals("rtb");
+        boolean isBokehMode = mode != null && (mode.equals("rtb") || mode.equals("single_rear_aibokeh"));
         if(isBokehMode) {
             try {
                 if (key.equals(SettingsManager.KEY_AI_BLUR_SHAPE)) {
@@ -15107,7 +15107,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void seBlurConfigSlideVisible() {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-        boolean isBokeh = value != null && value.equals("rtb");
+        boolean isBokeh = value != null && (value.equals("rtb") || value.equals("single_rear_aibokeh"));
         mUI.initializeBlurConfigSlide(!mPaused && isBokeh);
     }
 
@@ -15336,7 +15336,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 cameraId = swithCameraId;
             }
             String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-            if (selectMode != null && selectMode.equals("single_rear_cameraid") && mSingleRearId !=-1) {
+            if (selectMode != null && (selectMode.equals("single_rear_cameraid") || selectMode.equals("single_rear_aibokeh")) && mSingleRearId !=-1) {
                 cameraId = mSingleRearId;
             } else if (selectMode != null && selectMode.equals("sat") && mLogicalId != -1) {
                 cameraId = mLogicalId;
@@ -15365,7 +15365,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     switchedCameraId = false;
                 }
                 String selectMode = pref.getString(SettingsManager.KEY_SELECT_MODE, null);
-                if (selectMode != null && selectMode.equals("single_rear_cameraid") && mSingleRearId !=-1) {
+                if (selectMode != null && (selectMode.equals("single_rear_cameraid") || selectMode.equals("single_rear_aibokeh")) && mSingleRearId !=-1) {
                     return mSingleRearId;
                 } else if (selectMode != null && selectMode.equals("sat") && mLogicalId != -1) {
                     return mLogicalId;
