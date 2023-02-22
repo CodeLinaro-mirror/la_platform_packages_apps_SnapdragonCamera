@@ -303,7 +303,7 @@ public class ProMode extends View {
                             v.getMeasuredHeight());
                     v.setLayoutParams(lp);
                     v.setX(mPoints[i].x - v.getMeasuredWidth() / 2);
-                    v.setY(mPoints[i].y - 2 * v.getMeasuredHeight());
+                    v.setY(mPoints[i].y - 2 * v.getMeasuredHeight()- 5);
                 }
                 mParent.addView(v);
                 mAddedViews.add(v);
@@ -364,7 +364,7 @@ public class ProMode extends View {
         } else {
             v.setTextColor(Color.WHITE);
             v.setX(mCurveLeft + i * stride - v.getMeasuredWidth() / 2);
-            v.setY(mCurveY - 2 * v.getMeasuredHeight());
+            v.setY(mCurveY - 2 * v.getMeasuredHeight() - 10);
         }
 
         mParent.addView(v);
