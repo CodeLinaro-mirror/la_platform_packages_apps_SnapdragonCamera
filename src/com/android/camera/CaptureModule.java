@@ -1189,6 +1189,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mDeepPortraitMode = false;
     private boolean mIsCloseCamera = true;
     TotalCaptureResult mRawInputMeta;
+    private int mOpenCameraTimes = 3;
     private static final int LOCK_AF_AE_STATE_NONE = 0;
     private static final int LOCK_AF_AE_STATE_START = 1;
     private static final int LOCK_AF_AE_STATE_LOCK_DONE = 2;
@@ -2228,10 +2229,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.e(TAG, "onError " + id + " " + error);
             mCameraOpenCloseLock.release();
             mCamerasOpened = false;
-
+            if((error == 1 || error == 2) && mOpenCameraTimes >0){
+                mOpenCameraTimes --;
+                Message msg = mCameraHandler.obtainMessage(OPEN_CAMERA, getMainCameraId(), 0);
+                mCameraHandler.sendMessageDelayed(msg,200);
+                return;
+            }
             if (null != mActivity) {
-                Toast.makeText(mActivity,"open camera error id =" + id,
-                        Toast.LENGTH_LONG).show();
+                Toast.makeText(mActivity,"open camera error id =" + id+"," +
+                                "error reason:"+error,Toast.LENGTH_LONG).show();
                 mActivity.finish();
             }
             //workaround for removing task bug
@@ -7741,7 +7747,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         updateAICameraSeekBar();
         updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
         mUI.showRelatedIcons(mCurrentSceneMode.mode);
+        mCurrentSessionClosed = true;
         if(mIsCloseCamera && !PersistUtil.isTorchMode()) {
+            mOpenCameraTimes = 3;
             openCamera(getMainCameraId());
         }else if (PersistUtil.isTorchMode()){
                 mUI.showTorchUI();
