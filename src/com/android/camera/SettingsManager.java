@@ -2882,7 +2882,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         System.arraycopy(highRes,0,sizes,0,highRes.length);
         System.arraycopy(outRes,0,sizes,highRes.length,outRes.length);
         boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
-        String eisValue = getValue(SettingsManager.KEY_EIS_VALUE);
+        String eisValue = getPerfValue(SettingsManager.KEY_EIS_VALUE);
         boolean isEISDisabled = "disable".equals(eisValue);
         VideoCapabilities heifCap = null;
         if (isHeifEnabled) {
@@ -2914,7 +2914,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                     "single_rear_cameraid") && mCaptureModule.getMcxMode())){
                         continue;
                     }
-                    if (!isEISDisabled && Math.min(sizes[i].getWidth(),sizes[i].getHeight()) < 720) {
+                    if (mode != CaptureModule.CameraMode.HFR && !isEISDisabled && Math.min(sizes[i].getWidth(),sizes[i].getHeight()) < 720) {
                         //video size should't be larger than 720p when EIS V3 is enabled
                         continue;
                     }

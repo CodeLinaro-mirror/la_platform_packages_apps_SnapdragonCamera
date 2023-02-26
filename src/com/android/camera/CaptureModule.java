@@ -4530,13 +4530,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mNumFramesArrived.incrementAndGet();
 
                 Log.d(TAG, "captureStillPictureForLongshot onCaptureCompleted: " + mNumFramesArrived.get() + " " + mShotNum);
-                if (mLongshotActive && mNumFramesArrived.get() >= mShotNum) {
-                    mLongshotActive = false;
-                    mHandler.post(() -> stopBurstShot());
-                    mUI.enableVideo(true);
-                    return;
-                }
-
                 if (mLongshotActive) {
                     checkAndPlayShutterSound(getMainCameraId());
                     mActivity.runOnUiThread(new Runnable() {
@@ -5284,10 +5277,24 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                                 Image image = reader.acquireNextImage();
                                 if ((mLongshotActive || mNumFramesArrived.get() > 0)) {
-                                    Log.d(TAG, "long shot image available num " + mNumImageArrived.incrementAndGet());
+                                    Log.d(TAG, "long shot image available num " + mNumImageArrived.get());
+                                    if (mNumImageArrived.get() < mShotNum &&
+                                            mActivity.getMediaSaveService().isQueueFull()) {
+                                        Log.w(TAG, "long shot image available, but queue is full");
+                                        image.close();
+                                        return;
+                                    }
+                                    mNumImageArrived.incrementAndGet();
                                     if (mNumImageArrived.get() > mShotNum) {
                                         image.close();
-                                        Log.d(TAG, "image arrived over limit");
+                                        Log.d(TAG, "long shot image available, image arrived over limit, mLongshotActive:" + mLongshotActive + ",isOver:" + (mNumFramesArrived.get() >= mShotNum));
+                                        if (mLongshotActive && mNumFramesArrived.get() >= mShotNum) {
+                                            mLongshotActive = false;
+                                            stopBurstShot();
+                                            mHandler.post(() -> {
+                                                mUI.enableVideo(true);
+                                            });
+                                        }
                                         return;
                                     }
 
@@ -6712,10 +6719,22 @@ public class CaptureModule implements CameraModule, PhotoController,
         initModeByIntent();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
+        String action = mActivity.getIntent().getAction();
+        Bundle extra = mActivity.getIntent().getExtras();
+        boolean isVoiceQuery = false;
+        boolean noUiQuery = false;
+        if(extra != null ) {
+            try {
+                isVoiceQuery = (boolean) extra.getBoolean("isVoiceQuery");
+                noUiQuery = (boolean) extra.getBoolean("NoUiQuery");
+                Log.d(TAG,"action="+action+",NoUiQuery="+noUiQuery+",isVoiceQuery="+isVoiceQuery);
+            }catch (Exception e){
+            }
+        }
         if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
-        }else if(facingOfIntentExtras == -1  && mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA
-                && !resumeFromRestartAll){
+        }else if(facingOfIntentExtras == -1  && ((isVoiceQuery && noUiQuery)
+                || (action != null && action.equals(CameraUtil.GTS_TEST_ACTION))) && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
             mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         }
@@ -7565,7 +7584,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onSingleTapUp(View view, int x, int y) {
         if (mPaused || !mCamerasOpened || !mFirstTimeInitialized || !mAutoFocusRegionSupported
                 || !mAutoExposureRegionSupported || !isTouchToFocusAllowed()
-                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed) {
+                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed
+                || mSettingsManager.getPhysicalCameraId() != null) {
             return;
         }
         Log.d(TAG, "onSingleTapUp " + x + " " + y);
@@ -8050,6 +8070,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         try {
             int id = getMainCameraId();
             enableShutterAndVideoOnUiThread(id);
+            if (mCaptureSession[id] == null) {
+                return;
+            }
             mCaptureSession[id].stopRepeating();
             mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                     .build(), mCaptureCallback, mCameraHandler);
@@ -8348,6 +8371,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.d(TAG, "recordingVideo session onConfigured");
             setCameraModeSwitcherAllowed(true);
             int cameraId = getMainCameraId();
+            if (mPaused || null == mCameraDevice[cameraId]) {
+                mCaptureSession[cameraId] = null;
+                mCurrentSession = null;
+                Log.d(TAG, "camera has been closed, return it");
+                return;
+            }
             mCurrentSession = cameraCaptureSession;
             mCaptureSession[cameraId] = cameraCaptureSession;
             //APP could  check if  afState is anything other than INACTIVE , it should change the focus circle and skip the passive transient state.
@@ -8408,9 +8437,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 });
             }
-            int cameraId = getMainCameraId();
-            mCurrentSession = cameraCaptureSession;
-            mCaptureSession[cameraId] = cameraCaptureSession;
             //APP could  check if  afState is anything other than INACTIVE , it should change the focus circle and skip the passive transient state.
             if (mLastResultAFState != CaptureResult.CONTROL_AF_STATE_INACTIVE && mFocusStateListener != null) {
                 mActivity.runOnUiThread(new Runnable() {
@@ -8420,14 +8446,19 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 });
             }
+            int cameraId = getMainCameraId();
+            if (mPaused || null == mCameraDevice[cameraId]) {
+                mCaptureSession[cameraId] = null;
+                mCurrentSession = null;
+                Log.d(TAG, "camera has been closed, return it");
+                return;
+            }
+            mCurrentSession = cameraCaptureSession;
+            mCaptureSession[cameraId] = cameraCaptureSession;
             updateFaceDetection();
             mFirstPreviewLoaded = false;
             // Create slow motion request list
             List<CaptureRequest> slowMoRequests = null;
-            if(mCameraDevice[cameraId] == null){
-                Log.d(TAG, "camera has been closed, return it");
-                return;
-            }
             try {
                 setUpVideoCaptureRequestBuilder(cameraId);
                 if (isHighSpeedRateCapture()) {
@@ -9557,7 +9588,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void onButtonPause() {
-        if (!isRecorderReady())
+        if (!isRecorderReady() || !isRecordingVideo())
             return;
         pauseVideoRecording();
     }
@@ -13080,8 +13111,20 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mCaptureSession[cameraId].setRepeatingBurst(createSSMBatchRequest(
                                 mPreviewRequestBuilder[cameraId]), mCaptureCallback, mCameraHandler);
                     } else {
-                        mCaptureSession[cameraId].setRepeatingRequest(mPreviewRequestBuilder[cameraId]
-                                .build(), mCaptureCallback, mCameraHandler);
+                        int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
+                                mSettingsManager.getVideoFPS());
+                        if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                            if (PersistUtil.enableMediaRecorder() && mIsPreviewingVideo) {
+                                mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                            }
+                            limitPreviewFPS();
+                            if (PersistUtil.enableMediaRecorder() && mIsPreviewingVideo) {
+                                mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+                            }
+                        }else {
+                            mCaptureSession[cameraId].setRepeatingRequest(mPreviewRequestBuilder[cameraId]
+                                    .build(), mCaptureCallback, mCameraHandler);
+                        }
                     }
                 }
             } catch (CameraAccessException | IllegalStateException e) {
