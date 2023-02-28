@@ -830,6 +830,20 @@
         camera:entryValues="@array/pref_camera2_extended_max_zoom_entryvalues" />
 
     <ListPreference
+        camera:key="pref_camera2_hvx_shdr_key"
+        camera:defaultValue="@string/pref_camera2_hvx_shdr_default"
+        camera:title="@string/pref_camera2_hvx_shdr_title"
+        camera:entries="@array/pref_camera2_hvx_shdr_entries"
+        camera:entryValues="@array/pref_camera2_hvx_shdr_entry_values" />
+
+    <ListPreference
+        camera:key="pref_camera2_hvx_mfhdr_key"
+        camera:defaultValue="@string/pref_camera2_hvx_mfhdr_default"
+        camera:title="@string/pref_camera2_hvx_mfhdr_title"
+        camera:entries="@array/pref_camera2_hvx_mfhdr_entries"
+        camera:entryValues="@array/pref_camera2_hvx_mfhdr_entry_values" />
+
+    <ListPreference
         camera:key="pref_camera2_statsnn_control_key"
         camera:defaultValue="@string/pref_camera2_statsnn_control_default"
         camera:title="@string/pref_camera2_statsnn_control_title"
@@ -954,6 +968,13 @@
         camera:entryValues="@array/pref_camera2_multi_cameras_entryvalues"
         camera:key="pref_camera2_multi_cameras_key"
         camera:title="@string/pref_camera2_multi_cameras_title" />
+
+    <ListPreference
+        camera:defaultValue="@string/pref_camera2_override_resource_default"
+        camera:entries="@array/pref_camera2_camera2_entries"
+        camera:entryValues="@array/pref_camera2_camera2_entryvalues"
+        camera:key="pref_camera2_override_resource_key"
+        camera:title="@string/pref_camera2_override_resource_title" />
 
     <IconListPreference
         camera:defaultValue="@string/setting_off_value"

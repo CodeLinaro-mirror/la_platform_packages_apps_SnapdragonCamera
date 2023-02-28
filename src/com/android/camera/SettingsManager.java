@@ -294,6 +294,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_STATSNN_CONTROL = "pref_camera2_statsnn_control_key";
     public static final String KEY_PDNET_TOGGLE = "pref_camera2_pdnet_toggle_key";
     public static final String KEY_RAW_CB_INFO = "pref_camera2_raw_cb_info_key";
+    public static final String KEY_HVX_SHDR = "pref_camera2_hvx_shdr_key";
+    public static final String KEY_HVX_MFHDR = "pref_camera2_hvx_mfhdr_key";
     public static final String KEY_QLL = "pref_camera2_qll_key";
     public static final String KEY_AI_CAMERA = "pref_camera2_ai_camera_key";
     public static final String KEY_AI_CAMERA_BLURMODE = "pref_camera2_ai_camera_blurmode_key";
@@ -327,6 +329,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_CAPTURE_PROFILE= "pref_camera2_captrue_profile_key";
 
     public static final String KEY_TORCH_HDR_VALUE= "pref_camera2_torch_hdr_key";
+    public static final String KEY_OVERRIDE_RESOURCE = "pref_camera2_override_resource_key";
     private static final String TAG = "SnapCam_SettingsManager";
 
     private static SettingsManager sInstance;
@@ -1718,6 +1721,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference captureProfile = mPreferenceGroup.findPreference(KEY_CAPTURE_PROFILE);
         ListPreference multireprocess_input = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_INPUT);
         ListPreference multireprocess_output = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_OUTPUT);
+        ListPreference hvx_mfhdr = mPreferenceGroup.findPreference(KEY_HVX_MFHDR);
+        ListPreference hvx_shdr = mPreferenceGroup.findPreference(KEY_HVX_SHDR);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -1911,6 +1916,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (shadingCorrection != null) {
             if (!isShadingCorrectionSupported()){
                 mFilteredKeys.add(shadingCorrection.getKey());
+            }
+        }
+
+        if (hvx_shdr != null) {
+            if (!isHvxShdrSupported(cameraId)){
+                mFilteredKeys.add(hvx_shdr.getKey());
+            }
+        }
+
+        if(hvx_mfhdr != null){
+            if (!isHvxMFHDRSupported()) {
+                removePreference(mPreferenceGroup, KEY_HVX_MFHDR);
             }
         }
 
@@ -3111,6 +3128,34 @@ public class SettingsManager implements ListMenu.SettingsListener {
 //        }
 //        return ret;
         return true;
+    }
+
+    public boolean isHvxMFHDRSupported() {
+        boolean result = false;
+        try {
+            if (mCharacteristics.size() >0){
+                byte isSupported = mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.hvxMFHDRSupported);
+                result = (isSupported == 1);
+            }
+        } catch (IllegalArgumentException|NullPointerException e) {
+            e.printStackTrace();
+            Log.w(TAG, "Supported hvxMFHDRSupported is null.");
+        }
+        return result;
+    }
+
+    public boolean isHvxShdrSupported(int id) {
+        boolean ret = false;
+        try{
+            if (mCharacteristics.size() >0){
+                byte hvx_shdr_available = mCharacteristics.get(id).get(
+                        CaptureModule.support_hvx_shdr);
+                ret = hvx_shdr_available == 1;
+            }
+        } catch(IllegalArgumentException|NullPointerException e){
+            e.printStackTrace();
+        }
+        return ret;
     }
 
     private boolean isFastShutterModeSupported(int id) {

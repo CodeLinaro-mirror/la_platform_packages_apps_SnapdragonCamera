@@ -423,6 +423,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
 
+    public static CameraCharacteristics.Key<Byte> support_hvx_shdr =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.hvxSHDRMode.hvxSHDRSupported", Byte.class);
+    public static final CameraCharacteristics.Key<Byte> hvxMFHDRSupported =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.hvxMFHDRMode.hvxMFHDRSupported", Byte.class);
+
     public static CameraCharacteristics.Key<Byte> logical_camera_type =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.logicalCameraType.logical_camera_type", Byte.class);
     public static CaptureRequest.Key<Integer> support_video_hdr_values =
@@ -666,6 +671,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableShadingCorrection", byte.class);
     public static final CaptureRequest.Key<Integer> mcxRawCbInfo =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.McxRawCallbackInfo", Integer.class);
+    public static final CaptureRequest.Key<Byte> enable_hvx_shdr =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHVXSHDRMode", Byte.class);
+    public static final CaptureRequest.Key<Byte> enable_hvx_mfhdr =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHVXMFHDRMode", byte.class);
     public static final CaptureRequest.Key<Byte> mctf =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMCTFwithReferenceFrame", byte.class);
     public static final CaptureRequest.Key<Byte> enable_statsvisualizer =
@@ -3741,6 +3750,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
             }
             mIsPreviewingVideo = true;
+
             if (isHighSpeedRateCapture()) {
                 if (PersistUtil.enableMediaRecorder() && (mVideoRecordingSurface != null)) {
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
@@ -4003,7 +4013,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCurrentSceneMode == null) {
             int index = mIntentMode == INTENT_MODE_VIDEO ?
                     CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
-
             mCurrentModeIndex =  mNextModeIndex = index;
             mCurrentSceneMode = mSceneCameraIds.get(index);
         }
@@ -6863,6 +6872,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(raw_ids != null && raw_ids.size() > 0){
             applyMcxRawCbInfo(builder);
         }
+        applyHvxShdr(builder);
+        applyHVXMFHDRMode(builder);
         applyFaceContourVersion(builder);
         applyExtendMaxZoom(builder);
         applyMctf(builder);
@@ -6890,6 +6901,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyAICameraParam(builder);
         applyAICameraBlurModeParam(builder);
         applyXCFAOptimization(builder);
+        applyOverrideResuorceParam(builder);
     }
 
     private void applyAICameraParam(CaptureRequest.Builder builder){
@@ -6898,6 +6910,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.d(TAG,"set applyeAiCameraTag: " + value);
             VendorTagUtil.setAICamera(builder, Integer.parseInt(value));
         }
+    }
+
+    private void applyOverrideResuorceParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
+        Log.i(TAG,"applyOverrideResuorceParam, value:" + value);
+        VendorTagUtil.enableOverrideResuorce(builder, (byte)(value != null && value.equals("on") ? 0x01 : 0x00));
     }
 
     private void applyAICameraBlurModeParam(CaptureRequest.Builder builder){
@@ -6932,6 +6950,38 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyMFNRAIDEMode(CaptureRequest.Builder builder){
         if (isAIDE2Enabled()) {
             VendorTagUtil.enableMFNRAIDEMode(builder, (byte)0x01);
+        }
+    }
+
+    private void applyHvxShdr(CaptureRequest.Builder request) {
+        if (!mSettingsManager.isHvxShdrSupported(getMainCameraId())){
+            return;
+        }
+        try{
+            byte value = 0;
+            String hvx_shdr = mSettingsManager.getValue(
+                    SettingsManager.KEY_HVX_SHDR);
+            if(hvx_shdr != null && Integer.valueOf(hvx_shdr) > 0)
+                value = 1;
+            request.set(CaptureModule.enable_hvx_shdr,value);
+        } catch (IllegalArgumentException|NullPointerException e) {
+
+        }
+    }
+
+    private void applyHVXMFHDRMode(CaptureRequest.Builder request){
+        if (!mSettingsManager.isHvxMFHDRSupported()){
+            return;
+        }
+        try{
+            byte value = 0;
+            String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
+            if(hvx_mfhdr != null && Integer.valueOf(hvx_mfhdr) > 0)
+                value = 1;
+            request.set(CaptureModule.enable_hvx_mfhdr, value);
+            request.set(CaptureModule.mctf, value);
+        } catch (IllegalArgumentException|NullPointerException e) {
+
         }
     }
 
@@ -7203,10 +7253,22 @@ public class CaptureModule implements CameraModule, PhotoController,
         initModeByIntent();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
+        String action = mActivity.getIntent().getAction();
+        Bundle extra = mActivity.getIntent().getExtras();
+        boolean isVoiceQuery = false;
+        boolean noUiQuery = false;
+        if(extra != null ) {
+            try {
+                isVoiceQuery = (boolean) extra.getBoolean("isVoiceQuery");
+                noUiQuery = (boolean) extra.getBoolean("NoUiQuery");
+                Log.d(TAG,"action="+action+",NoUiQuery="+noUiQuery+",isVoiceQuery="+isVoiceQuery);
+            }catch (Exception e){
+            }
+        }
         if (facingOfIntentExtras != -1 && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
-        }else if(facingOfIntentExtras == -1  && mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA
-                && !resumeFromRestartAll) {
+        }else if(facingOfIntentExtras == -1  && ((isVoiceQuery && noUiQuery)
+                || (action != null && action.equals(CameraUtil.GTS_TEST_ACTION))) && !resumeFromRestartAll) {
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras);
             mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         }
@@ -8847,7 +8909,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updateVideoSnapshotSize() {
         mVideoSnapshotSize = getMaxPictureSizeLiveshot(getMainCameraId(),mVideoSize.getWidth(),
                 mVideoSize.getHeight());
-        if(mSettingsManager.isLiveshotSizeSameAsVideoSize()){
+        String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
+        String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
+        if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || "1".equals(hvx_shdr) || "1".equals(hvx_mfhdr)){
             mVideoSnapshotSize = mVideoSize;
         }
         String videoSnapshot = PersistUtil.getVideoSnapshotSize();
@@ -9089,6 +9153,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
+
                     if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                         if (PersistUtil.enableMediaRecorder()) {
                             mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
@@ -9270,7 +9335,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                     new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
             mCreateSessionLatency = System.currentTimeMillis();
-            mCameraDevice[cameraId].createCaptureSession(sessionConfig);
+            String overrideResource = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
+            boolean supported = true;
+            if(overrideResource == null || overrideResource.equals("off")) {
+                supported = mCameraDevice[cameraId].isSessionConfigurationSupported(sessionConfig);
+            }
+            if(supported) {
+                mCameraDevice[cameraId].createCaptureSession(sessionConfig);
+            }else{
+                warningToast("Stream combination is not supported.");
+            }
         } catch (Exception e) {
             Log.e(TAG,e);
         }
@@ -9301,15 +9375,19 @@ public class CaptureModule implements CameraModule, PhotoController,
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
         sessionConfig.setSessionParameters(initialRequest.build());
-        boolean supported = false;
+        boolean supported = true;
+        String overrideResource = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
-        try{
-            supported = camera.isSessionConfigurationSupported(sessionConfig);
-            Log.i(TAG, "  result :" + supported);
-        } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
-            Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error ="+ e);
+        if(overrideResource == null || overrideResource.equals("off")){
+            try {
+                supported = camera.isSessionConfigurationSupported(sessionConfig);
+                Log.i(TAG, "  result :" + supported);
+            } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error");
+                e.printStackTrace();
+            }
         }
         if(supported) {
             //only create session when configure is supported
@@ -9321,7 +9399,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.e(TAG, " error:", e);
             }
         } else {
-            warningToast("Session combination is not supported.");
+            warningToast("Stream combination is not supported.");
         }
     }
 
@@ -10325,7 +10403,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void onButtonPause() {
-        if (!isRecorderReady())
+        if (!isRecorderReady() || !isRecordingVideo())
             return;
         pauseVideoRecording();
     }
@@ -12259,6 +12337,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
 
         Log.d(TAG,  "applyVideoEIS EISV select: " + value);
+        String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
+        if (hvx_shdr != null) {
+            if (Integer.valueOf(hvx_shdr) > 0){
+                value = "V3";
+            }
+        }
+
         mStreamConfigOptMode = 0;
         boolean previewStabilizationOn = false;
         if (value != null) {
@@ -13131,6 +13216,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else if (promode && !exposuretime.equals("auto") && isovalue.equals("auto")) {
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
             VendorTagUtil.setIsoExpPriority(request, previewExpTime);
+            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
         } else if (promode && !exposuretime.equals("auto") && !isovalue.equals("auto")) {
             int isoValue = Integer.parseInt(isovalue);
@@ -13141,6 +13227,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean setExposureTime(CaptureRequest.Builder request, String exposuretime) {
         long newExpTime = -1;
         try {
+            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             newExpTime = Long.parseLong(exposuretime);
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
             VendorTagUtil.setIsoExpPriority(request, newExpTime);
@@ -13153,6 +13240,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setIsoValue(CaptureRequest.Builder request, int isoValue, long longValue, boolean isManual) {
+        request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
         VendorTagUtil.setIsoExpPriority(request, longValue);
         VendorTagUtil.setUseIsoValues(request, isoValue);
