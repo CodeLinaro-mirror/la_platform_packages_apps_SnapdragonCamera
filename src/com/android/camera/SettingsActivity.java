@@ -2048,6 +2048,10 @@ public class SettingsActivity extends PreferenceActivity {
                 key = new ArrayList<String>(Arrays.asList("Default", "RTB"));
                 value = new ArrayList<String>(Arrays.asList( "default", "rtb"));
             }
+            if (mSettingsManager.getAICameraValue().equals("1")){
+                key.remove("RTB");
+                value.remove("rtb");
+            }
             pref.setEntries(key.toArray(new CharSequence[key.size()]));
             pref.setEntryValues(value.toArray(new CharSequence[value.size()]));
             int idx = pref.findIndexOfValue(pref.getValue());;

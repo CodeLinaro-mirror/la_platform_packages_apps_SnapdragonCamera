@@ -13380,7 +13380,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyAICameraStrength(){
         if (mCurrentSessionClosed) return;
-        if(mSettingsManager.isAICameraOn()) {
+        if(Integer.parseInt(mSettingsManager.getAICameraValue()) != 0){
             Log.d(TAG, "applyAICameraStrength: " + mAIStrengthValue);
             try {
                 mPreviewRequestBuilder[getMainCameraId()].set(CaptureModule.AICameraStrength, mAIStrengthValue);
@@ -15404,7 +15404,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void updateZoomSeekBarVisible() {
         if (mCurrentSceneMode.mode == CameraMode.PRO_MODE  ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC || mIsRTBCameraId ||
-                mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
+                mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn()) ||
+                Integer.parseInt(mSettingsManager.getAICameraValue()) != 0) {
             if (mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
                 float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                         getMainCameraId());
@@ -15430,7 +15431,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void updateAICameraSeekBar(){
-        if(mSettingsManager.isAICameraOn()){
+        if(Integer.parseInt(mSettingsManager.getAICameraValue()) != 0){
             mUI.showAICameraSeekBar();
         }else{
             mUI.hideAICameraSeekBar();
