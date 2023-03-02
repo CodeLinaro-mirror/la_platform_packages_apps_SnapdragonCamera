@@ -534,4 +534,11 @@ public class PersistUtil {
     public static int getFocusAssistModeTimeout() {
         return PERSIST_FOCUS_ASSIST_MODE_TIMEOUT;
     }
+
+    private static final boolean PERSIST_ENABLE_PROSIGHT =
+        getBoolean("persist.sys.camera.prosight", true);
+
+    public static boolean isProSightEnabled() {
+        return PERSIST_ENABLE_PROSIGHT;
+    }
 }

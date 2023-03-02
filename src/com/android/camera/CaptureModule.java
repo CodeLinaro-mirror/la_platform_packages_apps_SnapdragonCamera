@@ -188,6 +188,7 @@ import org.json.JSONObject;
 import androidx.annotation.NonNull;
 import androidx.heifwriter.HeifWriter;
 import com.android.camera.ui.OneUICameraControls;
+import qti.video.QMediaCodecCapabilities;
 
 
 import java.util.ArrayList;
@@ -12410,6 +12411,19 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyVideoFlip();
         applyVideoSettings();
         mVideoEncoder = MediaCodec.createEncoderByType(encoder);
+        if (PersistUtil.isProSightEnabled()) {
+            try {
+                if (QMediaCodecCapabilities.isProSightSupported(mVideoEncoder)) {
+                    Log.i(TAG, "isprosightsupported: True");
+                    mVideoFormat = QMediaCodecCapabilities.enableProSight(mVideoFormat);
+                    Log.i(TAG, "enabling ProSight mode..");
+                } else {
+                    Log.i(TAG, "isprosightsupported: False");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "ProSight", e.fillInStackTrace());
+            }
+        }
         mVideoEncoder.configure(mVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
     }
 
