@@ -1579,6 +1579,9 @@ public class SettingsActivity extends PreferenceActivity {
                     ArrayList<String> RTBList = new ArrayList<>(multiCameraSettingList);
                     RTBList.add(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
                     RTBList.add(SettingsManager.KEY_INSENSOR_ZOOM);
+                    RTBList.add(SettingsManager.KEY_FD_SETTING);
+                    RTBList.add(SettingsManager.KEY_FD_FL_SETTING);
+                    RTBList.add(SettingsManager.KEY_FD_FACIAL_SETTING);
                     addDeveloperOptions(developer, RTBList);
                 }
                 break;
