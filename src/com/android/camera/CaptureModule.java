@@ -9330,8 +9330,20 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 mVideoRecordRequestBuilder : mVideoPreviewRequestBuilder),
                                 mCaptureCallback, mCameraHandler);
             } else {
-                mCurrentSession.setRepeatingRequest(captureRequest, mCaptureCallback,
-                        mCameraHandler);
+                int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
+                        mSettingsManager.getVideoFPS());
+                if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    if (PersistUtil.enableMediaRecorder() && mIsPreviewingVideo) {
+                        mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                    }
+                    limitPreviewFPS();
+                    if (PersistUtil.enableMediaRecorder() && mIsPreviewingVideo) {
+                        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+                    }
+                }else {
+                    mCurrentSession.setRepeatingRequest(captureRequest, mCaptureCallback,
+                            mCameraHandler);
+                }
             }
         } catch (CameraAccessException e) {
             e.printStackTrace();
