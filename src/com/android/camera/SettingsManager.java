@@ -2998,6 +2998,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
+    public int[] isScreenGrabSupported() {
+        int modes[] = null;
+        try {
+            modes = mCharacteristics.get(getCurrentCameraId())
+                    .get(CaptureModule.support_screen_grab_modes);
+        } catch (Exception e) {
+            Log.d(TAG,"isScreenGrabSupported(), cant read supportedScreenGrabmodes");
+        }
+        return modes;
+    }
+
     private boolean isAutoHDRSupported() {
         byte isAutoHdrSupported = 0;
         try {

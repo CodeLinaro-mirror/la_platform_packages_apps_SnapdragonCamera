@@ -412,6 +412,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.is_hdr_scene", Byte.class);
     public static CameraCharacteristics.Key<int[]> support_video_hdr_modes =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.available_video_hdr_modes.video_hdr_modes", int[].class);
+    public static CameraCharacteristics.Key<int[]> support_screen_grab_modes =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedScreenGrabmodes.ScreenGrabModes", int[].class);
     public static CameraCharacteristics.Key<int[]> support_video_mfhdr_modes =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedHDRmodes.HDRModes", int[].class);
     public static CameraCharacteristics.Key<Byte> support_auto_hdr_modes =
@@ -8929,7 +8931,23 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoSize.getHeight());
         String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
         String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
-        if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || "1".equals(hvx_shdr) || "1".equals(hvx_mfhdr)){
+        String hdrmode = mSettingsManager.getVideoHdrMode();
+        int[] modes = mSettingsManager.isScreenGrabSupported();
+        boolean isScrrenGrabSupported = false;
+        if(((hdrmode != null && hdrmode.toLowerCase().contains("mfhdr")) || (hvx_mfhdr != null && "1".equals(hvx_mfhdr))) && (modes != null)){
+            for (int x = 0; x < modes.length; x++) {
+                if (modes[x] == 2) {
+                    isScrrenGrabSupported = true;
+                }
+            }
+        }else if(((hdrmode != null && hdrmode.toLowerCase().contains("shdr")) || (hvx_shdr != null && "1".equals(hvx_shdr))) && (modes != null)){
+            for (int x = 0; x < modes.length; x++) {
+                if (modes[x] == 1) {
+                    isScrrenGrabSupported = true;
+                }
+            }
+        }
+        if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || isScrrenGrabSupported){
             mVideoSnapshotSize = mVideoSize;
         }
         String mlVideo = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
