@@ -3080,6 +3080,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mState[id] = STATE_PREVIEW;
         mControlAFMode = CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
         mUI.enableShutter(false);
+        setCameraModeSwitcherAllowed(false);
         try {
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilder[id] = getRequestBuilder(id);
@@ -3734,6 +3735,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void createSessionForVideo(final int cameraId) {
         try {
+            setCameraModeSwitcherAllowed(false);
             mVideoRecordRequestBuilder = null;
             setVideoState(VideoState.VIDEO_INIT);
             setupRecordingCommonSettings(cameraId);
