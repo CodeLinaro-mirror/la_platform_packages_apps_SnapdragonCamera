@@ -798,6 +798,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionU", Float.class);
     private static final CaptureRequest.Key<Float> blurChromaSuppressionV =
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionV", Float.class);
+    public static CameraCharacteristics.Key<Byte> isMLVideoSupported =
+            new CameraCharacteristics.Key<>("org.quic.camera.videoretouch.isVideoRetouchSupported", byte.class);
 
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_VENDOR_START = 0x10000;
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV = 0x10001;
@@ -6905,6 +6907,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyAICameraBlurModeParam(builder);
         applyXCFAOptimization(builder);
         applyOverrideResuorceParam(builder);
+        applyMLVideoParam(builder);
+    }
+
+    private void applyMLVideoParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
+        Log.d(TAG,"applyMLVideoParam, value:" + value);
+        VendorTagUtil.enableMLVideo(builder, (byte)(value != null && value.equals("on") ? 0x01 : 0x00));
     }
 
     private void applyAICameraParam(CaptureRequest.Builder builder){
@@ -8918,6 +8927,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
         if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || "1".equals(hvx_shdr) || "1".equals(hvx_mfhdr)){
             mVideoSnapshotSize = mVideoSize;
+        }
+        String mlVideo = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
+        if(mlVideo != null && mlVideo.equals("on")){
+            mVideoSnapshotSize = mVideoPreviewSize;
         }
         String videoSnapshot = PersistUtil.getVideoSnapshotSize();
         String[] sourceStrArray = videoSnapshot.split("x");
