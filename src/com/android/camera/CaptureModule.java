@@ -6936,8 +6936,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyVideoSnapshot(CaptureRequest.Builder builder, int id) {
         if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
             builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
+            applyAFRegions(builder, id);
+            applyAERegions(builder, id);
         }else{
             builder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+            applySettingsForLockExposure(builder, id);
         }
         applyFaceDetection(builder);
         applyColorEffect(builder);
