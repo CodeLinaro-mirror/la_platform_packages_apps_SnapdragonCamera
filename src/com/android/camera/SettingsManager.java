@@ -580,7 +580,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             videoQualityPref.setEntryValues(mContext.getResources().getStringArray(
                     R.array.pref_camera2_video_quality_entryvalues));
             filterUnsupportedOptions(videoQualityPref,getSupportedVideoSize(
-                    getCurrentCameraId()));
+                    mCaptureModule.getMainCameraId()));
         }
     }
     public void updateMultiReprocessInputOutput() {
