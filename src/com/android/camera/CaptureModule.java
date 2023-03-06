@@ -433,6 +433,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.inSensorZoomCapability", Integer.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
+    public static CameraCharacteristics.Key<Byte> isPhotoEISSupported =
+            new CameraCharacteristics.Key<>("org.quic.camera.PhotoEISSupported.isPhotoEISSupported", Byte.class);
 
     public static CameraCharacteristics.Key<Byte> support_hvx_shdr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.hvxSHDRMode.hvxSHDRSupported", Byte.class);
@@ -1396,7 +1398,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         public void onCaptureCompleted(CameraCaptureSession session,
                                        CaptureRequest request,
                                        TotalCaptureResult result) {
-            if("preview".equals(String.valueOf(result.getRequest().getTag()))){
+            if("preview".equals(String.valueOf(result.getRequest().getTag())) || mPaused){
                 return;
             }
             int id = getIdFromTag(result.getRequest().getTag());
@@ -3094,7 +3096,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (mRawReprocessType != 0) {
                         for (int i = 0; i < mRawCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mRAWImageReader[i].getSurface());
-                            configuration.setPhysicalCameraId(mSettingsManager.getRawReprocessPhysicalId());
+                            String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+                            if (!isLogicalId(physicalId)) {
+                                configuration.setPhysicalCameraId(physicalId);
+                            }
                             outputConfigurations.add(configuration);
                         }
                         for (int i = 0; i < mYUVCount; i++) {
@@ -3237,7 +3242,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private boolean isLogicalId(String id){
-        return id != null && id.contains("logical");
+        return id != null && (id.contains("logical") || id.contains("off"));
     }
 
     private List<OutputConfiguration> getPhysicalVideoOutputConfiguration() {
@@ -3546,11 +3551,17 @@ public class CaptureModule implements CameraModule, PhotoController,
         Log.d(TAG, "setAFModeToPreview ,preview:" + mPreviewRequestBuilder[id].toString());
         try {
             if (isSSMEnabled() && (mIsPreviewingVideo || mIsRecordingVideo)) {
+                if (!checkSessionAndBuilder(mCaptureSession[id], mVideoRecordRequestBuilder)) {
+                    return;
+                }
                 mCaptureSession[id].setRepeatingBurst(createSSMBatchRequest(mVideoRecordRequestBuilder),
                         mCaptureCallback, mCameraHandler);
             } else if (mCaptureSession[id] instanceof CameraConstrainedHighSpeedCaptureSession) {
                 CameraConstrainedHighSpeedCaptureSession session =
                         (CameraConstrainedHighSpeedCaptureSession) mCaptureSession[id];
+                if (!checkSessionAndBuilder(session, mVideoRecordRequestBuilder)) {
+                    return;
+                }
                 List requestList = session.createHighSpeedRequestList(mVideoRecordRequestBuilder.build());
                 session.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
             } else {
@@ -5322,8 +5333,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         if (mRawReprocessType != 0 ) {
                                             waitForRawMetaData();
                                             Log.i(TAG, "start reprocess-image");
-                                            if(mSettingsManager.getRawReprocessPhysicalId() != null) {
-                                                String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+                                            String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+                                            if(!isLogicalId(physicalId)) {
                                                 TotalCaptureResult physicalMetaData = mRawInputMeta.getPhysicalCameraTotalResults().get(physicalId);
                                                 mPostProcessor.reprocessImage(image, physicalMetaData);
                                             }else {
@@ -7010,7 +7021,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }else {
             mYUVCount = 0;
         }
-        if(mRawReprocessType != 0 && mSettingsManager.getRawReprocessPhysicalId() != null){
+        if(mRawReprocessType != 0){
             mRawCount = 1;
         } else{
             mRawCount = 0;
@@ -8104,7 +8115,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
         if (mRawCount == 1) {
-            Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(mSettingsManager.getRawReprocessPhysicalId()), rawFormat);
+            String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+            int id = (!isLogicalId(physicalId)) ? Integer.parseInt(physicalId) : getMainCameraId();
+            Size[] rawSize = mSettingsManager.getSupportedOutputSize(id, rawFormat);
             if (PersistUtil.isRawReprocessQcfa()) {
                 mRawSize[0] = new Size(8000, 6000);
             } else {
