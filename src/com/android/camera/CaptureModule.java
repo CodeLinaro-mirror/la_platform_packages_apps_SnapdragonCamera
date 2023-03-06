@@ -693,8 +693,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableInsensorZoom", Integer.class);
     private static final CaptureRequest.Key<Byte> xcfa_optimization =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableXCFAOptimization", byte.class);
-    private static final CaptureRequest.Key<float[]> horizon_level_control =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.HorizonLevelControl", float[].class);
+    private static final CaptureRequest.Key<Integer> horizon_level_control =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.HorizonLevelControl", Integer.class);
     private static final CaptureRequest.Key<Integer> cinematic_mode_enable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableCinematicMode", Integer.class);
     //HDRVideo MODE
@@ -6996,19 +6996,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             applyOfflineDumpTrigger(builder);
             applyVideoEncoderProfile(builder);
-            applyEISHorizonLevelControl(builder);
-        }
-        if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
-                mCurrentSceneMode.mode == CameraMode.CINEMATIC ||
-                mCurrentSceneMode.mode == CameraMode.DEFAULT) {
-            applyVSR(builder);
-            applyPreviewStabilization(builder);
         }
 
         if (mCurrentSceneMode.mode == CameraMode.DEFAULT
                 || mCurrentSceneMode.mode == CameraMode.VIDEO
                 || mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             applyVIULL(builder);
+            applyVSR(builder);
+            applyPreviewStabilization(builder);
+            applyEISHorizonLevelEnable(builder);
         }
         if (mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             applyEnableCinematic(builder);
@@ -10479,42 +10475,24 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
-    private void applyEISHorizonLevelControl(CaptureRequest.Builder builder) {
-        boolean enabled = true;
-        boolean isTuningControl = false;
-        String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE);
-        String level = mSettingsManager.getValue(SettingsManager.KEY_EIS_HORIZON_LEVEL_CONTROL);
-        if (value != null) {
-            enabled = value.equals(mActivity.getResources().getString(
-                    R.string.pref_camera2_eis_horizon_level_control_entry_value_1));
-            if (value.equals(mActivity.getResources().getString(
-                    R.string.pref_camera2_eis_horizon_level_control_entry_value_2))) {
-                isTuningControl = true;
-            }
-        } else {
-            enabled = false;
-            isTuningControl = true;
-        }
-
-        Log.d(TAG, "applyEISHorizonLevelControl value:" + value + " level: " + level +
-                " isTuningControl :" + isTuningControl);
-        if (isTuningControl) {
+    private void applyEISHorizonLevelEnable(CaptureRequest.Builder builder) {
+        if (mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             return;
         }
-
-        float[] eisHorizonLevels = new float[2];
-        if(level!= null && !isEISDisable() && enabled) {
-            eisHorizonLevels[0] = 1f;
-            eisHorizonLevels[1] = Float.parseFloat(level);
-        } else {
-            eisHorizonLevels[0] = 0f;
-            eisHorizonLevels[1] = 0f;
-        }
-        Log.d(TAG, "applyEISHorizonLevelControl eisHorizonLevels :" + eisHorizonLevels[0] + " and " + eisHorizonLevels[1]);
         try {
-            builder.set(CaptureModule.horizon_level_control, eisHorizonLevels);
+            int enable = 1;
+            String eisHorizonLevelEnable = mSettingsManager.getValue(
+                    SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE);
+            String photoEIS = mSettingsManager.getValue(SettingsManager.KEY_PHOTO_EIS_VALUE);
+            if ("0".equals(eisHorizonLevelEnable) ||
+                    (isEISDisable() && mCurrentSceneMode.mode == CameraMode.VIDEO) ||
+                    (isPhotoEISDisable() && mCurrentSceneMode.mode == CameraMode.DEFAULT)) {
+                enable = 0;
+            }
+            Log.v(TAG, "applyEISHorizonLevelEnable enable :" + enable);
+            builder.set(horizon_level_control, enable);
         } catch (IllegalArgumentException | UnsupportedOperationException e) {
-            Log.w(TAG, EXCEPTION_LOG,"applyEISHorizonLevelControl hal no vendorTag : " + horizon_level_control);
+            Log.w(TAG, EXCEPTION_LOG,"applyEISHorizonLevelEnable no vendorTag: " + horizon_level_control);
         }
     }
 
@@ -10761,6 +10739,19 @@ public class CaptureModule implements CameraModule, PhotoController,
             result = false;
         }
         Log.v(TAG, "isEISDisable :" + result);
+        return result;
+    }
+
+    private boolean isPhotoEISDisable() {
+        boolean result = true;
+        String value = mSettingsManager.getValue(SettingsManager.KEY_PHOTO_EIS_VALUE);
+        if (value != null) {
+            result = value.equals(mActivity.getResources().getString(
+                    R.string.pref_camera2_photo_eis_entry_value_disable));
+        } else {
+            result = false;
+        }
+        Log.v(TAG, "isPhotoEISDisable :" + result);
         return result;
     }
 
@@ -13755,10 +13746,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         float adrcGain = pref.getFloat(SettingsManager.KEY_AEC_ADRC_GAIN, awbDefault);
         float darkBoostGain = pref.getFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, awbDefault);
         int aecCameraId = pref.getInt(SettingsManager.KEY_WARM_START_AEC_CAMERA_ID, -1);
-        int afdWarmStart0 = pref.getInt(SettingsManager.KEY_AFD_WARM_START_ + "0", -1);
-        int afdWarmStart1 = pref.getInt(SettingsManager.KEY_AFD_WARM_START_ + "1", -1);
-        int afdWarmStart2 = pref.getInt(SettingsManager.KEY_AFD_WARM_START_ + "2", -1);
-        int afdWarmStart3 = pref.getInt(SettingsManager.KEY_AFD_WARM_START_ + "3", -1);
         int antBandingMode = pref.getInt(SettingsManager.KEY_ANT_BANDING_MODE, -1);
         int isFickerDetected = pref.getInt(SettingsManager.KEY_IS_FICKER_DETECTED, -1);
         if (rGain != awbDefault && gGain != awbDefault && gGain != bGain) {

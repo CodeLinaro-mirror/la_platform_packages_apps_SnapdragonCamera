@@ -416,12 +416,6 @@ public class SettingsActivity extends PreferenceActivity {
                 if(mSettingsManager.KEY_EXTENDED_MAX_ZOOM .equals(pref.getKey())){
                     updateZoomPreference();
                 }
-                if (pref.getKey().equals(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE)) {
-                    String value = ((ListPreference) pref).getValue();
-                    if (value != null && value.equals("1")) {
-                        updateEISHorizonLevelPreference();
-                    }
-                }
             }
         }
     };
@@ -1309,12 +1303,6 @@ public class SettingsActivity extends PreferenceActivity {
                             }
                         }
 
-                        if (preference.getKey().equals(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE)) {
-                            String value = ((ListPreference) preference).getValue();
-                            if (value != null && value.equals("1")) {
-                                updateEISHorizonLevelPreference();
-                            }
-                        }
                         return false;
                     }
 
@@ -1379,7 +1367,6 @@ public class SettingsActivity extends PreferenceActivity {
         final ArrayList<String> videoOnlyList = new ArrayList<String>() {
             {
                 add(SettingsManager.KEY_EIS_VALUE);
-                add(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE);
                 add(SettingsManager.KEY_FOVC_VALUE);
                 add(SettingsManager.KEY_VARIABLE_FPS);
                 //add(SettingsManager.KEY_VIDEO_HDR_VALUE);
@@ -1520,6 +1507,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.add(SettingsManager.KEY_FD_FL_SETTING);
                         videoAddList.add(SettingsManager.KEY_FD_FACIAL_SETTING);
+                        videoAddList.add(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE);
                         videoAddList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                         videoAddList.add(SettingsManager.KEY_PHYSICAL_CAMERA);
                         videoAddList.add(SettingsManager.KEY_MANUAL_HDR);
@@ -2478,53 +2466,6 @@ public class SettingsActivity extends PreferenceActivity {
                 eisPref.setEntryValues(values.toArray(new CharSequence[values.size()]));
             }
         }
-    }
-
-    private void updateEISHorizonLevelPreference() {
-        Log.d(TAG, "updateEISHorizonLevelPreference ");
-        String horizonLevel = mLocalSharedPref.getString(
-                SettingsManager.KEY_EIS_HORIZON_LEVEL_CONTROL, "0.0");
-        final SharedPreferences.Editor editor = mLocalSharedPref.edit();
-        final EditText levelInput = new EditText(SettingsActivity.this);
-        levelInput.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        final TextView levelText = new TextView(SettingsActivity.this);
-
-        final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
-        LinearLayout linear = new LinearLayout(SettingsActivity.this);
-        linear.setOrientation(1);
-        linear.addView(levelInput);
-        linear.addView(levelText);
-        alert.setTitle("EIS Horizon Level Control");
-        levelInput.setHint(" The range from 0.0 to 90");
-        levelText.setText("    EIS horizon level is " + horizonLevel);
-        alert.setView(linear);
-
-        alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog,int id) {
-                dialog.cancel();
-            }
-        });
-        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface Dialog,int id) {
-                float level = -1;
-                String levelStr = levelInput.getText().toString();
-                if (levelStr.length() > 0) {
-                    try {
-                        level = Float.parseFloat(levelStr);
-                    } catch (NumberFormatException e) {
-                        Log.w(TAG, "levelStr type incorrect value ");
-                    }
-                }
-                if (level <= 90 && level >= 0) {
-                    editor.putString(SettingsManager.KEY_EIS_HORIZON_LEVEL_CONTROL, levelStr);
-                    editor.apply();
-                } else {
-                    RotateTextToast.makeText(SettingsActivity.this, "Invalid EIS horizon Level " +
-                                    "control data", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-        alert.show();
     }
 
     private void updateT2TPreference() {

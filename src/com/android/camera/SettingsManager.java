@@ -255,7 +255,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_REMOSAIC_REPROCESSING = "pref_camera2_remosaic_reprocessing_key";
     public static final String KEY_EIS_VALUE = "pref_camera2_eis_key";
     public static final String KEY_EIS_HORIZON_LEVEL_ENABLE = "pref_camera2_eis_horizon_level_enable_key";
-    public static final String KEY_EIS_HORIZON_LEVEL_CONTROL = "pref_camera2_eis_horizon_level_control_key";
     public static final String KEY_PHOTO_EIS_VALUE = "pref_camera2_photo_eis_key";
     public static final String KEY_PREVIEW_STABILIZATION = "pref_camera2_preview_stabilization_key";
     public static final String KEY_FOVC_VALUE = "pref_camera2_fovc_key";
