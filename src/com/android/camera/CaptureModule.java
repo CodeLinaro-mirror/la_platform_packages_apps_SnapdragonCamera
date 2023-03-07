@@ -2287,6 +2287,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mCameraOpenCloseLock.release();
             mCamerasOpened = false;
             if((error == 1 || error == 2) && mOpenCameraTimes >0){
+                Log.i(TAG," mOpenCameraTimes="+mOpenCameraTimes);
                 mOpenCameraTimes --;
                 Message msg = mCameraHandler.obtainMessage(OPEN_CAMERA, getMainCameraId(), 0);
                 mCameraHandler.sendMessageDelayed(msg,200);
@@ -2405,7 +2406,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else if (mLockRequestHashCode[id] == result.getRequest().hashCode()){
                     Log.i(TAG, "AF lock request result received, but not focused");
                     mLockRequestHashCode[id] = 0;
-                } else if (mSettingsManager.isFixedFocus(id)) {
+                } else if (mSettingsManager.isFixedFocus(id) || mUI.getCurrentProMode() == ProMode.MANUAL_MODE) {
                     // CONTROL_AE_STATE can be null on some devices
                     if(aeState == null || (aeState == CaptureResult
                              .CONTROL_AE_STATE_CONVERGED) && isFlashOff(id)) {
@@ -2485,7 +2486,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 || aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED))
                                 && mIsAutoFlash
                                 && !mIsCanceled) {
-
                             Log.i(TAG, "SET CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL START");
                             mPreviewRequestBuilder[id].set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL);
@@ -4393,7 +4393,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (takeZSLPicture(cameraId)) {
                 return;
             }
-            if (mUI.getCurrentProMode() == ProMode.MANUAL_MODE ) {
+            if (mUI.getCurrentProMode() == ProMode.MANUAL_MODE && !isFlashOn(getMainCameraId())) {
                 captureStillPicture(cameraId);
             } else {
                 if (mLongshotActive) {
@@ -12533,12 +12533,14 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean isFlashOff(int id) {
         if (!mSettingsManager.isFlashSupported(id)) return true;
-        return mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE).equals("off");
+        return mSettingsManager.getValue(mCurrentSceneMode.mode == CameraMode.PRO_MODE ?
+                SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE).equals("off");
     }
 
     private boolean isFlashOn(int id) {
         if (!mSettingsManager.isFlashSupported(id)) return false;
-        return mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE).equals("on");
+        return mSettingsManager.getValue(mCurrentSceneMode.mode == CameraMode.PRO_MODE ?
+                SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE).equals("on");
     }
 
     private void initializePreviewConfiguration(int id) {
@@ -14031,7 +14033,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applySnapshotFlash(CaptureRequest.Builder request, String value) {
-        Log.d(TAG,  "applySnapshotFlash: " + value);
+        Log.i(TAG,  "applySnapshotFlash: " + value);
         String redeye = mSettingsManager.getValue(SettingsManager.KEY_REDEYE_REDUCTION);
         mIsAutoFlash = false;
         if (redeye != null && redeye.equals("on") && !mLongshotActive) {
