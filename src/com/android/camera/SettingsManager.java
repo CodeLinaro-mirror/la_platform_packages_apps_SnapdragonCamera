@@ -313,6 +313,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AI_BLUR_LUMA = "pref_camera2_blur_vsemode_key";
     public static final String KEY_AI_BLUR_CHROMAU = "pref_camera2_blur_chromau_key";
     public static final String KEY_AI_BLUR_CHROMAV = "pref_camera2_blur_chromav_key";
+    public static final String KEY_AI_BLUR_CHROMASTRENGTH = "pref_camera2_blur_chromastrength_key";
 
     public static final String KEY_AI_DENOISER = "pref_camera2_ai_denoiser_key";
     public static final String KEY_AI_DENOISER_FORMAT = "pref_camera2_ai_denoiser_format_key";
@@ -1583,10 +1584,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName,
                 Context.MODE_PRIVATE);
         String defaultValue = "0.00";
-        if(key == KEY_AI_BLUR_CHROMAU || key == KEY_AI_BLUR_CHROMAV){
+        if(key == KEY_AI_BLUR_CHROMAU || key == KEY_AI_BLUR_CHROMAV || key == KEY_AI_BLUR_STRENGTH || key == KEY_AI_BLUR_CHROMASTRENGTH){
             defaultValue = "0.50";
-        }else if(key == KEY_AI_BLUR_STRENGTH){
-            defaultValue = "1.00";
         }
         return sharedPreferences.getString(key,defaultValue);
     }

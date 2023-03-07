@@ -812,6 +812,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionU", Float.class);
     private static final CaptureRequest.Key<Float> blurChromaSuppressionV =
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionV", Float.class);
+    private static final CaptureRequest.Key<Float> blurChromaSuppressionStrength =
+            new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionStrength", Float.class);
     public static CameraCharacteristics.Key<Byte> isMLVideoSupported =
             new CameraCharacteristics.Key<>("org.quic.camera.videoretouch.isVideoRetouchSupported", byte.class);
 
@@ -13522,8 +13524,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_STRENGTH, builder);
             applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_DISTANCE, builder);
             applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_LUMA, builder);
-            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAU, builder);
-            applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAV, builder);
+            String value =  mSettingsManager.getValue(SettingsManager.KEY_AI_BLUR_LUMA);
+            if (value != null && value.equals("2")) {
+                applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAU, builder);
+                applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMAV, builder);
+            }
+            if(value != null && !value.equals("0")){
+                applyAIBlurConfig(SettingsManager.KEY_AI_BLUR_CHROMASTRENGTH, builder);
+            }
         }
     }
 
@@ -13558,6 +13566,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         builder.set(CaptureModule.blurChromaSuppressionU, value);
                     }else if(key.equals(SettingsManager.KEY_AI_BLUR_CHROMAV)) {
                         builder.set(CaptureModule.blurChromaSuppressionV, value);
+                    }else if(key.equals(SettingsManager.KEY_AI_BLUR_CHROMASTRENGTH)) {
+                        builder.set(CaptureModule.blurChromaSuppressionStrength, value);
                     }
                 }
             } catch (IllegalArgumentException e) {
@@ -14659,6 +14669,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 case SettingsManager.KEY_AI_BLUR_LUMA:
                 case SettingsManager.KEY_AI_BLUR_CHROMAU:
                 case SettingsManager.KEY_AI_BLUR_CHROMAV:
+                case SettingsManager.KEY_AI_BLUR_CHROMASTRENGTH:
                     applyAIBlurConfig(key,mVideoRecordRequestBuilder);
                     applyAIBlurConfig(key,mVideoPreviewRequestBuilder);
                     try {

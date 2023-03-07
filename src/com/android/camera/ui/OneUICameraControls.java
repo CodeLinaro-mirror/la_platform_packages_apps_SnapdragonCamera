@@ -146,12 +146,16 @@ public class OneUICameraControls extends RotatableLayout {
     private TextView mBlurLumaText;
     private TextView mBlurChromaUText;
     private TextView mBlurChromaVText;
+    private TextView mChromaStrengthText;
+
     private TextView mBlurShape;
     private TextView mBlurStrength;
     private TextView mBlurFocusDistance;
     private TextView mBlurLuma;
     private TextView mBlurChromaU;
     private TextView mBlurChromaV;
+    private TextView mChromaStrength;
+
 
     public OneUICameraControls(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -349,6 +353,7 @@ public class OneUICameraControls extends RotatableLayout {
         mBlurLumaText = (TextView) findViewById(R.id.blur_luma_value);
         mBlurChromaUText = (TextView) findViewById(R.id.blur_chromaU_value);
         mBlurChromaVText = (TextView) findViewById(R.id.blur_chromaV_value);
+        mChromaStrengthText = (TextView) findViewById(R.id.chroma_strength_value);
 
         mBlurShape = (TextView) findViewById(R.id.blur_shape_text);
         mBlurStrength = (TextView) findViewById(R.id.blur_strength_text);
@@ -356,11 +361,13 @@ public class OneUICameraControls extends RotatableLayout {
         mBlurLuma = (TextView) findViewById(R.id.blur_luma_text);
         mBlurChromaU = (TextView) findViewById(R.id.blur_chromaU_text);
         mBlurChromaV = (TextView) findViewById(R.id.blur_chromaV_text);
+        mChromaStrength = (TextView) findViewById(R.id.chroma_strength_text);
+
         mAIBlurSlide = (AIBlurConfigSlide) findViewById(R.id.aiblur_slide);
         mAIBlurSlide.initialize(this);
         mAIBlurViews = new TextView[]{
                 mBlurShape, mBlurShapeText, mBlurStrength,mBlurStrengthText,mBlurFocusDistance,mBlurFocusDistanceText,
-                mBlurLuma, mBlurLumaText,mBlurChromaU,mBlurChromaUText,mBlurChromaV,mBlurChromaVText};
+                mBlurLuma, mBlurLumaText,mBlurChromaU,mBlurChromaUText,mBlurChromaV,mBlurChromaVText, mChromaStrength, mChromaStrengthText};
         mBlurShape.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -451,8 +458,24 @@ public class OneUICameraControls extends RotatableLayout {
                 }
             }
         });
+        mChromaStrength.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                resetAIBlurConfigIcons();
+                if (mAIBlurSlide.getMode() != AIBlurConfigSlide.BLUR_CSTRENGTH_MODE) {
+                    mChromaStrengthText.setSelected(true);
+                    setAIBlurUi(mChromaStrength, mChromaStrengthText);
+                    mAIBlurSlide.setMode(AIBlurConfigSlide.BLUR_CSTRENGTH_MODE);
+                }else {
+                    mAIBlurSlide.setMode(AIBlurConfigSlide.NO_MODE);
+                    mChromaStrength.setTextColor(Color.WHITE);
+                    mChromaStrengthText.setTextColor(Color.WHITE);
+                }
+            }
+        });
         setAIBlurConfigParameters();
         setChromaEnable(mAIBlurSlide.isChromaMode());
+        setSuperStrengthEnable(mAIBlurSlide.isLumaorCHromaMode());
     }
 
     public void setChromaEnable(boolean value){
@@ -477,6 +500,22 @@ public class OneUICameraControls extends RotatableLayout {
             }else{
                 mBlurChromaV.setTextColor(Color.WHITE);
                 mBlurChromaVText.setTextColor(Color.WHITE);
+            }
+        }
+    }
+
+    public void setSuperStrengthEnable(boolean value){
+        mChromaStrength.setEnabled(value);
+        if(!value) {
+            mChromaStrength.setTextColor(GREY);
+            mChromaStrengthText.setTextColor(GREY);
+        }else{
+            if(mAIBlurSlide.getMode() == AIBlurConfigSlide.BLUR_CSTRENGTH_MODE){
+                mChromaStrength.setTextColor(BLUE);
+                mChromaStrengthText.setTextColor(BLUE);
+            }else{
+                mChromaStrength.setTextColor(Color.WHITE);
+                mChromaStrengthText.setTextColor(Color.WHITE);
             }
         }
     }
@@ -959,11 +998,12 @@ public class OneUICameraControls extends RotatableLayout {
         mBlurLumaText.setSelected(false);
         mBlurChromaUText.setSelected(false);
         mBlurChromaVText.setSelected(false);
+        mChromaStrengthText.setSelected(false);
     }
 
     private void setAIBlurConfigParameters() {
         int width = (mWidth > mHeight) ? mHeight : mWidth;
-        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(width / 6, width / 15);
+        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(width / mAIBlurViews.length *2, width / 15);
         for (TextView v : mAIBlurViews) {
             v.setLayoutParams(llp);
         }
@@ -1003,6 +1043,9 @@ public class OneUICameraControls extends RotatableLayout {
                 break;
             case AIBlurConfigSlide.BLUR_CHROMAV_MODE:
                 mBlurChromaVText.setText(value);
+                break;
+            case AIBlurConfigSlide.BLUR_CSTRENGTH_MODE:
+                mChromaStrengthText.setText(value);
                 break;
         }
     }
