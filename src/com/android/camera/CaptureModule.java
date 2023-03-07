@@ -7288,6 +7288,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mInitHeifWriter.close();
         }
         mUI.showPreviewCover();
+        mUI.hideEvSeekbar();
         if(mIsCloseCamera) {
             closeCamera();
         } else {
@@ -8012,6 +8013,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void updateZoomSmooth(float from, float to, int frame) {
+        if (isTakingPicture() || mIsRTBCameraId) {
+            return;
+        }
         float delta = (to - from) / frame;
         for (int i = 0; i < frame; i++) {
             float zoom = mZoomValue + delta;
