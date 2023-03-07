@@ -1592,7 +1592,10 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled) {
                     if (DEV_LEVEL_ALL) {
                         proModeOnlyList.add(SettingsManager.KEY_SWITCH_CAMERA);
+
                     }
+                    proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
+                    proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                     proModeOnlyList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     proModeOnlyList.add(SettingsManager.KEY_TONE_MAPPING);
                     proModeOnlyList.add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
