@@ -4,7 +4,7 @@
     package="org.codeaurora.snapcam">
 
     <uses-sdk
-        android:minSdkVersion="23"
+        android:minSdkVersion="30"
         android:targetSdkVersion="33" />
 
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" />
@@ -70,7 +70,7 @@
                 android:configChanges="orientation|screenSize|keyboardHidden"
                 android:parentActivityName="com.android.camera.CameraActivity"
                 android:visibleToInstantApps="true"
-            android:exported="true">
+                android:exported="true">
 
                 <intent-filter>
                     <action android:name="android.media.action.VIDEO_CAMERA" />
