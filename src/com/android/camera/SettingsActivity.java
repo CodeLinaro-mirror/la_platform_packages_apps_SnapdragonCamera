@@ -1197,7 +1197,7 @@ public class SettingsActivity extends PreferenceActivity {
         mDeveloperMenuEnabled = mSharedPreferences.getBoolean(SettingsManager.KEY_DEVELOPER_MENU, false);
 
         filterPreferences();
-        initializePreferences();
+        initializePreferences(false);
 
         for (int i = 0; i < getPreferenceScreen().getPreferenceCount(); i++) {
             PreferenceCategory category = (PreferenceCategory) getPreferenceScreen().getPreference(i);
@@ -1814,7 +1814,7 @@ public class SettingsActivity extends PreferenceActivity {
 
     }
 
-    private void initializePreferences() {
+    private void initializePreferences(boolean fromRestore) {
         updatePreference(SettingsManager.KEY_PICTURE_SIZE);
         updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
         updatePreference(SettingsManager.KEY_EXPOSURE);
@@ -1846,8 +1846,6 @@ public class SettingsActivity extends PreferenceActivity {
         updatePictureFormatPreference();
         updateLongShotPreference();
         updateHDRSceneDetection();
-        updateCinematicOptions();
-
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
         Set<Map.Entry<String, SettingsManager.Values>> set = map.entrySet();
@@ -1935,6 +1933,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreviewStabilizationPreference();
         updateMultiVideoFPSPreference();
         updateViullPreference();
+        updateCinematicOptions(fromRestore);
     }
 
     private void updateAudioEncoderPreference() {
@@ -2609,6 +2608,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
 
+
     private void updateHDRSceneDetection() {
         CaptureModule.CameraMode mode =
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
@@ -2627,7 +2627,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
 
-    private void updateCinematicOptions() {
+    private void updateCinematicOptions(boolean fromRestore) {
         CaptureModule.CameraMode mode =
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         if (mode == CaptureModule.CameraMode.CINEMATIC) {
@@ -2637,11 +2637,15 @@ public class SettingsActivity extends PreferenceActivity {
                     SettingsManager.KEY_TOUCH_TRACK_FOCUS);
             ListPreference statsNNPref = (ListPreference) findPreference(
                     SettingsManager.KEY_STATSNN_CONTROL);
-            if (t2t.equals("on")) {
+            if (t2t.equals("on") || fromRestore) {
                 t2TFocus.setChecked(true);
             }
             if (statsNNPref != null) {
-                statsNNPref.setValue(statsNN);
+                if (fromRestore) {
+                    statsNNPref.setValue("1");
+                } else {
+                    statsNNPref.setValue(statsNN);
+                }
             }
         }
 
@@ -2722,7 +2726,7 @@ public class SettingsActivity extends PreferenceActivity {
     private void restoreSettings() {
         mSettingsManager.restoreSettings();
         filterPreferences();
-        initializePreferences();
+        initializePreferences(true);
     }
 
 

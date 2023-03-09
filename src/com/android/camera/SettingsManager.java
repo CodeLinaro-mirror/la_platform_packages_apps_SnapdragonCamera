@@ -531,6 +531,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (facing == CameraCharacteristics.LENS_FACING_BACK) {
             mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.DEFAULT));
             mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.VIDEO));
+            mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.CINEMATIC));
             mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.HFR));
             mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.RTB));
             mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.SAT));
