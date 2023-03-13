@@ -1014,6 +1014,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private ImageReader[] mYUV10bitImageReader = new ImageReader[MAX_NUM_CAM];
     private Size[] mPhysicalSizes = new Size[PHYSICAL_CAMERA_COUNT];
     private Size[] mPhysicalRawSizes = new Size[PHYSICAL_CAMERA_COUNT];
+    private Size[] mPhysicalJpegRSizes = new Size[PHYSICAL_CAMERA_COUNT];
     private String[] mPhysicalRawId = new String[PHYSICAL_CAMERA_COUNT];
     private Size[] mPhysicalVideoSizes = new Size[PHYSICAL_CAMERA_COUNT];
     private Size[] mPhysicalVideoSnapshotSizes = new Size[PHYSICAL_CAMERA_COUNT];
@@ -1025,6 +1026,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private ImageReader[] mPhysicalYuv10bitReader = new ImageReader[MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private ImageReader[] mPhysicalRawReader = new ImageReader[MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private ImageReader[] mPhysicalJpegReader = new ImageReader[PHYSICAL_CAMERA_COUNT];
+    private ImageReader[] mPhysicalJpegRReader = new ImageReader[PHYSICAL_CAMERA_COUNT];
+
     //yuv raw images are for raw reprocess
     public int mRawReprocessType = 0;
     public boolean mMultiResReprocessEnabled = false;
@@ -3571,6 +3574,19 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
         }
+        Set<String> jpegR_ids = mSettingsManager.getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_JPEG_R_CALLBACK);
+        if (jpegR_ids != null) {
+            Iterator<String> id=jpegR_ids.iterator();
+            for (ImageReader reader : mPhysicalJpegRReader) {
+                if (reader != null){
+                    builder.addTarget(reader.getSurface());
+                    targetCount++;
+                    Log.d(TAG,"add jpeg R target id="+id.next()+" size="
+                            +reader.getWidth()+"x"+reader.getHeight());
+                }
+            }
+        }
         Set<String> yuv_ids = mSettingsManager.getPhysicalFeatureEnableId(
                 SettingsManager.KEY_PHYSICAL_YUV_CALLBACK);
         if(yuv_ids != null){
@@ -3688,6 +3704,25 @@ public class CaptureModule implements CameraModule, PhotoController,
                 outputConfigurations.add(configuration);
                 Log.d(TAG,"add output format=jpeg physicalId="+id+" size="
                         +mPhysicalJpegReader[i].getWidth()+"x"+mPhysicalJpegReader[i].getHeight());
+                i++;
+            }
+        }
+
+        Set<String> jpegR_ids = mSettingsManager.getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_JPEG_R_CALLBACK);
+        Log.d(TAG,"getPhysicalOutputConfiguration jpegR_ids="+jpegR_ids);
+        if (jpegR_ids != null){
+            int i = 0;
+            for (String id : jpegR_ids){
+                OutputConfiguration configuration = new OutputConfiguration(
+                        mPhysicalJpegRReader[i].getSurface());
+                if (!isLogicalId(id)){
+                    configuration.setPhysicalCameraId(id);
+                    setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
+                }
+                outputConfigurations.add(configuration);
+                Log.d(TAG,"add output format=jpeg R physicalId="+id+" size="
+                        +mPhysicalJpegRReader[i].getWidth()+"x"+mPhysicalJpegRReader[i].getHeight());
                 i++;
             }
         }
@@ -6117,6 +6152,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         for (int i=0; i< MAX_LOGICAL_PHYSICAL_CAMERA_COUNT; i++) {
             mPhysicalYuvReader[i] = null;
             mPhysicalRawReader[i] = null;
+            mPhysicalJpegRReader[i] = null;
         }
     }
 
@@ -6141,6 +6177,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 i++;
             }
         }
+
+        setPhysicalJpegRReader();
 
         Set<String> yuv_ids = mSettingsManager.getPhysicalFeatureEnableId(
                 SettingsManager.KEY_PHYSICAL_YUV_CALLBACK);
@@ -6276,6 +6314,67 @@ public class CaptureModule implements CameraModule, PhotoController,
         rawListener.setCamId(id);
         mPhysicalRawReader[i].setOnImageAvailableListener(rawListener, mImageAvailableHandler);
     }
+
+    private void setPhysicalJpegRReader(){
+        Set<String> jpegR_ids = mSettingsManager.getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_JPEG_R_CALLBACK);
+        if (jpegR_ids != null) {
+            int i = 0;
+            for (String id : jpegR_ids) {
+                int index = getIndexByPhysicalId(id);
+                Size size;
+                if (index != -1) {
+                    size = mPhysicalJpegRSizes[index];
+                } else {
+                    size = mPictureSize;
+                }
+                mPhysicalJpegRReader[i] = ImageReader.newInstance(size.getWidth(),
+                        size.getHeight(), ImageFormat.JPEG_R, 3);
+                Log.d(TAG, "JPEG R imageReader i=" + i + " id=" + id + " index=" + index +
+                        " size=" + size.toString());
+
+                PhysicalImageListener jpegRListener = new PhysicalImageListener() {
+                    @Override
+                    public void onImageAvailable(ImageReader reader) {
+                        Log.d(TAG, "new jpeg R image from physical camera " + id);
+                        if (captureWaitImageReceive()) {
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Log.d(TAG, " PhysicalJpegImgReader image available for cam enable shutter button");
+                                    mUI.enableShutter(true);
+                                }
+                            });
+                        }
+                        Image image = reader.acquireNextImage();
+                        mNamedImages.nameNewImage(System.currentTimeMillis());
+                        NamedEntity name = mNamedImages.getNextNameEntity();
+                        String title = (name == null) ? null : name.title;
+                        title = title + "_phy_" + id;
+                        long date = (name == null) ? -1 : name.date;
+
+                        byte[] bytes = getJpegData(image);
+                        int orientation = 0;
+                        ExifInterface exif = null;
+                        if (image.getFormat() != ImageFormat.HEIC) {
+                            exif = Exif.getExif(bytes);
+                            orientation = Exif.getOrientation(exif);
+                        } else {
+                            orientation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
+                        }
+                        mActivity.getMediaSaveService().addImage(bytes, title, date,
+                                null, image.getWidth(), image.getHeight(), orientation, null,
+                                mOnMediaSavedListener, mContentResolver, "jpeg");
+                        image.close();
+                    }
+                };
+                jpegRListener.setCamId(id);
+                mPhysicalJpegRReader[i].setOnImageAvailableListener(jpegRListener, mImageAvailableHandler);
+                i++;
+            }
+        }
+    }
+
     private void setPhysicalJpegImgReader(Size size, String id, int i){
         mPhysicalJpegReader[i] = ImageReader.newInstance(size.getWidth(),
                 size.getHeight(), ImageFormat.JPEG, 3);
@@ -7665,7 +7764,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     mPhysicalRawSizes[i] = mSupportedRawPictureSize;
                 }
-                mPhysicalRawId[i] = id;
+                Size[] jpegRSizes = mSettingsManager.getSupportedOutputSize(Integer.valueOf(id),
+                        ImageFormat.JPEG_R);
+                if (jpegRSizes != null) {
+                    mPhysicalJpegRSizes[i] = jpegRSizes[0];
+                }
                 i++;
             }
         }
