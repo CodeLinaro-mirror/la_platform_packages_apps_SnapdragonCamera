@@ -1512,7 +1512,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     faces = result.get(CaptureResult.STATISTICS_FACES);
                 }
                 Log.d(FD_TAG,BIG_LOG,"onCaptureCompleted Detected Face size = " + Integer.toString(faces == null ? 0 : faces.length));
-                if (faces != null && mSettingsManager.isFDRenderingAtPreview() && isCinematicDebugOn()) {
+                if (faces != null && mSettingsManager.isFDRenderingAtPreview() && isCinematicDebugOn()
+                        && !mSettingsManager.isMultiCameraEnabled()) {
                     if (isBsgcDetecionOn() || isFacialContourOn() || isFacePointOn()
                             || isFaceExpressionOn()
                             || isGenderOn()) {
@@ -1533,13 +1534,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             detectHDRMode(result, id);
             processCaptureResult(result);
             mPostProcessor.onMetaAvailable(result);
-            if (statsParametersUpdated <= STATS_PARAMETER_UPDATE) {
+            if (statsParametersUpdated <= STATS_PARAMETER_UPDATE &&
+                    !mSettingsManager.isMultiCameraEnabled()) {
                 updateStatsParameters(result);
             }
             String stats_visualizer = mSettingsManager.getValue(
                     SettingsManager.KEY_STATS_VISUALIZER_VALUE);
             if (mStatsVisualizer != null && mStatsVisualEnable.equals("1")
-                    && stats_visualizer != null) {
+                    && stats_visualizer != null && !mSettingsManager.isMultiCameraEnabled()) {
                 updateStatsView(stats_visualizer, result);
             } else {
                 mUI.updateAWBInfoVisibility(View.GONE);
@@ -1553,12 +1555,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mRSStatson = false;
                 updateRSStatsVisibility(View.GONE);
             }
-            if(mStatsVisualEnable.equals("1")){
+            if(mStatsVisualEnable.equals("1") && !mSettingsManager.isMultiCameraEnabled()){
                 updateStatsAecIdsView(result);
             } else {
                 mUI.updateAECIdInfoVisibility(View.GONE);
             }
-            if (isSateNNFocusSettingOn() && !mStatsVisualEnable.equals("1") && isCinematicDebugOn()) {
+            if (isSateNNFocusSettingOn() && !mStatsVisualEnable.equals("1") && isCinematicDebugOn()
+                    && !mSettingsManager.isMultiCameraEnabled()) {
                 updateStatsNNView(result);
             } else {
                 mUI.updateStatsNNVisibility(View.GONE);
@@ -6967,8 +6970,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applySessionParameters(CaptureRequest.Builder builder){
-        applyEarlyPCR(builder);
-        applyVariableFPS(builder);
         if(CURRENT_MODE == CameraMode.RTB && MCXMODE){
             Log.i(TAG,"set bokeh mode for captureBuilder");
             builder.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE, CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_STILL_CAPTURE);
@@ -6978,46 +6979,62 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(selectMode != null && (selectMode.equals("rtb") || selectMode.equals("single_rear_aibokeh"))){
             builder.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE, CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS);
         }
-        applyManualHDR(builder);
-        applySnapshotHDR(builder);
+        if (!mSettingsManager.isMultiCameraEnabled()) {
+            applyEarlyPCR(builder);
+            applyVariableFPS(builder);
+            applyManualHDR(builder);
+            applySnapshotHDR(builder);
+            applyFaceContourVersion(builder);
+            applyExtendMaxZoom(builder);
+            applyMctf(builder);
+            applyQLL(builder);
+            applyInSensorZoom(builder);
+            applyEnableStatsVisualizer(builder);
+            applyShadingCorrection(builder);
+            applyNumHDRExposure(builder);
+            applyStatsVisualizerOptionMask(builder);
+            applyStatsNNControl(builder);
+            applyMFNRAIDEMode(builder);
+            applyAICameraParam(builder);
+            applyAICameraBlurModeParam(builder);
+            applyXCFAOptimization(builder);
+            applyeHardSwitchParam(builder);
+            applyMLVideoParam(builder);
+        }
         Set<String> raw_ids = mSettingsManager.getPhysicalFeatureEnableId(SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
         if(raw_ids != null && raw_ids.size() > 0){
             applyMcxRawCbInfo(builder);
         }
-        applyFaceContourVersion(builder);
-        applyExtendMaxZoom(builder);
-        applyMctf(builder);
-        applyQLL(builder);
-        applyInSensorZoom(builder);
-        applyEnableStatsVisualizer(builder);
-        applyShadingCorrection(builder);
+
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.HFR ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
-            applyOfflineDumpTrigger(builder);
-            applyVideoEncoderProfile(builder);
+            if (!mSettingsManager.isMultiCameraEnabled()) {
+                applyOfflineDumpTrigger(builder);
+                applyVideoEncoderProfile(builder);
+            }
         }
-
+        if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
+                mCurrentSceneMode.mode == CameraMode.CINEMATIC ||
+                mCurrentSceneMode.mode == CameraMode.DEFAULT) {
+            if (!mSettingsManager.isMultiCameraEnabled()) {
+                applyVSR(builder);
+            }
+            applyPreviewStabilization(builder);
+        }
         if (mCurrentSceneMode.mode == CameraMode.DEFAULT
                 || mCurrentSceneMode.mode == CameraMode.VIDEO
                 || mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
-            applyVIULL(builder);
-            applyVSR(builder);
-            applyPreviewStabilization(builder);
-            applyEISHorizonLevelEnable(builder);
+            if (!mSettingsManager.isMultiCameraEnabled()) {
+                applyVIULL(builder);
+                applyVSR(builder);
+                applyPreviewStabilization(builder);
+                applyEISHorizonLevelEnable(builder);
+            }
         }
         if (mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             applyEnableCinematic(builder);
         }
-        applyNumHDRExposure(builder);
-        applyStatsVisualizerOptionMask(builder);
-        applyStatsNNControl(builder);
-        applyMFNRAIDEMode(builder);
-        applyAICameraParam(builder);
-        applyAICameraBlurModeParam(builder);
-        applyXCFAOptimization(builder);
-        applyeHardSwitchParam(builder);
-        applyMLVideoParam(builder);
     }
 
     private void applyeHardSwitchParam(CaptureRequest.Builder builder){
@@ -7103,39 +7120,43 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyCommonSettings(CaptureRequest.Builder builder, int id) {
-        builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
-        builder.set(CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
-        applyAfModes(builder);
-        applyFaceDetection(builder);
-        applyTouchTrackFocus(builder);
-        applyWhiteBalance(builder);
-        applyExposure(builder);
-        applyIsoAndExposureTime(builder);
-        applyColorEffect(builder);
-        applySceneMode(builder);
-        Log.d(TAG, " applyCommonSettings ZoomFixedSupport: " + mUI.getZoomFixedSupport() + ", mZoomValue :" + mZoomValue);
-        if (mUI.getZoomFixedSupport()) {
-            applyZoomRatio(builder, mZoomValue, id);
+        if (mSettingsManager.isMultiCameraEnabled()) {
+            applyPhotoEIS(builder);
         } else {
-            applyZoom(builder, id);
+            builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
+            builder.set(CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
+            applyAfModes(builder);
+            applyFaceDetection(builder);
+            applyTouchTrackFocus(builder);
+            applyWhiteBalance(builder);
+            applyExposure(builder);
+            applyIsoAndExposureTime(builder);
+            applyColorEffect(builder);
+            applySceneMode(builder);
+            Log.d(TAG, " applyCommonSettings ZoomFixedSupport: " + mUI.getZoomFixedSupport() + ", mZoomValue :" + mZoomValue);
+            if (mUI.getZoomFixedSupport()) {
+                applyZoomRatio(builder, mZoomValue, id);
+            } else {
+                applyZoom(builder, id);
+            }
+            applyInstantAEC(builder);
+            applySaturationLevel(builder);
+            applyAntiBandingLevel(builder);
+            applySharpnessControlModes(builder);
+            applyExposureMeteringModes(builder);
+            applyHistogram(builder);
+            applyAWBCCTAndAgain(builder);
+            applyBGStats(builder);
+            applyBEStats(builder);
+            applyWbColorTemperature(builder);
+            applyToneMapping(builder);
+            applyLivePreview(builder);
+            applyPdnetToggle(builder);
+            applyPhotoEIS(builder);
+            applyAICameraStrength();
+            applyTargetZoom(builder, 0f);
+            applyInStantZoom(builder);
         }
-        applyInstantAEC(builder);
-        applySaturationLevel(builder);
-        applyAntiBandingLevel(builder);
-        applySharpnessControlModes(builder);
-        applyExposureMeteringModes(builder);
-        applyHistogram(builder);
-        applyAWBCCTAndAgain(builder);
-        applyBGStats(builder);
-        applyBEStats(builder);
-        applyWbColorTemperature(builder);
-        applyToneMapping(builder);
-        applyLivePreview(builder);
-        applyPdnetToggle(builder);
-        applyPhotoEIS(builder);
-        applyAICameraStrength();
-        applyTargetZoom(builder, 0f);
-        applyInStantZoom(builder);
     }
 
     /**
@@ -10217,34 +10238,38 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyVideoCommentSettings(CaptureRequest.Builder builder, int cameraId) {
-        if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
-            builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
-            builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-        }else{
-            lockAfAeForRequestBuilder(builder, cameraId);
-        }
-        applyAntiBandingLevel(builder);
-        applyNoiseReduction(builder);
-        applyColorEffect(builder);
-        applyVideoFlash(builder, cameraId);
-        applyFaceDetection(builder);
-        if (mUI.getZoomFixedSupport()) {
-            applyZoomRatio(builder, mZoomValue, cameraId);
+        if (mSettingsManager.isMultiCameraEnabled()) {
+            applyVideoEIS(builder);
         } else {
-            applyZoom(builder, cameraId);
+            if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
+                builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
+                builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            }else{
+                lockAfAeForRequestBuilder(builder, cameraId);
+            }
+            applyAntiBandingLevel(builder);
+            applyNoiseReduction(builder);
+            applyColorEffect(builder);
+            applyVideoFlash(builder, cameraId);
+            applyFaceDetection(builder);
+            if (mUI.getZoomFixedSupport()) {
+                applyZoomRatio(builder, mZoomValue, cameraId);
+            } else {
+                applyZoom(builder, cameraId);
+            }
+            applyVideoEIS(builder);
+            applyVideoHDR(builder);
+            applyTouchTrackFocus(builder);
+            applyToneMapping(builder);
+            applyHistogram(builder);
+            applyBGStats(builder);
+            applyBEStats(builder);
+            applyPdnetToggle(builder);
+            applyAWBCCTAndAgain(builder);
+            applyAIBlurConfigs(builder);
+            applyExposure(builder);
+            applyInStantZoom(builder);
         }
-        applyVideoEIS(builder);
-        applyVideoHDR(builder);
-        applyTouchTrackFocus(builder);
-        applyToneMapping(builder);
-        applyHistogram(builder);
-        applyBGStats(builder);
-        applyBEStats(builder);
-        applyPdnetToggle(builder);
-        applyAWBCCTAndAgain(builder);
-        applyAIBlurConfigs(builder);
-        applyExposure(builder);
-        applyInStantZoom(builder);
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
