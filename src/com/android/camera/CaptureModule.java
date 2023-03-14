@@ -11445,7 +11445,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                         if (mHighSpeedCapture && !mHighSpeedRecordingMode) {
                             bufferInfo.presentationTimeUs -= mHighRecordingPausingTime*1000;
                         } else {
-                            bufferInfo.presentationTimeUs -= mRecordingPausingTime*1000;
+                            if (mCaptureTimeLapse) {
+                                bufferInfo.presentationTimeUs -= (mRecordingPausingTime * 1000L
+                                        * 1000L / (long) mTimeBetweenTimeLapseFrameCaptureMs  / 30L);
+                            } else {
+                                bufferInfo.presentationTimeUs -= mRecordingPausingTime*1000;
+                            }
                         }
                     }
                     frameNumber++;
