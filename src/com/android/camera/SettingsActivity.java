@@ -297,6 +297,7 @@ public class SettingsActivity extends PreferenceActivity {
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
+                    updateCaptureProfilePref();
                 }
 
                 if (pref.getKey().equals(SettingsManager.KEY_MANUAL_WB)) {
@@ -2290,14 +2291,15 @@ public class SettingsActivity extends PreferenceActivity {
         String yuv10bit = this.getString(R.string.pref_camera2_saveformat_value_yuv10bit);
         String yuv10bitWithMetadata = this.getString(
                 R.string.pref_camera2_saveformat_value_yuv10bit_withmetedata);
+        String value = "";
         if(rawFormat != null){
-            String value = rawFormat.getValue();
-            if(value.equals(yuv10bit) || value.equals(yuv10bitWithMetadata)){
-                pref.setEnabled(true);
-            } else {
-                pref.setValue("0");
-                pref.setEnabled(false);
-            }
+            value = rawFormat.getValue();
+        }
+        if(value.equals(yuv10bit) || value.equals(yuv10bitWithMetadata) || mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT){
+            pref.setEnabled(true);
+        } else {
+            pref.setValue("0");
+            pref.setEnabled(false);
         }
     }
 

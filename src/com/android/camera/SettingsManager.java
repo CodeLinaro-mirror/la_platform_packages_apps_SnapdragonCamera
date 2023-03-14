@@ -131,6 +131,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 	public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
     public static final int JPEG_FORMAT = 0;
     public static final int HEIF_FORMAT = 1;
+    public static final int JPEG_R_FORMAT = 3;
     public static final String LOGICAL_AND_PHYSICAL = "99";
     public static final String SCENE_MODE_DUAL_STRING = "100";
     public static final String SCENE_MODE_SUNSET_STRING = "10";
@@ -3293,7 +3294,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (cameraId > mCharacteristics.size())return null;
         StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
                 CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-        Size[] sizes = map.getOutputSizes(ImageFormat.JPEG);
+        int format = ImageFormat.JPEG;
+        if(getSavePictureFormat() == JPEG_R_FORMAT)
+            format = ImageFormat.JPEG_R;
+        Size[] sizes = map.getOutputSizes(format);
         List<String> res = new ArrayList<>();
 
         boolean isDeepportrait = getDeepportraitEnabled();
@@ -3301,7 +3305,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         boolean isMfSHDREnabled = isMfSHDREnable();
 
         if (getQuadBayerSensorPrefEnabled()) {
-            List<Size> qcfaSizes = getSupportedQCFAMaxPictureSizeList(Integer.toString(cameraId), ImageFormat.JPEG);
+            List<Size> qcfaSizes = getSupportedQCFAMaxPictureSizeList(Integer.toString(cameraId), format);
             if (qcfaSizes != null && qcfaSizes.size() != 0) {
                 for(Size size : qcfaSizes){
                     res.add(size.toString());
@@ -3347,7 +3351,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
 
-        Size[] highResSizes = map.getHighResolutionOutputSizes(ImageFormat.JPEG);
+        Size[] highResSizes = map.getHighResolutionOutputSizes(format);
 
         if (highResSizes != null) {
             for (int i = 0; i < highResSizes.length; i++) {
@@ -4108,6 +4112,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (supportHeic == 1){
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
         }
+        ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
         return ret;
     }
     public boolean isSupportedMixHdr(){
