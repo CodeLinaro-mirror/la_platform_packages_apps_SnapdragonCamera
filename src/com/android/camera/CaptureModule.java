@@ -3356,13 +3356,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         Log.v(TAG, "OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT");
                                     }
                                     String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
-                                    Log.v(TAG, "OutputConfiguration set previewProfile==null? :" + (previewProfile==null));
+                                    Log.v(TAG, "OutputConfiguration set previewProfile :" + previewProfile);
                                     if (previewProfile != null && !previewProfile.equals("0")) {
                                         out.setDynamicRangeProfile(Long.parseLong(previewProfile));
                                     }
                                     outputConfigurations.add(out);
                                 }
-                            }else{
+                            } else {
                                 mPreviewOutputConfiguration = new OutputConfiguration(
                                         new android.util.Size(mPreviewSize.getWidth(), mPreviewSize.getHeight()),
                                         SurfaceHolder.class);
@@ -3372,6 +3372,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     mFASurfaceConfigured = false;
                                 }
                                 Log.v(TAG, "add mPreviewOutputConfiguration");
+                                String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
+                                Log.v(TAG, "OutputConfiguration previewProfile :" + previewProfile);
+                                if (previewProfile != null && !previewProfile.equals("0")) {
+                                    mPreviewOutputConfiguration.setDynamicRangeProfile(Long.parseLong(previewProfile));
+                                }
                                 outputConfigurations.add(mPreviewOutputConfiguration);
                             }
                         } else {
