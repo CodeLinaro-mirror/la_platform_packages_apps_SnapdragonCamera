@@ -856,6 +856,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         filterHeifSizeOptions();
         mVideoEisConfigs = getVideoEisConfigs(cameraId);
         filterHFROptions();
+        filterVideoEncoderProfileOptions();
     }
 
 
@@ -1943,8 +1944,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         // These list can be changed run-time
         filterHFROptions();
         filterVideoEncoderOptions();
-        filterVideoEncoderProfileOptions();
-
         if (!mIsFrontCameraPresent || !isFacingFront(mCameraId)) {
             removePreference(mPreferenceGroup, KEY_SELFIE_FLASH);
             removePreference(mPreferenceGroup, KEY_SELFIEMIRROR);
