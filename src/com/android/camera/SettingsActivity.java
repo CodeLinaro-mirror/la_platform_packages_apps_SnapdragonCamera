@@ -309,6 +309,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if(pref.getKey().equals(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
                     updateZslPreference();
                     updatePictureFormatPreference();
+                    updateHDRSceneDetection();
                     if(isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)){
                         CaptureModule.CameraMode mode =
                                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
@@ -1844,6 +1845,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         updatePictureFormatPreference();
         updateLongShotPreference();
+        updateHDRSceneDetection();
         updateCinematicOptions();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
@@ -2603,6 +2605,24 @@ public class SettingsActivity extends PreferenceActivity {
             if(mode == CaptureModule.CameraMode.RTB && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)){
                 longShot.setChecked(false);
                 longShot.setEnabled(false);
+            }
+        }
+    }
+
+    private void updateHDRSceneDetection() {
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        if (mode == CaptureModule.CameraMode.RTB) {
+            String captureMFNRDef = this.getString(R.string.pref_camera2_capture_mfnr_default);
+            String captureMFNR = mLocalSharedPref.getString(
+                    SettingsManager.KEY_CAPTURE_MFNR_VALUE, captureMFNRDef);
+            ListPreference hdrSceneDetection = (ListPreference) findPreference(
+                    SettingsManager.KEY_AUTO_HDR);
+            if (captureMFNR.equals("1")) {
+                hdrSceneDetection.setValue("disable");
+                hdrSceneDetection.setEnabled(false);
+            } else {
+                hdrSceneDetection.setEnabled(true);
             }
         }
     }
