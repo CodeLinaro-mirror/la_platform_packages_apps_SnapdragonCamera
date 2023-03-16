@@ -4681,7 +4681,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void captureStillPicture(final int id) {
-        Log.i(TAG, " captureStillPicture " + id);
+        Log.i(TAG, "captureStillPicture " + id);
         mJpegImageData = null;
         mIsRefocus = false;
         if (isDeepZoom()) mSupportZoomCapture = false;
@@ -13107,7 +13107,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 request.set(CaptureRequest.CONTROL_SETTINGS_OVERRIDE,
                         CameraMetadata.CONTROL_SETTINGS_OVERRIDE_OFF);
             }
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | NoSuchFieldError e) {
             Log.v(TAG, EXCEPTION_LOG," applyInStantZoom didn`t exist CONTROL_SETTINGS_OVERRIDE");
         }
     }

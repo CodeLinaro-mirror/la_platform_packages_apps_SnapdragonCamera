@@ -3104,10 +3104,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isInStantZoomSupported() {
         if (mCharacteristics.size() > 0) {
-            int[] availableOverrides = mCharacteristics.get(CaptureModule.CURRENT_ID).get(CameraCharacteristics
-                    .CONTROL_AVAILABLE_SETTINGS_OVERRIDES);
-            if (availableOverrides == null) {
-                return false;
+            try {
+                int[] availableOverrides = mCharacteristics.get(CaptureModule.CURRENT_ID).get(CameraCharacteristics
+                        .CONTROL_AVAILABLE_SETTINGS_OVERRIDES);
+                if (availableOverrides == null) {
+                    return false;
+                }
+            }catch(IllegalArgumentException | NoSuchFieldError e) {
+                Log.w(TAG, EXCEPTION_LOG,"exception  e= "+e);
             }
         }
         return true;
