@@ -798,6 +798,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionU", Float.class);
     private static final CaptureRequest.Key<Float> blurChromaSuppressionV =
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionV", Float.class);
+    public static CameraCharacteristics.Key<Byte> isMLVideoSupported =
+            new CameraCharacteristics.Key<>("org.quic.camera.videoretouch.isVideoRetouchSupported", byte.class);
 
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_VENDOR_START = 0x10000;
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV = 0x10001;
@@ -3345,7 +3347,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                         for (int i = 0; i < mRawCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mRAWImageReader[i].getSurface());
-                            configuration.setPhysicalCameraId(mSettingsManager.getRawReprocessPhysicalId());
+                            String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+                            if (!isLogicalId(physicalId)) {
+                                configuration.setPhysicalCameraId(physicalId);
+                            }
                             outputConfigurations.add(configuration);
                         }
                         for (int i = 0; i < mYUVCount; i++) {
@@ -3516,7 +3521,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private boolean isLogicalId(String id){
-        return id != null && id.contains("logical");
+        return id != null && (id.contains("logical") || id.contains("off"));
     }
 
     private List<OutputConfiguration> getPhysicalVideoOutputConfiguration() {
@@ -5701,8 +5706,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         if (mRawReprocessType != 0) {
                                             waitForRawMetaData();
                                             Log.i(TAG, "start reprocess-image");
-                                            if (mSettingsManager.getRawReprocessPhysicalId() != null) {
-                                                String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+                                            String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+                                            if(!isLogicalId(physicalId)) {
                                                 TotalCaptureResult physicalMetaData = mRawInputMeta.getPhysicalCameraTotalResults().get(physicalId);
                                                 mPostProcessor.reprocessImage(image, physicalMetaData);
                                             } else {
@@ -6901,6 +6906,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyAICameraParam(builder);
         applyAICameraBlurModeParam(builder);
         applyXCFAOptimization(builder);
+        applyOverrideResuorceParam(builder);
+        applyMLVideoParam(builder);
+    }
+
+    private void applyMLVideoParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
+        Log.d(TAG,"applyMLVideoParam, value:" + value);
+        VendorTagUtil.enableMLVideo(builder, (byte)(value != null && value.equals("on") ? 0x01 : 0x00));
     }
 
     private void applyAICameraParam(CaptureRequest.Builder builder){
@@ -6909,6 +6922,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.d(TAG,"set applyeAiCameraTag: " + value);
             VendorTagUtil.setAICamera(builder, Integer.parseInt(value));
         }
+    }
+
+    private void applyOverrideResuorceParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
+        Log.i(TAG,"applyOverrideResuorceParam, value:" + value);
+        VendorTagUtil.enableOverrideResuorce(builder, (byte)(value != null && value.equals("on") ? 0x01 : 0x00));
     }
 
     private void applyAICameraBlurModeParam(CaptureRequest.Builder builder){
@@ -7544,7 +7563,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }else {
             mYUVCount = 0;
         }
-        if(mRawReprocessType != 0 && mSettingsManager.getRawReprocessPhysicalId() != null){
+        if(mRawReprocessType != 0){
             mRawCount = 1;
         } else{
             mRawCount = 0;
@@ -8772,7 +8791,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
         if( mRawCount == 1){
-            Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(mSettingsManager.getRawReprocessPhysicalId()), rawFormat);
+            String physicalId = mSettingsManager.getRawReprocessPhysicalId();
+            int id = (!isLogicalId(physicalId)) ? Integer.parseInt(physicalId) : getMainCameraId();
+            Size[] rawSize = mSettingsManager.getSupportedOutputSize(id, rawFormat);
             if(PersistUtil.isRawReprocessQcfa()){
                 mRawSize[0] = new Size(8000,6000);
             }else{
@@ -8906,6 +8927,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
         if(mSettingsManager.isLiveshotSizeSameAsVideoSize() || "1".equals(hvx_shdr) || "1".equals(hvx_mfhdr)){
             mVideoSnapshotSize = mVideoSize;
+        }
+        String mlVideo = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
+        if(mlVideo != null && mlVideo.equals("on")){
+            mVideoSnapshotSize = mVideoPreviewSize;
         }
         String videoSnapshot = PersistUtil.getVideoSnapshotSize();
         String[] sourceStrArray = videoSnapshot.split("x");
@@ -9328,7 +9353,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                     new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
             mCreateSessionLatency = System.currentTimeMillis();
-            mCameraDevice[cameraId].createCaptureSession(sessionConfig);
+            String overrideResource = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
+            boolean supported = true;
+            if(overrideResource == null || overrideResource.equals("off")) {
+                supported = mCameraDevice[cameraId].isSessionConfigurationSupported(sessionConfig);
+            }
+            if(supported) {
+                mCameraDevice[cameraId].createCaptureSession(sessionConfig);
+            }else{
+                warningToast("Stream combination is not supported.");
+            }
         } catch (Exception e) {
             Log.e(TAG,e);
         }
@@ -9359,15 +9393,19 @@ public class CaptureModule implements CameraModule, PhotoController,
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
         sessionConfig.setSessionParameters(initialRequest.build());
-        boolean supported = false;
+        boolean supported = true;
+        String overrideResource = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
-        try{
-            supported = camera.isSessionConfigurationSupported(sessionConfig);
-            Log.i(TAG, "  result :" + supported);
-        } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
-            Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error ="+ e);
+        if(overrideResource == null || overrideResource.equals("off")){
+            try {
+                supported = camera.isSessionConfigurationSupported(sessionConfig);
+                Log.i(TAG, "  result :" + supported);
+            } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error");
+                e.printStackTrace();
+            }
         }
         if(supported) {
             //only create session when configure is supported
@@ -9379,7 +9417,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.e(TAG, " error:", e);
             }
         } else {
-            warningToast("Session combination is not supported.");
+            warningToast("Stream combination is not supported.");
         }
     }
 
@@ -13197,6 +13235,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
             VendorTagUtil.setIsoExpPriority(request, previewExpTime);
             request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
+            if(!mSettingsManager.isFlashSupported(getMainCameraId())){
+                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            }
         } else if (promode && !exposuretime.equals("auto") && !isovalue.equals("auto")) {
             int isoValue = Integer.parseInt(isovalue);
             setIsoAndExposureTime(request, isoValue, previewExpTime);
@@ -13210,6 +13251,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
             VendorTagUtil.setIsoExpPriority(request, newExpTime);
             request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
+            if(!mSettingsManager.isFlashSupported(getMainCameraId())) {
+                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            }
+
         } catch (NumberFormatException e) {
             Log.w(TAG, " Input expTime " + exposuretime + " is invalid");
             return false;
@@ -13229,6 +13274,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, null);
         request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
+        if(!mSettingsManager.isFlashSupported(getMainCameraId())) {
+            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+        }
+
     }
 
     private void setIsoAndExposureTime(CaptureRequest.Builder request, int isoValue, long exposureTime) {
@@ -14076,7 +14125,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 case SettingsManager.KEY_VIDEO_FLASH_MODE:
                     switch (mCurrentSceneMode.mode) {
                         case PRO_MODE:
-
                             applyFlashForUIChange(mPreviewRequestBuilder[getMainCameraId()],
                                     getMainCameraId());
                             break;

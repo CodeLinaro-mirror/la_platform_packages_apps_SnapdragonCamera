@@ -96,6 +96,11 @@ public class VendorTagUtil {
     private static final CaptureRequest.Key<Float> targetZoom =
             new CaptureRequest.Key<>("org.quic.camera.clickZoom.targetZoom", Float.class);
 
+    private static final CaptureRequest.Key<Byte> override_resource_cost_validation =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.overrideResourceCostValidation", byte.class);
+    public static final CaptureRequest.Key<Byte> EnableMLVideo =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVideoRetouch", byte.class);
+
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
     private static final int MANUAL_WB_GAINS_MODE = 2;
@@ -317,6 +322,19 @@ public class VendorTagUtil {
     public static void setTargetZoom(CaptureRequest.Builder builder, float value) {
         if (isSupported(builder, targetZoom)) {
             builder.set(targetZoom, value);
+        }
+    }
+
+    public static void enableOverrideResuorce(CaptureRequest.Builder builder, byte enable) {
+        Log.i(TAG,"set enableOverrideResuorce: " + enable);
+        if (isSupported(builder, override_resource_cost_validation)) {
+            builder.set(override_resource_cost_validation, enable);
+        }
+    }
+    public static void enableMLVideo(CaptureRequest.Builder builder, byte enable) {
+        Log.d(TAG,"set enableMLVideo: " + enable);
+        if (isSupported(builder, EnableMLVideo)) {
+            builder.set(EnableMLVideo, enable);
         }
     }
 }

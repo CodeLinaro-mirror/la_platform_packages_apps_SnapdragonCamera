@@ -538,6 +538,13 @@
         camera:entryValues="@array/pref_camera2_eis_entryvalues" />
 
     <ListPreference
+        camera:key="pref_camera2_mlvideo_key"
+        camera:defaultValue="@string/pref_camera2_ml_video_default"
+        camera:title="@string/pref_camera2_ml_video_title"
+        camera:entries="@array/pref_camera2_camera2_entries"
+        camera:entryValues="@array/pref_camera2_camera2_entryvalues" />
+
+    <ListPreference
         camera:key="pref_camera2_photo_eis_key"
         camera:defaultValue="@string/pref_camera2_photo_eis_default"
         camera:title="@string/pref_camera2_photo_eis_title"
@@ -968,6 +975,13 @@
         camera:entryValues="@array/pref_camera2_multi_cameras_entryvalues"
         camera:key="pref_camera2_multi_cameras_key"
         camera:title="@string/pref_camera2_multi_cameras_title" />
+
+    <ListPreference
+        camera:defaultValue="@string/pref_camera2_override_resource_default"
+        camera:entries="@array/pref_camera2_camera2_entries"
+        camera:entryValues="@array/pref_camera2_camera2_entryvalues"
+        camera:key="pref_camera2_override_resource_key"
+        camera:title="@string/pref_camera2_override_resource_title" />
 
     <IconListPreference
         camera:defaultValue="@string/setting_off_value"

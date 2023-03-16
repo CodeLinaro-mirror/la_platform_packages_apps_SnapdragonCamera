@@ -241,7 +241,6 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 updateHdrRefOp();
                 updateQuadBayerPreference();
-                updateVsrPreference();
             }
 
             if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
@@ -377,7 +376,6 @@ public class SettingsActivity extends PreferenceActivity {
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                     updateViullPreference();
-                    updateVideoMFHDRPreference();
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_AI_CAMERA)){
                     updateEISPreference();
@@ -1321,6 +1319,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_HDR_ANS_MODE);
                 add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                 add(SettingsManager.KEY_VIULL);
+                add(SettingsManager.KEY_ML_VIDEO);
             }
         };
         final ArrayList<String> multiCameraSettingList = new ArrayList<String>() {
@@ -1448,12 +1447,14 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
                         videoAddList.add(SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
+                        videoAddList.add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                     } else {
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         videoAddList.remove(SettingsManager.KEY_HVX_SHDR);
                         videoAddList.remove(SettingsManager.KEY_HVX_MFHDR);
+                        videoAddList.remove(SettingsManager.KEY_ML_VIDEO);
                     }
                     videoAddList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     videoAddList.add(SettingsManager.KEY_TONE_MAPPING);
@@ -1627,6 +1628,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if(mSettingsManager.isMcxQcfaMode() && mSettingsManager.getQuadBayerPhysicalList() != null){
                     maxSize = mSettingsManager.getQuadBayerPhysicalList().size();
                 }
+                add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 for(String id : SettingsManager.KEY_PHYSICAL_SIZE){
                     if(i < maxSize) {
                         add(id);
@@ -1644,6 +1646,7 @@ public class SettingsActivity extends PreferenceActivity {
                 for(String id : SettingsManager.KEY_PHYSICAL_VIDEO_SIZE){
                     add(id);
                 }
+                add(SettingsManager.KEY_OVERRIDE_RESOURCE);
             }
         };
 
@@ -1656,6 +1659,7 @@ public class SettingsActivity extends PreferenceActivity {
                 addDeveloperOptions(developer,multiCameraPhotoList);
             } else {
                 multiCameraPhotoList.remove(SettingsManager.KEY_ZSL);
+                multiCameraPhotoList.remove(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 for (String removeKey : multiCameraPhotoList){
                     removePreference(removeKey,developer);
                 }
@@ -2016,13 +2020,6 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setEnabled(false);
             return;
         }
-        String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
-        if(mSettingsManager.getValueIndex(SettingsManager.KEY_SCENE_MODE) == 1 ||
-                (vsr != null && vsr.equals("1"))){
-            pref.setValue("off");
-            pref.setEnabled(false);
-            return;
-        }
     }
 
     private void updateMultiVideoFPSPreference() {
@@ -2187,12 +2184,6 @@ public class SettingsActivity extends PreferenceActivity {
                  pref.setEnabled(false);
                  return;
              }
-         }
-        String hdrmode = mSettingsManager.getVideoHdrMode();
-        if (hdrmode != null && !hdrmode.equals("off")){
-             pref.setValue("0");
-             pref.setEnabled(false);
-             return;
          }
          pref.setEnabled(true);
     }
