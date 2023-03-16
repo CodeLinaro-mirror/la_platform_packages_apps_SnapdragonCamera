@@ -3856,6 +3856,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         if (mRecordingTimeRect != null) {
             mRecordingTimeView.setRotation(-orientation);
+            if (mTimeLapseLabel != null && mTimeLapseLabel.getVisibility() == View.VISIBLE) {
+                mTimeLapseLabel.setRotation(-orientation);
+            }
         }
         if (mFaceView != null) {
             mFaceView.setDisplayRotation(orientation);

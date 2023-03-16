@@ -13,6 +13,13 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
+
+<!--
+    Changes from Qualcomm Innovation Center are provided under the following license:
+    Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+    SPDX-License-Identifier: BSD-3-Clause-Clear
+ -->
+
 <!-- This layout is shared by phone and tablet in portrait or landscape orientation. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:orientation="vertical"
@@ -26,5 +33,6 @@
             android:drawablePadding="5dp"/>
     <TextView android:id="@+id/time_lapse_label"
             android:text="@string/time_lapse_title"
-            style="@style/OnViewfinderLabel"/>
+            style="@style/OnViewfinderLabel"
+        android:layout_marginTop="10dp"/>
 </LinearLayout>
