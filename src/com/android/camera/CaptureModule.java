@@ -1152,7 +1152,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             int be_width = info[2];
             int be_height = info[3];
             int depth = info[4];
-            if (bg_width != -1 && bg_height != -1){
+            if (bg_width > 0 && bg_height > 0){
                 BGSTATS_DATA = bg_width*bg_height;
                 BGSTATS_WIDTH = bg_width*10;
                 BGSTATS_HEIGHT = bg_height*10;
@@ -1163,7 +1163,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 bg_b_statsdata = new int[BGSTATS_DATA];
                 bgstats_view.updateViewSize();
             }
-            if(be_width != -1 && be_height != -1) {
+            if(be_width > 0 && be_height > 0) {
                 BESTATS_DATA = be_width*be_height;
                 BESTATS_WIDTH = be_width*10;
                 BESTATS_HEIGHT = be_height*10;
