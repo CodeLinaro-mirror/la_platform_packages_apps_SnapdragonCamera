@@ -2221,6 +2221,9 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setValue("off");
             pref.setEnabled(false);
         }
+        if (pref.isEnabled()) {
+            updateMultiVideoFPSPreference();
+        }
     }
 
     private void updatePdnetTogglePreference() {
