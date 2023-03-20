@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera.ui;
 
@@ -194,7 +199,7 @@ public class PieRenderer extends OverlayRenderer
         mOpen = new ArrayList<PieItem>();
         mOpen.add(new PieItem(null, 0));
         Resources res = ctx.getResources();
-        mRadius = (int)(CameraUtil.sScreenWidth/2);
+        mRadius = (int)(CameraUtil.mScreenWidth/2);
         mRadiusInc = (int) res.getDimensionPixelSize(R.dimen.pie_radius_increment);
         mCircleSize = mRadius - res.getDimensionPixelSize(R.dimen.focus_radius_offset);
         mTouchOffset = (int) res.getDimensionPixelSize(R.dimen.pie_touch_offset);

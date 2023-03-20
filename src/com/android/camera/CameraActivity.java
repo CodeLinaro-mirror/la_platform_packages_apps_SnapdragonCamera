@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 package com.android.camera;
 
 import android.hardware.camera2.CameraAccessException;
@@ -116,6 +120,11 @@ import com.android.camera.util.PhotoSphereHelper;
 import com.android.camera.util.PhotoSphereHelper.PanoramaViewHelper;
 import com.android.camera.util.UsageStatistics;
 import org.codeaurora.snapcam.R;
+
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
+import com.android.camera.CaptureModule.CameraMode;
+import android.view.View;
 
 import java.io.File;
 import java.io.IOException;
@@ -240,8 +249,8 @@ public class CameraActivity extends Activity
     private Intent mStandardShareIntent;
     private ShareActionProvider mPanoramaShareActionProvider;
     private Intent mPanoramaShareIntent;
-    private SettingsManager mSettingsManager;
     private String mThumbnailPath;
+    public SettingsManager mSettingsManager;
 
     private final int DEFAULT_SYSTEM_UI_VISIBILITY = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
@@ -260,8 +269,11 @@ public class CameraActivity extends Activity
     // Keep track of data request here to avoid creating useless UpdateThumbnailTask.
     private boolean mDataRequested;
     private Cursor mCursor;
+    private boolean mIsAutoTest = false;
+    private boolean mOpenDevOption = false;
 
     private boolean mAutoTestEnabled = false;
+
 
     private WakeLock mWakeLock;
     private static final int REFOCUS_ACTIVITY_CODE = 1;
@@ -1819,7 +1831,6 @@ public class CameraActivity extends Activity
         boolean isStartPermissionActivity = false;
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean isRequestShown = prefs.getBoolean(CameraSettings.KEY_REQUEST_PERMISSION, false);
-
         if(!mSecureCamera && (!isRequestShown || !hasCriticalPermissions())) {
             Log.v(TAG, "Start Request Permission");
             Intent intent = new Intent(this, PermissionsActivity.class);
@@ -2450,6 +2461,27 @@ public class CameraActivity extends Activity
     private void setPreviewControlsVisibility(boolean showControls) {
         mCurrentModule.onPreviewFocusChanged(showControls);
     }
+
+    // method for autotest
+    public CaptureModule getCaptureModule(){
+        return mCaptureModule;
+    }
+    public boolean getAutoTest(){
+         return  mIsAutoTest;
+    }
+    public void setAutoTest(boolean test){
+        mIsAutoTest = test;
+    }
+    public boolean getDevOption(){
+        return  mOpenDevOption;
+    }
+    public void setDevOption(boolean open){
+        mOpenDevOption = open;
+    }
+
+
+
+
 
     // Accessor methods for getting latency times used in performance testing
     public long getAutoFocusTime() {

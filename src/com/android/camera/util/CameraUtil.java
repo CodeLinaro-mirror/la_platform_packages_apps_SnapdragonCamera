@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera.util;
 
@@ -42,6 +47,7 @@ import android.hardware.camera2.params.MultiResolutionStreamInfo;
 import android.location.Location;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaMuxer;
 import android.media.MediaRecorder;
 import android.net.Uri;
@@ -72,6 +78,8 @@ import com.android.camera.util.IntentHelper;
 import org.codeaurora.snapcam.R;
 
 import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
@@ -95,8 +103,17 @@ import java.util.Collections;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.Iterator;
 import java.util.Set;
-
+import android.media.MediaMetadataRetriever;
+import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import android.media.MediaExtractor;
+import android.media.MediaFormat;
 import static android.content.Context.MODE_PRIVATE;
+import java.io.FileInputStream;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Collection of utility functions used in this package.
@@ -167,7 +184,12 @@ public class CameraUtil {
     public static final String KEY_SAVE = "save";
     public static final String KEY_DELETE = "delete";
     public static final String KEY_DELETE_ALL = "delete_all";
-    public static int sScreenWidth;
+    public static int mScreenWidth;
+    public static DisplayMetrics metrics;
+    public static long timeInMillisec;
+    public static String mWidth,mHeight,mFrameRate,mTitle;
+    public static int mFps;
+
     private static long mStartTime;
     private static String mStartStr;
     private static final int FD_LOG = PersistUtil.CAMERA2_DEBUG_FD;
@@ -222,14 +244,15 @@ public class CameraUtil {
     }
 
     public static void initialize(Context context) {
-        DisplayMetrics metrics = new DisplayMetrics();
+        metrics = new DisplayMetrics();
         WindowManager wm = (WindowManager)
                 context.getSystemService(Context.WINDOW_SERVICE);
         wm.getDefaultDisplay().getMetrics(metrics);
         sPixelDensity = metrics.density;
         int dpw = (int) (metrics.widthPixels / sPixelDensity + 0.5);
         int dph = (int) (metrics.heightPixels / sPixelDensity + 0.5);
-        sScreenWidth = dpw < dph ? dpw : dph;
+        Log.d(TAG,"dpwh="+dpw+"*"+dph+",metricswh="+metrics.widthPixels+"*"+metrics.heightPixels);
+        mScreenWidth = dpw < dph ? dpw : dph;
         sImageFileNamer = new ImageFileNamer(
                 context.getString(R.string.image_file_name_format));
     }
@@ -1637,5 +1660,63 @@ public class CameraUtil {
         private final MultiResolutionImageReader mOwner;
         private final int mMaxBuffers;
         private ConditionVariable mImageAvailable = new ConditionVariable();
+    }
+
+    public static JSONObject getJsonObj(String filePath) {
+        String json;
+        try {
+            FileInputStream file = new FileInputStream(filePath);
+            int size = file.available();
+            byte[] buffer = new byte[size];
+            file.read(buffer);
+            file.close();
+            json = new String(buffer, "UTF-8");
+            return new JSONObject(json);
+        } catch (IOException | JSONException ex) {
+            Log.e(TAG,ex.toString());
+            return null;
+        }
+    }
+    public static void getMp4Info(File videoFile) {
+        if (videoFile == null || !videoFile.exists())
+            return ;
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        // source
+        try {
+            FileInputStream inputStream = new FileInputStream(videoFile.getAbsolutePath());
+            retriever.setDataSource(inputStream.getFD());
+            mWidth = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            mHeight = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+            String imgWidth = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_IMAGE_WIDTH);
+            String imgHeight = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_IMAGE_HEIGHT );
+
+            mFrameRate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE);
+            mTitle = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+            String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            String framecount = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_FRAME_COUNT);
+            timeInMillisec = Long.parseLong(time);
+            long count = Long.valueOf(framecount);
+            long dt = timeInMillisec/count;
+            mFps = (int)(1000/dt);
+            if(mFrameRate == null){
+                mFrameRate = String.valueOf(mFps);
+            }else{
+                int index = mFrameRate.indexOf('.');
+                if(index > 0) {
+                    mFrameRate = mFrameRate.substring(0, index);
+                }
+            }
+            inputStream.close();
+            Log.i(TAG,"time="+time+",timeInMillisec="+timeInMillisec+",mwidth="+mWidth+",mheight="+mHeight
+                    +",framerate="+mFrameRate+",title="+mTitle+",mFps="+mFps+",framecount="+framecount
+                    +",imgwidth="+imgWidth+",imgheight="+imgHeight);
+
+        } catch (Exception e) {
+            Log.e(TAG,"exception e="+e);
+            timeInMillisec = 0;
+            mWidth = null;
+            mHeight = null;
+        }
+
     }
 }

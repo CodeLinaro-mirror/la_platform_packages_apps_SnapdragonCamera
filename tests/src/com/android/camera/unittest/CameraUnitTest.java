@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera.unittest;
 
@@ -20,11 +25,40 @@ import com.android.camera.util.CameraUtil;
 
 import android.graphics.Matrix;
 import android.test.suitebuilder.annotation.SmallTest;
-
+import android.util.Log;
 import junit.framework.TestCase;
 
-@SmallTest
-public class CameraUnitTest extends TestCase {
+import android.support.test.filters.LargeTest;
+import android.support.test.runner.AndroidJUnit4;
+import android.util.Log;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import static junit.framework.TestCase.assertEquals;
+
+@RunWith(AndroidJUnit4.class)
+
+@LargeTest
+public class CameraUnitTest{
+	private String TAG = "CameraUnitTest";
+    @Before
+    public void setUp(){
+        try {
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @After
+    public void tearDown(){
+        try {
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+   @Test
     public void testRoundOrientation() {
         int h = CameraUtil.ORIENTATION_HYSTERESIS;
         assertEquals(0, CameraUtil.roundOrientation(0, 0));
@@ -68,38 +102,37 @@ public class CameraUnitTest extends TestCase {
         assertEquals(90, CameraUtil.roundOrientation(90, 270));
         assertEquals(180, CameraUtil.roundOrientation(180, 270));
     }
-
+    @Test
     public void testPrepareMatrix() {
         Matrix matrix = new Matrix();
         float[] points;
         int[] expected;
-
         CameraUtil.prepareMatrix(matrix, false, 0, 800, 480);
         points = new float[] {-1000, -1000, 0, 0, 1000, 1000, 0, 1000, -750, 250};
         expected = new int[] {0, 0, 400, 240, 800, 480, 400, 480, 100, 300};
         matrix.mapPoints(points);
-        assertEquals(expected, points);
+        assertEqualsArry(expected, points);
 
         CameraUtil.prepareMatrix(matrix, false, 90, 800, 480);
         points = new float[] {-1000, -1000,   0,   0, 1000, 1000, 0, 1000, -750, 250};
         expected = new int[] {800, 0, 400, 240, 0, 480, 0, 240, 300, 60};
         matrix.mapPoints(points);
-        assertEquals(expected, points);
+        assertEqualsArry(expected, points);
 
         CameraUtil.prepareMatrix(matrix, false, 180, 800, 480);
         points = new float[] {-1000, -1000, 0, 0, 1000, 1000, 0, 1000, -750, 250};
         expected = new int[] {800, 480, 400, 240, 0, 0, 400, 0, 700, 180};
         matrix.mapPoints(points);
-        assertEquals(expected, points);
+        assertEqualsArry(expected, points);
 
         CameraUtil.prepareMatrix(matrix, true, 180, 800, 480);
         points = new float[] {-1000, -1000, 0, 0, 1000, 1000, 0, 1000, -750, 250};
         expected = new int[] {0, 480, 400, 240, 800, 0, 400, 0, 100, 180};
         matrix.mapPoints(points);
-        assertEquals(expected, points);
+        assertEqualsArry(expected, points);
     }
 
-    private void assertEquals(int expected[], float[] actual) {
+    private void assertEqualsArry(int expected[], float[] actual) {
         for (int i = 0; i < expected.length; i++) {
             assertEquals("Array index " + i + " mismatch", expected[i], Math.round(actual[i]));
         }

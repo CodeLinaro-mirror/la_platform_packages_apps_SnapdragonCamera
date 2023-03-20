@@ -16,6 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera.ui;
 
@@ -907,7 +912,9 @@ public class OneUICameraControls extends RotatableLayout {
     public int getPromode() {
         return mProMode != null ? mProMode.getMode() : -99;
     }
-
+    public ProMode getmProMode(){
+        return mProMode;
+    }
     private void resetProModeIcons() {
         mExposureText.setSelected(false);
         mManualText.setSelected(false);
@@ -932,6 +939,7 @@ public class OneUICameraControls extends RotatableLayout {
         mProModeLayout.setVisibility(VISIBLE);
         mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() - 90);
     }
+
     public void setModeEnable(int mode,boolean isEnable) {
         switch (mode) {
             case ProMode.EXPOSURE_MODE:
@@ -991,8 +999,10 @@ public class OneUICameraControls extends RotatableLayout {
     public void setBlurMode(boolean blurMode) {
         mBlurModeOn = blurMode;
         initializeAIBlurSlide(mBlurModeOn);
-        mAIBlurSlide.reinit();
-        resetAIBlurConfigIcons();
+        if(blurMode) {
+            mAIBlurSlide.reinit();
+            resetAIBlurConfigIcons();
+        }
     }
 
     private void resetAIBlurConfigIcons() {

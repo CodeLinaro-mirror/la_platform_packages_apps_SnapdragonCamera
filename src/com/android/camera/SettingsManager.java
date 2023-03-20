@@ -28,7 +28,7 @@
  */
  /*
   * Changes from Qualcomm Innovation Center are provided under the following license:
-  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
   * SPDX-License-Identifier: BSD-3-Clause-Clear
   */
 
@@ -4344,10 +4344,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return list;
     }
 
-    private JSONObject parseJson(String fileName) {
+    private JSONObject parseJson(String filePath) {
         String json;
         try {
-            InputStream is = mContext.getAssets().open(fileName);
+            InputStream is = mContext.getAssets().open(filePath);
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);
@@ -4356,7 +4356,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return new JSONObject(json);
         } catch (IOException | JSONException ex) {
             Log.e(TAG,ex.toString());
-            return null;
+            try {
+                FileInputStream file = new FileInputStream(filePath);
+                int size = file.available();
+                byte[] buffer = new byte[size];
+                file.read(buffer);
+                file.close();
+                json = new String(buffer, "UTF-8");
+                return new JSONObject(json);
+            }catch (IOException | JSONException e) {
+                Log.e(TAG,e.toString());
+                return null;
+            }
         }
     }
 

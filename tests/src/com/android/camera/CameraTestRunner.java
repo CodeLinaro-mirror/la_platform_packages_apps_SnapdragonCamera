@@ -13,34 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera;
+import com.android.camera.functional.FunctionTest;
+import android.support.test.runner.AndroidJUnitRunner;;
+import android.os.Bundle;
 
-import android.test.InstrumentationTestRunner;
-import android.test.InstrumentationTestSuite;
-
-import com.android.camera.functional.CameraTest;
-import com.android.camera.functional.ImageCaptureIntentTest;
-import com.android.camera.functional.VideoCaptureIntentTest;
-import com.android.camera.unittest.CameraUnitTest;
-
-import junit.framework.TestSuite;
-
-
-public class CameraTestRunner extends InstrumentationTestRunner {
-
-    @Override
-    public TestSuite getAllTests() {
-        TestSuite suite = new InstrumentationTestSuite(this);
-        suite.addTestSuite(CameraTest.class);
-        suite.addTestSuite(ImageCaptureIntentTest.class);
-        suite.addTestSuite(VideoCaptureIntentTest.class);
-        suite.addTestSuite(CameraUnitTest.class);
-        return suite;
-    }
-
-    @Override
+public class CameraTestRunner  extends AndroidJUnitRunner {
     public ClassLoader getLoader() {
         return CameraTestRunner.class.getClassLoader();
+    }
+    @Override
+    public void onCreate(Bundle icicle) {
+        try {
+            super.onCreate(icicle);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }

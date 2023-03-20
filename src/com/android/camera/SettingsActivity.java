@@ -48,7 +48,7 @@ Not a contribution.
  */
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 package com.android.camera;
@@ -127,9 +127,10 @@ public class SettingsActivity extends PreferenceActivity {
     private static final String TAG = "SettingsActivity";
 
     private static final boolean DEV_LEVEL_ALL =
-            PersistUtil.getDevOptionLevel() == PersistUtil.CAMERA2_DEV_OPTION_ALL;
+            PersistUtil.getDevOptionLevel() == PersistUtil.CAMERA2_DEV_OPTION_ALL  ;
     public static final String CAMERA_MODULE = "camera_module";
     public static final String IS_SIGNGLE_CAMERA_MODULE = "is_single_camera_mode";
+    public static final String OPEN_DEVOPTION = "open_devoption";
     private SettingsManager mSettingsManager;
     private SharedPreferences mSharedPreferences;
     private SharedPreferences mLocalSharedPref;
@@ -146,6 +147,7 @@ public class SettingsActivity extends PreferenceActivity {
     private ExpandableListView fdFacialExpandableListView = null;
     private FdExpandListViewAdapter fdFacialExpandableAdapter = null;
     private boolean mIsSingleCameraMode = false;
+    private boolean mShowAllDevOption = false;
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
@@ -451,7 +453,6 @@ public class SettingsActivity extends PreferenceActivity {
         ListPreference ZSLPref = (ListPreference) findPreference(SettingsManager.KEY_ZSL);
         List<String> key_zsl = new ArrayList<String>(Arrays.asList("Off", "HAL-ZSL" ));
         List<String> value_zsl = new ArrayList<String>(Arrays.asList( "disable", "hal-zsl"));
-
         if (ZSLPref != null) {
             if (!isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) &&
                     !mSettingsManager.getQuadBayerSensorPrefEnabled() &&
@@ -1182,6 +1183,7 @@ public class SettingsActivity extends PreferenceActivity {
             setShowInLockScreen();
         }
         mIsSingleCameraMode = getIntent().getBooleanExtra(IS_SIGNGLE_CAMERA_MODULE, false);
+        mShowAllDevOption =  getIntent().getBooleanExtra(OPEN_DEVOPTION, false);
         mSettingsManager = SettingsManager.getInstance();
         if (mSettingsManager == null) {
             finish();
@@ -1197,7 +1199,7 @@ public class SettingsActivity extends PreferenceActivity {
         mSharedPreferences = getPreferenceManager().getSharedPreferences();
         mSharedPreferences.registerOnSharedPreferenceChangeListener(mSharedPreferenceChangeListener);
         mDeveloperMenuEnabled = mSharedPreferences.getBoolean(SettingsManager.KEY_DEVELOPER_MENU, false);
-
+        mDeveloperMenuEnabled = mDeveloperMenuEnabled || mShowAllDevOption;
         filterPreferences();
         initializePreferences(false);
 
@@ -1472,10 +1474,9 @@ public class SettingsActivity extends PreferenceActivity {
             case DEFAULT:
                 removePreferenceGroup("video", parentPre);
                 if (mDeveloperMenuEnabled && developer != null) {
-                    removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
-                    removePreference(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC, developer);
-                    if (!DEV_LEVEL_ALL) {
+                    if (!(DEV_LEVEL_ALL)) {
                         removePreference(SettingsManager.KEY_SWITCH_CAMERA, developer);
+                        removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
                     }
                     for (String removeKey : videoOnlyList) {
                         removePreference(removeKey, developer);

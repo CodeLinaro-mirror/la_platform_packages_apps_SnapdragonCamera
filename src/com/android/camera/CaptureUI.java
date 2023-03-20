@@ -19,7 +19,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -223,6 +223,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         // SurfaceHolder callbacks
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            Log.d(TAG,"width="+width+",height="+height);
             mSurfaceHolderMono = holder;
             if(mMonoDummyOutputAllocation != null) {
                 mMonoDummyOutputAllocation.setSurface(mSurfaceHolderMono.getSurface());
@@ -2112,6 +2113,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         Intent intent = new Intent(mActivity, SettingsActivity.class);
         intent.putExtra(SettingsActivity.CAMERA_MODULE, mModule.getCurrenCameraMode());
         intent.putExtra(SettingsActivity.IS_SIGNGLE_CAMERA_MODULE, mModule.isSingleCameraMode());
+        intent.putExtra(SettingsActivity.OPEN_DEVOPTION, mActivity.getDevOption());
         mActivity.startActivity(intent);
     }
 
@@ -2933,7 +2935,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         mFilterModeSwitcher.setEnabled(enableFilterMenu);
         if (mSettingsManager.isMultiCameraEnabled()){
-            mSceneModeHDR.setEnabled(false);
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
+                    mSceneModeHDR.setEnabled(false);
+                }
+            });
+
         } else {
             mSceneModeHDR.setEnabled(enableSceneMenu);
         }
@@ -3244,9 +3251,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showPreviewCover() {
-        Log.i(TAG, "showPreviewCover");
         mPreviewCover.setVisibility(View.VISIBLE);
     }
+
+
 
     public void hidePreviewCover() {
         Log.i(TAG, "hidePreviewCover");
@@ -3901,7 +3909,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         }
 
-        if ( mSceneModeInstructionalDialog != null && mSceneModeInstructionalDialog.isShowing()) {
+        if ( mSceneModeInstructionalDialog != null && mSceneModeInstructionalDialog.isShowing() &&
+                !mActivity.getAutoTest()) {
             mSceneModeInstructionalDialog.dismiss();
             mSceneModeInstructionalDialog = null;
             showSceneInstructionalDialog(orientation);
@@ -3919,7 +3928,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void showFirstTimeHelp() {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
         boolean isMenuShown = prefs.getBoolean(CameraSettings.KEY_SHOW_MENU_HELP, false);
-        if(!isMenuShown) {
+        if(!isMenuShown && !mActivity.getAutoTest()) {
             showFirstTimeHelp(mTopMargin, mBottomMargin);
             SharedPreferences.Editor editor = prefs.edit();
             editor.putBoolean(CameraSettings.KEY_SHOW_MENU_HELP, true);
@@ -4056,7 +4065,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 if ( value.equals("104") ) {//panorama
                     mSceneModeLabelRect.setVisibility(View.GONE);
                 }else{
-                    if ( needShowInstructional() ) {
+                    if ( needShowInstructional() && !mActivity.getAutoTest() ) {
                         showSceneInstructionalDialog(mOrientation);
                     }
                     if(value.equals("18")) {//hdr
@@ -4108,7 +4117,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showSurfaceView() {
-        Log.d(TAG, "surfaceView-setFixedSize = " + mPreviewWidth+"x"+mPreviewHeight);
+        Log.d(TAG, "surfceView-setFixedSize = " + mPreviewWidth + "x" + mPreviewHeight);
         if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
             mSurfaceView.getHolder().setFixedSize(mPreviewWidth, mPreviewHeight);
             mSurfaceView.setAspectRatio(mPreviewHeight, mPreviewWidth);
@@ -4146,7 +4155,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mPreviewWidth = width;
         mPreviewHeight = height;
         if (changed) {
-            showSurfaceView();
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
+                    showSurfaceView();
+                }
+            });
         }
         return changed;
     }
@@ -4302,5 +4315,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mThumbnail != null) {
             mThumbnail.setSoundEffectsEnabled(enabled);
         }
+    }
+    public OneUICameraControls getmCameraControls(){
+        return mCameraControls;
     }
 }
