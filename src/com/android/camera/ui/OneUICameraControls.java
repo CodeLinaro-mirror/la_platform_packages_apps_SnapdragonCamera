@@ -230,7 +230,7 @@ public class OneUICameraControls extends RotatableLayout {
         mWhiteBalance = (TextView) findViewById(R.id.whitebalance_text);
         mIso = (TextView) findViewById(R.id.iso_text);
         mShutterSpeed = (TextView) findViewById(R.id.shutterspeed_text);
-        mProMode.initialize(this);
+
 
         mExposureRotateLayout = (RotateLayout) findViewById(R.id.exposure_rotate_layout);
         mManualRotateLayout = (RotateLayout) findViewById(R.id.manual_rotate_layout);
@@ -898,8 +898,10 @@ public class OneUICameraControls extends RotatableLayout {
     public void setProMode(boolean promode) {
         mProModeOn = promode;
         initializeProMode(mProModeOn);
-        mProMode.reinit();
-        resetProModeIcons();
+        if(promode) {
+            mProMode.initialize(this);
+            resetProModeIcons();
+        }
     }
 
     public int getPromode() {
