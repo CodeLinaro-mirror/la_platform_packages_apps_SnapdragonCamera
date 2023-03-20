@@ -132,14 +132,14 @@ public class FdExpandListView  {
         mExpandKey.add("FD Gender");
 
         List<String> list = new ArrayList<String>();
-        CharSequence[] fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_GENDER);
+        CharSequence[] fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_FACE_EXPRESSION);
         for(int i = 0; i< fdEntry.length;i++){
             list.add(fdEntry[i].toString());
         }
         mExpandMap.put((String) mExpandKey.get(0), list);
 
         list = new ArrayList<String>();
-        fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_FACE_EXPRESSION);
+        fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_GENDER);
         for(int i = 0; i< fdEntry.length;i++){
             list.add(fdEntry[i].toString());
         }
@@ -172,10 +172,10 @@ public class FdExpandListView  {
         } else if (mFDIndex == 2) {
             switch(group) {
                 case 0:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FD_GENDER,child);
+                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FD_FACE_EXPRESSION,child);
                     break;
                 case 1:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FD_FACE_EXPRESSION,child);
+                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FD_GENDER,child);
                     break;
             }
         } else {
@@ -222,12 +222,12 @@ public class FdExpandListView  {
         } else if (mFDIndex == 2) {
             switch(group) {
                 case 0:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_GENDER);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FD_GENDER);
-                    break;
-                case 1:
                     fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_FACE_EXPRESSION);
                     valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FD_FACE_EXPRESSION);
+                    break;
+                case 1:
+                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_GENDER);
+                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FD_GENDER);
                     break;
             }
         } else {

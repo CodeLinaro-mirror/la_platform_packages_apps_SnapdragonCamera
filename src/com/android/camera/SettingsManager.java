@@ -299,6 +299,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String MAUNAL_ABSOLUTE_ISO_VALUE = "absolute";
     public static final String KEY_SELECT_MODE = "pref_camera2_select_mode_key";
     public static final String KEY_STATSNN_CONTROL = "pref_camera2_statsnn_control_key";
+    public static final String KEY_CINEMATIC_DEBUG = "pref_camera2_cinematic_debug_key";
     public static final String KEY_PDNET_TOGGLE = "pref_camera2_pdnet_toggle_key";
     public static final String KEY_RAW_CB_INFO = "pref_camera2_raw_cb_info_key";
     public static final String KEY_QLL = "pref_camera2_qll_key";
@@ -329,6 +330,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_PHYSICAL_RAW_REPROCESS = "pref_camera2_physical_raw_reprocess_key";
     public static final String KEY_RAWINFO_TYPE = "pref_camera2_rawinfo_type_key";
     public static final String KEY_RAW_FORMAT_TYPE = "pref_camera2_raw_format_key";
+    public static final String KEY_ML_VIDEO = "pref_camera2_mlvideo_key";
 
     public static final String KEY_PREVIEW_PROFILE= "pref_camera2_preview_profile_key";
     public static final String KEY_CAPTURE_PROFILE= "pref_camera2_captrue_profile_key";
@@ -584,7 +586,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             videoQualityPref.setEntryValues(mContext.getResources().getStringArray(
                     R.array.pref_camera2_video_quality_entryvalues));
             filterUnsupportedOptions(videoQualityPref,getSupportedVideoSize(
-                    getCurrentCameraId()));
+                    mCaptureModule.getMainCameraId()));
         }
     }
     public void updateMultiReprocessInputOutput() {
@@ -1017,11 +1019,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isAICameraOn(){
-        String value = getValue(KEY_AI_CAMERA);
+        String value = getPerfValue(KEY_AI_CAMERA);
         if(value != null && !value.equals("disable")){
             return Integer.parseInt(value) == 2;
         }
         return false;
+    }
+
+    public String getPerfValue(String key) {
+        SharedPreferences sp = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey()),
+                Context.MODE_PRIVATE);
+        return sp.getString(key, "disable");
     }
 
     public boolean isAICameraSnapshotEnabeld(){
@@ -1725,6 +1734,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference captureProfile = mPreferenceGroup.findPreference(KEY_CAPTURE_PROFILE);
         ListPreference multireprocess_input = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_INPUT);
         ListPreference multireprocess_output = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_OUTPUT);
+        ListPreference ml_video = mPreferenceGroup.findPreference(KEY_ML_VIDEO);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -1988,10 +1998,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
 
-        boolean devLevelAll =
-                PersistUtil.getDevOptionLevel() == PersistUtil.CAMERA2_DEV_OPTION_ALL;
         if (qll != null) {
-            if (!isQLLSupported() || !devLevelAll) {
+            if (!isQLLSupported()) {
                 removePreference(mPreferenceGroup, KEY_QLL);
             }
         }
@@ -2033,6 +2041,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (inSensorZoom != null) {
             if (!isInSensorZoomSupported()) {
                 removePreference(mPreferenceGroup, KEY_INSENSOR_ZOOM);
+            }
+        }
+
+        if(ml_video != null){
+            if (!isMLVideoSupported()) {
+                mFilteredKeys.add(ml_video.getKey());
             }
         }
 
@@ -2103,6 +2117,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         fullEntryValues.length);
                 physicalCamera.setEntries(newEntries);
                 physicalCamera.setEntryValues(newEntryValues);
+                if (isMcxQcfaMode()) {
+                    ArrayList<String> supported = new ArrayList<String>();
+                    supported.add(String.valueOf(cameraId));
+                    filterUnsupportedOptions(physicalCamera, supported);
+                }
+
                 //update for other options
                 fullEntryValues = physicalRawReprocessPref.getEntryValues();
                 fullEntries = physicalRawReprocessPref.getEntries();
@@ -2143,7 +2163,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 System.arraycopy(fullEntries, 0, newEntries, 1, fullEntries.length);
                 System.arraycopy(fullEntryValues, 0, newEntryValues, 1,
                         fullEntryValues.length);
-                if(!isMcxQcfaMode()) {
+                if (!isMcxQcfaMode()) {
                     physicalJpegCallback.setEntries(newEntries);
                     physicalJpegCallback.setEntryValues(newEntryValues);
                     physicalYuvCallback.setEntries(newEntries);
@@ -2537,7 +2557,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference hfrPref = mPreferenceGroup.findPreference(KEY_VIDEO_HIGH_FRAME_RATE);
         if (hfrPref != null) {
             CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
-            if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO) {
+            if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO ||
+                    mode == CaptureModule.CameraMode.CINEMATIC) {
                 ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
                 hfrPref.reloadInitialEntriesAndEntryValues();
                 mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
@@ -2743,7 +2764,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         ArrayList<String> supported = new ArrayList<String>();
-        if(mode == CaptureModule.CameraMode.VIDEO) {
+        if(mode == CaptureModule.CameraMode.VIDEO || mode == CaptureModule.CameraMode.CINEMATIC) {
             supported.add("off");
         }
         ListPreference videoEncoder = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
@@ -2784,6 +2805,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         if (videoCapabilities != null) {
                             if (videoCapabilities.areSizeAndRateSupported(
                                     videoSize.getWidth(), videoSize.getHeight(), (int) r.getUpper())) {
+                                if (mode == CaptureModule.CameraMode.CINEMATIC && (int)r.getUpper() >= 60) {
+                                    break;
+                                }
                                 if(mode == CaptureModule.CameraMode.HFR && (int)r.getUpper() < 120){
                                     break;
                                 }
@@ -2817,6 +2841,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         if (videoCapabilities != null) {
                             if (videoCapabilities.areSizeAndRateSupported(
                                     videoSize.getWidth(), videoSize.getHeight(), mExtendedHFRSize[i + 2])) {
+                                if (mode == CaptureModule.CameraMode.CINEMATIC &&
+                                        mExtendedHFRSize[i + 2] >= 60) {
+                                    break;
+                                }
                                 if(mode == CaptureModule.CameraMode.HFR &&
                                         mExtendedHFRSize[i + 2] < 120){
                                     break;
@@ -3053,6 +3081,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Log.d(TAG, " isInSensorZoomSupported result :" + result);
         //return (result == 1);
         return true;
+    }
+
+    public boolean isMLVideoSupported() {
+        boolean isSupported = false;
+        try {
+            isSupported = (mCharacteristics.get(mCameraId).get(CaptureModule.isMLVideoSupported)) == 1;
+        } catch (IllegalArgumentException | NullPointerException e) {
+            Log.w(TAG, "cannot find vendor tag: " +
+                    CaptureModule.isMLVideoSupported.toString());
+        }
+        Log.d(TAG,"isMLVideoSupported: " + isSupported);
+        return isSupported;
     }
 
     public boolean isAutoExposureRegionSupported(int id) {
@@ -3407,6 +3447,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (CameraSettings.VIDEO_QUALITY_TABLE.containsKey(videoSizes.get(i).toString())) {
                 Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(videoSizes.get(i).toString());
                 if (profile != null && CamcorderProfile.hasProfile(cameraId, profile)) {
+                    if (mode == CaptureModule.CameraMode.CINEMATIC &&
+                            !(videoSizes.get(i).toString().equals("1920x1080") ||
+                                    videoSizes.get(i).toString().equals("1280x720"))) {
+                        //Video size should be 1080P and 720P in CINEMATIC mode
+                        continue;
+                    }
                     if (mode != CaptureModule.CameraMode.HFR && isEISV3Enabled && Math.min(videoSizes.get(i).getWidth(),videoSizes.get(i).getHeight()) < 720) {
                         //video size should't be larger than 720p when EIS V3 is enabled
                         continue;

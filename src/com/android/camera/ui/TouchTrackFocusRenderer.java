@@ -238,13 +238,13 @@ public class TouchTrackFocusRenderer extends View implements FocusIndicator {
 
         if (mStatus == STATUS_TRACKED) {
             if (mRect != null) {
-                mPaint.setColor(Color.GREEN);
+                mPaint.setColor(0xFFC1FFC1);
                 canvas.drawRect(mRect, mPaint);
             }
         } else if (mStatus == STATUS_TRACKING) {
             if (mRect != null) {
                 if (mTrackerScore > 80) {
-                    mPaint.setColor(Color.GREEN);
+                    mPaint.setColor(0xFFC1FFC1);
                 } else{
                     mPaint.setColor(Color.YELLOW);
                 }

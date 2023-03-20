@@ -753,7 +753,8 @@ public class CameraActivity extends Activity
             mThumbnail.setImageDrawable(mThumbnailDrawable);
             if (!isSecureCamera()) {
                 if(mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
-                        || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR)){
+                        || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR ||
+                        mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC)){
                     return;
                 }else {
                     mThumbnail.setVisibility(View.VISIBLE);

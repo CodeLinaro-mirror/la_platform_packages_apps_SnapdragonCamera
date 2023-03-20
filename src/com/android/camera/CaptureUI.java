@@ -58,6 +58,7 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 
 import com.android.camera.gles.CameraRender;
+import com.android.camera.ui.RotateTextView;
 import com.android.camera.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
@@ -210,7 +211,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TextView mEvValue;
 
     private FocusAssistImageView mFAImageView;
-    private TextView mFocusAssistTextView;
+    private RotateTextView mFocusAssistTextView;
     private ViewStub mFAViewStub;
     private FocusAssistLayout mFALayout;
     private TextureView mFATextureView;
@@ -1403,7 +1404,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         float[] zoomRatioRange = mSettingsManager.getSupportedRatioZoomRange(
                 mModule.getMainCameraId());
         if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                isRTBModeInSelectMode()) {
+                (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
             zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                     mModule.getMainCameraId());
         }
@@ -1411,7 +1412,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             @Override
             public void onClick(View v) {
                 if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                        isRTBModeInSelectMode()){
+                        (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())){
                     float[] zoomRTBRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                            mModule.getMainCameraId());
                     if(zoomRTBRange[0] > 1 ) {
@@ -1653,7 +1654,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.VISIBLE);
         }
-        if(mFilterMenuStatus == FILTER_MENU_ON){
+        if(mFilterMenuStatus == FILTER_MENU_ON || mSettingsManager.isAICameraOn()){
             hideZoomSeekBar();
         }
     }
@@ -1727,7 +1728,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void updateStatsNNResultText(byte statsNNWidth, byte statsNNHeight, byte statsNNMapdata, byte statsNNNumroi, int[] statsNNRoiData, int statsNNRoiWeight) {
-        mStatsAecText.setText(STATS_NN_RESULT_TITLE[0]+Byte.toString(statsNNWidth) +" " + "\r\n" +
+        mStatsNNResultText.setText(STATS_NN_RESULT_TITLE[0]+Byte.toString(statsNNWidth) +" " + "\r\n" +
                                  STATS_NN_RESULT_TITLE[1]+Byte.toString(statsNNHeight) +" " + "\r\n" +
                                  STATS_NN_RESULT_TITLE[2]+Byte.toString(statsNNMapdata) +" " + "\r\n" +
                                  STATS_NN_RESULT_TITLE[3]+Byte.toString(statsNNNumroi) +" " + "\r\n" +
@@ -1919,7 +1920,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void onCameraOpened(int cameraId) {
         mGestures.setCaptureUI(this);
-        if (mModule.isDeepZoom()) {
+        if (mModule.isDeepZoom() ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC) {
             mGestures.setZoomEnabled(false);
         } else {
             mGestures.setZoomEnabled(mSettingsManager.isZoomSupported(cameraId));
@@ -1975,7 +1977,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         mZoomIncrease = true;
         mFaceView.initMode();
-        hideFrontBackSwither();
         if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
             mModeSelectLayout.setVisibility(View.GONE);
         }
@@ -2035,7 +2036,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         float[] zoomRatioRange = mSettingsManager.getSupportedRatioZoomRange(
                 mModule.getMainCameraId());
         if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                isRTBModeInSelectMode()) {
+                (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
             zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                     mModule.getMainCameraId());
         }
@@ -2119,7 +2120,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             return;
 
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
-        hideFrontBackSwither();
         mFrontBackSwitcher.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -2130,9 +2130,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void switchFrontBackCamera() {
         if (mIsVideoUI || !mModule.getCameraModeSwitcherAllowed()
-                || !isSupportFrontCamera(mModule.getCurrenCameraMode())
-                || (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
-                    !mSettingsManager.isFrontIDHFRSupported())) {
+                || !isSupportFrontCamera(mModule.getCurrenCameraMode())) {
             return;
         }
         mModule.setCameraModeSwitcherAllowed(false);
@@ -2215,6 +2213,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if(hdrmode != null && !hdrmode.equals("off")){
             return false;
         }
+        String qllStr = mSettingsManager.getValue(SettingsManager.KEY_QLL);
+        if (qllStr.equals("1")) {
+            return false;
+        }
         return true;
     }
     public void initSceneModeHDR() {
@@ -2278,7 +2280,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             if (highspeed) {
                 mFlashButton.setVisibility(View.GONE);
             } else {
-                if (mModule.isAFLocked()){
+                if (mModule.isAFLocked() ||
+                        mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC){
                     hideFlashButton();
                 } else {
                     mFlashButton.init(true);
@@ -2288,13 +2291,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mRecordingTimeView.setText("00:00");
             mRecordingTimeRect.setVisibility(View.VISIBLE);
             updateOfflineDumpTrigger(View.VISIBLE);
-            mMuteButton.setVisibility((mModule.isHSRMode() ||
-                    mModule.getHighSpeedCaptureRate() < 60) ? View.VISIBLE : View.INVISIBLE);
+            mMuteButton.setVisibility(showMuteButton()? View.VISIBLE : View.INVISIBLE);
             setMuteButtonResource(!mModule.isAudioMute());
         } else {
             mFlashButton.setVisibility(View.VISIBLE);
 //            mSettingsManager.setValue(SettingsManager.KEY_VIDEO_FLASH_MODE, "off");
-            if (mModule.isAFLocked()){
+            if (mModule.isAFLocked() ||
+                    mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC){
                 hideFlashButton();
             } else {
                 mFlashButton.init(true);
@@ -2305,7 +2308,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             updateOfflineDumpTrigger(View.GONE);
         }
     }
-
+    private boolean showMuteButton(){
+        String audioSelected = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER);
+        if((mModule.isHSRMode() || mModule.getHighSpeedCaptureRate() < 60) &&
+                !audioSelected.equals("off")){
+            return  true;
+        }
+        return  false;
+    }
     private void setMuteButtonResource(boolean isUnMute) {
         if(isUnMute) {
             mMuteButton.setImageResource(R.drawable.ic_unmuted_button);
@@ -2504,7 +2514,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void showUIafterRecording() {
         mCameraControls.setVideoMode(false);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
-        hideFrontBackSwither();
         mSettingsIcon.setVisibility(View.VISIBLE);
         mIsVideoUI = false;
         mPauseButton.setVisibility(View.INVISIBLE);
@@ -2523,7 +2532,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         //common settings
         mShutterButton.setVisibility(View.VISIBLE);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
-        hideFrontBackSwither();
         mMakeupButton.setVisibility(View.INVISIBLE);
         //settings for each mode
         switch (mode) {
@@ -2549,6 +2557,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mVideoButton.setVisibility(View.VISIBLE);
                 mFilterModeSwitcher.setVisibility(View.VISIBLE);
                 mShutterButton.setVisibility(View.INVISIBLE);
+                break;
+            case CINEMATIC:
+                mVideoButton.setVisibility(View.VISIBLE);
+                mFilterModeSwitcher.setVisibility(View.VISIBLE);
+                mShutterButton.setVisibility(View.INVISIBLE);
+                if (!DEV_LEVEL_ALL) {
+                    mFrontBackSwitcher.setVisibility(View.INVISIBLE);
+                }
                 break;
             case PRO_MODE:
                 mFilterModeSwitcher.setVisibility(View.INVISIBLE);
@@ -2922,14 +2938,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void onOrientationChanged() {
-    }
-
-    private void hideFrontBackSwither() {
-        if (mFrontBackSwitcher != null &&
-                ((mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR &&
-                !mSettingsManager.isFrontIDHFRSupported()))) {
-            mFrontBackSwitcher.setVisibility(View.INVISIBLE);
-        }
     }
 
     /**
@@ -3384,11 +3392,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             hideFocusAssistText();
             mModule.onFocusAssistModeStart(mFocusPointInPreview.x, mFocusPointInPreview.y);
         });
-        float textSize = mFocusAssistTextView.getTextSize();
-        float offset = textSize * 2;
         int circleSize = mPieRenderer.getSize() / 2;
-        mFocusAssistTextView.setX(mFocusPoint.x - circleSize);
-        mFocusAssistTextView.setY(mFocusPoint.y - circleSize - offset);
+        mFocusAssistTextView.setReferCircle(mFocusPoint.x, mFocusPoint.y, circleSize);
         mFocusAssistTextView.setVisibility(View.VISIBLE);
         if (mFAImageView == null) {
             mFAImageView = mRootView.findViewById(R.id.focus_assist_iv);
@@ -3417,6 +3422,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         params.topMargin = topMargin;
         mFAImageView.setLayoutParams(params);
         mFAImageView.setVisibility(View.VISIBLE);
+
+        Rect displayRegion = new Rect(surfaceViewLocation[0], surfaceViewLocation[1], mPreviewHeight, mPreviewWidth);
+        mFocusAssistTextView.setDisplayRegion(displayRegion);
+        if (mEvSeekBar != null) {
+            mFocusAssistTextView.setExtraOffset(0f, mEvSeekBar.getHeight());
+        }
+        mFocusAssistTextView.setOrientation(mOrientation, false);
     }
 
     public void hideFocusAssistText() {
@@ -3875,6 +3887,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mSceneModeInstructionalDialog.dismiss();
             mSceneModeInstructionalDialog = null;
             showSceneInstructionalDialog(orientation);
+        }
+
+        if (mFocusAssistTextView != null && mFocusAssistTextView.getVisibility() == View.VISIBLE) {
+            mFocusAssistTextView.setOrientation(orientation, animation);
         }
     }
 
