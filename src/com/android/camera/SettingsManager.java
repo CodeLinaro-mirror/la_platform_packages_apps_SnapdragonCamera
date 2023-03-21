@@ -3221,6 +3221,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 mValuesMap.get(KEY_FLASH_MODE) != null &&
                 isSupportedForMode();
     }
+    public boolean isFlashSupported() {
+        return mCharacteristics.get(mCaptureModule.getMainCameraId()).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) &&
+                mValuesMap.get(KEY_FLASH_MODE) != null &&
+                isSupportedForMode();
+    }
 
 	private boolean isSupportedForMode(){
         if((CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB ||
