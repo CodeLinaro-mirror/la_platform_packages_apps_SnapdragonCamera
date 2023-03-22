@@ -7257,6 +7257,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mBurstFps = 0;
         mPerformanceGapData.clear();
         cancelTouchFocus();
+        mUI.clearFocus();
         mPaused = true;
         if (mSurfaceReadyLock.availablePermits() == 0) {
             mSurfaceReadyLock.release();
@@ -14856,6 +14857,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(mLockAFAE != LOCK_AF_AE_STATE_NONE) {
             mLockAFAE = LOCK_AF_AE_STATE_NONE;
             applyIsAfLock(false);
+            mUI.clearFocus();
             applySettingsForUnlockExposure(mPreviewRequestBuilder[CURRENT_ID], CURRENT_ID);
             updateLockAFAEVisibility();
         }
