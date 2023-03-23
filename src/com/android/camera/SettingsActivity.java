@@ -2015,13 +2015,19 @@ public class SettingsActivity extends PreferenceActivity {
                 SettingsManager.KEY_EIS_VALUE);
         if (!mSettingsManager.isEISSupported(mSettingsManager.getVideoSize(),
                 mSettingsManager.getVideoFPS())) {
-            disableEis = true;
+            if (eisPref != null) {
+                eisPref.setValue("disable");
+                disableEis = true;
+            }
         }
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         ListPreference selectModePref = (ListPreference) findPreference(SettingsManager.KEY_SELECT_MODE);
         if (selectModePref != null) {
             if (selectModePref.getValue().equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
-                disableEis = true;
+                if (eisPref != null) {
+                    eisPref.setValue("disable");
+                    disableEis = true;
+                }
             }
             ListPreference hvx_shdr = (ListPreference)findPreference(
                     SettingsManager.KEY_HVX_SHDR);
@@ -2030,14 +2036,13 @@ public class SettingsActivity extends PreferenceActivity {
             if(eisPref != null) {
                 if ((hvx_shdr != null && Integer.valueOf(hvx_shdr.getValue()) > 0) ||
                         (hvx_mfhdr != null && Integer.valueOf(hvx_mfhdr.getValue()) > 0)) {
+                    eisPref.setValue("V3");
                     disableEis = true;
                 }
             }
         }
         if (eisPref != null) {
             if (disableEis) {
-                mSettingsManager.setValue(SettingsManager.KEY_EIS_VALUE, "disable");
-                eisPref.setValue("disable");
                 eisPref.setEnabled(false);
             } else {
                 eisPref.setEnabled(true);
