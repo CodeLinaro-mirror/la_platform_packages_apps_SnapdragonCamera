@@ -1738,6 +1738,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference multireprocess_output = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_OUTPUT);
         ListPreference ml_video = mPreferenceGroup.findPreference(KEY_ML_VIDEO);
         ListPreference inStantZoom = mPreferenceGroup.findPreference(KEY_INSTANT_ZOOM);
+        ListPreference aide = mPreferenceGroup.findPreference(KEY_AI_DENOISER);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -2060,6 +2061,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (vsr != null) {
             if (!isVSRSupported()) {
                 removePreference(mPreferenceGroup, KEY_VSR);
+            }
+        }
+
+        if(aide != null){
+            if(!isAIDE2Supported()){
+                mFilteredKeys.add(aide.getKey());
+                removePreference(mPreferenceGroup, KEY_AI_DENOISER_FORMAT);
+                removePreference(mPreferenceGroup, KEY_AI_DENOISER_MODE);
             }
         }
 
