@@ -241,7 +241,7 @@ public class CameraActivity extends Activity
     private ShareActionProvider mPanoramaShareActionProvider;
     private Intent mPanoramaShareIntent;
     private SettingsManager mSettingsManager;
-
+    private String mThumbnailPath;
 
     private final int DEFAULT_SYSTEM_UI_VISIBILITY = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
@@ -809,6 +809,14 @@ public class CameraActivity extends Activity
         if (!videoOnly || (mCurrentModule instanceof VideoModule) ||
                 (mCurrentModule instanceof MultiCameraModule) ||
                 ((mCurrentModule instanceof CaptureModule) && videoOnly)) {
+            LocalDataAdapter adapter = getDataAdapter();
+            ImageData img = adapter.getImageData(1);
+            if(img != null) {
+                String path = getPathFromUri(img.getContentUri());
+                if (path != null && path.equals(mThumbnailPath) && !path.contains("heic")) {
+                    return;
+                }
+            }
             (new UpdateThumbnailTask(null, true)).execute();
         }
     }
@@ -839,6 +847,7 @@ public class CameraActivity extends Activity
             if (path == null) {
                 return null;
             } else {
+                mThumbnailPath = path;
                 if (path.endsWith(Storage.HEIF_POSTFIX)) {
                     mOrientation = getOrientationFromUri(uri);
                 }
