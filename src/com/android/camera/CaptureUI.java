@@ -329,8 +329,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TextView mStatsNNResultText;
 
     private LinearLayout mZoomLinearLayout;
-
-    private TextView mZoomSwitch;
     private int mZoomIndex = 0;
     private TextView mPropSwitch;
 
@@ -693,8 +691,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         } else {
             mAFViewRender.setVisible(false);
         }
-        mZoomSwitch = (TextView)mRootView.findViewById(R.id.zoom_switch);
-        mZoomSwitch.setOnClickListener(new View.OnClickListener() {
+        mZoomValueText.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String[] entries;
@@ -737,7 +734,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     frame = ZOOM_SMOOTH_FRAME_MAX;
                 module.updateZoomSmooth(from,to,frame);
                 if(mModule.onZoomChanged(to)) {
-                    mZoomSwitch.setText(entries[mZoomIndex]);
+                    mZoomValueText.setText(entries[mZoomIndex]);
                     if (mZoomRenderer != null) {
                         mZoomRenderer.setZoom(to);
                     }
@@ -1011,8 +1008,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void enableZoomSeekBar(boolean enable) {
        if (mZoomSeekBar != null)
            mZoomSeekBar.setEnabled(enable);
-       if(mZoomSwitch != null){
-           mZoomSwitch.setEnabled(enable);
+       if(mZoomValueText != null){
+           mZoomValueText.setEnabled(enable);
        }
     }
 
@@ -1042,12 +1039,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
-    public void hideZoomSwitch(){
-        if (mZoomSwitch != null){
-            mZoomSwitch.setVisibility(View.GONE);
-        }
-    }
-
     public void hideZoomSeekBar() {
         if (mZoomLinearLayout != null) {
             mZoomLinearLayout.setVisibility(View.GONE);
@@ -1057,9 +1048,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.GONE);
-        }
-        if (mZoomSwitch != null) {
-            mZoomSwitch.setVisibility(View.GONE);
         }
     }
 
@@ -1072,16 +1060,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.VISIBLE);
-        }
-        if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                isRTBModeInSelectMode()) {
-            if (mZoomSwitch != null) {
-                mZoomSwitch.setVisibility(View.GONE);
-            }
-        } else {
-            if (mZoomSwitch != null) {
-                mZoomSwitch.setVisibility(View.VISIBLE);
-            }
         }
         if(mFilterMenuStatus == FILTER_MENU_ON){
             hideZoomSeekBar();
@@ -1382,13 +1360,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
 
         mZoomIncrease = true;
-        mZoomSwitch.setText("1x");
-        if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                isRTBModeInSelectMode()) {
-            mZoomSwitch.setVisibility(View.GONE);
-        } else {
-            mZoomSwitch.setVisibility(View.VISIBLE);
-        }
         mFaceView.initMode();
         hideFrontBackSwither();
         if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
@@ -1401,16 +1372,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mCameraControls.setProMode(promode);
         if (promode) {
             mVideoButton.setVisibility(View.INVISIBLE);
-            mZoomSwitch.setVisibility(View.INVISIBLE);
             //mFlashButton.setVisibility(View.INVISIBLE);
         } else if (mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL &&
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO) {
             mVideoButton.setVisibility(View.VISIBLE);
-        } else if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                isRTBModeInSelectMode()){
-            mZoomSwitch.setVisibility(View.GONE);
-        } else {
-            mZoomSwitch.setVisibility(View.VISIBLE);
         }
     }
 
