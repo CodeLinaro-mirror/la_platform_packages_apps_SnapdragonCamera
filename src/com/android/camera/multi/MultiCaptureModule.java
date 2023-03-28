@@ -126,7 +126,10 @@ public class MultiCaptureModule implements MultiCamera {
             new CaptureRequest.Key<>(
                     "org.codeaurora.qcamera3.sessionParameters.overrideResourceCostValidation",
                     byte.class);
-
+    private static final CaptureRequest.Key<Byte> enableHMEMode =
+            new CaptureRequest.Key<>(
+                    "org.codeaurora.qcamera3.sessionParameters.EnableHMEMode",
+                    byte.class);
     /**
      * {@link CaptureRequest.Builder} for the camera preview
      */
@@ -527,7 +530,7 @@ public class MultiCaptureModule implements MultiCamera {
                             Log.v(TAG, " CameraCaptureSession onConfigured id :" + id);
                             // When the session is ready, we start displaying the preview.
                             mCameraCaptureSessions[id] = cameraCaptureSession;
-                            applyFaceDetection(mPreviewRequestBuilders[id]);
+                            applyFaceDetection(mPreviewRequestBuilders[id], id);
                             updateFaceDetection(id);
                             setDisplayOrientation(id);
                             try {
@@ -549,14 +552,7 @@ public class MultiCaptureModule implements MultiCamera {
                         }
                     };
 
-            try {
-                final byte enable = 1;
-                mPreviewRequestBuilders[id].set(override_resource_cost_validation, enable);
-                Log.v(TAG, " set" + override_resource_cost_validation + " is 1");
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            }
-
+            applySessionParameters(mPreviewRequestBuilders[id], id);
             List<OutputConfiguration> outConfigurations = new ArrayList<>(2);
             outConfigurations.add(new OutputConfiguration(surface));
             outConfigurations.add(new OutputConfiguration(mImageReaders[id].getSurface()));
@@ -565,19 +561,21 @@ public class MultiCaptureModule implements MultiCamera {
                     SessionConfiguration.SESSION_REGULAR, outConfigurations,
                     new HandlerExecutor(mCameraHandler), stateCallback);
             sessionConfiguration.setSessionParameters(mPreviewRequestBuilders[id].build());
-            try {
-                CaptureRequest captureRequest = sessionConfiguration.getSessionParameters();
-                Log.v(TAG, " override_resource_cost_validation result: " +
-                        captureRequest.get(override_resource_cost_validation));
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            }
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
         return sessionConfiguration;
     }
 
+    private void applySessionParameters(CaptureRequest.Builder builder, int id){
+        try {
+            builder.set(override_resource_cost_validation, (byte)(0x01));
+            Log.v(TAG, " set" + override_resource_cost_validation + " is 1");
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+        applyHMEMode(builder, id);
+    }
 
     private class HandlerExecutor implements Executor {
         private final Handler ihandler;
@@ -666,7 +664,7 @@ public class MultiCaptureModule implements MultiCamera {
 
     private void updateFaceDetection(int id) {
         boolean faceDetection = mLocalSharedPref.getBoolean(
-                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION, false);
+                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION_ + id, false);
         Log.v(TAG, " updateFaceDetection faceDetection :" + faceDetection);
         int index = mCameraIDList.indexOf(String.valueOf(id));
 
@@ -851,13 +849,7 @@ public class MultiCaptureModule implements MultiCamera {
                 int index = mCameraIDList.indexOf(String.valueOf(cameraId));
                 captureBuilder.addTarget(mMultiCameraUI.getSurfaceViewList().get(
                         index).getHolder().getSurface());
-                try {
-                    final byte enable = 1;
-                    captureBuilder.set(override_resource_cost_validation, enable);
-                    Log.v(TAG, " capture set" + override_resource_cost_validation + " is 1");
-                } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
-                }
+                applySessionParameters(captureBuilder, cameraId);
                 applySettingsForCapture(captureBuilder, cameraId);
                 // Use the same AE and AF modes as the preview.
                 captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
@@ -968,10 +960,10 @@ public class MultiCaptureModule implements MultiCamera {
         request.set(CaptureRequest.JPEG_QUALITY, (byte) jpegQuality);
     }
 
-    private void applyFaceDetection(CaptureRequest.Builder request) {
+    private void applyFaceDetection(CaptureRequest.Builder request, int id) {
         boolean FdEnable = mLocalSharedPref.getBoolean(
-                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION, false);
-        Log.v(TAG, " applyFaceDetection FdEnable :" + FdEnable);
+                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION_ +id, false);
+        Log.v(TAG, " applyFaceDetection FdEnable :" + FdEnable + " for camera id :" + id);
         try {
             int modeValue = CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF;
             if (FdEnable){
@@ -980,6 +972,18 @@ public class MultiCaptureModule implements MultiCamera {
             Log.v(TAG, " applyFaceDetection modeValue :" + modeValue);
             request.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, modeValue);
         } catch (IllegalArgumentException e) {
+        }
+    }
+
+    private void applyHMEMode(CaptureRequest.Builder request, int id){
+        try {
+            boolean hmeMode = mLocalSharedPref.getBoolean(
+                    MultiSettingsActivity.KEY_MULTI_HME_MODE_ +id, false);
+            final byte value = (byte)(hmeMode? 0x01 : 0x00);
+            Log.v(TAG, " set " + value + " for enableHMEMode, current id is :" +id);
+            request.set(enableHMEMode, value);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
         }
     }
 
