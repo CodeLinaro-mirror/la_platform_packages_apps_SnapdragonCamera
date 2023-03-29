@@ -2625,10 +2625,14 @@ public class SettingsActivity extends PreferenceActivity {
             ListPreference hdrSceneDetection = (ListPreference) findPreference(
                     SettingsManager.KEY_AUTO_HDR);
             if (captureMFNR.equals("1")) {
-                hdrSceneDetection.setValue("disable");
-                hdrSceneDetection.setEnabled(false);
+                if (hdrSceneDetection != null) {
+                    hdrSceneDetection.setValue("disable");
+                    hdrSceneDetection.setEnabled(false);
+                }
             } else {
-                hdrSceneDetection.setEnabled(true);
+                if (hdrSceneDetection != null) {
+                    hdrSceneDetection.setEnabled(true);
+                }
             }
         }
     }
