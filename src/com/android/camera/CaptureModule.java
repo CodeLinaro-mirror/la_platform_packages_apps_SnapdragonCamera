@@ -10009,18 +10009,32 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mSettingsManager.isMultiCameraEnabled()) {
             Set<String> mfnr_ids = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_MFNR);
+            int noiseReduMode = CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY;
             if (mfnr_ids != null){
-                builder.set(CaptureRequest.NOISE_REDUCTION_MODE,
-                        CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY);
                 for (String id:mfnr_ids){
                     try {
                         builder.setPhysicalCameraKey(CaptureRequest.NOISE_REDUCTION_MODE,
-                                CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY,id);
+                                noiseReduMode,id);
                     } catch (Exception e) {
                         Log.w(TAG, EXCEPTION_LOG,"capture can`t find vendor NOISE_REDUCTION_MODE tag ");
                     }
                 }
+                Set<String> allPhysicalIds = mSettingsManager.getAllPhysicalCameraId();
+                String value = mSettingsManager.getValue(SettingsManager.KEY_PHYSICAL_MFNR);
+                for (String physical : allPhysicalIds) {
+                    if (!value.contains(physical)) {
+                        try {
+                            builder.setPhysicalCameraKey(CaptureRequest.NOISE_REDUCTION_MODE,
+                                    CameraMetadata.NOISE_REDUCTION_MODE_FAST,physical);
+                        } catch (Exception e) {
+                            Log.w(TAG, EXCEPTION_LOG,"capture can`t find vendor NOISE_REDUCTION_MODE tag ");
+                        }
+                    }
+                }
+            }else{
+                noiseReduMode = CameraMetadata.NOISE_REDUCTION_MODE_FAST;
             }
+            builder.set(CaptureRequest.NOISE_REDUCTION_MODE,noiseReduMode);
         } else {
             boolean isMfnrEnable = isMFNREnabled();
             int noiseReduMode = (isMfnrEnable ? CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY :
