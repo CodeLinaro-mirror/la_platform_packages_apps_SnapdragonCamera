@@ -1468,6 +1468,7 @@ public class SettingsActivity extends PreferenceActivity {
                 removePreferenceGroup("video", parentPre);
                 if (mDeveloperMenuEnabled && developer != null) {
                     removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
+                    removePreference(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC, developer);
                     if (!DEV_LEVEL_ALL) {
                         removePreference(SettingsManager.KEY_SWITCH_CAMERA, developer);
                     }
@@ -1554,7 +1555,7 @@ public class SettingsActivity extends PreferenceActivity {
                 removePreference(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> cinematicList = new ArrayList<>();
-                    cinematicList.add(SettingsManager.KEY_STATSNN_CONTROL);
+                    cinematicList.add(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC);
                     cinematicList.add(SettingsManager.KEY_CINEMATIC_DEBUG);
                     addDeveloperOptions(developer, cinematicList);
                 }
@@ -2642,20 +2643,10 @@ public class SettingsActivity extends PreferenceActivity {
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         if (mode == CaptureModule.CameraMode.CINEMATIC) {
             String t2t = mLocalSharedPref.getString(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "on");
-            String statsNN = mLocalSharedPref.getString(SettingsManager.KEY_STATSNN_CONTROL, "1");
             SwitchPreference t2TFocus = (SwitchPreference) findPreference(
                     SettingsManager.KEY_TOUCH_TRACK_FOCUS);
-            ListPreference statsNNPref = (ListPreference) findPreference(
-                    SettingsManager.KEY_STATSNN_CONTROL);
             if (t2t.equals("on") || fromRestore) {
                 t2TFocus.setChecked(true);
-            }
-            if (statsNNPref != null) {
-                if (fromRestore) {
-                    statsNNPref.setValue("1");
-                } else {
-                    statsNNPref.setValue(statsNN);
-                }
             }
         }
 
