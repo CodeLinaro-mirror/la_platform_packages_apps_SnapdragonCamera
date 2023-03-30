@@ -3111,17 +3111,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isInSensorZoomSupported() {
-        int result = 0;
+        boolean isSupported = false;
         try {
-            result = mCharacteristics.get(getCurrentCameraId()).get(
-                    CaptureModule.support_insensor_zoom);
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
-                    CaptureModule.support_insensor_zoom.toString());
+            isSupported = isAvailableUseCase(mCameraId, CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_CROPPED_RAW);
+        } catch (IllegalArgumentException | NoSuchFieldError e) {
+            Log.v(TAG, EXCEPTION_LOG," applyCroppedRaw didn`t find SCALER_AVAILABLE_STREAM_USE_CASES_CROPPED_RAW");
         }
-        Log.d(TAG, " isInSensorZoomSupported result :" + result);
-        //return (result == 1);
-        return true;
+        Log.d(TAG, " isInSensorZoomSupported result :" + isSupported);
+        return isSupported;
     }
 
     public boolean isMLVideoSupported() {
