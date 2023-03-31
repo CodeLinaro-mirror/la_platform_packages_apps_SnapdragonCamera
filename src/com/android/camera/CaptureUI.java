@@ -2161,9 +2161,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFlashButton.init(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR);
-        enableView(mFlashButton, SettingsManager.KEY_FLASH_MODE);
     }
-
+    public void updateFlashButton(boolean enable){
+        if (mFlashButton.getVisibility()== View.VISIBLE) {
+            mFlashButton.setEnabled(enable);
+        }
+    }
     public void hideFlashButton() {
         mFlashButton.setVisibility(View.GONE);
         String key;
@@ -2595,7 +2598,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         }
     }
-
     public void addFilterMode() {
         if (mSettingsManager.getValue(SettingsManager.KEY_COLOR_EFFECT) == null)
             return;
