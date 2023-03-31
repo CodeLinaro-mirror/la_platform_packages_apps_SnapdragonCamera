@@ -3662,7 +3662,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         updateSettingDependencyId();
         mUI = new CaptureUI(activity, this, parent);
         mUI.initializeControlByIntent();
-
         mFocusStateListener = new FocusStateListener(mUI);
         mLocationManager = new LocationManager(mActivity, this);
     }
@@ -3748,7 +3747,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     }
-
+    public void updateFlashIcon(){
+        String qll = mSettingsManager.getValue(SettingsManager.KEY_QLL);
+        if(isLongShotSettingEnabled() || mSettingsManager.isMultiCameraEnabled() ||
+                (qll != null && qll.equals("1"))){
+            mUI.updateFlashButton(false);
+        }else{
+            mUI.updateFlashButton(true);
+        }
+    }
     private void updateSettingDependencyId(){
         List<String> supported = mSettingsManager.getSupportedVideoSize(mLogicalId);
         if(!MCXMODE || supported.size() <= 0){
@@ -7219,6 +7226,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         updateZoomSeekBarVisible();
         updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
         mUI.showRelatedIcons(mCurrentSceneMode.mode);
+        updateFlashIcon();
         mCurrentSessionClosed = true;
         if(mIsCloseCamera) {
             mOpenCameraTimes = 3;
@@ -7695,7 +7703,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         return mCurrentSceneMode.getCurrentId();
     }
-
     public boolean isSingleCameraMode(){
         if(CaptureModule.FRONT_ID==mCurrentSceneMode.getCurrentId())
             return true;
