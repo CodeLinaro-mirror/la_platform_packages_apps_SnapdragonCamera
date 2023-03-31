@@ -1511,7 +1511,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     faces = result.get(CaptureResult.STATISTICS_FACES);
                 }
-                Log.d(FD_TAG,BIG_LOG,"onCaptureCompleted Detected Face size = " + Integer.toString(faces == null ? 0 : faces.length));
+                Log.d(FD_TAG,BIG_LOG,"onCaptureCompleted Detected Face size = " + Integer.toString(
+                    faces == null ? 0 : faces.length) + ", Frame Number  :" + mVideoFrameNumber);
                 if (faces != null && mSettingsManager.isFDRenderingAtPreview() && isCinematicDebugOn()
                         && !mSettingsManager.isMultiCameraEnabled()) {
                     if (isBsgcDetecionOn() || isFacialContourOn() || isFacePointOn()
