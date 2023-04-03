@@ -10944,7 +10944,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (PersistUtil.needEndOfStream()) {
             setEndOfStream(false, true);
         }
-        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        if (!isHighSpeedRateCapture()) {
+            mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        }
         for (int i =0; i < mPhysicalMediaRecorders.length; i++) {
             if (mPhysicalMediaRecorders[i] != null) {
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
