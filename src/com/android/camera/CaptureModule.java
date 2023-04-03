@@ -3120,13 +3120,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                             Log.i(TAG, "capturesession - onConfigured "+ id);
                             mCurrentSessionClosed = false;
                             if(mPreviewOutputConfiguration != null) {
-                                mPreviewOutputConfiguration.addSurface(getPreviewSurfaceForSession(id));
-                                try {
-                                    List<OutputConfiguration> finalizeOutputConfigs = new ArrayList<>();
-                                    finalizeOutputConfigs.add(mPreviewOutputConfiguration);
-                                    cameraCaptureSession.finalizeOutputConfigurations(finalizeOutputConfigs);
-                                } catch (Exception e) {
-                                    Log.e(TAG, "finalizeOutputConfigurations with exception:" + e.toString());
+                                Surface previewSur = getPreviewSurfaceForSession(id);
+                                if (mSurfaceReady && previewSur.isValid()) {
+                                    mPreviewOutputConfiguration.addSurface(previewSur);
+                                    try {
+                                        List<OutputConfiguration> finalizeOutputConfigs = new ArrayList<>();
+                                        finalizeOutputConfigs.add(mPreviewOutputConfiguration);
+                                        cameraCaptureSession.finalizeOutputConfigurations(finalizeOutputConfigs);
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "finalizeOutputConfigurations with exception:" + e.toString());
+                                    }
                                 }
                             }
                             setCameraModeSwitcherAllowed(true);
