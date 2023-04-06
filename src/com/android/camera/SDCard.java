@@ -32,10 +32,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.storage.StorageVolume;
 import android.os.storage.StorageManager;
+import android.provider.MediaStore;
 import android.util.Log;
 
 import java.io.File;
@@ -53,6 +55,9 @@ public class SDCard {
     private String mRawpath = null;
     private static SDCard sSDCard;
 
+    public static Uri sSdcardImageBaseUri = null;
+    public static Uri sSdcardVideoBaseUri = null;
+
     public boolean isWriteable() {
         if (mVolume == null) return false;
         final String state = getSDCardStorageState();
@@ -67,8 +72,7 @@ public class SDCard {
             return null;
         }
         if (mPath == null && mVolume.getDirectory() != null) {
-            mPath = mVolume.getDirectory().getAbsolutePath() + "/DCIM/Camera";
-            Log.i(TAG, "getDirectory " + mPath);
+            mPath = mVolume.getDirectory() + "/DCIM/Camera";
         }
         return mPath;
     }
@@ -114,6 +118,14 @@ public class SDCard {
                 volumes.get(VOLUME_SDCARD_INDEX) : null;
         mPath = null;
         mRawpath = null;
+        if (mVolume != null) {
+            String mediaStoreVolumeName = mVolume.getMediaStoreVolumeName();
+            sSdcardImageBaseUri = MediaStore.Images.Media.getContentUri(mediaStoreVolumeName);
+            sSdcardVideoBaseUri = MediaStore.Video.Media.getContentUri(mediaStoreVolumeName);
+        } else {
+            sSdcardImageBaseUri = null;
+            sSdcardVideoBaseUri = null;
+        }
     }
 
     private void registerMediaBroadcastreceiver(Context context) {
