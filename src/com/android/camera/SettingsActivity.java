@@ -1558,6 +1558,8 @@ public class SettingsActivity extends PreferenceActivity {
                     ArrayList<String> cinematicList = new ArrayList<>();
                     cinematicList.add(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC);
                     cinematicList.add(SettingsManager.KEY_CINEMATIC_DEBUG);
+                    cinematicList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
+                    cinematicList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                     addDeveloperOptions(developer, cinematicList);
                 }
                 break;
