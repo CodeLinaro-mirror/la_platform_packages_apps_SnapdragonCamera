@@ -666,6 +666,8 @@ public class Camera2FaceView extends FaceView {
         mFaces = null;
         mExFaces = null;
         mMaskNums = 0;
+        mHeadNums = 0;
+        mTorsoInts = null;
         invalidate();
     }
     @Override
@@ -676,6 +678,8 @@ public class Camera2FaceView extends FaceView {
         mExFaces = null;
         mColor = mFocusingColor;
         mMaskNums = 0;
+        mHeadNums = 0;
+        mTorsoInts = null;
         invalidate();
     }
 }
