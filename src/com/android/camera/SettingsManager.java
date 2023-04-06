@@ -1725,6 +1725,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference hvx_mfhdr = mPreferenceGroup.findPreference(KEY_HVX_MFHDR);
         ListPreference hvx_shdr = mPreferenceGroup.findPreference(KEY_HVX_SHDR);
         ListPreference ml_video = mPreferenceGroup.findPreference(KEY_ML_VIDEO);
+        ListPreference previewStabilization = mPreferenceGroup.findPreference(KEY_PREVIEW_STABILIZATION);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -2051,6 +2052,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (vsr != null) {
             if (!isVSRSupported()) {
                 removePreference(mPreferenceGroup, KEY_VSR);
+            }
+        }
+
+        if(previewStabilization != null){
+            if(!isPreviewStabalizationSupported()){
+                removePreference(mPreferenceGroup, KEY_PREVIEW_STABILIZATION);
             }
         }
 
@@ -3045,6 +3052,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return result > 1;
         }
         return (result > 0);
+    }
+
+    public boolean isPreviewStabalizationSupported() {
+        byte[] availableVideoStabilizationModes = null;
+        try {
+            availableVideoStabilizationModes = mCharacteristics.get(getCurrentCameraId()).get(
+                    CaptureModule.availableVideoStabilizationModes);
+            if(availableVideoStabilizationModes != null){
+                for(byte mode: availableVideoStabilizationModes){
+                    if(mode == 2){
+                        return true;
+                    }
+                }
+            }
+        } catch (IllegalArgumentException exception) {
+            Log.w(TAG,EXCEPTION_LOG,exception.toString());
+        }
+        return false;
     }
 
     public boolean isDynamicRangeTenBitSupported() {
