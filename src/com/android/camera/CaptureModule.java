@@ -4430,25 +4430,39 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         mUI.enableShutter(false);
+        int cameraId = getMainCameraId();
         boolean isflashRequired = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
         if(mSettingsManager.isTorchHDREnabled(isflashRequired,mPreviewCaptureResult)){
             mCaptureTorchTrigger = true;
-            applyFlash(mPreviewRequestBuilder[getMainCameraId()], getMainCameraId());
+            applyFlash(mPreviewRequestBuilder[cameraId], getMainCameraId());
             try{
-                mCaptureSession[getMainCameraId()].setRepeatingRequest(
-                mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback,mCameraHandler);
+                mCaptureSession[cameraId].setRepeatingRequest(
+                mPreviewRequestBuilder[cameraId].build(), mCaptureCallback,mCameraHandler);
             } catch (CameraAccessException | IllegalStateException e) {
                Log.e(TAG,e.toString());
             }
         }
+        Integer aeState = CameraMetadata.CONTROL_AE_STATE_INACTIVE;
+        if (mPreviewCaptureResult != null) {
+            aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
+        }
         if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) &&
-                !isFlashOn(getMainCameraId()) && (mPreviewCaptureResult != null &&
-                mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) !=
-                     CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED &&
+                !isFlashOn(cameraId) && (aeState != CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED &&
                 mPreviewCaptureResult.getRequest().get(CaptureRequest.CONTROL_AE_LOCK) != Boolean.TRUE || mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE)) {
-            takeZSLPictureInHAL();
+            // Flash mode is off ==> then send capture intent: 2
+            if (isFlashOff(cameraId)) {
+                takeZSLPictureInHAL();
+            // if AE state is CONTROL_AE_STATE_PRECAPTURE 5  ==> then send AEC lock true.
+            } else if (aeState != null && aeState == CameraMetadata.CONTROL_AE_STATE_PRECAPTURE) {
+                lockExposure(cameraId);
+            // if AE state is CONTROL_AE_STATE_CONVERGED 3 ==> then send capture intent: 2
+            } else if (aeState != null && aeState == CameraMetadata.CONTROL_AE_STATE_LOCKED) {
+                takeZSLPictureInHAL();
+            // if AE state is other than 3 & 5  ==> then send AFTrigger followed by AEtrigger
+            } else {
+                lockFocus(cameraId);
+            }
         } else {
-            int cameraId = getMainCameraId();
             if (takeZSLPicture(cameraId)) {
                 return;
             }
@@ -4459,7 +4473,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     parallelLockFocusExposure(cameraId);
                 } else{
                     if (mPreviewCaptureResult != null) {
-                        Integer aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
                         isFlashRequiredInDriver = aeState != null &&
                                 aeState == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
                     }
