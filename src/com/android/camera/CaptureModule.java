@@ -28,6 +28,7 @@ package com.android.camera;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -2236,8 +2237,35 @@ public class CaptureModule implements CameraModule, PhotoController,
                 return;
             }
             if (null != mActivity) {
-                Toast.makeText(mActivity,"open camera error id =" + id+"," +
-                                "error reason:"+error,Toast.LENGTH_LONG).show();
+                String errmsg = ""+error;
+                switch(error) {
+                    case 1:
+                        errmsg = "ERROR_CAMERA_IN_USE:" +
+                                "please close the application who is using camera.";
+                        break;
+                    case 2:
+                        errmsg = "ERROR_MAX_CAMERAS_IN_USE:" +
+                                "More camera devices cannot be opened until previous instances are closed.";
+                        break;
+                    case 3:
+                        errmsg = "ERROR_CAMERA_DISABLED:" +
+                                "Please check which application USES_POLICY_DISABLE_CAMERA.";
+                        break;
+                    case 4:
+                        errmsg = "ERROR_CAMERA_DEVICE:The camera device needs to be re-opened to be used again.";
+                        break;
+                    case 5:
+                        errmsg = "ERROR_CAMERA_SERVICE:" +
+                                "The Android device may need to be shut down and restarted" +
+                                " to restore camera function, or there may be a persistent hardware problem.";
+                        break;
+                }
+                final AlertDialog.Builder alert = new AlertDialog.Builder(mActivity);
+                alert.setMessage("Open camera error!Camera id:"+ id+"\nError reason is "+errmsg);
+                Dialog dialog = alert.show();
+                mHandler.postDelayed(() -> {
+                    dialog.dismiss();
+                }, 5000L);
                 mActivity.finish();
             }
             //workaround for removing task bug
