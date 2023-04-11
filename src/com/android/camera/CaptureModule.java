@@ -6746,8 +6746,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mTakingPicture[id] = false;
             enableShutterAndVideoOnUiThread(id);
-        } catch (NullPointerException | IllegalStateException | CameraAccessException e) {
-            Log.w(TAG, "Session is already closed");
+        } catch (NullPointerException | IllegalStateException | CameraAccessException | IllegalArgumentException e) {
+            Log.w(TAG, "Session is already closed or session had been changed");
         }
     }
 
