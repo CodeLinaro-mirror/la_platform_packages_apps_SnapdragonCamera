@@ -4185,6 +4185,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSettingsManager.init();
         updateSettingDependencyId();
         mPostProcessor = new PostProcessor(mActivity, this);
+        mPostProcessor.nativeEnablePerfLock();
         mFrameProcessor = new FrameProcessor(mActivity, this);
 
         mContentResolver = mActivity.getContentResolver();
@@ -8188,6 +8189,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCameraRender != null) {
             mCameraRender.destroy();
         }
+        mPostProcessor.nativePerfLockRelease(1);
     }
 
     @Override
@@ -15260,6 +15262,10 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void restartAll() {
+        int duration = 3000;
+        int[] list = {0x40400000, 0x1, 0x40C00000, 0x1, 0x40804000, 0X687, 0x40800000, 0X687,
+                0x40804100, 0X660, 0x40800100, 0X660, 0x40800200, 0X8C6, 0x40804200, 0X8C6};
+        mPostProcessor.nativePerfLockAcq(1, duration, list, list.length);
         mResumed = false;
         int nextCameraId = getNextScreneModeId(mNextModeIndex);
         Log.i(TAG, "restart all CURRENT_ID :" + CURRENT_ID + " nextCameraId :" + nextCameraId +",mLockAFAE :" +  mLockAFAE);
