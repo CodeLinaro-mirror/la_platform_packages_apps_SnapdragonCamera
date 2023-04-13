@@ -2252,6 +2252,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 filterVideoDuration();
             }
             updatePictureAndVideoSize();
+        } else if (KEY_SELECT_MODE.equals(pref.getKey())) {
+            mCaptureModule.reinit();
         }
     }
 

@@ -375,6 +375,7 @@ public class SettingsActivity extends PreferenceActivity {
                         pref.getKey().equals(SettingsManager.KEY_SELECT_MODE) ||
                         pref.getKey().equals(SettingsManager.KEY_SWITCH_CAMERA)) {
                     mSettingsManager.updatePictureAndVideoSize();
+                    updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                     updateEISPreference();
                 }
