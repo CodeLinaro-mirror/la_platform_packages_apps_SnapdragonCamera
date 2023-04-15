@@ -324,6 +324,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_PHYSICAL_RAW_REPROCESS = "pref_camera2_physical_raw_reprocess_key";
     public static final String KEY_RAWINFO_TYPE = "pref_camera2_rawinfo_type_key";
     public static final String KEY_RAW_FORMAT_TYPE = "pref_camera2_raw_format_key";
+    public static final String KEY_ML_VIDEO = "pref_camera2_mlvideo_key";
 
     public static final String KEY_PREVIEW_PROFILE= "pref_camera2_preview_profile_key";
     public static final String KEY_CAPTURE_PROFILE= "pref_camera2_captrue_profile_key";
@@ -580,7 +581,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             videoQualityPref.setEntryValues(mContext.getResources().getStringArray(
                     R.array.pref_camera2_video_quality_entryvalues));
             filterUnsupportedOptions(videoQualityPref,getSupportedVideoSize(
-                    getCurrentCameraId()));
+                    mCaptureModule.getMainCameraId()));
         }
     }
     public void updateMultiReprocessInputOutput() {
@@ -1723,6 +1724,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference multireprocess_output = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_OUTPUT);
         ListPreference hvx_mfhdr = mPreferenceGroup.findPreference(KEY_HVX_MFHDR);
         ListPreference hvx_shdr = mPreferenceGroup.findPreference(KEY_HVX_SHDR);
+        ListPreference ml_video = mPreferenceGroup.findPreference(KEY_ML_VIDEO);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -2037,6 +2039,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (inSensorZoom != null) {
             if (!isInSensorZoomSupported()) {
                 removePreference(mPreferenceGroup, KEY_INSENSOR_ZOOM);
+            }
+        }
+
+        if(ml_video != null){
+            if (!isMLVideoSupported()) {
+                mFilteredKeys.add(ml_video.getKey());
             }
         }
 
@@ -3055,6 +3063,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Log.d(TAG, " isInSensorZoomSupported result :" + result);
         //return (result == 1);
         return true;
+    }
+
+    public boolean isMLVideoSupported() {
+        boolean isSupported = false;
+        try {
+            isSupported = (mCharacteristics.get(mCameraId).get(CaptureModule.isMLVideoSupported)) == 1;
+        } catch (IllegalArgumentException | NullPointerException e) {
+            Log.w(TAG, "cannot find vendor tag: " +
+                    CaptureModule.isMLVideoSupported.toString());
+        }
+        Log.d(TAG,"isMLVideoSupported: " + isSupported);
+        return isSupported;
     }
 
     public boolean isAutoExposureRegionSupported(int id) {

@@ -211,11 +211,17 @@
   {
     "0":{"pref_camera2_raw_reprocess_key":"0"},
     "10":{"pref_camera2_longshot_key":"off",
-           "pref_camera2_manualhdr_key":"off",
-           "pref_camera2_zsl_key":"hal-zsl"},
+      "pref_camera2_manualhdr_key":"off",
+      "pref_camera2_zsl_key":"hal-zsl"},
     "16":{"pref_camera2_longshot_key":"off",
-          "pref_camera2_manualhdr_key":"off",
-          "pref_camera2_zsl_key":"hal-zsl"}
+      "pref_camera2_manualhdr_key":"off",
+      "pref_camera2_zsl_key":"hal-zsl"},
+    "54":{"pref_camera2_selfiemirror_key":"off",
+      "pref_camera2_longshot_key":"off",
+      "pref_camera2_raw_reprocess_key":"0"},
+    "99":{"pref_camera2_selfiemirror_key":"off",
+      "pref_camera2_longshot_key":"off",
+      "pref_camera2_raw_reprocess_key":"0"}
   },
   "pref_camera2_hdr_key":
   {
@@ -251,8 +257,9 @@
   },
   "pref_camera2_eis_key":
   {
-    "disable": {},
-    "V2": {"pref_camera2_manualhdr_key": "off"},
+    "disable": {"pref_camera2_mlvideo_key":"off"},
+    "V2": {"pref_camera2_manualhdr_key": "off",
+           "pref_camera2_mlvideo_key":"off"},
     "V3": {"pref_camera2_video_duration_key":"0"}
   },
   "pref_camera2_multi_camera_mode_key":
@@ -291,7 +298,8 @@
       "pref_camera2_ai_camera_blurmode_key": "0"},
     "rtb": {"pref_camera2_pdnet_toggle_key": "0",
             "pref_camera2_extended_max_zoom_key": "0"},
-    "single_rear_cameraid" : { "pref_camera2_ai_camera_blurmode_key": "0"},
+    "single_rear_cameraid" : { "pref_camera2_ai_camera_blurmode_key": "0",
+                               "pref_camera2_physical_raw_reprocess_key":"off"},
     "default" : { "pref_camera2_ai_camera_blurmode_key": "0"}
   },
   "pref_camera2_multiresimagereader_key":

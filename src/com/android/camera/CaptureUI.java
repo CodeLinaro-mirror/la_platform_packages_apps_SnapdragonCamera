@@ -1711,7 +1711,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void updateStatsNNResultText(byte statsNNWidth, byte statsNNHeight, byte statsNNMapdata, byte statsNNNumroi, int[] statsNNRoiData, int statsNNRoiWeight) {
-        mStatsAecText.setText(STATS_NN_RESULT_TITLE[0]+Byte.toString(statsNNWidth) +" " + "\r\n" +
+        mStatsNNResultText.setText(STATS_NN_RESULT_TITLE[0]+Byte.toString(statsNNWidth) +" " + "\r\n" +
                                  STATS_NN_RESULT_TITLE[1]+Byte.toString(statsNNHeight) +" " + "\r\n" +
                                  STATS_NN_RESULT_TITLE[2]+Byte.toString(statsNNMapdata) +" " + "\r\n" +
                                  STATS_NN_RESULT_TITLE[3]+Byte.toString(statsNNNumroi) +" " + "\r\n" +
@@ -2281,8 +2281,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoButton.setImageResource(R.drawable.video_stop);
             mRecordingTimeView.setText("00:00");
             mRecordingTimeRect.setVisibility(View.VISIBLE);
-            mMuteButton.setVisibility((mModule.isHSRMode() ||
-                    mModule.getHighSpeedCaptureRate() < 60) ? View.VISIBLE : View.INVISIBLE);
+            mMuteButton.setVisibility(showMuteButton()? View.VISIBLE : View.INVISIBLE);
             setMuteButtonResource(!mModule.isAudioMute());
         } else {
             mFlashButton.setVisibility(View.VISIBLE);
@@ -2297,7 +2296,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mMuteButton.setVisibility(View.INVISIBLE);
         }
     }
-
+    private boolean showMuteButton(){
+        String audioSelected = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER);
+        if((mModule.isHSRMode() || mModule.getHighSpeedCaptureRate() < 60) &&
+                !audioSelected.equals("off")){
+            return  true;
+        }
+        return  false;
+    }
     private void setMuteButtonResource(boolean isUnMute) {
         if(isUnMute) {
             mMuteButton.setImageResource(R.drawable.ic_unmuted_button);
