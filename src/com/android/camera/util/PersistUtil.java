@@ -388,6 +388,10 @@ public class PersistUtil {
         return PERSIST_SKIP_MEM_CHECK_ENABLED;
     }
 
+    public static boolean showIconWhenNoCam() {
+        return getBoolean("persist.sys.camera.showIconWhenNoCam", true);
+    }
+
     public static boolean isZzhdrEnabled(){
         return PERSIST_ZZHDR_ENABLED;
     }
