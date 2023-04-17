@@ -2260,7 +2260,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 afinfo_data[3] = Byte.toString(result.get(isDualPDHW));
                 afinfo_data[4] = Byte.toString(result.get(isLCRHW));
                 afinfo_data[5] = Byte.toString(result.get(isLCRSW));
-                afinfo_data[6] = Integer.toString(result.get(lenspos));
                 byte[] roi = result.get(autofocusroi);
                 //autofocusroi is left,top,width, height, transfer to left,top,right, bottom
                 mAFRoi[0] = byteArray2Int(roi, 0);
@@ -2395,12 +2394,16 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onClosed(CameraDevice cameraDevice) {
             int id = Integer.parseInt(cameraDevice.getId());
-            mCloseCameraLatency = System.currentTimeMillis() - mCloseCameraLatency;
             Log.i(TAG, "onClosed " + id);
-            mCameraDevice[id] = null;
-            mCameraOpenCloseLock.release();
-            mCamerasOpened = false;
-            mIsCloseCamera = true;
+            Log.d(TAG,"mCameraDevice[id]="+mCameraDevice[id]+",id="+id+",cameraDevice="+cameraDevice);
+            if((mCameraDevice[id] == null || mCameraDevice[id].equals(cameraDevice))
+                    && id == getMainCameraId()){
+                mCloseCameraLatency = System.currentTimeMillis() - mCloseCameraLatency;
+                mCameraDevice[id] = null;
+                mCameraOpenCloseLock.release();
+                mCamerasOpened = false;
+                mIsCloseCamera = true;
+            }
         }
 
     };
