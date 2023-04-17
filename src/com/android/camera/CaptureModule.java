@@ -5917,9 +5917,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             if (image.getFormat() == ImageFormat.HEIC) {
                                                 pictureFormat = "heic";
                                             }
-                                            if (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA) {
-                                                mIntentMode = INTENT_MODE_NORMAL;
-                                            }
                                             mActivity.getMediaSaveService().addImage(bytes, title, date,
                                                     null, image.getWidth(), image.getHeight(), orientation, exif,
                                                     mOnMediaSavedListener, mContentResolver,pictureFormat);
