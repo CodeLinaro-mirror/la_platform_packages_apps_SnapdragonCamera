@@ -936,7 +936,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int mAIStrengthValue = 0;
     private FocusStateListener mFocusStateListener;
     private LocationManager mLocationManager;
-    private SettingsManager mSettingsManager;
+    public SettingsManager mSettingsManager;
     private long SECONDARY_SERVER_MEM;
     private boolean mLongshotActive = false;
     private long mLastLongshotTimestamp = 0;
@@ -16305,8 +16305,9 @@ class Camera2RGBGraphView extends View {
     }
     @Override
     protected void onDraw(Canvas canvas) {
-        if(mCaptureModule == null && !mCaptureModule.mHiston) {
-            android.util.Log.e(TAG, "returning as histogram is off ");
+        String value = mCaptureModule.mSettingsManager.getValue(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
+        if(value == null || !value.contains("2")) {
+            Log.d(TAG, "returning as histogram is off ");
             return;
         }
 
