@@ -67,6 +67,11 @@ public class Camera2FaceView extends FaceView {
     private int[] mFacialMasks;
     private int mMaskNums = 0;
 
+    private int mHeadNums = 0;
+    private int[] mHeadInts;
+    private int[] mTorsoValidInts;
+    private int[] mTorsoInts;
+
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -195,6 +200,23 @@ public class Camera2FaceView extends FaceView {
         mMaskNums = maskNums;
         if (!mBlocked && (facialMasks != null) && (facialMasks.length > 0) &&
                 mCameraBound != null && maskNums > 0) {
+            postInvalidate();
+        }
+    }
+
+    public void setUpperBodys(int headNums, int[] headInts, int[] torsoValidInts, int[] torsoInts) {
+        mHeadNums = headNums;
+        if (headInts != null) {
+            mHeadInts = headInts;
+        }
+        if (torsoValidInts != null) {
+            mTorsoValidInts = torsoValidInts;
+        }
+        if (torsoInts != null) {
+            mTorsoInts = torsoInts;
+        }
+        if (!mBlocked && (headInts != null) && (headInts.length > 0) &&
+                mCameraBound != null && mHeadNums > 0) {
             postInvalidate();
         }
     }
@@ -345,6 +367,9 @@ public class Camera2FaceView extends FaceView {
                     }
                 }
             }
+
+            drawHeads(canvas, dx, dy, translateMatrix);
+            drawTorsos(canvas, dx, dy, translateMatrix);
 
             for (int i = 0; i < mFaces.length; i++) {
                 if (mFaces[i].getScore() < 50) continue;
@@ -567,6 +592,71 @@ public class Camera2FaceView extends FaceView {
             canvas.restore();
         }
         super.onDraw(canvas);
+    }
+
+    private void drawHeads(Canvas canvas, int dx, int dy, Matrix translateMatrix) {
+        if (mHeadNums > 0 && mHeadInts != null && mHeadInts.length > 4) {
+            for (int i = 0; i < mHeadInts.length; i += 4) {
+                if (mHeadNums == 0) {
+                    break;
+                }
+                if ((mHeadInts[i+2] - mHeadInts[i])  > 0 &&
+                        (mHeadInts[i+3] - mHeadInts[i+1]) > 0) {
+                    Rect head = new Rect(mHeadInts[i], mHeadInts[i+1],
+                            mHeadInts[i+2], mHeadInts[i+3]);
+                    head.offset(0, 0);
+                    if (isFDRectOutOfBound(head)) continue;
+                    mRect.set(head);
+                    if (mZoom != 1.0f && !(mZoomRationSupported && mPostZoomFov)) {
+                        mRect.left = mRect.left - mCameraBound.left;
+                        mRect.right = mRect.right - mCameraBound.left;
+                        mRect.top = mRect.top - mCameraBound.top;
+                        mRect.bottom = mRect.bottom - mCameraBound.top;
+                    }
+                    translateMatrix.mapRect(mRect);
+                    CameraUtil.dumpRect(mRect, "Original Head roi");
+                    mMatrix.mapRect(mRect);
+                    CameraUtil.dumpRect(mRect, "Transformed Head roi");
+                    mPaint.setColor(0xFFFF9900);
+                    mRect.offset(dx, dy);
+                    canvas.drawRect(mRect, mPaint);
+                }
+            }
+        }
+    }
+
+    private void drawTorsos(Canvas canvas, int dx, int dy, Matrix translateMatrix) {
+        if (mTorsoInts != null && mTorsoInts.length > 4) {
+            int j = 0;
+            for (int i = 0; i < mTorsoInts.length; i += 4) {
+                /** if (mTorsoValidInts[j] == 0) {
+                    j ++;
+                    continue;
+                }
+                j ++;*/
+                if ((mTorsoInts[i+2] - mTorsoInts[i])  > 0 &&
+                        (mTorsoInts[i+3] - mTorsoInts[i+1]) > 0) {
+                    Rect torsos = new Rect(mTorsoInts[i], mTorsoInts[i+1],
+                            mTorsoInts[i+2], mTorsoInts[i+3]);
+                    torsos.offset(0, 0);
+                    if (isFDRectOutOfBound(torsos)) continue;
+                    mRect.set(torsos);
+                    if (mZoom != 1.0f && !(mZoomRationSupported && mPostZoomFov)) {
+                        mRect.left = mRect.left - mCameraBound.left;
+                        mRect.right = mRect.right - mCameraBound.left;
+                        mRect.top = mRect.top - mCameraBound.top;
+                        mRect.bottom = mRect.bottom - mCameraBound.top;
+                    }
+                    translateMatrix.mapRect(mRect);
+                    CameraUtil.dumpRect(mRect, "Original Torso roi");
+                    mMatrix.mapRect(mRect);
+                    CameraUtil.dumpRect(mRect, "Transformed Torso roi");
+                    mPaint.setColor(0xFFCCCCCC);
+                    mRect.offset(dx, dy);
+                    canvas.drawRect(mRect, mPaint);
+                }
+            }
+        }
     }
 
     @Override

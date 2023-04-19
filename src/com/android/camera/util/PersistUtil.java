@@ -377,7 +377,7 @@ public class PersistUtil {
     }
 
     public static boolean needEndOfStream() {
-        return getBoolean("persist.sys.camera.endofstream", true);
+        return getBoolean("persist.sys.camera.endofstream", false);
     }
 
     public static boolean isCaptureAnimationEnabled(){

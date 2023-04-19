@@ -2522,7 +2522,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mModeSelectLayout.setVisibility(View.VISIBLE);
             mThumbnail.setVisibility(View.VISIBLE);
         }
-        mFilterModeSwitcher.setVisibility(View.VISIBLE);
+        String hdrmode = mSettingsManager.getVideoHdrMode();
+        if (hdrmode != null && hdrmode.equals("off")) {
+            mFilterModeSwitcher.setVisibility(View.VISIBLE);
+        }
         if (mFilterMenuStatus == FILTER_MENU_ON) {
             removeFilterMenu(true);
         }
@@ -2584,8 +2587,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mFilterModeSwitcher.setVisibility(View.INVISIBLE);
             mSettingsManager.setValue(SettingsManager.KEY_COLOR_EFFECT,"0");
         }
-        String maunalHDR = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_HDR);
-        if (maunalHDR != null && (maunalHDR.equals("manual") || maunalHDR.equals("auto"))) {
+        String hdrmode = mSettingsManager.getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
             mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         }
     }
@@ -3815,6 +3818,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFaceView.setFacialMasks(facialMasks, maskNums);
     }
 
+    public void onUpperBodyDetection(int headNums, int[] headInts,
+                                     int[] torsoValidInts, int[] torsoInts) {
+        mFaceView.setUpperBodys(headNums, headInts, torsoValidInts, torsoInts);
+    }
+
     public Point getSurfaceViewSize() {
         Point point = new Point();
         if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
@@ -3851,6 +3859,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         if (mRecordingTimeRect != null) {
             mRecordingTimeView.setRotation(-orientation);
+            if (mTimeLapseLabel != null && mTimeLapseLabel.getVisibility() == View.VISIBLE) {
+                mTimeLapseLabel.setRotation(-orientation);
+            }
         }
         if (mFaceView != null) {
             mFaceView.setDisplayRotation(orientation);

@@ -309,6 +309,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if(pref.getKey().equals(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
                     updateZslPreference();
                     updatePictureFormatPreference();
+                    updateHDRSceneDetection();
                     if(isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)){
                         CaptureModule.CameraMode mode =
                                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
@@ -415,12 +416,6 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if(mSettingsManager.KEY_EXTENDED_MAX_ZOOM .equals(pref.getKey())){
                     updateZoomPreference();
-                }
-                if (pref.getKey().equals(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE)) {
-                    String value = ((ListPreference) pref).getValue();
-                    if (value != null && value.equals("1")) {
-                        updateEISHorizonLevelPreference();
-                    }
                 }
             }
         }
@@ -1202,7 +1197,7 @@ public class SettingsActivity extends PreferenceActivity {
         mDeveloperMenuEnabled = mSharedPreferences.getBoolean(SettingsManager.KEY_DEVELOPER_MENU, false);
 
         filterPreferences();
-        initializePreferences();
+        initializePreferences(false);
 
         for (int i = 0; i < getPreferenceScreen().getPreferenceCount(); i++) {
             PreferenceCategory category = (PreferenceCategory) getPreferenceScreen().getPreference(i);
@@ -1309,12 +1304,6 @@ public class SettingsActivity extends PreferenceActivity {
                             }
                         }
 
-                        if (preference.getKey().equals(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE)) {
-                            String value = ((ListPreference) preference).getValue();
-                            if (value != null && value.equals("1")) {
-                                updateEISHorizonLevelPreference();
-                            }
-                        }
                         return false;
                     }
 
@@ -1379,7 +1368,6 @@ public class SettingsActivity extends PreferenceActivity {
         final ArrayList<String> videoOnlyList = new ArrayList<String>() {
             {
                 add(SettingsManager.KEY_EIS_VALUE);
-                add(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE);
                 add(SettingsManager.KEY_FOVC_VALUE);
                 add(SettingsManager.KEY_VARIABLE_FPS);
                 //add(SettingsManager.KEY_VIDEO_HDR_VALUE);
@@ -1520,6 +1508,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.add(SettingsManager.KEY_FD_FL_SETTING);
                         videoAddList.add(SettingsManager.KEY_FD_FACIAL_SETTING);
+                        videoAddList.add(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE);
                         videoAddList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                         videoAddList.add(SettingsManager.KEY_PHYSICAL_CAMERA);
                         videoAddList.add(SettingsManager.KEY_MANUAL_HDR);
@@ -1549,6 +1538,7 @@ public class SettingsActivity extends PreferenceActivity {
                     videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
+                    videoAddList.add(SettingsManager.KEY_INSTANT_ZOOM);
                     addDeveloperOptions(developer, videoAddList);
                 }
                 if (mode != VIDEO) {
@@ -1579,6 +1569,10 @@ public class SettingsActivity extends PreferenceActivity {
                     ArrayList<String> RTBList = new ArrayList<>(multiCameraSettingList);
                     RTBList.add(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
                     RTBList.add(SettingsManager.KEY_INSENSOR_ZOOM);
+                    RTBList.add(SettingsManager.KEY_FD_SETTING);
+                    RTBList.add(SettingsManager.KEY_FD_FL_SETTING);
+                    RTBList.add(SettingsManager.KEY_FD_FACIAL_SETTING);
+                    RTBList.add(SettingsManager.KEY_INSTANT_ZOOM);
                     addDeveloperOptions(developer, RTBList);
                 }
                 break;
@@ -1598,7 +1592,10 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled) {
                     if (DEV_LEVEL_ALL) {
                         proModeOnlyList.add(SettingsManager.KEY_SWITCH_CAMERA);
+
                     }
+                    proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
+                    proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                     proModeOnlyList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     proModeOnlyList.add(SettingsManager.KEY_TONE_MAPPING);
                     proModeOnlyList.add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
@@ -1820,7 +1817,7 @@ public class SettingsActivity extends PreferenceActivity {
 
     }
 
-    private void initializePreferences() {
+    private void initializePreferences(boolean fromRestore) {
         updatePreference(SettingsManager.KEY_PICTURE_SIZE);
         updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
         updatePreference(SettingsManager.KEY_EXPOSURE);
@@ -1851,8 +1848,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         updatePictureFormatPreference();
         updateLongShotPreference();
-        updateCinematicOptions();
-
+        updateHDRSceneDetection();
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
         Set<Map.Entry<String, SettingsManager.Values>> set = map.entrySet();
@@ -1940,6 +1936,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreviewStabilizationPreference();
         updateMultiVideoFPSPreference();
         updateViullPreference();
+        updateCinematicOptions(fromRestore);
     }
 
     private void updateAudioEncoderPreference() {
@@ -2044,6 +2041,10 @@ public class SettingsActivity extends PreferenceActivity {
             if((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID || !CaptureModule.MCXMODE) && mode == CaptureModule.CameraMode.VIDEO){
                 key = new ArrayList<String>(Arrays.asList("Default", "RTB"));
                 value = new ArrayList<String>(Arrays.asList( "default", "rtb"));
+            }
+            if (mSettingsManager.getAICameraValue().equals("1")){
+                key.remove("RTB");
+                value.remove("rtb");
             }
             pref.setEntries(key.toArray(new CharSequence[key.size()]));
             pref.setEntryValues(value.toArray(new CharSequence[value.size()]));
@@ -2222,6 +2223,9 @@ public class SettingsActivity extends PreferenceActivity {
         if (vsr != null && vsr.equals("1") && size >= 3840*2160 ){
             pref.setValue("off");
             pref.setEnabled(false);
+        }
+        if (pref.isEnabled()) {
+            updateMultiVideoFPSPreference();
         }
     }
 
@@ -2409,20 +2413,22 @@ public class SettingsActivity extends PreferenceActivity {
                     pref.setEnabled(false);
                     return;
                 } else {
-                    pref.setValueIndex(1);
-                    pref.setEnabled(false);
+                    pref.setEnabled(true);
                     return;
                 }
             }
         } else {
             String value = mSettingsManager.getValue(SettingsManager.KEY_PHOTO_EIS_VALUE);
             if (value != null) {
-                if (!value.equals("V2")) {
-                    pref.setValueIndex(0);
+                if (value.equals("V2")) {
+                    pref.setValueIndex(1);
                     pref.setEnabled(false);
                     return;
+                } else if ("dynamic".equals(value)) {
+                    pref.setEnabled(true);
+                    return;
                 } else {
-                    pref.setValueIndex(1);
+                    pref.setValueIndex(0);
                     pref.setEnabled(false);
                     return;
                 }
@@ -2469,53 +2475,6 @@ public class SettingsActivity extends PreferenceActivity {
                 eisPref.setEntryValues(values.toArray(new CharSequence[values.size()]));
             }
         }
-    }
-
-    private void updateEISHorizonLevelPreference() {
-        Log.d(TAG, "updateEISHorizonLevelPreference ");
-        String horizonLevel = mLocalSharedPref.getString(
-                SettingsManager.KEY_EIS_HORIZON_LEVEL_CONTROL, "0.0");
-        final SharedPreferences.Editor editor = mLocalSharedPref.edit();
-        final EditText levelInput = new EditText(SettingsActivity.this);
-        levelInput.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        final TextView levelText = new TextView(SettingsActivity.this);
-
-        final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
-        LinearLayout linear = new LinearLayout(SettingsActivity.this);
-        linear.setOrientation(1);
-        linear.addView(levelInput);
-        linear.addView(levelText);
-        alert.setTitle("EIS Horizon Level Control");
-        levelInput.setHint(" The range from 0.0 to 90");
-        levelText.setText("    EIS horizon level is " + horizonLevel);
-        alert.setView(linear);
-
-        alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog,int id) {
-                dialog.cancel();
-            }
-        });
-        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface Dialog,int id) {
-                float level = -1;
-                String levelStr = levelInput.getText().toString();
-                if (levelStr.length() > 0) {
-                    try {
-                        level = Float.parseFloat(levelStr);
-                    } catch (NumberFormatException e) {
-                        Log.w(TAG, "levelStr type incorrect value ");
-                    }
-                }
-                if (level <= 90 && level >= 0) {
-                    editor.putString(SettingsManager.KEY_EIS_HORIZON_LEVEL_CONTROL, levelStr);
-                    editor.apply();
-                } else {
-                    RotateTextToast.makeText(SettingsActivity.this, "Invalid EIS horizon Level " +
-                                    "control data", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-        alert.show();
     }
 
     private void updateT2TPreference() {
@@ -2657,7 +2616,30 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
 
-    private void updateCinematicOptions() {
+
+    private void updateHDRSceneDetection() {
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        if (mode == CaptureModule.CameraMode.RTB) {
+            String captureMFNRDef = this.getString(R.string.pref_camera2_capture_mfnr_default);
+            String captureMFNR = mLocalSharedPref.getString(
+                    SettingsManager.KEY_CAPTURE_MFNR_VALUE, captureMFNRDef);
+            ListPreference hdrSceneDetection = (ListPreference) findPreference(
+                    SettingsManager.KEY_AUTO_HDR);
+            if (captureMFNR.equals("1")) {
+                if (hdrSceneDetection != null) {
+                    hdrSceneDetection.setValue("disable");
+                    hdrSceneDetection.setEnabled(false);
+                }
+            } else {
+                if (hdrSceneDetection != null) {
+                    hdrSceneDetection.setEnabled(true);
+                }
+            }
+        }
+    }
+
+    private void updateCinematicOptions(boolean fromRestore) {
         CaptureModule.CameraMode mode =
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         if (mode == CaptureModule.CameraMode.CINEMATIC) {
@@ -2667,11 +2649,15 @@ public class SettingsActivity extends PreferenceActivity {
                     SettingsManager.KEY_TOUCH_TRACK_FOCUS);
             ListPreference statsNNPref = (ListPreference) findPreference(
                     SettingsManager.KEY_STATSNN_CONTROL);
-            if (t2t.equals("on")) {
+            if (t2t.equals("on") || fromRestore) {
                 t2TFocus.setChecked(true);
             }
             if (statsNNPref != null) {
-                statsNNPref.setValue(statsNN);
+                if (fromRestore) {
+                    statsNNPref.setValue("1");
+                } else {
+                    statsNNPref.setValue(statsNN);
+                }
             }
         }
 
@@ -2752,7 +2738,7 @@ public class SettingsActivity extends PreferenceActivity {
     private void restoreSettings() {
         mSettingsManager.restoreSettings();
         filterPreferences();
-        initializePreferences();
+        initializePreferences(true);
     }
 
 

@@ -716,15 +716,6 @@
             android:summary="%s"/>
 
         <ListPreference
-            android:key="pref_camera2_eis_horizon_level_enable_key"
-            android:defaultValue="@string/pref_camera2_eis_horizon_level_control_entry_value_2"
-            android:title="@string/pref_camera2_eis_horizon_level_control_title"
-            android:entries="@array/pref_camera2_eis_horizon_level_control_entries"
-            android:entryValues="@array/pref_camera2_eis_horizon_level_control_entryvalues"
-            android:layout="@layout/preference"
-            android:summary="%s"/>
-
-        <ListPreference
             android:key="pref_camera2_mlvideo_key"
             android:defaultValue="@string/pref_camera2_ml_video_default"
             android:title="@string/pref_camera2_ml_video_title"
@@ -741,6 +732,16 @@
             android:entryValues="@array/pref_camera2_photo_eis_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
+
+        <ListPreference
+            android:key="pref_camera2_eis_horizon_level_enable_key"
+            android:defaultValue="@string/pref_camera2_eis_horizon_level_control_entry_value_0"
+            android:title="@string/pref_camera2_eis_horizon_level_control_title"
+            android:entries="@array/pref_camera2_eis_horizon_level_control_entries"
+            android:entryValues="@array/pref_camera2_eis_horizon_level_control_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
 
         <ListPreference
             android:key="pref_camera2_preview_stabilization_key"
@@ -1123,6 +1124,15 @@
             android:title="@string/pref_camera2_insensor_zoom_title"
             android:entries="@array/pref_camera2_insensor_zoom_entries"
             android:entryValues="@array/pref_camera2_insensor_zoom_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
+            android:key="pref_camera2_instant_zoom_key"
+            android:defaultValue="@string/setting_off_value"
+            android:title="@string/pref_camera2_instant_zoom_title"
+            android:entries="@array/pref_camera2_camera2_entries"
+            android:entryValues="@array/pref_camera2_camera2_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
 

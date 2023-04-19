@@ -26,12 +26,18 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.camera.util;
 
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
-import com.android.camera.util.Log;
 
 public class VendorTagUtil {
     private static final String TAG = "SnapCam_VendorTagUtil";
@@ -100,6 +106,10 @@ public class VendorTagUtil {
 
     public static final CaptureRequest.Key<Byte> EnableMLVideo =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVideoRetouch", byte.class);
+    private static final CaptureRequest.Key<Integer> EIS_MODE =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EISMode", Integer.class);
+
+
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
     private static final int MANUAL_WB_GAINS_MODE = 2;
@@ -332,9 +342,15 @@ public class VendorTagUtil {
         }
     }
     public static void enableMLVideo(CaptureRequest.Builder builder, byte enable) {
-        Log.d(TAG,"set enableMLVideo: " + enable);
+        Log.d(TAG, "set enableMLVideo: " + enable);
         if (isSupported(builder, EnableMLVideo)) {
             builder.set(EnableMLVideo, enable);
+        }
+    }
+
+    public static void setEISModeForSessionParameter(CaptureRequest.Builder builder, int mode) {
+        if (isSupported(builder, EIS_MODE)) {
+            builder.set(EIS_MODE, mode);
         }
     }
 }

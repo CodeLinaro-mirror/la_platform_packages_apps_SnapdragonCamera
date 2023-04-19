@@ -193,6 +193,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             "pref_camera2_video_time_lapse_frame_interval_key";
     public static final String KEY_FACE_DETECTION = "pref_camera2_facedetection_key";
     public static final String KEY_FACE_MASK = "pref_camera2_facemask_key";
+    public static final String KEY_UPPER_BODY_DETECTION = "pref_camera2_upper_body_detection_key";
     public static final String KEY_VIDEO_HIGH_FRAME_RATE = "pref_camera2_hfr_key";
     public static final String KEY_SELFIE_FLASH = "pref_selfie_flash_key";
     public static final String KEY_SHUTTER_SOUND = "pref_camera2_shutter_sound_key";
@@ -254,7 +255,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_REMOSAIC_REPROCESSING = "pref_camera2_remosaic_reprocessing_key";
     public static final String KEY_EIS_VALUE = "pref_camera2_eis_key";
     public static final String KEY_EIS_HORIZON_LEVEL_ENABLE = "pref_camera2_eis_horizon_level_enable_key";
-    public static final String KEY_EIS_HORIZON_LEVEL_CONTROL = "pref_camera2_eis_horizon_level_control_key";
     public static final String KEY_PHOTO_EIS_VALUE = "pref_camera2_photo_eis_key";
     public static final String KEY_PREVIEW_STABILIZATION = "pref_camera2_preview_stabilization_key";
     public static final String KEY_FOVC_VALUE = "pref_camera2_fovc_key";
@@ -312,11 +312,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AI_BLUR_LUMA = "pref_camera2_blur_vsemode_key";
     public static final String KEY_AI_BLUR_CHROMAU = "pref_camera2_blur_chromau_key";
     public static final String KEY_AI_BLUR_CHROMAV = "pref_camera2_blur_chromav_key";
+    public static final String KEY_AI_BLUR_CHROMASTRENGTH = "pref_camera2_blur_chromastrength_key";
 
     public static final String KEY_AI_DENOISER = "pref_camera2_ai_denoiser_key";
     public static final String KEY_AI_DENOISER_FORMAT = "pref_camera2_ai_denoiser_format_key";
     public static final String KEY_AI_DENOISER_MODE = "pref_camera2_ai_denoiser_mode_key";
     public static final String KEY_INSENSOR_ZOOM = "pref_camera2_insensor_zoom_key";
+    public static final String KEY_INSTANT_ZOOM = "pref_camera2_instant_zoom_key";
     public static final String KEY_VSR = "pref_camera2_vsr_key";
     public static final String KEY_VIULL = "pref_camera2_viull_key";
 
@@ -529,6 +531,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (facing == CameraCharacteristics.LENS_FACING_BACK) {
             mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.DEFAULT));
             mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.VIDEO));
+            mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.CINEMATIC));
             mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.HFR));
             mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.RTB));
             mPrepNameKeys.add(rearTag + String.valueOf(CaptureModule.CameraMode.SAT));
@@ -853,6 +856,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         filterHeifSizeOptions();
         mVideoEisConfigs = getVideoEisConfigs(cameraId);
         filterHFROptions();
+        filterVideoEncoderProfileOptions();
     }
 
 
@@ -1581,10 +1585,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName,
                 Context.MODE_PRIVATE);
         String defaultValue = "0.00";
-        if(key == KEY_AI_BLUR_CHROMAU || key == KEY_AI_BLUR_CHROMAV){
+        if(key == KEY_AI_BLUR_CHROMAU || key == KEY_AI_BLUR_CHROMAV || key == KEY_AI_BLUR_STRENGTH || key == KEY_AI_BLUR_CHROMASTRENGTH){
             defaultValue = "0.50";
-        }else if(key == KEY_AI_BLUR_STRENGTH){
-            defaultValue = "1.00";
         }
         return sharedPreferences.getString(key,defaultValue);
     }
@@ -1735,6 +1737,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference multireprocess_input = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_INPUT);
         ListPreference multireprocess_output = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_OUTPUT);
         ListPreference ml_video = mPreferenceGroup.findPreference(KEY_ML_VIDEO);
+        ListPreference inStantZoom = mPreferenceGroup.findPreference(KEY_INSTANT_ZOOM);
+        ListPreference aide = mPreferenceGroup.findPreference(KEY_AI_DENOISER);
 
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
@@ -1941,8 +1945,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         // These list can be changed run-time
         filterHFROptions();
         filterVideoEncoderOptions();
-        filterVideoEncoderProfileOptions();
-
         if (!mIsFrontCameraPresent || !isFacingFront(mCameraId)) {
             removePreference(mPreferenceGroup, KEY_SELFIE_FLASH);
             removePreference(mPreferenceGroup, KEY_SELFIEMIRROR);
@@ -2050,9 +2052,23 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
 
+        if (inStantZoom != null) {
+            if (!isInStantZoomSupported()) {
+                removePreference(mPreferenceGroup, KEY_INSTANT_ZOOM);
+            }
+        }
+
         if (vsr != null) {
             if (!isVSRSupported()) {
                 removePreference(mPreferenceGroup, KEY_VSR);
+            }
+        }
+
+        if(aide != null){
+            if(!isAIDE2Supported()){
+                mFilteredKeys.add(aide.getKey());
+                removePreference(mPreferenceGroup, KEY_AI_DENOISER_FORMAT);
+                removePreference(mPreferenceGroup, KEY_AI_DENOISER_MODE);
             }
         }
 
@@ -3095,6 +3111,21 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return isSupported;
     }
 
+    public boolean isInStantZoomSupported() {
+        if (mCharacteristics.size() > 0) {
+            try {
+                int[] availableOverrides = mCharacteristics.get(CaptureModule.CURRENT_ID).get(CameraCharacteristics
+                        .CONTROL_AVAILABLE_SETTINGS_OVERRIDES);
+                if (availableOverrides == null) {
+                    return false;
+                }
+            }catch(IllegalArgumentException | NoSuchFieldError e) {
+                Log.w(TAG, EXCEPTION_LOG,"exception  e= "+e);
+            }
+        }
+        return true;
+    }
+
     public boolean isAutoExposureRegionSupported(int id) {
         Integer maxAERegions = mCharacteristics.get(id).get(
                 CameraCharacteristics.CONTROL_MAX_REGIONS_AE);
@@ -3196,6 +3227,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isFlashSupported(int id) {
         return mCharacteristics.get(id).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) &&
+                mValuesMap.get(KEY_FLASH_MODE) != null &&
+                isSupportedForMode();
+    }
+    public boolean isFlashSupported() {
+        return mCharacteristics.get(mCaptureModule.getMainCameraId()).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) &&
                 mValuesMap.get(KEY_FLASH_MODE) != null &&
                 isSupportedForMode();
     }

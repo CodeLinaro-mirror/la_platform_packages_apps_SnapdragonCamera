@@ -55,6 +55,7 @@ public class AIBlurConfigSlide extends View {
     public static final int BLUR_LUMA_MODE = 3;
     public static final int BLUR_CHROMEU_MODE = 4;
     public static final int BLUR_CHROMAV_MODE = 5;
+    public static final int BLUR_CSTRENGTH_MODE = 6;
 
     private static final int DRAG_Y_THRESHOLD = 100;
     private static final int DRAG_X_THRESHOLD = 30;
@@ -99,7 +100,9 @@ public class AIBlurConfigSlide extends View {
         mUI.updateBlurModeText(BLUR_FOCUS_DISTANCE_MODE, mSettingsManager.geBlurSliderValue(getKey(BLUR_FOCUS_DISTANCE_MODE)));
         mUI.updateBlurModeText(BLUR_CHROMEU_MODE, mSettingsManager.geBlurSliderValue(getKey(BLUR_CHROMEU_MODE)));
         mUI.updateBlurModeText(BLUR_CHROMAV_MODE, mSettingsManager.geBlurSliderValue(getKey(BLUR_CHROMAV_MODE)));
+        mUI.updateBlurModeText(BLUR_CSTRENGTH_MODE, mSettingsManager.geBlurSliderValue(getKey(BLUR_CSTRENGTH_MODE)));
         mUI.setChromaEnable(isChromaMode());
+        mUI.setSuperStrengthEnable(isLumaorCHromaMode());
     }
 
     private void init(int mode) {
@@ -112,6 +115,14 @@ public class AIBlurConfigSlide extends View {
 
     public boolean isChromaMode(){
         return mSettingsManager.getValue(SettingsManager.KEY_AI_BLUR_LUMA).equals("2");
+    }
+
+    public boolean isLumaorCHromaMode(){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_AI_BLUR_LUMA);
+        if(value != null && !value.equals("0")){
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -228,7 +239,7 @@ public class AIBlurConfigSlide extends View {
             for (int i = 0; i < 2; i++) {
                 TextView v = new TextView(mContext);
                 String s = "0";
-                if(mMode == BLUR_STRENGTH_MODE){
+                if(mMode == BLUR_STRENGTH_MODE || mMode == BLUR_CSTRENGTH_MODE){
                     if (i == 1) s = "1";
                 } else if(mMode == BLUR_FOCUS_DISTANCE_MODE){
                     if (i == 1) s = "1";
@@ -250,6 +261,7 @@ public class AIBlurConfigSlide extends View {
         }
         setOrientation(mOrientation);
         mUI.setChromaEnable(isChromaMode());
+        mUI.setSuperStrengthEnable(isLumaorCHromaMode());
     }
 
     private String getKey(int mode) {
@@ -266,6 +278,8 @@ public class AIBlurConfigSlide extends View {
                 return SettingsManager.KEY_AI_BLUR_CHROMAU;
             case BLUR_CHROMAV_MODE:
                 return SettingsManager.KEY_AI_BLUR_CHROMAV;
+            case BLUR_CSTRENGTH_MODE:
+                return SettingsManager.KEY_AI_BLUR_CHROMASTRENGTH;
         }
         return null;
     }
@@ -336,12 +350,18 @@ public class AIBlurConfigSlide extends View {
             }
             if(mMode == BLUR_LUMA_MODE){
                 mUI.setChromaEnable(idx ==2 ? true : false);
-                if(idx !=2){
-                    String defaultValue = "0.50";
+                mUI.setSuperStrengthEnable(idx ==1 || idx == 2? true : false);
+                String defaultValue = "0.50";
+                if(idx == 2 ){
                     mSettingsManager.setBlurSliderValue(SettingsManager.KEY_AI_BLUR_CHROMAU, true, defaultValue);
                     mUI.updateBlurModeText(BLUR_CHROMEU_MODE, defaultValue);
                     mSettingsManager.setBlurSliderValue(SettingsManager.KEY_AI_BLUR_CHROMAV, true, defaultValue);
                     mUI.updateBlurModeText(BLUR_CHROMAV_MODE, defaultValue);
+                    invalidate();
+                }
+                if(idx != 0) {//update ss for luma and chroma
+                    mSettingsManager.setBlurSliderValue(SettingsManager.KEY_AI_BLUR_CHROMASTRENGTH, true, defaultValue);
+                    mUI.updateBlurModeText(BLUR_CSTRENGTH_MODE, defaultValue);
                     invalidate();
                 }
             }

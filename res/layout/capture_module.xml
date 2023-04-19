@@ -202,8 +202,17 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone"/>
+        
         <com.android.camera.Camera2RequestGapGraphView
             android:id="@+id/graph_view_gap"
+            android:visibility="gone"
+            android:layout_width="340dip"
+            android:layout_height="100dip"
+            android:layout_marginTop="80dip"
+            android:layout_marginLeft="10dip" />
+
+        <com.android.camera.Camera2RGBGraphView
+            android:id="@+id/graph_view_rgb"
             android:visibility="gone"
             android:layout_width="340dip"
             android:layout_height="100dip"
