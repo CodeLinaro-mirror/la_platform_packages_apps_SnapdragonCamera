@@ -1712,6 +1712,7 @@ public class SettingsActivity extends PreferenceActivity {
             {
                 add(SettingsManager.KEY_PHYSICAL_CAMERA);
                 add(SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK);
+                add(SettingsManager.KEY_PHYSICAL_JPEG_R_CALLBACK);
                 add(SettingsManager.KEY_PHYSICAL_YUV_CALLBACK);
                 add(SettingsManager.KEY_PHYSICAL_YUV10BIT_CALLBACK);
                 add(SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
@@ -1779,6 +1780,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateMultiPreference(SettingsManager.KEY_PHYSICAL_CAMERA);
         updateMultiPreference(SettingsManager.KEY_PHYSICAL_CAMCORDER);
         updateMultiPreference(SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK);
+        updateMultiPreference(SettingsManager.KEY_PHYSICAL_JPEG_R_CALLBACK);
         updateMultiPreference(SettingsManager.KEY_PHYSICAL_YUV_CALLBACK);
         updateMultiPreference(SettingsManager.KEY_PHYSICAL_YUV10BIT_CALLBACK);
         updateMultiPreference(SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
