@@ -848,6 +848,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         filterHeifSizeOptions();
         mVideoEisConfigs = getVideoEisConfigs(cameraId);
         filterHFROptions();
+        resetSomeSettings();
+    }
+
+    private void resetSomeSettings() {
+        if (!PersistUtil.enableMediaRecorder()) {
+            String audioEncoder = getValue(KEY_AUDIO_ENCODER);
+            if (!"aac".equals(audioEncoder)) {
+                setValue(KEY_AUDIO_ENCODER, "aac");
+            }
+        }
     }
 
 

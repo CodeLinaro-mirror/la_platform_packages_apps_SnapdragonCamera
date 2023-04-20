@@ -1869,8 +1869,8 @@ public class SettingsActivity extends PreferenceActivity {
                 pref.setEnabled(true);
             }
         } else {
-            pref.setEnabled(false);
             pref.setValue("aac");
+            pref.setEnabled(false);
         }
     }
 
