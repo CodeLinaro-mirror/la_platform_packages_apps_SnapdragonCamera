@@ -926,14 +926,14 @@
 
     <ListPreference
         camera:key="pref_camera2_ai_camera_key"
-        camera:defaultValue="@string/pref_camera2_ai_camera_default"
+        camera:defaultValue="@string/pref_camera2_ai_camera_mode_entry_value_on"
         camera:title="@string/pref_camera2_ai_camera_title"
         camera:entries="@array/pref_camera2_ai_camera_mode_entries"
         camera:entryValues="@array/pref_camera2_ai_camera_mode_entryvalues" />
 
     <ListPreference
         camera:key="pref_camera2_ai_camera_snapshot_key"
-        camera:defaultValue="@string/pref_camera2_ai_camera_default"
+        camera:defaultValue="@string/pref_camera2_ai_camera_entry_value_enable"
         camera:title="@string/pref_camera2_ai_camera_snapshot_title"
         camera:entries="@array/pref_camera2_ai_camera_entries"
         camera:entryValues="@array/pref_camera2_ai_camera_entryvalues" />

@@ -205,6 +205,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TextView mTorchOpenText;
     private VerticalSeekBar mTorchbar;
     private VerticalSeekBar mVerticalEvBar;
+    private VerticalSeekBar mAICameraSeekBar;
+    private TextView mAIStrengthValue;
+
     private boolean mIsTorchOn;
     private int mTorchLen ;
     private int mTorchSection ;
@@ -453,7 +456,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private SeekBar mMakeupSeekBar;
     private SeekBar mDeepportraitSeekBar;
     private SeekBar mZoomSeekBar;
-    private SeekBar mAICameraSeekBar;
     private View mMakeupSeekBarLayout;
     private View mSeekbarBody;
     private TextView mMFNRSwitch;
@@ -1092,21 +1094,22 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mRecordingTimeRect.setVisibility(View.GONE);
         showFirstTimeHelp();
     }
+
     private void initAICameraSeekBar(){
-        mAICameraSeekBar = (SeekBar) mRootView.findViewById(R.id.aicamera_seekbar);
-        mAICameraSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
+        if (mAIStrengthValue == null) mAIStrengthValue = (TextView) mRootView.findViewById(R.id.aistrength_value);
+//        mAIStrengthValue.setText(value);
+//        mAIStrengthValue.setVisibility(View.VISIBLE);
+        mAICameraSeekBar = (VerticalSeekBar) mRootView.findViewById(R.id.aicamera_seekbar);
+        mAICameraSeekBar.setProgress(100);
+        mModule.updateAIStrengthValue(128);
+        mAICameraSeekBar.setOnSeekBarChangeListener(new VerticalSeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progresValue, boolean fromUser) {
+            public void onProgressChanged(VerticalSeekBar seekBar, int progresValue, boolean fromUser) {
                 if ( progresValue != 0 ) {
                     int value = (int)(128*progresValue/100);
                     mModule.updateAIStrengthValue(value);
                 }
-            }
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-            }
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
     }
@@ -1654,7 +1657,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.VISIBLE);
         }
-        if(mFilterMenuStatus == FILTER_MENU_ON || mSettingsManager.isAICameraOn()){
+        if(mFilterMenuStatus == FILTER_MENU_ON){
             hideZoomSeekBar();
         }
     }

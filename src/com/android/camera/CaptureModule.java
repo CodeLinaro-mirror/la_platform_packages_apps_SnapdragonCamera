@@ -7052,7 +7052,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyAICameraParam(CaptureRequest.Builder builder){
         String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA);
-        if(value != null &&  !value.equals("disable")){
+        if(!mSettingsManager.isAICameraDisable()){
             Log.d(TAG,"set applyeAiCameraTag: " + value);
             VendorTagUtil.setAICamera(builder, Integer.parseInt(value));
         }
@@ -13473,8 +13473,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyAICameraStrength(){
-        if (mCurrentSessionClosed) return;
-        if(Integer.parseInt(mSettingsManager.getAICameraValue()) != 0){
+        if (mCurrentSessionClosed || mPreviewRequestBuilder[getMainCameraId()] == null || mCaptureSession[getMainCameraId()] == null ||
+                (CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.VIDEO && CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.DEFAULT)) return;
+        if(!mSettingsManager.isAICameraDisable()){
             Log.d(TAG, "applyAICameraStrength: " + mAIStrengthValue);
             try {
                 mPreviewRequestBuilder[getMainCameraId()].set(CaptureModule.AICameraStrength, mAIStrengthValue);
@@ -15510,8 +15511,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void updateZoomSeekBarVisible() {
         if (mCurrentSceneMode.mode == CameraMode.PRO_MODE  ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC || mIsRTBCameraId ||
-                mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn()) ||
-                Integer.parseInt(mSettingsManager.getAICameraValue()) != 0) {
+                mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
             if (mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
                 float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                         getMainCameraId());
@@ -15537,7 +15537,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void updateAICameraSeekBar(){
-        if(Integer.parseInt(mSettingsManager.getAICameraValue()) != 0){
+        if(!mSettingsManager.isAICameraDisable()){
             mUI.showAICameraSeekBar();
         }else{
             mUI.hideAICameraSeekBar();

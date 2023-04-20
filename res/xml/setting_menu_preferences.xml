@@ -1003,7 +1003,7 @@
 
         <ListPreference
             android:key="pref_camera2_ai_camera_key"
-            android:defaultValue="@string/pref_camera2_ai_camera_default"
+            android:defaultValue="@string/pref_camera2_ai_camera_mode_entry_value_on"
             android:title="@string/pref_camera2_ai_camera_title"
             android:entries="@array/pref_camera2_ai_camera_mode_entries"
             android:entryValues="@array/pref_camera2_ai_camera_mode_entryvalues"
@@ -1012,7 +1012,7 @@
 
         <ListPreference
             android:key="pref_camera2_ai_camera_snapshot_key"
-            android:defaultValue="@string/pref_camera2_ai_camera_default"
+            android:defaultValue="@string/pref_camera2_ai_camera_entry_value_enable"
             android:title="@string/pref_camera2_ai_camera_snapshot_title"
             android:entries="@array/pref_camera2_ai_camera_entries"
             android:entryValues="@array/pref_camera2_ai_camera_entryvalues"
