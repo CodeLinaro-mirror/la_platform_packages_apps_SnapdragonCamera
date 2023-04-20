@@ -14577,8 +14577,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         } catch (Exception e) {}
         if (enable) {
             mHandler.post(() -> {
-                configureFASurface();
-                mUI.showFocusAssistText();
+                if (!mPaused) {
+                    configureFASurface();
+                    if (mFASurfaceConfigured) {
+                        mUI.showFocusAssistText();
+                    }
+                }
             });
         }
     }
