@@ -1023,7 +1023,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private ImageReader[] mPhysicalYuv10bitReader = new ImageReader[MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private ImageReader[] mPhysicalRawReader = new ImageReader[MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private ImageReader[] mPhysicalJpegReader = new ImageReader[PHYSICAL_CAMERA_COUNT];
-    private ImageReader[] mPhysicalJpegRReader = new ImageReader[PHYSICAL_CAMERA_COUNT];
+    private ImageReader[] mPhysicalJpegRReader = new ImageReader[MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
 
     //yuv raw images are for raw reprocess
     public int mRawReprocessType = 0;
@@ -3408,6 +3408,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 }
                                 if(mRawImageReader[id] != null && s == mRawImageReader[id].getSurface()){
                                     applyCroppedRaw(outputConfiguration, getMainCameraId());
+                                }
+                                if(s == mImageReader[id].getSurface() && mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT) {
+                                    String captureProfile = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_PROFILE);
+                                    Log.v(TAG, "OutputConfiguration set captureProfile :" + captureProfile);
+                                    if (captureProfile != null && !captureProfile.equals("0")) {
+                                        outputConfiguration.setDynamicRangeProfile(Long.parseLong(captureProfile));
+                                    }
                                 }
                             }
                             outputConfigurations.add(outputConfiguration);
@@ -6557,6 +6564,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         int format = ImageFormat.JPEG;
         if (mSettingsManager.isHeifHALEncoding()) {
             format = ImageFormat.HEIC;
+        }else if(mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT){
+            format = ImageFormat.JPEG_R;
         }
         mVideoSnapshotImageReader = ImageReader.newInstance(mVideoSnapshotSize.getWidth(),
                 mVideoSnapshotSize.getHeight(),format, 2);
@@ -7877,6 +7886,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             mChosenImageFormat = ImageFormat.YUV_420_888;
         } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {
             mChosenImageFormat = ImageFormat.HEIC;
+        }else if(mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT){
+            mChosenImageFormat = ImageFormat.JPEG_R;
         } else {
             mChosenImageFormat = ImageFormat.JPEG;
         }
