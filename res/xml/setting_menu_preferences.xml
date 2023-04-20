@@ -920,14 +920,14 @@
             android:entryValues="@array/pref_camera2_manualhdr_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
-  <ListPreference
-        android:key="pref_camera2_torch_hdr_key"
-        android:defaultValue="@string/pref_camera2_torch_hdr_default"
-        android:title="@string/pref_camera2_torch_hdr_title"
-        android:entries="@array/pref_camera2_torch_hdr_entries"
-        android:entryValues="@array/pref_camera2_torch_hdr_entryvalues"
-        android:layout="@layout/preference"
-        android:summary="%s"/>
+        <ListPreference
+            android:key="pref_camera2_torch_hdr_key"
+            android:defaultValue="@string/pref_camera2_torch_hdr_default"
+            android:title="@string/pref_camera2_torch_hdr_title"
+            android:entries="@array/pref_camera2_torch_hdr_entries"
+            android:entryValues="@array/pref_camera2_torch_hdr_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
 
         <ListPreference
             android:key="pref_camera2_offline_dump_trigger_key"
@@ -959,6 +959,15 @@
         <ListPreference
             android:key="pref_camera2_statsnn_control_key"
             android:defaultValue="@string/pref_camera2_statsnn_control_default"
+            android:title="@string/pref_camera2_statsnn_control_title"
+            android:entries="@array/pref_camera2_statsnn_control_entries"
+            android:entryValues="@array/pref_camera2_statsnn_control_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
+            android:key="pref_camera2_statsnn_control_for_cinematic_key"
+            android:defaultValue="@string/pref_camera2_statsnn_control_entry_value_enable"
             android:title="@string/pref_camera2_statsnn_control_title"
             android:entries="@array/pref_camera2_statsnn_control_entries"
             android:entryValues="@array/pref_camera2_statsnn_control_entryvalues"

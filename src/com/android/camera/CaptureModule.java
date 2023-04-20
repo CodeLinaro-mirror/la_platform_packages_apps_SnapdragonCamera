@@ -7467,7 +7467,13 @@ public class CaptureModule implements CameraModule, PhotoController,
     public boolean isSateNNFocusSettingOn() {
         try {
             String stats_nn_control = mSettingsManager.getValue(SettingsManager.KEY_STATSNN_CONTROL);
+            String stats_nn_control_for_cinematic = mSettingsManager.getValue(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC);
             if (stats_nn_control != null && Integer.parseInt(stats_nn_control) == 1) {
+                return true;
+            }
+            if (mCurrentSceneMode.mode == CameraMode.CINEMATIC &&
+                    stats_nn_control_for_cinematic != null &&
+                    Integer.parseInt(stats_nn_control_for_cinematic) == 1) {
                 return true;
             }
         } catch (Exception e) {
@@ -10372,9 +10378,23 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyStatsNNControl(CaptureRequest.Builder builder) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_STATSNN_CONTROL);
+        String valueForCinematic = mSettingsManager.getValue(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC);
         Log.v(TAG, "applyStatsNNControl statsnn control :" + value );
         if (value != null) {
             byte statsnn = (byte)(Integer.parseInt(value) == 1 ? 0x01 : 0x00);
+            try {
+                builder.set(CaptureModule.qcam3NNControl, statsnn);
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " + CaptureModule.qcam3NNControl);
+                try{
+                    builder.set(CaptureModule.statsNNControl, statsnn);
+                }catch (IllegalArgumentException ex) {
+                    Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " + CaptureModule.statsNNControl);
+                }
+            }
+        }
+        if (valueForCinematic != null && mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
+            byte statsnn = (byte)(Integer.parseInt(valueForCinematic) == 1 ? 0x01 : 0x00);
             try {
                 builder.set(CaptureModule.qcam3NNControl, statsnn);
             } catch (IllegalArgumentException e) {
