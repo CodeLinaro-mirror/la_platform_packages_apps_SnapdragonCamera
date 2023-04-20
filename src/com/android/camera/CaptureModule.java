@@ -3399,6 +3399,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     Log.i(TAG," set physical id " + physicalCameraId + "for image reader stream");
                                     outputConfiguration.setPhysicalCameraId(physicalCameraId);
                                 }
+                                if(mRawImageReader[id] != null && s == mRawImageReader[id].getSurface()){
+                                    applyCroppedRaw(outputConfiguration, getMainCameraId());
+                                }
                             }
                             outputConfigurations.add(outputConfiguration);
                         }
@@ -3728,6 +3731,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
                     setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
+                    applyCroppedRaw(configuration, Integer.parseInt(id));
+                }else{
+                    applyCroppedRaw(configuration, getMainCameraId());
                 }
                 outputConfigurations.add(configuration);
                 i++;
@@ -3739,7 +3745,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!isLogicalId(id)) {
                     configuration.setPhysicalCameraId(id);
                     setStreamUseCase(Integer.parseInt(id), SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV, configuration);
+                    applyCroppedRaw(configuration, Integer.parseInt(id));
+                }else {
+                    applyCroppedRaw(configuration, getMainCameraId());
                 }
+
                 outputConfigurations.add(configuration);
                 Log.d(TAG, "add raw output physicalId=" + id + " size="
                         + mPhysicalRawReader[i].getWidth() + "x" + mPhysicalRawReader[i].getHeight() + ",mPhysicalRawReader[i].getSurface()=" + mPhysicalRawReader[i].getSurface());
@@ -13006,15 +13016,27 @@ public class CaptureModule implements CameraModule, PhotoController,
             String inStantZoom = mSettingsManager.getValue(
                     SettingsManager.KEY_INSTANT_ZOOM);
             Log.v(TAG, " applyInStantZoom inSensorZoom :" + inStantZoom);
-            if ("on".equals(inStantZoom)){
+            if ("on".equals(inStantZoom)) {
                 request.set(CaptureRequest.CONTROL_SETTINGS_OVERRIDE,
                         CameraMetadata.CONTROL_SETTINGS_OVERRIDE_ZOOM);
-            }else {
+            } else {
                 request.set(CaptureRequest.CONTROL_SETTINGS_OVERRIDE,
                         CameraMetadata.CONTROL_SETTINGS_OVERRIDE_OFF);
             }
         } catch (IllegalArgumentException | NoSuchFieldError e) {
-            Log.v(TAG, EXCEPTION_LOG," applyInStantZoom didn`t exist CONTROL_SETTINGS_OVERRIDE");
+            Log.v(TAG, EXCEPTION_LOG, " applyInStantZoom didn`t exist CONTROL_SETTINGS_OVERRIDE");
+        }
+    }
+
+    private void applyCroppedRaw(OutputConfiguration configuration, int cameraId) {
+        try {
+            Log.d(TAG,"set cropped raw for raw steam:" + cameraId);
+            long useCaseId = CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_CROPPED_RAW;
+            if(mSettingsManager.isAvailableUseCase(cameraId, useCaseId)){
+                configuration.setStreamUseCase(useCaseId);
+            }
+        } catch (IllegalArgumentException | NoSuchFieldError e) {
+            Log.v(TAG, EXCEPTION_LOG," applyCroppedRaw didn`t find SCALER_AVAILABLE_STREAM_USE_CASES_CROPPED_RAW");
         }
     }
 
