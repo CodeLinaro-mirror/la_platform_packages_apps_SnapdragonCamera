@@ -7087,14 +7087,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyHvxShdr(CaptureRequest.Builder request) {
-        if (!mSettingsManager.isHvxShdrSupported(getMainCameraId())){
-            return;
-        }
         try{
             byte value = 0;
-            String hvx_shdr = mSettingsManager.getValue(
-                    SettingsManager.KEY_HVX_SHDR);
-            if(hvx_shdr != null && Integer.valueOf(hvx_shdr) > 0)
+            if(mSettingsManager.ishvxShdrEnabled())
                 value = 1;
             request.set(CaptureModule.enable_hvx_shdr,value);
         } catch (IllegalArgumentException|NullPointerException e) {
@@ -7103,14 +7098,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyHVXMFHDRMode(CaptureRequest.Builder request){
-        if (!mSettingsManager.isHvxMFHDRSupported()){
-            return;
-        }
         try{
             byte value = 0;
-            String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
-            if(hvx_mfhdr != null && Integer.valueOf(hvx_mfhdr) > 0)
+            if(mSettingsManager.ishvxMfhdrEnabled())
                 value = 1;
+            Log.d(TAG,"applyHVXMFHDRMode, value:" + value);
             request.set(CaptureModule.enable_hvx_mfhdr, value);
             request.set(CaptureModule.mctf, value);
         } catch (IllegalArgumentException|NullPointerException e) {
@@ -7858,6 +7850,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         updateZoom();
         updateZoomSeekBarVisible();
         updateAICameraSeekBar();
+        updateMixedHDRValue();
         updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
         mUI.showRelatedIcons(mCurrentSceneMode.mode);
         mCurrentSessionClosed = true;
@@ -7882,9 +7875,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mActivity.onModuleSelected(ModuleSwitcher.PANOCAPTURE_MODULE_INDEX);
             }
         }
-        if(!isSingleCameraMode()){
-            mSettingsManager.setValue(SettingsManager.KEY_HVX_MFHDR, "0");
-        }
         mActivity.runOnUiThread(new Runnable() {
             public void run() {
                 mUI.hideGridLineView();
@@ -7901,6 +7891,24 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void updateMixedHDRValue(){
+        final SharedPreferences pref = mActivity.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mActivity,
+                        mSettingsManager.getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        final SharedPreferences.Editor editor = pref.edit();
+        if(mSettingsManager.isHvxMFHDRSupported()) {
+            if(!isSingleCameraMode() || mCurrentSceneMode.mode != CameraMode.VIDEO) {
+                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_MFHDR, false);
+                editor.commit();
+            }
+        }
+        if(mSettingsManager.isHvxShdrSupported()) {
+            if(!isSingleCameraMode() && mCurrentSceneMode.mode != CameraMode.DEFAULT) {
+                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_SHDR, false);
+                editor.commit();
+            }
+        }
+    }
 
     private void checkRTBCameraId() {
         CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
@@ -9030,19 +9038,16 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updateVideoSnapshotSize() {
         mVideoSnapshotSize = getMaxPictureSizeLiveshot(getMainCameraId(),mVideoSize.getWidth(),
                 mVideoSize.getHeight());
-        String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
-        String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
-        String hdrmode = mSettingsManager.getVideoHdrMode();
         int[] modes = mSettingsManager.isScreenGrabSupported();
         String maunalHDR = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_HDR);
         boolean isScrrenGrabSupported = false;
-        if(((hdrmode != null && hdrmode.toLowerCase().contains("mfhdr")) || (hvx_mfhdr != null && "1".equals(hvx_mfhdr))) && (modes != null)){
+        if((mSettingsManager.ishvxMfhdrEnabled() || mSettingsManager.ishwMfhdrEnabled()) && (modes != null)){
             for (int x = 0; x < modes.length; x++) {
                 if (modes[x] == 2) {
                     isScrrenGrabSupported = true;
                 }
             }
-        }else if(((hdrmode != null && hdrmode.toLowerCase().contains("shdr")) || (hvx_shdr != null && "1".equals(hvx_shdr))) && (modes != null)){
+        }else if((mSettingsManager.ishvxShdrEnabled() || mSettingsManager.ishwShdrEnabled()) && (modes != null)){
             for (int x = 0; x < modes.length; x++) {
                 if (modes[x] == 1) {
                     isScrrenGrabSupported = true;
@@ -12513,11 +12518,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
 
         Log.d(TAG,  "applyVideoEIS EISV select: " + value);
-        String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
-        if (hvx_shdr != null) {
-            if (Integer.valueOf(hvx_shdr) > 0){
-                value = "V3";
-            }
+        if (mSettingsManager.ishvxShdrEnabled()) {
+            value = "V3";
         }
 
         mStreamConfigOptMode = 0;
