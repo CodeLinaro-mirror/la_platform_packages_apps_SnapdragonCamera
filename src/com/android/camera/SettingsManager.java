@@ -3306,9 +3306,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean isFlashSupported() {
         return mCharacteristics.get(mCaptureModule.getMainCameraId()).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) &&
                 mValuesMap.get(KEY_FLASH_MODE) != null &&
-                isSupportedForMode();
+                isSupportedForMode() && isFlashEnabled();
     }
-
+    private boolean isFlashEnabled(){
+        boolean enable = true;
+        String qll = getValue(SettingsManager.KEY_QLL);
+        if(mCaptureModule.isAFLocked() ||
+                mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC ||
+                mCaptureModule.isLongShotSettingEnabled() || isMultiCameraEnabled() ||
+                (qll != null && qll.equals("1"))){
+            enable = false;
+        }
+        return enable;
+    }
 	private boolean isSupportedForMode(){
         if((CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.SAT)){
