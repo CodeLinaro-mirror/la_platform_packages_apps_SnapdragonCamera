@@ -1104,10 +1104,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
             String dependentKey = dependsOnSet.iterator().next();
             String value = getValue(dependentKey);
             JSONObject dependencyList = getDependencyList(dependentKey, value);
-
             String newValue = null;
             try {
-                newValue = dependencyList.getString(keyToProcess);
+                if(dependencyList != null) {
+                    newValue = dependencyList.getString(keyToProcess);
+                }
             } catch (JSONException e) {
                 Log.w(TAG, "initializeValueMap JSONException No value for:" + keyToProcess);
                 continue;
