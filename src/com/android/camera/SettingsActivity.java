@@ -1949,19 +1949,19 @@ public class SettingsActivity extends PreferenceActivity {
             if (enable != null && enable.equals("1")) {
                 pref.setEnabled(false);
                 pref.setValue("aac");
-            } else {
-                if (PersistUtil.enableMediaRecorder()) {
-                    if (hdr_mode.equals("hdr")) {
-                        pref.setEnabled(false);
-                        pref.setValue("aac");
-                    } else {
-                        pref.setEnabled(true);
-                    }
-                } else {
-                    pref.setEnabled(false);
-                    pref.setValue("aac");
-                }
+                return;
             }
+        }
+        if (PersistUtil.enableMediaRecorder()) {
+            if (hdr_mode.equals("hdr")) {
+                pref.setEnabled(false);
+                pref.setValue("aac");
+            } else {
+                pref.setEnabled(true);
+            }
+        } else {
+            pref.setEnabled(false);
+            pref.setValue("aac");
         }
     }
 
@@ -2004,14 +2004,14 @@ public class SettingsActivity extends PreferenceActivity {
             if (enable != null && enable.equals("1")) {
                 pref.setValue("0");
                 pref.setEnabled(false);
-            } else {
-                if (PersistUtil.enableMediaRecorder()) {
-                    pref.setEnabled(true);
-                } else {
-                    pref.setValue("0");
-                    pref.setEnabled(false);
-                }
+                return;
             }
+        }
+        if (PersistUtil.enableMediaRecorder()) {
+            pref.setEnabled(true);
+        } else {
+            pref.setValue("0");
+            pref.setEnabled(false);
         }
     }
 
