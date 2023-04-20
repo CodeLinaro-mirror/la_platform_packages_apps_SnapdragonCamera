@@ -7170,7 +7170,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void applyAICameraParam(CaptureRequest.Builder builder){
         String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA);
-        if(!mSettingsManager.isAICameraDisable()){
+        if(value != null && !value.equals("disable")){
             Log.d(TAG,"set applyeAiCameraTag: " + value);
             VendorTagUtil.setAICamera(builder, Integer.parseInt(value));
         }
