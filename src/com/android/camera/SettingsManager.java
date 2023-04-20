@@ -241,6 +241,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MANUAL_MFHDR = "MFHDR";
     public static final String KEY_MANUAL_SHDR = "SHDR";
     public static final String KEY_MANUAL_QHDR = "QHDR";
+    public static final String KEY_MANUAL_HVX_MFHDR = "HVX_MFHDR";
+    public static final String KEY_MANUAL_HVX_SHDR = "HVX_SHDR";
     public static final HashMap<String, Integer> KEY_HDR_MODES_ORDER = new HashMap<String, Integer>();
 
     //tone mapping
@@ -407,6 +409,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         KEY_HDR_MODES_ORDER.put("SHDR", 1);
         KEY_HDR_MODES_ORDER.put("MFHDR", 2);
         KEY_HDR_MODES_ORDER.put("QHDR", 3);
+        KEY_HDR_MODES_ORDER.put("HVX_SHDR", 4);
+        KEY_HDR_MODES_ORDER.put("HVX_MFHDR", 5);
         VIDEO_ENCODER_PROFILE_MAP.put("off", "0");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10", "2");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10HDR10", "4");
@@ -993,7 +997,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             Log.w(TAG,EXCEPTION_LOG, "getMaxPreviewSize no vendorTag max_preview_size:");
         }
         int[] hdrMaxSize = getHdrMaxResolution();
-        if(isMfhdrEnabled() && hdrMaxSize != null){
+        if((ishwMfhdrEnabled() || ishwShdrEnabled()) && hdrMaxSize != null){
             if((maxPreviewSize != null && (maxPreviewSize[0]*maxPreviewSize[1] > hdrMaxSize[0]*hdrMaxSize[1] && hdrMaxSize[0] > 0 && hdrMaxSize[1] > 0)) ||
                     maxPreviewSize == null){
                maxPreviewSize = hdrMaxSize;
@@ -1012,12 +1016,51 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return maxHdrSize;
     }
 
-    public boolean isMfhdrEnabled() {
+    public boolean ishwMfhdrEnabled() {
         String hdrmode = getVideoHdrMode();
         if (hdrmode != null && !hdrmode.equals("off")) {
             String[] modeLists = hdrmode.split(" ");
             for (int i = 0; i < modeLists.length; i ++) {
-                if(modeLists[i].equals("MFHDR") || modeLists[i].equals("SHDR")) {
+                if(modeLists[i].equals("MFHDR")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean ishwShdrEnabled() {
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            String[] modeLists = hdrmode.split(" ");
+            for (int i = 0; i < modeLists.length; i ++) {
+                if(modeLists[i].equals("SHDR")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean ishvxMfhdrEnabled() {
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            String[] modeLists = hdrmode.split(" ");
+            for (int i = 0; i < modeLists.length; i ++) {
+                if(modeLists[i].equals("HVX_MFHDR")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean ishvxShdrEnabled() {
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            String[] modeLists = hdrmode.split(" ");
+            for (int i = 0; i < modeLists.length; i ++) {
+                if(modeLists[i].equals("HVX_SHDR")) {
                     return true;
                 }
             }
@@ -3342,6 +3385,47 @@ public class SettingsManager implements ListMenu.SettingsListener {
 //        }
 //        return ret;
         return true;
+    }
+
+    public boolean isHvxMFHDRSupported() {
+        boolean result = false;
+        try {
+            if (mCharacteristics.size() >0){
+                byte isSupported = mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.hvxMFHDRSupported);
+                result = (isSupported == 1);
+            }
+        } catch (IllegalArgumentException|NullPointerException e) {
+            e.printStackTrace();
+            Log.w(TAG, "Supported hvxMFHDRSupported is null.");
+        }
+        Log.d(TAG,"isHvxMFHDRSupported()" + result);
+        return result;
+    }
+
+    public boolean isHvxShdrSupported() {
+        boolean ret = false;
+        try{
+            if (mCharacteristics.size() >0){
+                byte hvx_shdr_available = mCharacteristics.get(getCurrentCameraId()).get(
+                        CaptureModule.support_hvx_shdr);
+                ret = hvx_shdr_available == 1;
+            }
+        } catch(IllegalArgumentException|NullPointerException e){
+            e.printStackTrace();
+        }
+        Log.d(TAG,"isHvxShdrSupported()" + ret);
+        return ret;
+    }
+
+    public int[] isScreenGrabSupported() {
+        int modes[] = null;
+        try {
+            modes = mCharacteristics.get(getCurrentCameraId())
+                    .get(CaptureModule.support_screen_grab_modes);
+        } catch (Exception e) {
+            Log.d(TAG,"isScreenGrabSupported(), cant read supportedScreenGrabmodes");
+        }
+        return modes;
     }
 
     private boolean isFastShutterModeSupported(int id) {

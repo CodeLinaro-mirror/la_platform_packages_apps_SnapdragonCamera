@@ -428,6 +428,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.is_hdr_scene", Byte.class);
     public static CameraCharacteristics.Key<int[]> support_video_hdr_modes =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.available_video_hdr_modes.video_hdr_modes", int[].class);
+    public static CameraCharacteristics.Key<int[]> support_screen_grab_modes =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedScreenGrabmodes.ScreenGrabModes", int[].class);
     public static CameraCharacteristics.Key<int[]> support_video_mfhdr_modes =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedHDRmodes.HDRModes", int[].class);
     public static CameraCharacteristics.Key<Byte> support_auto_hdr_modes =
@@ -438,6 +440,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.inSensorZoomCapability", Integer.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
+
+    public static CameraCharacteristics.Key<Byte> support_hvx_shdr =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.hvxSHDRMode.hvxSHDRSupported", Byte.class);
+    public static final CameraCharacteristics.Key<Byte> hvxMFHDRSupported =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.hvxMFHDRMode.hvxMFHDRSupported", Byte.class);
+
+    public static final CaptureRequest.Key<Byte> enable_hvx_shdr =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHVXSHDRMode", Byte.class);
+    public static final CaptureRequest.Key<Byte> enable_hvx_mfhdr =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHVXMFHDRMode", byte.class);
 
     public static CameraCharacteristics.Key<Byte> logical_camera_type =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.logicalCameraType.logical_camera_type", Byte.class);
@@ -7498,6 +7510,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyXCFAOptimization(builder);
             applyeHardSwitchParam(builder);
             applyMLVideoParam(builder);
+            applyHvxShdr(builder);
+            applyHVXMFHDRMode(builder);
         }
         Set<String> raw_ids = mSettingsManager.getPhysicalFeatureEnableId(SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
         if(raw_ids != null && raw_ids.size() > 0){
@@ -7584,6 +7598,30 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyMFNRAIDEMode(CaptureRequest.Builder builder){
         if (isAIDE2Enabled()) {
             VendorTagUtil.enableMFNRAIDEMode(builder, (byte)0x01);
+        }
+    }
+
+    private void applyHvxShdr(CaptureRequest.Builder request) {
+        try{
+            byte value = 0;
+            if(mSettingsManager.ishvxShdrEnabled())
+                value = 1;
+            request.set(CaptureModule.enable_hvx_shdr,value);
+        } catch (IllegalArgumentException|NullPointerException e) {
+
+        }
+    }
+
+    private void applyHVXMFHDRMode(CaptureRequest.Builder request){
+        try{
+            byte value = 0;
+            if(mSettingsManager.ishvxMfhdrEnabled())
+                value = 1;
+            Log.d(TAG,"applyHVXMFHDRMode, value:" + value);
+            request.set(CaptureModule.enable_hvx_mfhdr, value);
+            request.set(CaptureModule.mctf, value);
+        } catch (IllegalArgumentException|NullPointerException e) {
+
         }
     }
 
@@ -8411,6 +8449,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mActivity.updateStorageSpaceAndHint();
             }
         });
+
+        updateMixedHDRValue();
         if(mIsCloseCamera && !PersistUtil.isTorchMode()) {
             mOpenCameraTimes = 3;
             openCamera(getMainCameraId());
@@ -8445,6 +8485,25 @@ public class CaptureModule implements CameraModule, PhotoController,
                     createSessions();
                 }
             });
+        }
+    }
+
+    private void updateMixedHDRValue(){
+        final SharedPreferences pref = mActivity.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mActivity,
+                        mSettingsManager.getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        final SharedPreferences.Editor editor = pref.edit();
+        if(mSettingsManager.isHvxMFHDRSupported()) {
+            if(!isSingleCameraMode() || mCurrentSceneMode.mode != CameraMode.VIDEO) {
+                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_MFHDR, false);
+                editor.commit();
+            }
+        }
+        if(mSettingsManager.isHvxShdrSupported()) {
+            if(!isSingleCameraMode() && mCurrentSceneMode.mode != CameraMode.DEFAULT) {
+                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_SHDR, false);
+                editor.commit();
+            }
         }
     }
 
@@ -9815,8 +9874,33 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updateVideoSnapshotSize() {
         mVideoSnapshotSize = getMaxPictureSizeLiveshot(getMainCameraId(),mVideoSize.getWidth(),
                 mVideoSize.getHeight());
+
+        int[] modes = mSettingsManager.isScreenGrabSupported();
+        String maunalHDR = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_HDR);
+        boolean isScrrenGrabSupported = false;
+        if((mSettingsManager.ishvxMfhdrEnabled() || mSettingsManager.ishwMfhdrEnabled()) && (modes != null)){
+            for (int x = 0; x < modes.length; x++) {
+                if (modes[x] == 2) {
+                    isScrrenGrabSupported = true;
+                }
+            }
+        }else if((mSettingsManager.ishvxShdrEnabled() || mSettingsManager.ishwShdrEnabled()) && (modes != null)){
+            for (int x = 0; x < modes.length; x++) {
+                if (modes[x] == 1) {
+                    isScrrenGrabSupported = true;
+                }
+            }
+        }
+        if(maunalHDR != null && maunalHDR.equals("auto") && modes != null){
+            for (int x = 0; x < modes.length; x++) {
+                if (modes[x] == 1 || modes[x] == 2) {
+                    isScrrenGrabSupported = true;
+                }
+            }
+        }
         if(mSettingsManager.isLiveshotSizeSameAsVideoSize() ||
-                getCurrenCameraMode() == CameraMode.CINEMATIC){
+                getCurrenCameraMode() == CameraMode.CINEMATIC ||
+                isScrrenGrabSupported){
             mVideoSnapshotSize = mVideoSize;
         }
         String mlVideo = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
@@ -13634,7 +13718,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             key = SettingsManager.KEY_EIS_VALUE;
         }
         String value = mSettingsManager.getValue(key);
-
+        if (mSettingsManager.ishvxShdrEnabled()) {
+            value = "V3";
+        }
         Log.d(TAG,  "applyEIS key: " + key + ", value: " + value);
         boolean previewStabilizationOn = false;
         if (value != null) {

@@ -1136,6 +1136,9 @@ public class SettingsActivity extends PreferenceActivity {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
         StringBuilder defaultHDROrder = new StringBuilder();
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        final SharedPreferences.Editor editor = mLocalSharedPref.edit();
         for (int i = 0; i < modes.length; i++) {
             if (modes[i] == 1) {
                 listData.add(SettingsManager.KEY_MANUAL_SHDR);
@@ -1148,7 +1151,24 @@ public class SettingsActivity extends PreferenceActivity {
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_QHDR);
             }
         }
-        final SharedPreferences.Editor editor = mLocalSharedPref.edit();
+        if(mSettingsManager.isHvxMFHDRSupported()) {
+            if(mIsSingleCameraMode && mode == VIDEO) {
+                listData.add(SettingsManager.KEY_MANUAL_HVX_MFHDR);
+                defaultHDROrder.append(SettingsManager.KEY_MANUAL_HVX_MFHDR);
+            }else {
+                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_MFHDR, false);
+                editor.commit();
+            }
+        }
+        if(mSettingsManager.isHvxShdrSupported()) {
+            if(mIsSingleCameraMode && mode == DEFAULT) {
+                listData.add(SettingsManager.KEY_MANUAL_HVX_SHDR);
+                defaultHDROrder.append(SettingsManager.KEY_MANUAL_HVX_SHDR);
+            }else{
+                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_SHDR, false);
+                editor.commit();
+            }
+        }
         String orderLists = mLocalSharedPref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
         Log.v(TAG, " updateManualHDRSetting orderLists:" + orderLists);
         if (orderLists != null) {
