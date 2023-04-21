@@ -768,9 +768,10 @@ public class CameraActivity extends Activity
         if (mThumbnail != null) {
             mThumbnail.setImageDrawable(mThumbnailDrawable);
             if (!isSecureCamera()) {
-                if(mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
+                if((mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
                         || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR ||
-                        mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC)){
+                        mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC)) ||
+                        (mMultiCameraModule != null && mMultiCameraModule.isRecordingVideo())){
                     return;
                 }else {
                     mThumbnail.setVisibility(View.VISIBLE);

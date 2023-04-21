@@ -366,6 +366,7 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
             showTimeLapseUI(false);
             mShutterButton.setVisibility(View.VISIBLE);
             mSettingsIcon.setVisibility(View.INVISIBLE);
+            mThumbnail.setVisibility(View.INVISIBLE);
         } else {
             //mFlashButton.setVisibility(View.VISIBLE);
             //mFlashButton.init(true);
@@ -376,6 +377,7 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
             mMuteButton.setVisibility(View.INVISIBLE);
             mShutterButton.setVisibility(View.INVISIBLE);
             mSettingsIcon.setVisibility(View.VISIBLE);
+            mThumbnail.setVisibility(View.VISIBLE);
         }
     }
 
