@@ -15659,6 +15659,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void updateZoomSeekBarVisible() {
+        String multiCam = mSettingsManager.getValue(SettingsManager.KEY_MULTI_CAMERAS_MODE);
         if (mCurrentSceneMode.mode == CameraMode.PRO_MODE  ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC || mIsRTBCameraId ||
                 mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
@@ -15680,7 +15681,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
             mUI.hideZoomSeekBar();
-        } else {
+        } else if(multiCam != null && multiCam.equals("on")) {
+            mUI.hideZoomSeekBar();
+        }else{
             mUI.showZoomSeekBar();
             mUI.enableZoomSeekBar(true);
         }
