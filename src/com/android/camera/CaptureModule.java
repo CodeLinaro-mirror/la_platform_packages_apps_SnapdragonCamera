@@ -3292,11 +3292,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     }
                                     outputConfigurations.add(out);
                                 }
-                            }else{
+                            } else {
                                 mPreviewOutputConfiguration = new OutputConfiguration(
                                         new android.util.Size(mPreviewSize.getWidth(), mPreviewSize.getHeight()),
                                         SurfaceHolder.class);
                                 Log.v(TAG, "add mPreviewOutputConfiguration");
+                                String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
+                                Log.v(TAG, "OutputConfiguration previewProfile :" + previewProfile);
+                                if (previewProfile != null && !previewProfile.equals("0")) {
+                                    mPreviewOutputConfiguration.setDynamicRangeProfile(Long.parseLong(previewProfile));
+                                }
                                 outputConfigurations.add(mPreviewOutputConfiguration);
                             }
                         } else {
