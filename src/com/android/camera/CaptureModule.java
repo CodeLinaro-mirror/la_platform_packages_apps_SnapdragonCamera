@@ -802,6 +802,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionV", Float.class);
     public static CameraCharacteristics.Key<Byte> isMLVideoSupported =
             new CameraCharacteristics.Key<>("org.quic.camera.videoretouch.isVideoRetouchSupported", byte.class);
+    public static CameraCharacteristics.Key<byte[]> availableVideoStabilizationModes =
+            new CameraCharacteristics.Key<>("android.control.availableVideoStabilizationModes", byte[].class);
 
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_VENDOR_START = 0x10000;
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV = 0x10001;
