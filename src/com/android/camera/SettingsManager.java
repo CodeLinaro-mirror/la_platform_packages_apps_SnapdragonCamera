@@ -3214,13 +3214,25 @@ public class SettingsManager implements ListMenu.SettingsListener {
         int facing = mCharacteristics.get(id).get(CameraCharacteristics.LENS_FACING);
         return facing == CameraCharacteristics.LENS_FACING_FRONT;
     }
-
+    public boolean isFlashSupported(){
+        return isFlashSupported(mCaptureModule.getMainCameraId());
+    }
     public boolean isFlashSupported(int id) {
         return isFlashAvailable(id) &&
                 mValuesMap.get(KEY_FLASH_MODE) != null &&
-                isSupportedForMode();
+                isSupportedForMode() && isFlashEnabled();
     }
+    private boolean isFlashEnabled(){
+        boolean enable = true;
+        String qll = getValue(SettingsManager.KEY_QLL);
 
+        if(mCaptureModule.isAFLocked() ||
+                mCaptureModule.isLongShotSettingEnabled() || isMultiCameraEnabled() ||
+                (qll != null && qll.equals("1"))){
+            enable = false;
+        }
+        return enable;
+    }
 	private boolean isSupportedForMode(){
         if((CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.SAT)){
