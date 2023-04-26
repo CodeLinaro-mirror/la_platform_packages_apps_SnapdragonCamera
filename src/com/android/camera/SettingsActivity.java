@@ -1474,9 +1474,10 @@ public class SettingsActivity extends PreferenceActivity {
             case DEFAULT:
                 removePreferenceGroup("video", parentPre);
                 if (mDeveloperMenuEnabled && developer != null) {
+                    removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
+                    removePreference(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC, developer);
                     if (!(DEV_LEVEL_ALL)) {
                         removePreference(SettingsManager.KEY_SWITCH_CAMERA, developer);
-                        removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
                     }
                     for (String removeKey : videoOnlyList) {
                         removePreference(removeKey, developer);

@@ -968,7 +968,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mIsVoiceTakePhote = false;
     private String mCropValue;
     private Uri mCurrentVideoUri;
-    private long mRecordingTime;
     private final Set<Uri> mUrisInvalid = new HashSet<>();
     private boolean mTempHoldVideoInVideoIntent = false;
     private boolean mCurrentSessionClosed = false;
@@ -1241,8 +1240,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final int LOCK_AF_AE_STATE_NONE = 0;
     private static final int LOCK_AF_AE_STATE_START = 1;
     private static final int LOCK_AF_AE_STATE_LOCK_DONE = 2;
-
-    private String mImgTitle;
     private List<String> mLongImgTitle = new ArrayList<>();
 
     private int mLockAFAE = LOCK_AF_AE_STATE_NONE;
@@ -1407,7 +1404,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     public boolean isSessionClosed(int id){
         return (mCaptureSession[id] ==null);
     }
-    public String getImageTitle(){return mImgTitle;}
     public List<String> getLongImageTitle(){return mLongImgTitle;}
     public OneUICameraControls getmCameraControls(){
         return mUI.getmCameraControls();
@@ -1416,9 +1412,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         return mVideoSnapshotSize;
     }
     public Uri getVideoUri(){return mCurrentVideoUri;}
-    public long getRecordingTime(){
-        return mRecordingTime;
-    }
     public String getVideoFilePath(){
         return mVideoFilePath;
     }
@@ -1433,9 +1426,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
     public void setPreviewCaptureResult(CaptureResult  result){
         mPreviewCaptureResult = result;
-    }
-    public void setImageTitle(String title){
-        mImgTitle = title;
     }
     public void setLongImageTitle(List<String>  title){
         mLongImgTitle = title;
@@ -5976,7 +5966,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     String title = (name == null) ? null : name.title;
                                     Log.d(TAG,"mLongshotActive="+mLongshotActive+",titile="+title+
                                             ",mNumImageArrived.get()="+mNumImageArrived.get());
-                                    mLongImgTitle.add(title);
+                                    if(mActivity.getAutoTest()) {
+                                        mLongImgTitle.add(title);
+                                    }
                                     long date = (name == null) ? -1 : name.date;
                                     byte[] bytes = getJpegData(image);
                                     int orientation = 0;
@@ -6701,7 +6693,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                         NamedEntity name = mNamedImages.getNextNameEntity();
                         String title = (name == null) ? null : name.title;
                         long date = (name == null) ? -1 : name.date;
-                        mLongImgTitle.add(title);
+                        if(mActivity.getAutoTest()) {
+                            mLongImgTitle.add(title);
+                        }
                         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                         byte[] bytes = new byte[buffer.remaining()];
                         buffer.get(bytes);
@@ -10223,7 +10217,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mStartRecordingTime = System.currentTimeMillis();
         mRecordingPausingTime = 0;
-        mRecordingTime = 0L;
         Log.i(TAG, "triggerVideoRecording " + cameraId);
 
         mActivity.updateStorageSpaceAndHint();
@@ -11017,7 +11010,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         long targetNextUpdateDelay;
         if (!mCaptureTimeLapse) {
             text = CameraUtil.millisecondToTimeString(deltaAdjusted, false);
-            mRecordingTime = deltaAdjusted;
             targetNextUpdateDelay = 1000;
         } else {
             // The length of time lapse video is different from the length
@@ -11025,7 +11017,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             // only in format hh:mm:ss.dd, where dd are the centi seconds.
             text = CameraUtil.millisecondToTimeString(getTimeLapseVideoLength(delta), true);
             targetNextUpdateDelay = mTimeBetweenTimeLapseFrameCaptureMs;
-            mRecordingTime = getTimeLapseVideoLength(delta);
         }
         mUI.setRecordingTime(text);
         if (mRecordingTimeCountsDown != countdownRemainingTime) {

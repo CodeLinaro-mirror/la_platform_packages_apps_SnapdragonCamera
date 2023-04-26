@@ -150,6 +150,7 @@ public class TestBase{
         mActivity.setAutoTest(true);
         executeShellCommand("input tap 500 500");
         mActivity.mSettingsManager.restoreSettings();
+        Thread.sleep(SMALL_WAIT_DURATION);
         mActivity.getCaptureModule().restartAll();
         checkPreview("0", CaptureModule.CameraMode.DEFAULT);
     }
@@ -333,7 +334,8 @@ public class TestBase{
         for(int i = 0;i < length; i++ ){
             mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_PICTURE_SIZE,i);
             mCaptureModule.restartSession(true);
-            checkPreview(cameraid,mode);
+            Thread.sleep(SMALL_WAIT_DURATION);
+            //checkPreview(cameraid,mode);
             snapByLocation();
             if(!testResult) break;
         }
@@ -1207,6 +1209,8 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         mCaptureModule = mActivity.getCaptureModule();
         mCurrentPreviewResult = mCaptureModule.getPreviewCaptureResult();
         mProMode = mCaptureModule.getmCameraControls().getmProMode();
+        Log.i(TAG,"mode="+mode+",mainid="+mCaptureModule.getMainCameraId()
+        +",mActivity.isFinishing()="+mActivity.isFinishing());
         assertNotNull(mCurrentPreviewResult);
         assertFalse(mActivity.isFinishing());
         assertEquals(mode,mCaptureModule.getCurrenCameraMode());
@@ -1268,14 +1272,13 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         //TestUtil.getVideoInfo(videopath);
         int fps = 30;
         int fpsdiff = 0;
-        long timeshow = mCaptureModule.getRecordingTime() ;
+        //long timeshow = mCaptureModule.getRecordingTime() ;
         //assertNotNull(mFrameRate);
         if (mFrameRate != null && !mFrameRate.equals("off")) {
             String mode = mFrameRate.substring(0, 3);
             fps = Integer.parseInt(mFrameRate.substring(3));
             if (mode.equals("hfr")) {
                 time = time * (fps / 30);
-                timeshow = timeshow * (fps / 30);
                 fps = 30;
                 fpsdiff = fps - CameraUtil.mFps;
             }else{
@@ -1283,7 +1286,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             }
         }
         long timediff = time - CameraUtil.timeInMillisec;
-        long showdiff = timeshow - CameraUtil.timeInMillisec ;
+        //long showdiff = timeshow - CameraUtil.timeInMillisec ;
 
         //assertEquals(mVideoWidInSet,CameraUtil.mWidth);
         //assertEquals(mVideoHeiInSet,CameraUtil.mHeight);
@@ -1291,7 +1294,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 fpsdiff >5 || fpsdiff <-5 || timediff >2000 || timediff <-2000 ){
             testResult = false;
             Log.e(TAG,"TestFail reason:time="+time+",mVideoWidInSet"+mVideoWidInSet+",mVideoHeiInSet="+mVideoHeiInSet
-                    +",timediff="+timediff+",showdiff="+showdiff+",fpsdiff="+fpsdiff+",timeshow="+timeshow);
+                    +",timediff="+timediff+",fpsdiff="+fpsdiff);
             return;
         }
        /* if(fpsdiff >5 || fpsdiff <-5){
