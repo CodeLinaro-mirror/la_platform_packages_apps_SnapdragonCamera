@@ -794,6 +794,7 @@ public class CameraActivity extends Activity
 
     public void updateThumbnail(ImageView thumbnail) {
         mThumbnail = thumbnail;
+        mThumbnailPath = null;
         if (mThumbnail == null) return;
         if (mThumbnailDrawable != null) {
             mThumbnail.setImageDrawable(mThumbnailDrawable);
