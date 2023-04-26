@@ -5931,6 +5931,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 }
 
                                 Image image = reader.acquireNextImage();
+                                Log.d(TAG, "imageFormat is " + image.getFormat());
                                 if ((mLongshotActive || mNumFramesArrived.get() > 0)) {
                                     Log.d(TAG, "long shot image available num " + mNumImageArrived.get());
                                     if (mNumImageArrived.get() < mShotNum &&
@@ -6146,7 +6147,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                             Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.YCBCR_P010);
                             List<Size> yuvSizeList = Arrays.asList(yuvSizes);
                             yuvSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
-                            Log.v(TAG, " create mYUV10bitImageReader yuv size : " +
+                            if(mSettingsManager.getQuadBayerSensorPrefEnabled()){
+                                yuvSizeList = mSettingsManager.getSupportedQCFAMaxPictureSizeList(String.valueOf(getMainCameraId()), ImageFormat.YCBCR_P010);
+                                yuvSizeList.sort((o1,o2)->o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
+                            }
+                            Log.d(TAG, "create mYUV10bitImageReader yuv size : " +
                                     yuvSizeList.get(0).getWidth() + " x " +
                                     yuvSizeList.get(0).getHeight());
                             mYUV10bitImageReader[i] = ImageReader.newInstance(yuvSizeList.get(0).getWidth(),
