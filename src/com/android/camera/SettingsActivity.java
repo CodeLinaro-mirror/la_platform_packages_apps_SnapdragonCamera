@@ -1434,6 +1434,10 @@ public class SettingsActivity extends PreferenceActivity {
             removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, photoPre);
             removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, videoPre);
         }
+        boolean isStatsNN = mSettingsManager.isStatsNNSupported();
+        if (!isStatsNN) {
+            removePreference(SettingsManager.KEY_STATSNN_CONTROL, photoPre);
+        }
         Preference p = findPreference(SettingsManager.KEY_FD_SETTING);
         if(p != null) {
             fdExpandListView = new FdExpandListView(SettingsActivity.this);
@@ -1538,7 +1542,9 @@ public class SettingsActivity extends PreferenceActivity {
                     videoAddList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     videoAddList.add(SettingsManager.KEY_TONE_MAPPING);
                     videoAddList.add(SettingsManager.KEY_SELECT_MODE);
-                    videoAddList.add(SettingsManager.KEY_STATSNN_CONTROL);
+                    if (isStatsNN) {
+                        videoAddList.add(SettingsManager.KEY_STATSNN_CONTROL);
+                    }
                     videoAddList.add(SettingsManager.KEY_PDNET_TOGGLE);
                     videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
