@@ -11537,7 +11537,12 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void configureAACAudioEncoder(String encoder) throws IOException {
-        int aacProfileLevel = mAudioFormat.getInteger(MediaFormat.KEY_AAC_PROFILE);
+        int aacProfileLevel = -1;
+        try {
+            aacProfileLevel = mAudioFormat.getInteger(MediaFormat.KEY_AAC_PROFILE);
+        } catch (NullPointerException e) {
+            Log.w(TAG, "", e.fillInStackTrace());
+        }
         switch(aacProfileLevel) {
             case MediaCodecInfo.CodecProfileLevel.AACObjectLC:
             {
