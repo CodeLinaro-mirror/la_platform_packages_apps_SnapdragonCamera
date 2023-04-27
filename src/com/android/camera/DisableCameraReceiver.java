@@ -26,6 +26,7 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
 
 import com.android.camera.util.Log;
+import com.android.camera.util.PersistUtil;
 
 // We want to disable camera-related activities if there is no camera. This
 // receiver runs when BOOT_COMPLETED intent is received. After running once
@@ -46,7 +47,7 @@ public class DisableCameraReceiver extends BroadcastReceiver {
         needCameraActivity = CHECK_BACK_CAMERA_ONLY
                 ? hasBackCamera()
                 : hasCamera();
-        if (needCameraActivity) {
+        if (needCameraActivity || PersistUtil.showIconWhenNoCam()) {
             Log.i(TAG, "enable all camera activities");
             for (int i = 0; i < ACTIVITIES.length; i++) {
                 setComponentState(context, ACTIVITIES[i], true);
