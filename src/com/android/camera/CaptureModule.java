@@ -733,6 +733,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static final CameraCharacteristics.Key<Byte> is_t2t_supported =
             new CameraCharacteristics.Key<>(
                     "org.quic.camera2.objectTrackingResults.TrackerEnable", byte.class);
+    public static final CameraCharacteristics.Key<Byte> is_statsnn_supported =
+            new CameraCharacteristics.Key<>(
+                    "org.quic.camera2.statsNNSaliNetResults.statsNNSaliencyEnable", byte.class);
     private static final CaptureResult.Key<Integer> t2t_tracker_status =
             new CaptureResult.Key<>("org.quic.camera2.objectTrackingResults.TrackerStatus", Integer.class);
     private static final CaptureResult.Key<int[]> t2t_tracker_result_roi =
