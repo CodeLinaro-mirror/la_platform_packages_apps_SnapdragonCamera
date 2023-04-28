@@ -1030,7 +1030,7 @@ public class OneUICameraControls extends RotatableLayout {
             return;
         }
         mAIBlurLayout.setVisibility(VISIBLE);
-        mAIBlurLayout.setY(mHeight - mBottom - mAIBlurLayout.getHeight() - 250);
+        mAIBlurLayout.setY(mHeight - mBottom - mAIBlurLayout.getHeight() - 300);
     }
 
     public void updateBlurModeText(int mode, String value) {
