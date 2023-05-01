@@ -2150,7 +2150,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mAFRoi[1] = result.get(roiy_start);
                 mAFRoi[2] = result.get(roix_end);
                 mAFRoi[3] = result.get(roiy_end);
-                Log.d(TAG,"mAFRoi[0]:" + mAFRoi[0] +"mAFRoi[1]:" + mAFRoi[1] +"mAFRoi[2]:" + mAFRoi[2] + "mAFRoi[3]:" + mAFRoi[3]);
+                Log.d(TAG," mAFRoi[0]:" + mAFRoi[0] +"mAFRoi[1]:" + mAFRoi[1] +"mAFRoi[2]:" + mAFRoi[2] + "mAFRoi[3]:" + mAFRoi[3]);
             }catch (NullPointerException|IllegalArgumentException e){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
@@ -2277,12 +2277,16 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onClosed(CameraDevice cameraDevice) {
             int id = Integer.parseInt(cameraDevice.getId());
-            mCloseCameraLatency = System.currentTimeMillis() - mCloseCameraLatency;
-            Log.i(TAG, "onClosed " + id);
-            mCameraDevice[id] = null;
-            mCameraOpenCloseLock.release();
-            mCamerasOpened = false;
-            mIsCloseCamera = true;
+            Log.i(TAG,"onclosed id="+id);
+            Log.d(TAG,"mCameraDevice[id]="+
+                    mCameraDevice[id]+",id="+id+",cameraDevice="+cameraDevice+",getmainid="+getMainCameraId());
+            if((mCameraDevice[id] == null || mCameraDevice[id].equals(cameraDevice)) && id == getMainCameraId()){
+                mCloseCameraLatency = System.currentTimeMillis() - mCloseCameraLatency;
+                mCameraDevice[id] = null;
+                mCameraOpenCloseLock.release();
+                mCamerasOpened = false;
+                mIsCloseCamera = true;
+            }
         }
 
     };
