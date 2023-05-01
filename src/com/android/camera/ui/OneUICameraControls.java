@@ -152,13 +152,14 @@ public class OneUICameraControls extends RotatableLayout {
     private TextView mBlurLuma;
     private TextView mBlurChromaU;
     private TextView mBlurChromaV;
+    private SettingsManager mSettingsManager;
     private LinearLayout mAIDisLayout;
 
     public OneUICameraControls(Context context, AttributeSet attrs) {
         super(context, attrs);
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         setWillNotDraw(false);
-
+        mSettingsManager = SettingsManager.getInstance();
         mRefocusToast = new ArrowTextView(context);
         addView(mRefocusToast);
         setClipChildren(false);
@@ -909,6 +910,8 @@ public class OneUICameraControls extends RotatableLayout {
         }
     }
     public void closeFlashForPro( boolean isHiden){
+        if(!mSettingsManager.isFlashSupported())
+            return;
         if(isHiden) {
             mFlashButton.closeFlash(true);
             mFlashButton.setVisibility(View.INVISIBLE);
