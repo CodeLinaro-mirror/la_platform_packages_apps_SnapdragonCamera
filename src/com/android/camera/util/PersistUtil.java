@@ -389,7 +389,7 @@ public class PersistUtil {
     }
 
     public static boolean showIconWhenNoCam() {
-        return getBoolean("persist.sys.camera.showIconWhenNoCam", false);
+        return getBoolean("persist.sys.camera.showIconWhenNoCam", true);
     }
 
     public static boolean isZzhdrEnabled(){
