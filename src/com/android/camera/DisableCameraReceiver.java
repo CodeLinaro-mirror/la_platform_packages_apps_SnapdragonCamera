@@ -32,7 +32,7 @@ import com.android.camera.util.PersistUtil;
 // receiver runs when BOOT_COMPLETED intent is received. After running once
 // this receiver will be disabled, so it will not run again.
 public class DisableCameraReceiver extends BroadcastReceiver {
-    private static final String TAG = "DisableCameraReceiver";
+    private static final String TAG = "SnapCam_DisableCameraReceiver";
     private static final boolean CHECK_BACK_CAMERA_ONLY = false;
     private CameraManager mCameraManager;
     private static final String ACTIVITIES[] = {
