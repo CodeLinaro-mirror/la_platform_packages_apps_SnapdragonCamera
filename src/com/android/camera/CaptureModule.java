@@ -4808,7 +4808,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             String mode = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_MODE);
             if(mode.equals("0")){
-                mBGain = mGGain*detail_enhancement;
+                mBGain = mGGain*detail_enhancement*4;
             }
             Log.i(TAG,"mAideV2CaptureCallback, mRGain:" + mRGain + ",mGGain:" + mGGain + ",detail_enhancement:" + detail_enhancement + ",mBGain:" + mBGain);
             AIDEV2ProcessFrameArgs aideV2Args = new AIDEV2ProcessFrameArgs(inputFrameDim, downFrameDim, srcInputY, srcInputUV, srcDsInputY, srcDsInputUV,
