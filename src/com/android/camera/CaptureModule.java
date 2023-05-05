@@ -13530,14 +13530,14 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyVIULL(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_VIULL);
         if (value != null ) {
-            int mode = 0;
+            int mode = -1;
             try  {
                 mode = Integer.parseInt(value);
             } catch (NumberFormatException e) {
                 //
             }
             Log.v(TAG, " applyVIULL mode :" + mode);
-            if (mode != 0) {
+            if (mode != -1) {
                 VendorTagUtil.setVIULLMode(request, mode);
             }
         }

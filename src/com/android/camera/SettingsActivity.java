@@ -2403,7 +2403,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
-        if (!"0".equals(previewProfile)) {
+        if (previewProfile != null && !"0".equals(previewProfile)) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;
