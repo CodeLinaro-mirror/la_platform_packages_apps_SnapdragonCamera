@@ -7821,6 +7821,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mActivity.onModuleSelected(ModuleSwitcher.PANOCAPTURE_MODULE_INDEX);
             }
         }
+        if(!isSingleCameraMode()){
+            mSettingsManager.setValue(SettingsManager.KEY_HVX_MFHDR, "0");
+        }
         mActivity.runOnUiThread(new Runnable() {
             public void run() {
                 mUI.hideGridLineView();
@@ -8299,6 +8302,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             return false;
         }
     }
+
     public boolean isLongExpTmCaptrure(){
         Log.d(TAG,"mLongExpTime="+mLongExpTime+",maxExpTime="+maxExpTime);
         if(mCurrentSceneMode.mode == CameraMode.PRO_MODE && isTakingPicture() && mIsLongExpTmCp && mLongExpTime >maxExpTime) return true;
