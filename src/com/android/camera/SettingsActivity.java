@@ -2646,6 +2646,10 @@ public class SettingsActivity extends PreferenceActivity {
                 longShot.setChecked(false);
                 longShot.setEnabled(false);
             }
+            if(mSettingsManager.isOverriden(SettingsManager.KEY_LONGSHOT)){
+                longShot.setChecked(false);
+                longShot.setEnabled(false);
+            }
         }
     }
 
