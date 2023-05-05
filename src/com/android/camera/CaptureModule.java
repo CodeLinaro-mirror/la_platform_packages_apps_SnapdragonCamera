@@ -11351,7 +11351,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             shouldAddToMediaStoreNow = true;
         }
         mRecordingStoped = true;
-        if (PersistUtil.needEndOfStream()) {
+        String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
+        if (PersistUtil.needEndOfStream() && !profile.equals("HEVCProfileMain10HDR10Plus")) {
             setEndOfStream(false, true);
         }
         if (!isHighSpeedRateCapture()) {
