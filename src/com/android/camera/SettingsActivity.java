@@ -214,11 +214,15 @@ public class SettingsActivity extends PreferenceActivity {
                 ListPreference picFormat = (ListPreference)findPreference(SettingsManager.KEY_PICTURE_FORMAT);
                 if (PersistUtil.isMultiResolutionImageReaderEnabled() && value != null && "1".equals(value)) {
                     picSize.setEnabled(false);
-                    picFormat.setValue("0");
-                    picFormat.setEnabled(false);
+                    if (picFormat != null) {
+                        picFormat.setValue("0");
+                        picFormat.setEnabled(false);
+                    }
                 } else {
                     picSize.setEnabled(true);
-                    picFormat.setEnabled(true);
+                    if (picFormat != null) {
+                        picFormat.setEnabled(true);
+                    }
                 }
             }else if (key.equals(SettingsManager.KEY_VIDEO_ENCODER_PROFILE)){
                 CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
@@ -1557,6 +1561,11 @@ public class SettingsActivity extends PreferenceActivity {
                     if(mode == HFR && !mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())){
                         removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
                     }
+                    Preference p1 = findPreference(SettingsManager.KEY_PICTURE_FORMAT);
+                    if (p1 != null){
+                        PreferenceGroup general = (PreferenceGroup)findPreference("general");
+                        general.removePreference(p1);
+                    }
                 }else {
                     removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
                 }
@@ -2619,11 +2628,12 @@ public class SettingsActivity extends PreferenceActivity {
 
     private void updatePictureFormatPreference(){
        ListPreference pictureFormatPref = (ListPreference)findPreference(SettingsManager.KEY_PICTURE_FORMAT);
+       if (pictureFormatPref == null) {
+           return;
+       }
         CaptureModule.CameraMode mode =
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-       if(pictureFormatPref != null){
-            updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
-       }
+        updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
         if (mSettingsManager.getQuadBayerSensorPrefEnabled() ||(CaptureModule.CameraMode.RTB == mode && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE))) {
             pictureFormatPref.setValue("0");
             pictureFormatPref.setEnabled(false);
