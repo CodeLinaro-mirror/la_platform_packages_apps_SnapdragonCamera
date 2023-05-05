@@ -2227,6 +2227,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (qllStr.equals("1")) {
             return false;
         }
+        String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        if (selectMode != null && selectMode.equals("single_rear_cameraid")) {
+            boolean previewStabilizationOn = "enable".equals(mSettingsManager.
+                    getValue(SettingsManager.KEY_PREVIEW_STABILIZATION));
+            return !previewStabilizationOn;
+        }
         return true;
     }
     public void initSceneModeHDR() {
