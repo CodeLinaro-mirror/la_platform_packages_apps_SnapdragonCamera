@@ -4195,7 +4195,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         if (isAutoHDRSupported()){
-            if(isSupportedMixHdr() && !isAIBokehMode()){
+            if(isSupportedMixHdr()){
                 ret.add("auto");
             }
         }
