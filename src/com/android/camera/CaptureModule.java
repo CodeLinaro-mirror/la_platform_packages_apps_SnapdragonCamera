@@ -7357,6 +7357,12 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyCommonSettings(CaptureRequest.Builder builder, int id) {
+        Log.d(TAG, " applyCommonSettings ZoomFixedSupport: " + mUI.getZoomFixedSupport() + ", mZoomValue :" + mZoomValue);
+        if (mUI.getZoomFixedSupport()) {
+            applyZoomRatio(builder, mZoomValue, id);
+        } else {
+            applyZoom(builder, id);
+        }
         if (!mSettingsManager.isMultiCameraEnabled()) {
             builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
             builder.set(CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
@@ -7384,13 +7390,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyTargetZoom(builder, 0f);
             applyInStantZoom(builder);
         }
-        Log.d(TAG, " applyCommonSettings ZoomFixedSupport: " + mUI.getZoomFixedSupport() + ", mZoomValue :" + mZoomValue);
-        if (mUI.getZoomFixedSupport()) {
-            applyZoomRatio(builder, mZoomValue, id);
-        } else {
-            applyZoom(builder, id);
-        }
-
         applyColorEffect(builder);
     }
 
@@ -10672,6 +10671,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyVideoCommentSettings(CaptureRequest.Builder builder, int cameraId) {
+        if (mUI.getZoomFixedSupport()) {
+            applyZoomRatio(builder, mZoomValue, cameraId);
+        } else {
+            applyZoom(builder, cameraId);
+        }
         if (!mSettingsManager.isMultiCameraEnabled()) {
             if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
                 builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
@@ -10696,11 +10700,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyInStantZoom(builder);
         }
         applyColorEffect(builder);
-        if (mUI.getZoomFixedSupport()) {
-            applyZoomRatio(builder, mZoomValue, cameraId);
-        } else {
-            applyZoom(builder, cameraId);
-        }
     }
 
     private void applyVideoHDR(CaptureRequest.Builder builder) {
