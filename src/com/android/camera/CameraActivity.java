@@ -120,7 +120,7 @@ import com.android.camera.util.PhotoSphereHelper;
 import com.android.camera.util.PhotoSphereHelper.PanoramaViewHelper;
 import com.android.camera.util.UsageStatistics;
 import org.codeaurora.snapcam.R;
-
+import com.android.camera.app.CameraApp;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import com.android.camera.CaptureModule.CameraMode;
@@ -275,10 +275,9 @@ public class CameraActivity extends Activity
     private Cursor mCursor;
     private boolean mIsAutoTest = false;
     private boolean mOpenDevOption = false;
-
+    private boolean mIsPerformenceTest = false;
+    public long mColdOpenCameraTime = 0;
     private boolean mAutoTestEnabled = false;
-
-
     private WakeLock mWakeLock;
     private static final int REFOCUS_ACTIVITY_CODE = 1;
 
@@ -1564,6 +1563,7 @@ public class CameraActivity extends Activity
 
     @Override
     public void onCreate(Bundle state) {
+        mColdOpenCameraTime = System.currentTimeMillis();
         super.onCreate(state);
         try {
             //Print version info here
@@ -1993,6 +1993,8 @@ public class CameraActivity extends Activity
 
     @Override
     public void onDestroy() {
+        Log.i(TAG,"destroy");
+        mColdOpenCameraTime = 0;
         if (mWakeLock != null && mWakeLock.isHeld()) {
             mWakeLock.release();
             Log.d(TAG, "wake lock release");
@@ -2495,7 +2497,7 @@ public class CameraActivity extends Activity
         mCurrentModule.onPreviewFocusChanged(showControls);
     }
 
-    // method for autotest
+    // method for autotest start
     public CaptureModule getCaptureModule(){
         return mCaptureModule;
     }
@@ -2508,12 +2510,17 @@ public class CameraActivity extends Activity
     public boolean getDevOption(){
         return  mOpenDevOption;
     }
-    public void setDevOption(boolean open){
+    public void setDevOption(boolean open) {
         mOpenDevOption = open;
     }
+    public boolean getPerformenceTest(){
+        return  mIsPerformenceTest || mColdOpenCameraTime != 0;
+    }
+    public void setPerformenceTest(boolean test){
+        mIsPerformenceTest = test;
+    }
 
-
-
+   // method for autotest end
 
 
     // Accessor methods for getting latency times used in performance testing

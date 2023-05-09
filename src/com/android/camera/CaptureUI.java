@@ -2128,6 +2128,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFrontBackSwitcher.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if(mActivity.getPerformenceTest()) {
+                    mModule.setStartedTime(System.currentTimeMillis());
+                }
                 switchFrontBackCamera();
             }
         });
@@ -4271,6 +4274,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void swipeCameraMode(int move) {
+        if(mActivity.getPerformenceTest()) {
+            mModule.setStartedTime(System.currentTimeMillis());
+        }
         if (mIsVideoUI || !mModule.getCameraModeSwitcherAllowed() ||
                 mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
             return;

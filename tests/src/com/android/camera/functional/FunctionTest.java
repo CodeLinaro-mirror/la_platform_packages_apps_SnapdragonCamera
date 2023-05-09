@@ -127,7 +127,7 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInFrontVideo() throws Exception {
-        Log.i(TAG, "testInVideoModule");
+        Log.i(TAG, "testInFrontVideo");
         swipFromRTL(3);
         checkPreview("0",CaptureModule.CameraMode.VIDEO);
         executeShellCommand("input tap "+ mSwitchLoc[0]  +" "+mSwitchLoc[1]);
@@ -142,7 +142,7 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInFrontHFR() throws Exception {
-        Log.i(TAG, "testInHFRModule");
+        Log.i(TAG, "testInFrontHFR");
         swipFromRTL(1);
         checkPreview("2",CaptureModule.CameraMode.HFR);
         executeShellCommand("input tap "+ mSwitchLoc[0]  +" "+mSwitchLoc[1]);
@@ -155,13 +155,4 @@ public class FunctionTest extends TestBase  {
         //checkPreview("2",CaptureModule.CameraMode.HFR);
         runVideoCase("2",CaptureModule.CameraMode.CINEMATIC);
     }
-
-
-
-
-
-
-
-
-
 }

@@ -4081,6 +4081,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         if (maxSizes != null) {
             for (Size size : maxSizes) {
+                if(size == null || videoSize == null){
+                    Log.i(TAG,"size="+size+",videosize="+videoSize);
+                    result = false;
+                    return result;
+                }
                 if ((size.getWidth() == videoSize.getWidth() &&
                         size.getHeight() == videoSize.getHeight()) &&
                         (videoSize.getWidth() * videoSize.getHeight() > 1920 * 1080)) {
