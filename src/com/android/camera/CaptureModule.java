@@ -1616,7 +1616,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else {
                 mUI.updateAECIdInfoVisibility(View.GONE);
             }
-            if (isSateNNFocusSettingOn() && !mStatsVisualEnable.equals("1") && isCinematicDebugOn()
+            if (isSateNNFocusSettingOn() && isCinematicDebugOn()
                     && !mSettingsManager.isMultiCameraEnabled()) {
                 updateStatsNNView(result);
             } else {

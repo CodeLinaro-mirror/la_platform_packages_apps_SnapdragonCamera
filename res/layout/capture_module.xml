@@ -264,13 +264,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="220dip"
-            android:layout_marginLeft="250dip" />
+            android:layout_marginLeft="255dip" />
         <TextView
             android:id="@+id/bg_stats_graph_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="340dip"
-            android:layout_marginLeft="250dip"
+            android:layout_marginTop="300dip"
+            android:layout_marginLeft="255dip"
             android:textSize="14sp"
             android:visibility="gone"
             android:text="@string/stats_visualizer_bg_label"/>
@@ -279,14 +279,14 @@
             android:visibility="gone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="360dip"
-            android:layout_marginLeft="250dip" />
+            android:layout_marginTop="320dip"
+            android:layout_marginLeft="255dip" />
         <TextView
             android:id="@+id/be_stats_graph_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="480dip"
-            android:layout_marginLeft="250dip"
+            android:layout_marginTop="440dip"
+            android:layout_marginLeft="255dip"
             android:textSize="15sp"
             android:visibility="gone"
             android:text="@string/stats_visualizer_be_label"/>
@@ -295,8 +295,8 @@
             android:visibility="gone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="500dip"
-            android:layout_marginLeft="250dip" />
+            android:layout_marginTop="460dip"
+            android:layout_marginLeft="255dip" />
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -405,7 +405,9 @@
             android:id="@+id/stats_nn_result_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="160dip"
+            android:layout_marginBottom="170dip"
+            android:layout_gravity="right"
+            android:layout_marginRight="2dip"
             android:orientation="vertical"
             android:visibility="gone">
 
@@ -416,6 +418,7 @@
                 android:textColor="#ffff00"
                 android:background="#60000000"
                 android:textSize="13sp"
+                android:gravity="right"
                 android:layout_alignParentBottom="true"/>
         </RelativeLayout>
         <com.android.camera.DrawAutoHDR2
