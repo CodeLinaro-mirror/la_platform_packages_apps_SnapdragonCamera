@@ -3033,20 +3033,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         out.setPhysicalCameraId(physical_id);
                                     outputConfigurations.add(out);
                                     mUI.buildPhysicalSurfaces();
-                                    List<Surface> physicalSurfaces = mUI.getPhysicalSurfaces();
-                                    Set<String> allPhysicalIds =
-                                            mSettingsManager.getAllPhysicalCameraId();
-                                    int i = 1;
-                                    for (String physical : allPhysicalIds) {
-                                        if (!physical_id.equals(physical)) {
-                                            OutputConfiguration o = new OutputConfiguration(
-                                                    physicalSurfaces.get(i));
-                                            o.setPhysicalCameraId(physical);
-                                            outputConfigurations.add(o);
-                                            mPreviewRequestBuilder[id].addTarget(physicalSurfaces.get(i));
-                                            i++;
-                                        }
-                                    }
                                 } else {
                                     if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                                         out.addSensorPixelModeUsed(
@@ -3662,7 +3648,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         updateSettingDependencyId();
         mUI = new CaptureUI(activity, this, parent);
         mUI.initializeControlByIntent();
-
         mFocusStateListener = new FocusStateListener(mUI);
         mLocationManager = new LocationManager(mActivity, this);
     }
@@ -3748,7 +3733,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     }
-
+    public void updateFlashIcon(){
+        String qll = mSettingsManager.getValue(SettingsManager.KEY_QLL);
+        if(isLongShotSettingEnabled() || mSettingsManager.isMultiCameraEnabled() ||
+                (qll != null && qll.equals("1"))){
+            mUI.updateFlashButton(false);
+        }else{
+            mUI.updateFlashButton(true);
+        }
+    }
     private void updateSettingDependencyId(){
         List<String> supported = mSettingsManager.getSupportedVideoSize(mLogicalId);
         if(!MCXMODE || supported.size() <= 0){
@@ -4322,7 +4315,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if (!mSettingsManager.isMultiCameraEnabled()) {
                 if (!(mIsSupportedQcfa || isDeepZoom() || (fs2Value ==1) ||
-                        mSettingsManager.getQuadBayerSensorPrefEnabled())) {
+                        mSettingsManager.getQuadBayerSensorPrefEnabled()) && mSettingsManager.getSinglePhysicalCamera() == null) {
                     addPreviewSurface(captureBuilder, null, id);
                 }
             }
@@ -7219,6 +7212,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         updateZoomSeekBarVisible();
         updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
         mUI.showRelatedIcons(mCurrentSceneMode.mode);
+        updateFlashIcon();
         mCurrentSessionClosed = true;
         if(mIsCloseCamera) {
             mOpenCameraTimes = 3;
@@ -7695,7 +7689,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         return mCurrentSceneMode.getCurrentId();
     }
-
     public boolean isSingleCameraMode(){
         if(CaptureModule.FRONT_ID==mCurrentSceneMode.getCurrentId())
             return true;
@@ -10012,7 +10005,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "cannot access the file");
             }
-            retriever.release();
+            try {
+                retriever.release();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             mCurrentVideoValues.put(MediaStore.Video.Media.DURATION, duration);
             if (ApiHelper.isAndroidROrHigher()) {
