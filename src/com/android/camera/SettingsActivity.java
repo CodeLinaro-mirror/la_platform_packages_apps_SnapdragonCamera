@@ -361,6 +361,7 @@ public class SettingsActivity extends PreferenceActivity {
                         mSettingsManager.filterVideoEncoderProfileOptions();
                         updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
                     }
+                    updateAICameraPerf();
                 }
                 if(pref.getKey().equals(SettingsManager.KEY_HFR_BUFFER_MODE)){
                     updateVideoHfrFpsPreference();
@@ -1720,7 +1721,19 @@ public class SettingsActivity extends PreferenceActivity {
         CaptureModule.CameraMode mode =
                 (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        ListPreference aiCamera = (ListPreference)findPreference(SettingsManager.KEY_AI_CAMERA);
         Log.d(TAG,"isAICameraOn:" + mSettingsManager.isAICameraOn() + ",selectMode: " + selectMode);
+        if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") && mode == VIDEO  &&
+                mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID){
+            if(aiCamera != null) {
+                aiCamera.setValue("0");
+                aiCamera.setEnabled(false);
+            }
+        }else{
+            if(aiCamera != null) {
+                aiCamera.setEnabled(true);
+            }
+        }
         if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") && mode == VIDEO  &&
                 mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID){
             aiCameraList.add(SettingsManager.KEY_AI_CAMERA);
