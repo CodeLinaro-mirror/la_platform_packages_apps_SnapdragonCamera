@@ -9992,6 +9992,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void getOptMode() {
+        mStreamConfigOptMode = 0;
         String zzHDR = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HDR_VALUE);
         boolean zzHdrStatue = zzHDR.equals("1");
         if (zzHdrStatue) {
