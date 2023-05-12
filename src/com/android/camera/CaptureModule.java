@@ -3391,7 +3391,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
 
                     if (mRawReprocessType != 0) {
-
                         for (int i = 0; i < mRawCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mRAWImageReader[i].getSurface());
                             String physicalId = mSettingsManager.getRawReprocessPhysicalId();
@@ -3493,6 +3492,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         } catch (CameraAccessException | NullPointerException | IllegalStateException |IllegalArgumentException e) {
            Log.e(TAG,"createSession exception = "+ e);
+           e.printStackTrace();
         }
     }
 
@@ -3682,9 +3682,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 outputConfigurations.add(configuration);
                 i++;
             }
-        }else if(mSaveRaw) {
+        } else if (mSaveRaw) {
             for (int i = 0; i < mPhysicalRawId.length; i++) {
                 String id = mPhysicalRawId[i];
+                if (mPhysicalRawReader[i] == null) {
+                    break;
+                }
                 OutputConfiguration configuration = new OutputConfiguration(mPhysicalRawReader[i].getSurface());
                 if (!isLogicalId(id)) {
                     configuration.setPhysicalCameraId(id);
