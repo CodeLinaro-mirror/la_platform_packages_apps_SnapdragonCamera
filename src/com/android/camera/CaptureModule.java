@@ -727,6 +727,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             "org.quic.camera2.VideoConfigurations.info.VideoConfigurationsTable",int[].class);
     public static final CameraCharacteristics.Key<Byte> is_camera_fd_supported = new CameraCharacteristics.Key<>(
             "org.quic.camera.FDRendering.isFDRenderingInCameraUISupported",byte.class);
+    private static final CaptureRequest.Key<Byte> custom_noise_reduction =  new CaptureRequest.Key<>(
+            "org.quic.camera.CustomNoiseReduction.CustomNoiseReduction", byte.class);
 
     // offline dump trigger
     public static final CaptureRequest.Key<Integer> offline_dump_trigger_trigger =
@@ -6830,8 +6832,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 setTag(builder, "" + id + "-" + getCurrenCameraMode().name());
                 addPreviewSurface(builder, null, id);
                 applySettingsForUnlockFocus(builder, id);
-                if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE) {
+                if (mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE) {
                     applySettingsForLockExposure(builder, id);
+                }
+                // Set EIS vendor tag back to 0 after snapshot request
+                if (isMFNREnabled()) {
+                    builder.set(custom_noise_reduction, (byte) 0x00);
                 }
                 if (mCaptureSession[id] instanceof CameraConstrainedHighSpeedCaptureSession) {
                     List requestList = getHighSpeedList ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession,
@@ -10863,13 +10869,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             Set<String> mfnr_ids = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_MFNR);
             int noiseReduMode = CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY;
-            if (mfnr_ids != null){
-                for (String id:mfnr_ids){
+            if (mfnr_ids != null) {
+                builder.set(custom_noise_reduction, (byte) 0x01);
+                for (String id:mfnr_ids) {
                     try {
                         builder.setPhysicalCameraKey(CaptureRequest.NOISE_REDUCTION_MODE,
                                 noiseReduMode,id);
                     } catch (Exception e) {
-                        Log.w(TAG, EXCEPTION_LOG,"capture can`t find vendor NOISE_REDUCTION_MODE tag ");
+                        Log.w(TAG, EXCEPTION_LOG,"capture can`t find vendor NOISE_REDUCTION_MODE tag");
                     }
                 }
                 Set<String> allPhysicalIds = mSettingsManager.getAllPhysicalCameraId();
@@ -10880,11 +10887,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                             builder.setPhysicalCameraKey(CaptureRequest.NOISE_REDUCTION_MODE,
                                     CameraMetadata.NOISE_REDUCTION_MODE_FAST,physical);
                         } catch (Exception e) {
-                            Log.w(TAG, EXCEPTION_LOG,"capture can`t find vendor NOISE_REDUCTION_MODE tag ");
+                            Log.w(TAG, EXCEPTION_LOG,"capture can`t find vendor NOISE_REDUCTION_MODE tag");
                         }
                     }
                 }
-            }else{
+            } else {
                 noiseReduMode = CameraMetadata.NOISE_REDUCTION_MODE_FAST;
             }
             builder.set(CaptureRequest.NOISE_REDUCTION_MODE,noiseReduMode);
@@ -10900,9 +10907,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             builder.set(CaptureRequest.NOISE_REDUCTION_MODE, noiseReduMode);
             if (isMfnrEnable) {
                 try {
+                    builder.set(custom_noise_reduction, (byte) 0x01);
                     builder.set(CaptureModule.mfnrFrameNO, frameValue);
                 } catch (IllegalArgumentException e) {
-                    Log.w(TAG, EXCEPTION_LOG,"capture can`t find vendor tag:MFNumOfFrames");
+                    Log.w(TAG, EXCEPTION_LOG,"capture can`t find vendor tag:MFNumOfFrames or custom_noise_reduction");
                 }
             }
         }
