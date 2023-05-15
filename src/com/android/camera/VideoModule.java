@@ -1708,7 +1708,11 @@ public class VideoModule implements CameraModule,
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "cannot access the file");
             }
-            retriever.release();
+            try {
+                retriever.release();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             mActivity.getMediaSaveService().addVideo(mCurrentVideoFilename,
                     duration, mCurrentVideoValues,

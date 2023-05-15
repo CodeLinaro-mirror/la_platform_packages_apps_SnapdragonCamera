@@ -89,7 +89,6 @@ public class MultiSettingsActivity extends PreferenceActivity {
 
     // capture settings
     public static final String KEY_HAL_ZAL = "pref_multi_camera_hal_zsl_key";
-    public static final String KEY_MULTI_FACE_DETECTION = "pref_multi_camera_facedetection_key";
     public static final String KEY_PICTURE_SIZE_ = "Picture_size_of_camera_";
     public static final String KEY_PICTURE_SIZE_1 = "pref_multi_camera_picturesize1_key";
     public static final String KEY_PICTURE_SIZE_2 = "pref_multi_camera_picturesize2_key";
@@ -97,6 +96,10 @@ public class MultiSettingsActivity extends PreferenceActivity {
     public static final String KEY_PICTURE_SIZE_4 = "pref_multi_camera_picturesize4_key";
     public static final String KEY_PICTURE_QUALITY = "pref_multi_camera_jpegquality_key";
     public static final String KEY_SHUTTER_SOUND = "pref_multi_camera_shutter_sound_key";
+    public static final String KEY_MULTI_FACE_DETECTION_ = "Face_Detection_of_camera_";
+    public static final String KEY_MULTI_FACE_DETECTION_1 = "pref_multi_camera_facedetection1_key";
+    public static final String KEY_MULTI_FACE_DETECTION_2 = "pref_multi_camera_facedetection2_key";
+
     public static final String KEY_CAPTURE_MFNR_VALUE = "pref_multi_camera_capture_mfnr_key";
 
     // video settings
@@ -120,6 +123,10 @@ public class MultiSettingsActivity extends PreferenceActivity {
     private static final String KEY_VERSION_INFO = "multi_camera_version_info";
     public static final String KEY_MULTI_CAMERAS_MODE = "pref_camera2_multi_cameras_key";
     public static final String KEY_CONCURRENT_CAMERA = "pref_camera2_concurrent_camera_key";
+    public static final String KEY_MULTI_HME_MODE_ = "HME_Mode_of_camera_";
+    public static final String KEY_MULTI_HME_MODE_1 = "pref_multi_camera_hmemode1_key";
+    public static final String KEY_MULTI_HME_MODE_2 = "pref_multi_camera_hmemode2_key";
+
     public static final HashMap<Integer, String> KEY_PICTURE_SIZES = new HashMap<Integer, String>();
     public static final HashMap<Integer, String> KEY_VIDEO_SIZES = new HashMap<Integer, String>();
     private static Map<String, Set<String>> VIDEO_ENCODER_PROFILE_TABLE = new HashMap<>();
@@ -159,8 +166,14 @@ public class MultiSettingsActivity extends PreferenceActivity {
             String value;
             if (p instanceof SwitchPreference) {
                 boolean checked = ((SwitchPreference) p).isChecked();
-                value = checked ? "on" : "off";
-                editor.putBoolean(key, checked);
+                String title = (String)((SwitchPreference) p).getTitle();
+                if (key.contains("pref_multi_camera_facedetection") ||
+                        key.contains("pref_multi_camera_hmemode") ) {
+                    editor.putBoolean(title, checked);
+                } else {
+                    value = checked ? "on" : "off";
+                    editor.putBoolean(key, checked);
+                }
             } else if (p instanceof ListPreference){
                 value = ((ListPreference) p).getValue();
                 String title = (String)((ListPreference) p).getTitle();
@@ -192,6 +205,10 @@ public class MultiSettingsActivity extends PreferenceActivity {
                         initializeVideoSize2();
                         initializeVideoSize3();
                         initializeVideoSize4();
+                        initializeFaceDetection1();
+                        initializeFaceDetection2();
+                        initializHMEMode1();
+                        initializHMEMode2();
                     } else {
                         Toast.makeText(getApplicationContext(),
                                 R.string.pref_camera2_concurrent_camera_not_support,
@@ -337,7 +354,10 @@ public class MultiSettingsActivity extends PreferenceActivity {
         initializeConcurrentCameraIds();
 
         // capture settings
-        initializeFaceDetection();
+        initializeFaceDetection1();
+        initializeFaceDetection2();
+        initializHMEMode1();
+        initializHMEMode2();
         initializeHalZSLPref();
         initializePictureQuality();
         initializePictureSize1();
@@ -570,14 +590,79 @@ public class MultiSettingsActivity extends PreferenceActivity {
         }
     }
 
-    private void initializeFaceDetection() {
+    private void initializeFaceDetection1() {
         boolean isCheck = false;
-        if (mLocalSharedPref != null) {
-            isCheck = mLocalSharedPref.getBoolean(KEY_MULTI_FACE_DETECTION, false);
+        String cameraId = "0";
+        SwitchPreference faceDetection = (SwitchPreference)findPreference(KEY_MULTI_FACE_DETECTION_1);
+        if (mConcurrentIds != null && mConcurrentIds.length >0 && mConcurrentIds[0] != null){
+            cameraId = mConcurrentIds[0];
         }
-        SwitchPreference faceDetection = (SwitchPreference)findPreference(KEY_MULTI_FACE_DETECTION);
+        if (mLocalSharedPref != null) {
+            isCheck = mLocalSharedPref.getBoolean(KEY_MULTI_FACE_DETECTION_ + cameraId, false);
+        }
         if (faceDetection != null) {
+            faceDetection.setEnabled(true);
+            faceDetection.setTitle(KEY_MULTI_FACE_DETECTION_+cameraId);
             faceDetection.setChecked(isCheck);
+        }
+    }
+
+    private void initializeFaceDetection2() {
+        boolean isCheck = false;
+        String cameraId = "1";
+        SwitchPreference faceDetection = (SwitchPreference)findPreference(KEY_MULTI_FACE_DETECTION_2);
+        if (mConcurrentIds != null && mConcurrentIds.length >1 && mConcurrentIds[1] != null){
+            cameraId = mConcurrentIds[1];
+        } else {
+            if (faceDetection != null)
+                faceDetection.setEnabled(false);
+            return;
+        }
+        if (mLocalSharedPref != null) {
+            isCheck = mLocalSharedPref.getBoolean(KEY_MULTI_FACE_DETECTION_ + cameraId, false);
+        }
+        if (faceDetection != null) {
+            faceDetection.setEnabled(true);
+            faceDetection.setTitle(KEY_MULTI_FACE_DETECTION_+cameraId);
+            faceDetection.setChecked(isCheck);
+        }
+    }
+
+    private void initializHMEMode1() {
+        boolean isCheck = false;
+        String cameraId = "0";
+        SwitchPreference hmeMode = (SwitchPreference)findPreference(KEY_MULTI_HME_MODE_1);
+        if (mConcurrentIds != null && mConcurrentIds.length >0 && mConcurrentIds[0] != null){
+            cameraId = mConcurrentIds[0];
+        }
+        if (mLocalSharedPref != null) {
+            isCheck = mLocalSharedPref.getBoolean(KEY_MULTI_HME_MODE_ + cameraId, false);
+        }
+        if (hmeMode != null) {
+            hmeMode.setEnabled(true);
+            hmeMode.setTitle(KEY_MULTI_HME_MODE_ + cameraId);
+            hmeMode.setChecked(isCheck);
+        }
+    }
+
+    private void initializHMEMode2() {
+        boolean isCheck = false;
+        String cameraId = "1";
+        SwitchPreference hmeMode = (SwitchPreference)findPreference(KEY_MULTI_HME_MODE_2);
+        if (mConcurrentIds != null && mConcurrentIds.length >1 && mConcurrentIds[1] != null){
+            cameraId = mConcurrentIds[1];
+        } else {
+            if (hmeMode != null)
+                hmeMode.setEnabled(false);
+            return;
+        }
+        if (mLocalSharedPref != null) {
+            isCheck = mLocalSharedPref.getBoolean(KEY_MULTI_HME_MODE_ + cameraId, false);
+        }
+        if (hmeMode != null) {
+            hmeMode.setEnabled(true);
+            hmeMode.setTitle(KEY_MULTI_HME_MODE_ + cameraId);
+            hmeMode.setChecked(isCheck);
         }
     }
 

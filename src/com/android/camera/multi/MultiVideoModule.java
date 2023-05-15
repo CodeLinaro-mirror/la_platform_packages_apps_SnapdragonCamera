@@ -153,6 +153,10 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             new CaptureRequest.Key<>(
                     "org.codeaurora.qcamera3.sessionParameters.overrideResourceCostValidation",
                     byte.class);
+    private static final CaptureRequest.Key<Byte> enableHMEMode =
+            new CaptureRequest.Key<>(
+                    "org.codeaurora.qcamera3.sessionParameters.EnableHMEMode",
+                    byte.class);
     //HDRVideo MODE
     private static final CaptureRequest.Key<Integer> hdr_video_mode = new CaptureRequest.Key<>(
             "org.codeaurora.qcamera3.sessionParameters.HDRVideoMode", Integer.class);
@@ -442,10 +446,8 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 captureBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                         CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
                 applyVideoEIS(captureBuilder);
-                applyFaceDetection(captureBuilder);
-                final byte enable = 1;
-                captureBuilder.set(override_resource_cost_validation, enable);
-                Log.v(TAG, " captureBuilder set" + override_resource_cost_validation + " is 1");
+                applyFaceDetection(captureBuilder, cameraId);
+                applySessionParameters(captureBuilder, cameraId);
 
                 // Orientation
                 int rotation = mActivity.getWindowManager().getDefaultDisplay().getRotation();
@@ -588,7 +590,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
 
     private void updateFaceDetection(int id) {
         boolean faceDetection = mLocalSharedPref.getBoolean(
-                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION, false);
+                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION_ + id, false);
         Log.v(TAG, " updateFaceDetection faceDetection :" + faceDetection);
         int index = mCameraIDList.indexOf(String.valueOf(id));
 
@@ -1015,7 +1017,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                             Log.v(TAG, " mPreviewRequestBuilders onConfigured id :" + id);
                             // When the session is ready, we start displaying the preview.
                             mCameraPreviewSessions[id] = cameraCaptureSession;
-                            applyFaceDetection(mPreviewRequestBuilders[id]);
+                            applyFaceDetection(mPreviewRequestBuilders[id], id);
                             updateFaceDetection(id);
                             setDisplayOrientation(id);
                             applyVideoEIS(mPreviewRequestBuilders[id]);
@@ -1039,14 +1041,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         }
                     };
 
-            try {
-                final byte enable = 1;
-                mPreviewRequestBuilders[id].set(override_resource_cost_validation, enable);
-                Log.v(TAG, " set" + override_resource_cost_validation + " is 1");
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            }
-
+            applySessionParameters(mPreviewRequestBuilders[id], id);
             updateOptMode();
             List<OutputConfiguration> outConfigurations = new ArrayList<>(1);
             outConfigurations.add(new OutputConfiguration(surface));
@@ -1060,6 +1055,16 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             e.printStackTrace();
         }
         return sessionConfiguration;
+    }
+
+    private void applySessionParameters(CaptureRequest.Builder builder, int id){
+        try {
+            builder.set(override_resource_cost_validation, (byte)(0x01));
+            Log.v(TAG, " set" + override_resource_cost_validation + " is 1");
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+        applyHMEMode(builder, id);
     }
 
     private SessionConfiguration prepareRecordingSessions(int id, List<Surface> surfaces) {
@@ -1107,14 +1112,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         }
                     };
 
-            try {
-                final byte enable = 1;
-                mRecordRequestBuilders[id].set(override_resource_cost_validation, enable);
-                Log.v(TAG, " video set" + override_resource_cost_validation + " is 1");
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            }
-
+            applySessionParameters(mRecordRequestBuilders[id], id);
             updateOptMode();
             List<OutputConfiguration> outConfigurations = new ArrayList<>(1);
             for (Surface surface : surfaces) {
@@ -1289,7 +1287,8 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         CaptureRequest.NOISE_REDUCTION_MODE_HIGH_QUALITY);
             }
             applyVideoEIS(mRecordRequestBuilders[id]);
-            applyFaceDetection(mRecordRequestBuilders[id]);
+            applyFaceDetection(mRecordRequestBuilders[id], id);
+            applySessionParameters(mRecordRequestBuilders[id], id);
             List<Surface> surfaces = new ArrayList<>();
 
             // Set up Surface for the camera preview
@@ -1586,7 +1585,11 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         } catch (IllegalArgumentException e) {
             Log.e(TAG, "cannot access the file");
         }
-        retriever.release();
+        try {
+            retriever.release();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         mActivity.getMediaSaveService().addVideo(mVideoFilenames[id],
                 duration, mCurrentVideoValues[id],
                 mOnVideoSavedListener, mContentResolver);
@@ -1792,10 +1795,10 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         });
     }
 
-    private void applyFaceDetection(CaptureRequest.Builder request) {
+    private void applyFaceDetection(CaptureRequest.Builder request, int id) {
         boolean FdEnable = mLocalSharedPref.getBoolean(
-                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION, false);
-        Log.v(TAG, " applyFaceDetection FdEnable :" + FdEnable);
+                MultiSettingsActivity.KEY_MULTI_FACE_DETECTION_ + id, false);
+        Log.v(TAG, " applyFaceDetection FdEnable :" + FdEnable + " for camera id :" + id);
         try {
             int modeValue = CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF;
             if (FdEnable){
@@ -1804,6 +1807,18 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             Log.v(TAG, " applyFaceDetection modeValue :" + modeValue);
             request.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, modeValue);
         } catch (IllegalArgumentException e) {
+        }
+    }
+
+    private void applyHMEMode(CaptureRequest.Builder request, int id){
+        try {
+            boolean hmeMode = mLocalSharedPref.getBoolean(
+                    MultiSettingsActivity.KEY_MULTI_HME_MODE_ +id, false);
+            final byte value = (byte)(hmeMode? 0x01 : 0x00);
+            Log.v(TAG, " set " + value + " for enableHMEMode, current id is :" +id);
+            request.set(enableHMEMode, value);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
         }
     }
 

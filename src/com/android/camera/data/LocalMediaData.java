@@ -44,6 +44,7 @@ import com.android.camera.util.PhotoSphereHelper;
 import org.codeaurora.snapcam.R;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -643,7 +644,11 @@ public abstract class LocalMediaData implements LocalData {
             File origFile = new File(path);
             if (!origFile.exists() || origFile.length() <= 0) {
                 Log.e(TAG, "Invalid video file");
-                retriever.release();
+                try {
+                    retriever.release();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 return null;
             }
 
@@ -652,7 +657,11 @@ public abstract class LocalMediaData implements LocalData {
             } catch (RuntimeException ex) {
                 // setDataSource() can cause RuntimeException beyond
                 // IllegalArgumentException. e.g: data contain *.avi file.
-                retriever.release();
+                try {
+                    retriever.release();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 Log.e(TAG, "MediaMetadataRetriever.setDataSource() fail:"
                         + ex.getMessage());
                 return null;
@@ -669,7 +678,11 @@ public abstract class LocalMediaData implements LocalData {
                         MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
                 height = (val == null) ? 0 : Integer.parseInt(val);
             }
-            retriever.release();
+            try {
+                retriever.release();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             if (width == 0 || height == 0) {
                 // Width or height is still not available.
                 Log.e(TAG, "Unable to retrieve dimension of video:" + path);
@@ -824,7 +837,11 @@ public abstract class LocalMediaData implements LocalData {
                     Log.e(TAG, "MediaMetadataRetriever.setDataSource() fail:"
                             + e.getMessage());
                 }
-                retriever.release();
+                try {
+                    retriever.release();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 return bitmap;
             }
         }
