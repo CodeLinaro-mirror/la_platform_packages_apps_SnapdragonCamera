@@ -421,7 +421,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             String[] cameraIdList = manager.getCameraIdList();
             boolean isFirstBackCameraId = true;
             boolean isRearCameraPresent = false;
-            Log.d(TAG,"cameraIdList size ="+cameraIdList.length);
+            Log.i(TAG,"cameraIdList size ="+cameraIdList.length);
             for (int i = 0; i < cameraIdList.length; i++) {
                 String cameraId = cameraIdList[i];
                 CameraCharacteristics characteristics
@@ -1975,7 +1975,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
         // filter dynamic lists.
         // These list can be changed run-time
+        filterHFROptions();
         filterVideoEncoderOptions();
+        filterVideoEncoderProfileOptions();
         if (!mIsFrontCameraPresent || !isFacingFront(mCameraId)) {
             removePreference(mPreferenceGroup, KEY_SELFIE_FLASH);
             removePreference(mPreferenceGroup, KEY_SELFIEMIRROR);
