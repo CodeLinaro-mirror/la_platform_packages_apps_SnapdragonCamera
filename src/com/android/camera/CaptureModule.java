@@ -4541,15 +4541,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             // Flash mode is off ==> then send capture intent: 2
             if (isFlashOff(cameraId)) {
                 takeZSLPictureInHAL();
-            // if AE state is CONTROL_AE_STATE_PRECAPTURE 5  ==> then send AEC lock true.
+            // if AE state is PRECAPTURE 5  ==> then send AEC lock true.
             } else if (aeState != null && aeState == CameraMetadata.CONTROL_AE_STATE_PRECAPTURE) {
                 lockExposure(cameraId);
-            // if AE state is CONTROL_AE_STATE_CONVERGED 3 ==> then send capture intent: 2
-            } else if (aeState != null && aeState == CameraMetadata.CONTROL_AE_STATE_LOCKED) {
-                takeZSLPictureInHAL();
-            // if AE state is other than 3 & 5  ==> then send AFTrigger followed by AEtrigger
+            // if AE state is INACTIVE 0 SEARCHING 1 CONVERGED 2 or LOCKED 3 ==> then send capture intent: 2
             } else {
-                lockFocus(cameraId);
+                takeZSLPictureInHAL();
             }
         } else {
             if (takeZSLPicture(cameraId)) {
