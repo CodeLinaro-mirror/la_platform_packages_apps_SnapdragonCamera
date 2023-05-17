@@ -34,7 +34,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 // Included modules
 //==============================================================================
-#include <camxdefs.h>
 #include <vector>
 #include <thread>
 
@@ -55,6 +54,48 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define LOG_TAG "MfnrJniwrapper"
 #define printf(...) __android_log_print( ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__ )
 
+typedef uint8_t         UINT8;
+typedef int8_t          INT8;
+typedef uint32_t        UINT32;
+typedef int32_t         INT32;
+typedef uint64_t        UINT64;
+typedef int64_t         INT64;
+typedef uintptr_t       UINTPTR_T;
+
+typedef INT32 CamxResult;
+static const CamxResult CamxResultSuccess           = 0;    ///< Operation was successful
+static const CamxResult CamxResultEFailed           = 1;    ///< Operation encountered unspecified error
+static const CamxResult CamxResultEUnsupported      = 2;    ///< Operation is not supported
+static const CamxResult CamxResultEInvalidState     = 3;    ///< Invalid state
+static const CamxResult CamxResultEInvalidArg       = 4;    ///< Invalid argument
+static const CamxResult CamxResultEInvalidPointer   = 5;    ///< Invalid memory pointer
+static const CamxResult CamxResultENoSuch           = 6;    ///< No such item exists or is valid
+static const CamxResult CamxResultEOutOfBounds      = 7;    ///< Out of bounds
+static const CamxResult CamxResultENoMemory         = 8;    ///< Out of memory
+static const CamxResult CamxResultETimeout          = 9;    ///< Operation timed out
+static const CamxResult CamxResultENoMore           = 10;   ///< No more items available
+static const CamxResult CamxResultENeedMore         = 11;   ///< Operation requires more
+static const CamxResult CamxResultEExists           = 12;   ///< Item exists
+static const CamxResult CamxResultEPrivLevel        = 13;   ///< Privileges are insufficient for requested operation
+static const CamxResult CamxResultEResource         = 14;   ///< Resources are insufficient for requested operation
+static const CamxResult CamxResultEUnableToLoad     = 15;   ///< Unable to load library/object
+static const CamxResult CamxResultEInProgress       = 16;   ///< Operation is already in progress
+static const CamxResult CamxResultETryAgain         = 17;   ///< Could not complete request; try again
+static const CamxResult CamxResultEBusy             = 18;   ///< Device or resource busy
+static const CamxResult CamxResultEReentered        = 19;   ///< Non re-entrant API re-entered
+static const CamxResult CamxResultEReadOnly         = 20;   ///< Cannot change read-only object or parameter
+static const CamxResult CamxResultEOverflow         = 21;   ///< Value too large for defined data type
+static const CamxResult CamxResultEOutOfDomain      = 22;   ///< Math argument or result out of domain
+static const CamxResult CamxResultEInterrupted      = 23;   ///< Waitable call is interrupted
+static const CamxResult CamxResultEWouldBlock       = 24;   ///< Operation would block
+static const CamxResult CamxResultETooManyUsers     = 25;   ///< Too many users
+static const CamxResult CamxResultENotImplemented   = 26;   ///< Function or method is not implemented
+static const CamxResult CamxResultEDisabled         = 27;   ///< Feature disabled (by an override for example)
+static const CamxResult CamxResultECancelledRequest = 28;   ///< Flush in progress or bind import failure
+static const CamxResult CamxResultECoreNullMetadata = 29;   ///< Metadata is null
+static const CamxResult CamxResultEInducedError     = 30;   ///< Induced error using error inducement framework
+static const CamxResult CamxResultEFenceGroupError  = 31;   ///< Composite fence group configure incorrect
+static const CamxResult CamxResultECSLStreamOn      = 32;   ///< Error Streaming CSL On
 
 extern "C"
 {

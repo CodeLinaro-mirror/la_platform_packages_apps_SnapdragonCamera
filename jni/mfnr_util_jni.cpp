@@ -45,7 +45,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _LINUX
 #define _LINUX
 #endif
-#include "camxtypes.h"
 
 #include "camxmfnrwrapper.h"
 #include <android/log.h>
