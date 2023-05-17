@@ -1747,6 +1747,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateAICameraPerf();
         updateVideoHfrFpsPreference();
         updateEISPreference();
+        updatePhotoEISPreference();
         updateT2TPreference();
         updateZoomPreference();
         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
@@ -1857,19 +1858,19 @@ public class SettingsActivity extends PreferenceActivity {
             if (enable != null && enable.equals("1")) {
                 pref.setEnabled(false);
                 pref.setValue("aac");
-            } else {
-                if (PersistUtil.enableMediaRecorder()) {
-                    if (hdr_mode.equals("hdr")) {
-                        pref.setEnabled(false);
-                        pref.setValue("aac");
-                    } else {
-                        pref.setEnabled(true);
-                    }
-                } else {
-                    pref.setEnabled(false);
-                    pref.setValue("aac");
-                }
+                return;
             }
+        }
+        if (PersistUtil.enableMediaRecorder()) {
+            if (hdr_mode.equals("hdr")) {
+                pref.setEnabled(false);
+                pref.setValue("aac");
+            } else {
+                pref.setEnabled(true);
+            }
+        } else {
+            pref.setValue("aac");
+            pref.setEnabled(false);
         }
     }
 
@@ -1907,14 +1908,14 @@ public class SettingsActivity extends PreferenceActivity {
             if (enable != null && enable.equals("1")) {
                 pref.setValue("0");
                 pref.setEnabled(false);
-            } else {
-                if (PersistUtil.enableMediaRecorder()) {
-                    pref.setEnabled(true);
-                } else {
-                    pref.setValue("0");
-                    pref.setEnabled(false);
-                }
+                return;
             }
+        }
+        if (PersistUtil.enableMediaRecorder()) {
+            pref.setEnabled(true);
+        } else {
+            pref.setValue("0");
+            pref.setEnabled(false);
         }
     }
 
@@ -2326,6 +2327,18 @@ public class SettingsActivity extends PreferenceActivity {
         pref.setEnabled(true);
     }
 
+    private void updatePhotoEISPreference(){
+        ListPreference eisPref = (ListPreference)findPreference(
+                SettingsManager.KEY_PHOTO_EIS_VALUE);
+        if(eisPref != null && !mSettingsManager.isPreviewStabalizationSupported()) {
+            List<String> list = new ArrayList<String>(Arrays.asList("disable", "Dynamic Margin"));
+            List<String> values = new ArrayList<String>(Arrays.asList("disable", "dynamic"));
+            if (eisPref != null) {
+                eisPref.setEntries(list.toArray(new CharSequence[list.size()]));
+                eisPref.setEntryValues(values.toArray(new CharSequence[values.size()]));
+            }
+        }
+    }
     private void updateEISPreference() {
         ListPreference eisPref = (ListPreference)findPreference(
                 SettingsManager.KEY_EIS_VALUE);

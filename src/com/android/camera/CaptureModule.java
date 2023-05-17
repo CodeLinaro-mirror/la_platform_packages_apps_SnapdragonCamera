@@ -802,6 +802,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.blurConfig.blurChromaSuppressionV", Float.class);
     public static CameraCharacteristics.Key<Byte> isMLVideoSupported =
             new CameraCharacteristics.Key<>("org.quic.camera.videoretouch.isVideoRetouchSupported", byte.class);
+    public static CameraCharacteristics.Key<byte[]> availableVideoStabilizationModes =
+            new CameraCharacteristics.Key<>("android.control.availableVideoStabilizationModes", byte[].class);
 
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_VENDOR_START = 0x10000;
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV = 0x10001;
@@ -3290,11 +3292,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     }
                                     outputConfigurations.add(out);
                                 }
-                            }else{
+                            } else {
                                 mPreviewOutputConfiguration = new OutputConfiguration(
                                         new android.util.Size(mPreviewSize.getWidth(), mPreviewSize.getHeight()),
                                         SurfaceHolder.class);
                                 Log.v(TAG, "add mPreviewOutputConfiguration");
+                                String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
+                                Log.v(TAG, "OutputConfiguration previewProfile :" + previewProfile);
+                                if (previewProfile != null && !previewProfile.equals("0")) {
+                                    mPreviewOutputConfiguration.setDynamicRangeProfile(Long.parseLong(previewProfile));
+                                }
                                 outputConfigurations.add(mPreviewOutputConfiguration);
                             }
                         } else {
@@ -11445,7 +11452,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                         if (mHighSpeedCapture && !mHighSpeedRecordingMode) {
                             bufferInfo.presentationTimeUs -= mHighRecordingPausingTime*1000;
                         } else {
-                            bufferInfo.presentationTimeUs -= mRecordingPausingTime*1000;
+                            if (mCaptureTimeLapse) {
+                                bufferInfo.presentationTimeUs -= (mRecordingPausingTime * 1000L
+                                        * 1000L / (long) mTimeBetweenTimeLapseFrameCaptureMs  / 30L);
+                            } else {
+                                bufferInfo.presentationTimeUs -= mRecordingPausingTime*1000;
+                            }
                         }
                     }
                     frameNumber++;
@@ -11525,7 +11537,12 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void configureAACAudioEncoder(String encoder) throws IOException {
-        int aacProfileLevel = mAudioFormat.getInteger(MediaFormat.KEY_AAC_PROFILE);
+        int aacProfileLevel = -1;
+        try {
+            aacProfileLevel = mAudioFormat.getInteger(MediaFormat.KEY_AAC_PROFILE);
+        } catch (NullPointerException e) {
+            Log.w(TAG, "", e.fillInStackTrace());
+        }
         switch(aacProfileLevel) {
             case MediaCodecInfo.CodecProfileLevel.AACObjectLC:
             {
