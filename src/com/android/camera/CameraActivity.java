@@ -1606,7 +1606,13 @@ public class CameraActivity extends Activity
             finish();
             return;
         }
-
+        mSettingsManager = SettingsManager.getInstance();
+        if (mSettingsManager == null) {
+            mSettingsManager = SettingsManager.createInstance(this);
+        }
+        mSettingsManager.initCharacteristics();//In some devices,getCameraIdList is 0 or error
+            // when RECEIVE_BOOT_COMPLETED
+            //So we need to initCharacteristics when openCamera
         mCursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 null, null, null, null);
         GcamHelper.init(getContentResolver());
@@ -1901,10 +1907,7 @@ public class CameraActivity extends Activity
             Log.v(TAG, "onResume: No camera devices connected.");
             finish();
         }
-        mSettingsManager = SettingsManager.getInstance();
-        if (mSettingsManager == null) {
-            mSettingsManager = SettingsManager.createInstance(this);
-        }
+
         // Hide action bar first since we are in full screen mode first, and
         // switch the system UI to lights-out mode.
         this.setSystemBarsVisibility(false);

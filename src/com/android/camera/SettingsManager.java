@@ -415,7 +415,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
             mPreferences = new ComboPreferences(mContext);
         }
         upgradeGlobalPreferences(mPreferences.getGlobal(), mContext);
-
+        mDependency = parseJson("dependency.json");
+    }
+    public void initCharacteristics(){
+        if(mCharacteristics.size() >0) {
+            return;
+        }
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
             String[] cameraIdList = manager.getCameraIdList();
@@ -459,9 +464,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch (CameraAccessException e) {
             Log.e(TAG,e.toString());
         }
-
-        mDependency = parseJson("dependency.json");
     }
+
    public boolean isTorchHDREnabled(boolean isflashRequired,CaptureResult mResult) {
         boolean torchHDREnable = false;
         boolean flashEnable =false;
