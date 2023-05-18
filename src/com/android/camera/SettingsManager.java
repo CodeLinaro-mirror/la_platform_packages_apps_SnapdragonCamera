@@ -908,6 +908,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return supportted;
     }
 
+    public boolean isStatsNNSupported() {
+        boolean supportted = true;
+        try {
+            supportted = (mCharacteristics.get(mCameraId).get(CaptureModule.is_statsnn_supported) == 1);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            Log.w(TAG, EXCEPTION_LOG,"isStatsNNSupported is_statsnn_supported no vendor tag");
+        }
+        Log.i(TAG, "isStatsNNSupported supportted :" + supportted);
+        return supportted;
+    }
+
     public boolean isBurstShotSupported(){
         boolean isBurstShotSupported = true;
         try {
