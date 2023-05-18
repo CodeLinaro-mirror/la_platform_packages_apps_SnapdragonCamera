@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera.functional;
 
@@ -31,7 +36,10 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
+import android.util.Log;
+
 public class CameraTest extends InstrumentationTestCase {
+    private String TAG = "CameraTest";
     @LargeTest
     public void testVideoCaptureIntentFdLeak() throws Exception {
         Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
@@ -42,7 +50,9 @@ public class CameraTest extends InstrumentationTestCase {
                 + "test_fd_leak.3gp"));
         getInstrumentation().startActivitySync(intent).finish();
         // Test if the fd is closed.
+
         for (File f: new File("/proc/" + Process.myPid() + "/fd").listFiles()) {
+            int index = f.getCanonicalPath().indexOf("test_fd_leak.3gp");
             assertEquals(-1, f.getCanonicalPath().indexOf("test_fd_leak.3gp"));
         }
     }

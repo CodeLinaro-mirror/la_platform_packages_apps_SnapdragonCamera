@@ -12,33 +12,27 @@
      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
      See the License for the specific language governing permissions and
      limitations under the License.
+
+-->
+<!--
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.android.camera.tests">
-
-    <application
-        android:debuggable="true">
+    <uses-sdk
+        android:minSdkVersion="30"
+        android:targetSdkVersion="33" />
+    <application>
         <uses-library android:name="android.test.runner" />
     </application>
 
-    <instrumentation android:name="android.test.InstrumentationTestRunner"
-             android:targetPackage="org.codeaurora.snapcam"
-             android:label="Tests for Camera2 application."/>
 
     <instrumentation android:name="com.android.camera.CameraTestRunner"
             android:targetPackage="org.codeaurora.snapcam"
             android:label="Camera continuous test runner"/>
 
-    <instrumentation android:name="com.android.camera.exif.ExifTestRunner"
-            android:targetPackage="org.codeaurora.snapcam"
-            android:label="Tests for ExifParser."/>
 
-    <instrumentation android:name="com.android.camera.jpegstream.JpegStreamTestRunner"
-            android:targetPackage="org.codeaurora.snapcam"
-            android:label="Tests for JpegStream classes."/>
-
-    <instrumentation android:name="com.android.camera.stress.CameraStressTestRunner"
-            android:targetPackage="org.codeaurora.snapcam"
-            android:label="Camera stress test runner"/>
 </manifest>

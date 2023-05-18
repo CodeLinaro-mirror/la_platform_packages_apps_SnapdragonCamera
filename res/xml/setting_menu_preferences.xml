@@ -298,6 +298,16 @@
             android:layout="@layout/preference"
             android:summary="%s"
             android:title="@string/pref_camera_hfr_title" />
+
+        <ListPreference
+            android:defaultValue="@string/pref_camera2_hfr_buffermode_default"
+            android:entries="@array/pref_camera2_hfr_buffermode_entries"
+            android:entryValues="@array/pref_camera2_hfr_buffermode_entryvalues"
+            android:icon="@drawable/high_video_frame_rate"
+            android:key="pref_camera2_hfr_buffermode_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_hfr_buffermode_title" />
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -461,6 +471,15 @@
             android:entries="@array/pref_camera2_physical_camera_entries"
             android:entryValues="@array/pref_camera2_physical_camera_entryvalues"
             android:title="@string/pref_camera2_physical_jpeg_title"/>
+
+        <MultiSelectListPreference
+            android:defaultValue="@array/pref_camera2_physical_camera_default"
+            android:key="pref_camera2_physical_jpegR_key"
+            android:layout="@layout/preference"
+            android:summary="Choose which camera to capture JPEG_R"
+            android:entries="@array/pref_camera2_physical_camera_entries"
+            android:entryValues="@array/pref_camera2_physical_camera_entryvalues"
+            android:title="@string/pref_camera2_physical_jpegR_title"/>
 
         <MultiSelectListPreference
             android:defaultValue="@array/pref_camera2_physical_camera_default"
@@ -920,14 +939,14 @@
             android:entryValues="@array/pref_camera2_manualhdr_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
-  <ListPreference
-        android:key="pref_camera2_torch_hdr_key"
-        android:defaultValue="@string/pref_camera2_torch_hdr_default"
-        android:title="@string/pref_camera2_torch_hdr_title"
-        android:entries="@array/pref_camera2_torch_hdr_entries"
-        android:entryValues="@array/pref_camera2_torch_hdr_entryvalues"
-        android:layout="@layout/preference"
-        android:summary="%s"/>
+        <ListPreference
+            android:key="pref_camera2_torch_hdr_key"
+            android:defaultValue="@string/pref_camera2_torch_hdr_default"
+            android:title="@string/pref_camera2_torch_hdr_title"
+            android:entries="@array/pref_camera2_torch_hdr_entries"
+            android:entryValues="@array/pref_camera2_torch_hdr_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
 
         <ListPreference
             android:key="pref_camera2_offline_dump_trigger_key"
@@ -959,6 +978,15 @@
         <ListPreference
             android:key="pref_camera2_statsnn_control_key"
             android:defaultValue="@string/pref_camera2_statsnn_control_default"
+            android:title="@string/pref_camera2_statsnn_control_title"
+            android:entries="@array/pref_camera2_statsnn_control_entries"
+            android:entryValues="@array/pref_camera2_statsnn_control_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
+            android:key="pref_camera2_statsnn_control_for_cinematic_key"
+            android:defaultValue="@string/pref_camera2_statsnn_control_entry_value_enable"
             android:title="@string/pref_camera2_statsnn_control_title"
             android:entries="@array/pref_camera2_statsnn_control_entries"
             android:entryValues="@array/pref_camera2_statsnn_control_entryvalues"
@@ -1003,7 +1031,7 @@
 
         <ListPreference
             android:key="pref_camera2_ai_camera_key"
-            android:defaultValue="@string/pref_camera2_ai_camera_default"
+            android:defaultValue="@string/pref_camera2_ai_camera_mode_entry_value_on"
             android:title="@string/pref_camera2_ai_camera_title"
             android:entries="@array/pref_camera2_ai_camera_mode_entries"
             android:entryValues="@array/pref_camera2_ai_camera_mode_entryvalues"
@@ -1012,7 +1040,7 @@
 
         <ListPreference
             android:key="pref_camera2_ai_camera_snapshot_key"
-            android:defaultValue="@string/pref_camera2_ai_camera_default"
+            android:defaultValue="@string/pref_camera2_ai_camera_entry_value_enable"
             android:title="@string/pref_camera2_ai_camera_snapshot_title"
             android:entries="@array/pref_camera2_ai_camera_entries"
             android:entryValues="@array/pref_camera2_ai_camera_entryvalues"
@@ -1162,5 +1190,6 @@
             android:layout="@layout/preference"
             android:summary="%s"
             android:title="@string/pref_camera_hdrans_title" />
+
     </PreferenceCategory>
 </PreferenceScreen>

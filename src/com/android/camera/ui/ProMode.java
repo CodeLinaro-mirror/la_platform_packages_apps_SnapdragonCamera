@@ -26,6 +26,11 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera.ui;
 
@@ -98,8 +103,8 @@ public class ProMode extends View {
     private long []mExposureTime;
     private long mMinExpTm;
     private long mMaxExpTm;
-    private double mExpTmConvert = 1000000000;
-    private long mLongExpTm = 100000000;
+    public static double mExpTmConvert = 1000000000;
+    public static long mLongExpTm = 100000000;
     private List<String>mExpTmList;
     private String mCurrentExposuretime;
     private TextView mAutoText;
@@ -439,6 +444,12 @@ public class ProMode extends View {
         }
         mExpTmList.add(String.valueOf(mExposureTime[1]));
     }
+    public String getExposuretimeVaule(float slider){
+        int index =(int) (slider * mExpTmList.size());
+        if (index > mExpTmList.size() -1 ) index = mExpTmList.size() -1;
+        String valuestr = mExpTmList.get(index);
+        return valuestr;
+    }
     public void setSlider(float slider,boolean forceNotify) {
         if(mMode == MANUAL_MODE) {
             mFocusSlider = slider;
@@ -463,7 +474,7 @@ public class ProMode extends View {
         invalidate();
     }
 
-    private void setIndex(int index, boolean force) {
+    public void setIndex(int index, boolean force) {
         if (mIndex == index && !force) return;
         if (mIndex != -1 && mAddedViews != null && mAddedViews.size() > 0) {
             View v = mAddedViews.get(mIndex);

@@ -95,6 +95,7 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
     private FlashToggleButton mFlashButton;
     private View mFilterModeSwitcher;
     private View mSceneModeSwitcher;
+    private ImageView mSceneModeHDR;
 
     private int mOrientation;
 
@@ -282,6 +283,10 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
         if (mSceneModeSwitcher == null) {
             mSceneModeSwitcher = mRootView.findViewById(R.id.scene_mode_switcher);
         }
+        if(mSceneModeHDR == null) {
+            mSceneModeHDR = (ImageView) mRootView.findViewById(R.id.scene_mode_hdr);
+        }
+        mSceneModeHDR.setVisibility(View.INVISIBLE);
         mFlashButton.setVisibility(View.INVISIBLE);
         mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         mSceneModeSwitcher.setVisibility(View.INVISIBLE);

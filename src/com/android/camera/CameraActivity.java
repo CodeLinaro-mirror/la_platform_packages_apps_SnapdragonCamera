@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 package com.android.camera;
 
 import android.hardware.camera2.CameraAccessException;
+import android.media.ExifInterface;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.view.Display;
@@ -98,7 +103,6 @@ import com.android.camera.data.LocalDataAdapter;
 import com.android.camera.data.LocalMediaObserver;
 import com.android.camera.data.MediaDetails;
 import com.android.camera.data.SimpleViewData;
-import com.android.camera.exif.ExifInterface;
 import com.android.camera.tinyplanet.TinyPlanetFragment;
 import com.android.camera.multi.MultiCameraModule;
 import com.android.camera.ui.ModuleSwitcher;
@@ -117,8 +121,17 @@ import com.android.camera.util.PhotoSphereHelper.PanoramaViewHelper;
 import com.android.camera.util.UsageStatistics;
 import org.codeaurora.snapcam.R;
 
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
+import com.android.camera.CaptureModule.CameraMode;
+import android.view.View;
+
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import static com.android.camera.CameraManager.CameraOpenErrorCallback;
 
@@ -240,8 +253,8 @@ public class CameraActivity extends Activity
     private Intent mStandardShareIntent;
     private ShareActionProvider mPanoramaShareActionProvider;
     private Intent mPanoramaShareIntent;
-    private SettingsManager mSettingsManager;
-
+    private String mThumbnailPath;
+    public SettingsManager mSettingsManager;
 
     private final int DEFAULT_SYSTEM_UI_VISIBILITY = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
@@ -260,8 +273,11 @@ public class CameraActivity extends Activity
     // Keep track of data request here to avoid creating useless UpdateThumbnailTask.
     private boolean mDataRequested;
     private Cursor mCursor;
+    private boolean mIsAutoTest = false;
+    private boolean mOpenDevOption = false;
 
     private boolean mAutoTestEnabled = false;
+
 
     private WakeLock mWakeLock;
     private static final int REFOCUS_ACTIVITY_CODE = 1;
@@ -809,6 +825,14 @@ public class CameraActivity extends Activity
         if (!videoOnly || (mCurrentModule instanceof VideoModule) ||
                 (mCurrentModule instanceof MultiCameraModule) ||
                 ((mCurrentModule instanceof CaptureModule) && videoOnly)) {
+            LocalDataAdapter adapter = getDataAdapter();
+            ImageData img = adapter.getImageData(1);
+            if(img != null) {
+                String path = getPathFromUri(img.getContentUri());
+                if (path != null && path.equals(mThumbnailPath) && !path.contains("heic")) {
+                    return;
+                }
+            }
             (new UpdateThumbnailTask(null, true)).execute();
         }
     }
@@ -839,6 +863,7 @@ public class CameraActivity extends Activity
             if (path == null) {
                 return null;
             } else {
+                mThumbnailPath = path;
                 if (path.endsWith(Storage.HEIF_POSTFIX)) {
                     mOrientation = getOrientationFromUri(uri);
                 }
@@ -887,14 +912,41 @@ public class CameraActivity extends Activity
                 if (mOrientation != -1) {
                     orientation = mOrientation;
                 } else {
-                    ExifInterface exif = new ExifInterface();
+                    ExifInterface exif = null;
+                    int result = ExifInterface.ORIENTATION_NORMAL;
                     try {
                         if (mJpegData != null) {
-                            exif.readExif(mJpegData);
+                            exif = new ExifInterface(new ByteArrayInputStream(mJpegData));
+                            result = exif.getAttributeInt(
+                                    ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
                         } else {
-                            exif.readExif(path);
+                            InputStream is = null;
+                            try {
+                                is = new BufferedInputStream(new FileInputStream(path));
+                                exif = new ExifInterface(is);
+                                result = exif.getAttributeInt(
+                                        ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                            } catch (IOException e) {
+                                // ignore
+                            } finally {
+                                if (is != null) {
+                                    is.close();
+                                }
+                            }
                         }
-                        orientation = Exif.getOrientation(exif);
+                        switch (result) {
+                            case ExifInterface.ORIENTATION_ROTATE_90:
+                                orientation = 90;
+                                break;
+                            case ExifInterface.ORIENTATION_ROTATE_180:
+                                orientation = 180;
+                                break;
+                            case ExifInterface.ORIENTATION_ROTATE_270:
+                                orientation = 270;
+                                break;
+                            default:
+                                orientation = 0;
+                        }
                     } catch (IOException e) {
                         // ignore
                     }
@@ -1810,7 +1862,6 @@ public class CameraActivity extends Activity
         boolean isStartPermissionActivity = false;
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean isRequestShown = prefs.getBoolean(CameraSettings.KEY_REQUEST_PERMISSION, false);
-
         if(!mSecureCamera && (!isRequestShown || !hasCriticalPermissions())) {
             Log.v(TAG, "Start Request Permission");
             Intent intent = new Intent(this, PermissionsActivity.class);
@@ -2441,6 +2492,27 @@ public class CameraActivity extends Activity
     private void setPreviewControlsVisibility(boolean showControls) {
         mCurrentModule.onPreviewFocusChanged(showControls);
     }
+
+    // method for autotest
+    public CaptureModule getCaptureModule(){
+        return mCaptureModule;
+    }
+    public boolean getAutoTest(){
+         return  mIsAutoTest;
+    }
+    public void setAutoTest(boolean test){
+        mIsAutoTest = test;
+    }
+    public boolean getDevOption(){
+        return  mOpenDevOption;
+    }
+    public void setDevOption(boolean open){
+        mOpenDevOption = open;
+    }
+
+
+
+
 
     // Accessor methods for getting latency times used in performance testing
     public long getAutoFocusTime() {

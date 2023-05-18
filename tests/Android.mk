@@ -1,18 +1,29 @@
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
+LOCAL_MODULE_TAGS := optional
 
-# We only want this apk build for tests.
 LOCAL_MODULE_TAGS := tests
 
-LOCAL_SDK_VERSION := 16
+LOCAL_JAVA_LIBRARIES := android.test.runner android.test.base
+LOCAL_STATIC_JAVA_LIBRARIES := \
+    junit android-support-test \
+    guava
 
-LOCAL_STATIC_JAVA_LIBRARIES := littlemock dexmaker
+LOCAL_PRIVATE_PLATFORM_APIS := true
+LOCAL_PROGUARD_ENABLED := disabled
+
+LOCAL_PRIVILEGED_MODULE := true
 
 # Include all test java files.
 LOCAL_SRC_FILES := $(call all-java-files-under, src)
+#LOCAL_CERTIFICATE := platform
 
-LOCAL_PACKAGE_NAME := Camera2Tests
+LOCAL_PACKAGE_NAME := SdCameraTests
 
-LOCAL_INSTRUMENTATION_FOR := Camera2
+#LOCAL_VENDOR_MODULE := true
 
-#include $(BUILD_PACKAGE)
+LOCAL_INSTRUMENTATION_FOR := SnapdragonCamera
+
+include $(BUILD_PACKAGE)
+
+

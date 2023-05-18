@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera.functional;
 
 import com.android.camera.CameraActivity;
-import com.android.camera2.R;
+import org.codeaurora.snapcam.R;
 
 import android.app.Activity;
 import android.content.ContentResolver;
@@ -53,6 +58,7 @@ public class VideoCaptureIntentTest extends ActivityInstrumentationTestCase2 <Ca
 
     @Override
     protected void tearDown() throws Exception {
+        Log.d(TAG,"tearDown mVideoUri="+mVideoUri);
         if (mVideoUri != null) {
             ContentResolver resolver = getActivity().getContentResolver();
             Uri query = mVideoUri.buildUpon().build();
@@ -79,7 +85,6 @@ public class VideoCaptureIntentTest extends ActivityInstrumentationTestCase2 <Ca
     public void testNoExtraOutput() throws Exception {
         setActivityIntent(mIntent);
         getActivity();
-
         recordVideo();
         pressDone();
 
@@ -242,7 +247,7 @@ public class VideoCaptureIntentTest extends ActivityInstrumentationTestCase2 <Ca
         getInstrumentation().runOnMainSync(new Runnable() {
             @Override
             public void run() {
-                getActivity().findViewById(R.id.btn_done).performClick();
+                getActivity().findViewById(R.id.done_button).performClick();
             }
         });
     }
@@ -251,7 +256,7 @@ public class VideoCaptureIntentTest extends ActivityInstrumentationTestCase2 <Ca
         getInstrumentation().runOnMainSync(new Runnable() {
             @Override
             public void run() {
-                getActivity().findViewById(R.id.btn_cancel).performClick();
+                getActivity().findViewById(R.id.preview_btn_cancel).performClick();
             }
         });
     }

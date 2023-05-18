@@ -26,6 +26,11 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 package com.android.camera.imageprocessor;
 
 import android.content.ContentResolver;
@@ -170,6 +175,8 @@ public class PostProcessor{
         mTotalCaptureResultList.clear();
     }
 
+    private List<String> mLongImgTitle = new ArrayList<>();
+
     public ImageReader getZSLReprocessImageReader() { return mZSLReprocessImageReader; }
     public MultiResolutionImageReader getZSLReprocessMultiImageReader() { return mMultiOutputImageReader; }
 
@@ -260,7 +267,6 @@ public class PostProcessor{
         @Override
         public void onImageAvailable(ImageReader reader) {
             try {
-
                 if(mUseZSL) {
                     if(mController.isLongShotActive() && mPendingContinuousRequestCount > 0) {
                         Image image = reader.acquireNextImage();
@@ -484,6 +490,9 @@ public class PostProcessor{
         if (mZSLQueue == null)
             return false;
         mController.setJpegImageData(null);
+        mLongImgTitle = new ArrayList<>();
+        mController.setLongImageTitle(null);
+        mController.setCaptureResult(null);
         ZSLQueue.ImageItem imageItem = mZSLQueue.tryToGetMatchingItem();
         if(mController.getPreviewCaptureResult() == null ||
                 mController.getPreviewCaptureResult().get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED) {
@@ -635,7 +644,8 @@ public class PostProcessor{
                     public void onCaptureCompleted(CameraCaptureSession session,
                                                    CaptureRequest request,
                                                    TotalCaptureResult result) {
-                        Log.d(TAG, "reprocessImage onCaptureCompleted");
+                        Log.i(TAG, "onCaptureCompleted mController.isLongShotActive()="+mController.isLongShotActive());
+                        mController.setCaptureResult(result);
                         if (mController.isLongShotActive() && mActivity != null) {
                             mActivity.runOnUiThread(new Runnable() {
                                 @Override
@@ -1328,13 +1338,16 @@ public class PostProcessor{
         @Override
         public void onImageAvailable(ImageReader reader) {
             final Image image = reader.acquireNextImage();
-            Log.d(TAG,  "ZSL image Reprocess is done "+image.getTimestamp());
+            Log.i(TAG,  "ZSL onImageAvailable image Reprocess is done "+image.getTimestamp());
             mSavingHander.post(new Runnable() {
                 public void run() {
                     long captureStartTime = System.currentTimeMillis();
                     mNamedImages.nameNewImage(captureStartTime);
                     PhotoModule.NamedImages.NamedEntity name = mNamedImages.getNextNameEntity();
                     String title = (name == null) ? null : name.title;
+                    Log.d(TAG,"ZSL onImageAvailable title="+title);
+                    mLongImgTitle.add(title);
+                    mController.setLongImageTitle(mLongImgTitle);
                     long date = (name == null) ? -1 : name.date;
                     if(mController.mRawReprocessType == 2 || mController.mRawReprocessType == 3 || mController.mRawReprocessType == 5 ||mController.mRawReprocessType == 0){
                         image.getPlanes()[0].getBuffer().rewind();
