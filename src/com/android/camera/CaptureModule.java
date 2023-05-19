@@ -2253,6 +2253,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 afinfo_data[3] = Byte.toString(result.get(isDualPDHW));
                 afinfo_data[4] = Byte.toString(result.get(isLCRHW));
                 afinfo_data[5] = Byte.toString(result.get(isLCRSW));
+                afinfo_data[6] = Integer.toString(result.get(lenspos));
                 byte[] roi = result.get(autofocusroi);
                 //autofocusroi is left,top,width, height, transfer to left,top,right, bottom
                 mAFRoi[0] = byteArray2Int(roi, 0);
