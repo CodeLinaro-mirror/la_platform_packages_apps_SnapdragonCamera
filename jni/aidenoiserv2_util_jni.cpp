@@ -45,7 +45,7 @@ JNIEXPORT jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEng
         JNIEnv* env, jobject thiz, jintArray pInputFrameDim, jintArray pDsInputFrameDim, jintArray pOutputFrameDim,jint imageformat, jint mode);
 JNIEXPORT jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEngineProcessFrameV2(
         JNIEnv *env, jobject thiz, jobjectArray inputY,jobjectArray inputC, jobjectArray dsinputY, jobjectArray dsinputC,jbyteArray output,
-        jlong expTimeInNs, jint iso, jfloat denoiseStrength, jfloat adrcGain, jint rGain, jint bGain, jint gGain, jintArray roi);
+        jlong expTimeInNs, jint iso, jfloat denoiseStrength, jfloat adrcGain, jint rGain, jint bGain, jint gGain, jintArray roi, jfloat enhancefactor, jbyte gainThresholdY, jbyte gainThresholdUV);
 JNIEXPORT jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEngineAbortV2(
         JNIEnv* env, jobject thiz);
 JNIEXPORT jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEngineDestroyV2(
@@ -131,7 +131,7 @@ void WriteData(FILE *fp, unsigned char *pStart, int width, int height, int strid
 
 jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEngineProcessFrameV2(
         JNIEnv *env, jobject thiz, jobjectArray inputY,jobjectArray inputC, jobjectArray dsinputY, jobjectArray dsinputC, jbyteArray output,
-        jlong expTimeInNs, jint iso, jfloat denoiseStrength, jfloat adrcGain, jint rGain, jint bGain, jint gGain, jintArray roi)
+        jlong expTimeInNs, jint iso, jfloat denoiseStrength, jfloat adrcGain, jint rGain, jint bGain, jint gGain, jintArray roi, jfloat enhancefactor, jbyte gainThresholdY, jbyte gainThresholdUV)
 {
     AIDE_ProcessFrameArgs args;
     args.rGain = (uint32_t)rGain;
@@ -142,10 +142,13 @@ jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEngineProcess
     args.roi.y = (uint32_t)croi[1];
     args.roi.width = (uint32_t)croi[2];
     args.roi.height = (uint32_t)croi[3];
+    args.enhancefactor = (float)enhancefactor;
     args.denoiseStrength = (float)denoiseStrength;
     args.adrcGain = (float)adrcGain;
     args.iso = (uint32_t)iso;
     args.expTimeInNs = (uint64_t)expTimeInNs;
+    args.gainThresholdY = (uint8_t)gainThresholdY;
+    args.gainThresholdUV = (uint8_t)gainThresholdUV;
 
     uint8_t *cinputY = (uint8_t *)env->GetDirectBufferAddress(inputY);
     uint8_t *cinputVU = (uint8_t *)env->GetDirectBufferAddress(inputC);

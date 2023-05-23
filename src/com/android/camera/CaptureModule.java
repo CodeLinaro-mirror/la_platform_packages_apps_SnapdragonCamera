@@ -817,6 +817,10 @@ public class CaptureModule implements CameraModule, PhotoController,
     float color_saturation = 0.0f;
     float tone = 0.0f;
     float detail_enhancement = 0.0f;
+    float mEnhancefactor = 0.5f;
+    byte mGainThresholdY = 0;
+    byte mGainThresholdUV = 0;
+
     private Object mAideLock = new Object();
     float mAideAdrcGain = 100;
     public static final CameraCharacteristics.Key<int[]> hdrMaxResolution =
@@ -1679,6 +1683,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 color_saturation = byteArray2float(param, 4);
                 tone = byteArray2float(param, 8);
                 detail_enhancement = byteArray2float(param, 12);
+                mEnhancefactor = byteArray2float(param, 16);
+                mGainThresholdY = param[20];
+                mGainThresholdUV =  param[24];
             }
         } catch (IllegalArgumentException e) {
             Log.d(TAG, EXCEPTION_LOG,"no SWMFandAIDETuningParams");
@@ -3273,7 +3280,10 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                     if (!mSettingsManager.isHeifWriterEncoding() && mRawReprocessType != 1) {
                         if (!isMultiResolutionImageReaderEnabled()) {
-                            list.add(mImageReader[id].getSurface());
+                            if(!isAIDE2Enabled()){
+                                Log.i(TAG, "add blob configure stream except aide case");
+                                list.add(mImageReader[id].getSurface());
+                            }
                         }
                     }
                     if ((mSettingsManager.isMultiCameraEnabled() &&
@@ -4712,10 +4722,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             //apply hwmfnr and aide2 param
             try {
-                captureBuilder.set(CaptureModule.isHWMFNREnabled, (byte)((isMFNREnabled() && mSettingsManager.isHWMFNRSupport()) ? 0x01 : 0x00));
                 captureBuilder.set(CaptureModule.isAIDE2Enabled, (byte)(isAIDE2Enabled() && mAideAECLuxIndex >= lux_index_threadhold ? 0x01 : 0x00));
             } catch (IllegalArgumentException e) {
-                Log.w(TAG,EXCEPTION_LOG,"can not read hwmfnr enable or aide2 enable tag");
+                Log.w(TAG,EXCEPTION_LOG,"can not read aide2 enable tag");
             }
             if (isDeepZoom()) mSupportZoomCapture = true;
             if(isClearSightOn()) {
@@ -5193,7 +5202,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(mode.equals("0")){
                 mBGain = mGGain*detail_enhancement*4;
             }
-            Log.i(TAG,"mAideV2CaptureCallback, mRGain:" + mRGain + ",mGGain:" + mGGain + ",detail_enhancement:" + detail_enhancement + ",mBGain:" + mBGain);
+            Log.i(TAG,"mAideV2CaptureCallback, mRGain:" + mRGain + ",mGGain:" + mGGain + ",detail_enhancement:" + detail_enhancement + ",mBGain:" + mBGain
+                    + ",mEnhancefactor:" + mEnhancefactor + ",mGainThresholdY:" + mGainThresholdY + ",mGainThresholdUV:" + mGainThresholdUV);
             AIDEV2ProcessFrameArgs aideV2Args = new AIDEV2ProcessFrameArgs(inputFrameDim, downFrameDim, srcInputY, srcInputUV, srcDsInputY, srcDsInputUV,
                     title, cropRegion, mCaptureResult, mPictureSize, denoiseStrengthParam, mAideAdrcGain, (int)(mRGain*1024), (int)(mBGain*1024), (int)(mGGain*1024), orientation, quality);
 
@@ -5208,7 +5218,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             synchronized (mAideLock) {
                 if (TRACE_DEBUG) Trace.beginSection("aide2 process");
                 mActivity.getAIDenoiserService().startAideV2Process(aideV2Args.getsrcInputY(), aideV2Args.getsrcInputUV(), aideV2Args.getsrcDsInputY(),aideV2Args.getsrcDsInputUV(),
-                        aideV2Args.getInputFrameDim(), aideV2Args.getdownFrameDim(), 100000, 100, aideV2Args.getdenoiseStrengthParam(), aideV2Args.getadrcGain(), aideV2Args.getrGain(), aideV2Args.getbGain(), aideV2Args.getgGain(), Integer.parseInt(format), Integer.parseInt(mode));
+                        aideV2Args.getInputFrameDim(), aideV2Args.getdownFrameDim(), 100000, 100, aideV2Args.getdenoiseStrengthParam(), aideV2Args.getadrcGain(), aideV2Args.getrGain(),
+                        aideV2Args.getbGain(), aideV2Args.getgGain(), Integer.parseInt(format), Integer.parseInt(mode), mEnhancefactor, mGainThresholdY, mGainThresholdUV);
                 if (TRACE_DEBUG) Trace.endSection();
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
                 byte[] srcImage = mActivity.getAIDenoiserService().generateAideV2Image(mActivity, aideV2Args.getorientation(), aideV2Args.getpictureSize(), aideV2Args.getcropRegion(), aideV2Args.getcaptureResult(), aideV2Args.getquality());

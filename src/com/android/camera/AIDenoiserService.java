@@ -264,7 +264,7 @@ public class AIDenoiserService extends Service {
 
 
     public void startAideV2Process(ByteBuffer inputY, ByteBuffer inputC, ByteBuffer dsinputY, ByteBuffer dsinputC,
-            int[] inputFrameDim, int[] downFrameDim, long expTimeInNs, int iso, float denoiseStrength, float adrcGain, int rGain, int bGain, int gGain, int imageformat, int mode){
+            int[] inputFrameDim, int[] downFrameDim, long expTimeInNs, int iso, float denoiseStrength, float adrcGain, int rGain, int bGain, int gGain, int imageformat, int mode, float enhancefactor, byte gainThresholdY, byte gainThresholdUV){
         Log.i(TAG,"startAideV2Process, expTimeInNs：" + expTimeInNs + ",iso:" + iso + ",denoiseStrength:" +denoiseStrength + ",adrcGain:" + adrcGain +
                 ",rGain:" + rGain + ",bGain:" + bGain + ",gGain:" + gGain );
         mWidth = inputFrameDim[0];
@@ -276,7 +276,7 @@ public class AIDenoiserService extends Service {
         int result = mAideUtil.nativeAIDenoiserEngineCreateV2(inputFrameDim, downFrameDim, outputFrameDim, imageformat, mode);
         Log.i(TAG,"AideV2Process create result: " + result);
         result = mAideUtil.nativeAIDenoiserEngineProcessFrameV2(inputY,inputC, dsinputY,dsinputC, mAideOut.array(), expTimeInNs,
-            iso, denoiseStrength, adrcGain, rGain, bGain, gGain, mOutRoi);
+            iso, denoiseStrength, adrcGain, rGain, bGain, gGain, mOutRoi, enhancefactor, gainThresholdY, gainThresholdUV);
         Log.i(TAG,"AideV2Process process frame result: " + result);
         //mAideUtil.nativeAIDenoiserEngineAbortV2();
         mAideUtil.nativeAIDenoiserEngineDestroyV2();
