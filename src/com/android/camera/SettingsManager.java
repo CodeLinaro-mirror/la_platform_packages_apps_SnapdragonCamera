@@ -3914,12 +3914,32 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return modes;
     }
+    public boolean isRTBModeInSelectMode() {
+        String selectMode = getValue(SettingsManager.KEY_SELECT_MODE);
+        if(selectMode != null && selectMode.equals("rtb")){
+            return true;
+        }
+        return false;
+    }
 
     public List<String> getSupportedZoomLevel(int cameraId) {
         float maxZoom = mCharacteristics.get(cameraId).get(CameraCharacteristics
                 .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
+        float[] zoomRatioRange = getSupportedRatioZoomRange(
+                mCaptureModule.getMainCameraId());
+        if(mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
+                (isRTBModeInSelectMode() && isAICameraOn()) || isRTBModeInSelectMode()) {
+            zoomRatioRange = getSupportedBokenRatioZoomRange(
+                    mCaptureModule.getMainCameraId());
+        }
         ArrayList<String> supported = new ArrayList<String>();
-        for (int zoomLevel = 1; zoomLevel <= maxZoom; zoomLevel++) {
+        int minzoom = 1;
+        if(zoomRatioRange[0] < 1){
+            supported.add(String.valueOf(zoomRatioRange[0]));
+        }else if(zoomRatioRange[0] >1){
+            minzoom = (int)zoomRatioRange[0];
+        }
+        for (int zoomLevel = minzoom; zoomLevel <= maxZoom; zoomLevel++) {
             supported.add(String.valueOf(zoomLevel));
         }
         return supported;

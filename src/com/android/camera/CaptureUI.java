@@ -1408,7 +1408,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         float[] zoomRatioRange = mSettingsManager.getSupportedRatioZoomRange(
                 mModule.getMainCameraId());
         if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
+                (mSettingsManager.isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
             zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                     mModule.getMainCameraId());
         }
@@ -1416,7 +1416,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             @Override
             public void onClick(View v) {
                 if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                        (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())){
+                        (mSettingsManager.isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())){
                     float[] zoomRTBRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                            mModule.getMainCameraId());
                     if(zoomRTBRange[0] > 1 ) {
@@ -1604,13 +1604,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return mZoomRatioSupport && CaptureModule.MCXMODE;
     }
 
-    private boolean isRTBModeInSelectMode() {
-        String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
-        if(selectMode != null && selectMode.equals("rtb")){
-            return true;
-        }
-        return false;
-    }
 
     public void updateOfflineDumpTrigger(int status) {
         if (mOfflineDumpTrigger != null) {
@@ -1995,7 +1988,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO) {
             mVideoButton.setVisibility(View.VISIBLE);
         } else if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                isRTBModeInSelectMode()){
+                mSettingsManager.isRTBModeInSelectMode()){
         }
     }
 
@@ -2040,7 +2033,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         float[] zoomRatioRange = mSettingsManager.getSupportedRatioZoomRange(
                 mModule.getMainCameraId());
         if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
+                (mSettingsManager.isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
             zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                     mModule.getMainCameraId());
         }
@@ -2071,7 +2064,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mZoomRenderer.setZoomMax(zoomMax);
         }
         String zoomStr = mSettingsManager.getValue(SettingsManager.KEY_ZOOM);
-        int zoom = Integer.parseInt(zoomStr);
+        float zoom = Float.parseFloat(zoomStr);
 
         mZoomRenderer.setZoom(zoom > zoomMin ? zoom : zoomMin);
         mZoomRenderer.setOnZoomChangeListener(new ZoomChangeListener());
