@@ -3980,6 +3980,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return result;
     }
 
+    private boolean isVideoMode(){
+        return CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO ||
+                CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.PRO_MODE ||
+                CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR;
+    }
+
     public float[] getSupportedBokenRatioZoomRange(int cameraId) {
         Range<Float> range = null;
         float[] result = new float[2];
@@ -3991,7 +3997,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
             for (Capability cap : extendedSceneModeCaps) {
                 int mode = cap.getMode();
-                if (mode == CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS) {
+                if (isVideoMode() && mode == CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS) {
+                    range = cap.getZoomRatioRange();
+                }
+                if (!isVideoMode() && mode == CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_STILL_CAPTURE) {
                     range = cap.getZoomRatioRange();
                 }
             }
