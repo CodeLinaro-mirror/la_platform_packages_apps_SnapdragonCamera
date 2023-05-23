@@ -13710,6 +13710,14 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyVIULL(CaptureRequest.Builder request) {
+        String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
+        String hfr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        String videoQuality = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        if ("HEVCProfileMain10HDR10Plus".equals(profile) || !"off".equals(hfr) || "1280x720".equals(videoQuality)) {
+            Log.w(TAG, " applyVIULL mode : 0, video profile " + profile + ", hfr " + hfr + ", videoQuality " + videoQuality);
+            VendorTagUtil.setVIULLMode(request, 0);
+            return;
+        }
         String value = mSettingsManager.getValue(SettingsManager.KEY_VIULL);
         if (value != null ) {
             int mode = -1;
