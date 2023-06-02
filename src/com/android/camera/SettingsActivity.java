@@ -1979,7 +1979,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateCaptureProfilePref();
         updateMultiResReprocess();
         updatePreviewStabilizationPreference();
-        updateMultiVideoFPSPreference();
         updateViullPreference();
         updateCinematicOptions(fromRestore);
         updateHfrBufferMode();
