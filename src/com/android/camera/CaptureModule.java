@@ -7677,7 +7677,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mUI.hideEvSeekbar();
         });
 
-        if(mIsCloseCamera) {
+        if(isExitCamera || mIsCloseCamera) {
             closeCamera();
         } else {
             closeProcessors();
