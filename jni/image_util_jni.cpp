@@ -30,7 +30,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <jni.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <dlfcn.h>
 
 #ifdef __ANDROID__
 #include "android/log.h"
@@ -51,89 +50,11 @@ JNIEXPORT jint JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nati
         JNIEnv* env, jobject thiz, jbyteArray oldBuf, jbyteArray newBuf, jint oldWidth, jint oldHeight, jint oldStride, jint newWidth, jint newHeight);
 JNIEXPORT jint JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeNV21Split(
         JNIEnv* env, jobject thiz, jbyteArray srcYVU, jobjectArray yBuf, jobjectArray vuBuf, jint width, jint height, jint srcStride, jint dstStride);
-JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeEnablePerfLock(JNIEnv* env, jobject thiz);
-JNIEXPORT jint JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativePerfLockAcq(
-        JNIEnv* env, jobject thiz, jint handle, jint duration, jintArray resource,jint numArgs);
-JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativePerfLockRelease(
-        JNIEnv* env, jobject thiz, jint handle);
 #ifdef __cplusplus
 }
 #endif
 
 typedef unsigned char uint8_t;
-void *perf_handle;
-int (*perflock_acq)(int handle, int duration, int list[], int numArgs);
-int (*perflock_rel)(int handle);
-int (*perflock_hint)(int hint_id, char* package, int duration, int type);
-
-void getPerfhandle(){
-    perf_handle = dlopen("libqti-perfd-client.so", RTLD_NOW);
-    if(!perf_handle){
-        printf("Unable to open perf lib: %s", dlerror());
-    }
-
-    perflock_acq = (int (*)(int, int, int *, int))dlsym(perf_handle, "perf_lock_acq");
-    if(!perflock_acq){
-        printf("Unable to get perf_lock_acq handle");
-    }
-
-    perflock_rel = (int (*)(int))dlsym(perf_handle, "perf_lock_rel");
-    if(!perflock_rel){
-        printf("Unable to get perf_lock_rel handle");
-    }
-
-    perflock_hint = (int (*)(int, char*, int , int))dlsym(perf_handle, "perf_hint");
-    if(!perflock_hint){
-        printf("Unable to get perflock_hint handle");
-    }
-    printf("get perflock api successfully");
-}
-
-void perflockRelease(int handle){
-    if (handle != -1) {
-        printf("Releasing handle:%d", handle);
-        if(perflock_rel)
-            perflock_rel(handle);
-    }
-}
-
-int perflockAcquire(int handle, int duration, int resource[] ,int numArgs){
-    int handle_acq = -1;
-    if(perflock_acq){
-        printf("perflock_acq,handle=%d,duration=%d,numArgs=%d", handle, duration, numArgs);
-        handle_acq = perflock_acq(handle, duration, resource, numArgs);
-    }
-    return handle_acq;
-}
-int perfhintEnable(int hint_id, char* pkg, int duration, int type){
-    int handle_acq = 0;
-    if(duration < 0)
-    {
-        return 0;
-    }
-    if(perflock_hint)
-        handle_acq = perflock_hint(hint_id, pkg, duration, type);
-    return handle_acq;
-}
-
-JNIEXPORT void Java_com_android_camera_imageprocessor_PostProcessor_nativeEnablePerfLock(JNIEnv* env, jobject thiz)
-{
-    getPerfhandle();
-}
-JNIEXPORT jint Java_com_android_camera_imageprocessor_PostProcessor_nativePerfLockAcq(
-        JNIEnv* env, jobject thiz, jint handle, jint duration, jintArray resource,jint numArgs)
-{
-    int value =0;
-    jint *cresource = env->GetIntArrayElements(resource, 0);
-    value = perflockAcquire(handle, duration, cresource, numArgs);
-    env->ReleaseIntArrayElements(resource, cresource, 0);
-    return value;
-}
-JNIEXPORT void Java_com_android_camera_imageprocessor_PostProcessor_nativePerfLockRelease(
-        JNIEnv* env, jobject thiz, jint handle)
-{
-    perflockRelease(handle);
-}
 
 void rotateBufAndMerge(uint8_t *in_buf, jint imageWidth, jint imageHeight, jint degree, uint8_t *out_buf)
 {

@@ -1459,9 +1459,6 @@ public class PostProcessor{
     }
 
     private native int nativeFlipNV21(byte[] buf, int stride, int height, int gap, boolean isVertical);
-    public native void  nativeEnablePerfLock();
-    public native int nativePerfLockAcq(int handle, int duration, int resource[],int numArgs);
-    public native void nativePerfLockRelease(int handle);
     static {
         try {
             System.loadLibrary("jni_imageutil");
