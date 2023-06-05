@@ -2420,7 +2420,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-        if (!"off".equals(profile)) {
+        if ("HEVCProfileMain10HDR10Plus".equals(profile)) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;
