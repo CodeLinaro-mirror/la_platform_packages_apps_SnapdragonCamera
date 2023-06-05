@@ -1420,6 +1420,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public boolean isSessionClosed(int id){
         return (mCaptureSession[id] ==null);
     }
+    public CameraCaptureSession getCurrentSession(int id){
+        return mCaptureSession[id];
+    }
     public List<String> getLongImageTitle(){return mLongImgTitle;}
     public OneUICameraControls getmCameraControls(){
         return mUI.getmCameraControls();
@@ -6010,7 +6013,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 }
 
                                 Image image = reader.acquireNextImage();
-                                Log.d(TAG, "imageFormat is " + image.getFormat());
+                                Log.i(TAG, "imageFormat is " + image.getFormat());
                                 if ((mLongshotActive || mNumFramesArrived.get() > 0)) {
                                     Log.d(TAG, "long shot image available num " + mNumImageArrived.get());
                                     if (mNumImageArrived.get() < mShotNum &&
@@ -7698,7 +7701,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         closeVideoFileDescriptor();
         if (mIntentMode != CaptureModule.INTENT_MODE_NORMAL
                 && isExitCamera && mJpegImageData != null) {
-            mActivity.setResultEx(Activity.RESULT_CANCELED, new Intent());
+            //mActivity.setResultEx(Activity.RESULT_CANCELED, new Intent());
             mActivity.finish();
         }
         closeImageReader();
@@ -8493,11 +8496,15 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     @Override
     public void onCaptureDone() {
-        Log.d(TAG," onCaptureDone mPaused="+mPaused);
+        Log.i(TAG," onCaptureDone mPaused="+mPaused);
         if (mPaused) {
             return;
         }
         byte[] data = mJpegImageData;
+        if(data == null ){
+            Log.e(TAG,"mJpegImageData is null ,return.mJpegImageData= "+mJpegImageData);
+            return;
+        }
         if (mCropValue == null) {
             // First handle the no crop case -- just return the value.  If the
             // caller specifies a "save uri" then write the data to its
@@ -9624,7 +9631,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             int height = Integer.parseInt(sourceStrArray[1]);
             mVideoSnapshotSize = new Size(width, height);
         }
-        Log.d(TAG, "updateVideoSnapshotSize final video snapShot size = " + mVideoSnapshotSize.toString());
+        Log.i(TAG, "updateVideoSnapshotSize final video snapShot size = " + mVideoSnapshotSize.toString());
         Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(getMainCameraId());
         mVideoSnapshotThumbSize = getOptimalPreviewSize(mVideoSnapshotSize, thumbSizes); // get largest thumb size
     }
@@ -10450,6 +10457,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mCaptureCallback, mCameraHandler);
                 }
             }
+            mVideoFilePath = mVideoFilename;
             mCameraHandler.removeMessages(CANCEL_TOUCH_FOCUS, mCameraId[cameraId]);
             if (!mFrameProcessor.isFrameListnerEnabled() && !startVideoRecording() ||
                     !mIsRecordingVideo) {
@@ -10464,9 +10472,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                     mUI.resetPauseButton();
                     mRecordingTotalTime = 0L;
-
                     mRecordingStartTime = SystemClock.uptimeMillis();
-                    mVideoFilePath = mVideoFilename;
                     if (!isHighSpeedRateCapture() && mSettingsManager.isLiveshotSupported(mVideoSize,
                             mSettingsManager.getVideoFPS())){
                         mUI.enableShutter(true);

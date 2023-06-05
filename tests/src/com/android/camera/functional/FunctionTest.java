@@ -62,20 +62,21 @@ import android.support.test.rule.ActivityTestRule;
 
 
 
+
 @RunWith(AndroidJUnit4.class)
 public class FunctionTest extends TestBase  {
     private String TAG = "autoTest_FunctionTest";
-
     @BeforeClass
     public static void initJson(){
         Log.i("autotest_initJson","initJson beforeTest");
+        init();
         updateAndSavejson(INPUT_JSON,null,null,null);
     }
 
     @Before
     public void beforeEachTest()throws Exception {
         Log.i(TAG, "beforeEachTest");
-        init();
+
         OpenAndResetCamera();
         initsetting();
     }
@@ -154,5 +155,28 @@ public class FunctionTest extends TestBase  {
         swipFromRTL(2);
         //checkPreview("2",CaptureModule.CameraMode.HFR);
         runVideoCase("2",CaptureModule.CameraMode.CINEMATIC);
+    }
+
+    @Test
+    public void testInVideoIntent() throws Exception {
+        //setActivityIntent(mIntent);
+        //recordVideo();
+        mActivityRule.finishActivity();
+        Thread.sleep(OPEN_CAMERA_DURATION);
+        Log.i(TAG,"zcl videointent");
+        openCameraByIntent(mVideoIntent);
+        isOpenFromIntent = true;
+        runVideoCase("0",CaptureModule.CameraMode.VIDEO);
+    }
+    @Test
+    public void testInImageIntent() throws Exception {
+        //setActivityIntent(mIntent);
+        //recordVideo();
+        mActivityRule.finishActivity();
+        Thread.sleep(OPEN_CAMERA_DURATION);
+        Log.i(TAG,"zcl videointent");
+        openCameraByIntent(mImageIntent);
+        isOpenFromIntent = true;
+        runPhotoCase("0",CaptureModule.CameraMode.DEFAULT);
     }
 }
