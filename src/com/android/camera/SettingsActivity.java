@@ -2352,6 +2352,16 @@ public class SettingsActivity extends PreferenceActivity {
         if(rawFormat != null){
             value = rawFormat.getValue();
         }
+        if(mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT){
+            CharSequence[] fullEntryValues = pref.getEntryValues();
+            CharSequence[] fullEntries = pref.getEntries();
+            List<CharSequence> key =  new ArrayList<CharSequence>(Arrays.asList(fullEntries));
+            key.remove("HDR10");
+            List<CharSequence> values = new ArrayList<CharSequence>(Arrays.asList(fullEntryValues));
+            values.remove("4");
+            pref.setEntries(key.toArray(new CharSequence[key.size()]));
+            pref.setEntryValues(values.toArray(new CharSequence[values.size()]));
+        }
         if(value.equals(yuv10bit) || value.equals(yuv10bitWithMetadata) || mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT){
             pref.setEnabled(true);
         } else {
