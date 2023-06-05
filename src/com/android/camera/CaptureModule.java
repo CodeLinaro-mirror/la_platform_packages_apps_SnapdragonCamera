@@ -8740,8 +8740,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mUI.hideFocusAssistText();
         Log.d(TAG, "onSingleTapUp " + x + " " + y);
-        if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE &&
-                mCurrentSceneMode.mode != CameraMode.CINEMATIC) {
+        if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE) {
             mLockAFAE = LOCK_AF_AE_STATE_NONE;
             applyIsAfLock(false);
             cancelTouchFocus(mCurrentSceneMode.getCurrentId());
@@ -8778,8 +8777,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     @Override
     public void onLongPress(View view, int x, int y) {
         if (mPaused || !mCamerasOpened || !mFirstTimeInitialized || !mAutoFocusRegionSupported
-                || !mAutoExposureRegionSupported || !isTouchToFocusAllowed() ||
-                mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
+                || !mAutoExposureRegionSupported || !isTouchToFocusAllowed()) {
             return;
         }
         Log.d(TAG, "onLongPress " + x + " " + y);
