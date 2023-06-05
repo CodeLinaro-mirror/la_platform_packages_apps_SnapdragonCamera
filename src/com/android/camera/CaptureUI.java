@@ -2533,6 +2533,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void showUIafterRecording() {
         mCameraControls.setVideoMode(false);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
+        if (!DEV_LEVEL_ALL && mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC) {
+            mFrontBackSwitcher.setVisibility(View.INVISIBLE);
+        }
         mSettingsIcon.setVisibility(View.VISIBLE);
         mIsVideoUI = false;
         mPauseButton.setVisibility(View.INVISIBLE);
