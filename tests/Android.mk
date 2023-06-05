@@ -1,3 +1,4 @@
+ifneq ($(strip $(SOONG_CONFIG_qticamera_apk)),true)
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := optional
@@ -25,5 +26,5 @@ LOCAL_PACKAGE_NAME := SdCameraTests
 LOCAL_INSTRUMENTATION_FOR := SnapdragonCamera
 
 include $(BUILD_PACKAGE)
-
+endif
 
