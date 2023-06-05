@@ -1,3 +1,4 @@
+ifneq ($(strip $(SOONG_CONFIG_qticamera_apk)),true)
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
@@ -12,7 +13,6 @@ LOCAL_STATIC_JAVA_LIBRARIES := littlemock dexmaker
 LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
 LOCAL_PACKAGE_NAME := Camera2Tests
-
 LOCAL_INSTRUMENTATION_FOR := Camera2
-
 #include $(BUILD_PACKAGE)
+endif
