@@ -1397,7 +1397,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public Set<String> getPhysicalFeatureEnableId(String key) {
-        if (!isMultiCameraEnabled())
+        String ismulti = getValue(KEY_MULTI_CAMERA_MODE);
+        if (!isMultiCameraEnabled() && (ismulti == null || ismulti.equals("0")))
             return null;
         String ids  = getValue(key);
         if (getPhysicalCameraId() == null){
