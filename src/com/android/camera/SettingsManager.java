@@ -71,7 +71,7 @@ import com.android.camera.ui.PanoCaptureProcessView;
 import com.android.camera.util.PersistUtil;
 import com.android.camera.util.ApiHelper;
 import com.android.camera.util.SettingTranslation;
-import com.android.camera.util.AutoTestUtil;
+import com.android.camera.app.CameraApp;
 
 import org.codeaurora.snapcam.R;
 import org.json.JSONException;
@@ -206,7 +206,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_TONE_MAPPING_DARK_BOOST = "pref_camera2_tone_mapping_dark_boost";
     public static final String KEY_TONE_MAPPING_FOURTH_TONE = "pref_camera2_tone_mapping_fourth_tone";
 
-    public static final String AUTO_TEST_WRITE_CONTENT = "auto_test_write_content";
 
     public static final String KEY_MANUAL_WB = "pref_camera2_manual_wb_key";
     public static final String KEY_MANUAL_WB_TEMPERATURE_VALUE =
@@ -458,98 +457,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Log.d(TAG, "SettingsManager init" + CaptureModule.CURRENT_ID);
         final int cameraId = getInitialCameraId();
         setLocalIdAndInitialize(cameraId);
-        autoTestBroadcast(cameraId);
         reloadCharacteristics(cameraId);
     }
 
     public void reinit(int cameraId) {
         Log.d(TAG, "SettingsManager reinit " + cameraId);
         setLocalIdAndInitialize(cameraId);
-    }
-
-    private void autoTestBroadcast(int cameraId) {
-        final SharedPreferences pref = mContext.getSharedPreferences(
-                ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey()),
-                Context.MODE_PRIVATE);
-        final SharedPreferences.Editor editor = pref.edit();
-        boolean autoWrite = pref.getBoolean(AUTO_TEST_WRITE_CONTENT, true);
-        if (autoWrite) {
-            Thread autoTest = new Thread() {
-                public void run() {
-                    writeAutoTextHelpTxt(editor);
-                }
-            };
-            autoTest.start();
-        }
-    }
-
-    private void writeAutoTextHelpTxt(SharedPreferences.Editor editor) {
-        List<String> supportLists = new ArrayList<String>();
-        /* Video Size */
-        String[] videoSizes = getEntryValues(R.array.pref_camera2_video_quality_entryvalues);
-        /* Picture Size */
-        String[] pictSizes = getEntryValues(R.array.pref_camera2_picturesize_entryvalues);
-        // back support pictureSizes
-        List<String> backPLists = getSupportList(getSupportedPictureSize(0), pictSizes);
-        supportLists.add("<Back camera support PictureSizes>");
-        supportLists.addAll(backPLists);
-        // front support pictureSizes
-        if (mCharacteristics.size() > 1) {
-            List<String> frontPLists = getSupportList(getSupportedPictureSize(1), pictSizes);
-            supportLists.add("<Front camera support PictureSizes>");
-            supportLists.addAll(frontPLists);
-            /* Video Size */
-            List<String> frontVideoLists = getSupportList(getSupportedVideoSize(1), videoSizes);
-            supportLists.add("<Front camera support VideoSizes and fps>");
-            for (int i=0; i < frontVideoLists.size(); i++) {
-                String videoSize = frontVideoLists.get(i);
-                List<String> fps = getSupportedHFRForAutoTest(videoSize);
-                supportLists.add(videoSize);
-                supportLists.addAll(fps);
-                List<String> videoEncoders = getSupportedVideoEncoderForAutoTest(videoSize);
-                supportLists.addAll(videoEncoders);
-                supportLists.add("");
-            }
-        }
-        List<String> backVideoLists = getSupportList(getSupportedVideoSize(0), videoSizes);
-        supportLists.add("<Back camera support VideoSizes and fps>");
-        for (int i=0; i < backVideoLists.size(); i++) {
-            String videoSize = backVideoLists.get(i);
-            List<String> fps = getSupportedHFRForAutoTest(videoSize);
-            supportLists.add(videoSize);
-            supportLists.addAll(fps);
-            List<String> videoEncoders = getSupportedVideoEncoderForAutoTest(videoSize);
-            supportLists.addAll(videoEncoders);
-            supportLists.add("");
-        }
-
-        String filePath = AutoTestUtil.createFile(mContext);
-        boolean result = AutoTestUtil.writeFileContent(filePath, supportLists);
-        editor.putBoolean(AUTO_TEST_WRITE_CONTENT, false);
-        editor.apply();
-    }
-
-    private List<String> setCharSequenceToListStr(String title, CharSequence[] charSequences) {
-        List<String> list = new ArrayList<String>();
-        list.add(title);
-        for (CharSequence support : charSequences) {
-            list.add(support.toString());
-        }
-        return list;
-    }
-
-    private String[] getEntryValues(int id) {
-        return mContext.getResources().getStringArray(id);
-    }
-
-    public List<String> getSupportList(List<String> supported, String[] supportList) {
-        List<String> resultList = new ArrayList<String>();
-        for (String item : supportList) {
-            if (supported.indexOf(item) >= 0) {
-                resultList.add(item);
-            }
-        }
-        return resultList;
     }
 
     private void setLocalIdAndInitialize(int cameraId) {
@@ -1607,94 +1520,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
 
         return res;
-    }
-
-    private List<String> getSupportedVideoEncoderForAutoTest(String videoSizeStr) {
-        ArrayList<String> supported = new ArrayList<String>();
-        ListPreference videoEncoder = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
-        if (videoEncoder == null) return supported;
-
-        if (videoEncoder != null) {
-            String str = null;
-            MediaCodecList list = new MediaCodecList(MediaCodecList.ALL_CODECS);
-            MediaCodecInfo[] codecInfos = list.getCodecInfos();
-            for (MediaCodecInfo info: codecInfos) {
-                if ( info.isEncoder() ) {
-                    int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
-                    if (type != -1){
-                        str = SettingTranslation.getVideoEncoder(type);
-                        if (isCurrentVideoResolutionSupportedByEncoder(info)) {
-                            supported.add(str);
-                        }
-                    }
-                }
-            }
-        }
-        return supported;
-    }
-
-    private List<String> getSupportedHFRForAutoTest(String videoSizeStr) {
-        ArrayList<String> supported = new ArrayList<String>();
-        ListPreference videoEncoder = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
-        if (videoEncoder == null) return supported;
-        int videoEncoderNum = SettingTranslation.getVideoEncoder(videoEncoder.getValue());
-        VideoCapabilities videoCapabilities = null;
-        boolean findVideoEncoder = false;
-        if (videoSizeStr != null) {
-            Size videoSize = parseSize(videoSizeStr);
-            MediaCodecList allCodecs = new MediaCodecList(MediaCodecList.ALL_CODECS);
-            for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
-                if (!info.isEncoder() || info.getName().contains("google")) continue;
-                for (String type : info.getSupportedTypes()) {
-                    if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))) {
-                        CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
-                        videoCapabilities = codecCapabilities.getVideoCapabilities();
-                        findVideoEncoder = true;
-                        break;
-                    }
-                }
-                if (findVideoEncoder) break;
-            }
-
-            try {
-                Range[] range = getSupportedHighSpeedVideoFPSRange(mCameraId, videoSize);
-                for (Range r : range) {
-                    // To support HFR for both preview and recording,
-                    // minmal FPS needs to be equal to maximum FPS
-                    if ((int) r.getUpper() == (int) r.getLower()) {
-                        if (videoCapabilities != null) {
-                            if (videoCapabilities.areSizeAndRateSupported(
-                                    videoSize.getWidth(), videoSize.getHeight(), (int) r.getUpper())) {
-                                supported.add("hfr" + String.valueOf(r.getUpper()));
-                                supported.add("hsr" + String.valueOf(r.getUpper()));
-                            }
-                        }
-                    }
-                }
-            } catch (IllegalArgumentException ex) {
-                Log.w(TAG, "HFR is not supported for this resolution " + ex);
-            }
-            if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 3) {
-                for (int i = 0; i < mExtendedHFRSize.length; i += 3) {
-                    String item = "hfr" + mExtendedHFRSize[i + 2];
-                    if (!supported.contains(item)
-                            && videoSize.getWidth() <= mExtendedHFRSize[i]
-                            && videoSize.getHeight() <= mExtendedHFRSize[i + 1]) {
-                        if (videoCapabilities != null) {
-                            if (videoCapabilities.areSizeAndRateSupported(
-                                    videoSize.getWidth(), videoSize.getHeight(), mExtendedHFRSize[i + 2])) {
-                                supported.add(item);
-                                supported.add("hsr" + mExtendedHFRSize[i + 2]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return supported;
     }
 
     private List<String> getSupportedHighFrameRate() {
