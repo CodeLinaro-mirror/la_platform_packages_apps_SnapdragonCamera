@@ -10174,18 +10174,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void createCameraSessionWithSessionConfiguration(int cameraId,
                  List<OutputConfiguration> outConfigurations, InputConfiguration inputConfig, CameraCaptureSession.StateCallback listener,
                  Handler handler, CaptureRequest.Builder initialRequest) {
-
-        int opMode = SESSION_REGULAR;
-        String valueFS2 = mSettingsManager.getValue(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
-        if (valueFS2 != null) {
-            int intValue = Integer.parseInt(valueFS2);
-            if (intValue == 1) {
-                opMode |= STREAM_CONFIG_MODE_FS2;
-            }
-        }
-
-        Log.i(TAG, "  opMode: " + opMode + ",mStreamConfigOptMode: " + mStreamConfigOptMode);
-        createCaptureSessionWithSessionConfiguration(mCameraDevice[cameraId], opMode | mStreamConfigOptMode, outConfigurations, inputConfig, listener, handler, initialRequest);
+        getOptMode();
+        Log.i(TAG, "mStreamConfigOptMode: " + mStreamConfigOptMode);
+        createCaptureSessionWithSessionConfiguration(mCameraDevice[cameraId], mStreamConfigOptMode, outConfigurations, inputConfig, listener, handler, initialRequest);
     }
 
     private void getOptMode() {
