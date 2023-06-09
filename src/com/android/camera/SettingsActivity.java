@@ -1539,6 +1539,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_CAPTURE_PROFILE);
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
                         videoAddList.add(SettingsManager.KEY_VIULL);
+                        videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
                     } else {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
@@ -1553,7 +1554,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_STATSNN_CONTROL);
                     }
                     videoAddList.add(SettingsManager.KEY_PDNET_TOGGLE);
-                    videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
+
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                     videoAddList.add(SettingsManager.KEY_INSTANT_ZOOM);
