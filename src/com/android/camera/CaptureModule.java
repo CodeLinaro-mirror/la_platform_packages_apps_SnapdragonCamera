@@ -28,6 +28,7 @@ package com.android.camera;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -732,6 +733,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static final CameraCharacteristics.Key<Byte> is_t2t_supported =
             new CameraCharacteristics.Key<>(
                     "org.quic.camera2.objectTrackingResults.TrackerEnable", byte.class);
+    public static final CameraCharacteristics.Key<Byte> is_statsnn_supported =
+            new CameraCharacteristics.Key<>(
+                    "org.quic.camera2.statsNNSaliNetResults.statsNNSaliencyEnable", byte.class);
     private static final CaptureResult.Key<Integer> t2t_tracker_status =
             new CaptureResult.Key<>("org.quic.camera2.objectTrackingResults.TrackerStatus", Integer.class);
     private static final CaptureResult.Key<int[]> t2t_tracker_result_roi =
@@ -2149,7 +2153,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mAFRoi[1] = result.get(roiy_start);
                 mAFRoi[2] = result.get(roix_end);
                 mAFRoi[3] = result.get(roiy_end);
-                Log.d(TAG,"mAFRoi[0]:" + mAFRoi[0] +"mAFRoi[1]:" + mAFRoi[1] +"mAFRoi[2]:" + mAFRoi[2] + "mAFRoi[3]:" + mAFRoi[3]);
+                Log.d(TAG," mAFRoi[0]:" + mAFRoi[0] +"mAFRoi[1]:" + mAFRoi[1] +"mAFRoi[2]:" + mAFRoi[2] + "mAFRoi[3]:" + mAFRoi[3]);
             }catch (NullPointerException|IllegalArgumentException e){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
@@ -2238,8 +2242,35 @@ public class CaptureModule implements CameraModule, PhotoController,
                 return;
             }
             if (null != mActivity) {
-                Toast.makeText(mActivity,"open camera error id =" + id+"," +
-                                "error reason:"+error,Toast.LENGTH_LONG).show();
+                String errmsg = ""+error;
+                switch(error) {
+                    case 1:
+                        errmsg = "ERROR_CAMERA_IN_USE:" +
+                                "please close the application who is using camera.";
+                        break;
+                    case 2:
+                        errmsg = "ERROR_MAX_CAMERAS_IN_USE:" +
+                                "More camera devices cannot be opened until previous instances are closed.";
+                        break;
+                    case 3:
+                        errmsg = "ERROR_CAMERA_DISABLED:" +
+                                "Please check which application USES_POLICY_DISABLE_CAMERA.";
+                        break;
+                    case 4:
+                        errmsg = "ERROR_CAMERA_DEVICE:The camera device needs to be re-opened to be used again.";
+                        break;
+                    case 5:
+                        errmsg = "ERROR_CAMERA_SERVICE:" +
+                                "The Android device may need to be shut down and restarted" +
+                                " to restore camera function, or there may be a persistent hardware problem.";
+                        break;
+                }
+                final AlertDialog.Builder alert = new AlertDialog.Builder(mActivity);
+                alert.setMessage("Open camera error!Camera id:"+ id+"\nError reason is "+errmsg);
+                Dialog dialog = alert.show();
+                mHandler.postDelayed(() -> {
+                    dialog.dismiss();
+                }, 5000L);
                 mActivity.finish();
             }
             //workaround for removing task bug
@@ -2249,12 +2280,16 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onClosed(CameraDevice cameraDevice) {
             int id = Integer.parseInt(cameraDevice.getId());
-            mCloseCameraLatency = System.currentTimeMillis() - mCloseCameraLatency;
-            Log.i(TAG, "onClosed " + id);
-            mCameraDevice[id] = null;
-            mCameraOpenCloseLock.release();
-            mCamerasOpened = false;
-            mIsCloseCamera = true;
+            Log.i(TAG,"onclosed id="+id);
+            Log.d(TAG,"mCameraDevice[id]="+
+                    mCameraDevice[id]+",id="+id+",cameraDevice="+cameraDevice+",getmainid="+getMainCameraId());
+            if((mCameraDevice[id] == null || mCameraDevice[id].equals(cameraDevice)) && id == getMainCameraId()){
+                mCloseCameraLatency = System.currentTimeMillis() - mCloseCameraLatency;
+                mCameraDevice[id] = null;
+                mCameraOpenCloseLock.release();
+                mCamerasOpened = false;
+                mIsCloseCamera = true;
+            }
         }
 
     };
@@ -3359,7 +3394,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
 
                     if (mRawReprocessType != 0) {
-
                         for (int i = 0; i < mRawCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mRAWImageReader[i].getSurface());
                             String physicalId = mSettingsManager.getRawReprocessPhysicalId();
@@ -3461,6 +3495,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         } catch (CameraAccessException | NullPointerException | IllegalStateException |IllegalArgumentException e) {
            Log.e(TAG,"createSession exception = "+ e);
+           e.printStackTrace();
         }
     }
 
@@ -3650,9 +3685,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 outputConfigurations.add(configuration);
                 i++;
             }
-        }else if(mSaveRaw) {
+        } else if (mSaveRaw) {
             for (int i = 0; i < mPhysicalRawId.length; i++) {
                 String id = mPhysicalRawId[i];
+                if (mPhysicalRawReader[i] == null) {
+                    break;
+                }
                 OutputConfiguration configuration = new OutputConfiguration(mPhysicalRawReader[i].getSurface());
                 if (!isLogicalId(id)) {
                     configuration.setPhysicalCameraId(id);
@@ -10009,18 +10047,32 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mSettingsManager.isMultiCameraEnabled()) {
             Set<String> mfnr_ids = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_MFNR);
+            int noiseReduMode = CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY;
             if (mfnr_ids != null){
-                builder.set(CaptureRequest.NOISE_REDUCTION_MODE,
-                        CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY);
                 for (String id:mfnr_ids){
                     try {
                         builder.setPhysicalCameraKey(CaptureRequest.NOISE_REDUCTION_MODE,
-                                CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY,id);
+                                noiseReduMode,id);
                     } catch (Exception e) {
                         Log.w(TAG, EXCEPTION_LOG,"capture can`t find vendor NOISE_REDUCTION_MODE tag ");
                     }
                 }
+                Set<String> allPhysicalIds = mSettingsManager.getAllPhysicalCameraId();
+                String value = mSettingsManager.getValue(SettingsManager.KEY_PHYSICAL_MFNR);
+                for (String physical : allPhysicalIds) {
+                    if (!value.contains(physical)) {
+                        try {
+                            builder.setPhysicalCameraKey(CaptureRequest.NOISE_REDUCTION_MODE,
+                                    CameraMetadata.NOISE_REDUCTION_MODE_FAST,physical);
+                        } catch (Exception e) {
+                            Log.w(TAG, EXCEPTION_LOG,"capture can`t find vendor NOISE_REDUCTION_MODE tag ");
+                        }
+                    }
+                }
+            }else{
+                noiseReduMode = CameraMetadata.NOISE_REDUCTION_MODE_FAST;
             }
+            builder.set(CaptureRequest.NOISE_REDUCTION_MODE,noiseReduMode);
         } else {
             boolean isMfnrEnable = isMFNREnabled();
             int noiseReduMode = (isMfnrEnable ? CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY :

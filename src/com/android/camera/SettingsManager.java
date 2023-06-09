@@ -402,13 +402,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
             mPreferences = new ComboPreferences(mContext);
         }
         upgradeGlobalPreferences(mPreferences.getGlobal(), mContext);
-
+        mDependency = parseJson("dependency.json");
+    }
+    public void initCharacteristics(){
+        if(mCharacteristics.size() > 0){
+            return;
+        }
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
             String[] cameraIdList = manager.getCameraIdList();
             boolean isFirstBackCameraId = true;
             boolean isRearCameraPresent = false;
-            Log.d(TAG,"cameraIdList size ="+cameraIdList.length);
+            Log.i(TAG,"cameraIdList size ="+cameraIdList.length);
             for (int i = 0; i < cameraIdList.length; i++) {
                 String cameraId = cameraIdList[i];
                 CameraCharacteristics characteristics
@@ -446,9 +451,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch (CameraAccessException e) {
             Log.e(TAG,e.toString());
         }
-
-        mDependency = parseJson("dependency.json");
     }
+
    public boolean isTorchHDREnabled(boolean isflashRequired,CaptureResult mResult) {
         boolean torchHDREnable = false;
         boolean flashEnable =false;
@@ -848,6 +852,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         filterHeifSizeOptions();
         mVideoEisConfigs = getVideoEisConfigs(cameraId);
         filterHFROptions();
+        filterVideoEncoderProfileOptions();
         resetSomeSettings();
     }
 
@@ -905,6 +910,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
             supportted = (mCharacteristics.get(mCameraId).get(CaptureModule.is_t2t_supported) == 1);
         } catch (IllegalArgumentException | NullPointerException e) {
         }
+        return supportted;
+    }
+
+    public boolean isStatsNNSupported() {
+        boolean supportted = true;
+        try {
+            supportted = (mCharacteristics.get(mCameraId).get(CaptureModule.is_statsnn_supported) == 1);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            Log.w(TAG, EXCEPTION_LOG,"isStatsNNSupported is_statsnn_supported no vendor tag");
+        }
+        Log.i(TAG, "isStatsNNSupported supportted :" + supportted);
         return supportted;
     }
 
@@ -1949,7 +1965,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         filterHFROptions();
         filterVideoEncoderOptions();
         filterVideoEncoderProfileOptions();
-
         if (!mIsFrontCameraPresent || !isFacingFront(mCameraId)) {
             removePreference(mPreferenceGroup, KEY_SELFIE_FLASH);
             removePreference(mPreferenceGroup, KEY_SELFIEMIRROR);
@@ -3249,13 +3264,25 @@ public class SettingsManager implements ListMenu.SettingsListener {
         int facing = mCharacteristics.get(id).get(CameraCharacteristics.LENS_FACING);
         return facing == CameraCharacteristics.LENS_FACING_FRONT;
     }
-
+    public boolean isFlashSupported(){
+        return isFlashSupported(mCaptureModule.getMainCameraId());
+    }
     public boolean isFlashSupported(int id) {
         return isFlashAvailable(id) &&
                 mValuesMap.get(KEY_FLASH_MODE) != null &&
-                isSupportedForMode();
+                isSupportedForMode() && isFlashEnabled();
     }
+    private boolean isFlashEnabled(){
+        boolean enable = true;
+        String qll = getValue(SettingsManager.KEY_QLL);
 
+        if(mCaptureModule.isAFLocked() ||
+                mCaptureModule.isLongShotSettingEnabled() || isMultiCameraEnabled() ||
+                (qll != null && qll.equals("1"))){
+            enable = false;
+        }
+        return enable;
+    }
 	private boolean isSupportedForMode(){
         if((CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.SAT)){

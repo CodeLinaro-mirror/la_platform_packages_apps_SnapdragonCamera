@@ -120,10 +120,11 @@ public class ProMode extends View {
             mMaxExpTm = mExposureTime[1];
             setExposuretimeList();
         }
+        init(ISO_MODE);
         initExpousreTime();
         init(EXPOSURE_MODE);
         init(WHITE_BALANCE_MODE);
-        init(ISO_MODE);
+
         mUI.updateProModeText(MANUAL_MODE, "Manual");
     }
 
@@ -131,12 +132,10 @@ public class ProMode extends View {
         mCurrentExposuretime = mSettingsManager.getKeyValue(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE);
         if (mCurrentExposuretime.equals("auto") || mCurrentExposuretime.equals("")) {
             mUI.updateProModeText(EXPOSURE_TIME_MODE, "Auto");
-           if(mExposureTime != null) mUI.closeFlashForPro(false);
         }
        else{
             long mExposurTime = CameraUtil.strToLong(mCurrentExposuretime, mLongExpTm);
             mUI.updateProModeText(EXPOSURE_TIME_MODE, getExposureTimeStr(mExposurTime));
-            if (mExposurTime > mLongExpTm) mUI.closeFlashForPro(true);
         }
     }
    private int getIndexOfValue(String exposuretime,List<String>valueList){
@@ -154,12 +153,25 @@ public class ProMode extends View {
         if (key == null) return;
         int index = mSettingsManager.getValueIndex(key);
         CharSequence[] cc = mSettingsManager.getEntries(key);
-        mIsoIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_ISO);
-        if (mode == EXPOSURE_MODE && mCurrentExposuretime != null && !mCurrentExposuretime.equals("auto") && !mCurrentExposuretime.equals("") && mIsoIndex > 0) {
-            resetEV();
-        } else {
-            mUI.updateProModeText(mode, cc[index].toString());
+        if(mode == ISO_MODE) {
+            mIsoIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_ISO);
         }
+        if (mode == EXPOSURE_MODE ){
+           if( mCurrentExposuretime != null &&
+                !mCurrentExposuretime.equals("auto") && !mCurrentExposuretime.equals("") && mIsoIndex > 0) {
+               resetEV();
+               mUI.closeFlashForPro(true);
+               index = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
+           }else{
+               mUI.setModeEnable(EXPOSURE_MODE,true);
+               long mExposurTime = CameraUtil.strToLong(mCurrentExposuretime, mLongExpTm);
+               if (mExposurTime > mLongExpTm) mUI.closeFlashForPro(true);
+               else{
+                   mUI.closeFlashForPro(false);
+               }
+           }
+        }
+        mUI.updateProModeText(mode, cc[index].toString());
     }
 
     @Override
