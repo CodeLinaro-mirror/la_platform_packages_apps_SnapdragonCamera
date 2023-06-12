@@ -7397,6 +7397,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyOfflineDumpTrigger(builder);
                 applyVideoEncoderProfile(builder);
             }
+            if(mCurrentSceneMode.mode == CameraMode.HFR){
+                applyBufferMode(builder);
+            }
         }
         if (mCurrentSceneMode.mode == CameraMode.DEFAULT
                 || mCurrentSceneMode.mode == CameraMode.VIDEO
@@ -10412,16 +10415,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mHasMapTimes.put("endStop->createSession", System.currentTimeMillis() - mSessionAfterRecord);
             }
         }
-        try {
-            String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
-            if(buffermode != null && buffermode.equals("1")) {
-                mVideoRecordRequestBuilder.set(CaptureModule.outputBufferComb, 1);
-            }else{
-                mVideoRecordRequestBuilder.set(CaptureModule.outputBufferComb, 0);
-            }
-        }catch (IllegalArgumentException e){
-            Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
-        }
+
         try {
             SessionConfiguration sessionConfig = new SessionConfiguration(optionMode,
                     outConfigurations, new HandlerExecutor(mCameraHandler), mSessionListener);
@@ -13407,6 +13401,18 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (value != null) {
             int intValue = Integer.parseInt(value);
             request.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, intValue);
+        }
+    }
+    private void applyBufferMode(CaptureRequest.Builder request){
+        try {
+            String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
+            if(buffermode != null && buffermode.equals("1")) {
+                request.set(CaptureModule.outputBufferComb, 1);
+            }else{
+                request.set(CaptureModule.outputBufferComb, 0);
+            }
+        }catch (IllegalArgumentException e){
+            Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
         }
     }
 
