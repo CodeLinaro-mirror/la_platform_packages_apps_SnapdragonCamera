@@ -413,7 +413,9 @@ public class SettingsActivity extends PreferenceActivity {
                 }
 
                 if (SettingsManager.KEY_PHOTO_EIS_VALUE.equals(pref.getKey())
-                        || SettingsManager.KEY_EIS_VALUE.equals(pref.getKey())) {
+                        || SettingsManager.KEY_EIS_VALUE.equals(pref.getKey()) ||
+                        SettingsManager.KEY_PHYSICAL_CAMERA.equals(pref.getKey()) ||
+                        SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK.equals(pref.getKey())) {
                     updatePreviewStabilizationPreference();
                 }
                 if (mSettingsManager.KEY_FACE_DETECTION.equals(pref.getKey()) ||
@@ -2498,6 +2500,13 @@ public class SettingsActivity extends PreferenceActivity {
                     pref.setEnabled(false);
                     return;
                 } else if ("dynamic".equals(value)) {
+                    Set<String> jpeg_ids = mSettingsManager.getPhysicalFeatureEnableId(
+                            SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK);
+                    if (mSettingsManager.getPhysicalCameraId() != null || jpeg_ids != null) {
+                        pref.setValueIndex(0);
+                        pref.setEnabled(false);
+                        return;
+                    }
                     pref.setEnabled(true);
                     return;
                 } else {
