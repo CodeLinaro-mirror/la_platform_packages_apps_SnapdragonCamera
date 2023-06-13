@@ -207,7 +207,6 @@ public class SettingsActivity extends PreferenceActivity {
                 updateEISPreference();
                 updatePdnetTogglePreference();
                 updateViullPreference();
-                updateZoomPreference();
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
                 value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
@@ -2576,10 +2575,10 @@ public class SettingsActivity extends PreferenceActivity {
         if (extendMaxPref != null && extendMaxPref.getValue().equals("1")) {
             int maxZoom = (int)mSettingsManager.getSupportedExtendedMaxZoom(cameraId);
             zoomLevelLists.add(String.valueOf(maxZoom));
-
         }
         List<String> zoomEntriesLists = new ArrayList<String>();
-        for (int i = 0; i< zoomLevelLists.size(); i++) {
+        zoomEntriesLists.add("Default");
+        for (int i = 1; i< zoomLevelLists.size(); i++) {
             zoomEntriesLists.add(zoomLevelLists.get(i) + "x");
         }
         if(zoomPref != null) {
