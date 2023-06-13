@@ -4216,7 +4216,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (supportHeic == 1){
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
         }
-        ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
+        if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB) {
+            ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
+        }
         return ret;
     }
     public boolean isSupportedMixHdr(){

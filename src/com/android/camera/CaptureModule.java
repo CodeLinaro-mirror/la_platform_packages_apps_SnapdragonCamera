@@ -3565,11 +3565,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     applyCroppedRaw(outputConfiguration, getMainCameraId());
                                 }
                                 if(s == mImageReader[id].getSurface() && mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT) {
-                                    String captureProfile = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_PROFILE);
-                                    Log.v(TAG, "OutputConfiguration set captureProfile :" + captureProfile);
-                                    if (captureProfile != null && !captureProfile.equals("0")) {
-                                        outputConfiguration.setDynamicRangeProfile(Long.parseLong(captureProfile));
-                                    }
+                                    Log.v(TAG, "OutputConfiguration set captureProfile :" + 2);
+                                    outputConfiguration.setDynamicRangeProfile(2);
                                 }
                             }
                             outputConfigurations.add(outputConfiguration);
@@ -3879,6 +3876,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     configuration.setPhysicalCameraId(id);
                     setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
                 }
+                configuration.setDynamicRangeProfile(2);
                 outputConfigurations.add(configuration);
                 Log.d(TAG,"add output format=jpeg R physicalId="+id+" size="
                         +mPhysicalJpegRReader[i].getWidth()+"x"+mPhysicalJpegRReader[i].getHeight());
@@ -10205,6 +10203,11 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void createRegularSession(int cameraId) throws CameraAccessException {
         List<OutputConfiguration> outConfigurations = new ArrayList<>();
+        OutputConfiguration videoSnapshotConfig = new OutputConfiguration(
+                mVideoSnapshotImageReader.getSurface());
+        if( mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT){
+            videoSnapshotConfig.setDynamicRangeProfile(2);
+        }
         Set<String> ids = mSettingsManager.getPhysicalFeatureEnableId(
                 SettingsManager.KEY_PHYSICAL_CAMCORDER);
         if (mSettingsManager.getPhysicalCameraId() != null || (ids != null && ids.size() != 0)) {
@@ -10214,8 +10217,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mVideoRecordRequestBuilder.addTarget(mUI.getPhysicalSurfaces().get(0));
                     outConfigurations.add(new OutputConfiguration(mUI.getPhysicalSurfaces().get(0)));
                     if(!is8KInMulti) {
-                        outConfigurations.add(new OutputConfiguration(
-                                mVideoSnapshotImageReader.getSurface()));
+                        outConfigurations.add(videoSnapshotConfig);
                         outConfigurations.add(new OutputConfiguration(mVideoRecordingSurface));
                     }
                 }
@@ -10263,8 +10265,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mLiveShotOutput.enableSurfaceSharing();
                 outConfigurations.add(mLiveShotOutput);
             } else {
-                OutputConfiguration videoSnapshotConfig = new OutputConfiguration(
-                        mVideoSnapshotImageReader.getSurface());
                 if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
                     videoSnapshotConfig.addSensorPixelModeUsed(
                             CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
