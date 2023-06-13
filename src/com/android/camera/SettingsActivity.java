@@ -252,10 +252,15 @@ public class SettingsActivity extends PreferenceActivity {
             if (key.equals(SettingsManager.KEY_MANUAL_HDR)) {
                 value = ((ListPreference) p).getValue();
                 if (value.equals("manual")) {
-                    UpdateManualHDRSetting();
+                    updateManualHDRSetting();
                 }
                 updateHdrRefOp();
                 updateQuadBayerPreference();
+            }
+
+            if (key.equals(SettingsManager.KEY_MANUAL_HDR) ||
+                    key.equals(SettingsManager.KEY_QLL)) {
+                updateQLLPreference();
             }
 
             if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
@@ -1084,7 +1089,7 @@ public class SettingsActivity extends PreferenceActivity {
         alert.show();
     }
 
-    private void UpdateManualHDRSetting() {
+    private void updateManualHDRSetting() {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
         StringBuilder defaultHDROrder = new StringBuilder();
@@ -1102,7 +1107,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
         final SharedPreferences.Editor editor = mLocalSharedPref.edit();
         String orderLists = mLocalSharedPref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
-        Log.v(TAG, " UpdateManualHDRSetting orderLists:" + orderLists);
+        Log.v(TAG, " updateManualHDRSetting orderLists:" + orderLists);
         if (orderLists != null) {
             listData.clear();
             for (String title : orderLists.split("#")) {
@@ -1311,7 +1316,7 @@ public class SettingsActivity extends PreferenceActivity {
                         if (preference.getKey().equals(SettingsManager.KEY_MANUAL_HDR)) {
                             String value = ((ListPreference) preference).getValue();
                             if (value.equals("manual")) {
-                                UpdateManualHDRSetting();
+                                updateManualHDRSetting();
                             }
                         }
 
@@ -1896,6 +1901,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePictureFormatPreference();
         updateLongShotPreference();
         updateHDRSceneDetection();
+        updateQLLPreference();
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
         Set<Map.Entry<String, SettingsManager.Values>> set = map.entrySet();
@@ -2158,6 +2164,20 @@ public class SettingsActivity extends PreferenceActivity {
         if (mSettingsManager.isLimitedHDR()) {
             pref.setEnabled(false);
             pref.setValue("-1");
+        }
+    }
+    private void updateQLLPreference() {
+        ListPreference mixHDRPref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
+        ListPreference qllPref = (ListPreference)findPreference(SettingsManager.KEY_QLL);
+        if (mixHDRPref != null && mixHDRPref.getValue().equals("auto")) {
+            if (qllPref != null) {
+                qllPref.setValue("0");
+                qllPref.setEnabled(false);;
+            }
+        } else {
+            if (qllPref != null) {
+                qllPref.setEnabled(true);;
+            }
         }
     }
     private void updateVideoMFHDRPreference() {
