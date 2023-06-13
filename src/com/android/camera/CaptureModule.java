@@ -7554,12 +7554,14 @@ public class CaptureModule implements CameraModule, PhotoController,
         mCaptureCallbackHandler = new Handler(mCaptureCallbackThread.getLooper());
         mMpoSaveHandler = new MpoSaveHandler(mMpoSaveThread.getLooper());
         mZoomHandler = new ZoomHandler(mCaptureCallbackThread.getLooper());
+        Log.i(TAG, "startBackgroundThread");
     }
 
     /**
      * Stops the background thread and its {@link Handler}.
      */
     private void stopBackgroundThread() {
+        Log.i(TAG, "stopBackgroundThread");
         mCameraThread.quitSafely();
         mImageAvailableThread.quitSafely();
         mCaptureCallbackThread.quitSafely();
@@ -7752,7 +7754,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mPreviewOutputConfiguration = null;
         mZoomValue = 1f;
         mUI.updateZoomSeekBar(1.0f);
-        if (isExitCamera && mIsCloseCamera) {
+        if (isExitCamera || mIsCloseCamera) {
             stopBackgroundThread();
             closeImageReader();
         }
