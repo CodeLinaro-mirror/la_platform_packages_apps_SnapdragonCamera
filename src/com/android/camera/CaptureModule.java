@@ -7529,7 +7529,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyToneMapping(builder);
             applyLivePreview(builder);
             applyPdnetToggle(builder);
-            applyAICameraStrength();
+            applyAICameraStrength(builder);
             applyTargetZoom(builder, 0f);
             applyInStantZoom(builder);
         }
@@ -10108,7 +10108,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (mPaused || mCurrentSession == null || mCameraDevice[cameraId] == null) {
                     return;
                 }
-                applyAICameraStrength();
+                applyAICameraStrengthAndUpdate();
 
                 if (isHighSpeedRateCapture()) {
                     slowMoRequests = mSuperSlomoCapture ?
@@ -10953,6 +10953,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyAIBlurConfigs(builder);
             applyExposure(builder);
             applyInStantZoom(builder);
+            applyAICameraStrength(builder);
         }
         applyColorEffect(builder);
     }
@@ -14238,20 +14239,24 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public void updateAIStrengthValue(int value){
         mAIStrengthValue = value;
-        applyAICameraStrength();
+        applyAICameraStrengthAndUpdate();
     }
 
-    private void applyAICameraStrength(){
-        if (mCurrentSessionClosed || mPreviewRequestBuilder[getMainCameraId()] == null || mCaptureSession[getMainCameraId()] == null ||
+    private void applyAICameraStrengthAndUpdate(){
+        if (mCurrentSessionClosed || mPreviewRequestBuilder[getMainCameraId()] == null || mCaptureSession[getMainCameraId()] == null || mSettingsManager.isAICameraDisable() ||
                 (CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.VIDEO && CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.DEFAULT)) return;
-        if(!mSettingsManager.isAICameraDisable()){
+        Log.d(TAG, "applyAICameraStrengthAndUpdate: " + mAIStrengthValue);
+        try {
+            applyAICameraStrength(mPreviewRequestBuilder[getMainCameraId()]);
+            mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
+        } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException e) {
+            Log.e(TAG, "Camera Access Exception in applyAICameraStrengthAndUpdate, apply failed e="+e);
+        }
+    }
+    private void applyAICameraStrength(CaptureRequest.Builder builder){
+        if(!mSettingsManager.isAICameraDisable()) {
             Log.d(TAG, "applyAICameraStrength: " + mAIStrengthValue);
-            try {
-                mPreviewRequestBuilder[getMainCameraId()].set(CaptureModule.AICameraStrength, mAIStrengthValue);
-                mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
-            } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException e) {
-                Log.e(TAG, "Camera Access Exception in applyAICameraStrength, apply failed e="+e);
-            }
+            builder.set(CaptureModule.AICameraStrength, mAIStrengthValue);
         }
     }
 
