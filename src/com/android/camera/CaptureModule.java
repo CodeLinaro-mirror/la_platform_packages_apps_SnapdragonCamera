@@ -9751,7 +9751,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private Size getMaxPictureSizeLiveshot(int cameraId, int videoWidth, int videoHeight) {
-        Size[] sizes = mSettingsManager.getAllSupportedOutputSize(cameraId);
+        Size[] sizes = mSettingsManager.getAllSupportedOutputSize(cameraId,
+                mSettingsManager.isMaxConfigureSize(cameraId, new Size(videoWidth, videoHeight)));
         Size maxLiveShotSize = mSettingsManager.getMaxLiveShotSize(mVideoSize, mSettingsManager.getVideoFPS());
         float ratio = (float) videoWidth / videoHeight;
         Size optimalSize = null;
@@ -10269,8 +10270,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 OutputConfiguration videoSnapshotConfig = new OutputConfiguration(
                         mVideoSnapshotImageReader.getSurface());
                 if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
-                    videoSnapshotConfig.addSensorPixelModeUsed(
-                            CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
                     videoSnapshotConfig.addSensorPixelModeUsed(
                             CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
                     Log.v(TAG, " videoSnapShot OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
