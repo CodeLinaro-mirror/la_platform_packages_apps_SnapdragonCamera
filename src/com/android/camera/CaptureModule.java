@@ -5751,12 +5751,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     NamedEntity name = mNamedImages.getNextNameEntity();
                                     String title = (name == null) ? null : name.title;
                                     long date = (name == null) ? -1 : name.date;
-                                    byte[] bytes = getJpegData(image);
+                                    byte[] bytes = null;
+                                    if(image.getFormat() != ImageFormat.YUV_420_888 && image.getFormat() != ImageFormat.YCBCR_P010){
+                                        bytes = getJpegData(image);
+                                    }
                                     int orientation = 0;
                                     ExifInterface exif = null;
                                     orientation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
-                                    exif = Exif.getExif(bytes);
-                                    long imglen = bytes.length;
+                                    if(bytes != null)
+                                        exif = Exif.getExif(bytes);
                                     int imageFormat = image.getFormat();
                                     int imageWidth = image.getWidth();
                                     int imageHeight = image.getHeight();
@@ -6274,19 +6277,34 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private byte[] getYUV10BitFromImage(Image image) {
         try{
+            // P010 samples are stored within 16 bit values
+            int format = image.getFormat();
+            int width = image.getWidth();
             int height = image.getHeight();
-            int stride = image.getPlanes()[0].getRowStride();
-            ByteBuffer dataY= image.getPlanes()[0].getBuffer();
-            ByteBuffer dataUV = image.getPlanes()[1].getBuffer();
-            dataY.rewind();
-            dataUV.rewind();
-            byte[] bytesY = new byte[dataY.remaining()];
-            dataY.get(bytesY);
-            byte[] bytesUV = new byte[dataUV.remaining()];
-            dataUV.get(bytesUV);
-            byte[] data = new byte[stride*height*3/2];
-            System.arraycopy(bytesY,0,data,0,bytesY.length);
-            System.arraycopy(bytesUV,0,data,stride*height,bytesUV.length);
+            Image.Plane[] planes = image.getPlanes();
+            ByteBuffer buffer = null;
+            int rowStride, pixelStride;
+            byte[] data = null;
+            int offset = 0;
+            int bytesPerPixelRounded = (ImageFormat.getBitsPerPixel(format) + 7) / 8;
+
+            data = new byte[width * height * bytesPerPixelRounded];
+            for (int i = 0; i < 2; i++) {
+                buffer = planes[i].getBuffer();
+                buffer.rewind();
+                rowStride = planes[i].getRowStride();
+                int h = (i == 0) ? height : height / 2;
+                for (int row = 0; row < h; row++) {
+                    // Each 10-bit pixel occupies 2 bytes
+                    int length = 2 * width;
+                    buffer.get(data, offset, length);
+                    offset += length;
+                    if (row < h - 1) {
+                        buffer.position(buffer.position() + rowStride - length);
+                    }
+                }
+                buffer.rewind();
+            }
             return data;
         }catch (IllegalStateException e) {
             return null;
