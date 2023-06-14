@@ -8500,7 +8500,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     for (int i = 0; i < faceNum; i++) {
                         final int gender = byteArray2Int(genderArray, arrayIndex);
                         arrayIndex += 4;
-                        arrayIndex += 4;
                         Log.d(FD_TAG, FD_LOG, "fd gender index " + gender);
                         final int face_id = byteArray2Int(genderArray, arrayIndex);
                         arrayIndex += 4;
