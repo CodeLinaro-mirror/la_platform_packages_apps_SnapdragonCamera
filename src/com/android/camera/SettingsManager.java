@@ -682,6 +682,31 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return null;
     }
 
+    private void getQuadBayerPhysicalStreamIdEachFormat(Set<String> newValues, Set<String> values){
+        if (newValues != null && newValues.size() != 0) {
+            for(String value: newValues){
+                if(!values.contains(value)){
+                    values.add(value);
+                }
+            }
+        }
+    }
+
+    public Set<String> getQuadBayerPhysicalStreamIds(){
+        Set<String> values = new HashSet<>();
+        getQuadBayerPhysicalStreamIdEachFormat(getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK), values);
+        getQuadBayerPhysicalStreamIdEachFormat(getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_JPEG_R_CALLBACK), values);
+        getQuadBayerPhysicalStreamIdEachFormat(getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_YUV_CALLBACK), values);
+        getQuadBayerPhysicalStreamIdEachFormat(getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_YUV10BIT_CALLBACK), values);
+        getQuadBayerPhysicalStreamIdEachFormat(getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_RAW_CALLBACK), values);
+        return values;
+    }
+
     public List<Size> getSupportedQCFAMaxPictureSizeList(String cameraId, int format) {
         List<Size> res = new ArrayList<>();
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
