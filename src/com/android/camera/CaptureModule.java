@@ -10163,6 +10163,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     });
                 }
+                if(mIntentMode == mIntentMode) {
+                    mActivity.runOnUiThread(()->{
+                        seBlurConfigSlideVisible();
+                    });
+                }
+
             } catch (CameraAccessException | IllegalStateException e) {
                 Log.w(TAG, "video-setRepeatingRequest fail=" + e);
             }
