@@ -1955,7 +1955,7 @@ public class SettingsActivity extends PreferenceActivity {
             }
             pref.setValueIndex(idx);
             String cameraValue = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
-            if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
+            if (cameraValue != null && cameraValue.equals("rear") || cameraValue == null) isBack = true;
             boolean perfEnable = false;
             if((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
                     ((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID || !CaptureModule.MCXMODE) && mSettingsManager.isAICameraOn() && (mode == CaptureModule.CameraMode.VIDEO))){

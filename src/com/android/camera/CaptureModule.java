@@ -15307,7 +15307,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         public void setSwithCameraId(int swithCameraId) {
             this.swithCameraId = swithCameraId;
-            if(swithCameraId == CaptureModule.FRONT_ID) {
+            if(swithCameraId == CaptureModule.FRONT_ID && CaptureModule.FRONT_ID != -1) {
                 mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "front");
             }
         }
