@@ -2213,7 +2213,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             return false;
         }
         String qllStr = mSettingsManager.getValue(SettingsManager.KEY_QLL);
-        if (qllStr.equals("1")) {
+        if (qllStr != null && qllStr.equals("1")) {
             return false;
         }
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);

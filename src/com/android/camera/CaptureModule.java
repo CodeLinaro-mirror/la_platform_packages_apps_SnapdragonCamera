@@ -4402,7 +4402,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
     public void updateFlashIcon(){
         String qll = mSettingsManager.getValue(SettingsManager.KEY_QLL);
-        if(isLongShotSettingEnabled() || mSettingsManager.isMultiCameraEnabled() || qll.equals("1")){
+        if(isLongShotSettingEnabled() || mSettingsManager.isMultiCameraEnabled() || (qll != null && qll.equals("1"))){
             mUI.updateFlashButton(false);
         }else{
             mUI.updateFlashButton(true);

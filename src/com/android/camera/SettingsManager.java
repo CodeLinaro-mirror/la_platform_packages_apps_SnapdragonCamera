@@ -1296,11 +1296,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
     public boolean isAvailableUseCase(int cameraId,long useCaseId){
         boolean isSupported = false;
-        long[]avilibleCase = mCharacteristics.get(cameraId).get(CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES);
-       for(int i = 0;i < avilibleCase.length ;i++){
-           Log.d(TAG,"isAvailableUseCase avilibleCase[i]="+avilibleCase[i]);
-           if (useCaseId == avilibleCase[i]) isSupported = true;
-       }
+        try {
+            long[] avilibleCase = mCharacteristics.get(cameraId).get(CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES);
+            if(avilibleCase == null){
+                return false;
+            }
+            for (int i = 0; i < avilibleCase.length; i++) {
+                Log.d(TAG, "isAvailableUseCase avilibleCase[i]=" + avilibleCase[i]);
+                if (useCaseId == avilibleCase[i]) isSupported = true;
+            }
+        }catch(Exception e){
+            Log.i(TAG," isAvailableUseCase exception="+e);
+        }
         Log.d(TAG,"isAvailableUseCase isSupported="+isSupported);
        return isSupported;
     }
