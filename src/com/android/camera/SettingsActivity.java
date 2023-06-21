@@ -2119,11 +2119,12 @@ public class SettingsActivity extends PreferenceActivity {
             if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
             boolean perfEnable = false;
             if((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
-                    ((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID || !CaptureModule.MCXMODE) && mSettingsManager.isAICameraOn() && (mode == CaptureModule.CameraMode.VIDEO))){
+                    ((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID ||
+                            !CaptureModule.MCXMODE) && mSettingsManager.isAICameraOn() && (mode == CaptureModule.CameraMode.VIDEO))){
                 perfEnable = true;
             }
             if(!perfEnable){
-                pref.setValue("0");
+                pref.setValue("default");
             }
             pref.setEnabled(perfEnable);
         }
