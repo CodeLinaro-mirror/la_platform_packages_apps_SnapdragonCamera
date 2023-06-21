@@ -224,8 +224,9 @@ public class TouchTrackFocusRenderer extends View implements FocusIndicator {
         canvas.save();
         mMatrix.postRotate(mOrientation);
         canvas.rotate(-mOrientation);
-
-        mRect.offset(-mOriginalCameraBound.left, -mOriginalCameraBound.top);
+        //This is for special sensor caused(3459459), camx can`t fixed, so app fixed.
+        //mRect.offset(-mOriginalCameraBound.left, -mOriginalCameraBound.top);
+        mRect.offset(0, 0);
         if (mZoom != 1.0f && !(mZoomRationSupported && mPostZoomFov)) {
             mRect.left = mRect.left - mCameraBound.left;
             mRect.right = mRect.right - mCameraBound.left;

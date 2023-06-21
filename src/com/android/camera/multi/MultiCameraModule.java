@@ -162,7 +162,7 @@ public class MultiCameraModule implements CameraModule, PhotoController {
     }
 
     public void restartAll() {
-        Log.d(TAG, "restart all");
+        Log.i(TAG, "restart all");
         onPauseBeforeSuper();
         onPauseAfterSuper();
         setCurrentSceneModeOnly(mNextModeIndex);
@@ -185,7 +185,7 @@ public class MultiCameraModule implements CameraModule, PhotoController {
     }
 
     public void onVideoButtonClick() {
-        Log.d(TAG, "onVideoButtonClick");
+        Log.i(TAG, "onVideoButtonClick");
         String[] cameraIds = mMultiCamera.getCameraIdList();
         mMultiCamera.onVideoButtonClick(cameraIds);
     }
@@ -248,7 +248,7 @@ public class MultiCameraModule implements CameraModule, PhotoController {
             try{
                 Log.v(TAG, " checkConcurrentSessionConfigurationSupported ids :" + configs.keySet().toString());
                 ret = manager.isConcurrentSessionConfigurationSupported(configs);
-                Log.v(TAG, " checkConcurrentSessionConfigurationSupported ret :" + ret);
+                Log.i(TAG, " checkConcurrentSessionConfigurationSupported ret :" + ret);
             }catch (CameraAccessException|IllegalArgumentException e){
                 e.printStackTrace();
             }
@@ -290,7 +290,7 @@ public class MultiCameraModule implements CameraModule, PhotoController {
     @Override
     public void init(CameraActivity activity, View parent) {
         SceneModule module;
-        Log.v(TAG, " init ");
+        Log.i(TAG, " init ");
         for (int i = 0; i < mSelectableModes.length; i++) {
             module = new SceneModule();
             module.mode = CameraMode.values()[i];
@@ -328,7 +328,7 @@ public class MultiCameraModule implements CameraModule, PhotoController {
 
     @Override
     public void onResumeAfterSuper() {
-        Log.d(TAG, " onResumeAfterSuper ");
+        Log.i(TAG, " onResumeAfterSuper ");
         mMultiCamera.onResume();
         Message msg = Message.obtain();
         msg.what = OPEN_CAMERA;
@@ -336,12 +336,14 @@ public class MultiCameraModule implements CameraModule, PhotoController {
             mCameraHandler.sendMessage(msg);
         }
         mUI.showRelatedIcons(mCurrentSceneMode.mode);
+        mUI.initPreviewSurface();
     }
 
     @Override
     public void onPauseBeforeSuper() {
-        Log.d(TAG, " onPauseBeforeSuper ");
+        Log.i(TAG, " onPauseBeforeSuper ");
         mMultiCamera.onPause();
+        mUI.removeSurfaceCallback();
     }
 
     @Override
@@ -555,7 +557,7 @@ public class MultiCameraModule implements CameraModule, PhotoController {
 
     @Override
     public void onShutterButtonClick() {
-        Log.d(TAG, "onShutterButtonClick");
+        Log.i(TAG, "onShutterButtonClick");
         String[] cameraIds = mMultiCamera.getCameraIdList();
         mMultiCamera.onShutterButtonClick(cameraIds);
         for (String CameraId : cameraIds) {

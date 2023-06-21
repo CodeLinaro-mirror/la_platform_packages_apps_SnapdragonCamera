@@ -111,7 +111,6 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
         mRootView = parent;
         mActivity.getLayoutInflater().inflate(R.layout.multi_camera_module,
                 (ViewGroup) mRootView, true);
-
         initPreviewSurface();
         initCameraControls();
         initShutterButton();
@@ -163,13 +162,12 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
         }
     }
 
-    private void initPreviewSurface() {
+    public void initPreviewSurface() {
         // Multi camera preview
         mMainPreviewSurface = (SurfaceView) mRootView.findViewById(R.id.main_preview_content);
         mFirstPreviewSurface = (SurfaceView) mRootView.findViewById(R.id.first_preview_content);
         mSecondPreviewSurface = (SurfaceView) mRootView.findViewById(R.id.second_preview_content);
         mThirdPreviewSurface = (SurfaceView) mRootView.findViewById(R.id.third_preview_content);
-
         mSurfaceViewList.add(mMainPreviewSurface);
         mSurfaceViewList.add(mFirstPreviewSurface);
         mSurfaceViewList.add(mSecondPreviewSurface);
@@ -366,6 +364,7 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
             showTimeLapseUI(false);
             mShutterButton.setVisibility(View.VISIBLE);
             mSettingsIcon.setVisibility(View.INVISIBLE);
+            mThumbnail.setVisibility(View.INVISIBLE);
         } else {
             //mFlashButton.setVisibility(View.VISIBLE);
             //mFlashButton.init(true);
@@ -376,6 +375,7 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
             mMuteButton.setVisibility(View.INVISIBLE);
             mShutterButton.setVisibility(View.INVISIBLE);
             mSettingsIcon.setVisibility(View.VISIBLE);
+            mThumbnail.setVisibility(View.VISIBLE);
         }
     }
 
@@ -507,34 +507,39 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            Log.v(TAG, "mMainSurfaceHolderCallback surfaceCreated");
+            Log.i(TAG, "mMainSurfaceHolderCallback surfaceCreated");
             mMainSurfaceHolder = holder;
             previewUIReady();
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
-            Log.v(TAG, "mMainSurfaceHolderCallback surfaceDestroyed");
+            Log.i(TAG, "mMainSurfaceHolderCallback surfaceDestroyed");
             mMainSurfaceHolder = null;
+
         }
     };
+    public void removeSurfaceCallback(){
+        if( mMainSurfaceHolder != null)
+        mMainSurfaceHolder.removeCallback(mMainSurfaceHolderCallback);
+    }
 
     private SurfaceHolder.Callback mFirstHolderCallback = new SurfaceHolder.Callback() {
 
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            Log.v(TAG, "mFirstHolderCallback surfaceChanged: w : h =" + width + "x" + height);
+            Log.i(TAG, "mFirstHolderCallback surfaceChanged: w : h =" + width + "x" + height);
         }
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            Log.v(TAG, "mFirstHolderCallback surfaceCreated");
+            Log.i(TAG, "mFirstHolderCallback surfaceCreated");
             mFirstSurfaceHolder = holder;
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
-            Log.v(TAG, "mFirstHolderCallback surfaceDestroyed");
+            Log.i(TAG, "mFirstHolderCallback surfaceDestroyed");
             mFirstSurfaceHolder = null;
         }
     };
@@ -543,18 +548,18 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
 
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            Log.v(TAG, "mSecondHolderCallback surfaceChanged: w : h =" + width + "x" + height);
+            Log.i(TAG, "mSecondHolderCallback surfaceChanged: w : h =" + width + "x" + height);
         }
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            Log.v(TAG, "mSecondHolderCallback surfaceCreated");
+            Log.i(TAG, "mSecondHolderCallback surfaceCreated");
             mSecondSurfaceHolder = holder;
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
-            Log.v(TAG, "mSecondHolderCallback surfaceDestroyed");
+            Log.i(TAG, "mSecondHolderCallback surfaceDestroyed");
             mSecondSurfaceHolder = null;
         }
     };
@@ -563,18 +568,18 @@ public class MultiCameraUI implements PreviewGestures.SingleTapListener,
 
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            Log.v(TAG, "mThirdHolderCallback surfaceChanged: w : h =" + width + "x" + height);
+            Log.i(TAG, "mThirdHolderCallback surfaceChanged: w : h =" + width + "x" + height);
         }
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            Log.v(TAG, "mThirdHolderCallback surfaceCreated");
+            Log.i(TAG, "mThirdHolderCallback surfaceCreated");
             mSecondSurfaceHolder = holder;
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
-            Log.v(TAG, "mThirdHolderCallback surfaceDestroyed");
+            Log.i(TAG, "mThirdHolderCallback surfaceDestroyed");
             mSecondSurfaceHolder = null;
         }
     };

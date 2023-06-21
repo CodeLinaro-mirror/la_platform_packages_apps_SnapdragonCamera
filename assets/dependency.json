@@ -78,7 +78,8 @@
       "pref_camera2_picture_format_key":"0",
       "pref_camera2_multi_camera_mode_key":"0",
       "pref_camera2_ai_denoiser_key":"0",
-      "pref_camera2_longshot_key":"off"}
+      "pref_camera2_longshot_key":"off",
+      "pref_camera2_photo_eis_key":"disable"}
     ,
     "100":
     {"pref_camera2_longshot_key":"off",
@@ -330,5 +331,14 @@
          "pref_camera2_force_aux_key": "off"
     },
     "0": {}
+  },
+  "pref_camera2_photo_eis_key":
+  {
+    "V2": {
+      "pref_camera2_manualhdr_key":"off"
+    },
+    "dynamic": {
+      "pref_camera2_manualhdr_key":"off"
+    }
   }
 }

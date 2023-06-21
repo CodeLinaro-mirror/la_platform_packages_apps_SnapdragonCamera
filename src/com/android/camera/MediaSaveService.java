@@ -71,7 +71,7 @@ public class MediaSaveService extends Service {
                                    PersistUtil.getSaveTaskMemoryLimitInMb();
 
     private static final int SAVE_TASK_MEMORY_LIMIT = SAVE_TASK_MEMORY_LIMIT_IN_MB * 1024 * 1024;
-    private static final String TAG = "CAM_" + MediaSaveService.class.getSimpleName();
+    private static final String TAG = "SnapCam_" + MediaSaveService.class.getSimpleName();
 
     private final IBinder mBinder = new LocalBinder();
     private Listener mListener;
@@ -146,6 +146,7 @@ public class MediaSaveService extends Service {
     public void addImage(final byte[] data, String title, long date, Location loc,
             int width, int height, int orientation, ExifInterface exif,
             OnMediaSavedListener l, ContentResolver resolver, String pictureFormat) {
+
         if (isQueueFull()) {
             Log.e(TAG, "Cannot add image when the queue is full");
             return;

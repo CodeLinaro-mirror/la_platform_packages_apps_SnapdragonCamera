@@ -62,20 +62,21 @@ import android.support.test.rule.ActivityTestRule;
 
 
 
+
 @RunWith(AndroidJUnit4.class)
 public class FunctionTest extends TestBase  {
     private String TAG = "autoTest_FunctionTest";
-
     @BeforeClass
     public static void initJson(){
         Log.i("autotest_initJson","initJson beforeTest");
+        init();
         updateAndSavejson(INPUT_JSON,null,null,null);
     }
 
     @Before
     public void beforeEachTest()throws Exception {
         Log.i(TAG, "beforeEachTest");
-        init();
+
         OpenAndResetCamera();
         initsetting();
     }
@@ -127,7 +128,7 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInFrontVideo() throws Exception {
-        Log.i(TAG, "testInVideoModule");
+        Log.i(TAG, "testInFrontVideo");
         swipFromRTL(3);
         checkPreview("0",CaptureModule.CameraMode.VIDEO);
         executeShellCommand("input tap "+ mSwitchLoc[0]  +" "+mSwitchLoc[1]);
@@ -142,7 +143,7 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInFrontHFR() throws Exception {
-        Log.i(TAG, "testInHFRModule");
+        Log.i(TAG, "testInFrontHFR");
         swipFromRTL(1);
         checkPreview("2",CaptureModule.CameraMode.HFR);
         executeShellCommand("input tap "+ mSwitchLoc[0]  +" "+mSwitchLoc[1]);
@@ -156,12 +157,26 @@ public class FunctionTest extends TestBase  {
         runVideoCase("2",CaptureModule.CameraMode.CINEMATIC);
     }
 
-
-
-
-
-
-
-
-
+    @Test
+    public void testInVideoIntent() throws Exception {
+        //setActivityIntent(mIntent);
+        //recordVideo();
+        mActivityRule.finishActivity();
+        Thread.sleep(OPEN_CAMERA_DURATION);
+        Log.i(TAG,"zcl videointent");
+        openCameraByIntent(mVideoIntent);
+        isOpenFromIntent = true;
+        runVideoCase("0",CaptureModule.CameraMode.VIDEO);
+    }
+    @Test
+    public void testInImageIntent() throws Exception {
+        //setActivityIntent(mIntent);
+        //recordVideo();
+        mActivityRule.finishActivity();
+        Thread.sleep(OPEN_CAMERA_DURATION);
+        Log.i(TAG,"zcl videointent");
+        openCameraByIntent(mImageIntent);
+        isOpenFromIntent = true;
+        runPhotoCase("0",CaptureModule.CameraMode.DEFAULT);
+    }
 }

@@ -415,13 +415,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
             mPreferences = new ComboPreferences(mContext);
         }
         upgradeGlobalPreferences(mPreferences.getGlobal(), mContext);
-
+        mDependency = parseJson("dependency.json");
+    }
+    public void initCharacteristics(){
+        if(mCharacteristics.size() >0) {
+            return;
+        }
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
             String[] cameraIdList = manager.getCameraIdList();
             boolean isFirstBackCameraId = true;
             boolean isRearCameraPresent = false;
-            Log.d(TAG,"cameraIdList size ="+cameraIdList.length);
+            Log.i(TAG,"cameraIdList size ="+cameraIdList.length);
             for (int i = 0; i < cameraIdList.length; i++) {
                 String cameraId = cameraIdList[i];
                 CameraCharacteristics characteristics
@@ -459,9 +464,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch (CameraAccessException e) {
             Log.e(TAG,e.toString());
         }
-
-        mDependency = parseJson("dependency.json");
     }
+
    public boolean isTorchHDREnabled(boolean isflashRequired,CaptureResult mResult) {
         boolean torchHDREnable = false;
         boolean flashEnable =false;
@@ -909,6 +913,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
             supportted = (mCharacteristics.get(mCameraId).get(CaptureModule.is_t2t_supported) == 1);
         } catch (IllegalArgumentException | NullPointerException e) {
         }
+        return supportted;
+    }
+
+    public boolean isStatsNNSupported() {
+        boolean supportted = true;
+        try {
+            supportted = (mCharacteristics.get(mCameraId).get(CaptureModule.is_statsnn_supported) == 1);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            Log.w(TAG, EXCEPTION_LOG,"isStatsNNSupported is_statsnn_supported no vendor tag");
+        }
+        Log.i(TAG, "isStatsNNSupported supportted :" + supportted);
         return supportted;
     }
 
@@ -1964,7 +1979,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
         // filter dynamic lists.
         // These list can be changed run-time
+        filterHFROptions();
         filterVideoEncoderOptions();
+        filterVideoEncoderProfileOptions();
         if (!mIsFrontCameraPresent || !isFacingFront(mCameraId)) {
             removePreference(mPreferenceGroup, KEY_SELFIE_FLASH);
             removePreference(mPreferenceGroup, KEY_SELFIEMIRROR);
@@ -3306,9 +3323,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean isFlashSupported() {
         return mCharacteristics.get(mCaptureModule.getMainCameraId()).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) &&
                 mValuesMap.get(KEY_FLASH_MODE) != null &&
-                isSupportedForMode();
+                isSupportedForMode() && isFlashEnabled();
     }
-
+    private boolean isFlashEnabled(){
+        boolean enable = true;
+        String qll = getValue(SettingsManager.KEY_QLL);
+        if(mCaptureModule.isAFLocked() ||
+                mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC ||
+                mCaptureModule.isLongShotSettingEnabled() || isMultiCameraEnabled() ||
+                (qll != null && qll.equals("1"))){
+            enable = false;
+        }
+        return enable;
+    }
 	private boolean isSupportedForMode(){
         if((CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.SAT)){
@@ -3887,12 +3914,32 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return modes;
     }
+    public boolean isRTBModeInSelectMode() {
+        String selectMode = getValue(SettingsManager.KEY_SELECT_MODE);
+        if(selectMode != null && selectMode.equals("rtb")){
+            return true;
+        }
+        return false;
+    }
 
     public List<String> getSupportedZoomLevel(int cameraId) {
         float maxZoom = mCharacteristics.get(cameraId).get(CameraCharacteristics
                 .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
+        float[] zoomRatioRange = getSupportedRatioZoomRange(
+                mCaptureModule.getMainCameraId());
+        if(mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
+                (isRTBModeInSelectMode() && isAICameraOn()) || isRTBModeInSelectMode()) {
+            zoomRatioRange = getSupportedBokenRatioZoomRange(
+                    mCaptureModule.getMainCameraId());
+        }
         ArrayList<String> supported = new ArrayList<String>();
-        for (int zoomLevel = 0; zoomLevel <= maxZoom; zoomLevel++) {
+        int minzoom = 1;
+        if(zoomRatioRange[0] < 1){
+            supported.add(String.valueOf(zoomRatioRange[0]));
+        }else if(zoomRatioRange[0] >1){
+            minzoom = (int)zoomRatioRange[0];
+        }
+        for (int zoomLevel = minzoom; zoomLevel <= maxZoom; zoomLevel++) {
             supported.add(String.valueOf(zoomLevel));
         }
         return supported;
@@ -3933,6 +3980,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return result;
     }
 
+    private boolean isVideoMode(){
+        return CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO ||
+                CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.PRO_MODE ||
+                CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR;
+    }
+
     public float[] getSupportedBokenRatioZoomRange(int cameraId) {
         Range<Float> range = null;
         float[] result = new float[2];
@@ -3944,7 +3997,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
             for (Capability cap : extendedSceneModeCaps) {
                 int mode = cap.getMode();
-                if (mode == CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS) {
+                if (isVideoMode() && mode == CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS) {
+                    range = cap.getZoomRatioRange();
+                }
+                if (!isVideoMode() && mode == CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_STILL_CAPTURE) {
                     range = cap.getZoomRatioRange();
                 }
             }
@@ -4058,6 +4114,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         if (maxSizes != null) {
             for (Size size : maxSizes) {
+                if(size == null || videoSize == null){
+                    Log.i(TAG,"size="+size+",videosize="+videoSize);
+                    result = false;
+                    return result;
+                }
                 if ((size.getWidth() == videoSize.getWidth() &&
                         size.getHeight() == videoSize.getHeight()) &&
                         (videoSize.getWidth() * videoSize.getHeight() > 1920 * 1080)) {
@@ -4195,7 +4256,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         if (isAutoHDRSupported()){
-            if(isSupportedMixHdr() && !isAIBokehMode()){
+            if(isSupportedMixHdr()){
                 ret.add("auto");
             }
         }

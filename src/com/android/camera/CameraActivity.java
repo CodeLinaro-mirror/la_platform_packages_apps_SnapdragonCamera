@@ -120,7 +120,7 @@ import com.android.camera.util.PhotoSphereHelper;
 import com.android.camera.util.PhotoSphereHelper.PanoramaViewHelper;
 import com.android.camera.util.UsageStatistics;
 import org.codeaurora.snapcam.R;
-
+import com.android.camera.app.CameraApp;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import com.android.camera.CaptureModule.CameraMode;
@@ -275,10 +275,9 @@ public class CameraActivity extends Activity
     private Cursor mCursor;
     private boolean mIsAutoTest = false;
     private boolean mOpenDevOption = false;
-
+    private boolean mIsPerformenceTest = false;
+    public long mColdOpenCameraTime = 0;
     private boolean mAutoTestEnabled = false;
-
-
     private WakeLock mWakeLock;
     private static final int REFOCUS_ACTIVITY_CODE = 1;
 
@@ -768,9 +767,10 @@ public class CameraActivity extends Activity
         if (mThumbnail != null) {
             mThumbnail.setImageDrawable(mThumbnailDrawable);
             if (!isSecureCamera()) {
-                if(mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
+                if((mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
                         || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR ||
-                        mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC)){
+                        mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC)) ||
+                        (mMultiCameraModule != null && mMultiCameraModule.isRecordingVideo())){
                     return;
                 }else {
                     mThumbnail.setVisibility(View.VISIBLE);
@@ -793,6 +793,7 @@ public class CameraActivity extends Activity
 
     public void updateThumbnail(ImageView thumbnail) {
         mThumbnail = thumbnail;
+        mThumbnailPath = null;
         if (mThumbnail == null) return;
         if (mThumbnailDrawable != null) {
             mThumbnail.setImageDrawable(mThumbnailDrawable);
@@ -1562,6 +1563,7 @@ public class CameraActivity extends Activity
 
     @Override
     public void onCreate(Bundle state) {
+        mColdOpenCameraTime = System.currentTimeMillis();
         super.onCreate(state);
         try {
             //Print version info here
@@ -1604,7 +1606,13 @@ public class CameraActivity extends Activity
             finish();
             return;
         }
-
+        mSettingsManager = SettingsManager.getInstance();
+        if (mSettingsManager == null) {
+            mSettingsManager = SettingsManager.createInstance(this);
+        }
+        mSettingsManager.initCharacteristics();//In some devices,getCameraIdList is 0 or error
+            // when RECEIVE_BOOT_COMPLETED
+            //So we need to initCharacteristics when openCamera
         mCursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 null, null, null, null);
         GcamHelper.init(getContentResolver());
@@ -1899,10 +1907,7 @@ public class CameraActivity extends Activity
             Log.v(TAG, "onResume: No camera devices connected.");
             finish();
         }
-        mSettingsManager = SettingsManager.getInstance();
-        if (mSettingsManager == null) {
-            mSettingsManager = SettingsManager.createInstance(this);
-        }
+
         // Hide action bar first since we are in full screen mode first, and
         // switch the system UI to lights-out mode.
         this.setSystemBarsVisibility(false);
@@ -1991,6 +1996,8 @@ public class CameraActivity extends Activity
 
     @Override
     public void onDestroy() {
+        Log.i(TAG,"destroy");
+        mColdOpenCameraTime = 0;
         if (mWakeLock != null && mWakeLock.isHeld()) {
             mWakeLock.release();
             Log.d(TAG, "wake lock release");
@@ -2493,7 +2500,7 @@ public class CameraActivity extends Activity
         mCurrentModule.onPreviewFocusChanged(showControls);
     }
 
-    // method for autotest
+    // method for autotest start
     public CaptureModule getCaptureModule(){
         return mCaptureModule;
     }
@@ -2506,12 +2513,17 @@ public class CameraActivity extends Activity
     public boolean getDevOption(){
         return  mOpenDevOption;
     }
-    public void setDevOption(boolean open){
+    public void setDevOption(boolean open) {
         mOpenDevOption = open;
     }
+    public boolean getPerformenceTest(){
+        return  mIsPerformenceTest || mColdOpenCameraTime != 0;
+    }
+    public void setPerformenceTest(boolean test){
+        mIsPerformenceTest = test;
+    }
 
-
-
+   // method for autotest end
 
 
     // Accessor methods for getting latency times used in performance testing
