@@ -378,6 +378,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_AI_CAMERA)){
                     updateEISPreference();
+                    updateSwitchIDInModePreference(true);
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
                     updateVideoMFHDRPreference();
@@ -1848,6 +1849,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreviewStabilizationPreference();
         updateMultiVideoFPSPreference();
         updateViullPreference();
+        updateHvxHDRPref();
         updateHvxDependencyPref();
     }
 
@@ -1954,8 +1956,12 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setValueIndex(idx);
             String cameraValue = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
             if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
-            pref.setEnabled((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
-                    (mode == CaptureModule.CameraMode.VIDEO));
+            boolean perfEnable = false;
+            if((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
+                    ((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID || !CaptureModule.MCXMODE) && mSettingsManager.isAICameraOn() && (mode == CaptureModule.CameraMode.VIDEO))){
+                perfEnable = true;
+            }
+            pref.setEnabled(perfEnable);
         }
     }
 
@@ -2068,18 +2074,32 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
 
+    private void updateHvxHDRPref() {
+        ListPreference hvx_mfhdr = (ListPreference)findPreference(SettingsManager.KEY_HVX_MFHDR);
+        ListPreference hvx_shdr = (ListPreference)findPreference(SettingsManager.KEY_HVX_SHDR);
+        if(mIsSingleCameraMode){
+            if(hvx_mfhdr != null) hvx_mfhdr.setEnabled(true);
+            if(hvx_shdr != null) hvx_shdr.setEnabled(true);
+        }else{
+            if(hvx_mfhdr != null) {
+                hvx_mfhdr.setValue("0");
+                hvx_mfhdr.setEnabled(false);
+            }
+            if(hvx_shdr != null) {
+                hvx_shdr.setValue("0");
+                hvx_shdr.setEnabled(false);
+            }
+        }
+    }
+
     private void updateHvxDependencyPref() {
         ListPreference hvx_mfhdr = (ListPreference)findPreference(SettingsManager.KEY_HVX_MFHDR);
         ListPreference hvx_shdr = (ListPreference)findPreference(SettingsManager.KEY_HVX_SHDR);
         ListPreference videoPref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_QUALITY);
-        ListPreference selectModePref = (ListPreference)findPreference(SettingsManager.KEY_SELECT_MODE);
         if((hvx_mfhdr != null && hvx_mfhdr.getValue().equals("1"))|| (hvx_shdr != null && hvx_shdr.getValue().equals("1"))){
-            selectModePref.setValue("single_rear_cameraid");
-            selectModePref.setEnabled(false);
             videoPref.setValue("1920x1080");
             videoPref.setEnabled(false);
         }else{
-            if(selectModePref != null) selectModePref.setEnabled(true);
             if(videoPref != null) videoPref.setEnabled(true);
         }
     }

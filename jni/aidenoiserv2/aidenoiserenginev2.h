@@ -39,6 +39,14 @@ extern "C" {
 #define ARRAY_LEN(arr)                  (sizeof(arr) / sizeof(arr[0]))
 #define AIDE_STATIC_ASSERT(COND, MSG)   typedef char static_assertion_##MSG[(COND)?1:-1]
 
+#ifndef MAX
+#define        MAX(a, b) (((a) > (b)) ? (a) : (b))     /* Maximum value */
+#endif
+
+#ifndef MIN
+#define        MIN(a, b) (((a) < (b)) ? (a) : (b))     /* Minimum value */
+#endif
+
 // AIDE is shorthand for AI Denoiser Engine
 
 // AI Denoiser Engine Handle
@@ -82,7 +90,6 @@ const char *AIDenoiserEngine_GetErrCodeStr(unsigned int code)
                                   "AIDE_ERROR_NSP_FATAL",
                                   "AIDE_ERROR_NSP_RECOVERABLE",
                                   "AIDE_ERROR_INVALID_STATE" };
-    AIDE_STATIC_ASSERT(ARRAY_LEN(strs) == AIDE_ERRORCODE_MAX, error_code_unmatch);
     if (code < AIDE_ERRORCODE_MAX) {
         return strs[code];
     }
@@ -126,12 +133,15 @@ typedef struct {
 
     uint64_t            expTimeInNs;      // Exposure Time in nanoseconds – range: 1/100 – 1s
     uint32_t            iso;              // ISO = (real_gain * 100) / iso_100_gain
+    float               enhancefactor;    // Enhancement tuning factor: 0.0-1.0 (default = 0.5)
     float               denoiseStrength;  // Denoising strength: 0.0-1.0 (default = 0.5)
     float               adrcGain;         // ADRC gain: if greater than 1, ADRC is on, else off.
     uint32_t            rGain;            // R gain from 3A
     uint32_t            bGain;            // B gain from 3A
     uint32_t            gGain;            // G gain from 3A
-    uint32_t            reservedData[20]; // Placeholder for future parameters
+    uint8_t             gainThresholdY;   // Gain Threshold param for Luma
+    uint8_t             gainThresholdUV;  // Gain Threshold param for Chroma
+    uint32_t            reservedData[17]; // Placeholder for future parameters
 
     AIDE_ROI            roi;              // Crop roi data
 } AIDE_ProcessFrameArgs;
