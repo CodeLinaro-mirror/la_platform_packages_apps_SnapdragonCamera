@@ -1286,7 +1286,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean isMultiCameraEnabled(){
         String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey());
         SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName, Context.MODE_PRIVATE);
-        String enable = sharedPreferences.getString(KEY_MULTI_CAMERA_MODE,"default");
+        String enable = sharedPreferences.getString(KEY_MULTI_CAMERA_MODE, "0");
         return "1".equals(enable);
     }
 
