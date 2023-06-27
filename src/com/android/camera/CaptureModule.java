@@ -1008,6 +1008,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private HandlerThread mCaptureCallbackThread;
     private HandlerThread mMpoSaveThread;
 
+    private boolean mBackgroundThreadFlag = false;
+
     /**
      * A {@link Handler} for running tasks in the background.
      */
@@ -7542,6 +7544,10 @@ public class CaptureModule implements CameraModule, PhotoController,
      * Starts a background thread and its {@link Handler}.
      */
     private void startBackgroundThread() {
+        if (mBackgroundThreadFlag) {
+            Log.w(TAG, "background thread has been running");
+            return;
+        }
         mCameraThread = new HandlerThread("CameraBackground");
         mCameraThread.start();
         mImageAvailableThread = new HandlerThread("CameraImageAvailable");
@@ -7557,12 +7563,17 @@ public class CaptureModule implements CameraModule, PhotoController,
         mMpoSaveHandler = new MpoSaveHandler(mMpoSaveThread.getLooper());
         mZoomHandler = new ZoomHandler(mCaptureCallbackThread.getLooper());
         Log.i(TAG, "startBackgroundThread");
+        mBackgroundThreadFlag = true;
     }
 
     /**
      * Stops the background thread and its {@link Handler}.
      */
     private void stopBackgroundThread() {
+        if (!mBackgroundThreadFlag) {
+            Log.w(TAG, "background thread has not been running");
+            return;
+        }
         Log.i(TAG, "stopBackgroundThread");
         mCameraThread.quitSafely();
         mImageAvailableThread.quitSafely();
@@ -7597,6 +7608,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         } catch (InterruptedException e) {
             Log.e(TAG,e.toString());
         }
+        mBackgroundThreadFlag = false;
     }
 
     private void openCamera(int id) {
