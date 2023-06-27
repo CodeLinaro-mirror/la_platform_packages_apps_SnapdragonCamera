@@ -7654,18 +7654,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         });
 
-        if (mLongshoting){
-            if (mCurrentSession != null) {
-                try {
-                    mFlushLatency = System.currentTimeMillis();
-                    mCurrentSession.abortCaptures();
-                    mFlushLatency = System.currentTimeMillis() - mFlushLatency;
-                    mCurrentSession.stopRepeating();
-                } catch (CameraAccessException|IllegalStateException e) {
-                    Log.e(TAG,e);
-                }
-            }
-        } else if (mIsRecordingVideo) {
+        if (mIsRecordingVideo) {
             stopRecordingVideo(getMainCameraId());
         } else if (!mIsCloseCamera){
             if (mIsPreviewingVideo && !mIsRecordingVideo) {
