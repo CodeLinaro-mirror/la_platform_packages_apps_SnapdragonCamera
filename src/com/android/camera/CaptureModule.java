@@ -7514,8 +7514,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyAfModes(builder);
             applyFaceDetection(builder);
             applyTouchTrackFocus(builder);
-            applyWhiteBalance(builder);
-            applyExposure(builder);
             applyIsoAndExposureTime(builder);
             applySceneMode(builder);
             applyInstantAEC(builder);
@@ -7536,6 +7534,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyInStantZoom(builder);
         }
         applyColorEffect(builder);
+        applyWhiteBalance(builder);
+        applyExposure(builder);
     }
 
     /**
