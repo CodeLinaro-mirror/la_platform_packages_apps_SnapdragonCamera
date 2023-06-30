@@ -2111,10 +2111,6 @@ public class SettingsActivity extends PreferenceActivity {
             if (idx < 0 ) {
                 idx = 0;
             }
-            pref.setValueIndex(idx);
-            if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
-                pref.setValue("default");
-            }
             String cameraValue = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
             if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
             boolean perfEnable = false;
@@ -2125,6 +2121,10 @@ public class SettingsActivity extends PreferenceActivity {
             }
             if(!perfEnable){
                 pref.setValue("default");
+            } else if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                pref.setValue("default");
+            } else {
+                pref.setValueIndex(idx);
             }
             pref.setEnabled(perfEnable);
         }
