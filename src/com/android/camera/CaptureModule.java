@@ -5334,7 +5334,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             public void onCaptureSequenceCompleted(CameraCaptureSession session, int
                             sequenceId, long frameNumber) {
                 Log.i(TAG,"onCaptureSequenceCompleted, " + mNumFramesArrived.get());
-
+                mTakingPicture[getMainCameraId()] = false;
                 if (mPaused) {
                     return;
                 }
@@ -13223,9 +13223,13 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             Log.i(TAG, "Start Longshot");
             mLongshotActive = true;
+            mTakingPicture[getMainCameraId()] = true;
             mNumFramesArrived.getAndSet(0);
             mNumImageArrived.getAndSet(0);
             mUI.enableVideo(!mLongshotActive);
+            if (mCurrentSceneMode.mode != CameraMode.PRO_MODE) {
+                mUI.enableZoomSeekBar(false);
+            }
             checkSelfieFlashAndTakePicture();
         } else {
             RotateTextToast.makeText(mActivity, "Long shot not support", Toast.LENGTH_SHORT).show();
