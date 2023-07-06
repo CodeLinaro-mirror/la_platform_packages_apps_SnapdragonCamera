@@ -9034,6 +9034,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         String hvx_mfhdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_MFHDR);
         String hdrmode = mSettingsManager.getVideoHdrMode();
         int[] modes = mSettingsManager.isScreenGrabSupported();
+        String maunalHDR = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_HDR);
         boolean isScrrenGrabSupported = false;
         if(((hdrmode != null && hdrmode.toLowerCase().contains("mfhdr")) || (hvx_mfhdr != null && "1".equals(hvx_mfhdr))) && (modes != null)){
             for (int x = 0; x < modes.length; x++) {
@@ -9044,6 +9045,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         }else if(((hdrmode != null && hdrmode.toLowerCase().contains("shdr")) || (hvx_shdr != null && "1".equals(hvx_shdr))) && (modes != null)){
             for (int x = 0; x < modes.length; x++) {
                 if (modes[x] == 1) {
+                    isScrrenGrabSupported = true;
+                }
+            }
+        }
+        if(maunalHDR != null && maunalHDR.equals("auto") && modes != null){
+            for (int x = 0; x < modes.length; x++) {
+                if (modes[x] == 1 || modes[x] == 2) {
                     isScrrenGrabSupported = true;
                 }
             }
@@ -15307,7 +15315,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         public void setSwithCameraId(int swithCameraId) {
             this.swithCameraId = swithCameraId;
-            if(swithCameraId == CaptureModule.FRONT_ID) {
+            if(swithCameraId == CaptureModule.FRONT_ID && CaptureModule.FRONT_ID != -1) {
                 mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "front");
             }
         }
