@@ -13929,10 +13929,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public boolean showMFNR(){
-        if ( (mCurrentSceneMode.mode == CameraMode.DEFAULT || mCurrentSceneMode.mode == CameraMode.RTB)
+        if ((mCurrentSceneMode.mode == CameraMode.DEFAULT || mCurrentSceneMode.mode == CameraMode.RTB)
                 && !mPostProcessor.isSelfieMirrorOn() && !mSettingsManager.isZSLInAppEnabled())
             return true;
-        else return false;
+        else
+            return false;
     }
 
     private void updateRGBGraghView(){
