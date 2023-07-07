@@ -78,6 +78,9 @@ public class ProMode extends View {
     private PathMeasure mCurveMeasure;
     private int mCurveLeft;
     private int mCurveRight;
+
+    private int mMidX;
+    private int mMidY;
     private float mSlider = -1;
     private float mFocusSlider = -1;
     private float mExpTmSlider = -1;
@@ -110,7 +113,23 @@ public class ProMode extends View {
     private TextView mAutoText;
     private int mIsoIndex = 0;
 
+    public int getCurveLeft() {
+        return mCurveLeft;
+    }
+    public int getCurveY() {
+        return mCurveY;
+    }
+    public int getCurveRight() {
+        return mCurveRight;
+    }
 
+    public int getMidX() {
+        return mMidX;
+    }
+
+    public int getMidY() {
+        return mMidY;
+    }
     public ProMode(Context context, AttributeSet attrs) {
         super(context, attrs);
         mContext = context;
@@ -234,6 +253,8 @@ public class ProMode extends View {
         float cx = (mCurveLeft + mCurveRight) / 2;
         mCurvePath.reset();
         mCurvePath.moveTo(mCurveLeft, mCurveY);
+        mMidX = (int)cx;
+        mMidY = mCurveY - mCurveHeight;
         mCurvePath.quadTo(cx, mCurveY - mCurveHeight, mCurveRight, mCurveY);
         mCurveMeasure = new PathMeasure(mCurvePath, false);
     }

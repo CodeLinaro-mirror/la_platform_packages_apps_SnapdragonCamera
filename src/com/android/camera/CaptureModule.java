@@ -2403,7 +2403,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onError(CameraDevice cameraDevice, int error) {
             int id = Integer.parseInt(cameraDevice.getId());
-            Log.e(TAG, "onError " + id + " " + error);
+            Log.e(TAG, "CameraDevice onError " + id + " " + error);
             mCameraOpenCloseLock.release();
             mCamerasOpened = false;
             if((error == 1 || error == 2) && mOpenCameraTimes >0){
