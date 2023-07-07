@@ -2327,21 +2327,8 @@ public class SettingsActivity extends PreferenceActivity {
         ListPreference eisPref = (ListPreference)findPreference(
                 SettingsManager.KEY_EIS_VALUE);
         if (eisPref == null) return;
-        boolean changeEIS = true;
-        MultiSelectListPreference camCorderPref = (MultiSelectListPreference) findPreference(
-                SettingsManager.KEY_PHYSICAL_CAMCORDER);
-        if (camCorderPref != null) {
-            Set<String> camCorderSet = camCorderPref.getValues();
-            if (camCorderSet != null) {
-                for (String str : camCorderSet) {
-                    if (!"".equals(str)) {
-                        changeEIS &= false;
-                    }
-                }
-            }
-        }
         if (!mSettingsManager.isEISSupported(mSettingsManager.getVideoSize(),
-                mSettingsManager.getVideoFPS()) || !changeEIS) {
+                mSettingsManager.getVideoFPS())) {
             if (eisPref != null) {
                 eisPref.setValue("disable");
                 eisPref.setEnabled(false);
