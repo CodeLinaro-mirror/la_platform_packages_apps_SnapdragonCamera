@@ -1397,7 +1397,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public Set<String> getPhysicalFeatureEnableId(String key) {
-        if (!isMultiCameraEnabled())
+        String ismulti = getValue(KEY_MULTI_CAMERA_MODE);
+        if (!isMultiCameraEnabled() && (ismulti == null || ismulti.equals("0")))
             return null;
         String ids  = getValue(key);
         if (getPhysicalCameraId() == null){
@@ -3925,21 +3926,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public List<String> getSupportedZoomLevel(int cameraId) {
         float maxZoom = mCharacteristics.get(cameraId).get(CameraCharacteristics
                 .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
-        float[] zoomRatioRange = getSupportedRatioZoomRange(
-                mCaptureModule.getMainCameraId());
-        if(mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
-                (isRTBModeInSelectMode() && isAICameraOn()) || isRTBModeInSelectMode()) {
-            zoomRatioRange = getSupportedBokenRatioZoomRange(
-                    mCaptureModule.getMainCameraId());
-        }
         ArrayList<String> supported = new ArrayList<String>();
-        int minzoom = 1;
-        if(zoomRatioRange[0] < 1){
-            supported.add(String.valueOf(zoomRatioRange[0]));
-        }else if(zoomRatioRange[0] >1){
-            minzoom = (int)zoomRatioRange[0];
-        }
-        for (int zoomLevel = minzoom; zoomLevel <= maxZoom; zoomLevel++) {
+        for (int zoomLevel = 0; zoomLevel <= maxZoom; zoomLevel++) {
             supported.add(String.valueOf(zoomLevel));
         }
         return supported;

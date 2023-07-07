@@ -206,7 +206,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private VerticalSeekBar mTorchbar;
     private VerticalSeekBar mVerticalEvBar;
     private VerticalSeekBar mAICameraSeekBar;
-    private TextView mAIStrengthValue;
 
     private boolean mIsTorchOn;
     private int mTorchLen ;
@@ -1097,20 +1096,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     private void initAICameraSeekBar(){
-        String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
-        if (mAIStrengthValue == null) mAIStrengthValue = (TextView) mRootView.findViewById(R.id.aistrength_value);
-//        mAIStrengthValue.setText(value);
-//        mAIStrengthValue.setVisibility(View.VISIBLE);
         mAICameraSeekBar = (VerticalSeekBar) mRootView.findViewById(R.id.aicamera_seekbar);
         mAICameraSeekBar.setProgress(100);
         mModule.updateAIStrengthValue(128);
         mAICameraSeekBar.setOnSeekBarChangeListener(new VerticalSeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(VerticalSeekBar seekBar, int progresValue, boolean fromUser) {
-                if ( progresValue != 0 ) {
-                    int value = (int)(128*progresValue/100);
-                    mModule.updateAIStrengthValue(value);
-                }
+                int value = (int)(128*progresValue/100);
+                mModule.updateAIStrengthValue(value);
             }
         });
     }

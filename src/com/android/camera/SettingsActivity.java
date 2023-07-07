@@ -207,7 +207,6 @@ public class SettingsActivity extends PreferenceActivity {
                 updateEISPreference();
                 updatePdnetTogglePreference();
                 updateViullPreference();
-                updateZoomPreference();
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
                 value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
@@ -253,10 +252,15 @@ public class SettingsActivity extends PreferenceActivity {
             if (key.equals(SettingsManager.KEY_MANUAL_HDR)) {
                 value = ((ListPreference) p).getValue();
                 if (value.equals("manual")) {
-                    UpdateManualHDRSetting();
+                    updateManualHDRSetting();
                 }
                 updateHdrRefOp();
                 updateQuadBayerPreference();
+            }
+
+            if (key.equals(SettingsManager.KEY_MANUAL_HDR) ||
+                    key.equals(SettingsManager.KEY_QLL)) {
+                updateQLLPreference();
             }
 
             if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
@@ -414,7 +418,9 @@ public class SettingsActivity extends PreferenceActivity {
                 }
 
                 if (SettingsManager.KEY_PHOTO_EIS_VALUE.equals(pref.getKey())
-                        || SettingsManager.KEY_EIS_VALUE.equals(pref.getKey())) {
+                        || SettingsManager.KEY_EIS_VALUE.equals(pref.getKey()) ||
+                        SettingsManager.KEY_PHYSICAL_CAMERA.equals(pref.getKey()) ||
+                        SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK.equals(pref.getKey())) {
                     updatePreviewStabilizationPreference();
                 }
                 if (mSettingsManager.KEY_FACE_DETECTION.equals(pref.getKey()) ||
@@ -1083,7 +1089,7 @@ public class SettingsActivity extends PreferenceActivity {
         alert.show();
     }
 
-    private void UpdateManualHDRSetting() {
+    private void updateManualHDRSetting() {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
         StringBuilder defaultHDROrder = new StringBuilder();
@@ -1101,7 +1107,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
         final SharedPreferences.Editor editor = mLocalSharedPref.edit();
         String orderLists = mLocalSharedPref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
-        Log.v(TAG, " UpdateManualHDRSetting orderLists:" + orderLists);
+        Log.v(TAG, " updateManualHDRSetting orderLists:" + orderLists);
         if (orderLists != null) {
             listData.clear();
             for (String title : orderLists.split("#")) {
@@ -1310,7 +1316,7 @@ public class SettingsActivity extends PreferenceActivity {
                         if (preference.getKey().equals(SettingsManager.KEY_MANUAL_HDR)) {
                             String value = ((ListPreference) preference).getValue();
                             if (value.equals("manual")) {
-                                UpdateManualHDRSetting();
+                                updateManualHDRSetting();
                             }
                         }
 
@@ -1536,8 +1542,10 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
+                        videoAddList.add(SettingsManager.KEY_CAPTURE_PROFILE);
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
                         videoAddList.add(SettingsManager.KEY_VIULL);
+                        videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
                     } else {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
@@ -1552,7 +1560,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_STATSNN_CONTROL);
                     }
                     videoAddList.add(SettingsManager.KEY_PDNET_TOGGLE);
-                    videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
+
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                     videoAddList.add(SettingsManager.KEY_INSTANT_ZOOM);
@@ -1893,6 +1901,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePictureFormatPreference();
         updateLongShotPreference();
         updateHDRSceneDetection();
+        updateQLLPreference();
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
         Set<Map.Entry<String, SettingsManager.Values>> set = map.entrySet();
@@ -1978,7 +1987,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateCaptureProfilePref();
         updateMultiResReprocess();
         updatePreviewStabilizationPreference();
-        updateMultiVideoFPSPreference();
         updateViullPreference();
         updateCinematicOptions(fromRestore);
         updateHfrBufferMode();
@@ -2156,6 +2164,20 @@ public class SettingsActivity extends PreferenceActivity {
         if (mSettingsManager.isLimitedHDR()) {
             pref.setEnabled(false);
             pref.setValue("-1");
+        }
+    }
+    private void updateQLLPreference() {
+        ListPreference mixHDRPref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
+        ListPreference qllPref = (ListPreference)findPreference(SettingsManager.KEY_QLL);
+        if (mixHDRPref != null && mixHDRPref.getValue().equals("auto")) {
+            if (qllPref != null) {
+                qllPref.setValue("0");
+                qllPref.setEnabled(false);;
+            }
+        } else {
+            if (qllPref != null) {
+                qllPref.setEnabled(true);;
+            }
         }
     }
     private void updateVideoMFHDRPreference() {
@@ -2498,6 +2520,13 @@ public class SettingsActivity extends PreferenceActivity {
                     pref.setEnabled(false);
                     return;
                 } else if ("dynamic".equals(value)) {
+                    Set<String> jpeg_ids = mSettingsManager.getPhysicalFeatureEnableId(
+                            SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK);
+                    if (mSettingsManager.getPhysicalCameraId() != null || jpeg_ids != null) {
+                        pref.setValueIndex(0);
+                        pref.setEnabled(false);
+                        return;
+                    }
                     pref.setEnabled(true);
                     return;
                 } else {
@@ -2575,10 +2604,10 @@ public class SettingsActivity extends PreferenceActivity {
         if (extendMaxPref != null && extendMaxPref.getValue().equals("1")) {
             int maxZoom = (int)mSettingsManager.getSupportedExtendedMaxZoom(cameraId);
             zoomLevelLists.add(String.valueOf(maxZoom));
-
         }
         List<String> zoomEntriesLists = new ArrayList<String>();
-        for (int i = 0; i< zoomLevelLists.size(); i++) {
+        zoomEntriesLists.add("Default");
+        for (int i = 1; i< zoomLevelLists.size(); i++) {
             zoomEntriesLists.add(zoomLevelLists.get(i) + "x");
         }
         if(zoomPref != null) {

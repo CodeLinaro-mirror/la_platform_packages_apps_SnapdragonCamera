@@ -971,7 +971,7 @@
     </string-array>
     <!-- Camera Preferences zoom dialog box entries -->
     <string-array name="pref_camera_zoom_entries" translatable="false">
-        <item>@string/pref_camera_zoom_entry_min</item>
+        <item>@string/pref_camera_zoom_entry_default</item>
         <item>@string/pref_camera_zoom_entry_1x</item>
         <item>@string/pref_camera_zoom_entry_2x</item>
         <item>@string/pref_camera_zoom_entry_3x</item>
@@ -986,7 +986,7 @@
     </string-array>
 
     <string-array name="pref_camera_zoom_entryvalues" translatable="false">
-        <item>0.58</item>
+        <item>0</item>
         <item>1</item>
         <item>2</item>
         <item>3</item>

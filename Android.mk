@@ -1,11 +1,10 @@
-ifneq ($(strip $(SOONG_CONFIG_qticamera_apk)),true)
-
 LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_TAGS := optional
 
+ifneq ($(strip $(SOONG_CONFIG_qticamera_apk)),true)
 LOCAL_STATIC_JAVA_LIBRARIES := android-support-v13
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v4
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-recyclerview
@@ -59,7 +58,6 @@ else
 endif
 
 include $(BUILD_PACKAGE)
+endif
 
 include $(call all-makefiles-under, $(LOCAL_PATH))
-
-endif
