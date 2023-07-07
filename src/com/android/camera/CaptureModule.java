@@ -1405,8 +1405,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public Face[] getStickyFaces() {
         return mStickyFaces;
     }
-    //for autoTest start
-
+    /*----------- Add for autoTest start ------------*/
     private HashMap<String,Long> mHasMapTimes = new HashMap<>();
     private long mLockFocusTime;
     private long mPreCaptureTime;
@@ -1415,7 +1414,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mClosedCamTime;
     private long mStartedTime;
     private long mSessionAfterRecord;
-
     public CaptureResult getPreviewCaptureResult() {
         return mPreviewCaptureResult;
     }
@@ -1454,10 +1452,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void setLongImageTitle(List<String>  title){
         mLongImgTitle = title;
     }
-    public void setKeyIdxInProMode(int index){
-        mUI.getmCameraControls().getmProMode().setIndex(index,false);
-    }
-
     public void setStartedTime(long time){
         mStartedTime = time;
     }
@@ -1475,7 +1469,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         mStartedTime = 0;
         mActivity.mColdOpenCameraTime = 0;
     }
-    //for autoTest end
+    public boolean getPaused(){
+        return mPaused;
+    }
+    /*----------- Add for autoTest end ------------*/
     private void detectHDRMode(CaptureResult result, int id) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
         String autoHdr = mSettingsManager.getValue(SettingsManager.KEY_AUTO_HDR);
@@ -7565,8 +7562,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         mCaptureCallbackHandler = new Handler(mCaptureCallbackThread.getLooper());
         mMpoSaveHandler = new MpoSaveHandler(mMpoSaveThread.getLooper());
         mZoomHandler = new ZoomHandler(mCaptureCallbackThread.getLooper());
-        Log.i(TAG, "startBackgroundThread");
         mBackgroundThreadFlag = true;
+        Log.d(TAG, "startBackgroundThread");
     }
 
     /**
@@ -12102,10 +12099,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (Storage.isSaveSDCard() && maxFileSize > SDCARD_SIZE_LIMIT) {
             maxFileSize = SDCARD_SIZE_LIMIT;
         }
-
         try {
             if (PersistUtil.enableMediaRecorder() && mMediaRecorder != null) {
-                Log.i(TAG, "MediaRecorder setMaxFileSize: " + maxFileSize);
+                Log.d(TAG, "MediaRecorder setMaxFileSize: " + maxFileSize);
                 mMediaRecorder.setMaxFileSize(maxFileSize);
             } else {
                 //CODEC:

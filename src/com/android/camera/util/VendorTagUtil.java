@@ -336,7 +336,7 @@ public class VendorTagUtil {
     }
 
     public static void enableHardSwitch(CaptureRequest.Builder builder, byte enable) {
-        Log.i(TAG,"set enableHardSwitch: " + enable);
+        Log.d(TAG,"set enableHardSwitch: " + enable);
         if (isSupported(builder, enableHardSwitch)) {
             builder.set(enableHardSwitch, enable);
         }

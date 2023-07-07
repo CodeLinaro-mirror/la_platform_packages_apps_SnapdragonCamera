@@ -76,9 +76,7 @@ public class FunctionTest extends TestBase  {
     @Before
     public void beforeEachTest()throws Exception {
         Log.i(TAG, "beforeEachTest");
-
         OpenAndResetCamera();
-        initsetting();
     }
     @After
     public void afterEachTest() throws Exception{
