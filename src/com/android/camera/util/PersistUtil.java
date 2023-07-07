@@ -527,6 +527,8 @@ public class PersistUtil {
     public static boolean useTextureViewToPreview() {
         return getBoolean("persist.sys.camera.use_texture_view_to_preview", false);
     }
+    public static boolean isStressTestRunning() {
+        return getBoolean("persist.sys.camera.stress.test.run", false);}
 
     private static final int PERSIST_FOCUS_ASSIST_MODE_TIMEOUT =
             getInt("persist.sys.camera.focus_assist_mode.timeout", 8000);
@@ -537,6 +539,8 @@ public class PersistUtil {
 
     private static final boolean PERSIST_ENABLE_PROSIGHT =
         getBoolean("persist.sys.camera.prosight", true);
+
+
 
     public static boolean isProSightEnabled() {
         return PERSIST_ENABLE_PROSIGHT;

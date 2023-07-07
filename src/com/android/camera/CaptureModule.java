@@ -1252,8 +1252,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final int LOCK_AF_AE_STATE_NONE = 0;
     private static final int LOCK_AF_AE_STATE_START = 1;
     private static final int LOCK_AF_AE_STATE_LOCK_DONE = 2;
-    private List<String> mLongImgTitle = new ArrayList<>();
-
     private int mLockAFAE = LOCK_AF_AE_STATE_NONE;
     private TextView mLockAFAEText;
     private int[] mClickPosition = new int[2];
@@ -1417,6 +1415,14 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mClosedCamTime;
     private long mStartedTime;
     private long mSessionAfterRecord;
+    private List<String> mLongImgTitle = new ArrayList<>();
+    private List<ExifInterface> mImagExif = new ArrayList<>();;
+    public List<ExifInterface> getImagExif(){
+        return mImagExif;
+    }
+    public void setImagExif(List<ExifInterface> exif){
+        mImagExif = exif;
+    }
     public CaptureResult getPreviewCaptureResult() {
         return mPreviewCaptureResult;
     }
@@ -1440,6 +1446,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public String getVideoFilePath(){
         return mVideoFilePath;
     }
+
     public CaptureUI getCaptureUI(){
         return mUI;
     }
@@ -2418,7 +2425,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onError(CameraDevice cameraDevice, int error) {
             int id = Integer.parseInt(cameraDevice.getId());
-            Log.e(TAG, "onError " + id + " " + error);
+            Log.e(TAG, "CameraDevice onError " + id + " " + error);
             mCameraOpenCloseLock.release();
             mCamerasOpened = false;
             if((error == 1 || error == 2) && mOpenCameraTimes >0){
@@ -6181,6 +6188,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                 ",mNumImageArrived.get()="+mNumImageArrived.get()+
                                                 ",imageWidth="+imageWidth+",imageHeight="+imageHeight+",imageFormat="+imageFormat);
                                         mLongImgTitle.add(title);
+                                        mImagExif.add(exif);
                                     }
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         saveRawImg(bytes, image, name, title);
@@ -6921,9 +6929,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         NamedEntity name = mNamedImages.getNextNameEntity();
                         String title = (name == null) ? null : name.title;
                         long date = (name == null) ? -1 : name.date;
-                        if(mActivity.getAutoTest()) {
-                            mLongImgTitle.add(title);
-                        }
+
                         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                         byte[] bytes = new byte[buffer.remaining()];
                         buffer.get(bytes);
@@ -6934,6 +6940,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                             exif = new ExifInterface(new ByteArrayInputStream(bytes));
                         } catch (IOException e) {
                             Log.w(TAG,"get exif failed");
+                        }
+                        if(mActivity.getAutoTest()) {
+                            mLongImgTitle.add(title);
+                            mImagExif.add(exif);
                         }
                         if (image.getFormat() != ImageFormat.HEIC && exif != null){
                             orientation = CameraUtil.getOrientation(exif);
@@ -11918,7 +11928,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             path = Storage.DIRECTORY + '/' + filename;
         }
-        Log.d(TAG,"title="+title+",filename="+filename+",mime="+mime+",path="+path);
+        Log.d(TAG," title="+title+",filename="+filename+",mime="+mime+",path="+path+
+                ",Storage.DIRECTORY="+Storage.DIRECTORY+",Storage.isSaveSDCard()="+Storage.isSaveSDCard());
         mCurrentVideoValues = new ContentValues(13);
         mCurrentVideoValues.put(MediaStore.Video.Media.TITLE, title);
         mCurrentVideoValues.put(MediaStore.Video.Media.DISPLAY_NAME, filename);
@@ -11937,7 +11948,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mCurrentVideoValues.put(MediaStore.Video.Media.IS_PENDING, 1);
             mCurrentVideoValues.put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Camera");
         }
-        mVideoFilename = path;
+        mVideoFilename = filename;
         return path;
     }
 

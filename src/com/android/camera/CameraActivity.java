@@ -2976,7 +2976,7 @@ public class CameraActivity extends Activity
         return mCaptureModule;
     }
     public boolean getAutoTest(){
-         return  mIsAutoTest;
+         return  mIsAutoTest || PersistUtil.isStressTestRunning();
     }
     public void setAutoTest(boolean test){
         mIsAutoTest = test;

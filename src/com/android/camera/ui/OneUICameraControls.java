@@ -195,6 +195,9 @@ public class OneUICameraControls extends RotatableLayout {
     public int getIntentMode() {
         return mIntentMode;
     }
+    public ProMode getProMode(){
+        return mProMode;
+    }
 
     @Override
     public void onFinishInflate() {
