@@ -2406,16 +2406,6 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
 
-        ListPreference vsrPref = (ListPreference) findPreference(SettingsManager.KEY_VSR);
-        if (vsrPref != null) {
-            String value = mSettingsManager.getValue(SettingsManager.KEY_VSR);
-            if ("1".equals(value)) {
-                pref.setValue("0");
-                pref.setEnabled(false);
-                return;
-            }
-        }
-
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         String selectMode = mSettingsManager.getValue(mSettingsManager.KEY_SELECT_MODE);
         if (selectMode.equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
