@@ -2045,12 +2045,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                     int binCount = result.get(CaptureModule.buckets);
                     int statsType = result.get(CaptureModule.stats_type);
-                    Log.i(TAG, "binCount:" + binCount + ",statsType:" + statsType + ",data length:" + histogramStats.length);
+                    Log.d(TAG, BIG_LOG,"binCount:" + binCount + ",statsType:" + statsType + ",data length:" + histogramStats.length);
                     if (statsType == 6 && binCount == 256) {
                         updateRGBGraghViewVisibility(View.INVISIBLE);
                         updateGraghViewVisibility(View.VISIBLE);
                         updateGraghView();
-                    } else {
+                    } else if (binCount !=0){
                         updateGraghViewVisibility(View.INVISIBLE);
                         updateRGBGraghViewVisibility(View.VISIBLE);
                         updateRGBGraghView();
@@ -16690,7 +16690,6 @@ class Camera2RGBGraphView extends View {
 
             cavas.drawColor(0xFFAAAAAA);
             paint.setColor(Color.BLACK);
-
             for (int k = 0; k <= (graphheight / 32); k++) {
                 float y = (float) (32 * k) + border;
                 cavas.drawLine(border, y, graphwidth + border, y, paint);
