@@ -1925,8 +1925,8 @@ public class SettingsActivity extends PreferenceActivity {
 
     private void updateSwitchIDInModePreference(boolean isShowRTB){
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_SELECT_MODE);
-        List<String> key = new ArrayList<String>(Arrays.asList("Single rear cameraID", "SAT", "Default" ));
-        List<String> value = new ArrayList<String>(Arrays.asList( "single_rear_cameraid", "sat", "default"));
+        List<String> key = new ArrayList<String>(Arrays.asList("Default", "Single rear cameraID", "SAT"));
+        List<String> value = new ArrayList<String>(Arrays.asList("default", "single_rear_cameraid", "sat"));
         boolean isBack = false;
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
         if (pref != null) {
@@ -1958,6 +1958,10 @@ public class SettingsActivity extends PreferenceActivity {
                 perfEnable = true;
             }
             pref.setEnabled(perfEnable);
+            //for front camera, if aicamera off, select mode is disabled, still need to change value to default
+            if(!perfEnable){
+                pref.setValueIndex(0);
+            }
         }
     }
 
