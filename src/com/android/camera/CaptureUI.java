@@ -2194,7 +2194,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             });
         }
     }
-    private boolean showHDRScene() {
+    public boolean showHDRScene() {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
         String hdrmode = mSettingsManager.getVideoHdrMode();
         String multiCam = mSettingsManager.getValue(SettingsManager.KEY_MULTI_CAMERAS_MODE);

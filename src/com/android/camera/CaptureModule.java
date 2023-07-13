@@ -1766,14 +1766,19 @@ public class CaptureModule implements CameraModule, PhotoController,
             mUI.updatePerformanceDebugInfoVisibility(View.GONE);
             updateGapGraghViewVisibility(View.GONE);
             if((mActivity.getPerformenceTest()) && mFirstRequestLatency != 0) {
-                mFirstRequestLatency = System.currentTimeMillis() - mFirstRequestLatency;
-                mHasMapTimes.put("FirstRequest->onCaptureCompleted",mFirstRequestLatency);
-                mFirstRequestLatency = 0;
-                if(mActivity.mColdOpenCameraTime != 0){
-                    mHasMapTimes.put("Total", System.currentTimeMillis() - mActivity.mColdOpenCameraTime);
-                    mActivity.mColdOpenCameraTime = 0;
-                }else {
-                    mHasMapTimes.put("Total", System.currentTimeMillis() - mStartedTime);
+                String tag_ = String.valueOf(result.getRequest().getTag());
+                int mainCameraId = getMainCameraId();
+                String curTag = mainCameraId + "-" + getCurrenCameraMode().name();
+                if(curTag.equals(tag_)) {
+                    mFirstRequestLatency = System.currentTimeMillis() - mFirstRequestLatency;
+                    mHasMapTimes.put("FirstRequest->onCaptureCompleted", mFirstRequestLatency);
+                    mFirstRequestLatency = 0;
+                    if (mActivity.mColdOpenCameraTime != 0) {
+                        mHasMapTimes.put("Total", System.currentTimeMillis() - mActivity.mColdOpenCameraTime);
+                        mActivity.mColdOpenCameraTime = 0;
+                    } else {
+                        mHasMapTimes.put("Total", System.currentTimeMillis() - mStartedTime);
+                    }
                 }
             }
 
@@ -7649,6 +7654,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mSnapshotLatency = 0;
         mZoomLatency = 0;
         mBurstFps = 0;
+        mActivity.mColdOpenCameraTime = 0;
         mPerformanceGapData.clear();
         cancelTouchFocus();
         mActivity.runOnUiThread(() -> mUI.clearFocus());
@@ -7808,7 +7814,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mCurrentSceneMode.setSwithCameraId(facingOfIntentExtras,true);
             mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         }
-        if(!CameraApp.isColdStart){
+        if(!CameraApp.isColdStart || mActivity.mColdOpenCameraTime == 0){
             reinit();
         }
         CameraApp.isColdStart = false;

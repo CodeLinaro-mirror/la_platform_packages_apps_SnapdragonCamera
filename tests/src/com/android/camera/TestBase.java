@@ -135,6 +135,7 @@ public class TestBase{
     private TotalCaptureResult mCurrentCaptureResult;
     private CaptureResult mCurrentPreviewResult;
     public CaptureModule mCaptureModule;
+    public CaptureUI mCaptureUI;
     private ProMode mProMode;
     private CharSequence[] isovalue,evvalue,wbvalue;
     private int swipevalue;
@@ -567,17 +568,10 @@ public class TestBase{
         snapByLocation();
         checkHdr(HDR_SCENE_OFF);
     }
-    private boolean showHdr(CaptureModule.CameraMode mode){
-        boolean show = true;
-        if(mode != CaptureModule.CameraMode.DEFAULT && mode != CaptureModule.CameraMode.RTB){
-            show = false;
-        }
-        return show;
-    }
     public void testHdr(CaptureModule.CameraMode mode)throws Exception {
         updateJson(5,null);
         View mHdr = mActivity.findViewById(R.id.scene_mode_hdr);
-        if (!showHdr(mode)) {
+        if (!mCaptureUI.showHDRScene()) {
             mSupported = false;
           if(mHdr.getVisibility() != View.VISIBLE){
                 testResult = true;
@@ -608,6 +602,8 @@ public class TestBase{
         }
         if(check1 && check2) {
             updateJson(5,testPass);
+        }else{
+            updateJson(5,testFail);
         }
     }
 
@@ -1539,6 +1535,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         executeShellCommand("input tap 500 500");
         mActivity = mActivityRule.getActivity();
         mCaptureModule = mActivity.getCaptureModule();
+        mCaptureUI = mCaptureModule.getCaptureUI();
         initsetting();
     }
     public void initsetting(){
