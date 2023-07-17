@@ -1743,7 +1743,6 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_PREVIEW_PROFILE);
         updatePreference(SettingsManager.KEY_CAPTURE_PROFILE);
         updateMultiPreference(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
-        updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
         updateVideoMFHDRPreference();
         updateQuadBayerPreference();
@@ -1960,14 +1959,6 @@ public class SettingsActivity extends PreferenceActivity {
             }
             pref.setEnabled(perfEnable);
         }
-    }
-
-    private void updateVideoHDRPreference() {
-        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_HDR_VALUE);
-        if (pref == null) {
-            return;
-        }
-        pref.setEnabled(mSettingsManager.isZZHDRSupported());
     }
 
     public boolean isHwMfnrDisabled(){
