@@ -1542,7 +1542,6 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
-                        videoAddList.add(SettingsManager.KEY_CAPTURE_PROFILE);
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
                         videoAddList.add(SettingsManager.KEY_VIULL);
                         videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
@@ -2112,19 +2111,20 @@ public class SettingsActivity extends PreferenceActivity {
             if (idx < 0 ) {
                 idx = 0;
             }
-            pref.setValueIndex(idx);
-            if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
-                pref.setValue("default");
-            }
             String cameraValue = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
             if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
             boolean perfEnable = false;
             if((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
-                    ((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID || !CaptureModule.MCXMODE) && mSettingsManager.isAICameraOn() && (mode == CaptureModule.CameraMode.VIDEO))){
+                    ((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID ||
+                            !CaptureModule.MCXMODE) && mSettingsManager.isAICameraOn() && (mode == CaptureModule.CameraMode.VIDEO))){
                 perfEnable = true;
             }
             if(!perfEnable){
-                pref.setValue("0");
+                pref.setValue("default");
+            } else if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                pref.setValue("default");
+            } else {
+                pref.setValueIndex(idx);
             }
             pref.setEnabled(perfEnable);
         }
@@ -2375,17 +2375,7 @@ public class SettingsActivity extends PreferenceActivity {
         if(rawFormat != null){
             value = rawFormat.getValue();
         }
-        if(mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT){
-            CharSequence[] fullEntryValues = pref.getEntryValues();
-            CharSequence[] fullEntries = pref.getEntries();
-            List<CharSequence> key =  new ArrayList<CharSequence>(Arrays.asList(fullEntries));
-            key.remove("HDR10");
-            List<CharSequence> values = new ArrayList<CharSequence>(Arrays.asList(fullEntryValues));
-            values.remove("4");
-            pref.setEntries(key.toArray(new CharSequence[key.size()]));
-            pref.setEntryValues(values.toArray(new CharSequence[values.size()]));
-        }
-        if(value.equals(yuv10bit) || value.equals(yuv10bitWithMetadata) || mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT){
+        if(value.equals(yuv10bit) || value.equals(yuv10bitWithMetadata)){
             pref.setEnabled(true);
         } else {
             pref.setValue("0");

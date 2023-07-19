@@ -128,7 +128,9 @@ public class AIBlurConfigSlide extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
+        if (mMode == NO_MODE) {
+            return;
+        }
         if (mMode != NO_MODE) {
             mPaint.setColor(Color.WHITE);
             mPaint.setStyle(Paint.Style.STROKE);

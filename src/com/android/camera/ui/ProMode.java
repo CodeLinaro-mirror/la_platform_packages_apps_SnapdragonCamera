@@ -320,7 +320,11 @@ public class ProMode extends View {
                             v.getMeasuredHeight());
                     v.setLayoutParams(lp);
                     v.setX(mPoints[i].x - v.getMeasuredWidth() / 2);
-                    v.setY(mPoints[i].y - 2 * v.getMeasuredHeight()- 5);
+                    if(mMode != ISO_MODE){
+                        v.setY(mPoints[i].y - 2 * v.getMeasuredHeight());
+                    }else {
+                        v.setY(mPoints[i].y - 2 * v.getMeasuredHeight() - 11);
+                    }
                 }
                 mParent.addView(v);
                 mAddedViews.add(v);

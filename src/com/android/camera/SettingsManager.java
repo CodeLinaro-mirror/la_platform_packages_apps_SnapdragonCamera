@@ -1286,7 +1286,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean isMultiCameraEnabled(){
         String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey());
         SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName, Context.MODE_PRIVATE);
-        String enable = sharedPreferences.getString(KEY_MULTI_CAMERA_MODE,"default");
+        String enable = sharedPreferences.getString(KEY_MULTI_CAMERA_MODE, "0");
         return "1".equals(enable);
     }
 
@@ -1296,11 +1296,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
     public boolean isAvailableUseCase(int cameraId,long useCaseId){
         boolean isSupported = false;
-        long[]avilibleCase = mCharacteristics.get(cameraId).get(CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES);
-       for(int i = 0;i < avilibleCase.length ;i++){
-           Log.d(TAG,"isAvailableUseCase avilibleCase[i]="+avilibleCase[i]);
-           if (useCaseId == avilibleCase[i]) isSupported = true;
-       }
+        try {
+            long[] avilibleCase = mCharacteristics.get(cameraId).get(CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES);
+            if(avilibleCase == null){
+                return false;
+            }
+            for (int i = 0; i < avilibleCase.length; i++) {
+                Log.d(TAG, "isAvailableUseCase avilibleCase[i]=" + avilibleCase[i]);
+                if (useCaseId == avilibleCase[i]) isSupported = true;
+            }
+        }catch(Exception e){
+            Log.i(TAG," isAvailableUseCase exception="+e);
+        }
         Log.d(TAG,"isAvailableUseCase isSupported="+isSupported);
        return isSupported;
     }
@@ -3464,10 +3471,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return map.getOutputSizes(cl);
     }
 
-    public Size[] getAllSupportedOutputSize(int cameraId) {
+    public Size[] getAllSupportedOutputSize(int cameraId, boolean maxRes) {
         if (cameraId > mCharacteristics.size())return null;
-        StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
-                CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        StreamConfigurationMap map = null;
+        if (!maxRes) {
+            map = mCharacteristics.get(cameraId).get(
+                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        } else {
+            map = mCharacteristics.get(cameraId).get(
+                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
+        }
         Size[] picSize = map.getOutputSizes(ImageFormat.PRIVATE);
         Size[] highResSizes = map.getHighResolutionOutputSizes(ImageFormat.JPEG);
         Size[] allPicSizes = new Size[picSize.length + highResSizes.length];
@@ -4210,7 +4223,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (supportHeic == 1){
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
         }
-        ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
+        if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB) {
+            ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
+        }
         return ret;
     }
     public boolean isSupportedMixHdr(){

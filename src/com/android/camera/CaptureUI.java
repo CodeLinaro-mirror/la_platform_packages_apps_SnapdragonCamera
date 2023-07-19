@@ -2213,7 +2213,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             return false;
         }
         String qllStr = mSettingsManager.getValue(SettingsManager.KEY_QLL);
-        if (qllStr.equals("1")) {
+        if (qllStr != null && qllStr.equals("1")) {
             return false;
         }
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
@@ -2825,7 +2825,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mSceneModeHDR != null) mSceneModeHDR.setEnabled(status);
         if (mFilterModeSwitcher != null) mFilterModeSwitcher.setEnabled(status);
         if (mMakeupButton != null) mMakeupButton.setVisibility(View.GONE);
-        if (mShutterButton != null) mShutterButton.setEnabled(status);
+        if(!status){
+            if (mShutterButton != null) mShutterButton.setEnabled(status);
+        }
     }
 
     public void initializeControlByIntent() {
