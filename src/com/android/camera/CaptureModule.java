@@ -14265,12 +14265,27 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
                         }
                     }
+                    Integer aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
+                    if(aeState == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED ||
+                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE){
+                        captureRequest.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL);
+                        mSetAePrecaptureTriggerIdel ++;
+                    }
                     if (instant) {
                         session.capture(captureRequest
                                 .build(), mCaptureCallback, mCameraHandler);
                     } else {
                         session.setRepeatingRequest(captureRequest
                                 .build(), mCaptureCallback, mCameraHandler);
+                    }
+                    if(mSetAePrecaptureTriggerIdel >0) {
+                        captureRequest.set(
+                                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE);
+                        session.setRepeatingRequest(captureRequest
+                                .build(), mCaptureCallback, mCameraHandler);
+                        mSetAePrecaptureTriggerIdel = 0;
                     }
                 }
             }
