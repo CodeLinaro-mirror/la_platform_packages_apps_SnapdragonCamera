@@ -1,11 +1,9 @@
-ifneq ($(strip $(SOONG_CONFIG_qticamera_apk)),true)
-
 LOCAL_PATH:= $(call my-dir)
-
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_TAGS := optional
 
+ifneq ($(strip $(SOONG_CONFIG_qticamera_apk)),true)
 LOCAL_STATIC_JAVA_LIBRARIES := android-support-v13
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v4
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-recyclerview
@@ -46,11 +44,11 @@ LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 # the libraries in the APK, otherwise just put them in /system/lib and
 # leave them out of the APK
 
-#ifneq (,$(TARGET_BUILD_APPS))
-#  LOCAL_JNI_SHARED_LIBRARIES := libjni_aidenoiserutilv2
-#else
-#  LOCAL_REQUIRED_MODULES := libjni_aidenoiserutilv2
-#endif
+ifneq (,$(TARGET_BUILD_APPS))
+  LOCAL_JNI_SHARED_LIBRARIES := libjni_aidenoiserutilv2
+else
+  LOCAL_REQUIRED_MODULES := libjni_aidenoiserutilv2
+endif
 
 ifneq (,$(TARGET_BUILD_APPS))
   LOCAL_JNI_SHARED_LIBRARIES := libjni_imageutil
@@ -59,7 +57,5 @@ else
 endif
 
 include $(BUILD_PACKAGE)
-
-include $(call all-makefiles-under, $(LOCAL_PATH))
-
 endif
+include $(call all-makefiles-under, $(LOCAL_PATH))
