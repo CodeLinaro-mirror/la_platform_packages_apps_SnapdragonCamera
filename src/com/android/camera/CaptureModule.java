@@ -6140,11 +6140,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     mNamedImages.nameNewImage(mCaptureStartTime);
                                     NamedEntity name = mNamedImages.getNextNameEntity();
                                     String title = (name == null) ? null : name.title;
-                                    Log.d(TAG,"mLongshotActive="+mLongshotActive+",titile="+title+
-                                            ",mNumImageArrived.get()="+mNumImageArrived.get());
-                                    if(mActivity.getAutoTest()) {
-                                        mLongImgTitle.add(title);
-                                    }
+
                                     long date = (name == null) ? -1 : name.date;
                                     byte[] bytes = getJpegData(image);
                                     int orientation = 0;
@@ -6155,6 +6151,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     int imageFormat = image.getFormat();
                                     int imageWidth = image.getWidth();
                                     int imageHeight = image.getHeight();
+                                    if(mActivity.getAutoTest()) {
+                                        Log.i(TAG,"mLongshotActive="+mLongshotActive+",titile="+title+
+                                                ",mNumImageArrived.get()="+mNumImageArrived.get()+
+                                                ",imageWidth="+imageWidth+",imageHeight="+imageHeight+",imageFormat="+imageFormat);
+                                        mLongImgTitle.add(title);
+                                    }
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         saveRawImg(bytes, image, name, title);
                                         if (mRawReprocessType != 0) {
