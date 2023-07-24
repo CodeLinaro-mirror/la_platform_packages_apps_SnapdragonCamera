@@ -6434,6 +6434,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     builder.addTarget(mPhysicalSnapshotImageReaders[i].getSurface());
                     ret++;
                 }
+                if (mPhysicalMediaRecorders[i] != null) {
+                    builder.addTarget(mPhysicalMediaSurfaces[i]);
+                }
             }
             return ret;
         }
@@ -13942,6 +13945,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             List<Surface> previews = mUI.getPhysicalSurfaces();
             if(mSettingsManager.isLogicalEnable()){
                 builder.addTarget(previews.get(0));
+                builder.addTarget(mVideoRecordingSurface);;
                 if (surfaceList != null){
                     surfaceList.add(previews.get(0));
                 }
