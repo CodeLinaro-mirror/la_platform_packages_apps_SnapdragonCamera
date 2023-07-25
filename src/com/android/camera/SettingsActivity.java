@@ -2672,15 +2672,16 @@ public class SettingsActivity extends PreferenceActivity {
        if (pictureFormatPref == null) {
            return;
        }
-        CaptureModule.CameraMode mode =
-                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-        updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
-        if (mSettingsManager.getQuadBayerSensorPrefEnabled() ||(CaptureModule.CameraMode.RTB == mode && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE))) {
-            pictureFormatPref.setValue("0");
-            pictureFormatPref.setEnabled(false);
-        } else {
-            pictureFormatPref.setEnabled(true);
-        }
+       CaptureModule.CameraMode mode =
+               (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+       mSettingsManager.filterPictureFormat();
+       updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
+       if ((CaptureModule.CameraMode.RTB == mode && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE))) {
+           pictureFormatPref.setValue("0");
+           pictureFormatPref.setEnabled(false);
+       } else {
+           pictureFormatPref.setEnabled(true);
+       }
     }
 
     private void updateLongShotPreference() {

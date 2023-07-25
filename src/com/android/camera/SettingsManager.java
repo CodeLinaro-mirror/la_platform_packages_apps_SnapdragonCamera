@@ -4260,7 +4260,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
         ArrayList<String> ret = new ArrayList<String>();
         ret.add(String.valueOf(SettingsManager.JPEG_FORMAT));
-        if (supportHeic == 1){
+        if (supportHeic == 1 && !getQuadBayerSensorPrefEnabled()){
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
         }
         if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB) {
