@@ -4004,6 +4004,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void createSessionForVideo(final int cameraId) {
         try {
             setCameraModeSwitcherAllowed(false);
+            mStopRecPending = false;
             mVideoRecordRequestBuilder = null;
             setVideoState(VideoState.VIDEO_INIT);
             setupRecordingCommonSettings(cameraId);
@@ -8711,6 +8712,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void onRecordingDone(boolean valid) {
+        mStopRecPending = false;
         Intent resultIntent = new Intent();
         int resultCode;
         if (valid) {
@@ -11789,7 +11791,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mUI.resetTrackingFocus();
             }
         });
-        mStopRecPending = false;
+        if(mIntentMode != INTENT_MODE_VIDEO) {
+            mStopRecPending = false;
+        }
     }
 
     private void setVideoFlashOff() {
