@@ -9106,7 +9106,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else if(mSettingsManager.isLiveshotSizeSameAsVideoSize()){
                     mPhysicalVideoSnapshotSizes[i] = mPhysicalVideoSizes[i];
                 } else {
-                    if (mQuadBayerPhysicalIds.size() != 0 && mQuadBayerPhysicalIds.contains(id)) {
+                    if (mQuadBayerPhysicalIds.size() != 0 && mQuadBayerPhysicalIds.contains(id) && mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                         mPhysicalVideoSnapshotSizes[i] = mPhysicalVideoSizes[i];
                     } else {
                         mPhysicalVideoSnapshotSizes[i] = getMaxPictureSizeLiveshot(Integer.valueOf(id),
