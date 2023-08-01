@@ -68,8 +68,9 @@ int (*perflock_hint)(int hint_id, char* package, int duration, int type);
 
 void getPerfhandle(){
     perf_handle = dlopen("libqti-perfd-client.so", RTLD_NOW);
-    if(!perf_handle){
+    if(perf_handle == NULL){
         printf("Unable to open perf lib: %s", dlerror());
+        return ;
     }
 
     perflock_acq = (int (*)(int, int, int *, int))dlsym(perf_handle, "perf_lock_acq");
