@@ -11073,7 +11073,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             builder.set(CaptureRequest.NOISE_REDUCTION_MODE,noiseReduMode);
         } else {
-            boolean isMfnrEnable = isMFNREnabled();
+            boolean isMfnrEnable = !isLongShotSettingEnabled() && isMFNREnabled();
             int noiseReduMode = (isMfnrEnable ? CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY :
                     CameraMetadata.NOISE_REDUCTION_MODE_FAST);
             String frameStr = mSettingsManager.getKeyValue(mSettingsManager.KEY_CAPTURE_MFNR_FRAME);
@@ -14021,7 +14021,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public boolean showMFNR(){
         if ((mCurrentSceneMode.mode == CameraMode.DEFAULT || mCurrentSceneMode.mode == CameraMode.RTB)
-                && !mPostProcessor.isSelfieMirrorOn() && !mSettingsManager.isZSLInAppEnabled())
+                && !mPostProcessor.isSelfieMirrorOn() && !mSettingsManager.isZSLInAppEnabled() && !isLongShotSettingEnabled())
             return true;
         else
             return false;
