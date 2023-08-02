@@ -4018,7 +4018,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             setUpPhysicalMediaRecorder();
             if (PersistUtil.enableMediaRecorder()) {
                 mVideoRecordingSurface = MediaCodec.createPersistentInputSurface();
-                if(!setUpMediaRecorder(cameraId)){
+                if(!is8KInMulti && !setUpMediaRecorder(cameraId)){
                     return;
                 }
             } else {
@@ -12020,7 +12020,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         releasePhysicalRecorder();
         int count = ids.size();
-        Log.d(TAG,"setUpPhysicalMediaRecorder count="+count);
+        Log.i(TAG,"setUpPhysicalMediaRecorder count="+count);
         CamcorderProfile profile;
         Object[] idsArray =ids.toArray();
         for (int i=0;i<count;i++) {
