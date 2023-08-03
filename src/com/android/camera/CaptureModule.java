@@ -13421,7 +13421,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(!mSettingsManager.isFlashSupported(getMainCameraId())) {
                 request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             }
-
         } catch (NumberFormatException e) {
             Log.w(TAG, " Input expTime " + exposuretime + " is invalid");
             return false;
@@ -13472,29 +13471,46 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (manualExposureMode == null) return result;
         if (manualExposureMode.equals(isoPriority)) {
             int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
-                    "100"));
-            long longValue = SettingsManager.KEY_ISO_INDEX.get(
-                    SettingsManager.MAUNAL_ABSOLUTE_ISO_VALUE);
-            setIsoValue(request, isoValue, longValue, true);
-            result = true;
+                    "-1"));
+            if(isoValue != -1) {
+                long longValue = SettingsManager.KEY_ISO_INDEX.get(
+                        SettingsManager.MAUNAL_ABSOLUTE_ISO_VALUE);
+                setIsoValue(request, isoValue, longValue, true);
+                result = true;
+            }
         } else if (manualExposureMode.equals(expTimePriority)) {
-            String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "0");
+            String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "auto");
             result = setExposureTime(request, expTime);
         } else if (manualExposureMode.equals(userSetting)) {
             int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
-                    "100"));
-            long newExpTime = 1;
-            String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "0");
+                    "-1"));
+            long newExpTime = 0l;
+            String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "auto");
             try {
                 newExpTime = Long.parseLong(expTime);
             } catch (NumberFormatException e) {
                 Log.w(TAG, "Input expTime " + expTime + " is invalid");
             }
             Log.v(TAG,  "manual ISO value : " + isoValue + ", Exposure value :" + newExpTime);
-            setIsoAndExposureTime(request, isoValue, newExpTime);
+            if(isoValue == -1 && newExpTime > 0){
+                setExposureTime(request,expTime);
+            }else if(newExpTime <=0 && isoValue >-1){
+                long longValue = SettingsManager.KEY_ISO_INDEX.get(
+                        SettingsManager.MAUNAL_ABSOLUTE_ISO_VALUE);
+                setIsoValue(request, isoValue, longValue, true);
+            }else if(newExpTime > 0 && isoValue >-1){
+                setIsoAndExposureTime(request, isoValue, newExpTime);
+            }else{
+                result = false;
+                return  result;
+            }
             result = true;
         } else if (manualExposureMode.equals(gainsPriority)) {
-            float gains = pref.getFloat(SettingsManager.KEY_MANUAL_GAINS_VALUE, 1.0f);
+            float gains = pref.getFloat(SettingsManager.KEY_MANUAL_GAINS_VALUE, 0f);
+            if(gains <= 0){
+                result = false;
+                return result;
+            }
             int[] isoRange = mSettingsManager.getIsoRangeValues(getMainCameraId());
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
             int isoValue = 100;
