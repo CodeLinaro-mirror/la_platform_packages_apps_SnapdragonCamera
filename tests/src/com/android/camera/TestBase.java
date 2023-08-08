@@ -135,6 +135,7 @@ public class TestBase{
     private TotalCaptureResult mCurrentCaptureResult;
     private CaptureResult mCurrentPreviewResult;
     public CaptureModule mCaptureModule;
+    public CaptureUI mCaptureUI;
     private ProMode mProMode;
     private CharSequence[] isovalue,evvalue,wbvalue;
     private int swipevalue;
@@ -163,8 +164,7 @@ public class TestBase{
         openCameraByIntent(mMainIntent);
         mActivity.mSettingsManager.restoreSettings();
         Thread.sleep(SMALL_WAIT_DURATION);
-        mActivity.getCaptureModule().restartAll();
-        checkPreview("0", CaptureModule.CameraMode.DEFAULT);
+        testSettingIcon("0", CaptureModule.CameraMode.DEFAULT);
         isOpenFromIntent = false;
     }
     public void OpenCamera() throws Exception{
@@ -202,63 +202,6 @@ public class TestBase{
         }catch (Exception e){
             Log.e("autotest_updateAndSavejson"," writejsonobj e= "+e);
         }
-    }
-    public  void updatePerformenceJson(String jsonFile,String[]item,String jsonArray,
-                                             List<Long>values,int times){
-        JSONObject mObj= CameraUtil.getJsonObj(jsonFile);
-        if (mObj == null) {
-            Log.e(TAG,"Json file not exit,will not save the test result.jsonFile is "+jsonFile);
-            return;
-        }
-        if(values != null && jsonArray != null) {
-            try {
-                JSONArray array = mObj.getJSONArray(jsonArray);
-                for (int i = 0; i < array.length(); i++) {
-                    JSONObject obj = array.getJSONObject(i);
-                    int count = obj.getInt("testTimes");
-                    if (times == count) {
-                        for(int j = 0;j < item.length;j++){
-                            obj.put(item[j],values.get(j));
-                        }
-                        break;
-                    }
-                }
-
-            } catch (Exception e) {
-                Log.e(TAG, "updatejsonobj e= " + e);
-            }
-        }
-        saveJson(jsonFile,mObj);
-    }
-
-    public  void updatePerformenceJson(String jsonFile,String[]item,String jsonArray,
-                                       HashMap<Integer, List<Long> > values){
-        JSONObject mObj= CameraUtil.getJsonObj(jsonFile);
-        if (mObj == null) {
-            Log.e(TAG,"Json file not exit,will not save the test result.jsonFile is "+jsonFile);
-            return;
-        }
-        if(values != null && jsonArray != null) {
-            try {
-                JSONArray array = mObj.getJSONArray(jsonArray);
-                for(int j = 0;j <values.size();j++) {
-                    for (int i = 0; i < array.length(); i++) {
-                        JSONObject obj = array.getJSONObject(i);
-                        int count = obj.getInt("testTimes");
-                        if (j == count) {
-                            for (int k = 0; k < item.length; j++) {
-                                obj.put(item[k], values.get(j).get(k));
-                            }
-                            break;
-                        }
-                    }
-                }
-
-            } catch (Exception e) {
-                Log.e(TAG, "updatejsonobj e= " + e);
-            }
-        }
-        saveJson(jsonFile,mObj);
     }
 
     public  void updatePerformenceJson(String jsonFile,HashMap<String,HashMap<String,Long>> values,int times) {
@@ -313,6 +256,7 @@ public class TestBase{
             openCameraByIntent(mImageIntent);
             Thread.sleep(OPEN_CAMERA_DURATION);
         }
+        testSettingIcon(cameraId,mode);
         testHdr(mode);
         if(isOpenFromIntent){
             openCameraByIntent(mImageIntent);
@@ -327,11 +271,6 @@ public class TestBase{
         if(isOpenFromIntent){
             openCameraByIntent(mImageIntent);
             Thread.sleep(OPEN_CAMERA_DURATION);
-        }
-        testSettingIcon(cameraId,mode);
-        if(isOpenFromIntent){
-            openCameraByIntent(mImageIntent);
-            checkPreview("0",mode);
         }
         if(cameraId.equals("1")) {
             testToggleBackFront(mode,false);
@@ -371,6 +310,7 @@ public class TestBase{
             openCameraByIntent(mVideoIntent);
             Thread.sleep(OPEN_CAMERA_DURATION);
         }
+        testSettingIcon(cameraId,mode);
         testHdr(mode);
         testFlash(cameraId,mode,false);
         if(isOpenFromIntent){
@@ -383,11 +323,6 @@ public class TestBase{
             Thread.sleep(OPEN_CAMERA_DURATION);
         }
         testVideoPauseAndResume();
-        if(isOpenFromIntent){
-            openCameraByIntent(mVideoIntent);
-            Thread.sleep(OPEN_CAMERA_DURATION);
-        }
-        testSettingIcon(cameraId,mode);
         if(isOpenFromIntent){
             openCameraByIntent(mVideoIntent);
             Thread.sleep(OPEN_CAMERA_DURATION);
@@ -498,22 +433,12 @@ public class TestBase{
         updateJson(5,null);
         executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
         Thread.sleep(SMALL_WAIT_DURATION);
-/*        if(!mActivity.isFinishing()){
-            testResult = false;
-            Log.e(TAG,"TestFail reason:cameraactivity should finished.activity.isFinishing()=" +mActivity.isFinishing());
-            return;
-        }*/
-        executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
-        checkPreview(cameraid,mode);
-        if(!testResult){
-            updateJson(5,testFail);
+        if(!mCaptureModule.getPaused()){
+            testFail = getFailStr("mPaused",mCaptureModule.getPaused(),true);
+        }else {
+            executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
+            checkPreview(cameraid, mode);
         }
-        if(isVideoMode(mode)){
-            testVideo(mode,true);
-        }else{
-            testSnapshot(mode);
-        }
-
         if(testResult) updateJson(5,testPass);
         else{
             updateJson(5,testFail);
@@ -643,17 +568,10 @@ public class TestBase{
         snapByLocation();
         checkHdr(HDR_SCENE_OFF);
     }
-    private boolean showHdr(CaptureModule.CameraMode mode){
-        boolean show = true;
-        if(mode != CaptureModule.CameraMode.DEFAULT && mode != CaptureModule.CameraMode.RTB){
-            show = false;
-        }
-        return show;
-    }
     public void testHdr(CaptureModule.CameraMode mode)throws Exception {
         updateJson(5,null);
         View mHdr = mActivity.findViewById(R.id.scene_mode_hdr);
-        if (!showHdr(mode)) {
+        if (!mCaptureUI.showHDRScene()) {
             mSupported = false;
           if(mHdr.getVisibility() != View.VISIBLE){
                 testResult = true;
@@ -684,6 +602,8 @@ public class TestBase{
         }
         if(check1 && check2) {
             updateJson(5,testPass);
+        }else{
+            updateJson(5,testFail);
         }
     }
 
@@ -699,13 +619,21 @@ public class TestBase{
         for(int i = 0;i < length; i++ ){
             mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_PICTURE_SIZE,i);
             testSettingIcon(cameraid,mode);
-            if(!testResult) {
+            if(testResult) {
+                snapByLocation();
+                if(!testResult){
+                    checkresult = false;
+                    break;
+                }
+            }else{
                 checkresult = false;
+                break;
             }
+
         }
         mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_PICTURE_SIZE,defvalue);
         testSettingIcon(cameraid,mode);
-        if(testResult && checkresult) updateJson(5,testPass);
+        if(testResult) updateJson(5,testPass);
     }
     public void testFrameRate(CaptureModule.CameraMode mode) throws Exception {
         int length = mActivity.mSettingsManager.getEntryValues(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).length;
@@ -752,10 +680,17 @@ public class TestBase{
             for(int k = 0;k <framelen;k++){
                 mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, k);
                testSettingIcon(cameraid, mode);
-                if(!testResult) {
+                if(testResult) {
+                  testVideo(mode,false);
+                    if(!testResult){
+                        checkresult = false;
+                        break;
+                    }
+                }else{
                     checkresult = false;
                     break;
                 }
+
             }
         }
         mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_QUALITY, defvalue);
@@ -875,7 +810,7 @@ public class TestBase{
         for(int i = 0;i <length; i++ ){
             mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_ZSL,i);
             testSettingIcon(cameraId,mode);
-            //snapByLocation();
+            snapByLocation();
             if(!testResult) {
                 flashInZslResult = false;
                 longshotInZslResult = false;
@@ -913,6 +848,7 @@ public class TestBase{
         for(int i = 0;i <length; i++ ){
             mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_CAPTURE_MFNR_VALUE,i);
             testSettingIcon(cameraId,mode);
+            snapByLocation();
             checkMFNR();
             if(!testResult) {
                 break;
@@ -1599,6 +1535,8 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         executeShellCommand("input tap 500 500");
         mActivity = mActivityRule.getActivity();
         mCaptureModule = mActivity.getCaptureModule();
+        mCaptureUI = mCaptureModule.getCaptureUI();
+        initsetting();
     }
     public void initsetting(){
         View mShutter = mActivity.findViewById(R.id.shutter_button);
@@ -1733,8 +1671,8 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 if(value == null) {
                     value = "FAIL";
                     mSupported = true;
-                    testFail = "FAIL";
                     testResult = true;
+                    testFail = value;
                 }
                 if(!mSupported){
                     value = value+"(INVISIBLE)";
@@ -1755,19 +1693,27 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         Thread.sleep(OPEN_CAMERA_DURATION);
         if(mCurrentPreviewResult == null){
            testFail = getFailStr("CurrentPreviewResult",mCurrentPreviewResult,"NotNull");
+            updateJson(5,testFail);
+            return;
         }
         //assertNotNull(mCurrentPreviewResult);
         if(mActivity.isFinishing()){
             testFail = getFailStr("Activity_Finshing",mActivity.isFinishing(),false);
+            updateJson(5,testFail);
+            return;
         }
         //assertFalse(mActivity.isFinishing());
         if(mode != mCaptureModule.getCurrenCameraMode()){
             testFail = getFailStr("CurrenCameraMode",mCaptureModule.getCurrenCameraMode(),mode);
+            updateJson(5,testFail);
+            return;
         }
        // assertEquals(mode,mCaptureModule.getCurrenCameraMode());
         String mainId = String.valueOf(mCaptureModule.getMainCameraId());
         if(!(id.equals(mainId))){
             testFail = getFailStr("getMainCameraId",mainId,id);
+            updateJson(5,testFail);
+            return;
         }
         //assertEquals(id,mainId);
         //
@@ -1775,12 +1721,16 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         String resid = mCurrentPreviewResult.getCameraId();
         if(!(id.equals(resid))){
             testFail = getFailStr("CurrentPreviewResult.getCameraId()",resid,id);
+            updateJson(5,testFail);
+            return;
         }
         CameraCaptureSession currentSession = mCaptureModule.getCurrentSession(Integer.valueOf(id));
         //boolean sessionclose = mCaptureModule.isSessionClosed(Integer.valueOf(id))
         //assertEquals(false,mCaptureModule.isSessionClosed(Integer.valueOf(mainId)));
         if(currentSession == null){
             testFail = getFailStr("CaptureSession",currentSession,"NotNull");
+            updateJson(5,testFail);
+            return;
         }
         if(testResult) updateJson(5,testPass);
         else{

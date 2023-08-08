@@ -2048,12 +2048,7 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref == null) {
             return;
         }
-        if (!PersistUtil.enableMediaRecorder()) {
-            pref.setEnabled(false);
-            pref.setValue("off");
-        } else {
-            updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-        }
+        updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
     }
 
     private void updateTimeLapsePreference() {
@@ -2400,16 +2395,6 @@ public class SettingsActivity extends PreferenceActivity {
         if (hfrPref != null) {
             String value = hfrPref.getValue();
             if (!"off".equals(value)) {
-                pref.setValue("0");
-                pref.setEnabled(false);
-                return;
-            }
-        }
-
-        ListPreference vsrPref = (ListPreference) findPreference(SettingsManager.KEY_VSR);
-        if (vsrPref != null) {
-            String value = mSettingsManager.getValue(SettingsManager.KEY_VSR);
-            if ("1".equals(value)) {
                 pref.setValue("0");
                 pref.setEnabled(false);
                 return;

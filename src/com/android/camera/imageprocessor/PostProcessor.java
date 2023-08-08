@@ -860,7 +860,7 @@ public class PostProcessor{
         mSavingHander = new ProcessorHandler(mSavingHandlerThread.getLooper());
 
         mWatchdog = new WatchdogThread();
-        Log.i(TAG,"start watch dog");
+        Log.d(TAG,"start watch dog");
         mWatchdog.start();
     }
 

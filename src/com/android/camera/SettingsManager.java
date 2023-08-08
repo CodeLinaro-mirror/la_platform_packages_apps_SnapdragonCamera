@@ -3202,7 +3202,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             isSupported = (mCharacteristics.get(mCameraId).get(CaptureModule.isMLVideoSupported)) == 1;
         } catch (IllegalArgumentException | NullPointerException e) {
-            Log.w(TAG, "cannot find vendor tag: " +
+            Log.v(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
                     CaptureModule.isMLVideoSupported.toString());
         }
         Log.d(TAG,"isMLVideoSupported: " + isSupported);
@@ -4116,7 +4116,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (maxSizes != null) {
             for (Size size : maxSizes) {
                 if(size == null || videoSize == null){
-                    Log.i(TAG,"size="+size+",videosize="+videoSize);
+                    Log.d(TAG,"size="+size+",videosize="+videoSize);
                     result = false;
                     return result;
                 }
