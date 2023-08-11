@@ -6309,9 +6309,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             dataY.get(bytesY);
             byte[] bytesUV = new byte[dataUV.remaining()];
             dataUV.get(bytesUV);
-            byte[] data = new byte[bytesY.length+bytesUV.length];
+            byte[] data = new byte[stride*height*3/2];
             System.arraycopy(bytesY,0,data,0,bytesY.length);
-            System.arraycopy(bytesUV,0,data,bytesY.length,bytesUV.length);
+            System.arraycopy(bytesUV,0,data,stride*height,bytesUV.length);
             return data;
         }catch (IllegalStateException e) {
             return null;
