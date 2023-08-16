@@ -682,6 +682,31 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return null;
     }
 
+    private void getQuadBayerPhysicalStreamIdEachFormat(Set<String> newValues, Set<String> values){
+        if (newValues != null && newValues.size() != 0) {
+            for(String value: newValues){
+                if(!values.contains(value)){
+                    values.add(value);
+                }
+            }
+        }
+    }
+
+    public Set<String> getQuadBayerPhysicalStreamIds(){
+        Set<String> values = new HashSet<>();
+        getQuadBayerPhysicalStreamIdEachFormat(getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK), values);
+        getQuadBayerPhysicalStreamIdEachFormat(getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_JPEG_R_CALLBACK), values);
+        getQuadBayerPhysicalStreamIdEachFormat(getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_YUV_CALLBACK), values);
+        getQuadBayerPhysicalStreamIdEachFormat(getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_YUV10BIT_CALLBACK), values);
+        getQuadBayerPhysicalStreamIdEachFormat(getPhysicalFeatureEnableId(
+                SettingsManager.KEY_PHYSICAL_RAW_CALLBACK), values);
+        return values;
+    }
+
     public List<Size> getSupportedQCFAMaxPictureSizeList(String cameraId, int format) {
         List<Size> res = new ArrayList<>();
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
@@ -3103,14 +3128,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return true;
     }
 
-    public boolean isZZHDRSupported() {
+    public int[] getVideoHDRSupported() {
         int modes[] = null;
         try {
             modes = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_video_hdr_modes);
         } catch (Exception e) {
         }
-        return modes != null && modes.length > 1;
+        return modes;
     }
 
     public boolean isShadingCorrectionSupported() {
@@ -3202,7 +3227,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             isSupported = (mCharacteristics.get(mCameraId).get(CaptureModule.isMLVideoSupported)) == 1;
         } catch (IllegalArgumentException | NullPointerException e) {
-            Log.w(TAG, "cannot find vendor tag: " +
+            Log.v(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
                     CaptureModule.isMLVideoSupported.toString());
         }
         Log.d(TAG,"isMLVideoSupported: " + isSupported);
@@ -4116,7 +4141,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (maxSizes != null) {
             for (Size size : maxSizes) {
                 if(size == null || videoSize == null){
-                    Log.i(TAG,"size="+size+",videosize="+videoSize);
+                    Log.d(TAG,"size="+size+",videosize="+videoSize);
                     result = false;
                     return result;
                 }
@@ -4167,6 +4192,21 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 String value = getValue(KEY_SELECT_MODE);
                 if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO && (
                         value != null && value.equals("rtb"))) {
+                    profile.remove("HEVCProfileMain10HDR10Plus");
+                }
+                int[] hdrModes = getVideoHDRSupported();
+                boolean hdr10Plus = false;
+                if (hdrModes != null) {
+                    for (int mode : hdrModes) {
+                        if (mode == 3) {
+                            hdr10Plus = true;
+                            break;
+                        }
+                    }
+                } else {
+                    hdr10Plus = true;
+                }
+                if (hdr10Plus) {
                     profile.remove("HEVCProfileMain10HDR10Plus");
                 }
             }

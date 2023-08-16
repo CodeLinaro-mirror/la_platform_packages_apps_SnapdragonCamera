@@ -62,7 +62,6 @@ public class PerformanceTest extends TestBase {
         OpenAndResetCamera();
         mActivity.setPerformenceTest(true);
         isPerformenceTest = true;
-        initsetting();
         mCaptureModule.resetHashMapTimes();
     }
 
@@ -82,7 +81,7 @@ public class PerformanceTest extends TestBase {
     @Test
     public void testPhoto() throws Exception {
         for (int i = 0; i < CYCLE_TIMES; i++) {
-            Log.i(TAG, "zcl 111 start this time i=" + i);
+            Log.i(TAG, "start this time i=" + i);
             if(i==0) {
                 resetPreview();
                 mActivityRule.finishActivity();
@@ -110,7 +109,7 @@ public class PerformanceTest extends TestBase {
     @Test
     public void testBokeh() throws Exception {
         for (int i = 0; i < CYCLE_TIMES; i++) {
-            Log.i(TAG, "zcl 111 start this time i=" + i);
+            Log.i(TAG, "start this time i=" + i);
             if(i==0) {
                 resetPreview();
                 swipFromLTR(1);
@@ -136,7 +135,7 @@ public class PerformanceTest extends TestBase {
     @Test
     public void testHFR() throws Exception {
         for (int i = 0; i < CYCLE_TIMES; i++) {
-            Log.i(TAG, "zcl 111 start this time i=" + i);
+            Log.i(TAG, "start this time i=" + i);
             if(i==0) {
                 resetPreview();
                 swipFromRTL(1);
@@ -163,7 +162,7 @@ public class PerformanceTest extends TestBase {
     @Test
     public void testVideo() throws Exception {
         for (int i = 0; i < CYCLE_TIMES; i++) {
-            Log.i(TAG, "zcl 111 start this time i=" + i);
+            Log.i(TAG, "start this time i=" + i);
             if(i==0) {
                 resetPreview();
                 swipFromRTL(3);
