@@ -2795,6 +2795,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         List<Surface> list = new LinkedList<Surface>();
         mState[id] = STATE_PREVIEW;
         mControlAFMode = CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
+        setCameraModeSwitcherAllowed(false);
         try {
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilder[id] = getRequestBuilder(id);
@@ -3342,6 +3343,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mVideoRecordRequestBuilder = null;
             setVideoState(VideoState.VIDEO_INIT);
             setupRecordingCommonSettings(cameraId);
+            setCameraModeSwitcherAllowed(false);
             Set<String> ids = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_CAMCORDER);
             if (ids != null && ids.size() != 0){
@@ -3455,7 +3457,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
             mPreviewRequestBuilder[cameraId] = mVideoRecordRequestBuilder;
             mIsPreviewingVideo = true;
-
             if (isHighSpeedRateCapture()) {
                 if (PersistUtil.enableMediaRecorder() && (mVideoRecordingSurface != null)) {
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
@@ -8220,9 +8221,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (videoSize2 != null) {
             mVideoSize = new Size(videoSize2.x, videoSize2.y);
         }
-        if (DEBUG) {
-            Log.v(TAG, "updateVideoSize mVideoSize = " + mVideoSize + ", videoSize :" + videoSize);
-        }
+        Log.d(TAG, "updateVideoSize mVideoSize = " + mVideoSize + ", videoSize :" + videoSize);
         Size[] prevSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
                 MediaRecorder.class);
         mVideoPreviewSize = getOptimalVideoPreviewSize(mVideoSize, prevSizes);
