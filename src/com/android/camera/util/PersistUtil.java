@@ -184,7 +184,9 @@ public class PersistUtil {
     public static int getLongshotShotLimit(int defaultValue) {
         return  getInt("persist.sys.camera.longshot.shotnum", defaultValue);
     }
-
+    public static boolean showIconWhenNoCam() {
+        return getBoolean("persist.sys.camera.showIconWhenNoCam", false);
+    }
     public static Point getCameraPreviewSize() {
         Point result = null;
         if (PERSIST_CAMERA_PREVIEW_SIZE != null) {
