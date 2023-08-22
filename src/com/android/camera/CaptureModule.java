@@ -4822,7 +4822,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                 mAideActiveCameraIds.put(activeId, true);
                                                 captureBuilder.addTarget(mAideFullImageReader[getIndexByPhysicalId(Integer.toString(activeId))].getSurface());
                                                 mCaptureRequestNum++;
-                                                if (mAideAECLuxIndex >= lux_index_threadhold) {//for low light, only HWMFNR, will not add ds image
+                                                if (mAideAECLuxIndex >= lux_index_threadhold) {//for high light, only HWMFNR, will not add ds image
                                                     Log.d(TAG, "add master ds yuv for dual zone " + activeId);
                                                     captureBuilder.addTarget(mAideDs4ImageReader[getIndexByPhysicalId(Integer.toString(activeId))].getSurface());
                                                     mCaptureRequestNum++;
@@ -4834,7 +4834,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         Log.d(TAG, "add active full yuv for single zone " + mActiveCameraIds.get(0));
                                         captureBuilder.addTarget(mAideFullImageReader[getIndexByPhysicalId(Integer.toString(mActiveCameraIds.get(0)))].getSurface());
                                         mCaptureRequestNum++;
-                                        if (mAideAECLuxIndex >= lux_index_threadhold) {//for low light, only HWMFNR, will not add ds image
+                                        if (mAideAECLuxIndex >= lux_index_threadhold) {//for high light, only HWMFNR, will not add ds image
                                             Log.d(TAG, "add active ds yuv for single zone " + mActiveCameraIds.get(0));
                                             captureBuilder.addTarget(mAideDs4ImageReader[getIndexByPhysicalId(Integer.toString(mActiveCameraIds.get(0)))].getSurface());
                                             mCaptureRequestNum++;
@@ -4844,7 +4844,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             } else {
                                 captureBuilder.addTarget(mAideFullImageReader[getMainCameraId()].getSurface());
                                 mCaptureRequestNum++;
-                                if (mAideAECLuxIndex >= lux_index_threadhold) {//for low light, only HWMFNR, will not add ds image
+                                if (mAideAECLuxIndex >= lux_index_threadhold) {//for high light, only HWMFNR, will not add ds image
                                     captureBuilder.addTarget(mAideDs4ImageReader[getMainCameraId()].getSurface());
                                     mCaptureRequestNum++;
                                 }
@@ -5164,7 +5164,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             enableShutterButtonOnMainThread(id);
             AIDenoiserService aiDenoiserService = mActivity.getAIDenoiserService();
             String format = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_FORMAT);
-            if(mAideAECLuxIndex < lux_index_threadhold){//low light only do HWMFNR and no need to crop
+            if(mAideAECLuxIndex < lux_index_threadhold){//high light only do HWMFNR and no need to crop
                 aiDenoiserService.wantImagesNum(mCaptureRequestNum);
                 Size yuvSize = new Size(mAideFullImage.getWidth(), mAideFullImage.getHeight());
                 Log.i(TAG,"save jpeg for mfnr aide start, yuv size:" + yuvSize.toString());
@@ -5183,6 +5183,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mActivity.getContentResolver(), "jpeg");
                 mActivity.updateThumbnail(jpeg);
                 if (TRACE_DEBUG) Trace.endSection();
+                mAideFullImage.close();
+                mAideFullImage = null;
                 return;
             }
             Log.d(TAG,"wait " + mCaptureRequestNum + " YUVs");
@@ -5219,12 +5221,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                     + ",mEnhancefactor:" + mEnhancefactor + ",mGainThresholdY:" + mGainThresholdY + ",mGainThresholdUV:" + mGainThresholdUV);
             AIDEV2ProcessFrameArgs aideV2Args = new AIDEV2ProcessFrameArgs(inputFrameDim, downFrameDim, srcInputY, srcInputUV, srcDsInputY, srcDsInputUV,
                     title, cropRegion, mCaptureResult, mPictureSize, denoiseStrengthParam, mAideAdrcGain, (int)(mRGain*1024), (int)(mBGain*1024), (int)(mGGain*1024), orientation, quality);
-
             mAideFullImage.close();
             mAideFullImage = null;
             mAideDownImage.close();
             mAideDownImage = null;
             namedEntity = null;
+
             //process aidev2
             Log.d(TAG, " mAideV2CaptureCallback, start to call aide lib");
             synchronized (mAideLock) {
