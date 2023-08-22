@@ -5171,7 +5171,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 byte[] yuv = getYUVFromImage(mAideFullImage);
                 int stride = mAideFullImage.getPlanes()[0].getRowStride();
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
-                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,yuvSize.getWidth(), yuvSize.getHeight(), stride,
+                Rect rect = aiDenoiserService.getCropRegion(yuvSize.getWidth(), yuvSize.getHeight(),mPictureSize.getWidth(),mPictureSize.getHeight());
+                yuv = aiDenoiserService.cropYuvImage(yuv, stride, yuvSize.getWidth(), yuvSize.getHeight(), rect);
+                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,rect.width(), rect.height(), rect.width(),
                         mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
                 byte[] jpeg = aiDenoiserService.bitmapToJpeg(bitmap, orientation, mCaptureResult, quality);
                 mActivity.getMediaSaveService().addImage(
