@@ -224,7 +224,7 @@ public class SettingsActivity extends PreferenceActivity {
                         picFormat.setEnabled(true);
                     }
                 }
-            }else if (key.equals(SettingsManager.KEY_VIDEO_ENCODER_PROFILE)){
+            } else if (key.equals(SettingsManager.KEY_VIDEO_ENCODER_PROFILE)){
                 CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
                 if(mode == CaptureModule.CameraMode.VIDEO) {
                     updateSwitchIDInModePreference(true);
@@ -283,6 +283,9 @@ public class SettingsActivity extends PreferenceActivity {
             }
             if (SettingsManager.KEY_PREVIEW_PROFILE.equals(key)) {
                 updateViullPreference();
+            }
+            if (SettingsManager.KEY_LONGSHOT.equals(key)) {
+                updateMFNRPreference();
             }
         }
     };
@@ -1026,6 +1029,24 @@ public class SettingsActivity extends PreferenceActivity {
             }
         });
         alert.show();
+    }
+
+    private void updateMFNRPreference() {
+        ListPreference mfnrPref = (ListPreference)findPreference(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+        String longshotValue = mSettingsManager.getValue(SettingsManager.KEY_LONGSHOT);
+        if (longshotValue.equals("on")) {
+            if (mfnrPref != null) {
+                mfnrPref.setValue("0");
+            } else {
+                mSettingsManager.setKeyValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE, true, "0");
+            }
+        } else {
+            if (mfnrPref != null) {
+                mfnrPref.setValue("1");
+            } else {
+                mSettingsManager.setKeyValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE, true, "1");
+            }
+        }
     }
 
     private void showToneMappingDialog(LinearLayout linear, AlertDialog.Builder alert, String mode){
@@ -1883,7 +1904,6 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_PREVIEW_PROFILE);
         updatePreference(SettingsManager.KEY_CAPTURE_PROFILE);
         updateMultiPreference(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
-        updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
         updateVideoMFHDRPreference();
         updateQuadBayerPreference();
@@ -2123,14 +2143,6 @@ public class SettingsActivity extends PreferenceActivity {
             }
             pref.setEnabled(perfEnable);
         }
-    }
-
-    private void updateVideoHDRPreference() {
-        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_HDR_VALUE);
-        if (pref == null) {
-            return;
-        }
-        pref.setEnabled(mSettingsManager.isZZHDRSupported());
     }
 
     public boolean isHwMfnrDisabled(){
@@ -2683,14 +2695,10 @@ public class SettingsActivity extends PreferenceActivity {
                 if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) ||
                         mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                     longShot.setChecked(false);
-                    longShot.setEnabled(false);
-                } else {
-                    longShot.setEnabled(true);
                 }
             }
             if(mode == CaptureModule.CameraMode.RTB && isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)){
                 longShot.setChecked(false);
-                longShot.setEnabled(false);
             }
             if(mSettingsManager.isOverriden(SettingsManager.KEY_LONGSHOT)){
                 longShot.setChecked(false);

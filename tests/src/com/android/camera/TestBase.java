@@ -137,6 +137,7 @@ public class TestBase{
     public CaptureModule mCaptureModule;
     public CaptureUI mCaptureUI;
     private ProMode mProMode;
+    private SettingsManager mSettingsManager;
     private CharSequence[] isovalue,evvalue,wbvalue;
     private int swipevalue;
     private boolean updateJson = false;
@@ -280,7 +281,9 @@ public class TestBase{
         if(isOpenFromIntent){
             return;
         }
+        mActivity.setDevOption(true);
         testLongShot(cameraId,mode);
+        mActivity.setDevOption(false);
         testPictureSize(cameraId,mode);
         if (mode != CaptureModule.CameraMode.PRO_MODE) {
             testMFNR(cameraId,mode);
@@ -370,7 +373,7 @@ public class TestBase{
                 mSupported = false;
             } else {
                 testResult = false;
-                Log.e(TAG, "TestFail reason:BackFontSwitch icon should not be visible");
+                testFail = getFailStr("BackFontSwitch icon",mToggle.getVisibility(),View.INVISIBLE);
             }
             if(testResult) updateJson(5,testPass);
             else{
@@ -431,8 +434,10 @@ public class TestBase{
     }
     private void testSettingIcon(String cameraid,CaptureModule.CameraMode mode) throws Exception{
         updateJson(5,null);
+        Log.i(TAG,"click setting="+mSettingLoc[0]+"*"+mSettingLoc[1]);
         executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
         Thread.sleep(SMALL_WAIT_DURATION);
+        Log.i(TAG,"click setting getPaused="+mCaptureModule.getPaused());
         if(!mCaptureModule.getPaused()){
             testFail = getFailStr("mPaused",mCaptureModule.getPaused(),true);
         }else {
@@ -463,6 +468,8 @@ public class TestBase{
             }
             if(testResult){
                 updateJson(5,testPass);
+            }else{
+                updateJson(5,testFail);
             }
         }else {
             boolean intenton = false;
@@ -634,6 +641,9 @@ public class TestBase{
         mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_PICTURE_SIZE,defvalue);
         testSettingIcon(cameraid,mode);
         if(testResult) updateJson(5,testPass);
+        else{
+            updateJson(5,testFail);
+        }
     }
     public void testFrameRate(CaptureModule.CameraMode mode) throws Exception {
         int length = mActivity.mSettingsManager.getEntryValues(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).length;
@@ -724,6 +734,11 @@ public class TestBase{
     }*/
     public void testLongShot(String cameraId,CaptureModule.CameraMode mode)throws Exception {
         updateJson(5, null);
+        boolean resetmfnr = false;
+       if(mCaptureModule.isMFNREnabled()){
+           mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE,"0");
+           resetmfnr = true;
+       }
         mActivity.mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "on");
         testSettingIcon(cameraId,mode);
         resetCapture();
@@ -735,6 +750,11 @@ public class TestBase{
             resetCapture();
             if(!testResult){
                 mActivity.mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
+                updateJson(5, testFail);
+                if(resetmfnr){
+                    mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE,"1");
+                    testSettingIcon(cameraId,mode);
+                }
                 return;
             }
             executeShellCommand("input swipe " + mShutterLoc[0] + " " + mShutterLoc[1] + " " + mShutterLoc[0] + " " + mShutterLoc[1] + " " + 5000);
@@ -753,22 +773,23 @@ public class TestBase{
         }
         mActivity.mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
         if (testResult) updateJson(5, testPass);
+        else{
+            updateJson(5, testFail);
+        }
+        if(resetmfnr){
+            mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE,"1");
+            testSettingIcon(cameraId,mode);
+        }
     }
     private void checkLongShot(boolean max)throws Exception{
         List<String> patharry = mActivity.getCaptureModule().getLongImageTitle();
         if(patharry == null){
-/*            testResult = false;
-            Log.e(TAG,"TestFail reason:imagtitle is null");*/
             testFail = getFailStr("imagepath",patharry,"NotNull");
             return;
         }
        // assertNotNull(patharry);
 
         if(patharry.size() > PersistUtil.getLongshotShotLimit() || patharry.size() ==0){
-           // throw new AssertionError("longshot image num shoud not 0 and > getLongshotShotLimit" +
-            //        ",but ten num is "+patharry.size());
-      /*      Log.e(TAG,"TestFail reason:patharry.size ="+patharry.size());
-            testResult = false;*/
             testFail = getFailStr("image_num",patharry.size(),"below "+  PersistUtil.getLongshotShotLimit());
             return;
         }
@@ -776,13 +797,6 @@ public class TestBase{
             testFail = getFailStr("image_num",patharry.size(),"above 0");
             return;
         }
-/*        if(max && patharry.size() != PersistUtil.getLongshotShotLimit()){
-            Log.e(TAG,"TestFail reason:With long click for a long time,patharry.size should be " +
-                    "getLongshotShotLimit ="+PersistUtil.getLongshotShotLimit()+
-                    ",but patharry.size() is )"+patharry.size());
-            testResult = false;
-            return;
-        }*/
         if(mLongShotNum == patharry.size()){
             testFail = getFailStr("imag_num shoule different","mLongShotNum == patharry.size()","different");
             return;
@@ -822,10 +836,26 @@ public class TestBase{
                 longshotInZslResult = false;
                 break;
             }
-            testFlash(cameraId,mode,false);
-            flashInZslResult &= testResult;
-            testLongShot(cameraId,mode);
-            longshotInZslResult &= testResult;
+            if(!flashInZslResult && !longshotInZslResult){
+                break;
+            }
+            if(flashInZslResult) {
+                testFlash(cameraId, mode, false);
+                flashInZslResult &= testResult;
+                if (!flashInZslResult) {
+                    flashvalue = testFail;
+                    updateAndSavejson(OUTPUT_JSON, "testFlashInZSL", parentNm, flashvalue);
+                }
+                testResult = true;
+            }
+            if(longshotInZslResult) {
+                testLongShot(cameraId, mode);
+                longshotInZslResult &= testResult;
+                if (!longshotInZslResult) {
+                    longshotvalue = testFail;
+                    updateAndSavejson(OUTPUT_JSON, "testLongShotInZSL", parentNm, longshotvalue);
+                }
+            }
         }
         mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_ZSL,defvalue);
         snapByLocation();
@@ -881,8 +911,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             mSupported = false;
             View mZoomBar = mActivity.findViewById(R.id.zoom_seekbar);
             if (mZoomBar.getVisibility() == View.VISIBLE) {
-/*                testResult = false;
-                Log.e(TAG, "TestFail reason:Don't show zoom bar in proMode");*/
                 testFail = getFailStr("mZoomBar.getVisibility()",mZoomBar.getVisibility(),"INVISIBLE");
             } else {
                 testResult = true;
@@ -1005,6 +1033,9 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         }
         mProMode.setIndex(defidx,true);
         if(testResult)updateJson(5,testPass);
+        else{
+            updateJson(5,testFail);
+        }
     }
     public void testWB() throws Exception {
         updateJson(5,null);
@@ -1024,6 +1055,9 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         }
         mProMode.setIndex(defidx,true);
         if(testResult)updateJson(5,testPass);
+        else {
+            updateJson(5,testFail);
+        }
     }
 
     public void testISO() throws Exception {
@@ -1064,6 +1098,9 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             if(!testResult) break;
         }
         if(testResult)updateJson(5,testPass);
+        else {
+            updateJson(5,testFail);
+        }
     }
     public void testShutterSpeed()throws Exception {
         updateJson(5,null);
@@ -1098,15 +1135,20 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
 
         assertEquals(setvalue, valueInSet);
         assertEquals(valueInResult, longexif);
-        if (!setvalue.equals(valueInSet) || valueInResult != longexif ||
-                diffvalue > mProMode.mLongExpTm || diffvalue < -mProMode.mLongExpTm) {
-            testResult = false;
-            Log.e(TAG, "TestFail reason:checkShutterSpeed setvalue =" + setvalue + ",valueInSet=" + valueInSet
-                    + ",valueInExif=" + valueInExif + ",valueinresult=" + valueInResult + ",doubleexif=" + doubleexif +
-                    ",longexif=" + longexif + ",diff=" + diffvalue + ",longvalue=" + longvalue);
+        if(!setvalue.equals(valueInSet)){
+            testFail = getFailStr("ExposuretimeVaule",valueInSet,setvalue);
             return;
         }
+        if(valueInResult != longexif){
+            testFail = getFailStr("Exposuretime in exif",longexif,valueInResult);
+            return;
 
+        }
+        if(diffvalue > mProMode.mLongExpTm || diffvalue < -mProMode.mLongExpTm){
+            testFail = getFailStr("Exposuretime value diff between value in setting and value in exif"
+            ,diffvalue,"less than "+mProMode.mLongExpTm);
+            return;
+        }
 
       /*  if(diffvalue > mProMode.mLongExpTm || (diffvalue < 0 && diffvalue > -mProMode.mLongExpTm)){
             throw new AssertionError("set shutterspeed value is " +
@@ -1130,17 +1172,18 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         String valueInExif = mCurrentexif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH);
             //assertEquals(setvalue,valueInSet);
         //assertEquals(mControlAFMode,CaptureResult.CONTROL_AF_MODE_OFF);
-        if (setvalue != valueInSet || CaptureResult.CONTROL_AF_MODE_OFF != mControlAFMode ||
-                valuediff > 0.2 || valuediff < -0.2) {
-            testResult = false;
-            Log.e(TAG, "TestFail reason:valueSet =" + valueSet + ",valueInResult=" + valueInResult
-                    + ",mControlAFMode=" + mControlAFMode + ",setvalue=" + setvalue + ",valueInSet" + ",valueInExif=" + valueInExif + ",valuediff=" + valuediff);
+        if (setvalue != valueInSet){
+            testFail = getFailStr("KEY_FOCUS_DISTANCE",valueInSet,setvalue);
             return;
         }
-/*    if(valuediff > 0.2 ||( valuediff < -0.2)){
-        throw new AssertionError("set focsdistance value is " +
-                valueSet+",but value in result is "+ valueInResult);
-    }*/
+        if(CaptureResult.CONTROL_AF_MODE_OFF != mControlAFMode){
+            testFail = getFailStr("CONTROL_AF_MODE_OFF",mControlAFMode,CaptureResult.CONTROL_AF_MODE_OFF);
+            return;
+        }
+        if(valuediff > 0.2 || valuediff < -0.2){
+            testFail = getFailStr("KEY_FOCUS_DISTANCE diff with LENS_FOCUS_DISTANCE",valuediff,"less than 0.2");
+            return;
+        }
     }
     public void testAllInPro() throws Exception{
         updateJson(5,null);
@@ -1197,9 +1240,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             int isoset = Integer.parseInt(setvalue);
             int isodiff = isoset - isoInResult;
             if(isoInResult != Integer.parseInt(valueInExif)){
-      /*          testResult = false;
-                Log.e(TAG,"TestFail reason: isovalue="+isovalue+",valueInExif="+valueInExif+",isoInResult="+isoInResult
-                        +",isauto="+isauto+",isodiff="+isodiff);*/
                 testFail =getFailStr("ExifInterface.TAG_ISO",valueInExif,isoInResult);
                 return;
             }
@@ -1216,9 +1256,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         int wbInSet = Integer.parseInt(valueinset);
         int wbInResult =mCurrentCaptureResult.get(CaptureResult.CONTROL_AWB_MODE);
         if(!valueinset.equals(setvalue) ){
-/*            testResult = false;
-            Log.e(TAG,"TestFail reason: wbInSet="+wbInSet+",valueinset="+valueinset+",setvalue="+setvalue
-                    +",wbInResult="+wbInResult+",valueInExif="+valueInExif);*/
             testFail = getFailStr("KEY_WHITE_BALANCE",valueinset,setvalue);
             return;
         }
@@ -1231,8 +1268,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
        // assertEquals(wbInSet,wbInResult);
         if(isauto){
             if(!valueInExif.equals("0")){
-/*                testResult = false;
-                Log.e(TAG,"TestFail reason:exif value is "+valueInExif);*/
                 testFail = getFailStr("ExifInterface.TAG_WHITE_BALANCE",valueInExif,"0");
                 return;
             }
@@ -1240,8 +1275,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         }else{
             //assertEquals("1",valueInExif);
             if(!valueInExif.equals("1")){
-/*                testResult = false;
-                Log.e(TAG,"TestFail reason:exif value is "+valueInExif);*/
                 testFail = getFailStr("ExifInterface.TAG_WHITE_BALANCE",valueInExif,"1");
                 return;
             }
@@ -1252,8 +1285,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         if(!testResult) return;
         String value = mActivity.mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
         if(value == null){
-/*            testResult = false;
-            Log.e(TAG,"TestFail reason:KEY_EXPOSURE is null");*/
             testFail = getFailStr("KEY_EXPOSURE",value,"NotNull");
             return;
         }
@@ -1261,9 +1292,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         int aeInSet = Integer.parseInt(value);
         int aeInResult = mActivity.getCaptureModule().getCaptureResult().get(CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION);
         if(!indexvalue.equals(value)){
-/*            testResult = false;
-            Log.e(TAG,"TestFail reason:value in set is "+aeInSet+",aeInResult is "+aeInResult
-            +",indexvalue="+indexvalue+",value="+value);*/
             testFail = getFailStr("KEY_EXPOSURE",value,indexvalue);
             return;
         }
@@ -1439,15 +1467,11 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         //assertEquals(Activity.RESULT_OK, activity.getResultCode());
         // Verify the video file
         if(!mActivity.isFinishing()){
-/*            testResult = false;
-            Log.e(TAG,"TestFail reason:activity.isFinishing()=" +mActivity.isFinishing());*/
             testFail = getFailStr("mActivity.isFinishing()",mActivity.isFinishing(),true);
             return false;
         }
         Intent resultData = mActivity.getResultData();
         if(resultData == null){
-/*            testResult = false;
-            Log.e(TAG,"TestFail reason:resultData=" +resultData);*/
             testFail = getFailStr("getResultData",resultData,"NotNull");
             return false;
         }
@@ -1456,7 +1480,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             mUri = resultData.getData();
             if(mUri == null){
                 testResult = false;
-                Log.e(TAG,"TestFail reason:mUri=" +mUri);
                 testFail = getFailStr("mUri",mUri,"NotNull");
                 return false;
             }
@@ -1465,34 +1488,27 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             String duration = retriever.extractMetadata(
                     MediaMetadataRetriever.METADATA_KEY_DURATION);
             if (duration == null) {
-/*                testResult = false;
-                Log.e(TAG, "TestFail reason:duration=" + duration);*/
                 testFail = getFailStr("METADATA_KEY_DURATION",duration,"NotNull");
                 return false;
             }
             //assertNotNull(duration);
             int durationValue = Integer.parseInt(duration);
             if (durationValue <= 0) {
-               // Log.e(TAG, "TestFail reason:durationValue=" + durationValue);
                 testFail = getFailStr("METADATA_KEY_DURATION",durationValue,"above 0");
                 return false;
             }
         }else{
             Bundle bundle = resultData.getExtras();
             if (bundle == null) {
-                //Log.e(TAG, "TestFail reason: bundle=" + bundle.toString());
                 testFail = getFailStr("resultData.getExtras()",bundle,"NotNull");
                 return  false;
             }
             Bitmap bitmap = (Bitmap) bundle.getParcelable("data");
             if(bitmap == null ){
-                //Log.e(TAG, "TestFail reason:bitmap=" + bitmap);
                 testFail = getFailStr("bitmap",bitmap,"NotNull");
                 return false;
             }
             if(bitmap.getWidth() <=0 ){
-                /*Log.e(TAG, "TestFail reason:bitmap.getWidth()=" + bitmap.getWidth()
-                +",bitmap.getHeight()="+bitmap.getHeight());*/
                 testFail = getFailStr("bitmap.getWidth()",bitmap.getWidth(),"above 0");
                 return false;
             }
@@ -1536,6 +1552,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         mActivity = mActivityRule.getActivity();
         mCaptureModule = mActivity.getCaptureModule();
         mCaptureUI = mCaptureModule.getCaptureUI();
+        mSettingsManager = mActivity.mSettingsManager;
         initsetting();
     }
     public void initsetting(){
@@ -1562,8 +1579,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         mSwitch.getLocationInWindow(mSwitchLoc);
         mVideoShutter.getLocationInWindow(mVideoLoc);
         mSettingsButton.getLocationInWindow(mSettingLoc);
-
-
         mModeLayout.getLocationInWindow(mModeLoc);
        // mModeItem.getLocationInWindow(mModeItemLoc);
 
@@ -1665,6 +1680,8 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         int stacklen = stack.length;
         if(stacklen > level) {
+            String oldChild = jsonChildNm;
+            String oldParent = jsonParentNm;
             jsonChildNm = stack[level - 2].getMethodName();
             jsonParentNm = stack[level].getMethodName();
             if(jsonParentNm.length() > 6 && jsonParentNm.substring(0,6).equals("testIn")) {
@@ -1678,6 +1695,9 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                     value = value+"(INVISIBLE)";
                 }
                 updateAndSavejson(OUTPUT_JSON, jsonChildNm, jsonParentNm,value);
+            }else{
+                jsonChildNm = oldChild;
+                jsonParentNm = oldParent;
             }
         }
     }
@@ -1770,52 +1790,28 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 ",mCurrentPreviewResult=" +mCurrentPreviewResult+"Current videosize is "
                 +mVideoWidInSet+"*"+mVideoHeiInSet+",frameRate in setting is "
                 +mFrameRate);
-/*        if(isRecording || mCurrentPreviewResult == null ||
-                videopath == null){
-            testResult = false;
-            Log.e(TAG,"TestFail reason:mIsRecordingVideo="+mCaptureModule.mIsRecordingVideo+
-                    ",mCurrentPreviewResult=" +mCurrentPreviewResult+ ",videopath="+videopath);
-            return;
-        }*/
         if(isRecording){
-            testResult = false;
-            //reportErrorInfo("IsRecordingVideo",isRecording,"false");
             testFail = getFailStr("IsRecordingVideo",isRecording,"false");
             return;
         }
         if(mCurrentPreviewResult == null){
-            testResult = false;
-            //reportErrorInfo("CurrentPreviewResult",mCurrentPreviewResult,"NotNull");
             testFail = getFailStr("CurrentPreviewResult",mCurrentPreviewResult,"NotNull");
             return;
         }
         if(videopath == null){
-            testResult = false;
-            //reportErrorInfo("VideoFilePath",videopath,"NotNull");
             testFail = getFailStr("VideoFilePath",videopath,"NotNull");
             return;
         }
         File f = new File(videopath);
         mFrameRate = mActivity.mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         if(!f.exists()){
-            testResult = false;
-            //reportErrorInfo("VideoFilePath.exit",f.exists(),"True");
             testFail = getFailStr("VideoFilePath.exit",f.exists(),"True");
             return;
         }
         if(f.length() < VIDEO_LENGTH){
-            testResult = false;
-            //reportErrorInfo("VideoFilePath.length",f.length(),"above "+ VIDEO_LENGTH);
             testFail = getFailStr("VideoFilePath.length",f.length(),"above "+ VIDEO_LENGTH);
             return;
         }
-
-/*        if(!f.exists() || f.length() < VIDEO_LENGTH){
-            testResult = false;
-            Log.e(TAG,"TestFail reason:videopath is  f.exists()="+f.exists()+
-                    ",f.length()="+f.length()+",mFrameRate="+mFrameRate);
-            return;
-        }*/
         /*assertTrue(f.exists());
 
         assertTrue(f.length() > VIDEO_LENGTH);
@@ -1856,28 +1852,12 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             testFail = getFailStr("video FrameRate",fpsInVideo,fps);
             return;
         }
-/*        if(timediff >2000 || timediff <-2000){
-            testResult = false;
-            reportErrorInfo("timeInMillisec(diff(time in video compare with recording time) " +
-                    "should < 2000)",CameraUtil.timeInMillisec,time);
-            return;
-        }*/
-/*        if(!mVideoWidInSet.equals(CameraUtil.mWidth) || !mVideoHeiInSet.equals(CameraUtil.mHeight) ||
-                fpsdiff >5 || fpsdiff <-5 || timediff >2000 || timediff <-2000 ){
-            testResult = false;
-            Log.e(TAG,"TestFail reason:time="+time+",mVideoWidInSet="+mVideoWidInSet+",mVideoHeiInSet="+mVideoHeiInSet
-                    +",timediff shoud <2s,timediff="+timediff+",fpsdiff shoud <5, fpsdiff="+fpsdiff+",mFrameRate="+mFrameRate);
-            return;
-        }*/
-       /* if(fpsdiff >5 || fpsdiff <-5){
-            throw new AssertionError("video fps should be  " + fps +
-                    ",but  mFrameRate is  "+CameraUtil.mFrameRate+",mfps is "+ CameraUtil.mFps);
-        }
+        /*
         if(timediff >1000 || timediff <-1000){
             throw new AssertionError("duration should be  " + time +
                     ",but  duration in the file is  "+CameraUtil.timeInMillisec);
-        }*/
-/*        if(showdiff >3000 || showdiff <-3000){
+        }
+       if(showdiff >3000 || showdiff <-3000){
             throw new AssertionError("show time is  " + timeshow +
                     ",but  duration in the file is  "+TestUtil.mDuration);
         }*/
@@ -1886,8 +1866,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
     public void checkSnapShot(String path) throws Exception {
         if(!testResult) return;
         if(!mCaptureModule.getCaptureUI().isShutterEnabled()){
-            testResult = false;
-            //Log.e(TAG,"TestFail reason:Shutter button is not enable");
             testFail = getFailStr("isShutterEnabled",mCaptureModule.getCaptureUI().isShutterEnabled(),true);
             return;
         }
@@ -1900,9 +1878,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         //assertTrue(f.length() > 1024);
         if(isOpenFromIntent){
             if(f.exists()){
-                testResult = false;
-                //Log.e(TAG,"TestFail reason:isOpenFromIntent,snapshot f.exists()="+f.exists() +
-                //        " f.length()="+f.length());
                 testFail = getFailStr("imagepath.exit()",f.exists(),false);
             }
             return;
@@ -1919,8 +1894,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         }
     mCurrentexif = new ExifInterface(path);
         if(mCurrentexif == null ){
-            testResult = false;
-            //Log.e(TAG,"TestFail reason:mCurrentexif="+mCurrentexif);
             testFail = getFailStr("imagepath.exif",mCurrentexif,"NotNull");
             return;
         }
@@ -1928,9 +1901,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         String wInExif= mCurrentexif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH);
         String hInExif= mCurrentexif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
         if(!mPicWidInSet.equals(wInExif) || !mPicHeiInSet.equals(hInExif)){
-            testResult = false;
-/*            Log.e(TAG,"TestFail reason:picture size is wrong with exif info ,picturesize in set ="+mPicWidInSet
-                    +"*"+mPicHeiInSet+",but size in exif is "+wInExif+"*"+hInExif);*/
+            Log.i(TAG,"imagepath="+path);
             testFail = getFailStr("ImageSize in exif",wInExif+"*"+hInExif,
                     mPicWidInSet+"*"+mPicHeiInSet);
             return;
@@ -1963,8 +1934,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
         if (isSupportSnapShot(mode)) {
             if (mCurrentexif == null && !isOpenFromIntent) {
-                testResult = false;
-                //Log.e(TAG,"TestFail reason:mCurrentexif= "+mCurrentexif);
                 testFail = getFailStr("Currentexif", mCurrentexif, "NotNull");
                 return;
             }
@@ -1981,8 +1950,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 + ",aeInPreview=" + aeInPreview + ",flashInPreview=" + flashInPreview + ",flashInExif=" + flashInExif);
         //assertEquals(setvalue,flashinset);
         if (!setvalue.equals(flashinset)) {
-            testResult = false;
-            //Log.e(TAG,"TestFail reason:setflash is "+setvalue+",but flash is setting is "+flashinset);
             testFail = getFailStr("flashinset", flashinset, setvalue);
             return;
         }
@@ -1993,8 +1960,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                     //assertEquals( CaptureResult.CONTROL_AE_MODE_ON_ALWAYS_FLASH,aeInResult);
                     // assertTrue((flashInExif & FLASH_ON) > 0);
                     if (CaptureResult.FLASH_MODE_SINGLE != flashInResult) {
-                        //testResult = false;
-                        //Log.e(TAG, "TestFail reason:flashInResult is "+flashInResult+",aeInResult is "+aeInResult);
                         testFail = getFailStr("FLASH_MODE in reslut", flashInResult, CaptureResult.FLASH_MODE_SINGLE);
                         return;
                     }
@@ -2002,15 +1967,11 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                         testFail = getFailStr("CONTROL_AE_MODE in reslut", aeInResult, CaptureResult.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
                     }
                     if (!isOpenFromIntent && flashInExif != FLASH_ON) {
-/*                        testResult = false;
-                        Log.e(TAG, "TestFail reason: flashInExif is "+flashInExif);*/
                         testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_ON);
                         return;
                     }
                 } else {
                     if (CaptureResult.FLASH_MODE_TORCH != flashInPreview) {
-/*                        testResult = false;
-                        Log.e(TAG, "TestFail reason:flashInPreview is "+flashInPreview+",aeInPreview is "+aeInPreview);*/
                         testFail = getFailStr("FLASH_MODE in preview", flashInPreview, CaptureResult.FLASH_MODE_TORCH);
                         return;
                     }
@@ -2024,8 +1985,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                         // assertEquals(CaptureResult.CONTROL_AE_MODE_ON, aeInResult);
                         //assertTrue((flashInExif & FLASH_ON) > 0);
                         if (CaptureResult.FLASH_MODE_TORCH != flashInResult) {
-/*                            testResult = false;
-                            Log.e(TAG, "TestFail reason:flashInResult is "+flashInResult+",aeInResult is "+aeInResult);*/
                             testFail = getFailStr("FLASH_MODE in reslut", flashInResult, CaptureResult.FLASH_MODE_TORCH);
                             return;
                         }
@@ -2034,8 +1993,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                         }
                         if (!isOpenFromIntent) {
                             if (flashInExif != FLASH_ON) {
-/*                                testResult = false;
-                                Log.e(TAG, "TestFail reason:flashInExif is "+flashInExif);*/
                                 testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_ON);
                                 return;
                             }
@@ -2047,8 +2004,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 //assertEquals(CaptureResult.FLASH_MODE_SINGLE,flashInResult);
                 //assertEquals(CaptureResult.CONTROL_AE_MODE_ON_AUTO_FLASH,aeInResult);
                 if (CaptureResult.FLASH_MODE_SINGLE != flashInResult) {
-/*                    testResult = false;
-                    Log.e(TAG,"TestFail reason:flashInResult is"+flashInResult+",aeInResult is"+aeInResult);*/
                     testFail = getFailStr("FLASH_MODE in reslut", flashInResult, CaptureResult.FLASH_MODE_SINGLE);
                     return;
                 }
@@ -2059,18 +2014,12 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 if (isTriggered) {
                     // assertTrue((flashInExif & FLASH_ON) > 0);
                     if (flashInExif != FLASH_AUTO_ON && !isOpenFromIntent) {
-/*                        testResult = false;
-                        Log.e(TAG,"TestFail reason:flashInResult is"+flashInResult+",aeInResult is"+aeInResult+
-                                ",flashInExif is "+flashInExif);*/
                         testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_AUTO_ON);
                         return;
                     }
                 } else {
                     // assertTrue((flashInExif & FLASH_OFF) > 0);
                     if (flashInExif != FLASH_AUTO_OFF && !isOpenFromIntent) {
-/*                        testResult = false;
-                        Log.e(TAG,"TestFail reason:flashInResult is"+flashInResult+",aeInResult is"+aeInResult+
-                                ",flashInExif is "+flashInExif);*/
                         testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_AUTO_OFF);
                         return;
                     }
@@ -2082,8 +2031,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                     //assertEquals(CaptureResult.CONTROL_AE_MODE_ON, aeInResult);
                     //assertTrue((flashInExif & FLASH_OFF) > 0);
                     if (CaptureResult.FLASH_MODE_OFF != flashInResult) {
-/*                        testResult = false;
-                        Log.e(TAG,"TestFail reason:flashInResult is"+flashInResult+",aeInResult is"+aeInResult);*/
                         testFail = getFailStr("FLASH_MODE in reslut", flashInResult, CaptureResult.FLASH_MODE_OFF);
                         return;
                     }
@@ -2092,8 +2039,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                         return;
                     }
                     if (!isOpenFromIntent && flashInExif != FLASH_OFF) {
-                        testResult = false;
-                        //Log.e(TAG, "TestFail reason: flashInExif is "+flashInExif);
                         testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_OFF);
                         return;
                     }
@@ -2101,8 +2046,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 //assertEquals(CaptureResult.FLASH_MODE_OFF,flashInPreview);
                 //assertEquals(CaptureResult.CONTROL_AE_MODE_ON,aeInPreview);
                 if (CaptureResult.FLASH_MODE_OFF != flashInPreview) {
-                       /* testResult = false;
-                        Log.e(TAG, "TestFail reason:flashInPreview is "+flashInPreview+",aeInPreview is "+aeInPreview);*/
                     testFail = getFailStr("FLASH_MODE in preview", flashInPreview, CaptureResult.FLASH_MODE_OFF);
                     return;
                 }
@@ -2121,9 +2064,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         int setValue = Integer.parseInt(sceneValue);
         //assertEquals(value,setValue);
         if(value != setValue){
-/*            Log.e(TAG,"TestFail reason:value is not equals with the value in setting," +
-                    "value is "+value+",value in setting is "+setValue);*/
-            testResult = false;
             testFail = getFailStr("KEY_SCENE_MODE",setValue,value);
             return;
         }
@@ -2132,9 +2072,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         }
         int sceneMode = mCurrentCaptureResult.get(CaptureResult.CONTROL_SCENE_MODE);
         if(value != sceneMode){
-            testResult =false;
-/*            Log.e(TAG,"TestFail reason:value is not equals with the value in result," +
-                    "value is "+value+",value in result is "+sceneMode);*/
             testFail = getFailStr("CONTROL_SCENE_MODE",sceneMode,value);
             return;
         }
@@ -2158,9 +2095,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         float zoomInPre = mCurrentPreviewResult.get(CaptureResult.CONTROL_ZOOM_RATIO );
         float zoomStr = mActivity.getCaptureModule().getZoomValue();
         if(zoomStr == mOldZoomstr){
-            testResult = false;
-          /*  Log.e(TAG,"TestFail reason:zoom is not changed,current zoom is "
-                    +zoomStr+",the before zoom is "+mOldZoomstr);*/
             testFail = getFailStr("zoom should be changed","currentzoom == beforezoom","different");
             return;
         }
@@ -2169,14 +2103,10 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         if(mode != CaptureModule.CameraMode.HFR && !isOpenFromIntent){
             float zoomInCap = mCurrentCaptureResult.get(CaptureResult.CONTROL_ZOOM_RATIO);
             if(zoomStr != zoomInCap ){
-                testResult = false;
-               /* Log.e(TAG,"TestFail reason:zoom value is wrong,zoomstr is "+zoomStr+
-                        ",zoom in preview is"+zoomInPre+",zoom in capture is "+zoomInCap);*/
                 testFail = getFailStr("zoomInCapture:CONTROL_ZOOM_RATIO",zoomInCap,zoomStr);
                 return;
             }
             if(zoomStr != zoomInPre){
-                testResult = false;
                 testFail = getFailStr("zoomInPreview:CONTROL_ZOOM_RATIO",zoomInPre,zoomStr);
                 return;
             }
@@ -2186,8 +2116,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             Rect mCropRegion = mCurrentPreviewResult.get(CaptureResult.SCALER_CROP_REGION);
             if(mOldZoomRegion == mCropRegion){
                 testResult = false;
-                Log.e(TAG,"TestFail reason:zoom value is not changed ,oldregion  is "+mOldZoomRegion+
-                        ",new region is"+mCropRegion);
                 testFail = getFailStr("SCALER_CROP_REGION should change","mCropRegion==mOldZoomRegion","different");
                 return;
             }
@@ -2201,7 +2129,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
        boolean zslresult =  mCurrentCaptureResult.get(CaptureResult.CONTROL_ENABLE_ZSL);
        if(zslset != zslresult){
            testResult = false;
-           //Log.e(TAG,"TestFail reason:zsl in setting is "+zslset+",but zsl in capturereslut is "+zslresult);
            testFail = getFailStr("CONTROL_ENABLE_ZSL",zslresult,zslset);
            return;
        }
