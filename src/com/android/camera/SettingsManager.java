@@ -4642,17 +4642,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return fpsRate;
     }
 
-    public boolean isVideoPreviewStabilizationSupported() {
-        boolean supported = false;
-        Size videoSize = getVideoSize();
-        int longEdge = Math.max(videoSize.getWidth(), videoSize.getHeight());
-        int shortEdge = Math.min(videoSize.getWidth(), videoSize.getHeight());
-        if (getVideoFPS() <= 30 && longEdge <= 1920 && shortEdge <= 1080) {
-            supported = true;
-        }
-        return supported;
-    }
-
     public String getVideoHdrMode(){
         String value = getValue(SettingsManager.KEY_MANUAL_HDR);
         Log.v(TAG, "getVideoHdrMode value :" + value);

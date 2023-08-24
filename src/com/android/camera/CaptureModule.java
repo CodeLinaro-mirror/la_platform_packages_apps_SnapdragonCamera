@@ -13555,9 +13555,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (value.equals("V2") || value.equals("dynamic")) {
                 previewStabilizationOn = "enable".equals(mSettingsManager.
                         getValue(SettingsManager.KEY_PREVIEW_STABILIZATION));
-                if (mCurrentSceneMode.mode == CameraMode.VIDEO) {
-                    previewStabilizationOn &= mSettingsManager.isVideoPreviewStabilizationSupported();
-                }
             }
             if (!previewStabilizationOn) {
                 try {
