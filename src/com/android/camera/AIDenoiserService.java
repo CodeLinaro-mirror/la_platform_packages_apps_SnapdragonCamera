@@ -377,6 +377,23 @@ public class AIDenoiserService extends Service {
         }
     }
 
+    public Rect getCropRegion(int width, int height, int jpegWidth, int jpegHeight){
+        int xCenter = width / 2;
+        int yCenter = height / 2;
+        float aideRatio = (float) width / height;
+        float pictureRatio = (float) jpegWidth / jpegHeight;
+        if(aideRatio > pictureRatio){
+            width = jpegWidth/jpegHeight*height;
+        } else if (aideRatio < pictureRatio){
+            height = width * jpegHeight /jpegWidth;
+        }
+        int xDelta = (int) (width / 2);
+        int yDelta = (int) (height / 2);
+        Rect rect = new Rect(xCenter - xDelta, yCenter - yDelta, xCenter + xDelta, yCenter + yDelta);
+        Log.i(TAG,"rect:" + rect);
+        return rect;
+    }
+
     public byte[] cropYuvImage(byte[] srcImage,int stride, int width, int height, Rect cropRect) {
         if (cropRect.left > width ||
                 cropRect.top > height ||

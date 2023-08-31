@@ -3095,13 +3095,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                             Log.i(TAG, "capturesession - onConfigured "+ id);
                             mCurrentSessionClosed = false;
                             if(mPreviewOutputConfiguration != null) {
-                                mPreviewOutputConfiguration.addSurface(getPreviewSurfaceForSession(id));
-                                try {
-                                    List<OutputConfiguration> finalizeOutputConfigs = new ArrayList<>();
-                                    finalizeOutputConfigs.add(mPreviewOutputConfiguration);
-                                    cameraCaptureSession.finalizeOutputConfigurations(finalizeOutputConfigs);
-                                } catch (Exception e) {
-                                    Log.e(TAG, "finalizeOutputConfigurations with exception:" + e.toString());
+                                Surface previewSur = getPreviewSurfaceForSession(id);
+                                if (mSurfaceReady && previewSur.isValid()) {
+                                    mPreviewOutputConfiguration.addSurface(previewSur);
+                                    try {
+                                        List<OutputConfiguration> finalizeOutputConfigs = new ArrayList<>();
+                                        finalizeOutputConfigs.add(mPreviewOutputConfiguration);
+                                        cameraCaptureSession.finalizeOutputConfigurations(finalizeOutputConfigs);
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "finalizeOutputConfigurations with exception:" + e.toString());
+                                    }
                                 }
                             }
                             setCameraModeSwitcherAllowed(true);
@@ -4822,7 +4825,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                 mAideActiveCameraIds.put(activeId, true);
                                                 captureBuilder.addTarget(mAideFullImageReader[getIndexByPhysicalId(Integer.toString(activeId))].getSurface());
                                                 mCaptureRequestNum++;
-                                                if (mAideAECLuxIndex >= lux_index_threadhold) {//for low light, only HWMFNR, will not add ds image
+                                                if (mAideAECLuxIndex >= lux_index_threadhold) {//for high light, only HWMFNR, will not add ds image
                                                     Log.d(TAG, "add master ds yuv for dual zone " + activeId);
                                                     captureBuilder.addTarget(mAideDs4ImageReader[getIndexByPhysicalId(Integer.toString(activeId))].getSurface());
                                                     mCaptureRequestNum++;
@@ -4834,7 +4837,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         Log.d(TAG, "add active full yuv for single zone " + mActiveCameraIds.get(0));
                                         captureBuilder.addTarget(mAideFullImageReader[getIndexByPhysicalId(Integer.toString(mActiveCameraIds.get(0)))].getSurface());
                                         mCaptureRequestNum++;
-                                        if (mAideAECLuxIndex >= lux_index_threadhold) {//for low light, only HWMFNR, will not add ds image
+                                        if (mAideAECLuxIndex >= lux_index_threadhold) {//for high light, only HWMFNR, will not add ds image
                                             Log.d(TAG, "add active ds yuv for single zone " + mActiveCameraIds.get(0));
                                             captureBuilder.addTarget(mAideDs4ImageReader[getIndexByPhysicalId(Integer.toString(mActiveCameraIds.get(0)))].getSurface());
                                             mCaptureRequestNum++;
@@ -4844,7 +4847,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             } else {
                                 captureBuilder.addTarget(mAideFullImageReader[getMainCameraId()].getSurface());
                                 mCaptureRequestNum++;
-                                if (mAideAECLuxIndex >= lux_index_threadhold) {//for low light, only HWMFNR, will not add ds image
+                                if (mAideAECLuxIndex >= lux_index_threadhold) {//for high light, only HWMFNR, will not add ds image
                                     captureBuilder.addTarget(mAideDs4ImageReader[getMainCameraId()].getSurface());
                                     mCaptureRequestNum++;
                                 }
@@ -5164,14 +5167,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             enableShutterButtonOnMainThread(id);
             AIDenoiserService aiDenoiserService = mActivity.getAIDenoiserService();
             String format = mSettingsManager.getValue(SettingsManager.KEY_AI_DENOISER_FORMAT);
-            if(mAideAECLuxIndex < lux_index_threadhold){//low light only do HWMFNR and no need to crop
+            if(mAideAECLuxIndex < lux_index_threadhold){//high light only do HWMFNR and no need to crop
                 aiDenoiserService.wantImagesNum(mCaptureRequestNum);
                 Size yuvSize = new Size(mAideFullImage.getWidth(), mAideFullImage.getHeight());
                 Log.i(TAG,"save jpeg for mfnr aide start, yuv size:" + yuvSize.toString());
                 byte[] yuv = getYUVFromImage(mAideFullImage);
                 int stride = mAideFullImage.getPlanes()[0].getRowStride();
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
-                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,yuvSize.getWidth(), yuvSize.getHeight(), stride,
+                Rect rect = aiDenoiserService.getCropRegion(yuvSize.getWidth(), yuvSize.getHeight(),mPictureSize.getWidth(),mPictureSize.getHeight());
+                yuv = aiDenoiserService.cropYuvImage(yuv, stride, yuvSize.getWidth(), yuvSize.getHeight(), rect);
+                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,rect.width(), rect.height(), rect.width(),
                         mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
                 byte[] jpeg = aiDenoiserService.bitmapToJpeg(bitmap, orientation, mCaptureResult, quality);
                 mActivity.getMediaSaveService().addImage(
@@ -5181,6 +5186,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mActivity.getContentResolver(), "jpeg");
                 mActivity.updateThumbnail(jpeg);
                 if (TRACE_DEBUG) Trace.endSection();
+                mAideFullImage.close();
+                mAideFullImage = null;
                 return;
             }
             Log.d(TAG,"wait " + mCaptureRequestNum + " YUVs");
@@ -5217,12 +5224,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                     + ",mEnhancefactor:" + mEnhancefactor + ",mGainThresholdY:" + mGainThresholdY + ",mGainThresholdUV:" + mGainThresholdUV);
             AIDEV2ProcessFrameArgs aideV2Args = new AIDEV2ProcessFrameArgs(inputFrameDim, downFrameDim, srcInputY, srcInputUV, srcDsInputY, srcDsInputUV,
                     title, cropRegion, mCaptureResult, mPictureSize, denoiseStrengthParam, mAideAdrcGain, (int)(mRGain*1024), (int)(mBGain*1024), (int)(mGGain*1024), orientation, quality);
-
             mAideFullImage.close();
             mAideFullImage = null;
             mAideDownImage.close();
             mAideDownImage = null;
             namedEntity = null;
+
             //process aidev2
             Log.d(TAG, " mAideV2CaptureCallback, start to call aide lib");
             synchronized (mAideLock) {
@@ -6309,9 +6316,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             dataY.get(bytesY);
             byte[] bytesUV = new byte[dataUV.remaining()];
             dataUV.get(bytesUV);
-            byte[] data = new byte[bytesY.length+bytesUV.length];
+            byte[] data = new byte[stride*height*3/2];
             System.arraycopy(bytesY,0,data,0,bytesY.length);
-            System.arraycopy(bytesUV,0,data,bytesY.length,bytesUV.length);
+            System.arraycopy(bytesUV,0,data,stride*height,bytesUV.length);
             return data;
         }catch (IllegalStateException e) {
             return null;
@@ -9106,7 +9113,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else if(mSettingsManager.isLiveshotSizeSameAsVideoSize()){
                     mPhysicalVideoSnapshotSizes[i] = mPhysicalVideoSizes[i];
                 } else {
-                    if (mQuadBayerPhysicalIds.size() != 0 && mQuadBayerPhysicalIds.contains(id)) {
+                    if (mQuadBayerPhysicalIds.size() != 0 && mQuadBayerPhysicalIds.contains(id) && mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                         mPhysicalVideoSnapshotSizes[i] = mPhysicalVideoSizes[i];
                     } else {
                         mPhysicalVideoSnapshotSizes[i] = getMaxPictureSizeLiveshot(Integer.valueOf(id),
@@ -13215,12 +13222,27 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
                         }
                     }
+                    Integer aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
+                    if(aeState == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED ||
+                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE){
+                        captureRequest.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL);
+                        mSetAePrecaptureTriggerIdel ++;
+                    }
                     if (instant) {
                         session.capture(captureRequest
                                 .build(), mCaptureCallback, mCameraHandler);
                     } else {
                         session.setRepeatingRequest(captureRequest
                                 .build(), mCaptureCallback, mCameraHandler);
+                    }
+                    if(mSetAePrecaptureTriggerIdel >0) {
+                        captureRequest.set(
+                                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE);
+                        session.setRepeatingRequest(captureRequest
+                                .build(), mCaptureCallback, mCameraHandler);
+                        mSetAePrecaptureTriggerIdel = 0;
                     }
                 }
             }
@@ -13421,7 +13443,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(!mSettingsManager.isFlashSupported(getMainCameraId())) {
                 request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             }
-
         } catch (NumberFormatException e) {
             Log.w(TAG, " Input expTime " + exposuretime + " is invalid");
             return false;
@@ -13472,29 +13493,46 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (manualExposureMode == null) return result;
         if (manualExposureMode.equals(isoPriority)) {
             int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
-                    "100"));
-            long longValue = SettingsManager.KEY_ISO_INDEX.get(
-                    SettingsManager.MAUNAL_ABSOLUTE_ISO_VALUE);
-            setIsoValue(request, isoValue, longValue, true);
-            result = true;
+                    "-1"));
+            if(isoValue != -1) {
+                long longValue = SettingsManager.KEY_ISO_INDEX.get(
+                        SettingsManager.MAUNAL_ABSOLUTE_ISO_VALUE);
+                setIsoValue(request, isoValue, longValue, true);
+                result = true;
+            }
         } else if (manualExposureMode.equals(expTimePriority)) {
-            String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "0");
+            String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "auto");
             result = setExposureTime(request, expTime);
         } else if (manualExposureMode.equals(userSetting)) {
             int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
-                    "100"));
-            long newExpTime = 1;
-            String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "0");
+                    "-1"));
+            long newExpTime = 0l;
+            String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "auto");
             try {
                 newExpTime = Long.parseLong(expTime);
             } catch (NumberFormatException e) {
                 Log.w(TAG, "Input expTime " + expTime + " is invalid");
             }
             Log.v(TAG,  "manual ISO value : " + isoValue + ", Exposure value :" + newExpTime);
-            setIsoAndExposureTime(request, isoValue, newExpTime);
+            if(isoValue == -1 && newExpTime > 0){
+                setExposureTime(request,expTime);
+            }else if(newExpTime <=0 && isoValue >-1){
+                long longValue = SettingsManager.KEY_ISO_INDEX.get(
+                        SettingsManager.MAUNAL_ABSOLUTE_ISO_VALUE);
+                setIsoValue(request, isoValue, longValue, true);
+            }else if(newExpTime > 0 && isoValue >-1){
+                setIsoAndExposureTime(request, isoValue, newExpTime);
+            }else{
+                result = false;
+                return  result;
+            }
             result = true;
         } else if (manualExposureMode.equals(gainsPriority)) {
-            float gains = pref.getFloat(SettingsManager.KEY_MANUAL_GAINS_VALUE, 1.0f);
+            float gains = pref.getFloat(SettingsManager.KEY_MANUAL_GAINS_VALUE, 0f);
+            if(gains <= 0){
+                result = false;
+                return result;
+            }
             int[] isoRange = mSettingsManager.getIsoRangeValues(getMainCameraId());
             VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
             int isoValue = 100;
