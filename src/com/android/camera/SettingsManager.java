@@ -4105,7 +4105,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 boolean hdr10Plus = false;
                 if (hdrModes != null) {
                     for (int mode : hdrModes) {
-                        if (mode == 3) {
+                        if (mode == 3) { // If mode == 3 will show HDR10+
                             hdr10Plus = true;
                             break;
                         }
@@ -4113,7 +4113,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 } else {
                     hdr10Plus = true;
                 }
-                if (hdr10Plus) {
+                if (!hdr10Plus) {
                     profile.remove("HEVCProfileMain10HDR10Plus");
                 }
             }
