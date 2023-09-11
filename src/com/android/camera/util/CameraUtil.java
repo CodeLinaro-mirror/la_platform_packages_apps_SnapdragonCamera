@@ -45,6 +45,7 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.MultiResolutionImageReader;
 import android.hardware.camera2.params.MultiResolutionStreamInfo;
 import android.location.Location;
+import android.media.ExifInterface;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaMetadataRetriever;
@@ -1115,6 +1116,19 @@ public class CameraUtil {
             rotation = (info.get(CameraCharacteristics.SENSOR_ORIENTATION) + orientation) % 360;
         }
         return rotation;
+    }
+
+    public static int getOrientation(ExifInterface exif) {
+        switch (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, 0)) {
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                return 90;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                return 270;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                return 180;
+            default:
+                return 0;
+        }
     }
 
     /**
