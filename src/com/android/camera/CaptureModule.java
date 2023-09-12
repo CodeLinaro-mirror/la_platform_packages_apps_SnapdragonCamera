@@ -4903,8 +4903,18 @@ public class CaptureModule implements CameraModule, PhotoController,
             if ((mCurrentSceneMode.mode == CameraMode.VIDEO ||
                     mCurrentSceneMode.mode == CameraMode.HFR ||
                     mCurrentSceneMode.mode == CameraMode.CINEMATIC) && !mIsRecordingVideo) {
-                Surface surface = getPreviewSurfaceForSession(id);
-                builder.addTarget(surface);
+                if (mSettingsManager.getPhysicalCameraId() != null) {
+                    List<Surface> previews = mUI.getPhysicalSurfaces();
+                    if (mSettingsManager.isLogicalEnable()) {
+                        builder.addTarget(previews.get(0));
+                    }
+                    for (int i = 1; i <= mSettingsManager.getPhysicalCameraId().size(); i++) {
+                        builder.addTarget(previews.get(i));
+                    }
+                }else {
+                    Surface surface = getPreviewSurfaceForSession(id);
+                    builder.addTarget(surface);
+                }
             } else {
                 addPreviewSurface(builder, null, id);
             }
@@ -8904,8 +8914,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onSingleTapUp(View view, int x, int y) {
         if (mPaused || !mCamerasOpened || !mFirstTimeInitialized || !mAutoFocusRegionSupported
                 || !mAutoExposureRegionSupported || !isTouchToFocusAllowed()
-                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed
-                || mSettingsManager.getPhysicalCameraId() != null) {
+                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed) {
             return;
         }
         mUI.hideFocusAssistText();
@@ -15174,8 +15183,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         } else {
             List<Surface> surfaces = mFrameProcessor.getInputSurfaces();
-            for(Surface surface : surfaces) {
-                if(surfaceList != null) {
+            for (Surface surface : surfaces) {
+                if (surfaceList != null) {
                     surfaceList.add(surface);
                 }
                 builder.addTarget(surface);
