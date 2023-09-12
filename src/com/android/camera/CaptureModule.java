@@ -4574,8 +4574,21 @@ public class CaptureModule implements CameraModule, PhotoController,
             setTag(builder, "" + id + "-" + getCurrenCameraMode().name());
             if((mCurrentSceneMode.mode == CameraMode.VIDEO ||
                     mCurrentSceneMode.mode == CameraMode.HFR) && !mIsRecordingVideo){
-                Surface surface = getPreviewSurfaceForSession(id);
-                builder.addTarget(surface);
+                if (mSettingsManager.getPhysicalCameraId() != null) {
+                    List<Surface> previews = mUI.getPhysicalSurfaces();
+                    if(mSettingsManager.isLogicalEnable()){
+                        builder.addTarget(previews.get(0));
+                        if(isRecordingVideo()) {
+                            builder.addTarget(mVideoRecordingSurface);
+                        }
+                    }
+                    for (int i =1;i <=mSettingsManager.getPhysicalCameraId().size();i++){
+                        builder.addTarget(previews.get(i));
+                    }
+                }else {
+                    Surface surface = getPreviewSurfaceForSession(id);
+                    builder.addTarget(surface);
+                }
             } else {
                 addPreviewSurface(builder, null, id);
             }
@@ -8289,8 +8302,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onSingleTapUp(View view, int x, int y) {
         if (mPaused || !mCamerasOpened || !mFirstTimeInitialized || !mAutoFocusRegionSupported
                 || !mAutoExposureRegionSupported || !isTouchToFocusAllowed()
-                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed
-                || mSettingsManager.getPhysicalCameraId() != null) {
+                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed) {
             return;
         }
         Log.d(TAG, "onSingleTapUp " + x + " " + y);
