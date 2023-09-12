@@ -12082,7 +12082,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mMediaRecorder.prepare();
             mMediaRecorder.setOnErrorListener(this);
             mMediaRecorder.setOnInfoListener(this);
-        } catch (IOException e) {
+        } catch (IOException | SecurityException e) {
             Log.e(TAG, " prepare failed for " + mVideoFilename + e);
             if (mCurrentVideoUri != null) {
                 mContentResolver.delete(mCurrentVideoUri, null);
