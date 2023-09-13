@@ -4361,9 +4361,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (takeZSLPicture(cameraId)) {
                 return;
             }
-            if (mUI.getCurrentProMode() == ProMode.MANUAL_MODE ) {
-                captureStillPicture(cameraId);
-            } else {
+
                 if (mLongshotActive) {
                     parallelLockFocusExposure(cameraId);
                 } else{
@@ -4375,7 +4373,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     lockFocus(cameraId);
                 }
             }
-        }
     }
 
     private boolean isActionImageCapture() {
@@ -12373,7 +12370,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean isFlashOn(int id) {
         if (!mSettingsManager.isFlashSupported(id)) return false;
-        return mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE).equals("on");
+        return mSettingsManager.getValue(mCurrentSceneMode.mode == CameraMode.PRO_MODE ?
+                SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE).equals("on");
     }
 
     private void initializePreviewConfiguration(int id) {
