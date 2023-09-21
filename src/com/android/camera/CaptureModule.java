@@ -2403,7 +2403,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onError(CameraDevice cameraDevice, int error) {
             int id = Integer.parseInt(cameraDevice.getId());
-            Log.e(TAG, "onError " + id + " " + error);
+            Log.e(TAG, "CameraDevice onError " + id + " " + error);
             mCameraOpenCloseLock.release();
             mCamerasOpened = false;
             if((error == 1 || error == 2) && mOpenCameraTimes >0){
@@ -13555,9 +13555,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (value.equals("V2") || value.equals("dynamic")) {
                 previewStabilizationOn = "enable".equals(mSettingsManager.
                         getValue(SettingsManager.KEY_PREVIEW_STABILIZATION));
-                if (mCurrentSceneMode.mode == CameraMode.VIDEO) {
-                    previewStabilizationOn &= mSettingsManager.isVideoPreviewStabilizationSupported();
-                }
             }
             if (!previewStabilizationOn) {
                 try {
@@ -14442,10 +14439,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     }
-
+    public void changeExpoure(String value){
+        int cameraId = getMainCameraId();
+        int ev = CameraUtil.strToInt(value,0);
+        if(mPreviewRequestBuilder[cameraId] != null) {
+            mPreviewRequestBuilder[cameraId].set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, ev);
+            updatePreview();
+        }
+    }
     private void applyExposure(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
-
         if (value == null) return;
         int intValue = Integer.parseInt(value);
         Log.d(TAG,"applyev value="+value+",intvalue="+intValue);
@@ -15623,27 +15626,31 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         if (updatePreviewLogical) {
-            try {
-                int cameraId = getMainCameraId();
-                if (checkSessionAndBuilder(mCaptureSession[cameraId],
-                        mPreviewRequestBuilder[cameraId])) {
-                    if (mCaptureSession[cameraId] instanceof CameraConstrainedHighSpeedCaptureSession) {
-                        List<CaptureRequest> list = getHighSpeedList((CameraConstrainedHighSpeedCaptureSession)
-                                mCaptureSession[cameraId],
-                                        mPreviewRequestBuilder[cameraId]);
-                        mCaptureSession[cameraId].setRepeatingBurst(list, mCaptureCallback,
-                                mCameraHandler);
-                    } else if (isSSMEnabled()) {
-                        mCaptureSession[cameraId].setRepeatingBurst(createSSMBatchRequest(
-                                mPreviewRequestBuilder[cameraId]), mCaptureCallback, mCameraHandler);
-                    } else {
-                        mCaptureSession[cameraId].setRepeatingRequest(mPreviewRequestBuilder[cameraId]
-                                .build(), mCaptureCallback, mCameraHandler);
-                    }
+            updatePreview();
+        }
+    }
+
+    private void updatePreview(){
+        try {
+            int cameraId = getMainCameraId();
+            if (checkSessionAndBuilder(mCaptureSession[cameraId],
+                    mPreviewRequestBuilder[cameraId])) {
+                if (mCaptureSession[cameraId] instanceof CameraConstrainedHighSpeedCaptureSession) {
+                    List<CaptureRequest> list = getHighSpeedList((CameraConstrainedHighSpeedCaptureSession)
+                                    mCaptureSession[cameraId],
+                            mPreviewRequestBuilder[cameraId]);
+                    mCaptureSession[cameraId].setRepeatingBurst(list, mCaptureCallback,
+                            mCameraHandler);
+                } else if (isSSMEnabled()) {
+                    mCaptureSession[cameraId].setRepeatingBurst(createSSMBatchRequest(
+                            mPreviewRequestBuilder[cameraId]), mCaptureCallback, mCameraHandler);
+                } else {
+                    mCaptureSession[cameraId].setRepeatingRequest(mPreviewRequestBuilder[cameraId]
+                            .build(), mCaptureCallback, mCameraHandler);
                 }
-            } catch (CameraAccessException | IllegalStateException e) {
-                Log.e(TAG,e.toString());
             }
+        } catch (CameraAccessException | IllegalStateException e) {
+            Log.e(TAG,e.toString());
         }
     }
 

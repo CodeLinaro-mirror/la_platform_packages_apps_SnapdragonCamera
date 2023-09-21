@@ -4198,7 +4198,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 boolean hdr10Plus = false;
                 if (hdrModes != null) {
                     for (int mode : hdrModes) {
-                        if (mode == 3) {
+                        if (mode == 3) { // If mode == 3 will show HDR10+
                             hdr10Plus = true;
                             break;
                         }
@@ -4206,7 +4206,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 } else {
                     hdr10Plus = true;
                 }
-                if (hdr10Plus) {
+                if (!hdr10Plus) {
                     profile.remove("HEVCProfileMain10HDR10Plus");
                 }
             }
@@ -4260,7 +4260,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
         ArrayList<String> ret = new ArrayList<String>();
         ret.add(String.valueOf(SettingsManager.JPEG_FORMAT));
-        if (supportHeic == 1){
+        if (supportHeic == 1 && !getQuadBayerSensorPrefEnabled()){
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
         }
         if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB) {
@@ -4640,17 +4640,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
             fpsRate = Integer.parseInt(fpsStr.substring(3));
         }
         return fpsRate;
-    }
-
-    public boolean isVideoPreviewStabilizationSupported() {
-        boolean supported = false;
-        Size videoSize = getVideoSize();
-        int longEdge = Math.max(videoSize.getWidth(), videoSize.getHeight());
-        int shortEdge = Math.min(videoSize.getWidth(), videoSize.getHeight());
-        if (getVideoFPS() <= 30 && longEdge <= 1920 && shortEdge <= 1080) {
-            supported = true;
-        }
-        return supported;
     }
 
     public String getVideoHdrMode(){

@@ -68,6 +68,7 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.graphics.Point;
 
 
 
@@ -91,6 +92,7 @@ public class TestBase{
     public static final int VIDEO_DURATION = 6000;
     public static final int VIDEO_LENGTH = 10240;
     public static final int NORMAL_PIC_LENG_MIN = 10;
+    public static final int SWIPE_STEP = 200;
     public static final int FLASH_ON = 9;
     public static final int FLASH_OFF = 16;
     public static final int FLASH_AUTO_OFF = 24;
@@ -117,12 +119,14 @@ public class TestBase{
     public int[] mVideoLoc = new  int[2];
     public int[]mPauseLoc = new  int[2];
     public int[]mModeLoc = new  int[2];
+    public int[]mProLayoutLoc = new  int[2];
     public int[]mSettingLoc = new  int[2];
     public int[]mCancelLoc = new  int[2];
 
     public int[]mReviewCancelLoc = new  int[2];
     public int[]mDoneLoc = new  int[2];
     public int[]mRetakeLoc = new  int[2];
+    public int[]mThumbLoc = new  int[2];
 
     public int mCurrentImgNum;
     public int mZoomBarWidth;
@@ -139,7 +143,7 @@ public class TestBase{
     private ProMode mProMode;
     private SettingsManager mSettingsManager;
     private CharSequence[] isovalue,evvalue,wbvalue;
-    private int swipevalue;
+    public int swipevalue;
     private boolean updateJson = false;
     private String jsonChildNm = null;
     private String jsonParentNm = null;
@@ -155,6 +159,10 @@ public class TestBase{
     private Uri mUri;
     private int methodLevel = 5;
     private boolean checkfps = false;
+    public HashMap<String, int[]> mModeIconL = new HashMap<>();
+    public HashMap<String, int[]> mModeIconR = new HashMap<>();
+    public HashMap<String, int[]> mIconLoc = new HashMap<>();
+    public HashMap<String, int[]> mProLoc = new HashMap<>();
 
     public static void init(){
         uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
@@ -204,7 +212,6 @@ public class TestBase{
             Log.e("autotest_updateAndSavejson"," writejsonobj e= "+e);
         }
     }
-
     public  void updatePerformenceJson(String jsonFile,HashMap<String,HashMap<String,Long>> values,int times) {
         JSONObject mObj = CameraUtil.getJsonObj(jsonFile);
         if (mObj == null || values == null) {
@@ -236,7 +243,7 @@ public class TestBase{
         saveJson(jsonFile, mObj);
     }
 
-    private void saveJson(String jsonFile, JSONObject obj) {
+    public void saveJson(String jsonFile, JSONObject obj) {
         try {
             FileWriter fileWriter = new FileWriter(jsonFile);
             fileWriter.write(obj.toString());
@@ -745,7 +752,7 @@ public class TestBase{
         mLongShotNum = 0;
         if (mode != CaptureModule.CameraMode.PRO_MODE) {
             executeShellCommand("input swipe " + mShutterLoc[0] + " " + mShutterLoc[1] + " " + mShutterLoc[0] + " " + mShutterLoc[1] + " " + 1000);
-            Thread.sleep(SNAPSHOT_NORMAL_FLAH_OFF * 2);
+            Thread.sleep(SNAPSHOT_NORMAL_FLAH_OFF * 3);
             checkLongShot(false);
             resetCapture();
             if(!testResult){
@@ -1553,6 +1560,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         mCaptureModule = mActivity.getCaptureModule();
         mCaptureUI = mCaptureModule.getCaptureUI();
         mSettingsManager = mActivity.mSettingsManager;
+        mProMode = mCaptureModule.getmCameraControls().getmProMode();
         initsetting();
     }
     public void initsetting(){
@@ -1564,27 +1572,68 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         View mSwitch = mActivity.findViewById(R.id.front_back_switcher);
         View mVideoShutter = mActivity.findViewById(R.id.video_button);
 
-        View mModeLayout = mActivity.findViewById(R.id.mode_select_layout);
        // View mModeItem = mActivity.findViewById(R.id.camera2_mode_item);
         View mSettingsButton = mActivity.findViewById(R.id.settings);
-
-
+        View mThumbnail = mActivity.findViewById(R.id.preview_thumb);
         mZoomBarWidth = mZoomBar.getWidth();
         mZoomValueWidth = mZoomValue.getWidth();
         mShutter.getLocationInWindow(mShutterLoc);
+        mIconLoc.put("Shutter",mShutterLoc);
         mFlash.getLocationInWindow(mFlashLoc);
+        mIconLoc.put("Flash",mFlashLoc);
         mHdr.getLocationInWindow(mHdrLoc);
+        mIconLoc.put("Hdr",mHdrLoc);
         mZoomBar.getLocationInWindow(mZoomBarLoc);
+        mIconLoc.put("ZoomBarMin",mZoomBarLoc);
+        int[]maxzoom = {mZoomBarWidth,mZoomBarLoc[1]};
+        mIconLoc.put("ZoomBarMax", maxzoom);
         mZoomValue.getLocationInWindow(mZoomValueLoc);
+        mIconLoc.put("ZoomValue",mZoomValueLoc);
         mSwitch.getLocationInWindow(mSwitchLoc);
+        mIconLoc.put("SwitchCam",mSwitchLoc);
         mVideoShutter.getLocationInWindow(mVideoLoc);
         mSettingsButton.getLocationInWindow(mSettingLoc);
+        mIconLoc.put("Setting",mSettingLoc);
+        mThumbnail.getLocationInWindow(mThumbLoc);
+        mIconLoc.put("Thumb",mThumbLoc);
+        Log.i(TAG,"thumb="+mThumbLoc[0]*mThumbLoc[1]+",settingloc="+mSettingLoc[0]+"*"+mSettingLoc[1]
+        +",mHdrLoc="+mHdrLoc[0]+"*"+mHdrLoc[1]+",mFlashLoc="+mFlashLoc[0]+mFlashLoc[1]);
+    }
+    public void getModeLoc(){
+        View mCameraModeText = mActivity.findViewById(R.id.mode_text);
+        View mModeLayout = mActivity.findViewById(R.id.mode_select_layout);
         mModeLayout.getLocationInWindow(mModeLoc);
-       // mModeItem.getLocationInWindow(mModeItemLoc);
-
+        mCaptureModule.getCameraModeList().size();
+        List<String> modeList = mCaptureModule.getCameraModeList();
+        int modeListSize = modeList.size();
+        int modelen = mCameraModeText.getMeasuredWidth();
+        int modehigh = mCameraModeText.getMeasuredHeight();
         DisplayMetrics metrics = CameraUtil.metrics;
+        for(int i = 0;i <modeListSize; i++){
+            int x = i * modelen + modelen/2;
+            if(modeList.get(i).equals("Pro") && x > metrics.widthPixels){
+                for(int j = 0;j < modeListSize;j++) {
+                    int y = metrics.widthPixels - modelen / 2 - j*modelen;
+                    String modenm =  modeList.get(modeListSize-j-1);
+                    int[] locr = {y,mModeLoc[1]};
+                    mModeIconR.put(modenm,locr);
+                    //mIconLoc.put(modenm,locr);
+                }
+            }
+            int[] modemloc = {x,mModeLoc[1]};
+            mModeIconL.put(modeList.get(i),modemloc);
+            mIconLoc.put(modeList.get(i),modemloc);
+        }
+        // mModeItem.getLocationInWindow(mModeItemLoc);
+
         int value = metrics.widthPixels < metrics.heightPixels ? metrics.widthPixels : metrics.heightPixels;
         swipevalue = value / 2 ;
+        int[] modetext = {swipevalue,mModeLoc[1]};
+        int[] modeswipe = {swipevalue,swipevalue};
+        mModeIconR.put("SlideModeTxt",modetext);
+        mIconLoc.put("SwipeModeL",modeswipe);
+        mIconLoc.put("SwipeModeR",modeswipe);
+        mIconLoc.put("Focus",modeswipe);
     }
     private void getRecordingLoc(){
         View mPauseButton = mActivity.findViewById(R.id.video_pause);
@@ -1601,6 +1650,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         mRetakeButton.getLocationInWindow(mRetakeLoc);
     }
     public void getIconLoctionInPro(){
+/*        mProModeLayout = (ViewGroup) findViewById(R.id.pro_mode_layout);
         View mEVtext = mActivity.findViewById(R.id.exposure_text);
         View mFocustext = mActivity.findViewById(R.id.focusdistance_text);
         View mShuttertext = mActivity.findViewById(R.id.shutterspeed_text);
@@ -1611,6 +1661,34 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         mShuttertext.getLocationInWindow(mShutterLoc);
         mWBtext.getLocationInWindow(mWBLoc);
         mISOtext.getLocationInWindow(mISOLoc);
+        mProLoc.put("EV",mEVLoc);
+        mProLoc.put("FocusDistance",mFocDisLoc);
+        mProLoc.put("ShutterSpeed",mShutterLoc);
+        mProLoc.put("WB",mWBLoc);
+        mProLoc.put("ISO",mISOLoc);*/
+        View mProLayout = mActivity.findViewById(R.id.pro_mode_layout);
+        mProLayout.getLocationInWindow(mProLayoutLoc);
+        String[]proList = {"EV","FocusDistance","ShutterSpeed","WB","ISO"};
+        int proItem = proList.length;
+        int prolen = CameraUtil.metrics.widthPixels/proItem;
+        for(int j =0; j < proItem;j++){
+            int x = j*prolen +prolen/2;
+            int[] proloc = {x,mProLayoutLoc[1]};
+            mProLoc.put(proList[j],proloc);
+        }
+        int[] promin = {mProMode.getCurveLeft(),mProMode.getCurveY()};
+        int[]promid = {mProMode.getMidX(),mProMode.getMidY()};
+        int[]promax = {mProMode.getCurveRight(),mProMode.getCurveY()};
+        View mShutter = mActivity.findViewById(R.id.shutter_button);
+        int[] snaploc  = new int[2];
+        mShutter.getLocationInWindow(snaploc);
+        mProLoc.put("proMinValue",promin);
+        mProLoc.put("proMidValue",promid);
+        mProLoc.put("proMaxValue",promax);
+        mProLoc.put("Shutter",snaploc);
+        mProLoc.put("Flash",mFlashLoc);
+        mProLoc.put("Setting",mSettingLoc);
+        mProLoc.put("Thumb",mThumbLoc);
     }
 
     public String executeShellCommand(String cmd) {
@@ -1708,7 +1786,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         }
         Thread.sleep(OPEN_CAMERA_DURATION);
         mCurrentPreviewResult = mCaptureModule.getPreviewCaptureResult();
-        mProMode = mCaptureModule.getmCameraControls().getmProMode();
         executeShellCommand("input tap 500 500");
         Thread.sleep(OPEN_CAMERA_DURATION);
         if(mCurrentPreviewResult == null){

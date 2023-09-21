@@ -1312,9 +1312,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             hideVerticalEv();
             return;
         }
-        final int length = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE).length;
+
         int index = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
         String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
+        CharSequence evlist[] = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE);
+        final int length = evlist.length;
         if (mEvValue == null) mEvValue = (TextView) mRootView.findViewById(R.id.ev_value);
         mEvValue.setText(value);
         mEvValue.setVisibility(View.VISIBLE);
@@ -1326,18 +1328,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 public void onProgressChanged(VerticalSeekBar seekBar, int progress, boolean fromUser) {
                     int index = progress / section;
                     if (index > length - 1) index = length - 1;
-                    int currentIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
-                    if (currentIndex != index) {
-                        mSettingsManager.setValueIndex(SettingsManager.KEY_EXPOSURE, index);
-                        String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
-                        mEvValue.setText(value);
-                    }
+                    String str = (String) evlist[index];
+                    mModule.changeExpoure(str);
+                    mEvValue.setText(str);
                 }
             });
         }
         mVerticalEvBar.setVisibility(View.VISIBLE);
         int progress = section * (index);
-        if (progress > 100) progress = 100;
+        if (progress > 100 || length == index+1) progress = 100;
         mVerticalEvBar.setProgress(progress);
         float scale = (float) progress / 100;
         mVerticalEvBar.freshProgress(scale);
@@ -1346,15 +1345,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return isEvChanging;
     }
     private void resetEv() {
-        String defaultEV = mActivity.getResources().getString(
-                R.string.pref_exposure_default);
-        mSettingsManager.setValue(SettingsManager.KEY_EXPOSURE, defaultEV);
+        String settingEV = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
+        mModule.changeExpoure(settingEV);
         if(PersistUtil.showVerticalEvBar() && mVerticalEvBar != null) {
             initVerticalEvBar();
         }
     }
     private void initEvSeekBar() {
-        final int length = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE).length;
+
+        CharSequence evlist[] = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE);
+        final int length = evlist.length;
         resetEv();
         int index = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
         final int section = 100 / length;
@@ -1365,10 +1365,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     int index = progress / section;
                     if (index > length - 1) index = length - 1;
-                    int currentIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
-                    if (currentIndex != index) {
-                        mSettingsManager.setValueIndex(SettingsManager.KEY_EXPOSURE, index);
-                    }
+                    mModule.changeExpoure((String) evlist[index]);
                 }
 
                 @Override
@@ -1386,7 +1383,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
     private void setEvBarProgress(int evIndex, int section, SeekBar seekBar) {
         int progress = section * (evIndex);
-        if (progress >100) progress = 100;
+        int evlen =mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE).length;
+        if (progress >100 || evlen == evIndex+1) progress = 100;
         seekBar.setProgress(progress);
     }
 
