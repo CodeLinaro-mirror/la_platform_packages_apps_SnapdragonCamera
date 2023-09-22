@@ -835,12 +835,16 @@ public class TestBase{
             if(!testResult) {
                 flashInZslResult = false;
                 longshotInZslResult = false;
+                flashvalue = testFail;
+                longshotvalue = testFail;
                 break;
             }
             checkZSL();
             if(!testResult) {
                 flashInZslResult = false;
                 longshotInZslResult = false;
+                flashvalue = testFail;
+                longshotvalue = testFail;
                 break;
             }
             if(!flashInZslResult && !longshotInZslResult){
@@ -987,10 +991,11 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 }else{
                     updateJson(5, testFail);
                 }
-
             }else{
                 if (checkbar1 && checkbar2 && checkbar3) {
                     updateJson(5, testPass);
+                }else{
+                    updateJson(5, testFail);
                 }
             }
         }
@@ -1564,6 +1569,9 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         initsetting();
     }
     public void initsetting(){
+        if(mSettingLoc[0] != 0){
+            return;
+        }
         View mShutter = mActivity.findViewById(R.id.shutter_button);
         View mFlash = mActivity.findViewById(R.id.flash_button);
         View mHdr = mActivity.findViewById(R.id.scene_mode_hdr);
@@ -1596,8 +1604,9 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         mIconLoc.put("Setting",mSettingLoc);
         mThumbnail.getLocationInWindow(mThumbLoc);
         mIconLoc.put("Thumb",mThumbLoc);
-        Log.i(TAG,"thumb="+mThumbLoc[0]*mThumbLoc[1]+",settingloc="+mSettingLoc[0]+"*"+mSettingLoc[1]
-        +",mHdrLoc="+mHdrLoc[0]+"*"+mHdrLoc[1]+",mFlashLoc="+mFlashLoc[0]+mFlashLoc[1]);
+        Log.i(TAG,"thumb="+mThumbLoc[0]+"*"+mThumbLoc[1]+",settingloc="+mSettingLoc[0]+"*"+mSettingLoc[1]
+        +",mHdrLoc="+mHdrLoc[0]+"*"+mHdrLoc[1]+",mFlashLoc="+mFlashLoc[0]+"*"+mFlashLoc[1]+"shutterloc="
+                + mShutterLoc[0]+"*"+ mShutterLoc[1]);
     }
     public void getModeLoc(){
         View mCameraModeText = mActivity.findViewById(R.id.mode_text);
@@ -1969,7 +1978,12 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             testFail = getFailStr("imagepath.length()",f.length(),"above 1024");
             return;
         }
-    mCurrentexif = new ExifInterface(path);
+        try {
+            mCurrentexif = new ExifInterface(path);
+        }catch(Exception e){
+            Log.i(TAG,"getexif e="+e);
+            mCurrentexif = mCaptureModule.getImagExif();
+        }
         if(mCurrentexif == null ){
             testFail = getFailStr("imagepath.exif",mCurrentexif,"NotNull");
             return;

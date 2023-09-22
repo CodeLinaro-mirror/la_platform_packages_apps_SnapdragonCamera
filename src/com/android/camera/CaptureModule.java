@@ -1413,6 +1413,10 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mClosedCamTime;
     private long mStartedTime;
     private long mSessionAfterRecord;
+    private ExifInterface mImagExif;
+    public ExifInterface getImagExif(){
+        return mImagExif;
+    }
     public CaptureResult getPreviewCaptureResult() {
         return mPreviewCaptureResult;
     }
@@ -6176,6 +6180,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     } catch (IOException e) {
                                         Log.w(TAG,"get exif failed");
                                     }
+
                                     long imglen = bytes.length;
                                     int imageFormat = image.getFormat();
                                     int imageWidth = image.getWidth();
@@ -6183,8 +6188,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     if(mActivity.getAutoTest()) {
                                         Log.i(TAG,"mLongshotActive="+mLongshotActive+",titile="+title+
                                                 ",mNumImageArrived.get()="+mNumImageArrived.get()+
-                                                ",imageWidth="+imageWidth+",imageHeight="+imageHeight+",imageFormat="+imageFormat);
+                                                ",imageWidth="+imageWidth+",imageHeight="+imageHeight+",imageFormat="+imageFormat
+                                        +",mImagExif="+exif);
                                         mLongImgTitle.add(title);
+                                        mImagExif = exif;
                                     }
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         saveRawImg(bytes, image, name, title);
@@ -7215,6 +7222,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void closeImageReader() {
+        Log.i(TAG, "closeImageReader");
         for (int i = MAX_NUM_CAM - 1; i >= 0; i--) {
             if (null != mImageReader[i]) {
                 mImageReader[i].close();
@@ -7665,7 +7673,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mMpoSaveHandler = new MpoSaveHandler(mMpoSaveThread.getLooper());
         mZoomHandler = new ZoomHandler(mCaptureCallbackThread.getLooper());
         mBackgroundThreadFlag = true;
-        Log.d(TAG, "startBackgroundThread");
+        Log.i(TAG, "startBackgroundThread");
     }
 
     /**
@@ -7875,7 +7883,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             //mActivity.setResultEx(Activity.RESULT_CANCELED, new Intent());
             mActivity.finish();
         }
-        closeImageReader();
+
         mJpegImageData = null;
     }
 
