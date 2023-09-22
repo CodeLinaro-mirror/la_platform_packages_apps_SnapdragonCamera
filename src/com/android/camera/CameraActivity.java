@@ -1605,7 +1605,15 @@ public class CameraActivity extends Activity
             finish();
             return;
         }
-
+        mSettingsManager = SettingsManager.getInstance();
+        if (mSettingsManager == null) {
+            mSettingsManager = SettingsManager.createInstance(this);
+        }
+        /*
+        In some devices,getCameraIdList is 0 or wrong when RECEIVE_BOOT_COMPLETED
+        So we need to initCharacteristics when openCamera
+        */
+        mSettingsManager.initCharacteristics();
         mCursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 null, null, null, null);
         GcamHelper.init(getContentResolver());
