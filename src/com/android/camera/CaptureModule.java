@@ -1626,6 +1626,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mPostProcessor.onMetaAvailable(result);
             if (statsParametersUpdated <= STATS_PARAMETER_UPDATE &&
                     !mSettingsManager.isMultiCameraEnabled()) {
+
                 updateStatsParameters(result);
             }
             String stats_visualizer = mSettingsManager.getValue(
@@ -2078,8 +2079,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
             Log.i(TAG,"BG, bgRStats:" + bgRStats + ",bgGStats:" + bgGStats + ",bgBStats:" + bgBStats + ",mBGStatson:" + mBGStatson);
+
             if (bgRStats != null && bgGStats != null && bgBStats != null && mBGStatson) {
                 synchronized (bg_r_statsdata) {
+                    if(bg_r_statsdata.length != bgRStats.length) {
+                        Log.d(TAG,"be_r_statsdata.length="+bg_r_statsdata.length +",beRStats.length="+bgRStats.length);
+                        updateStatsParameters(result);
+                    }
                     System.arraycopy(bgRStats, 0, bg_r_statsdata, 0, bgRStats.length);
                     System.arraycopy(bgGStats, 0, bg_g_statsdata, 0, bgGStats.length);
                     System.arraycopy(bgBStats, 0, bg_b_statsdata, 0, bgBStats.length);
@@ -2126,8 +2132,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             Log.i(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
 
+
             if (beRStats != null && beGStats != null && beBStats != null && mBEStatson) {
+
                 synchronized (be_r_statsdata) {
+                    if(be_r_statsdata.length != beRStats.length) {
+                        Log.d(TAG,"be_r_statsdata.length="+be_r_statsdata.length +",beRStats.length="+beRStats.length);
+                        updateStatsParameters(result);
+                    }
                     System.arraycopy(beRStats, 0, be_r_statsdata, 0, beRStats.length);
                     System.arraycopy(beGStats, 0, be_g_statsdata, 0, beRStats.length);
                     System.arraycopy(beBStats, 0, be_b_statsdata, 0, beRStats.length);
@@ -8042,7 +8054,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 BGSTATS_DATA = bg_width*bg_height;
                 BGSTATS_WIDTH = bg_width*STATS_LENGTH;
                 BGSTATS_HEIGHT = bg_height*STATS_LENGTH;
-
                 bg_statsdata = new int[BGSTATS_DATA*STATS_LENGTH*STATS_LENGTH];
                 bg_r_statsdata = new int[BGSTATS_DATA];
                 bg_g_statsdata = new int[BGSTATS_DATA];
