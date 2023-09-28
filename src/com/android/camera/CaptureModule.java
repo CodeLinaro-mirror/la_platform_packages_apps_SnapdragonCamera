@@ -4361,9 +4361,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (takeZSLPicture(cameraId)) {
                 return;
             }
-            if (mUI.getCurrentProMode() == ProMode.MANUAL_MODE ) {
-                captureStillPicture(cameraId);
-            } else {
+
                 if (mLongshotActive) {
                     parallelLockFocusExposure(cameraId);
                 } else{
@@ -4375,7 +4373,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     lockFocus(cameraId);
                 }
             }
-        }
     }
 
     private boolean isActionImageCapture() {
@@ -4574,8 +4571,21 @@ public class CaptureModule implements CameraModule, PhotoController,
             setTag(builder, "" + id + "-" + getCurrenCameraMode().name());
             if((mCurrentSceneMode.mode == CameraMode.VIDEO ||
                     mCurrentSceneMode.mode == CameraMode.HFR) && !mIsRecordingVideo){
-                Surface surface = getPreviewSurfaceForSession(id);
-                builder.addTarget(surface);
+                if (mSettingsManager.getPhysicalCameraId() != null) {
+                    List<Surface> previews = mUI.getPhysicalSurfaces();
+                    if(mSettingsManager.isLogicalEnable()){
+                        builder.addTarget(previews.get(0));
+                        if(isRecordingVideo()) {
+                            builder.addTarget(mVideoRecordingSurface);
+                        }
+                    }
+                    for (int i =1;i <=mSettingsManager.getPhysicalCameraId().size();i++){
+                        builder.addTarget(previews.get(i));
+                    }
+                }else {
+                    Surface surface = getPreviewSurfaceForSession(id);
+                    builder.addTarget(surface);
+                }
             } else {
                 addPreviewSurface(builder, null, id);
             }
@@ -4671,7 +4681,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE){
                 applySettingsForLockExposure(captureBuilder, id);
             }
-            if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) && !isLongExpTmCaptrure()) {
+            if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) &&
+                    !isLongExpTmCaptrure() &&
+                    !mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, true);
             } else {
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, false);
@@ -8287,8 +8299,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onSingleTapUp(View view, int x, int y) {
         if (mPaused || !mCamerasOpened || !mFirstTimeInitialized || !mAutoFocusRegionSupported
                 || !mAutoExposureRegionSupported || !isTouchToFocusAllowed()
-                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed
-                || mSettingsManager.getPhysicalCameraId() != null) {
+                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed) {
             return;
         }
         Log.d(TAG, "onSingleTapUp " + x + " " + y);
@@ -12082,7 +12093,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mMediaRecorder.prepare();
             mMediaRecorder.setOnErrorListener(this);
             mMediaRecorder.setOnInfoListener(this);
-        } catch (IOException e) {
+        } catch (IOException | SecurityException e) {
             Log.e(TAG, " prepare failed for " + mVideoFilename + e);
             if (mCurrentVideoUri != null) {
                 mContentResolver.delete(mCurrentVideoUri, null);
@@ -12359,7 +12370,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean isFlashOn(int id) {
         if (!mSettingsManager.isFlashSupported(id)) return false;
-        return mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE).equals("on");
+        return mSettingsManager.getValue(mCurrentSceneMode.mode == CameraMode.PRO_MODE ?
+                SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE).equals("on");
     }
 
     private void initializePreviewConfiguration(int id) {
