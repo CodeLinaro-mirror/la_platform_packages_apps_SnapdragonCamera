@@ -2115,6 +2115,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO) {
                 ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
                 hfrPref.reloadInitialEntriesAndEntryValues();
+                if(videoQuality == null){
+                    return;
+                }
                 mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
                         getSupportedHighFrameRate(mode, videoQuality.getValue(), mCameraId));
                 if (!mIsHFRSupported) {
