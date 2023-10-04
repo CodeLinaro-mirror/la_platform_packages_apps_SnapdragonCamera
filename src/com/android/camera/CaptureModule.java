@@ -73,6 +73,7 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.CamcorderProfile;
 import android.media.CameraProfile;
+import android.media.ExifInterface;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaCodec;
@@ -121,7 +122,6 @@ import com.android.camera.deepportrait.CamGLRenderObserver;
 import com.android.camera.deepportrait.CamGLRenderer;
 import com.android.camera.deepportrait.DPImage;
 import com.android.camera.deepportrait.GLCameraPreview;
-import com.android.camera.exif.ExifInterface;
 import com.android.camera.gles.CameraRender;
 import com.android.camera.imageprocessor.filter.BlurbusterFilter;
 import com.android.camera.imageprocessor.filter.ChromaflashFilter;
@@ -156,6 +156,7 @@ import com.android.camera.aide.AideUtil.*;
 import org.codeaurora.snapcam.R;
 import org.codeaurora.snapcam.filter.ClearSightImageProcessor;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
@@ -4043,7 +4044,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             try {
                                 setupMediaCodecAudio();
                             }catch (Exception e){
-                                e.printStackTrace();
+                                Log.w(TAG,"get exif failed");
                             }
                             mAudioCodecInit = true;
                         }
@@ -4902,8 +4903,18 @@ public class CaptureModule implements CameraModule, PhotoController,
             if ((mCurrentSceneMode.mode == CameraMode.VIDEO ||
                     mCurrentSceneMode.mode == CameraMode.HFR ||
                     mCurrentSceneMode.mode == CameraMode.CINEMATIC) && !mIsRecordingVideo) {
-                Surface surface = getPreviewSurfaceForSession(id);
-                builder.addTarget(surface);
+                if (mSettingsManager.getPhysicalCameraId() != null) {
+                    List<Surface> previews = mUI.getPhysicalSurfaces();
+                    if (mSettingsManager.isLogicalEnable()) {
+                        builder.addTarget(previews.get(0));
+                    }
+                    for (int i = 1; i <= mSettingsManager.getPhysicalCameraId().size(); i++) {
+                        builder.addTarget(previews.get(i));
+                    }
+                }else {
+                    Surface surface = getPreviewSurfaceForSession(id);
+                    builder.addTarget(surface);
+                }
             } else {
                 addPreviewSurface(builder, null, id);
             }
@@ -5981,7 +5992,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         int orientation = 0;
         ExifInterface exif = null;
         orientation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
-        exif = Exif.getExif(bytes);
+        try {
+            exif = new ExifInterface(new ByteArrayInputStream(bytes));
+        } catch (IOException e) {
+            Log.w(TAG,"get exif failed");
+        }
         long imglen = bytes.length;
         int imageFormat = image.getFormat();
         int imageWidth = image.getWidth();
@@ -5992,7 +6007,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             int setsucess = setInfoForDng(mRawMeta);
             Log.d(TAG, "saveRawImg- mRawMeta=" + mRawMeta + ",setsucess=" + setsucess);
             if (setsucess == 0) {
-                mActivity.getMediaSaveService().addDng(image, imglen, title, date, null, imageWidth, imageHeight, orientation, exif,
+                mActivity.getMediaSaveService().addDng(image, imglen, title, date, null, imageWidth, imageHeight, orientation, null,
                         mOnMediaSavedListener, mContentResolver, "dng");
             } else {
                 mActivity.getMediaSaveService().addRawImage(bytes, title, "raw");
@@ -6146,7 +6161,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     int orientation = 0;
                                     ExifInterface exif = null;
                                     orientation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
-                                    exif = Exif.getExif(bytes);
+                                    try {
+                                        exif = new ExifInterface(new ByteArrayInputStream(bytes));
+                                    } catch (IOException e) {
+                                        Log.w(TAG,"get exif failed");
+                                    }
                                     long imglen = bytes.length;
                                     int imageFormat = image.getFormat();
                                     int imageWidth = image.getWidth();
@@ -6184,9 +6203,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                 String.valueOf(timeStamp),"yuv");
                                         image.close();
                                     } else {
-                                        if (image.getFormat() != ImageFormat.HEIC) {
-                                            exif = Exif.getExif(bytes);
-                                            orientation = Exif.getOrientation(exif);
+                                        if (image.getFormat() != ImageFormat.HEIC && exif != null) {
+                                            orientation = CameraUtil.getOrientation(exif);
                                         }
                                         if (mIntentMode != CaptureModule.INTENT_MODE_NORMAL &&
                                                 mIntentMode != INTENT_MODE_STILL_IMAGE_CAMERA) {
@@ -6202,7 +6220,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                 pictureFormat = "heic";
                                             }
                                             mActivity.getMediaSaveService().addImage(bytes, title, date,
-                                                    null, image.getWidth(), image.getHeight(), orientation, exif,
+                                                    null, image.getWidth(), image.getHeight(), orientation, null,
                                                     mOnMediaSavedListener, mContentResolver,pictureFormat);
 
                                             if (mLongshotActive) {
@@ -6659,9 +6677,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                         byte[] bytes = getJpegData(image);
                         int orientation = 0;
                         ExifInterface exif = null;
-                        if (image.getFormat() != ImageFormat.HEIC) {
-                            exif = Exif.getExif(bytes);
-                            orientation = Exif.getOrientation(exif);
+                        try {
+                            exif = new ExifInterface(new ByteArrayInputStream(bytes));
+                        } catch (IOException e) {
+                            Log.w(TAG,"get exif failed");
+                        }
+                        if (image.getFormat() != ImageFormat.HEIC && exif != null) {
+                            orientation = CameraUtil.getOrientation(exif);
                         } else {
                             orientation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
                         }
@@ -6706,9 +6728,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 byte[] bytes = getJpegData(image);
                 int orientation = 0;
                 ExifInterface exif = null;
-                if (image.getFormat() != ImageFormat.HEIC) {
-                    exif = Exif.getExif(bytes);
-                    orientation = Exif.getOrientation(exif);
+                try {
+                    exif = new ExifInterface(new ByteArrayInputStream(bytes));
+                } catch (IOException e) {
+                    Log.w(TAG,"get exif failed");
+                }
+                if (image.getFormat() != ImageFormat.HEIC && exif != null) {
+                    orientation = CameraUtil.getOrientation(exif);
                 } else {
                     orientation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
                 }
@@ -6812,9 +6838,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 byte[] bytes = getJpegData(image);
                                 int orientation = 0;
                                 ExifInterface exif = null;
-                                if (image.getFormat() != ImageFormat.HEIC){
-                                    exif = Exif.getExif(bytes);
-                                    orientation = Exif.getOrientation(exif);
+                                try {
+                                    exif = new ExifInterface(new ByteArrayInputStream(bytes));
+                                } catch (IOException e) {
+                                    Log.w(TAG,"get exif failed");
+                                }
+                                if (image.getFormat() != ImageFormat.HEIC && exif != null){
+                                    orientation = CameraUtil.getOrientation(exif);
                                 } else {
                                     orientation = CameraUtil.getJpegRotation(
                                             getMainCameraId(),mOrientation);
@@ -6894,9 +6924,13 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                         int orientation = 0;
                         ExifInterface exif = null;
-                        if (image.getFormat() != ImageFormat.HEIC){
-                            exif = Exif.getExif(bytes);
-                            orientation = Exif.getOrientation(exif);
+                        try {
+                            exif = new ExifInterface(new ByteArrayInputStream(bytes));
+                        } catch (IOException e) {
+                            Log.w(TAG,"get exif failed");
+                        }
+                        if (image.getFormat() != ImageFormat.HEIC && exif != null){
+                            orientation = CameraUtil.getOrientation(exif);
                         } else {
                             orientation = CameraUtil.getJpegRotation(getMainCameraId(),mOrientation);
                         }
@@ -6904,7 +6938,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         String saveFormat = image.getFormat() == ImageFormat.HEIC? "heic" : "jpeg";
 
                         mActivity.getMediaSaveService().addImage(bytes, title, date,
-                                null, image.getWidth(), image.getHeight(), orientation, exif,
+                                null, image.getWidth(), image.getHeight(), orientation, null,
                                 mOnMediaSavedListener, mContentResolver, saveFormat);
 
                         if (image.getFormat() != ImageFormat.HEIC){
@@ -7846,6 +7880,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mIsCloseCamera = true;
         }
         mSettingsManager.createCaptureModule(this);
+        initModeByIntent();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         String action = mActivity.getIntent().getAction();
@@ -8658,8 +8693,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                     CameraUtil.closeSilently(outputStream);
                 }
             } else {
-                ExifInterface exif = Exif.getExif(data);
-                int orientation = Exif.getOrientation(exif);
+                ExifInterface exif = null;
+                try {
+                    exif = new ExifInterface(new ByteArrayInputStream(data));
+                } catch (IOException e) {
+                    Log.w(TAG,"get exif failed");
+                }
+                int orientation = 0;
+                if (exif != null) {
+                    orientation = CameraUtil.getOrientation(exif);
+                } else {
+                    orientation = CameraUtil.getJpegRotation(getMainCameraId(),mOrientation);
+                }
                 Bitmap bitmap = CameraUtil.makeBitmap(data, 50 * 1024);
                 bitmap = CameraUtil.rotate(bitmap, orientation);
                 mActivity.setResultEx(Activity.RESULT_OK,
@@ -8869,8 +8914,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void onSingleTapUp(View view, int x, int y) {
         if (mPaused || !mCamerasOpened || !mFirstTimeInitialized || !mAutoFocusRegionSupported
                 || !mAutoExposureRegionSupported || !isTouchToFocusAllowed()
-                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed
-                || mSettingsManager.getPhysicalCameraId() != null) {
+                || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed) {
             return;
         }
         mUI.hideFocusAssistText();
@@ -15139,8 +15183,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         } else {
             List<Surface> surfaces = mFrameProcessor.getInputSurfaces();
-            for(Surface surface : surfaces) {
-                if(surfaceList != null) {
+            for (Surface surface : surfaces) {
+                if (surfaceList != null) {
                     surfaceList.add(surface);
                 }
                 builder.addTarget(surface);
@@ -15990,9 +16034,18 @@ public class CaptureModule implements CameraModule, PhotoController,
             byte[] bayerBytes = getJpegData(bayerImage);
             byte[] monoBytes = getJpegData(monoImage);
 
-            ExifInterface exif = Exif.getExif(bayerBytes);
-            int orientation = Exif.getOrientation(exif);
-
+            ExifInterface exif = null;
+            try {
+                exif = new ExifInterface(new ByteArrayInputStream(bayerBytes));
+            } catch (IOException e) {
+                Log.w(TAG,"get exif failed");
+            }
+            int orientation = 0;
+            if (exif != null) {
+                orientation = CameraUtil.getOrientation(exif);
+            } else {
+                orientation = CameraUtil.getJpegRotation(getMainCameraId(),mOrientation);
+            }
             mActivity.getMediaSaveService().addMpoImage(
                     null, bayerBytes, monoBytes, width, height, title,
                     date, null, orientation, mOnMediaSavedListener, mContentResolver, "jpeg");

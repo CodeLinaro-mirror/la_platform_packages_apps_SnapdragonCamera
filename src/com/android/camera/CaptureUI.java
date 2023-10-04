@@ -2098,7 +2098,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         intent.putExtra(SettingsActivity.CAMERA_MODULE, mModule.getCurrenCameraMode());
         intent.putExtra(SettingsActivity.IS_SIGNGLE_CAMERA_MODULE, mModule.isSingleCameraMode());
         intent.putExtra(SettingsActivity.OPEN_DEVOPTION, mActivity.getDevOption());
-        mActivity.startActivity(intent);
+        mActivity.openSettingsActivity(intent);
     }
 
     public void initCameraSwitcher() {
