@@ -378,6 +378,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_AI_CAMERA)){
                     updateEISPreference();
+                    updateSwitchIDInModePreference(true);
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
                     updateVideoMFHDRPreference();
@@ -393,12 +394,6 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if(mSettingsManager.KEY_EXTENDED_MAX_ZOOM .equals(pref.getKey())){
                     updateZoomPreference();
-                }
-
-                if(pref.getKey().equals(SettingsManager.KEY_HVX_MFHDR) ||
-                        pref.getKey().equals(SettingsManager.KEY_HVX_SHDR)){
-                    updateEISPreference();
-                    updateHvxDependencyPref();
                 }
             }
         }
@@ -1061,6 +1056,9 @@ public class SettingsActivity extends PreferenceActivity {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
         StringBuilder defaultHDROrder = new StringBuilder();
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        final SharedPreferences.Editor editor = mLocalSharedPref.edit();
         for (int i = 0; i < modes.length; i++) {
             if (modes[i] == 1) {
                 listData.add(SettingsManager.KEY_MANUAL_SHDR);
@@ -1073,18 +1071,26 @@ public class SettingsActivity extends PreferenceActivity {
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_QHDR);
             }
         }
-        final SharedPreferences.Editor editor = mLocalSharedPref.edit();
+        if(mSettingsManager.isHvxMFHDRSupported()) {
+            if(mIsSingleCameraMode && mode == VIDEO) {
+                listData.add(SettingsManager.KEY_MANUAL_HVX_MFHDR);
+                defaultHDROrder.append(SettingsManager.KEY_MANUAL_HVX_MFHDR);
+            }else {
+                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_MFHDR, false);
+                editor.commit();
+            }
+        }
+        if(mSettingsManager.isHvxShdrSupported()) {
+            if(mIsSingleCameraMode && mode == DEFAULT) {
+                listData.add(SettingsManager.KEY_MANUAL_HVX_SHDR);
+                defaultHDROrder.append(SettingsManager.KEY_MANUAL_HVX_SHDR);
+            }else{
+                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_SHDR, false);
+                editor.commit();
+            }
+        }
         String orderLists = mLocalSharedPref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
         Log.v(TAG, " UpdateManualHDRSetting orderLists:" + orderLists);
-        if (orderLists != null) {
-            listData.clear();
-            for (String title : orderLists.split("#")) {
-                listData.add(title);
-            }
-        }else{
-            editor.putString(SettingsManager.KEY_MIXED_HDR_ORDER, defaultHDROrder.toString());
-            editor.apply();
-        }
         final DragonListView listView = new DragonListView(SettingsActivity.this);
         DragListViewAdapter adapter = new DragListViewAdapter(this, listData);
         listView.setAdapter(adapter);
@@ -1308,8 +1314,6 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_VARIABLE_FPS);
                 //add(SettingsManager.KEY_VIDEO_HDR_VALUE);
                 add(SettingsManager.KEY_VIDEO_FLIP);
-                add(SettingsManager.KEY_HVX_SHDR);
-                add(SettingsManager.KEY_HVX_MFHDR);
                 add(SettingsManager.KEY_PHYSICAL_CAMCORDER);
                 for (String key: SettingsManager.KEY_PHYSICAL_VIDEO_SIZE)
                     add(key);
@@ -1455,8 +1459,6 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
-                        videoAddList.remove(SettingsManager.KEY_HVX_SHDR);
-                        videoAddList.remove(SettingsManager.KEY_HVX_MFHDR);
                         videoAddList.remove(SettingsManager.KEY_ML_VIDEO);
                     }
                     videoAddList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
@@ -1740,10 +1742,7 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
         updatePreference(SettingsManager.KEY_PREVIEW_PROFILE);
         updatePreference(SettingsManager.KEY_CAPTURE_PROFILE);
-        updatePreference(SettingsManager.KEY_HVX_SHDR);
-        updatePreference(SettingsManager.KEY_HVX_MFHDR);
         updateMultiPreference(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
-        updateVideoHDRPreference();
         updateVideoVariableFpsPreference();
         updateVideoMFHDRPreference();
         updateQuadBayerPreference();
@@ -1848,7 +1847,6 @@ public class SettingsActivity extends PreferenceActivity {
         updatePreviewStabilizationPreference();
         updateMultiVideoFPSPreference();
         updateViullPreference();
-        updateHvxDependencyPref();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1927,8 +1925,8 @@ public class SettingsActivity extends PreferenceActivity {
 
     private void updateSwitchIDInModePreference(boolean isShowRTB){
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_SELECT_MODE);
-        List<String> key = new ArrayList<String>(Arrays.asList("Single rear cameraID", "SAT", "Default" ));
-        List<String> value = new ArrayList<String>(Arrays.asList( "single_rear_cameraid", "sat", "default"));
+        List<String> key = new ArrayList<String>(Arrays.asList("Default", "Single rear cameraID", "SAT"));
+        List<String> value = new ArrayList<String>(Arrays.asList("default", "single_rear_cameraid", "sat"));
         boolean isBack = false;
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
         if (pref != null) {
@@ -1953,18 +1951,18 @@ public class SettingsActivity extends PreferenceActivity {
             }
             pref.setValueIndex(idx);
             String cameraValue = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
-            if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
-            pref.setEnabled((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
-                    (mode == CaptureModule.CameraMode.VIDEO));
+            if (cameraValue != null && cameraValue.equals("rear") || cameraValue == null) isBack = true;
+            boolean perfEnable = false;
+            if((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
+                    ((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID || !CaptureModule.MCXMODE) && mSettingsManager.isAICameraOn() && (mode == CaptureModule.CameraMode.VIDEO))){
+                perfEnable = true;
+            }
+            pref.setEnabled(perfEnable);
+            //for front camera, if aicamera off, select mode is disabled, still need to change value to default
+            if(!perfEnable){
+                pref.setValueIndex(0);
+            }
         }
-    }
-
-    private void updateVideoHDRPreference() {
-        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_HDR_VALUE);
-        if (pref == null) {
-            return;
-        }
-        pref.setEnabled(mSettingsManager.isZZHDRSupported());
     }
 
     public boolean isHwMfnrDisabled(){
@@ -2065,22 +2063,6 @@ public class SettingsActivity extends PreferenceActivity {
                 pref.setValue("off");
                 pref.setEnabled(false);
             }
-        }
-    }
-
-    private void updateHvxDependencyPref() {
-        ListPreference hvx_mfhdr = (ListPreference)findPreference(SettingsManager.KEY_HVX_MFHDR);
-        ListPreference hvx_shdr = (ListPreference)findPreference(SettingsManager.KEY_HVX_SHDR);
-        ListPreference videoPref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_QUALITY);
-        ListPreference selectModePref = (ListPreference)findPreference(SettingsManager.KEY_SELECT_MODE);
-        if((hvx_mfhdr != null && hvx_mfhdr.getValue().equals("1"))|| (hvx_shdr != null && hvx_shdr.getValue().equals("1"))){
-            selectModePref.setValue("single_rear_cameraid");
-            selectModePref.setEnabled(false);
-            videoPref.setValue("1920x1080");
-            videoPref.setEnabled(false);
-        }else{
-            if(selectModePref != null) selectModePref.setEnabled(true);
-            if(videoPref != null) videoPref.setEnabled(true);
         }
     }
 
@@ -2349,21 +2331,8 @@ public class SettingsActivity extends PreferenceActivity {
         ListPreference eisPref = (ListPreference)findPreference(
                 SettingsManager.KEY_EIS_VALUE);
         if (eisPref == null) return;
-        boolean changeEIS = true;
-        MultiSelectListPreference camCorderPref = (MultiSelectListPreference) findPreference(
-                SettingsManager.KEY_PHYSICAL_CAMCORDER);
-        if (camCorderPref != null) {
-            Set<String> camCorderSet = camCorderPref.getValues();
-            if (camCorderSet != null) {
-                for (String str : camCorderSet) {
-                    if (!"".equals(str)) {
-                        changeEIS &= false;
-                    }
-                }
-            }
-        }
         if (!mSettingsManager.isEISSupported(mSettingsManager.getVideoSize(),
-                mSettingsManager.getVideoFPS()) || !changeEIS) {
+                mSettingsManager.getVideoFPS())) {
             if (eisPref != null) {
                 eisPref.setValue("disable");
                 eisPref.setEnabled(false);
@@ -2380,19 +2349,6 @@ public class SettingsActivity extends PreferenceActivity {
             if (eisPref != null) {
                 eisPref.setEntries(list.toArray(new CharSequence[list.size()]));
                 eisPref.setEntryValues(values.toArray(new CharSequence[values.size()]));
-            }
-            ListPreference hvx_shdr = (ListPreference)findPreference(
-                    SettingsManager.KEY_HVX_SHDR);
-            ListPreference hvx_mfhdr = (ListPreference)findPreference(
-                    SettingsManager.KEY_HVX_MFHDR);
-            if(eisPref != null) {
-                if ((hvx_shdr != null && Integer.valueOf(hvx_shdr.getValue()) > 0) ||
-                        (hvx_mfhdr != null && Integer.valueOf(hvx_mfhdr.getValue()) > 0)) {
-                    eisPref.setValue("V3");
-                    eisPref.setEnabled(false);
-                } else {
-                    eisPref.setEnabled(true);
-                }
             }
         }
     }

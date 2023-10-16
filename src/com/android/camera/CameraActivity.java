@@ -17,6 +17,7 @@
 package com.android.camera;
 
 import android.hardware.camera2.CameraAccessException;
+import android.media.ExifInterface;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.view.Display;
@@ -101,7 +102,6 @@ import com.android.camera.data.LocalDataAdapter;
 import com.android.camera.data.LocalMediaObserver;
 import com.android.camera.data.MediaDetails;
 import com.android.camera.data.SimpleViewData;
-import com.android.camera.exif.ExifInterface;
 import com.android.camera.tinyplanet.TinyPlanetFragment;
 import com.android.camera.multi.MultiCameraModule;
 import com.android.camera.ui.ModuleSwitcher;
@@ -120,9 +120,14 @@ import com.android.camera.util.PhotoSphereHelper.PanoramaViewHelper;
 import com.android.camera.util.UsageStatistics;
 import org.codeaurora.snapcam.R;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-
+import java.io.InputStream;
+import android.app.KeyguardManager;
+import android.app.KeyguardManager.KeyguardDismissCallback;
 import static com.android.camera.CameraManager.CameraOpenErrorCallback;
 
 public class CameraActivity extends Activity
@@ -270,6 +275,8 @@ public class CameraActivity extends Activity
 
     private WakeLock mWakeLock;
     private static final int REFOCUS_ACTIVITY_CODE = 1;
+    /** Handle to Keyguard service. */
+    private KeyguardManager mKeyguardManager = null;
 
     private class MyOrientationEventListener
             extends OrientationEventListener {
@@ -917,14 +924,41 @@ public class CameraActivity extends Activity
                 if (mOrientation != -1) {
                     orientation = mOrientation;
                 } else {
-                    ExifInterface exif = new ExifInterface();
+                    ExifInterface exif = null;
+                    int result = ExifInterface.ORIENTATION_NORMAL;
                     try {
                         if (mJpegData != null) {
-                            exif.readExif(mJpegData);
+                            exif = new ExifInterface(new ByteArrayInputStream(mJpegData));
+                            result = exif.getAttributeInt(
+                                    ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
                         } else {
-                            exif.readExif(path);
+                            InputStream is = null;
+                            try {
+                                is = new BufferedInputStream(new FileInputStream(path));
+                                exif = new ExifInterface(is);
+                                result = exif.getAttributeInt(
+                                        ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                            } catch (IOException e) {
+                                // ignore
+                            } finally {
+                                if (is != null) {
+                                    is.close();
+                                }
+                            }
                         }
-                        orientation = Exif.getOrientation(exif);
+                        switch (result) {
+                            case ExifInterface.ORIENTATION_ROTATE_90:
+                                orientation = 90;
+                                break;
+                            case ExifInterface.ORIENTATION_ROTATE_180:
+                                orientation = 180;
+                                break;
+                            case ExifInterface.ORIENTATION_ROTATE_270:
+                                orientation = 270;
+                                break;
+                            default:
+                                orientation = 0;
+                        }
                     } catch (IOException e) {
                         // ignore
                     }
@@ -1823,7 +1857,68 @@ public class CameraActivity extends Activity
         // switch the system UI to lights-out mode.
         if (focus) this.setSystemBarsVisibility(false);
     }
+    public void openSettingsActivity(Intent intent){
+        if (!isKeyguardLocked()) {
+            startActivity(intent);
+        } else {
+            /* Need to explicitly request keyguard dismissal for PIN/pattern
+             * entry to show up directly. */
+            requestDismissKeyguard(
+                    /* requesting Activity: */ CameraActivity.this,
+                    new KeyguardDismissCallback() {
+                        @Override
+                        public void onDismissSucceeded() {
+                            /* Need to use launchActivityByIntent() so that going
+                             * back from settings after unlock leads to main
+                             * activity instead of dismissing camera entirely. */
+                            launchActivityByIntent(intent);
+                        }
+                        @Override
+                        public void onDismissError() {
+                            Log.e(TAG, "Keyguard dismissal failed.");
+                        }
+                        @Override
+                        public void onDismissCancelled() {
+                            Log.d(TAG, "Keyguard dismissal canceled.");
+                        }
+                    }
+            );
+        }
+    }
+    public void launchActivityByIntent(Intent intent) {
+        // Starting from L, we prefer not to start edit activity within camera's task.
+        mResetToPreviewOnResume = false;
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
+        startActivity(intent);
+    }
+    protected boolean isKeyguardLocked() {
+        if (mKeyguardManager == null) {
+            mKeyguardManager =  (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        }
+        if (mKeyguardManager != null) {
+            return mKeyguardManager.isKeyguardLocked();
+        }
+        return false;
+    }
 
+    protected boolean isKeyguardSecure() {
+        if (mKeyguardManager == null) {
+            mKeyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        }
+        if (mKeyguardManager != null) {
+            return mKeyguardManager.isKeyguardSecure();
+        }
+        return false;
+    }
+
+    protected void requestDismissKeyguard(Activity activity, KeyguardManager.KeyguardDismissCallback callback) {
+        if (mKeyguardManager == null) {
+            mKeyguardManager =  (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        }
+        if (mKeyguardManager != null) {
+            mKeyguardManager.requestDismissKeyguard(activity, callback);
+        }
+    }
     /**
      * Checks if any of the needed Android runtime permissions are missing.
      * If they are, then launch the permissions activity under one of the following conditions:

@@ -2102,7 +2102,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         Intent intent = new Intent(mActivity, SettingsActivity.class);
         intent.putExtra(SettingsActivity.CAMERA_MODULE, mModule.getCurrenCameraMode());
         intent.putExtra(SettingsActivity.IS_SIGNGLE_CAMERA_MODULE, mModule.isSingleCameraMode());
-        mActivity.startActivity(intent);
+        mActivity.openSettingsActivity(intent);
     }
 
     public void initCameraSwitcher() {
@@ -3088,7 +3088,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mPhysicalPreviewContainer.setVisibility(View.VISIBLE);
             mSurfaceView.setZOrderMediaOverlay(physical_id != null);
             mPhysicalHolders[0] = mPhysicalViews[0].getHolder();
-            mPhysicalHolders[0].setFixedSize(mLogicalPreviewSize.getWidth(), mLogicalPreviewSize.getHeight());
+            if(PersistUtil.getCameraPreviewSize() != null) {
+                ViewGroup.LayoutParams layoutParams = mPhysicalViews[0].getLayoutParams();
+                layoutParams.height = mLogicalPreviewSize.getHeight();
+                layoutParams.width = mLogicalPreviewSize.getWidth();
+                mPhysicalViews[0].setLayoutParams(layoutParams);
+                mPhysicalHolders[0].setFixedSize(mPreviewWidth, mPreviewHeight);
+            }else{
+                mPhysicalHolders[0].setFixedSize(mLogicalPreviewSize.getWidth(), mLogicalPreviewSize.getHeight());
+            }
             mPhysicalViews[0].setVisibility(View.VISIBLE);
             int i = 1;
             for (String id : physicalIds) {
@@ -3106,7 +3114,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                         preview = new Size(mPreviewHeight / 2, mPreviewWidth / 2);
                     }
                     Log.d(TAG, "physical surface " + i + " preview size=" + preview.toString());
-                    mPhysicalHolders[i].setFixedSize(preview.getWidth(), preview.getHeight());
+                    if(PersistUtil.getCameraPreviewSize() != null){
+                        ViewGroup.LayoutParams physicalLayoutParams = mPhysicalViews[i].getLayoutParams();
+                        physicalLayoutParams.height = preview.getHeight();
+                        physicalLayoutParams.width = preview.getWidth();
+                        mPhysicalViews[i].setLayoutParams(physicalLayoutParams);
+                        mPhysicalHolders[i].setFixedSize(mPreviewWidth, mPreviewHeight);
+                    }else{
+                        mPhysicalHolders[i].setFixedSize(preview.getWidth(), preview.getHeight());
+                    }
                     mPhysicalViews[i].setVisibility(View.VISIBLE);
                 }
                 i++;
