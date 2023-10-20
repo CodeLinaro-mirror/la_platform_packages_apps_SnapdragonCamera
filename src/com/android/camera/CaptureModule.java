@@ -789,8 +789,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("com.qti.chi.multicamerainfo.MasterCamera", Byte.class);
     private static final CaptureResult.Key<byte[]> ActiveCameraInfo =
             new CaptureResult.Key<>("com.qti.chi.multicamerainfo.ActiveCameraInfo", byte[].class);
-    private static final CaptureResult.Key<byte[]> MultiCameraIds =
-            new CaptureResult.Key<>("com.qti.chi.multicamerainfo.MultiCameraIds", byte[].class);
 
     public static final CameraCharacteristics.Key<Integer> MFNRType =
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.MFNRType", Integer.class);
@@ -1660,12 +1658,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(isAIDE2Enabled()){
                 try {
                     mAideAdrcGain = result.get(adrc_gain);
+                    mMasterCameraId = result.get(CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID);
+                    Log.d(TAG,"mMasterCameraId: " + mMasterCameraId);
                 } catch (IllegalArgumentException e) {
-                    Log.d(TAG,EXCEPTION_LOG,"no adrc_gain tag");
-                }
-                byte[] multiCameraIds = result.get(MultiCameraIds);
-                if(multiCameraIds != null) {
-                    mMasterCameraId = String.valueOf(byteArray2Int(multiCameraIds, 8));
+                    Log.d(TAG,EXCEPTION_LOG,"no adrc_gain tag or LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID");
                 }
             }
             if(isAIDE2Enabled() || mSaveRaw) {
@@ -5031,7 +5027,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE){
                 applySettingsForLockExposure(captureBuilder, id);
             }
-            if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) && !isLongExpTmCaptrure()) {
+            if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) &&
+                    !isLongExpTmCaptrure() &&
+                    !mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, true);
             } else {
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, false);
