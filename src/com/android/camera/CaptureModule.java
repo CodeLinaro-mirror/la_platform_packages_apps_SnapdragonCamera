@@ -1250,7 +1250,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final int LOCK_AF_AE_STATE_NONE = 0;
     private static final int LOCK_AF_AE_STATE_START = 1;
     private static final int LOCK_AF_AE_STATE_LOCK_DONE = 2;
-    private List<String> mLongImgTitle = new ArrayList<>();
+
 
     private int mLockAFAE = LOCK_AF_AE_STATE_NONE;
     private TextView mLockAFAEText;
@@ -1413,9 +1413,13 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mClosedCamTime;
     private long mStartedTime;
     private long mSessionAfterRecord;
-    private ExifInterface mImagExif;
-    public ExifInterface getImagExif(){
+    private List<String> mLongImgTitle = new ArrayList<>();
+    private List<ExifInterface> mImagExif = new ArrayList<>();;
+    public List<ExifInterface> getImagExif(){
         return mImagExif;
+    }
+    public void setImagExif(List<ExifInterface> exif){
+         mImagExif = exif;
     }
     public CaptureResult getPreviewCaptureResult() {
         return mPreviewCaptureResult;
@@ -6191,7 +6195,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                 ",imageWidth="+imageWidth+",imageHeight="+imageHeight+",imageFormat="+imageFormat
                                         +",mImagExif="+exif);
                                         mLongImgTitle.add(title);
-                                        mImagExif = exif;
+                                        mImagExif.add(exif);
                                     }
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         saveRawImg(bytes, image, name, title);
@@ -6932,9 +6936,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         NamedEntity name = mNamedImages.getNextNameEntity();
                         String title = (name == null) ? null : name.title;
                         long date = (name == null) ? -1 : name.date;
-                        if(mActivity.getAutoTest()) {
-                            mLongImgTitle.add(title);
-                        }
+
                         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                         byte[] bytes = new byte[buffer.remaining()];
                         buffer.get(bytes);
@@ -6945,6 +6947,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                             exif = new ExifInterface(new ByteArrayInputStream(bytes));
                         } catch (IOException e) {
                             Log.w(TAG,"get exif failed");
+                        }
+                        if(mActivity.getAutoTest()) {
+                            mLongImgTitle.add(title);
+                            mImagExif.add(exif);
                         }
                         if (image.getFormat() != ImageFormat.HEIC && exif != null){
                             orientation = CameraUtil.getOrientation(exif);
