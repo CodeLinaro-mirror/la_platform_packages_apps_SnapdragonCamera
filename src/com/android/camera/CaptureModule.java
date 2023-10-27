@@ -13027,26 +13027,25 @@ public class CaptureModule implements CameraModule, PhotoController,
         // Get HDR ANS mode. (0 off, 1 on)
         int hdrAns = SettingTranslation
                 .getHdrAnsMode(mSettingsManager.getValue(SettingsManager.KEY_HDR_ANS_MODE));
+        if (PersistUtil.needAudioEncoder()) {
+            AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
+            setDefaultHDRParameters(am);
 
-        AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
-        setDefaultHDRParameters(am);
+            if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
+                Log.d(TAG, "Enable HDR");
+                am.setParameters("hdr_record_on=true");
+                am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
+                am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
+                am.setParameters("hdr_audio_channel_count=4");
+                am.setParameters("hdr_audio_sampling_rate=48000");
 
-        if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
-            Log.d(TAG, "Enable HDR");
-            am.setParameters("hdr_record_on=true");
-            am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
-            am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
-            am.setParameters("hdr_audio_channel_count=4");
-            am.setParameters("hdr_audio_sampling_rate=48000");
-        }
-
-        if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
-            Log.d(TAG, "cameraId " + mSettingsManager.isFacingFront(cameraId) + " mOrientation " + mOrientation);
-            am.setParameters(mSettingsManager.isFacingFront(cameraId) ? "facing=front" : "facing=back");
-            am.setParameters((mOrientation == 90 || mOrientation == 180)
+                Log.d(TAG, "cameraId " + mSettingsManager.isFacingFront(cameraId) + " mOrientation " + mOrientation);
+                am.setParameters(mSettingsManager.isFacingFront(cameraId) ? "facing=front" : "facing=back");
+                am.setParameters((mOrientation == 90 || mOrientation == 180)
                                 ? "inverted=true" : "inverted=false");
-            am.setParameters((mOrientation == 90 || mOrientation == 270)
+                am.setParameters((mOrientation == 90 || mOrientation == 270)
                                 ? "orientation=landscape" : "orientation=portrait");
+            }
         }
 
         //updateHFRSetting();
@@ -16279,11 +16278,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
         }
-
-        AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
-        // Set default values for HDR settings
-        setDefaultHDRParameters(am);
-
+        if (PersistUtil.needAudioEncoder()) {
+            AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
+            // Set default values for HDR settings
+            setDefaultHDRParameters(am);
+        }
 
     }
 
@@ -16332,6 +16331,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      * MediaPlaybackService to pause playback.
      */
     private void requestAudioFocus() {
+        if (!PersistUtil.needAudioEncoder()) return;
         AudioManager am = (AudioManager)mActivity.getSystemService(Context.AUDIO_SERVICE);
         // Send request to obtain audio focus. This will stop other
         // music stream.
@@ -16343,6 +16343,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void releaseAudioFocus() {
+        if (!PersistUtil.needAudioEncoder()) return;
         AudioManager am = (AudioManager)mActivity.getSystemService(Context.AUDIO_SERVICE);
         int result = am.abandonAudioFocus(null);
         if (result == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
