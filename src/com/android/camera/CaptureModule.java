@@ -1306,7 +1306,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (id == getMainCameraId()) {
                 updateFocusStateChange(result);
                 updateAWBCCTAndgains(result);
-                mAideAdrcGain = result.get(adrc_gain);
+                try{
+                    mAideAdrcGain = result.get(adrc_gain);
+                } catch (IllegalArgumentException|NullPointerException e) {
+                    Log.d(TAG, " did not contains the vendorTag : " + adrc_gain);
+                }
                 updateAECGainAndExposure(result);
                 String physical_id = mSettingsManager.getSinglePhysicalCamera();
                 Face[] faces;
