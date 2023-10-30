@@ -1198,6 +1198,8 @@ public class PostProcessor{
         exif.addOrientationTag(orientationInDegree);
         exif.addDateTimeStampTag(ExifInterface.TAG_DATE_TIME, System.currentTimeMillis(),
                 TimeZone.getDefault());
+        exif.addDateTimeStampTag(ExifInterface.TAG_DATE_TIME_ORIGINAL, System.currentTimeMillis(),
+                TimeZone.getDefault());
         if(result != null) {
             if(result.get(CaptureResult.FLASH_MODE) != null) {
                 exif.addFlashTag(result.get(CaptureResult.FLASH_MODE) != CaptureResult.FLASH_MODE_OFF);
