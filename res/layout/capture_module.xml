@@ -19,7 +19,7 @@
 
 <!--
     Changes from Qualcomm Innovation Center are provided under the following license:
-    Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+    Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
     SPDX-License-Identifier: BSD-3-Clause-Clear
  -->
 
@@ -40,6 +40,12 @@
         android:layout_height="match_parent"
         android:id="@+id/mdp_preivew_frame"
         android:layout_gravity="center_vertical|center_horizontal">
+
+        <ViewStub
+            android:id="@+id/depth_view_stub"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout="@layout/depth_view" />
 
         <ViewStub
             android:id="@+id/preview_view_stub"

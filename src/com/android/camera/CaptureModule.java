@@ -96,6 +96,8 @@ import android.os.SystemClock;
 import android.os.Trace;
 import android.provider.MediaStore;
 import android.util.DisplayMetrics;
+
+import com.android.camera.gles.DepthRender;
 import com.android.camera.util.Log;
 import android.util.Range;
 import android.util.Size;
@@ -233,7 +235,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final int CANCEL_TOUCH_FOCUS = 1;
     private static final int MAX_NUM_CAM = 16;
     private static final int CONTOUR_POINTS_COUNT = 89;
-    private String DEPTH_CAM_ID;
+    private String DEPTH_CAM_ID = null;
     private static final MeteringRectangle[] ZERO_WEIGHT_3A_REGION = new MeteringRectangle[]{
             new MeteringRectangle(0, 0, 0, 0, 0)};
     private static final String EXTRA_QUICK_CAPTURE =
@@ -908,7 +910,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean[] mCameraOpened = new boolean[MAX_NUM_CAM];
     private CameraDevice[] mCameraDevice = new CameraDevice[MAX_NUM_CAM];
     private String[] mCameraId = new String[MAX_NUM_CAM];
-    private String[] mSelectableModes = {"Video", "Cinematic", "HFR", "Photo", "Bokeh", "SAT", "Pro"};
+    private String[] mSelectableModes = {"Video", "Cinematic", "HFR", "Photo", "Bokeh", "SAT", "Pro", "Depth"};
     private ArrayList<SceneModule> mSceneCameraIds = new ArrayList<>();
     private Set<String> mQuadBayerPhysicalIds = new HashSet<>();
     public static boolean MCXMODE = false;
@@ -928,7 +930,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         DEFAULT,
         RTB,
         SAT,
-        PRO_MODE
+        PRO_MODE,
+        DEPTH
     }
     private enum VideoState {
         VIDEO_INIT,
@@ -1051,6 +1054,14 @@ public class CaptureModule implements CameraModule, PhotoController,
     private ImageReader[] mPhysicalRawReader = new ImageReader[MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private ImageReader[] mPhysicalJpegReader = new ImageReader[PHYSICAL_CAMERA_COUNT];
     private ImageReader[] mPhysicalJpegRReader = new ImageReader[MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
+
+    private ImageReader mDepthImageReader = null;
+
+    private final Object mDepthImageLock = new Object();
+    private DepthRender mDepthRender = null;
+
+    private long mDepthLastFrameTimeStamp = 0L;
+    private int mDepthFrameCount = 0;
     private boolean is8KInMulti = false;
     //yuv raw images are for raw reprocess
     public int mRawReprocessType = 0;
@@ -1088,6 +1099,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private final Handler mHandler = new MainHandler();
     private CameraCaptureSession mCurrentSession;
     private OutputConfiguration mPreviewOutputConfiguration;
+
+    private Size mDepthSize = null;
     private Size mPreviewSize;
     private Size mPictureSize;
     private Size mVideoPreviewSize;
@@ -3270,6 +3283,38 @@ public class CaptureModule implements CameraModule, PhotoController,
         return id;
     }
 
+    private int mDepthMode = -1;
+
+    private void applyDepthMode(CaptureRequest.Builder builder) {
+        if (CameraMode.DEPTH != mCurrentSceneMode.mode) {
+            return;
+        }
+        if (mDepthMode == -1) {
+            mDepthMode = mSettingsManager.getDepthMode();
+        }
+        VendorTagUtil.setDepthMode(builder, (int) mDepthMode);
+    }
+
+    private void applyITofTuningSet(CaptureRequest.Builder builder) {
+        if (CameraMode.DEPTH != mCurrentSceneMode.mode) {
+            return;
+        }
+        String tuning_set = mSettingsManager.getValue(SettingsManager.KEY_ITOF_TUNING_SET);
+        int set = Integer.parseInt(tuning_set);
+        VendorTagUtil.setITofTuningSet(builder, set);
+    }
+
+    public void onDepthEngineChanged(int mode) {
+        mDepthMode = mode;
+        restartSession(false);
+    }
+
+    public void onDepthFocusChanged(int focus) {
+        if (mDepthRender != null) {
+            mDepthRender.setDepthFocus(focus);
+        }
+    }
+
     private void createSession(final int id) {
         Log.d(TAG, "createSession,id: " + id + ",mPaused:" + mPaused + ",mCameraOpened:"
                 + mCameraOpened[id] + ",mCameraDevice:"+ mCameraDevice[id] + ", mChosenImageFormat :" + mChosenImageFormat);
@@ -3491,9 +3536,63 @@ public class CaptureModule implements CameraModule, PhotoController,
                         list.add(surs);
                     }
                     mPreviewRequestBuilder[id].addTarget(surface);
+                    if (DEPTH_CAM_ID != null &&
+                            mCurrentSceneMode.mode == CameraMode.DEPTH &&
+                            mSettingsManager.isBackCamera(id)) {
+                        mDepthLastFrameTimeStamp = 0L;
+                        mHandler.post(() -> {
+                            mUI.updateDepthFps(0f);
+                        });
+                        if (mDepthRender == null) {
+                            mDepthRender = new DepthRender();
+                            mDepthRender.setColorLut(mActivity);
+                        }
+                        mDepthRender.init();
+                        Log.i(TAG, "depth image reader " + mDepthSize);
+                        mDepthImageReader = ImageReader.newInstance(mDepthSize.getWidth(),
+                                mDepthSize.getHeight(), ImageFormat.DEPTH16, MAX_IMAGEREADERS);
+                        mDepthImageReader.setOnImageAvailableListener(reader -> {
+                            synchronized (mDepthImageLock) {
+                                Image image = reader.acquireNextImage();
+                                if (image == null) {
+                                    return;
+                                }
+                                if (mDepthLastFrameTimeStamp == 0L) {
+                                    mDepthLastFrameTimeStamp = System.currentTimeMillis();
+                                    mDepthFrameCount = 1;
+                                } else {
+                                    if (++mDepthFrameCount == 50) {
+                                        long now = System.currentTimeMillis();
+                                        long diff = now - mDepthLastFrameTimeStamp;
+                                        final float fps = 1000f / (diff / 50f);
+                                        mHandler.post(() -> {
+                                            mUI.updateDepthFps(fps);
+                                        });
+                                        mDepthLastFrameTimeStamp = now;
+                                        mDepthFrameCount = 0;
+                                    }
+                                }
+                                int width = image.getWidth();
+                                int height = image.getHeight();
+                                int rowStride = image.getPlanes()[0].getRowStride();
+                                int pixStride = image.getPlanes()[0].getPixelStride();
+                                ByteBuffer imageBuffer = image.getPlanes()[0].getBuffer();
+                                mDepthRender.setDepthBuffer(imageBuffer, width, height, rowStride, pixStride);
+                                image.close();
+                            }
+                        }, mImageAvailableHandler);
+
+                        Surface depthSurface = mDepthImageReader.getSurface();
+                        list.add(depthSurface);
+                        mPreviewRequestBuilder[id].addTarget(depthSurface);
+
+                        mHandler.post(() -> {
+                            mUI.showDepthView(mDepthRender);
+                        });
+                    }
 
                     if (!mSettingsManager.isHeifWriterEncoding() && mRawReprocessType != 1) {
-                        if (!isMultiResolutionImageReaderEnabled()) {
+                        if (!isMultiResolutionImageReaderEnabled() && mDepthImageReader == null) {
                             list.add(mImageReader[id].getSurface());
                         }
                     }
@@ -4406,11 +4505,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
 
+            if (!foundDepth) {
+                mDepthSize = mSettingsManager.getSupportedDepthSize(characteristics);
+                foundDepth = mDepthSize != null;
+            }
+
             initQuadBayerPhsicalCameraIds(isLogicalCamera, cameraId, manager, characteristics, capabilities);
 
             if(foundDepth) {
-                mCameraId[i] = "-1";
-                continue;
+                DEPTH_CAM_ID = cameraId;
+//                continue;
             }
             mCameraId[i] = cameraId;
             isFirstDefault = setUpLocalMode(i, characteristics, removeList,
@@ -4505,6 +4609,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 removeList[CameraMode.VIDEO.ordinal()] = false;
                 removeList[CameraMode.CINEMATIC.ordinal()] = false;
                 removeList[CameraMode.PRO_MODE.ordinal()] = false;
+                if (DEPTH_CAM_ID != null) {
+                    removeList[CameraMode.DEPTH.ordinal()] = false;
+                }
                 if (physical_ids != null && physical_ids.size() == 0 &&
                         facing != CameraCharacteristics.LENS_FACING_FRONT){
                     if (mSingleRearId == -1) {
@@ -4547,6 +4654,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mSceneCameraIds.get(CameraMode.VIDEO.ordinal()).rearCameraId = defaultId;
                     mSceneCameraIds.get(CameraMode.CINEMATIC.ordinal()).rearCameraId = mSingleRearId;
                     mSceneCameraIds.get(CameraMode.PRO_MODE.ordinal()).rearCameraId = defaultId;
+                    if (DEPTH_CAM_ID != null) {
+                        mSceneCameraIds.get(CameraMode.DEPTH.ordinal()).rearCameraId = defaultId;
+                    }
                     //default HFR is support, will remove after setting manager init
                     removeList[CameraMode.HFR.ordinal()] = false;
                     mSceneCameraIds.get(CameraMode.HFR.ordinal()).rearCameraId = mSingleRearId;
@@ -7197,6 +7307,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             uninitMultiResolutionImageReader();
         }
         closePhysicalImageReaders();
+        synchronized (mDepthImageLock) {
+            if (mDepthImageReader != null) {
+                mDepthImageReader.close();
+                mDepthImageReader = null;
+            }
+        }
     }
 
     private void closePhysicalImageReaders(){
@@ -7235,6 +7351,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             mVideoSnapshotImageReader.close();
             mVideoSnapshotImageReader = null;
         }
+
+        synchronized (mDepthImageLock) {
+            if (null != mDepthImageReader) {
+                mDepthImageReader.close();
+                mDepthImageReader = null;
+            }
+        }
+
     }
 
     /**
@@ -7523,6 +7647,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             applyEnableCinematic(builder);
         }
+        applyDepthMode(builder);
+        applyITofTuningSet(builder);
     }
 
     private void applyeHardSwitchParam(CaptureRequest.Builder builder){
@@ -7683,6 +7809,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         Log.i(TAG, "stopBackgroundThread");
+        if (mCameraThread == null) {
+            return;
+        }
         mCameraThread.quitSafely();
         mImageAvailableThread.quitSafely();
         mCaptureCallbackThread.quitSafely();
@@ -7865,6 +7994,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mUI.getGLCameraPreview().onPause();
         }
         mUI.hidePhysicalSurfaces();
+        mUI.hideDepthView();
         mPreviewOutputConfiguration = null;
         mZoomValue = 1f;
         mUI.updateZoomSeekBar(1.0f);
@@ -8341,6 +8471,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(mCurrentSceneMode.mode == CameraMode.VIDEO){
             enableVideoButton(false);//disable the video button before media recorder is ready
         }
+        mUI.showControlUI();
         mUI.enableShutter(false);
         mHighSpeedCapture = false;
         if(!MCXMODE) {
@@ -15103,6 +15234,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyFaceDetection(CaptureRequest.Builder request) {
+        if (CURRENT_MODE == CameraMode.DEPTH) {
+            return;
+        }
         String value = mSettingsManager.getValue(SettingsManager.KEY_FACE_DETECTION);
         String mode = mSettingsManager.getValue(SettingsManager.KEY_FACE_DETECTION_MODE);
         String facialContour = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
@@ -16519,6 +16653,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                  nextSceneMode.mode == CameraMode.SAT ||
                  nextSceneMode.mode == CameraMode.CINEMATIC ||
                  nextSceneMode.mode == CameraMode.PRO_MODE ||
+                 nextSceneMode.mode == CameraMode.DEPTH ||
                  (nextSceneMode.mode == CameraMode.HFR &&
                          !mSettingsManager.isFrontIDHFRSupported()))) {
             mSettingsManager.setValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
@@ -16531,7 +16666,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public void updateZoomSeekBarVisible() {
         String multiCam = mSettingsManager.getValue(SettingsManager.KEY_MULTI_CAMERAS_MODE);
-        if (mCurrentSceneMode.mode == CameraMode.PRO_MODE  ||
+        if (mCurrentSceneMode.mode == CameraMode.PRO_MODE  || mCurrentSceneMode.mode == CameraMode.DEPTH ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC || mIsRTBCameraId ||
                 mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
             if (mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {

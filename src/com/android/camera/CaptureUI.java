@@ -36,6 +36,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -82,6 +83,7 @@ import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.ImageView;
@@ -89,6 +91,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.android.camera.app.FilmstripBottomPanel;
@@ -1924,7 +1927,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void onCameraOpened(int cameraId) {
         mGestures.setCaptureUI(this);
         if (mModule.isDeepZoom() ||
-                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC) {
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) {
             mGestures.setZoomEnabled(false);
         } else {
             mGestures.setZoomEnabled(mSettingsManager.isZoomSupported(cameraId));
@@ -2158,7 +2162,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     private boolean isSupportFrontCamera(CaptureModule.CameraMode mode) {
-        return mode != CaptureModule.CameraMode.PRO_MODE;
+        return mode != CaptureModule.CameraMode.PRO_MODE && mode != CaptureModule.CameraMode.DEPTH;
     }
 
     public void initFlashButton() {
@@ -3029,6 +3033,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mFilmstripLayout.getVisibility() == View.VISIBLE) {
             return mFilmstripLayout.onBackPressed();
         }
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) {
+            switchToPhotoModeDueToError(true);
+            return true;
+        }
         if (handleBackKeyOnMenu()) return true;
         if (mPieRenderer != null && mPieRenderer.showsItems()) {
             mPieRenderer.hide();
@@ -3041,6 +3049,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         return false;
     }
+
 
     public SurfaceHolder getSurfaceHolder() {
         return mSurfaceHolder;
@@ -3383,6 +3392,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
     private ArrayList<FocusIndicator> getFocusIndicator() {
         ArrayList<FocusIndicator> foucusList =new ArrayList<>();
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) {
+            return foucusList;
+        }
         if (mModule.isTrackingFocusSettingOn()) {
             if (mPieRenderer != null) {
                 mPieRenderer.clear();
@@ -3698,8 +3710,218 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+    private TextureView mDepthTextureView;
+    private ViewGroup.LayoutParams mPreviewLayoutParams;
+    private Switch mDepthSwitch;
+
+    private TextView mDepthFps;
+
+    private SeekBar mDepthSeekBar;
+
+    private ImageView mDepthSetting;
+
+    public void showDepthView(TextureView.SurfaceTextureListener listener) {
+        if (mDepthTextureView == null) {
+            ViewStub viewStub = mRootView.findViewById(R.id.depth_view_stub);
+            viewStub.inflate();
+            mDepthTextureView = mRootView.findViewById(R.id.depth_preview_texture_view);
+        }
+
+        FrameLayout.LayoutParams params1 =
+                new FrameLayout.LayoutParams(
+                        mPreviewHeight,
+                        mPreviewWidth,
+                        Gravity.CENTER);
+        mDepthTextureView.setLayoutParams(params1);
+        mDepthTextureView.setSurfaceTextureListener(listener);
+        mDepthTextureView.setVisibility(View.VISIBLE);
+
+        if (mPreviewLayoutParams == null) {
+            Point p = getPointInScreen(0, 0);
+            int height = p.y;
+            int width = (int) (height * 1.0f  / mPreviewWidth * mPreviewHeight);
+            FrameLayout.LayoutParams params =
+                    new FrameLayout.LayoutParams(
+                            width,
+                            height,
+                            Gravity.TOP | Gravity.START);
+            params.setMargins(0, height, 0, 0);
+
+            if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+                mPreviewLayoutParams = mSurfaceView.getLayoutParams();
+                mSurfaceView.setLayoutParams(params);
+            } else {
+                mPreviewLayoutParams = mTextureView.getLayoutParams();
+                mTextureView.setLayoutParams(params);
+            }
+        }
+
+        mCameraControls.setVisibility(View.GONE);
+        mGestures.setEnabled(false);
+
+        if (mDepthSetting == null) {
+            mDepthSetting = new ImageView(mActivity);
+            FrameLayout.LayoutParams params_ =
+                    new FrameLayout.LayoutParams(
+                            CameraUtil.dpToPixel(25),
+                            CameraUtil.dpToPixel(25),
+                            Gravity.TOP | Gravity.END);
+            params_.topMargin = 100;
+            params_.rightMargin = 50;
+            mDepthSetting.setLayoutParams(params_);
+            mDepthSetting.setImageResource(R.drawable.settings);
+            mDepthSetting.setOnClickListener((view) -> {
+                openSettingsMenu();
+            });
+            ((ViewGroup) mRootView).addView(mDepthSetting);
+        }
+
+        if (mDepthSwitch == null) {
+            mDepthSwitch = new Switch(mActivity);
+            mDepthSwitch.setTextOn("HW");
+            mDepthSwitch.setTextOff("SW");
+            FrameLayout.LayoutParams params2 =
+                    new FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            Gravity.TOP | Gravity.END);
+            params2.topMargin = 100;
+            params2.rightMargin = 200;
+            mDepthSwitch.setLayoutParams(params2);
+            mDepthSwitch.setChecked(mSettingsManager.getDepthMode() == 2);
+            ((ViewGroup) mRootView).addView(mDepthSwitch);
+            mDepthSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    mSettingsManager.setDepthMode(isChecked ? 2 : 0);
+                    if (mDepthTextureView != null) {
+                        mDepthTextureView.setVisibility(View.GONE);
+                    }
+                    mModule.onDepthEngineChanged(isChecked ? 2 : 0);
+                }
+            });
+        }
+
+        if (mDepthFps == null) {
+            mDepthFps = new TextView(mActivity);
+            FrameLayout.LayoutParams params2 =
+                    new FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            Gravity.TOP | Gravity.START);
+            params2.topMargin = 100;
+            params2.leftMargin = 100;
+            mDepthFps.setLayoutParams(params2);
+            mDepthFps.setTextColor(Color.RED);
+            mDepthFps.setTextSize(18f);
+            ((ViewGroup) mRootView).addView(mDepthFps);
+        }
+
+        if (mDepthSeekBar == null) {
+            mDepthSeekBar = new SeekBar(mActivity);
+            FrameLayout.LayoutParams params =
+                    new FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            Gravity.BOTTOM | Gravity.START);
+            params.bottomMargin = 200;
+            params.leftMargin = 100;
+            params.rightMargin = 100;
+            mDepthSeekBar.setLayoutParams(params);
+            mDepthSeekBar.setMax(3000);
+            mDepthSeekBar.setMin(500);
+            mDepthSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    Log.i(TAG, "onProgressChanged " + progress);
+                    mModule.onDepthFocusChanged(progress);
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+
+                }
+            });
+            ((ViewGroup) mRootView).addView(mDepthSeekBar);
+            mDepthSeekBar.setProgress(1000);
+        }
+
+    }
+
+    public void hideDepthView() {
+        if (mDepthTextureView != null) {
+            mDepthTextureView.setVisibility(View.GONE);
+        }
+
+        if (mPreviewLayoutParams != null) {
+            if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+                mSurfaceView.setLayoutParams(mPreviewLayoutParams);
+            } else {
+                mTextureView.setLayoutParams(mPreviewLayoutParams);
+            }
+            mPreviewLayoutParams = null;
+        }
+
+        if (mDepthSetting != null) {
+            ((ViewGroup) mRootView).removeView(mDepthSetting);
+            mDepthSetting = null;
+        }
+
+        if (mDepthSwitch != null) {
+            ((ViewGroup) mRootView).removeView(mDepthSwitch);
+            mDepthSwitch = null;
+        }
+
+        if (mDepthFps != null) {
+            ((ViewGroup) mRootView).removeView(mDepthFps);
+            mDepthFps = null;
+        }
+
+        if (mDepthSeekBar != null) {
+            ((ViewGroup) mRootView).removeView(mDepthSeekBar);
+            mDepthSeekBar = null;
+        }
+
+        mGestures.setEnabled(true);
+    }
+
+    public void showControlUI() {
+        if (mCameraControls != null &&
+                mModule.getCurrenCameraMode() != CaptureModule.CameraMode.DEPTH &&
+                mCameraControls.getVisibility() != View.VISIBLE) {
+            mCameraControls.setVisibility(View.VISIBLE);
+        }
+    }
+
+    public void updateDepthFps(float fps) {
+        Log.v(TAG, "updateDepthFps " + fps);
+        if (mDepthFps != null) {
+            if (mSettingsManager.getDepthMode() == 0) {
+                fps = fps / 2f;
+            }
+            if (fps == 0f) {
+                mDepthFps.setText("");
+            } else {
+                mDepthFps.setText(String.format(Locale.getDefault(), "FPS:%.2f%n", fps));
+            }
+        }
+    }
+
+    public int getDepthProgress() {
+        if (mDepthSeekBar != null) {
+            return mDepthSeekBar.getProgress();
+        }
+        return 1000;
+    }
+
     public void showEvSeekbar(int x, int y) {
-        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE) return;
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) return;
         initEvSeekBar();
         int evX = x - mPieRenderer.getSize() / 2 - mPieRenderer.getSize() / 5;
         int evY = y + mPieRenderer.getSize() / 2;

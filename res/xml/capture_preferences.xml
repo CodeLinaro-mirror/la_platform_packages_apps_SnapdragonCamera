@@ -28,7 +28,7 @@
 -->
 <!--
     Changes from Qualcomm Innovation Center are provided under the following license:
-    Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+    Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
     SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <PreferenceGroup
@@ -1035,4 +1035,12 @@
         camera:entryValues="@array/pref_camera2_camera2_entryvalues"
         camera:key="pref_camera2_performance_debug_key"
         camera:title="@string/pref_camera2_performance_debug_title"/>
+
+    <ListPreference
+        camera:defaultValue="0"
+        camera:entries="@array/pref_camera2_itof_tuning_set_entries"
+        camera:entryValues="@array/pref_camera2_itof_tuning_set_entryvalues"
+        camera:key="pref_camera2_itof_tuning_set_key"
+        camera:title="@string/pref_camera2_itof_tuning_set_title"
+        />
 </PreferenceGroup>

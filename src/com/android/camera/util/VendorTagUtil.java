@@ -29,7 +29,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -109,7 +109,11 @@ public class VendorTagUtil {
     private static final CaptureRequest.Key<Integer> EIS_MODE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EISMode", Integer.class);
 
+    public static final CaptureRequest.Key<Integer> DEPTH_MODE =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.DepthMode",Integer.class);
 
+    public static final CaptureRequest.Key<Integer> ITOF_TUNING_SET =
+            new CaptureRequest.Key<>("com.qti.node.itofpreprocess.ITOFTuningSet", Integer.class);
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
     private static final int MANUAL_WB_GAINS_MODE = 2;
@@ -351,6 +355,20 @@ public class VendorTagUtil {
     public static void setEISModeForSessionParameter(CaptureRequest.Builder builder, int mode) {
         if (isSupported(builder, EIS_MODE)) {
             builder.set(EIS_MODE, mode);
+        }
+    }
+
+    public static void setDepthMode(CaptureRequest.Builder builder, int mode) {
+        Log.i(TAG,"setDepthMode: " + mode);
+        if (isSupported(builder, DEPTH_MODE)) {
+            builder.set(DEPTH_MODE, mode);
+        }
+    }
+
+    public static void setITofTuningSet(CaptureRequest.Builder builder, int tuningSet) {
+        Log.i(TAG,"setITofTuningSet: " + tuningSet);
+        if (isSupported(builder, ITOF_TUNING_SET)) {
+            builder.set(ITOF_TUNING_SET, tuningSet);
         }
     }
 }

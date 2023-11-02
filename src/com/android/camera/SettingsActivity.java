@@ -117,6 +117,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.android.camera.CaptureModule.CameraMode.DEFAULT;
+import static com.android.camera.CaptureModule.CameraMode.DEPTH;
 import static com.android.camera.CaptureModule.CameraMode.HFR;
 import static com.android.camera.CaptureModule.CameraMode.RTB;
 import static com.android.camera.CaptureModule.CameraMode.SAT;
@@ -1576,6 +1577,9 @@ public class SettingsActivity extends PreferenceActivity {
             removePreference(SettingsManager.KEY_RAW_CB_INFO, developer);
         }
         removePreference(SettingsManager.KEY_VIDEO_HDR_VALUE, developer);
+        if (mode != DEPTH) {
+            removePreference(SettingsManager.KEY_ITOF_TUNING_SET, developer);
+        }
         switch (mode) {
             case DEFAULT:
                 removePreferenceGroup("video", parentPre);
@@ -1728,6 +1732,16 @@ public class SettingsActivity extends PreferenceActivity {
                     proModeOnlyList.add(SettingsManager.KEY_TONE_MAPPING);
                     proModeOnlyList.add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
                     addDeveloperOptions(developer, proModeOnlyList);
+                }
+                break;
+            case DEPTH:
+                removePreferenceGroup("general", parentPre);
+                removePreferenceGroup("photo", parentPre);
+                removePreferenceGroup("video", parentPre);
+                if (mDeveloperMenuEnabled && developer != null) {
+                    ArrayList<String> depthList = new ArrayList<>();
+                    depthList.add(SettingsManager.KEY_ITOF_TUNING_SET);
+                    addDeveloperOptions(developer, depthList);
                 }
                 break;
             default:

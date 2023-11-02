@@ -97,6 +97,9 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -349,6 +352,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_HFR_BUFFER_MODE = "pref_camera2_hfr_buffermode_key";
 
     public static final String KEY_TORCH_HDR_VALUE= "pref_camera2_torch_hdr_key";
+
+    public static final String KEY_DEPTH_MODE = "DEPTH_MODE";
+
+    public static final String KEY_ITOF_TUNING_SET = "pref_camera2_itof_tuning_set_key";
+
     private static final String TAG = "SnapCam_SettingsManager";
 
     private static SettingsManager sInstance;
@@ -477,6 +485,30 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch (CameraAccessException e) {
             Log.e(TAG,e.toString());
         }
+    }
+
+    public boolean isBackCamera(int cameraId) {
+        if (cameraId > mCharacteristics.size()) {
+            return false;
+        }
+        int facing = mCharacteristics.get(cameraId).get(CameraCharacteristics.LENS_FACING);
+        return facing == CameraCharacteristics.LENS_FACING_BACK;
+    }
+
+    public void setDepthMode(int mode) {
+        final SharedPreferences pref = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext,
+                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putInt(KEY_DEPTH_MODE, mode);
+        editor.apply();
+    }
+
+    public int getDepthMode() {
+        final SharedPreferences pref = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext,
+                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        return pref.getInt(KEY_DEPTH_MODE, 2);
     }
 
    public boolean isTorchHDREnabled(boolean isflashRequired,CaptureResult mResult) {
@@ -908,6 +940,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isFDRenderingAtPreview(){
+        if (CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.DEPTH) {
+            return false;
+        }
         boolean isFDRenderingInUI = false;
         if( CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR) {
@@ -3410,6 +3445,33 @@ public class SettingsManager implements ListMenu.SettingsListener {
         boolean isMfHDR = pref.getBoolean(KEY_MANUAL_MFHDR, false);
         boolean isSHDR = pref.getBoolean(KEY_MANUAL_SHDR, false);
         return isMfHDR || isSHDR;
+    }
+
+    public Size getSupportedDepthSize(CameraCharacteristics characteristics) {
+        try {
+            Field key = characteristics.getClass().getDeclaredField("DEPTH_AVAILABLE_DEPTH_STREAM_CONFIGURATIONS");
+            key.setAccessible(true);
+            Object depthStreamConfigurations_key = key.get(characteristics);
+            Class<?> type = key.getType();
+            Log.i(TAG, "Key type " + type);//android.hardware.camera2.CameraCharacteristics$Key
+            Method method_get = characteristics.getClass().getDeclaredMethod("get", type);
+            Object values = method_get.invoke(characteristics, depthStreamConfigurations_key);
+            Log.i(TAG, "values type " + values.getClass());// [Landroid.hardware.camera2.params.StreamConfiguration
+            Class<?> StreamConfiguration_Class = values.getClass().getComponentType();
+            int length = Array.getLength(values);
+            Log.i(TAG, "values length " + length);
+            if (length < 1) {
+                return null;
+            }
+            Object value = Array.get(values, 0);
+            Method method_getSize = StreamConfiguration_Class.getDeclaredMethod("getSize");
+            Size stream_size = (Size) method_getSize.invoke(value);
+            Log.i(TAG, "getSize from depth stream configurations " + stream_size);
+            return stream_size;
+        } catch (Exception e) {
+            Log.w(TAG, "getSupportedDepthSize ", e.fillInStackTrace());
+        }
+        return null;
     }
 
     private List<String> getSupportedPictureSize(int cameraId) {
