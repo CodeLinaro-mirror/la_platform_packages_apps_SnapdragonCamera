@@ -2196,13 +2196,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 removePreference(mPreferenceGroup, KEY_CAPTURE_PROFILE);
             }
         } else {
-            if (previewProfile != null) {
-                if (filterUnsupportedOptions(previewProfile,
-                        getSupportedCapturePreviewProfile())) {
-                    mFilteredKeys.add(previewProfile.getKey());
-                }
-                previewProfile.print();
-            }
             if (captureProfile != null) {
                 if (filterUnsupportedOptions(captureProfile,
                         getSupportedCapturePreviewProfile())) {

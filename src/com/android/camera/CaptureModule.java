@@ -10530,18 +10530,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
                     Log.v(TAG, " video OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
                 }
-                if (mSettingsManager.isDynamicRangeTenBitSupported() &&
-                        !PersistUtil.isVideoEncoderProfileByVendorTag()) {
-                    String encoderProfile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-                    if (encoderProfile != null) {
-                        String profile = SettingsManager.VIDEO_ENCODER_PROFILE_MAP.get(encoderProfile);
-                        Log.v(TAG, "OutputConfiguration set video encoderProfile :" +
-                                encoderProfile + ", profile :" + profile);
-                        if (!profile.equals("0")) {
-                            videoConfig.setDynamicRangeProfile(Long.parseLong(profile));
-                        }
-                    }
-                }
+                setDynamicProfile(videoConfig);
                 outConfigurations.add(videoConfig);
             }
             OutputConfiguration videoPrevConfig = new OutputConfiguration(mVideoPreviewSurface);
@@ -10652,6 +10641,20 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void setDynamicProfile(OutputConfiguration videoRecordConfig){
+        if (mSettingsManager.isDynamicRangeTenBitSupported() &&
+                !PersistUtil.isVideoEncoderProfileByVendorTag()) {
+            String encoderProfile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
+            if (encoderProfile != null) {
+                String profile = SettingsManager.VIDEO_ENCODER_PROFILE_MAP.get(encoderProfile);
+                Log.v(TAG, "OutputConfiguration set video encoderProfile :" +
+                        encoderProfile + ", profile :" + profile);
+                if (!profile.equals("0")) {
+                    videoRecordConfig.setDynamicRangeProfile(Long.parseLong(profile));
+                }
+            }
+        }
+    }
     private void createHighSpeedSession(int cameraID) throws CameraAccessException {
         int optionMode = isSSMEnabled() ? STREAM_CONFIG_SSM : SESSION_HIGH_SPEED;
         List<OutputConfiguration> outConfigurations = new ArrayList<>();
@@ -10668,6 +10671,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
             Log.v(TAG, " video record OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
         }
+        setDynamicProfile(videoRecordConfig);
         outConfigurations.add(videoPreviewConfig);
         outConfigurations.add(videoRecordConfig);
         setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
