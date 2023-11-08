@@ -9919,11 +9919,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mSettingsManager.getPhysicalFeatureEnableId
                 (SettingsManager.KEY_PHYSICAL_CAMCORDER) != null) {
             Log.d(TAG,"releasePhysicalRecorder");
-            for (MediaRecorder recorder:mPhysicalMediaRecorders){
-                if (recorder != null){
-                    recorder.reset();
-                    recorder.release();
-                    recorder = null;
+            for (int i =0; i<mPhysicalMediaRecorders.length; i++){
+                if (mPhysicalMediaRecorders[i] != null){
+                    mPhysicalMediaRecorders[i].reset();
+                    mPhysicalMediaRecorders[i].release();
+                    mPhysicalMediaRecorders[i] = null;
                 }
             }
         }
