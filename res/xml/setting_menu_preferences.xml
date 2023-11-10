@@ -392,6 +392,14 @@
             android:summary="%s"
             android:title="@string/pref_camera2_anti_banding_level_title" />
         <ListPreference
+            android:defaultValue="@string/pref_camera2_audio_ble_default"
+            android:entries="@array/pref_camera2_audio_ble_entry"
+            android:entryValues="@array/pref_camera2_audio_ble_entryvalues"
+            android:key="pref_camera2_audio_ble_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_audio_ble_title" />
+        <ListPreference
             android:defaultValue="@string/pref_camera2_hdr_default"
             android:entries="@array/pref_camera2_hdr_entries"
             android:entryValues="@array/pref_camera2_hdr_entryvalues"

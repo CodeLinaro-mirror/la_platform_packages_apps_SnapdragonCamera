@@ -1601,6 +1601,9 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_ONCAPTUREBUFFERLOST_HINT);
                         if (PersistUtil.enableMediaRecorder()) {
                             videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
+                            if (mSettingsManager.isBLEConnected()) {
+                               videoAddList.add(SettingsManager.KEY_AUDIO_BLE);
+                            }
                         }
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA);
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);

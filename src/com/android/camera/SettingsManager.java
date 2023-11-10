@@ -359,6 +359,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public static final String KEY_ITOF_TUNING_SET = "pref_camera2_itof_tuning_set_key";
 
+    public static final String KEY_AUDIO_BLE = "pref_camera2_audio_ble_key";
+
     private static final String TAG = "SnapCam_SettingsManager";
 
     private static SettingsManager sInstance;
@@ -497,6 +499,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         int facing = mCharacteristics.get(cameraId).get(CameraCharacteristics.LENS_FACING);
         return facing == CameraCharacteristics.LENS_FACING_BACK;
+    }
+
+    public boolean isBLEConnected() {
+        return mCaptureModule.isBLEConnected();
     }
 
     public void setDepthMode(int mode) {

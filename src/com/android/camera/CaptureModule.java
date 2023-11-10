@@ -68,6 +68,8 @@ import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.LensShadingMap;
 import android.location.Location;
+import android.media.AudioDeviceCallback;
+import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -85,6 +87,7 @@ import android.media.MediaCodecInfo.VideoCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaMuxer;
 import android.media.MediaRecorder;
+import android.media.MicrophoneInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -2897,6 +2900,25 @@ public class CaptureModule implements CameraModule, PhotoController,
     public boolean isBackCamera() {
         String value = mSettingsManager.mPreferences.getGlobal().getString(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         return value.equals("rear");
+    }
+
+    public boolean isBLEConnected() {
+        String audioSelected = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER);
+        if (PersistUtil.needAudioEncoder() && !audioSelected.equals("off")) {
+            AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
+            AudioDeviceInfo[] allDeviceInputInfo = am.getDevices(AudioManager.GET_DEVICES_INPUTS);
+            for (AudioDeviceInfo deviceInfo : allDeviceInputInfo) {
+                Log.i(TAG, "BLE, AudioDevice type " + deviceInfo.getType());
+                if (deviceInfo.getType() == AudioDeviceInfo.TYPE_BLE_HEADSET) {
+                    int[] channelCounts = deviceInfo.getChannelCounts();
+                    mBleInputDevice = deviceInfo;
+                    Log.i(TAG, "BLE, found ble device, channel count " +
+                            Arrays.toString(channelCounts));
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public int getCameraMode() {
@@ -13284,6 +13306,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         deleteInvalidUri();
     }
     //------------------------------------------end-----------------------------------------
+    private AudioDeviceInfo mBleInputDevice;
 
     private void setDefaultHDRParameters(AudioManager am) {
         // Set default values for HDR/3D Audio settings
@@ -13300,17 +13323,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         am.setParameters("hdr_audio_sampling_rate=0");
     }
 
-    private boolean setUpMediaRecorder(int cameraId) throws IOException {
-        long startSetMedia = System.currentTimeMillis();
-        if (mSettingsManager.isMultiCameraEnabled() && !mSettingsManager.isLogicalEnable()){
-            mMediaRecorder = null;
-            return true;
-        }
-        Log.i(TAG, "start setUpMediaRecorder");
-        Bundle myExtras = mActivity.getIntent().getExtras();
-        if (mMediaRecorder == null) mMediaRecorder = new MediaRecorder();
-        mMediaRecorder.reset();
-
+    private void configurateAudio(int camId) {
+        int audioEncoder = SettingTranslation
+                .getAudioEncoder(mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER));
         // Get audio recording mode from SettingTranslation. 0 default, 1 hdr
         int audioRecordingMode = SettingTranslation
                 .getAudioRecordingMode(mSettingsManager.getValue(SettingsManager.KEY_AUDIO_RECORDING_MODE));
@@ -13322,43 +13337,27 @@ public class CaptureModule implements CameraModule, PhotoController,
         // Get HDR ANS mode. (0 off, 1 on)
         int hdrAns = SettingTranslation
                 .getHdrAnsMode(mSettingsManager.getValue(SettingsManager.KEY_HDR_ANS_MODE));
-        if (PersistUtil.needAudioEncoder()) {
-            AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
-            setDefaultHDRParameters(am);
 
-            if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
-                Log.d(TAG, "Enable HDR");
-                am.setParameters("hdr_record_on=true");
-                am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
-                am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
-                am.setParameters("hdr_audio_channel_count=4");
-                am.setParameters("hdr_audio_sampling_rate=48000");
-
-                Log.d(TAG, "cameraId " + mSettingsManager.isFacingFront(cameraId) + " mOrientation " + mOrientation);
-                am.setParameters(mSettingsManager.isFacingFront(cameraId) ? "facing=front" : "facing=back");
-                am.setParameters((mOrientation == 90 || mOrientation == 180)
-                                ? "inverted=true" : "inverted=false");
-                am.setParameters((mOrientation == 90 || mOrientation == 270)
-                                ? "orientation=landscape" : "orientation=portrait");
-            }
-        }
-
-        //updateHFRSetting();
         boolean hfr = mHighSpeedCapture && !mHighSpeedRecordingMode;
-        int videoWidth = mProfile.videoFrameWidth;
-        int videoHeight = mProfile.videoFrameHeight;
-        mUnsupportedResolution = false;
-        String audioSelected = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER);
-        int audioEncoder = -1;
-        int videoEncoder = SettingTranslation
-                .getVideoEncoder(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER));
-        Log.d(TAG,"videoEncoder="+ videoEncoder+
-                " settings="+mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER));
-        if (PersistUtil.needAudioEncoder() && !audioSelected.equals("off")) {
-            audioEncoder = SettingTranslation
-                    .getAudioEncoder(mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER));
+
+        AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
+        setDefaultHDRParameters(am);
+        if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
+            Log.d(TAG, "Enable audioHDR");
+            am.setParameters("hdr_record_on=true");
+            am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
+            am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
+            am.setParameters("hdr_audio_channel_count=4");
+            am.setParameters("hdr_audio_sampling_rate=48000");
+            Log.d(TAG, "cameraId is " + mSettingsManager.isFacingFront(camId) +
+                    ", mOrientation is " + mOrientation);
+            am.setParameters(mSettingsManager.isFacingFront(camId) ? "facing=front" : "facing=back");
+            am.setParameters((mOrientation == 90 || mOrientation == 180)
+                    ? "inverted=true" : "inverted=false");
+            am.setParameters((mOrientation == 90 || mOrientation == 270)
+                    ? "orientation=landscape" : "orientation=portrait");
         }
-        mProfile.videoCodec = videoEncoder;
+
         if (!mCaptureTimeLapse && !hfr && !mSuperSlomoCapture && (-1 != audioEncoder)) {
             // Set audio source as unprocessed if HDR
             if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
@@ -13372,7 +13371,41 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
 
-        if ( isVideoEncoderProfileSupported()
+        if (mSettingsManager.getValue(SettingsManager.KEY_AUDIO_BLE).equals("On")) {
+            if (mBleInputDevice != null) {
+                boolean result = mMediaRecorder.setPreferredDevice(mBleInputDevice);
+                Log.i(TAG, "BLE, setPreferredDevice ble " + result);
+            }
+        }
+    }
+
+    private boolean setUpMediaRecorder(int cameraId) throws IOException {
+        long startSetMedia = System.currentTimeMillis();
+        if (mSettingsManager.isMultiCameraEnabled() && !mSettingsManager.isLogicalEnable()){
+            mMediaRecorder = null;
+            return true;
+        }
+        Log.i(TAG, "start setUpMediaRecorder");
+        Bundle myExtras = mActivity.getIntent().getExtras();
+        if (mMediaRecorder == null) mMediaRecorder = new MediaRecorder();
+        mMediaRecorder.reset();
+
+        int videoWidth = mProfile.videoFrameWidth;
+        int videoHeight = mProfile.videoFrameHeight;
+        mUnsupportedResolution = false;
+
+        int videoEncoder = SettingTranslation
+                .getVideoEncoder(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER));
+        Log.d(TAG,"videoEncoder="+ videoEncoder+
+                " settings="+mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER));
+        mProfile.videoCodec = videoEncoder;
+
+        String audioSelected = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER);
+        int audioEncoder = -1;
+        if (PersistUtil.needAudioEncoder() && !audioSelected.equals("off")) {
+            configurateAudio(cameraId);
+        }
+        if (isVideoEncoderProfileSupported()
                 && VendorTagUtil.isHDRVideoModeSupported(mCameraDevice[cameraId])) {
             int videoEncoderProfile = SettingTranslation.getVideoEncoderProfile(
                     mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE));
@@ -13390,8 +13423,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mMediaRecorder.setVideoSize(mProfile.videoFrameWidth, mProfile.videoFrameHeight);
         mMediaRecorder.setVideoEncoder(videoEncoder);
-        Log.d(TAG," mMediaRecorder.setVideoEncoder="+videoEncoder);
-        if (!mCaptureTimeLapse && !hfr && !mSuperSlomoCapture && (-1 != audioEncoder)) {
+        Log.d(TAG," mMediaRecorder.setVideoEncoder=" + videoEncoder);
+        if (PersistUtil.needAudioEncoder() && !audioSelected.equals("off")) {
+            audioEncoder = SettingTranslation
+                    .getAudioEncoder(mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER));
+        }
+        if (!mCaptureTimeLapse && !(mHighSpeedCapture && !mHighSpeedRecordingMode)
+                && !mSuperSlomoCapture && (-1 != audioEncoder)) {
             mMediaRecorder.setAudioEncodingBitRate(mProfile.audioBitRate);
             mMediaRecorder.setAudioChannels(mProfile.audioChannels);
             mMediaRecorder.setAudioSamplingRate(mProfile.audioSampleRate);
@@ -13452,6 +13490,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             mMediaRecorder.prepare();
             mMediaRecorder.setOnErrorListener(this);
             mMediaRecorder.setOnInfoListener(this);
+            if (mBleInputDevice != null) {
+                List<MicrophoneInfo> microphoneInfos =  mMediaRecorder.getActiveMicrophones();
+                for (MicrophoneInfo microphoneInfo : microphoneInfos) {
+                    Log.i(TAG, "BLE, Active microphone info " + microphoneInfo.getType());
+                }
+            }
             return true;
         } catch (IOException e) {
             Log.e(TAG, "prepare failed for " + mVideoFilename + e);
