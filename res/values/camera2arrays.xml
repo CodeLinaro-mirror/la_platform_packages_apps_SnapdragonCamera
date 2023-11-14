@@ -1131,6 +1131,18 @@ for time lapse recording -->
         <item>@string/pref_camera2_instant_aec_entry_fast</item>
     </string-array>
 
+    <string-array name="pref_camera2_color_space_entries" translatable="true">
+        <item>@string/pref_camera2_color_space_disable</item>
+        <item>@string/pref_camera2_color_space_srgb</item>
+        <item>@string/pref_camera2_color_space_display_p3</item>
+    </string-array>
+
+    <string-array name="pref_camera2_color_space_entryvalues" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
     <string-array name="pref_camera2_anti_banding_level_entryvalues" translatable="false">
         <item>0</item>
         <item>1</item>

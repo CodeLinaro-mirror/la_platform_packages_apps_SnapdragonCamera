@@ -375,13 +375,18 @@
         camera:title="@string/pref_camera2_instant_aec_title" />
 
     <ListPreference
+        camera:defaultValue="@string/pref_camera2_color_space_default"
+        camera:entries="@array/pref_camera2_color_space_entries"
+        camera:entryValues="@array/pref_camera2_color_space_entryvalues"
+        camera:key="pref_camera2_color_space_key"
+        camera:title="@string/pref_camera2_color_space_title" />
+
+    <ListPreference
         camera:defaultValue="@string/pref_camera2_saturation_level_default"
         camera:entries="@array/pref_camera2_saturation_level_entries"
         camera:entryValues="@array/pref_camera2_saturation_level_entryvalues"
         camera:key="pref_camera2_saturation_level_key"
         camera:title="@string/pref_camera2_saturation_level_title" />
-
-
 
     <ListPreference
         camera:defaultValue="@string/pref_camera2_anti_banding_level_default"

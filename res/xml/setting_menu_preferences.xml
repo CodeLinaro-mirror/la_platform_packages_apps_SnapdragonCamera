@@ -361,6 +361,14 @@
             android:summary="%s"
             android:title="@string/pref_camera2_instant_aec_title" />
         <ListPreference
+            android:defaultValue="@string/pref_camera2_color_space_default"
+            android:entries="@array/pref_camera2_color_space_entries"
+            android:entryValues="@array/pref_camera2_color_space_entryvalues"
+            android:key="pref_camera2_color_space_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_color_space_title" />
+        <ListPreference
             android:defaultValue="@string/pref_camera2_saturation_level_default"
             android:entries="@array/pref_camera2_saturation_level_entries"
             android:entryValues="@array/pref_camera2_saturation_level_entryvalues"
