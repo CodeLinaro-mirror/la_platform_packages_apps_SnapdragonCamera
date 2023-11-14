@@ -6542,6 +6542,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     @Override
                     public void onImageAvailable(ImageReader reader) {
                         Log.d(TAG, "new yuv image from physical camera " + id);
+                        releaseShutterButton();
                         Image image = reader.acquireNextImage();
                         byte[] yuv = getYUVFromImage(image);
                         mNamedImages.nameNewImage(System.currentTimeMillis());
@@ -6579,6 +6580,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     @Override
                     public void onImageAvailable(ImageReader reader) {
                         Log.d(TAG, "new yuv 10bit image from physical camera "+id);
+                        releaseShutterButton();
                         Image image = reader.acquireNextImage();
                         byte[] yuv = getYUV10BitFromImage(image);
                         mNamedImages.nameNewImage(System.currentTimeMillis());
@@ -6633,6 +6635,18 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void releaseShutterButton(){
+        if (captureWaitImageReceive()) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "image available for cam enable shutter button " );
+                    mUI.enableShutter(true);
+                }
+            });
+        }
+    }
+
     private void setPhysicalImgReader(Size size, String id, int i) {
         if(mSaveRaw)
         mPhysicalRawReader[i] = ImageReader.newInstance(size.getWidth(),
@@ -6642,6 +6656,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         PhysicalImageListener rawListener = new PhysicalImageListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
+                releaseShutterButton();
                 Image image = reader.acquireNextImage();
                 ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                 byte[] raw = new byte[buffer.remaining()];
@@ -6679,15 +6694,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     @Override
                     public void onImageAvailable(ImageReader reader) {
                         Log.d(TAG, "new jpeg R image from physical camera " + id);
-                        if (captureWaitImageReceive()) {
-                            mHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Log.d(TAG, " PhysicalJpegImgReader image available for cam enable shutter button");
-                                    mUI.enableShutter(true);
-                                }
-                            });
-                        }
+                        releaseShutterButton();
                         Image image = reader.acquireNextImage();
                         mNamedImages.nameNewImage(System.currentTimeMillis());
                         NamedEntity name = mNamedImages.getNextNameEntity();
@@ -6730,15 +6737,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             @Override
             public void onImageAvailable(ImageReader reader) {
                 Log.d(TAG, "new jpeg image from physical camera " + id);
-                if (captureWaitImageReceive()) {
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Log.d(TAG, " PhysicalJpegImgReader image available for cam enable shutter button");
-                            mUI.enableShutter(true);
-                        }
-                    });
-                }
+                releaseShutterButton();
                 Image image = reader.acquireNextImage();
                 mNamedImages.nameNewImage(System.currentTimeMillis());
                 NamedEntity name = mNamedImages.getNextNameEntity();
