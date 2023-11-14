@@ -3610,7 +3610,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
 
                     if (mRawReprocessType != 0) {
-
                         for (int i = 0; i < mRawCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mRAWImageReader[i].getSurface());
                             configuration.setPhysicalCameraId(mSettingsManager.getRawReprocessPhysicalId());
@@ -10398,6 +10397,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
                     new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
+            String colorSpace = mSettingsManager.getValue(SettingsManager.KEY_COLOR_SPACE);
+            if (colorSpace != null && !colorSpace.equals("0")) {
+                sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
+            }
             mCreateSessionLatency = System.currentTimeMillis();
             mCameraDevice[cameraId].createCaptureSession(sessionConfig);
         } catch (Exception e) {
@@ -10430,6 +10433,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
         sessionConfig.setSessionParameters(initialRequest.build());
+        String colorSpace = mSettingsManager.getValue(SettingsManager.KEY_COLOR_SPACE);
+        if (colorSpace != null && !colorSpace.equals("0")) {
+            sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
+        }
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
@@ -10487,6 +10494,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             SessionConfiguration sessionConfig = new SessionConfiguration(optionMode,
                     outConfigurations, new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
+            String colorSpace = mSettingsManager.getValue(SettingsManager.KEY_COLOR_SPACE);
+            if (colorSpace != null && !colorSpace.equals("0")) {
+                sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
+            }
             mCreateSessionLatency = System.currentTimeMillis();
             mCameraDevice[cameraID].createCaptureSession(sessionConfig);
         } catch (Exception exception) {

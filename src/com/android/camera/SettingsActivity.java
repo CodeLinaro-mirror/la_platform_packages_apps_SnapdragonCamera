@@ -60,7 +60,14 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnDismissListener;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.ColorSpace;
+import android.graphics.ColorSpace.Named;
 import android.graphics.ImageFormat;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.params.ColorSpaceProfiles;
+import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.MultiSelectListPreference;
@@ -74,6 +81,7 @@ import androidx.annotation.NonNull;
 import android.view.Window;
 import android.view.WindowManager;
 import com.android.camera.util.Log;
+import android.util.ArraySet;
 import android.util.Size;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
@@ -148,6 +156,9 @@ public class SettingsActivity extends PreferenceActivity {
     private FdExpandListViewAdapter fdFacialExpandableAdapter = null;
     private boolean mIsSingleCameraMode = false;
     private boolean mShowAllDevOption = false;
+
+    private ArrayList<CameraCharacteristics> mCharacteristics;
+
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
@@ -261,6 +272,13 @@ public class SettingsActivity extends PreferenceActivity {
             if (key.equals(SettingsManager.KEY_MANUAL_HDR) ||
                     key.equals(SettingsManager.KEY_QLL)) {
                 updateQLLPreference();
+            }
+
+            if (key.equals(SettingsManager.KEY_PICTURE_FORMAT) ||
+                    key.equals(SettingsManager.KEY_PREVIEW_PROFILE) ||
+                    key.equals(SettingsManager.KEY_CAPTURE_PROFILE) ||
+                    key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
+                updateColorSpacePreference();
             }
 
             if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
@@ -1215,6 +1233,8 @@ public class SettingsActivity extends PreferenceActivity {
         if (isSecureCamera) {
             setShowInLockScreen();
         }
+        mCharacteristics = new ArrayList<>();
+        initCharacteristics();
         mIsSingleCameraMode = getIntent().getBooleanExtra(IS_SIGNGLE_CAMERA_MODULE, false);
         mShowAllDevOption =  getIntent().getBooleanExtra(OPEN_DEVOPTION, false);
         mSettingsManager = SettingsManager.getInstance();
@@ -1347,7 +1367,53 @@ public class SettingsActivity extends PreferenceActivity {
                 });
             }
         }
+    }
 
+    private void initCharacteristics(){
+        if(mCharacteristics.size() >0) {
+            return;
+        }
+        CameraManager manager = (CameraManager) this.getSystemService(Context.CAMERA_SERVICE);
+        try {
+            String[] cameraIdList = manager.getCameraIdList();
+            Log.i(TAG,"cameraIdList size ="+cameraIdList.length);
+            for (int i = 0; i < cameraIdList.length; i++) {
+                String cameraId = cameraIdList[i];
+                CameraCharacteristics characteristics
+                        = manager.getCameraCharacteristics(cameraId);
+                mCharacteristics.add(i, characteristics);
+            }
+        } catch (CameraAccessException e) {
+            Log.e(TAG,e.toString());
+        }
+    }
+
+    private Set<ColorSpace.Named> getSupportedColorSpaces(int cameraId, int imageFormat,
+            long previewProfile, long captureProfile) {
+        ColorSpaceProfiles colorSpaceProfiles = mCharacteristics.get(cameraId).get(
+                CameraCharacteristics.REQUEST_AVAILABLE_COLOR_SPACE_PROFILES);
+        Log.v(TAG, " getSupportedColorSpaces imageFormat :" + imageFormat + ", previewProfile :" + previewProfile + ", captureProfile :" + captureProfile);
+        if (colorSpaceProfiles == null) {
+            return new ArraySet<ColorSpace.Named>();
+        }
+        Set<ColorSpace.Named> colorSpaces = new ArraySet<ColorSpace.Named>();
+        if (captureProfile == 0) {
+            colorSpaces = colorSpaceProfiles.getSupportedColorSpaces(imageFormat);
+            Log.v(TAG, " capture colorSpaces :" + colorSpaces);
+        } else {
+            colorSpaces = colorSpaceProfiles.getSupportedColorSpacesForDynamicRange(imageFormat, captureProfile);
+            Log.v(TAG, " capture ForDynamicRange :" + colorSpaces);
+        }
+        if (colorSpaces.size() != 0) {
+            if (previewProfile == 0) {
+                colorSpaces = colorSpaceProfiles.getSupportedColorSpaces(imageFormat);
+                Log.v(TAG, " previewProfile colorSpaces :" + colorSpaces);
+            } else {
+                colorSpaces = colorSpaceProfiles.getSupportedColorSpacesForDynamicRange(imageFormat, previewProfile);
+                Log.v(TAG, " preview ForDynamicRange :" + colorSpaces);
+            }
+        }
+        return colorSpaces;
     }
 
     private void filterPreferences() {
@@ -1584,6 +1650,7 @@ public class SettingsActivity extends PreferenceActivity {
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                     videoAddList.add(SettingsManager.KEY_INSTANT_ZOOM);
+                    videoAddList.add(SettingsManager.KEY_COLOR_SPACE);
                     addDeveloperOptions(developer, videoAddList);
                 }
                 if (mode != VIDEO) {
@@ -1921,6 +1988,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateLongShotPreference();
         updateHDRSceneDetection();
         updateQLLPreference();
+        updateColorSpacePreference();
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
         Set<Map.Entry<String, SettingsManager.Values>> set = map.entrySet();
@@ -2179,13 +2247,61 @@ public class SettingsActivity extends PreferenceActivity {
         if (mixHDRPref != null && mixHDRPref.getValue().equals("auto")) {
             if (qllPref != null) {
                 qllPref.setValue("0");
-                qllPref.setEnabled(false);;
+                qllPref.setEnabled(false);
             }
         } else {
             if (qllPref != null) {
-                qllPref.setEnabled(true);;
+                qllPref.setEnabled(true);
             }
         }
+    }
+    private void updateColorSpacePreference() {
+        ListPreference colorSpacePref = (ListPreference)findPreference(SettingsManager.KEY_COLOR_SPACE);
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        if (mode == CaptureModule.CameraMode.VIDEO || mode == CaptureModule.CameraMode.HFR) {
+            List<String> list = new ArrayList<String>(Arrays.asList("DISABLE", "SRGB"));
+            List<String> values = new ArrayList<String>(Arrays.asList("0", "1"));
+            if (colorSpacePref != null) {
+                colorSpacePref.setEntries(list.toArray(new CharSequence[list.size()]));
+                colorSpacePref.setEntryValues(values.toArray(new CharSequence[values.size()]));
+            }
+        } else if (mode == CaptureModule.CameraMode.DEFAULT) {
+            int cameraId = mSettingsManager.getCurrentCameraId();
+            Set<ColorSpace.Named> colorSpaceSet = null;
+            String format = mSettingsManager.getValue(SettingsManager.KEY_PICTURE_FORMAT);
+            long captureProfileLong = 0;
+            String captureProfile = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_PROFILE);
+            if (captureProfile != null && !captureProfile.equals("0")) {
+                captureProfileLong = Long.parseLong(captureProfile);
+            }
+            long previewProfileLong = 0;
+            String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
+            if (previewProfile != null && !previewProfile.equals("0")) {
+                previewProfileLong = Long.parseLong(previewProfile);
+            }
+            if (format != null) {
+                colorSpaceSet = getSupportedColorSpaces(cameraId,
+                        SettingsManager.KEY_IMAGE_FORMAT_INDEX.get(format), previewProfileLong,
+                        captureProfileLong);
+            }
+
+            String rawFormat = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+            Log.v(TAG, " format :" + format + ", rawFormat : " + rawFormat);
+
+            if ((colorSpaceSet == null || colorSpaceSet.size() == 0) ||
+                    (rawFormat != null && (rawFormat.equals("10") || rawFormat.equals("16")))) {
+                if (colorSpacePref != null) {
+                    colorSpacePref.setValue("0");
+                    colorSpacePref.setEnabled(false);
+                }
+            } else {
+                if (colorSpacePref != null) {
+                    colorSpacePref.setEnabled(true);
+                }
+            }
+        }
+
     }
     private void updateVideoMFHDRPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
