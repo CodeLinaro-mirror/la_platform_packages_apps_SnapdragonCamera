@@ -3078,7 +3078,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             isSupported = (mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.isAIDE2Supported)) == 1;
             Log.i(TAG,"isAIDE2Supported: " + isSupported);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException|NullPointerException e) {
             Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
                     CaptureModule.isAIDE2Supported.toString());
         }
