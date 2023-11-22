@@ -1250,7 +1250,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final int LOCK_AF_AE_STATE_NONE = 0;
     private static final int LOCK_AF_AE_STATE_START = 1;
     private static final int LOCK_AF_AE_STATE_LOCK_DONE = 2;
-    private List<String> mLongImgTitle = new ArrayList<>();
+
 
     private int mLockAFAE = LOCK_AF_AE_STATE_NONE;
     private TextView mLockAFAEText;
@@ -1413,6 +1413,14 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mClosedCamTime;
     private long mStartedTime;
     private long mSessionAfterRecord;
+    private List<String> mLongImgTitle = new ArrayList<>();
+    private List<ExifInterface> mImagExif = new ArrayList<>();;
+    public List<ExifInterface> getImagExif(){
+        return mImagExif;
+    }
+    public void setImagExif(List<ExifInterface> exif){
+         mImagExif = exif;
+    }
     public CaptureResult getPreviewCaptureResult() {
         return mPreviewCaptureResult;
     }
@@ -1625,6 +1633,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mPostProcessor.onMetaAvailable(result);
             if (statsParametersUpdated <= STATS_PARAMETER_UPDATE &&
                     !mSettingsManager.isMultiCameraEnabled()) {
+
                 updateStatsParameters(result);
             }
             String stats_visualizer = mSettingsManager.getValue(
@@ -2075,8 +2084,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
             Log.i(TAG,"BG, bgRStats:" + bgRStats + ",bgGStats:" + bgGStats + ",bgBStats:" + bgBStats + ",mBGStatson:" + mBGStatson);
+
             if (bgRStats != null && bgGStats != null && bgBStats != null && mBGStatson) {
                 synchronized (bg_r_statsdata) {
+                    if(bg_r_statsdata.length != bgRStats.length) {
+                        Log.d(TAG,"be_r_statsdata.length="+bg_r_statsdata.length +",beRStats.length="+bgRStats.length);
+                        updateStatsParameters(result);
+                    }
                     System.arraycopy(bgRStats, 0, bg_r_statsdata, 0, bgRStats.length);
                     System.arraycopy(bgGStats, 0, bg_g_statsdata, 0, bgGStats.length);
                     System.arraycopy(bgBStats, 0, bg_b_statsdata, 0, bgBStats.length);
@@ -2123,8 +2137,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             Log.i(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
 
+
             if (beRStats != null && beGStats != null && beBStats != null && mBEStatson) {
+
                 synchronized (be_r_statsdata) {
+                    if(be_r_statsdata.length != beRStats.length) {
+                        Log.d(TAG,"be_r_statsdata.length="+be_r_statsdata.length +",beRStats.length="+beRStats.length);
+                        updateStatsParameters(result);
+                    }
                     System.arraycopy(beRStats, 0, be_r_statsdata, 0, beRStats.length);
                     System.arraycopy(beGStats, 0, be_g_statsdata, 0, beRStats.length);
                     System.arraycopy(beBStats, 0, be_b_statsdata, 0, beRStats.length);
@@ -6164,6 +6184,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     } catch (IOException e) {
                                         Log.w(TAG,"get exif failed");
                                     }
+
                                     long imglen = bytes.length;
                                     int imageFormat = image.getFormat();
                                     int imageWidth = image.getWidth();
@@ -6171,8 +6192,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     if(mActivity.getAutoTest()) {
                                         Log.i(TAG,"mLongshotActive="+mLongshotActive+",titile="+title+
                                                 ",mNumImageArrived.get()="+mNumImageArrived.get()+
-                                                ",imageWidth="+imageWidth+",imageHeight="+imageHeight+",imageFormat="+imageFormat);
+                                                ",imageWidth="+imageWidth+",imageHeight="+imageHeight+",imageFormat="+imageFormat
+                                        +",mImagExif="+exif);
                                         mLongImgTitle.add(title);
+                                        mImagExif.add(exif);
                                     }
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         saveRawImg(bytes, image, name, title);
@@ -6913,9 +6936,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         NamedEntity name = mNamedImages.getNextNameEntity();
                         String title = (name == null) ? null : name.title;
                         long date = (name == null) ? -1 : name.date;
-                        if(mActivity.getAutoTest()) {
-                            mLongImgTitle.add(title);
-                        }
+
                         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                         byte[] bytes = new byte[buffer.remaining()];
                         buffer.get(bytes);
@@ -6926,6 +6947,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                             exif = new ExifInterface(new ByteArrayInputStream(bytes));
                         } catch (IOException e) {
                             Log.w(TAG,"get exif failed");
+                        }
+                        if(mActivity.getAutoTest()) {
+                            mLongImgTitle.add(title);
+                            mImagExif.add(exif);
                         }
                         if (image.getFormat() != ImageFormat.HEIC && exif != null){
                             orientation = CameraUtil.getOrientation(exif);
@@ -7203,6 +7228,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void closeImageReader() {
+        Log.i(TAG, "closeImageReader");
         for (int i = MAX_NUM_CAM - 1; i >= 0; i--) {
             if (null != mImageReader[i]) {
                 mImageReader[i].close();
@@ -7653,7 +7679,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mMpoSaveHandler = new MpoSaveHandler(mMpoSaveThread.getLooper());
         mZoomHandler = new ZoomHandler(mCaptureCallbackThread.getLooper());
         mBackgroundThreadFlag = true;
-        Log.d(TAG, "startBackgroundThread");
+        Log.i(TAG, "startBackgroundThread");
     }
 
     /**
@@ -7863,7 +7889,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             //mActivity.setResultEx(Activity.RESULT_CANCELED, new Intent());
             mActivity.finish();
         }
-        closeImageReader();
+
         mJpegImageData = null;
     }
 
@@ -8075,7 +8101,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 BGSTATS_DATA = bg_width*bg_height;
                 BGSTATS_WIDTH = bg_width*STATS_LENGTH;
                 BGSTATS_HEIGHT = bg_height*STATS_LENGTH;
-
                 bg_statsdata = new int[BGSTATS_DATA*STATS_LENGTH*STATS_LENGTH];
                 bg_r_statsdata = new int[BGSTATS_DATA];
                 bg_g_statsdata = new int[BGSTATS_DATA];
@@ -13008,26 +13033,25 @@ public class CaptureModule implements CameraModule, PhotoController,
         // Get HDR ANS mode. (0 off, 1 on)
         int hdrAns = SettingTranslation
                 .getHdrAnsMode(mSettingsManager.getValue(SettingsManager.KEY_HDR_ANS_MODE));
+        if (PersistUtil.needAudioEncoder()) {
+            AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
+            setDefaultHDRParameters(am);
 
-        AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
-        setDefaultHDRParameters(am);
+            if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
+                Log.d(TAG, "Enable HDR");
+                am.setParameters("hdr_record_on=true");
+                am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
+                am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
+                am.setParameters("hdr_audio_channel_count=4");
+                am.setParameters("hdr_audio_sampling_rate=48000");
 
-        if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
-            Log.d(TAG, "Enable HDR");
-            am.setParameters("hdr_record_on=true");
-            am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
-            am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
-            am.setParameters("hdr_audio_channel_count=4");
-            am.setParameters("hdr_audio_sampling_rate=48000");
-        }
-
-        if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
-            Log.d(TAG, "cameraId " + mSettingsManager.isFacingFront(cameraId) + " mOrientation " + mOrientation);
-            am.setParameters(mSettingsManager.isFacingFront(cameraId) ? "facing=front" : "facing=back");
-            am.setParameters((mOrientation == 90 || mOrientation == 180)
+                Log.d(TAG, "cameraId " + mSettingsManager.isFacingFront(cameraId) + " mOrientation " + mOrientation);
+                am.setParameters(mSettingsManager.isFacingFront(cameraId) ? "facing=front" : "facing=back");
+                am.setParameters((mOrientation == 90 || mOrientation == 180)
                                 ? "inverted=true" : "inverted=false");
-            am.setParameters((mOrientation == 90 || mOrientation == 270)
+                am.setParameters((mOrientation == 90 || mOrientation == 270)
                                 ? "orientation=landscape" : "orientation=portrait");
+            }
         }
 
         //updateHFRSetting();
@@ -16260,11 +16284,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
         }
-
-        AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
-        // Set default values for HDR settings
-        setDefaultHDRParameters(am);
-
+        if (PersistUtil.needAudioEncoder()) {
+            AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
+            // Set default values for HDR settings
+            setDefaultHDRParameters(am);
+        }
 
     }
 
@@ -16313,6 +16337,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      * MediaPlaybackService to pause playback.
      */
     private void requestAudioFocus() {
+        if (!PersistUtil.needAudioEncoder()) return;
         AudioManager am = (AudioManager)mActivity.getSystemService(Context.AUDIO_SERVICE);
         // Send request to obtain audio focus. This will stop other
         // music stream.
@@ -16324,6 +16349,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void releaseAudioFocus() {
+        if (!PersistUtil.needAudioEncoder()) return;
         AudioManager am = (AudioManager)mActivity.getSystemService(Context.AUDIO_SERVICE);
         int result = am.abandonAudioFocus(null);
         if (result == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {

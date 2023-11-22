@@ -72,6 +72,7 @@ import com.android.camera.SettingsManager;
 import com.android.camera.deepportrait.DPImage;
 import com.android.camera.exif.ExifInterface;
 import com.android.camera.exif.Rational;
+
 import com.android.camera.imageprocessor.filter.BestpictureFilter;
 import com.android.camera.imageprocessor.filter.BlurbusterFilter;
 import com.android.camera.imageprocessor.filter.ChromaflashFilter;
@@ -100,6 +101,7 @@ import com.android.camera.imageprocessor.filter.ImageFilter;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
 import com.android.camera.util.VendorTagUtil;
+import java.io.ByteArrayInputStream;
 
 public class PostProcessor{
 
@@ -176,6 +178,7 @@ public class PostProcessor{
     }
 
     private List<String> mLongImgTitle = new ArrayList<>();
+    private List<android.media.ExifInterface> mImagExif = new ArrayList<>();
 
     public ImageReader getZSLReprocessImageReader() { return mZSLReprocessImageReader; }
     public MultiResolutionImageReader getZSLReprocessMultiImageReader() { return mMultiOutputImageReader; }
@@ -491,6 +494,7 @@ public class PostProcessor{
             return false;
         mController.setJpegImageData(null);
         mLongImgTitle = new ArrayList<>();
+        mImagExif = new ArrayList<>();
         mController.setLongImageTitle(null);
         mController.setCaptureResult(null);
         ZSLQueue.ImageItem imageItem = mZSLQueue.tryToGetMatchingItem();
@@ -1198,6 +1202,8 @@ public class PostProcessor{
         exif.addOrientationTag(orientationInDegree);
         exif.addDateTimeStampTag(ExifInterface.TAG_DATE_TIME, System.currentTimeMillis(),
                 TimeZone.getDefault());
+        exif.addDateTimeStampTag(ExifInterface.TAG_DATE_TIME_ORIGINAL, System.currentTimeMillis(),
+                TimeZone.getDefault());
         if(result != null) {
             if(result.get(CaptureResult.FLASH_MODE) != null) {
                 exif.addFlashTag(result.get(CaptureResult.FLASH_MODE) != CaptureResult.FLASH_MODE_OFF);
@@ -1346,8 +1352,10 @@ public class PostProcessor{
                     PhotoModule.NamedImages.NamedEntity name = mNamedImages.getNextNameEntity();
                     String title = (name == null) ? null : name.title;
                     Log.d(TAG,"ZSL onImageAvailable title="+title);
-                    mLongImgTitle.add(title);
-                    mController.setLongImageTitle(mLongImgTitle);
+                    if(mActivity.getAutoTest()) {
+                        mLongImgTitle.add(title);
+                        mController.setLongImageTitle(mLongImgTitle);
+                    }
                     long date = (name == null) ? -1 : name.date;
                     if(mController.mRawReprocessType == 2 || mController.mRawReprocessType == 3 || mController.mRawReprocessType == 5 ||mController.mRawReprocessType == 0){
                         image.getPlanes()[0].getBuffer().rewind();
@@ -1356,8 +1364,16 @@ public class PostProcessor{
                         image.getPlanes()[0].getBuffer().get(bytes, 0, size);
                         ExifInterface exif = null;
                         int orientation = 0;
+                        exif = Exif.getExif(bytes);
+                        if(mActivity.getAutoTest()) {
+                            try {
+                                android.media.ExifInterface myexif = new android.media.ExifInterface(new ByteArrayInputStream(bytes));
+                                mImagExif.add(myexif);
+                            }catch (Exception e){
+                                Log.i(TAG,"getexif e="+e);
+                            }
+                        }
                         if (image.getFormat() != ImageFormat.HEIC) {
-                            exif = Exif.getExif(bytes);
                             orientation = Exif.getOrientation(exif);
                         } else {
                             orientation = CameraUtil.getJpegRotation(mController.getMainCameraId(),mOrientation);
@@ -1382,9 +1398,20 @@ public class PostProcessor{
                         }
                     }else{
                         byte[] bytes = getYUVFromImage(image);
+                        if(mActivity.getAutoTest()) {
+                            try {
+                                android.media.ExifInterface myexif2 = new android.media.ExifInterface(new ByteArrayInputStream(bytes));
+                                mImagExif.add(myexif2);
+                            }catch (Exception e){
+                                Log.i(TAG,"getexif e="+e);
+                            }
+                        }
                         mActivity.getMediaSaveService().addRawImage(bytes, title,
                                 "yuv");
                         image.close();
+                    }
+                    if(mActivity.getAutoTest()) {
+                        mController.setImagExif(mImagExif);
                     }
                 }
             });
