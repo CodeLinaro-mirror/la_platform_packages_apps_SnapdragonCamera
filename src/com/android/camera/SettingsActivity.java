@@ -2332,6 +2332,13 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setEnabled(false);
             return;
         }
+
+        String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        String hdrmode = mSettingsManager.getVideoHdrMode();
+        int videoSize = CameraUtil.getSize(videoSizeStr);
+        if(videoSize >= 7680*4320 && hdrmode != null && (hdrmode.indexOf("MFHDR")>=0)){
+            pref.setValue("off");
+        }
     }
 
     private void updateMultiVideoFPSPreference() {
@@ -3001,7 +3008,7 @@ public class SettingsActivity extends PreferenceActivity {
                         final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
                         alert.setMessage("Donnot support "+title+" " +
                                 "when Video FPS >=60 or enabled SaveRaw or inSensor zoom" +
-                                " or quadBayerSensor or videoSize >=4k in MCX mode");
+                                " or quadBayerSensor or videoSize >=8k in MCX mode");
                         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
                             }
