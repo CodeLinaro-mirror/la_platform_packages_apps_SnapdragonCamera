@@ -62,6 +62,8 @@ import android.media.MediaRecorder;
 import android.media.CamcorderProfile;
 import android.preference.PreferenceManager;
 import android.util.ArraySet;
+
+import com.android.camera.util.CameraUtil;
 import com.android.camera.util.Log;
 import android.util.Range;
 import android.util.Rational;
@@ -4280,10 +4282,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return ret;
     }
     public boolean isSupportedMixHdr(){
-        if(((getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) != null && getValue(SettingsManager.KEY_RAW_FORMAT_TYPE).equals("0")) ||
-                getValue(SettingsManager.KEY_RAW_FORMAT_TYPE) == null) && (((getValue(SettingsManager.KEY_INSENSOR_ZOOM) != null &&
-                getValue(SettingsManager.KEY_INSENSOR_ZOOM).equals("0")) || getValue(SettingsManager.KEY_INSENSOR_ZOOM) == null))
-                && !getQuadBayerSensorPrefEnabled()){
+        String rawFormat = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        String inSensorZoom = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        String videoSizeStr = getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        int videoSize = CameraUtil.getSize(videoSizeStr);
+        if(((rawFormat != null && rawFormat.equals("0")) || rawFormat == null) &&
+            ((inSensorZoom != null && inSensorZoom.equals("0")) || inSensorZoom == null) &&
+                (videoSize < 7680*4320) && !getQuadBayerSensorPrefEnabled()){
              return true;
         }
         return false;
