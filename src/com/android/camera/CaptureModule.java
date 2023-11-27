@@ -7785,6 +7785,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         } catch (CameraAccessException|IllegalStateException e) {
                             Log.e(TAG,e);
                         }
+                    }else{
+                        mLockNums.incrementAndGet(1);
                     }
                 }
             }).start();
