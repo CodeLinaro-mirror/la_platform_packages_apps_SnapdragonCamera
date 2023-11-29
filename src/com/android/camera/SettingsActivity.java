@@ -1052,7 +1052,10 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateMFNRPreference() {
         ListPreference mfnrPref = (ListPreference)findPreference(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
         String longshotValue = mSettingsManager.getValue(SettingsManager.KEY_LONGSHOT);
-        if (longshotValue.equals("on") && !isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)) {
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        if (longshotValue.equals("on") &&(!isPrefEnabled(SettingsManager.KEY_BURST_LIMIT) ||
+                mode == CaptureModule.CameraMode.RTB ) ) {
             if (mfnrPref != null) {
                 mfnrPref.setValue("0");
             } else {
