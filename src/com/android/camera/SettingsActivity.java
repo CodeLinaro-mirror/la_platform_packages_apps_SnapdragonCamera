@@ -365,6 +365,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updateVideoMFHDRPreference();
                     updateSwitchIDInModePreference(false);
                     if(mSettingsManager.isMultiCameraEnabled()){
+                        mSettingsManager.buildMultiCameraPreference();
                         recreate();
                     }
                 }
@@ -2901,17 +2902,25 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void updateMultiPreference(String key) {
+
         MultiSelectListPreference pref = (MultiSelectListPreference) findPreference(key);
         if (pref != null) {
             if (mSettingsManager.getEntries(key) != null) {
                 pref.setEntries(mSettingsManager.getEntries(key));
                 pref.setEntryValues(mSettingsManager.getEntryValues(key));
                 String values = mSettingsManager.getValue(key);
+                CharSequence[] entryvalue = mSettingsManager.getEntryValues(key);
                 Set<String> valueSet = new HashSet<String>();
                 if (values != null) {
                     String[] splitValues = values.trim().split(";");
                     for (String str : splitValues) {
-                        valueSet.add(str);
+                        for(int i=0;i <entryvalue.length ;i++){
+                            if(str.equals(entryvalue[i])){
+                                valueSet.add(str);
+                                break;
+                            }
+                        }
+
                     }
                 }
                 pref.setValues(valueSet);
