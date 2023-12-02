@@ -36,6 +36,8 @@ package com.android.camera;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.ColorSpace;
+import android.graphics.ColorSpace.Named;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -340,6 +342,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_PREVIEW_PROFILE= "pref_camera2_preview_profile_key";
     public static final String KEY_CAPTURE_PROFILE= "pref_camera2_captrue_profile_key";
 
+    public static final String KEY_COLOR_SPACE = "pref_camera2_color_space_key";
+
     public static final String KEY_HFR_BUFFER_MODE = "pref_camera2_hfr_buffermode_key";
 
     public static final String KEY_TORCH_HDR_VALUE= "pref_camera2_torch_hdr_key";
@@ -371,6 +375,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     private static Map<String, Set<String>> VIDEO_ENCODER_PROFILE_TABLE = new HashMap<>();
     public static final HashMap<String, String> VIDEO_ENCODER_PROFILE_MAP = new HashMap<String, String>();
+    public static final HashMap<String, ColorSpace.Named> COLOR_SPACE_MAP = new HashMap<String, ColorSpace.Named>();
+    public static final HashMap<String, Integer> KEY_IMAGE_FORMAT_INDEX = new HashMap<String, Integer>();
 
     public Map<String, Values> getValuesMap() {
         return mValuesMap;
@@ -403,6 +409,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10", "2");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10HDR10", "4");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10HDR10Plus", "8");
+        COLOR_SPACE_MAP.put("1", ColorSpace.Named.SRGB);
+        COLOR_SPACE_MAP.put("2", ColorSpace.Named.DISPLAY_P3);
+        KEY_IMAGE_FORMAT_INDEX.put("0", ImageFormat.JPEG);
+        KEY_IMAGE_FORMAT_INDEX.put("1", ImageFormat.HEIC);
+        KEY_IMAGE_FORMAT_INDEX.put("3", ImageFormat.JPEG_R);
     }
 
     private SettingsManager(Context context) {
