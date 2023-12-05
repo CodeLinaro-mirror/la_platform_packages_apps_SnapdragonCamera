@@ -529,6 +529,10 @@ public class PersistUtil {
     }
     public static boolean isStressTestRunning() {
         return getBoolean("persist.sys.camera.stress.test.run", false);}
+    public static boolean isFuncTestRunning() {
+        return getBoolean("persist.sys.camera.func.test.run", false);}
+    public static boolean isPerfTestRunning() {
+        return getBoolean("persist.sys.camera.perf.test.run", false);}
 
     private static final int PERSIST_FOCUS_ASSIST_MODE_TIMEOUT =
             getInt("persist.sys.camera.focus_assist_mode.timeout", 8000);

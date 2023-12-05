@@ -50,7 +50,6 @@ public class StressTest extends TestBase {
     @After
     public void afterTest() throws Exception {
         Log.i(TAG, "afterEachTest");
-        mActivity.setAutoTest(false);
         mActivityRule.finishActivity();
     }
 
@@ -113,17 +112,7 @@ public class StressTest extends TestBase {
         }
         switchModeTextToR(false);
     }
-    private void switchModeTextToR(boolean lToR)throws Exception {
-        int[] SlideModeTxt = mModeIconR.get("SlideModeTxt");
-        int swipevalue = 0;
-        if(lToR){
-            swipevalue = SlideModeTxt[0] - SWIPE_STEP;
-        }else{
-            swipevalue = SlideModeTxt[0] + SWIPE_STEP;
-        }
-        executeShellCommand("input swipe " +SlideModeTxt[0] + " "+SlideModeTxt[1] +" "+ swipevalue + " "+SlideModeTxt[1]);
-        Thread.sleep(SMALL_WAIT_DURATION);
-    }
+
     private void clickProMode()throws Exception{
         switchModeTextToR(true);
         int[] proloc = mModeIconR.get("Pro");
@@ -132,7 +121,7 @@ public class StressTest extends TestBase {
     }
     @Test
     public void readIconLoc()throws Exception{
-        getModeLoc();
+        //getModeLoc();
         clickProMode();
         getIconLoctionInPro();
         JSONObject saveObj = new JSONObject();

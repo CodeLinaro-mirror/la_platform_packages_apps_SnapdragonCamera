@@ -1914,6 +1914,7 @@ public class CameraActivity extends Activity
         registerReceiver(mAutoTestReceiver, filter, RECEIVER_EXPORTED);
     }
 
+
     @Override
     public void onCreate(Bundle state) {
         mColdOpenCameraTime = System.currentTimeMillis();
@@ -2986,11 +2987,9 @@ public class CameraActivity extends Activity
         return mCaptureModule;
     }
     public boolean getAutoTest(){
-         return  mIsAutoTest || PersistUtil.isStressTestRunning();
+         return  PersistUtil.isFuncTestRunning();
     }
-    public void setAutoTest(boolean test){
-        mIsAutoTest = test;
-    }
+
     public boolean getDevOption(){
         return  mOpenDevOption;
     }
@@ -2998,11 +2997,9 @@ public class CameraActivity extends Activity
         mOpenDevOption = open;
     }
     public boolean getPerformenceTest(){
-        return  mIsPerformenceTest || mColdOpenCameraTime != 0;
+        return  PersistUtil.isPerfTestRunning();
     }
-    public void setPerformenceTest(boolean test){
-        mIsPerformenceTest = test;
-    }
+
 
    // method for autotest end
 

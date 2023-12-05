@@ -383,6 +383,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private Map<String,VideoEisConfig> mVideoEisConfigs;
     private ArrayList<String> mPrepNameKeys;
     private Map<String, Set<String>> mQuadBayerIds = new HashMap<>();
+    private boolean isPreferenceEnable = false;
+    private String checkey;
 
     private static Map<String, Set<String>> VIDEO_ENCODER_PROFILE_TABLE = new HashMap<>();
     public static final HashMap<String, String> VIDEO_ENCODER_PROFILE_MAP = new HashMap<String, String>();
@@ -1757,6 +1759,22 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return null;
     }
 
+    public void setEntries(String key,CharSequence[] entries){
+        if ( mPreferenceGroup != null ) {
+            ListPreference pref = mPreferenceGroup.findPreference(key);
+            if (pref != null) {
+                pref.setEntries(entries);
+            }
+        }
+    }
+    public void setValues(String key,CharSequence[] values){
+        if ( mPreferenceGroup != null ) {
+            ListPreference pref = mPreferenceGroup.findPreference(key);
+            if (pref != null) {
+                pref.setEntryValues(values);
+            }
+        }
+    }
     public int[] getResource(String key, int type) {
         IconListPreference pref = (IconListPreference) mPreferenceGroup.findPreference(key);
         switch (type) {
@@ -3501,13 +3519,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
             key.setAccessible(true);
             Object depthStreamConfigurations_key = key.get(characteristics);
             Class<?> type = key.getType();
-            Log.i(TAG, "Key type " + type);//android.hardware.camera2.CameraCharacteristics$Key
             Method method_get = characteristics.getClass().getDeclaredMethod("get", type);
             Object values = method_get.invoke(characteristics, depthStreamConfigurations_key);
-            Log.i(TAG, "values type " + values.getClass());// [Landroid.hardware.camera2.params.StreamConfiguration
             Class<?> StreamConfiguration_Class = values.getClass().getComponentType();
             int length = Array.getLength(values);
-            Log.i(TAG, "values length " + length);
             if (length < 1) {
                 return null;
             }
@@ -3517,7 +3532,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             Log.i(TAG, "getSize from depth stream configurations " + stream_size);
             return stream_size;
         } catch (Exception e) {
-            Log.w(TAG, "getSupportedDepthSize ", e.fillInStackTrace());
+            Log.w(TAG, "getSupportedDepthSize exception: "+ e);
         }
         return null;
     }
@@ -4393,7 +4408,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
     public boolean isSupportedMixHdr(){
         String rawFormat = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
-        String inSensorZoom = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        String inSensorZoom = getValue(SettingsManager.KEY_INSENSOR_ZOOM);
         String videoSizeStr = getValue(SettingsManager.KEY_VIDEO_QUALITY);
         int videoSize = CameraUtil.getSize(videoSizeStr);
         if(((rawFormat != null && rawFormat.equals("0")) || rawFormat == null) &&
@@ -4403,7 +4418,46 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return false;
     }
-
+    public boolean isFilterShow(){
+        if(mCaptureModule.mMFNREnable && mCaptureModule.getMainCameraId() ==  android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT){
+           return false;
+        }
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            return false;
+        }
+        return true;
+    }
+    public String getSupportedMixedHDR(){
+        final SharedPreferences pref = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext,
+                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        String orderList = pref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
+        String fpsStr = getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        if(orderList == null){
+            return null;
+        }
+        int indexm = orderList.indexOf("mfhdr");
+        int indexq = orderList.indexOf("qhdr");
+        if((!isSupportedMixHdr() || (fpsStr != null && !fpsStr.equals("off"))) && (
+                indexm >=0 || indexq>=0)){
+            if(indexm > 0){
+                orderList = orderList.substring(0,indexm-1) + orderList.substring(indexm+5);
+            }else if (indexm == 0){
+                orderList = orderList.substring(indexm+5);
+            }
+            if(indexq > 0){
+                orderList = orderList.substring(0,indexq-1) + orderList.substring(indexq+4);
+            }else if (indexq == 0){
+                orderList = orderList.substring(indexq+4);
+            }
+            SharedPreferences.Editor editor =
+                    PreferenceManager.getDefaultSharedPreferences(mContext).edit();
+            editor.putString(SettingsManager.KEY_MIXED_HDR_ORDER, orderList);
+            editor.apply();
+        }
+        return orderList;
+    }
     public boolean isAIBokehMode(){
         boolean isAICameraEnabled = Integer.parseInt(getAICameraValue()) == 2;
         final SharedPreferences pref = mContext.getSharedPreferences(
@@ -4786,11 +4840,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         String title = orderLists[i];
                         boolean isChecked = pref.getBoolean(title, false);
                         Log.v(TAG, " getVideoHdrMode title:" + title + ", isChecked :" + isChecked);
-                        if (isChecked) {
+                        if (isChecked || mCaptureModule.getAutoSetting()) {
                             hdrmode.append(title).append(" ");
                         }
                     }
-                    Log.v(TAG, " getVideoHdrMode hdrmode:" + hdrmode.toString());
                     if(hdrmode.toString().equals("")) return "off";
                     else
                     return hdrmode.toString();

@@ -544,7 +544,7 @@ public class Storage {
             if (isSaveSDCard() && SDCard.instance().isWriteable()) {
                 return SDCard.instance().getDirectory() + '/' + title + suffix;
             } else {
-                return DIRECTORY + '/' + title + suffix;
+                return RAW_DIRECTORY + '/' + title + suffix;
             }
         }  else if(pictureFormat.equalsIgnoreCase("dng")) {
             return RAW_DIRECTORY + '/' + title + ".dng";

@@ -191,7 +191,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TouchTrackFocusRenderer mT2TFocusRenderer;
     private StateNNTrackFocusRenderer mStatsNNFocusRenderer;
     private ImageView mThumbnail;
-    private final FilmstripLayout mFilmstripLayout;
+    public final FilmstripLayout mFilmstripLayout;
     private final FilmstripBottomPanel mFilmstripBottomControls;
     private final FilmstripContentPanel mFilmstripPanel;
     private Camera2FaceView mFaceView;
@@ -2630,6 +2630,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         }
     }
+    private int mFilterHight,mFilterWidth;
+    public int getFilterHight(){
+        return  mFilterHight;
+    }
+    public int getFilterWidth(){
+        return  mFilterWidth;
+    }
     public void addFilterMode() {
         if (mSettingsManager.getValue(SettingsManager.KEY_COLOR_EFFECT) == null)
             return;
@@ -2680,6 +2687,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mFilterLayout.setLayoutParams(params);
             ((ViewGroup) mRootView).addView(mFilterLayout);
             mFilterLayout.setY(display.getHeight() - 2 * size);
+            if(mActivity.getAutoTest()) {
+                mFilterHight = display.getHeight() - 2 * size;
+            }
         }
         gridOuterLayout.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams
                 .MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
@@ -2691,6 +2701,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             RotateLayout filterBox = (RotateLayout) inflater.inflate(
                     R.layout.filter_mode_view, null, false);
             ImageView imageView = (ImageView) filterBox.findViewById(R.id.image);
+
             final int j = i;
 
             filterBox.setOnTouchListener(new View.OnTouchListener() {
@@ -2721,6 +2732,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             TextView label = (TextView) filterBox.findViewById(R.id.label);
 
             imageView.setImageResource(thumbnails[i]);
+            if(mActivity.getAutoTest() && i ==0 ){
+                mFilterWidth = imageView.getMeasuredWidth();
+            }
+
+
             label.setText(entries[i]);
             gridLayout.addView(filterBox);
         }
@@ -2877,7 +2893,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mCameraControls.setIntentMode(mModule.getCurrentIntentMode());
         }
     }
-
+    public String getTitleFromFilm(int index){
+       return mFilmstripLayout.getTitleFromFilm(index);
+    }
     public void doShutterAnimation() {
         AnimationDrawable frameAnimation = (AnimationDrawable) mShutterButton.getDrawable();
         frameAnimation.stop();
@@ -4168,8 +4186,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         }
 
-        if ( mSceneModeInstructionalDialog != null && mSceneModeInstructionalDialog.isShowing() &&
-                !mActivity.getAutoTest()) {
+        if ( mSceneModeInstructionalDialog != null && mSceneModeInstructionalDialog.isShowing()) {
             mSceneModeInstructionalDialog.dismiss();
             mSceneModeInstructionalDialog = null;
             showSceneInstructionalDialog(orientation);

@@ -93,11 +93,12 @@ public class FunctionTest extends TestBase  {
     @After
     public void afterEachTest() throws Exception{
         Log.i(TAG, "AfterClass");
-        mActivity.setAutoTest(false);
-        resetPreview();
-        resetCapture();
-        resetVideo();
+        mCaptureModule.setLongImageTitle(null);
+        mCaptureModule.setImagExif(null);
+        mCaptureModule.setImgType(null);
+        isOpenFromIntent = false;
         mActivityRule.finishActivity();
+
     }
     @Test
     public void testInPhoto() throws Exception {
@@ -124,7 +125,7 @@ public class FunctionTest extends TestBase  {
         }
         Log.i(TAG, "testInBokehModule");
         swipFromLTR(1);
-       // checkPreview("0",CaptureModule.CameraMode.RTB);
+        // checkPreview("0",CaptureModule.CameraMode.RTB);
         runPhotoCase("0",CaptureModule.CameraMode.RTB);
     }
 
@@ -134,20 +135,30 @@ public class FunctionTest extends TestBase  {
             return;
         }
         Log.i(TAG, "testInProModule");
-        swipFromLTR(2);
-       // checkPreview("0",CaptureModule.CameraMode.PRO_MODE);
+
+        int[] loc = mModeIconR.get("Pro");
+        if(loc == null){
+            loc = mModeIconL.get("Pro");
+        }else{
+            switchModeTextToR(true);
+        }
+        Log.i(TAG, "testInProModule loc="+loc[0]+"*"+loc[1]);
+        executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
+        // checkPreview("0",CaptureModule.CameraMode.PRO_MODE);
         getIconLoctionInPro();
         getKeyValue();
         runPhotoCase("0",CaptureModule.CameraMode.PRO_MODE);
     }
 
     @Test
-    public void testInVideo() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInVideo")){
+    public void testInVideoMode() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInVideoMode")){
             return;
         }
-        Log.i(TAG, "testInVideoModule");
-        swipFromRTL(3);
+        int[] loc = mModeIconL.get("Video");
+        Log.i(TAG, "testInVideoModule mVideoModeLoc="+loc[0]+"*"+loc[1]);
+        // swipFromRTL(3);
+        executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
         //checkPreview("0",CaptureModule.CameraMode.VIDEO);
         runVideoCase("0",CaptureModule.CameraMode.VIDEO);
     }
@@ -157,7 +168,10 @@ public class FunctionTest extends TestBase  {
             return;
         }
         Log.i(TAG, "testInFrontVideo");
-        swipFromRTL(3);
+        int[] loc = mModeIconL.get("Video");
+        Log.i(TAG, "testInFrontVideo mVideoModeLoc="+loc[0]+"*"+loc[1]);
+        // swipFromRTL(3);
+        executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
         checkPreview("0",CaptureModule.CameraMode.VIDEO);
         executeShellCommand("input tap "+ mSwitchLoc[0]  +" "+mSwitchLoc[1]);
         runVideoCase("1",CaptureModule.CameraMode.VIDEO);
@@ -188,8 +202,9 @@ public class FunctionTest extends TestBase  {
         if(functionTestMode != null && !functionTestMode.contains("testInCinema")){
             return;
         }
-        Log.i(TAG, "testInCinema");
-        swipFromRTL(2);
+        int[] loc = mModeIconL.get("Cinematic");
+        Log.i(TAG, "testInCinema mVideoModeLoc="+loc[0]+"*"+loc[1]);
+        executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
         //checkPreview("2",CaptureModule.CameraMode.HFR);
         runVideoCase("2",CaptureModule.CameraMode.CINEMATIC);
     }

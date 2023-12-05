@@ -78,21 +78,15 @@ public class PerformanceTest extends TestBase {
         Log.i(TAG, "beforeEachTest");
         init();
         OpenAndResetCamera();
-        mActivity.setPerformenceTest(true);
         isPerformenceTest = true;
-        mCaptureModule.resetHashMapTimes();
     }
 
     @After
     public void afterEachTest() throws Exception {
         Log.i(TAG, "afterEachTest");
-        mActivity.setAutoTest(false);
-        mActivity.setPerformenceTest(false);
         isPerformenceTest = false;
-        resetPreview();
-        resetCapture();
-        resetVideo();
         performenceValues.clear();
+        mCaptureModule.resetHashMapTimes();
         mActivityRule.finishActivity();
     }
 
@@ -111,12 +105,12 @@ public class PerformanceTest extends TestBase {
                 OpenCamera();
                 continue;
             }
+
             resetPreview();
             mActivityRule.finishActivity();
             Thread.sleep(OPEN_CAMERA_DURATION);
             mActivityRule = new ActivityTestRule<>(CameraActivity.class);
             OpenCamera();
-            mActivity.setPerformenceTest(true);
             performenceValues = new HashMap<String,HashMap<String,Long>>();
 
             HashMap<String,Long>  coldStartHash = getHashMapValue(mCaptureModule.getHashMapTimes());
