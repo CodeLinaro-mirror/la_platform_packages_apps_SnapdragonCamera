@@ -107,7 +107,6 @@ public class Storage {
     }
 
     private Storage(Context context) {
-        DIRECTORY = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES).getPath();
     }
 
     public static Uri getImageBaseUri() {
