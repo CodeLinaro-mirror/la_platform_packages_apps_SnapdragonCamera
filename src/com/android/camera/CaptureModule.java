@@ -3627,7 +3627,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
 
                     if (mRawReprocessType != 0) {
-
                         for (int i = 0; i < mRawCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mRAWImageReader[i].getSurface());
                             configuration.setPhysicalCameraId(mSettingsManager.getRawReprocessPhysicalId());
@@ -6542,6 +6541,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     @Override
                     public void onImageAvailable(ImageReader reader) {
                         Log.d(TAG, "new yuv image from physical camera " + id);
+                        releaseShutterButton();
                         Image image = reader.acquireNextImage();
                         byte[] yuv = getYUVFromImage(image);
                         mNamedImages.nameNewImage(System.currentTimeMillis());
@@ -6579,6 +6579,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     @Override
                     public void onImageAvailable(ImageReader reader) {
                         Log.d(TAG, "new yuv 10bit image from physical camera "+id);
+                        releaseShutterButton();
                         Image image = reader.acquireNextImage();
                         byte[] yuv = getYUV10BitFromImage(image);
                         mNamedImages.nameNewImage(System.currentTimeMillis());
@@ -6633,6 +6634,18 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void releaseShutterButton(){
+        if (captureWaitImageReceive()) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "image available for cam enable shutter button " );
+                    mUI.enableShutter(true);
+                }
+            });
+        }
+    }
+
     private void setPhysicalImgReader(Size size, String id, int i) {
         if(mSaveRaw)
         mPhysicalRawReader[i] = ImageReader.newInstance(size.getWidth(),
@@ -6642,6 +6655,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         PhysicalImageListener rawListener = new PhysicalImageListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
+                releaseShutterButton();
                 Image image = reader.acquireNextImage();
                 ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                 byte[] raw = new byte[buffer.remaining()];
@@ -6679,15 +6693,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     @Override
                     public void onImageAvailable(ImageReader reader) {
                         Log.d(TAG, "new jpeg R image from physical camera " + id);
-                        if (captureWaitImageReceive()) {
-                            mHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Log.d(TAG, " PhysicalJpegImgReader image available for cam enable shutter button");
-                                    mUI.enableShutter(true);
-                                }
-                            });
-                        }
+                        releaseShutterButton();
                         Image image = reader.acquireNextImage();
                         mNamedImages.nameNewImage(System.currentTimeMillis());
                         NamedEntity name = mNamedImages.getNextNameEntity();
@@ -6730,15 +6736,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             @Override
             public void onImageAvailable(ImageReader reader) {
                 Log.d(TAG, "new jpeg image from physical camera " + id);
-                if (captureWaitImageReceive()) {
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Log.d(TAG, " PhysicalJpegImgReader image available for cam enable shutter button");
-                            mUI.enableShutter(true);
-                        }
-                    });
-                }
+                releaseShutterButton();
                 Image image = reader.acquireNextImage();
                 mNamedImages.nameNewImage(System.currentTimeMillis());
                 NamedEntity name = mNamedImages.getNextNameEntity();
@@ -10465,6 +10463,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
                     new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
+            String colorSpace = mSettingsManager.getValue(SettingsManager.KEY_COLOR_SPACE);
+            if (colorSpace != null && !colorSpace.equals("0")) {
+                sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
+            }
             mCreateSessionLatency = System.currentTimeMillis();
             mCameraDevice[cameraId].createCaptureSession(sessionConfig);
         } catch (Exception e) {
@@ -10497,6 +10499,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
         sessionConfig.setSessionParameters(initialRequest.build());
+        String colorSpace = mSettingsManager.getValue(SettingsManager.KEY_COLOR_SPACE);
+        if (colorSpace != null && !colorSpace.equals("0")) {
+            sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
+        }
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
@@ -10554,6 +10560,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             SessionConfiguration sessionConfig = new SessionConfiguration(optionMode,
                     outConfigurations, new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
+            String colorSpace = mSettingsManager.getValue(SettingsManager.KEY_COLOR_SPACE);
+            if (colorSpace != null && !colorSpace.equals("0")) {
+                sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
+            }
             mCreateSessionLatency = System.currentTimeMillis();
             mCameraDevice[cameraID].createCaptureSession(sessionConfig);
         } catch (Exception exception) {
@@ -11140,16 +11150,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             builder.set(CaptureRequest.NOISE_REDUCTION_MODE,noiseReduMode);
         } else {
-            boolean isMfnrEnable = !isLongShotSettingEnabled() && isMFNREnabled();
-            int noiseReduMode = (isMfnrEnable ? CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY :
+
+            int noiseReduMode = (isMFNREnabled() ? CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY :
                     CameraMetadata.NOISE_REDUCTION_MODE_FAST);
             String frameStr = mSettingsManager.getKeyValue(mSettingsManager.KEY_CAPTURE_MFNR_FRAME);
             int frameValue = 3;
             frameValue = CameraUtil.strToInt(frameStr,frameValue);
-            Log.i(TAG, "applyCaptureMFNR mfnrEnable :" + isMfnrEnable + ", noiseReduMode :"
+            Log.i(TAG, "applyCaptureMFNR mfnrEnable :" + isMFNREnabled() + ", noiseReduMode :"
                     + noiseReduMode +",frameStr="+frameStr+",framevalue="+frameValue);
             builder.set(CaptureRequest.NOISE_REDUCTION_MODE, noiseReduMode);
-            if (isMfnrEnable) {
+            if (isMFNREnabled()) {
                 try {
                     builder.set(custom_noise_reduction, (byte) 0x01);
                     builder.set(CaptureModule.mfnrFrameNO, frameValue);
@@ -14084,7 +14094,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public boolean showMFNR(){
         if ((mCurrentSceneMode.mode == CameraMode.DEFAULT || mCurrentSceneMode.mode == CameraMode.RTB)
-                && !mPostProcessor.isSelfieMirrorOn() && !mSettingsManager.isZSLInAppEnabled() && !isLongShotSettingEnabled())
+                && !mPostProcessor.isSelfieMirrorOn() && !mSettingsManager.isZSLInAppEnabled())
             return true;
         else
             return false;
