@@ -520,6 +520,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CaptureRequest.Key<Integer> ssmInterpFactor =
             new CaptureRequest.Key<>("com.qti.chi.superslowmotionfrc.InterpolationFactor", Integer.class);
 
+    public static final CaptureRequest.Key<Integer> enableFRC =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableFRC", Integer.class);
+    public static final CameraCharacteristics.Key<byte[]> nspFRCRatio =
+            new CameraCharacteristics.Key<>("org.quic.camera.nspfrcinfo.SupportedFrcRatio", byte[].class);
+
     public static final CameraCharacteristics.Key<int[]> superBufferTable =
             new CameraCharacteristics.Key<>("org.quic.camera2.customhfrfps.info.CustomHFRConfigurations", int[].class);
     public static CaptureRequest.Key<Integer> outputBufferComb =
@@ -1830,11 +1835,15 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
     public int byteArray2Int(byte[] src, int offset) {
-        int value;
-        value = (int) ((src[offset] & 0xFF)
-                | ((src[offset+1] & 0xFF)<<8)
-                | ((src[offset+2] & 0xFF)<<16)
-                | ((src[offset+3] & 0xFF)<<24));
+        int value = 0;
+        try {
+            value = (int) ((src[offset] & 0xFF)
+                    | ((src[offset + 1] & 0xFF) << 8)
+                    | ((src[offset + 2] & 0xFF) << 16)
+                    | ((src[offset + 3] & 0xFF) << 24));
+        }catch(Exception e){
+            Log.e(TAG,"src ="+src+",exception is "+e);
+        }
         return value;
     }
     public float byteArray2float(byte[] arr, int index) {
@@ -7632,6 +7641,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if(mCurrentSceneMode.mode == CameraMode.HFR){
                 applyBufferMode(builder);
+            }else if(mCurrentSceneMode.mode == CameraMode.VIDEO){
+                applyFRC(builder);
             }
         }
         if (mCurrentSceneMode.mode == CameraMode.DEFAULT
@@ -13710,6 +13721,18 @@ public class CaptureModule implements CameraModule, PhotoController,
             }else{
                 request.set(CaptureModule.outputBufferComb, 0);
             }
+        }catch (IllegalArgumentException e){
+            Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
+        }
+    }
+    private void applyFRC(CaptureRequest.Builder request){
+        try {
+            String value = mSettingsManager.getValue(SettingsManager.KEY_FRC_MODE);
+            int setvalue = 0;
+            if(value != null){
+                setvalue = Integer.valueOf(value);
+            }
+            request.set(CaptureModule.enableFRC,setvalue );
         }catch (IllegalArgumentException e){
             Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
         }

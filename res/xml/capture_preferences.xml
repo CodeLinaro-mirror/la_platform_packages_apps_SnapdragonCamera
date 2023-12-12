@@ -280,6 +280,13 @@
         camera:title="@string/pref_camera_hdrans_title"/>
 
     <ListPreference
+        camera:defaultValue="@string/pref_camera_frc_disable"
+        camera:entries="@array/pref_camera2_frc_entries"
+        camera:entryValues="@array/pref_camera2_frc_entryvalues"
+        camera:key="pref_camera2_frc_key"
+        camera:title="@string/pref_camera_frc_title"/>
+
+    <ListPreference
         camera:defaultValue="@string/pref_camera2_noise_reduction_default"
         camera:entries="@array/pref_camera2_noise_reduction_entries"
         camera:entryValues="@array/pref_camera2_noise_reduction_entryvalues"

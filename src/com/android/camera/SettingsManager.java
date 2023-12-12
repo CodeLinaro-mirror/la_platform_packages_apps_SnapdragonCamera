@@ -194,6 +194,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AUDIO_RECORDING_MODE = "pref_camera2_audiorecordingmode_key";
     public static final String KEY_HDR_WNR_MODE = "pref_camera2_hdrwnr_key";
     public static final String KEY_HDR_ANS_MODE = "pref_camera2_hdrans_key";
+    public static final String KEY_FRC_MODE = "pref_camera2_frc_key";
     public static final String KEY_DIS = "pref_camera2_dis_key";
     public static final String KEY_NOISE_REDUCTION = "pref_camera2_noise_reduction_key";
     public static final String KEY_VIDEO_FLASH_MODE = "pref_camera2_video_flashmode_key";
@@ -2851,6 +2852,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return isSupported;
         }
         return isSupported;
+    }
+    public int getFRCRatio(){
+        int value = 0;
+        try {
+            if (mCharacteristics.size() > 0) {
+                byte[] bytes = mCharacteristics.get(mCameraId).get(CaptureModule.nspFRCRatio);
+                value = mCaptureModule.byteArray2Int(bytes,0);
+               return value;
+            }
+        } catch(IllegalArgumentException exception) {
+            Log.w(TAG,EXCEPTION_LOG,exception.toString());
+        }
+        return 0;
     }
 
     private List<String> getSupportedHFRForAutoTest(String videoSizeStr) {

@@ -1487,6 +1487,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_AUDIO_RECORDING_MODE);
                 add(SettingsManager.KEY_HDR_WNR_MODE);
                 add(SettingsManager.KEY_HDR_ANS_MODE);
+                add(SettingsManager.KEY_FRC_MODE);
                 add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                 add(SettingsManager.KEY_ML_VIDEO);
             }
@@ -2095,18 +2096,31 @@ public class SettingsActivity extends PreferenceActivity {
         updateViullPreference();
         updateCinematicOptions(fromRestore);
         updateHfrBufferMode();
+        updateFRCPreference();
     }
-    public void updateHfrBufferMode(){
-        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_HFR_BUFFER_MODE);
+    public void updateHfrBufferMode() {
+        ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_HFR_BUFFER_MODE);
+        if (pref == null) {
+            return;
+        }
+        if (mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())) {
+            pref.setEnabled(true);
+        } else {
+            pref.setEnabled(false);
+            pref.setValue("0");
+        }
+    }
+    public void updateFRCPreference(){
+        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_FRC_MODE);
         if(pref == null){
             return;
         }
-        if (mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())){
-                pref.setEnabled(true);
-            }else{
-                pref.setEnabled(false);
-                pref.setValue("0");
-            }
+        if (mSettingsManager.getFRCRatio() >0 ){
+            pref.setEnabled(true);
+        }else{
+            pref.setEnabled(false);
+            pref.setValue("0");
+        }
     }
     private void updateAudioEncoderPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_AUDIO_ENCODER);
