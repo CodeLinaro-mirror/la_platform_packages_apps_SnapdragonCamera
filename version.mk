@@ -43,7 +43,7 @@
 # base_version_build is 3 digits and auto-increment for fixing CR.
 base_version_major := 2
 base_version_minor := 08
-base_version_build := 163
+base_version_build := 164
 
 #####################################################
 #####################################################
