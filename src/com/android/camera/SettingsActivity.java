@@ -1702,11 +1702,12 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> RTBList = new ArrayList<>(multiCameraSettingList);
                     RTBList.add(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+                    RTBList.add(SettingsManager.KEY_MANUAL_HDR);
                     RTBList.add(SettingsManager.KEY_INSENSOR_ZOOM);
+                    RTBList.add(SettingsManager.KEY_INSTANT_ZOOM);
                     RTBList.add(SettingsManager.KEY_FD_SETTING);
                     RTBList.add(SettingsManager.KEY_FD_FL_SETTING);
                     RTBList.add(SettingsManager.KEY_FD_FACIAL_SETTING);
-                    RTBList.add(SettingsManager.KEY_INSTANT_ZOOM);
                     addDeveloperOptions(developer, RTBList);
                 }
                 break;
