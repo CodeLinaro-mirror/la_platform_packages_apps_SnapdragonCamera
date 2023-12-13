@@ -2569,7 +2569,7 @@ public class CameraActivity extends Activity
         return mCaptureModule;
     }
     public boolean getAutoTest(){
-         return  mIsAutoTest || PersistUtil.isStressTestRunning();
+         return  mIsAutoTest;
     }
     public void setAutoTest(boolean test){
         mIsAutoTest = test;

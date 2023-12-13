@@ -1413,8 +1413,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mClosedCamTime;
     private long mStartedTime;
     private long mSessionAfterRecord;
-    private List<String> mLongImgTitle = new ArrayList<>();
-    private List<ExifInterface> mImagExif = new ArrayList<>();;
+    private List<String> mLongImgTitle;
+    private List<ExifInterface> mImagExif;
     public List<ExifInterface> getImagExif(){
         return mImagExif;
     }

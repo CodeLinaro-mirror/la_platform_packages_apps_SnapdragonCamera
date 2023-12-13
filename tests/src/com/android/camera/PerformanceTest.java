@@ -68,8 +68,8 @@ public class PerformanceTest extends TestBase {
     @After
     public void afterEachTest() throws Exception {
         Log.i(TAG, "afterEachTest");
-        mActivity.setAutoTest(false);
         mActivity.setPerformenceTest(false);
+        mActivity.setAutoTest(false);
         isPerformenceTest = false;
         resetPreview();
         resetCapture();

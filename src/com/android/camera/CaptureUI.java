@@ -3908,7 +3908,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
 
         if ( mSceneModeInstructionalDialog != null && mSceneModeInstructionalDialog.isShowing() &&
-                !mActivity.getAutoTest()) {
+                !mActivity.getAutoTest() && !PersistUtil.isStressTestRunning()) {
             mSceneModeInstructionalDialog.dismiss();
             mSceneModeInstructionalDialog = null;
             showSceneInstructionalDialog(orientation);
@@ -3926,7 +3926,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void showFirstTimeHelp() {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
         boolean isMenuShown = prefs.getBoolean(CameraSettings.KEY_SHOW_MENU_HELP, false);
-        if(!isMenuShown && !mActivity.getAutoTest()) {
+        if(!isMenuShown && !mActivity.getAutoTest() && !PersistUtil.isStressTestRunning()) {
             showFirstTimeHelp(mTopMargin, mBottomMargin);
             SharedPreferences.Editor editor = prefs.edit();
             editor.putBoolean(CameraSettings.KEY_SHOW_MENU_HELP, true);
@@ -4063,7 +4063,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 if ( value.equals("104") ) {//panorama
                     mSceneModeLabelRect.setVisibility(View.GONE);
                 }else{
-                    if ( needShowInstructional() && !mActivity.getAutoTest() ) {
+                    if ( needShowInstructional() && !mActivity.getAutoTest() && !PersistUtil.isStressTestRunning()) {
                         showSceneInstructionalDialog(mOrientation);
                     }
                     if(value.equals("18")) {//hdr

@@ -85,6 +85,8 @@ public class FunctionTest extends TestBase  {
         resetPreview();
         resetCapture();
         resetVideo();
+        mCaptureModule.setLongImageTitle(null);
+        mCaptureModule.setImagExif(null);
         mActivityRule.finishActivity();
     }
     @Test
