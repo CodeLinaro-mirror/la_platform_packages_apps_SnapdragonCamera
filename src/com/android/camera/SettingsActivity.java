@@ -359,6 +359,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                     updatePreference(SettingsManager.KEY_SCENE_MODE);
                     updateZslPreference();
+                    updateForceAUXPreference();
                     updateLongShotPreference();
                     updatePictureFormatPreference();
                     updateVideoMFHDRPreference();
@@ -388,6 +389,7 @@ public class SettingsActivity extends PreferenceActivity {
                         mSettingsManager.filterVideoEncoderProfileOptions();
                         updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
                     }
+                    updateForceAUXPreference();
                     updateAICameraPerf();
                 }
                 if(pref.getKey().equals(SettingsManager.KEY_HFR_BUFFER_MODE)){
@@ -1823,7 +1825,7 @@ public class SettingsActivity extends PreferenceActivity {
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         ListPreference aiCamera = (ListPreference)findPreference(SettingsManager.KEY_AI_CAMERA);
         Log.d(TAG,"isAICameraOn:" + mSettingsManager.isAICameraOn() + ",selectMode: " + selectMode);
-        if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") && mode == VIDEO  &&
+        if (selectMode.equals("rtb") && mode == VIDEO  &&
                 mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID){
             if(aiCamera != null) {
                 aiCamera.setValue("0");
@@ -1834,7 +1836,7 @@ public class SettingsActivity extends PreferenceActivity {
                 aiCamera.setEnabled(true);
             }
         }
-        if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") && mode == VIDEO  &&
+        if (selectMode.equals("rtb") && mode == VIDEO  &&
                 mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID){
             aiCameraList.add(SettingsManager.KEY_AI_CAMERA);
             aiCameraList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
@@ -2064,6 +2066,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         updateZslPreference();
+        updateForceAUXPreference();
         updateVideoEncoderProfile();
         updateSwitchIDInModePreference(true);
         updateTimeLapsePreference();
@@ -2342,6 +2345,18 @@ public class SettingsActivity extends PreferenceActivity {
         int videoSize = CameraUtil.getSize(videoSizeStr);
         if(videoSize >= 7680*4320 && hdrmode != null && (hdrmode.indexOf("MFHDR")>=0)){
             pref.setValue("off");
+        }
+    }
+
+    private void updateForceAUXPreference() {
+        ListPreference forceAUX = (ListPreference)findPreference(SettingsManager.KEY_FORCE_AUX);
+        if (forceAUX == null) return;
+        String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        if ((selectMode != null && selectMode.equals("single_rear_cameraid")) || mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+            forceAUX.setValue("off");
+            forceAUX.setEnabled(false);
+        } else {
+            forceAUX.setEnabled(true);
         }
     }
 
