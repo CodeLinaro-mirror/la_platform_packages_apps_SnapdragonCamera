@@ -22,8 +22,10 @@ package com.android.camera;
 
 import android.hardware.camera2.CameraAccessException;
 import android.media.ExifInterface;
+import android.os.Environment;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.provider.Settings;
 import android.view.Display;
 import android.graphics.Point;
 import android.Manifest;
@@ -2265,6 +2267,12 @@ public class CameraActivity extends Activity
             editor.putBoolean(CameraSettings.KEY_REQUEST_PERMISSION, true);
             editor.apply();
             isStartPermissionActivity = true;
+        }
+        if (!Environment.isExternalStorageManager()) {
+            Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+            Uri uri = Uri.fromParts("package", getPackageName(), null);
+            intent.setData(uri);
+            startActivity(intent);
         }
         return isStartPermissionActivity;
     }
