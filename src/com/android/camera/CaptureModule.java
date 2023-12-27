@@ -8889,7 +8889,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean mFASurfaceConfigured = false;
     private void configureFASurface() {
-        if (!isTouchFocusAssistSupported() || mIsInFocusAssistMode) {
+        if (!isTouchFocusAssistSupported() || mIsInFocusAssistMode || !getCameraModeSwitcherAllowed()) {
             return;
         }
         if (mFASurfaceConfigured) {
