@@ -3395,8 +3395,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     };
 
             Surface surface = null;
-            if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getSinglePhysicalCamera() != null || isClearSightOn()
-                || CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW || needYUVStream()) {
+            if(needWaitSurface()) {
                 try {
                     waitForPreviewSurfaceReady();
                 } catch (RuntimeException e) {
@@ -10490,6 +10489,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.d(TAG,"setTimeStamp exception ="+e);
             }
         }
+    }
+    private boolean needWaitSurface(){
+        String colorSpace = mSettingsManager.getValue(SettingsManager.KEY_COLOR_SPACE);
+        if((colorSpace != null && !colorSpace.equals("0")) ||
+                (mSettingsManager.getPhysicalCameraId() != null ||
+                mSettingsManager.getSinglePhysicalCamera() != null ||
+                isClearSightOn()
+                || CaptureUI.USE_TEXTURE_VIEW_TO_PREVIEW || needYUVStream()
+                )){
+            return  true;
+        }
+        return false;
     }
     private void createCaptureSessionWithSessionConfiguration(CameraDevice camera, int opMode,
                                                               List<OutputConfiguration> outConfigurations,

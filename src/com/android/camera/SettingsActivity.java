@@ -215,7 +215,6 @@ public class SettingsActivity extends PreferenceActivity {
             } else if (key.equals(SettingsManager.KEY_SELECT_MODE)) {
                 CaptureModule.CameraMode mode = (CaptureModule.CameraMode)
                         getIntent().getSerializableExtra(CAMERA_MODULE);
-                updateEISPreference();
                 updatePdnetTogglePreference();
                 updateViullPreference();
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
@@ -379,7 +378,6 @@ public class SettingsActivity extends PreferenceActivity {
 
                 if (pref.getKey().equals(SettingsManager.KEY_VIDEO_QUALITY) ||
                         pref.getKey().equals(SettingsManager.KEY_SELECT_MODE)){
-                    updateEISPreference();
                     updateVideoVariableFpsPreference();
                     updateVideoHfrFpsPreference();
                     CaptureModule.CameraMode mode =
@@ -389,6 +387,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
                     }
                     updateAICameraPerf();
+                    updateEISPreference();
                 }
                 if(pref.getKey().equals(SettingsManager.KEY_HFR_BUFFER_MODE)){
                     updateVideoHfrFpsPreference();
@@ -414,7 +413,6 @@ public class SettingsActivity extends PreferenceActivity {
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
-                    updateEISPreference();
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
                     updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
