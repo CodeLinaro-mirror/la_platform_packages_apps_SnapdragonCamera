@@ -162,6 +162,7 @@ public class TestBase{
     public HashMap<String, int[]> mModeIconL = new HashMap<>();
     public HashMap<String, int[]> mModeIconR = new HashMap<>();
     public HashMap<String, int[]> mIconLoc = new HashMap<>();
+    public HashMap<String, int[]> mRecordLoc = new HashMap<>();
     public HashMap<String, int[]> mProLoc = new HashMap<>();
 
     public static void init(){
@@ -1589,6 +1590,8 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
 
        // View mModeItem = mActivity.findViewById(R.id.camera2_mode_item);
         View mSettingsButton = mActivity.findViewById(R.id.settings);
+        int mSetWidth = mSettingsButton.getMeasuredWidth();
+        int mSetHeight = mSettingsButton.getMeasuredHeight();
         View mThumbnail = mActivity.findViewById(R.id.preview_thumb);
         mZoomBarWidth = mZoomBar.getWidth();
         mZoomValueWidth = mZoomValue.getWidth();
@@ -1596,18 +1599,25 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         mIconLoc.put("Shutter",mShutterLoc);
         mFlash.getLocationInWindow(mFlashLoc);
         mIconLoc.put("Flash",mFlashLoc);
+        mRecordLoc.put("Flash",mFlashLoc);
         mHdr.getLocationInWindow(mHdrLoc);
         mIconLoc.put("Hdr",mHdrLoc);
         mZoomBar.getLocationInWindow(mZoomBarLoc);
         mIconLoc.put("ZoomBarMin",mZoomBarLoc);
+        mRecordLoc.put("ZoomBarMin",mZoomBarLoc);
         int[]maxzoom = {mZoomBarWidth,mZoomBarLoc[1]};
         mIconLoc.put("ZoomBarMax", maxzoom);
+        mRecordLoc.put("ZoomBarMin",mZoomBarLoc);
         mZoomValue.getLocationInWindow(mZoomValueLoc);
         mIconLoc.put("ZoomValue",mZoomValueLoc);
+        mRecordLoc.put("ZoomValue",mZoomValueLoc);
         mSwitch.getLocationInWindow(mSwitchLoc);
         mIconLoc.put("SwitchCam",mSwitchLoc);
+        mRecordLoc.put("SwitchCam",mSwitchLoc);
         mVideoShutter.getLocationInWindow(mVideoLoc);
         mSettingsButton.getLocationInWindow(mSettingLoc);
+        mSettingLoc[0] += mSetWidth/2;
+        mSettingLoc[1] += mSetHeight/2;
         mIconLoc.put("Setting",mSettingLoc);
         mThumbnail.getLocationInWindow(mThumbLoc);
         mIconLoc.put("Thumb",mThumbLoc);
@@ -1647,8 +1657,8 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         int[] modetext = {swipevalue,mModeLoc[1]};
         int[] modeswipe = {swipevalue,swipevalue};
         mModeIconR.put("SlideModeTxt",modetext);
-        mIconLoc.put("SwipeModeL",modeswipe);
-        mIconLoc.put("SwipeModeR",modeswipe);
+       // mIconLoc.put("SwipeModeL",modeswipe);
+        //mIconLoc.put("SwipeModeR",modeswipe);
         mIconLoc.put("Focus",modeswipe);
     }
     private void getRecordingLoc(){
@@ -1861,8 +1871,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
     public void resetPreview()throws Exception{
         if(mCaptureModule != null) {
             mCaptureModule.setPreviewCaptureResult(null);
-            mCaptureModule.setLongImageTitle(new ArrayList<>());
-            mCaptureModule.setImagExif(new ArrayList<>());
             mCaptureModule.resetHashMapTimes();
         }
     }
