@@ -757,7 +757,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         List<Size> res = new ArrayList<>();
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         CameraCharacteristics characteristics;
-        if(!isMultiCameraEnabled()) {
+        if(!isMultiCameraEnabled() && !isRawReprocess()) {
             cameraId = Integer.toString(getQuadBayerSensorCameraId());
             if (getQuadBayerPhysicalId(cameraId) != null) cameraId = getQuadBayerPhysicalId(cameraId);
         }
@@ -2325,6 +2325,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             physicalYuv10bitCallback.setEntryValues(newEntryValues);
             physicalRawCallback.setEntries(newEntries);
             physicalRawCallback.setEntryValues(newEntryValues);
+            physicalRawReprocessPref.setEntries(newEntries);
+            physicalRawReprocessPref.setEntryValues(newEntryValues);
         }
         CharSequence[] singlePhysicalEntries = new CharSequence[newEntries.length + 1];
         CharSequence[] singlePhysicalValues = new CharSequence[newEntryValues.length + 1];
@@ -2364,6 +2366,29 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } else if (KEY_SELECT_MODE.equals(pref.getKey())) {
             mCaptureModule.reinit();
         }
+    }
+    private boolean buildPhysicalRawReprocessCamera(ListPreference listPreference) {
+        boolean ret = false;
+        Set<String> physical_ids = getAllPhysicalCameraId();
+        if (physical_ids != null && physical_ids.size() != 0){
+            int i = 0;
+            int size = physical_ids.size() + 1;
+            CharSequence[] fullEntryValues = new CharSequence[size];
+            CharSequence[] fullEntries = new CharSequence[size];
+            for (String id : physical_ids){
+                fullEntries[i] = "physical id : " + id;
+                fullEntryValues[i] = id.trim();
+                Log.d(TAG,"buildPhysicalRawReprocessCamera fullEntries[i]=" + fullEntries[i]+
+                        " fullEntryValues[i]="+fullEntryValues[i]);
+                i++;
+            }
+            fullEntries[i] = "Disable";
+            fullEntryValues[i] = "logical";
+            listPreference.setEntries(fullEntries);
+            listPreference.setEntryValues(fullEntryValues);
+            ret = true;
+        }
+        return ret;
     }
 
     private boolean buildPhysicalCamera(int cameraId,ListPreference listPreference) {
