@@ -2209,8 +2209,6 @@ public class SettingsActivity extends PreferenceActivity {
             }
             if(!perfEnable){
                 pref.setValue("default");
-            } else if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
-                pref.setValue("default");
             } else {
                 pref.setValueIndex(idx);
             }
@@ -2241,10 +2239,6 @@ public class SettingsActivity extends PreferenceActivity {
             return;
         }
         pref.setEnabled(true);
-        if (mSettingsManager.isLimitedHDR()) {
-            pref.setEnabled(false);
-            pref.setValue("-1");
-        }
     }
     private void updateQLLPreference() {
         ListPreference mixHDRPref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
@@ -2331,11 +2325,6 @@ public class SettingsActivity extends PreferenceActivity {
                 pref.setEnabled(false);
                 return;
             }
-        }
-        if(mSettingsManager.getValueIndex(SettingsManager.KEY_SCENE_MODE) == 1 ) {
-            pref.setValue("off");
-            pref.setEnabled(false);
-            return;
         }
 
         String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
