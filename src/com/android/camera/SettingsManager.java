@@ -4386,7 +4386,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (supportHeic == 1){
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
         }
-        if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB) {
+        if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB && isDynamicRangeTenBitSupported()) {
             ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
         }
         return ret;
