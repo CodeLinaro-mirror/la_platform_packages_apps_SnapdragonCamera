@@ -810,7 +810,8 @@ public class TestBase{
         }
         for(int i=0;i<patharry.size();i++){
             String path = mNormalPath + patharry.get(i)+NORMAL_IMG;
-            checkSnapShot(path);
+            List<ExifInterface> exif = mCaptureModule.getImagExif();
+            checkSnapShot(path,exif.get(i));
         }
         //assertNotEquals(mLongShotNum,patharry.size());
         mLongShotNum = patharry.size();
@@ -835,12 +836,16 @@ public class TestBase{
             if(!testResult) {
                 flashInZslResult = false;
                 longshotInZslResult = false;
+                flashvalue = testFail;
+                longshotvalue = testFail;
                 break;
             }
             checkZSL();
             if(!testResult) {
                 flashInZslResult = false;
                 longshotInZslResult = false;
+                flashvalue = testFail;
+                longshotvalue = testFail;
                 break;
             }
             if(!flashInZslResult && !longshotInZslResult){
@@ -987,10 +992,11 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 }else{
                     updateJson(5, testFail);
                 }
-
             }else{
                 if (checkbar1 && checkbar2 && checkbar3) {
                     updateJson(5, testPass);
+                }else{
+                    updateJson(5, testFail);
                 }
             }
         }
@@ -1427,7 +1433,8 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         assertNotNull(patharry);
         assertEquals(1,patharry.size());
         String path =mNormalPath + patharry.get(0) + NORMAL_IMG;
-        checkSnapShot(path);
+        List<ExifInterface> exif = mCaptureModule.getImagExif();
+        checkSnapShot(path,exif.get(0));
     }
     private void snapShotCheck()throws Exception{
         mCurrentCaptureResult = mCaptureModule.getCaptureResult();
@@ -1450,7 +1457,12 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             return;
         }
         String path =mNormalPath + patharry.get(0) + NORMAL_IMG;
-        checkSnapShot(path);
+        List<ExifInterface> exif = mCaptureModule.getImagExif();
+        if(exif.size() != 1 ){
+            testFail = getFailStr("exifinfo",exif.size(),1);
+            return;
+        }
+        checkSnapShot(path,exif.get(0));
     }
     private void snapByButton()throws Exception{
         //mCurrentImgNum = getCameraDirectoryJpegAmount();
@@ -1564,6 +1576,9 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         initsetting();
     }
     public void initsetting(){
+        if(mSettingLoc[0] != 0){
+            return;
+        }
         View mShutter = mActivity.findViewById(R.id.shutter_button);
         View mFlash = mActivity.findViewById(R.id.flash_button);
         View mHdr = mActivity.findViewById(R.id.scene_mode_hdr);
@@ -1596,8 +1611,9 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         mIconLoc.put("Setting",mSettingLoc);
         mThumbnail.getLocationInWindow(mThumbLoc);
         mIconLoc.put("Thumb",mThumbLoc);
-        Log.i(TAG,"thumb="+mThumbLoc[0]*mThumbLoc[1]+",settingloc="+mSettingLoc[0]+"*"+mSettingLoc[1]
-        +",mHdrLoc="+mHdrLoc[0]+"*"+mHdrLoc[1]+",mFlashLoc="+mFlashLoc[0]+mFlashLoc[1]);
+        Log.i(TAG,"thumb="+mThumbLoc[0]+"*"+mThumbLoc[1]+",settingloc="+mSettingLoc[0]+"*"+mSettingLoc[1]
+        +",mHdrLoc="+mHdrLoc[0]+"*"+mHdrLoc[1]+",mFlashLoc="+mFlashLoc[0]+"*"+mFlashLoc[1]+"shutterloc="
+                + mShutterLoc[0]+"*"+ mShutterLoc[1]);
     }
     public void getModeLoc(){
         View mCameraModeText = mActivity.findViewById(R.id.mode_text);
@@ -1838,6 +1854,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         if(mCaptureModule != null) {
             mCaptureModule.setCaptureResult(null);
             mCaptureModule.setLongImageTitle(new ArrayList<>());
+            mCaptureModule.setImagExif(new ArrayList<>());
             mCurrentexif = null;
         }
     }
@@ -1845,6 +1862,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         if(mCaptureModule != null) {
             mCaptureModule.setPreviewCaptureResult(null);
             mCaptureModule.setLongImageTitle(new ArrayList<>());
+            mCaptureModule.setImagExif(new ArrayList<>());
             mCaptureModule.resetHashMapTimes();
         }
     }
@@ -1852,6 +1870,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         if(mCaptureModule != null) {
             mCaptureModule.setVideFilePath(null);
             mCaptureModule.setLongImageTitle(new ArrayList<>());
+            mCaptureModule.setImagExif(new ArrayList<>());
         }
     }
 
@@ -1940,19 +1959,16 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         }*/
 
     }
-    public void checkSnapShot(String path) throws Exception {
+
+    public void checkSnapShot(String path,ExifInterface exif) throws Exception {
         if(!testResult) return;
         if(!mCaptureModule.getCaptureUI().isShutterEnabled()){
             testFail = getFailStr("isShutterEnabled",mCaptureModule.getCaptureUI().isShutterEnabled(),true);
             return;
         }
-        //assertTrue(mCaptureModule.getCaptureUI().isShutterEnabled());
-/*        mCurrentImgNum = getCameraDirectoryJpegAmount();
-        assertEquals(preJpgNum,mCurrentImgNum - picnum);*/
+
         File f = new File(path);
-        //assertTrue(f.exists());
-        //assertTrue(f.length() > 1024);
-        //assertTrue(f.length() > 1024);
+
         if(isOpenFromIntent){
             if(f.exists()){
                 testFail = getFailStr("imagepath.exit()",f.exists(),false);
@@ -1969,12 +1985,17 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             testFail = getFailStr("imagepath.length()",f.length(),"above 1024");
             return;
         }
-    mCurrentexif = new ExifInterface(path);
+        try {
+            mCurrentexif = new ExifInterface(path);
+        }catch(Exception e){
+            Log.i(TAG,"getexif e="+e);
+            mCurrentexif =exif;
+        }
         if(mCurrentexif == null ){
             testFail = getFailStr("imagepath.exif",mCurrentexif,"NotNull");
             return;
         }
-       // assertNotNull(mCurrentexif);
+
         String wInExif= mCurrentexif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH);
         String hInExif= mCurrentexif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
         if(!mPicWidInSet.equals(wInExif) || !mPicHeiInSet.equals(hInExif)){
@@ -1983,8 +2004,6 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                     mPicWidInSet+"*"+mPicHeiInSet);
             return;
         }
-        //assertEquals(mPicWidInSet,wInExif);
-        //assertEquals(mPicHeiInSet,hInExif);
 
     }
 

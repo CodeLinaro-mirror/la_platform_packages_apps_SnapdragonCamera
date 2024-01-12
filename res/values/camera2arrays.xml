@@ -462,6 +462,7 @@
         <item>@string/pref_camera_picturesize_entry_36mp</item>
         <item>8192 x 4320</item>
         <item>7680 x 4320</item>
+        <item>7296 x 4992</item>
         <item>@string/pref_camera_picturesize_entry_32mp</item>
         <item>6528 x 4896 (32M)</item>
         <item>@string/pref_camera_picturesize_entry_25mp</item>
@@ -519,6 +520,7 @@
         <item>6928x5196</item>
         <item>8192x4320</item>
         <item>7680x4320</item>
+        <item>7296x4992</item>
         <item>6560x4928</item>
         <item>6528x4896</item>
         <item>5184x4882</item>
@@ -1127,6 +1129,18 @@ for time lapse recording -->
         <item>@string/pref_camera2_instant_aec_entry_disable</item>
         <item>@string/pref_camera2_instant_aec_entry_aggressive</item>
         <item>@string/pref_camera2_instant_aec_entry_fast</item>
+    </string-array>
+
+    <string-array name="pref_camera2_color_space_entries" translatable="true">
+        <item>@string/pref_camera2_color_space_disable</item>
+        <item>@string/pref_camera2_color_space_srgb</item>
+        <item>@string/pref_camera2_color_space_display_p3</item>
+    </string-array>
+
+    <string-array name="pref_camera2_color_space_entryvalues" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
     </string-array>
 
     <string-array name="pref_camera2_anti_banding_level_entryvalues" translatable="false">

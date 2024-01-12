@@ -789,8 +789,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("com.qti.chi.multicamerainfo.MasterCamera", Byte.class);
     private static final CaptureResult.Key<byte[]> ActiveCameraInfo =
             new CaptureResult.Key<>("com.qti.chi.multicamerainfo.ActiveCameraInfo", byte[].class);
-    private static final CaptureResult.Key<byte[]> MultiCameraIds =
-            new CaptureResult.Key<>("com.qti.chi.multicamerainfo.MultiCameraIds", byte[].class);
 
     public static final CameraCharacteristics.Key<Integer> MFNRType =
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.MFNRType", Integer.class);
@@ -1252,7 +1250,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final int LOCK_AF_AE_STATE_NONE = 0;
     private static final int LOCK_AF_AE_STATE_START = 1;
     private static final int LOCK_AF_AE_STATE_LOCK_DONE = 2;
-    private List<String> mLongImgTitle = new ArrayList<>();
+
 
     private int mLockAFAE = LOCK_AF_AE_STATE_NONE;
     private TextView mLockAFAEText;
@@ -1415,6 +1413,14 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mClosedCamTime;
     private long mStartedTime;
     private long mSessionAfterRecord;
+    private List<String> mLongImgTitle = new ArrayList<>();
+    private List<ExifInterface> mImagExif = new ArrayList<>();;
+    public List<ExifInterface> getImagExif(){
+        return mImagExif;
+    }
+    public void setImagExif(List<ExifInterface> exif){
+         mImagExif = exif;
+    }
     public CaptureResult getPreviewCaptureResult() {
         return mPreviewCaptureResult;
     }
@@ -1627,6 +1633,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mPostProcessor.onMetaAvailable(result);
             if (statsParametersUpdated <= STATS_PARAMETER_UPDATE &&
                     !mSettingsManager.isMultiCameraEnabled()) {
+
                 updateStatsParameters(result);
             }
             String stats_visualizer = mSettingsManager.getValue(
@@ -1660,12 +1667,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(isAIDE2Enabled()){
                 try {
                     mAideAdrcGain = result.get(adrc_gain);
+                    mMasterCameraId = result.get(CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID);
+                    Log.d(TAG,"mMasterCameraId: " + mMasterCameraId);
                 } catch (IllegalArgumentException e) {
-                    Log.d(TAG,EXCEPTION_LOG,"no adrc_gain tag");
-                }
-                byte[] multiCameraIds = result.get(MultiCameraIds);
-                if(multiCameraIds != null) {
-                    mMasterCameraId = String.valueOf(byteArray2Int(multiCameraIds, 8));
+                    Log.d(TAG,EXCEPTION_LOG,"no adrc_gain tag or LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID");
                 }
             }
             if(isAIDE2Enabled() || mSaveRaw) {
@@ -2079,8 +2084,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
             Log.i(TAG,"BG, bgRStats:" + bgRStats + ",bgGStats:" + bgGStats + ",bgBStats:" + bgBStats + ",mBGStatson:" + mBGStatson);
+
             if (bgRStats != null && bgGStats != null && bgBStats != null && mBGStatson) {
                 synchronized (bg_r_statsdata) {
+                    if(bg_r_statsdata.length != bgRStats.length) {
+                        Log.d(TAG,"be_r_statsdata.length="+bg_r_statsdata.length +",beRStats.length="+bgRStats.length);
+                        updateStatsParameters(result);
+                    }
                     System.arraycopy(bgRStats, 0, bg_r_statsdata, 0, bgRStats.length);
                     System.arraycopy(bgGStats, 0, bg_g_statsdata, 0, bgGStats.length);
                     System.arraycopy(bgBStats, 0, bg_b_statsdata, 0, bgBStats.length);
@@ -2127,8 +2137,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             Log.i(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
 
+
             if (beRStats != null && beGStats != null && beBStats != null && mBEStatson) {
+
                 synchronized (be_r_statsdata) {
+                    if(be_r_statsdata.length != beRStats.length) {
+                        Log.d(TAG,"be_r_statsdata.length="+be_r_statsdata.length +",beRStats.length="+beRStats.length);
+                        updateStatsParameters(result);
+                    }
                     System.arraycopy(beRStats, 0, be_r_statsdata, 0, beRStats.length);
                     System.arraycopy(beGStats, 0, be_g_statsdata, 0, beRStats.length);
                     System.arraycopy(beBStats, 0, be_b_statsdata, 0, beRStats.length);
@@ -3611,7 +3627,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
 
                     if (mRawReprocessType != 0) {
-
                         for (int i = 0; i < mRawCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mRAWImageReader[i].getSurface());
                             configuration.setPhysicalCameraId(mSettingsManager.getRawReprocessPhysicalId());
@@ -5031,7 +5046,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE){
                 applySettingsForLockExposure(captureBuilder, id);
             }
-            if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) && !isLongExpTmCaptrure()) {
+            if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) &&
+                    !isLongExpTmCaptrure() &&
+                    !mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, true);
             } else {
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, false);
@@ -6166,6 +6183,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     } catch (IOException e) {
                                         Log.w(TAG,"get exif failed");
                                     }
+
                                     long imglen = bytes.length;
                                     int imageFormat = image.getFormat();
                                     int imageWidth = image.getWidth();
@@ -6173,8 +6191,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     if(mActivity.getAutoTest()) {
                                         Log.i(TAG,"mLongshotActive="+mLongshotActive+",titile="+title+
                                                 ",mNumImageArrived.get()="+mNumImageArrived.get()+
-                                                ",imageWidth="+imageWidth+",imageHeight="+imageHeight+",imageFormat="+imageFormat);
+                                                ",imageWidth="+imageWidth+",imageHeight="+imageHeight+",imageFormat="+imageFormat
+                                        +",mImagExif="+exif);
                                         mLongImgTitle.add(title);
+                                        mImagExif.add(exif);
                                     }
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         saveRawImg(bytes, image, name, title);
@@ -6521,6 +6541,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     @Override
                     public void onImageAvailable(ImageReader reader) {
                         Log.d(TAG, "new yuv image from physical camera " + id);
+                        releaseShutterButton();
                         Image image = reader.acquireNextImage();
                         byte[] yuv = getYUVFromImage(image);
                         mNamedImages.nameNewImage(System.currentTimeMillis());
@@ -6558,6 +6579,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     @Override
                     public void onImageAvailable(ImageReader reader) {
                         Log.d(TAG, "new yuv 10bit image from physical camera "+id);
+                        releaseShutterButton();
                         Image image = reader.acquireNextImage();
                         byte[] yuv = getYUV10BitFromImage(image);
                         mNamedImages.nameNewImage(System.currentTimeMillis());
@@ -6612,6 +6634,18 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private void releaseShutterButton(){
+        if (captureWaitImageReceive()) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "image available for cam enable shutter button " );
+                    mUI.enableShutter(true);
+                }
+            });
+        }
+    }
+
     private void setPhysicalImgReader(Size size, String id, int i) {
         if(mSaveRaw)
         mPhysicalRawReader[i] = ImageReader.newInstance(size.getWidth(),
@@ -6621,6 +6655,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         PhysicalImageListener rawListener = new PhysicalImageListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
+                releaseShutterButton();
                 Image image = reader.acquireNextImage();
                 ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                 byte[] raw = new byte[buffer.remaining()];
@@ -6658,15 +6693,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     @Override
                     public void onImageAvailable(ImageReader reader) {
                         Log.d(TAG, "new jpeg R image from physical camera " + id);
-                        if (captureWaitImageReceive()) {
-                            mHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Log.d(TAG, " PhysicalJpegImgReader image available for cam enable shutter button");
-                                    mUI.enableShutter(true);
-                                }
-                            });
-                        }
+                        releaseShutterButton();
                         Image image = reader.acquireNextImage();
                         mNamedImages.nameNewImage(System.currentTimeMillis());
                         NamedEntity name = mNamedImages.getNextNameEntity();
@@ -6709,15 +6736,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             @Override
             public void onImageAvailable(ImageReader reader) {
                 Log.d(TAG, "new jpeg image from physical camera " + id);
-                if (captureWaitImageReceive()) {
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Log.d(TAG, " PhysicalJpegImgReader image available for cam enable shutter button");
-                            mUI.enableShutter(true);
-                        }
-                    });
-                }
+                releaseShutterButton();
                 Image image = reader.acquireNextImage();
                 mNamedImages.nameNewImage(System.currentTimeMillis());
                 NamedEntity name = mNamedImages.getNextNameEntity();
@@ -6915,9 +6934,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         NamedEntity name = mNamedImages.getNextNameEntity();
                         String title = (name == null) ? null : name.title;
                         long date = (name == null) ? -1 : name.date;
-                        if(mActivity.getAutoTest()) {
-                            mLongImgTitle.add(title);
-                        }
+
                         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                         byte[] bytes = new byte[buffer.remaining()];
                         buffer.get(bytes);
@@ -6928,6 +6945,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                             exif = new ExifInterface(new ByteArrayInputStream(bytes));
                         } catch (IOException e) {
                             Log.w(TAG,"get exif failed");
+                        }
+                        if(mActivity.getAutoTest()) {
+                            mLongImgTitle.add(title);
+                            mImagExif.add(exif);
                         }
                         if (image.getFormat() != ImageFormat.HEIC && exif != null){
                             orientation = CameraUtil.getOrientation(exif);
@@ -7205,6 +7226,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void closeImageReader() {
+        Log.i(TAG, "closeImageReader");
         for (int i = MAX_NUM_CAM - 1; i >= 0; i--) {
             if (null != mImageReader[i]) {
                 mImageReader[i].close();
@@ -7655,7 +7677,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mMpoSaveHandler = new MpoSaveHandler(mMpoSaveThread.getLooper());
         mZoomHandler = new ZoomHandler(mCaptureCallbackThread.getLooper());
         mBackgroundThreadFlag = true;
-        Log.d(TAG, "startBackgroundThread");
+        Log.i(TAG, "startBackgroundThread");
     }
 
     /**
@@ -7779,6 +7801,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         } catch (CameraAccessException|IllegalStateException e) {
                             Log.e(TAG,e);
                         }
+                    }else{
+                        mLockNums.incrementAndGet(1);
                     }
                 }
             }).start();
@@ -7865,7 +7889,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             //mActivity.setResultEx(Activity.RESULT_CANCELED, new Intent());
             mActivity.finish();
         }
-        closeImageReader();
+
         mJpegImageData = null;
     }
 
@@ -8077,7 +8101,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 BGSTATS_DATA = bg_width*bg_height;
                 BGSTATS_WIDTH = bg_width*STATS_LENGTH;
                 BGSTATS_HEIGHT = bg_height*STATS_LENGTH;
-
                 bg_statsdata = new int[BGSTATS_DATA*STATS_LENGTH*STATS_LENGTH];
                 bg_r_statsdata = new int[BGSTATS_DATA];
                 bg_g_statsdata = new int[BGSTATS_DATA];
@@ -10442,6 +10465,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
                     new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
+            String colorSpace = mSettingsManager.getValue(SettingsManager.KEY_COLOR_SPACE);
+            if (colorSpace != null && !colorSpace.equals("0")) {
+                sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
+            }
             mCreateSessionLatency = System.currentTimeMillis();
             mCameraDevice[cameraId].createCaptureSession(sessionConfig);
         } catch (Exception e) {
@@ -10474,6 +10501,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
         sessionConfig.setSessionParameters(initialRequest.build());
+        String colorSpace = mSettingsManager.getValue(SettingsManager.KEY_COLOR_SPACE);
+        if (colorSpace != null && !colorSpace.equals("0")) {
+            sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
+        }
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
@@ -10531,6 +10562,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             SessionConfiguration sessionConfig = new SessionConfiguration(optionMode,
                     outConfigurations, new HandlerExecutor(mCameraHandler), mSessionListener);
             sessionConfig.setSessionParameters(mVideoRecordRequestBuilder.build());
+            String colorSpace = mSettingsManager.getValue(SettingsManager.KEY_COLOR_SPACE);
+            if (colorSpace != null && !colorSpace.equals("0")) {
+                sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
+            }
             mCreateSessionLatency = System.currentTimeMillis();
             mCameraDevice[cameraID].createCaptureSession(sessionConfig);
         } catch (Exception exception) {
@@ -11117,16 +11152,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             builder.set(CaptureRequest.NOISE_REDUCTION_MODE,noiseReduMode);
         } else {
-            boolean isMfnrEnable = !isLongShotSettingEnabled() && isMFNREnabled();
-            int noiseReduMode = (isMfnrEnable ? CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY :
+
+            int noiseReduMode = (isMFNREnabled() ? CameraMetadata.NOISE_REDUCTION_MODE_HIGH_QUALITY :
                     CameraMetadata.NOISE_REDUCTION_MODE_FAST);
             String frameStr = mSettingsManager.getKeyValue(mSettingsManager.KEY_CAPTURE_MFNR_FRAME);
             int frameValue = 3;
             frameValue = CameraUtil.strToInt(frameStr,frameValue);
-            Log.i(TAG, "applyCaptureMFNR mfnrEnable :" + isMfnrEnable + ", noiseReduMode :"
+            Log.i(TAG, "applyCaptureMFNR mfnrEnable :" + isMFNREnabled() + ", noiseReduMode :"
                     + noiseReduMode +",frameStr="+frameStr+",framevalue="+frameValue);
             builder.set(CaptureRequest.NOISE_REDUCTION_MODE, noiseReduMode);
-            if (isMfnrEnable) {
+            if (isMFNREnabled()) {
                 try {
                     builder.set(custom_noise_reduction, (byte) 0x01);
                     builder.set(CaptureModule.mfnrFrameNO, frameValue);
@@ -13010,26 +13045,25 @@ public class CaptureModule implements CameraModule, PhotoController,
         // Get HDR ANS mode. (0 off, 1 on)
         int hdrAns = SettingTranslation
                 .getHdrAnsMode(mSettingsManager.getValue(SettingsManager.KEY_HDR_ANS_MODE));
+        if (PersistUtil.needAudioEncoder()) {
+            AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
+            setDefaultHDRParameters(am);
 
-        AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
-        setDefaultHDRParameters(am);
+            if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
+                Log.d(TAG, "Enable HDR");
+                am.setParameters("hdr_record_on=true");
+                am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
+                am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
+                am.setParameters("hdr_audio_channel_count=4");
+                am.setParameters("hdr_audio_sampling_rate=48000");
 
-        if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
-            Log.d(TAG, "Enable HDR");
-            am.setParameters("hdr_record_on=true");
-            am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
-            am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
-            am.setParameters("hdr_audio_channel_count=4");
-            am.setParameters("hdr_audio_sampling_rate=48000");
-        }
-
-        if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
-            Log.d(TAG, "cameraId " + mSettingsManager.isFacingFront(cameraId) + " mOrientation " + mOrientation);
-            am.setParameters(mSettingsManager.isFacingFront(cameraId) ? "facing=front" : "facing=back");
-            am.setParameters((mOrientation == 90 || mOrientation == 180)
+                Log.d(TAG, "cameraId " + mSettingsManager.isFacingFront(cameraId) + " mOrientation " + mOrientation);
+                am.setParameters(mSettingsManager.isFacingFront(cameraId) ? "facing=front" : "facing=back");
+                am.setParameters((mOrientation == 90 || mOrientation == 180)
                                 ? "inverted=true" : "inverted=false");
-            am.setParameters((mOrientation == 90 || mOrientation == 270)
+                am.setParameters((mOrientation == 90 || mOrientation == 270)
                                 ? "orientation=landscape" : "orientation=portrait");
+            }
         }
 
         //updateHFRSetting();
@@ -14062,7 +14096,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public boolean showMFNR(){
         if ((mCurrentSceneMode.mode == CameraMode.DEFAULT || mCurrentSceneMode.mode == CameraMode.RTB)
-                && !mPostProcessor.isSelfieMirrorOn() && !mSettingsManager.isZSLInAppEnabled() && !isLongShotSettingEnabled())
+                && !mPostProcessor.isSelfieMirrorOn() && !mSettingsManager.isZSLInAppEnabled())
             return true;
         else
             return false;
@@ -16262,11 +16296,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
         }
-
-        AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
-        // Set default values for HDR settings
-        setDefaultHDRParameters(am);
-
+        if (PersistUtil.needAudioEncoder()) {
+            AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
+            // Set default values for HDR settings
+            setDefaultHDRParameters(am);
+        }
 
     }
 
@@ -16315,6 +16349,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      * MediaPlaybackService to pause playback.
      */
     private void requestAudioFocus() {
+        if (!PersistUtil.needAudioEncoder()) return;
         AudioManager am = (AudioManager)mActivity.getSystemService(Context.AUDIO_SERVICE);
         // Send request to obtain audio focus. This will stop other
         // music stream.
@@ -16326,6 +16361,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void releaseAudioFocus() {
+        if (!PersistUtil.needAudioEncoder()) return;
         AudioManager am = (AudioManager)mActivity.getSystemService(Context.AUDIO_SERVICE);
         int result = am.abandonAudioFocus(null);
         if (result == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
