@@ -113,7 +113,7 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.DepthMode",Integer.class);
 
     public static final CaptureRequest.Key<Integer> ITOF_TUNING_SET =
-            new CaptureRequest.Key<>("com.qti.node.itofpreprocess.ITOFTuningSet", Integer.class);
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.DepthTuningSet", Integer.class);
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
     private static final int MANUAL_WB_GAINS_MODE = 2;

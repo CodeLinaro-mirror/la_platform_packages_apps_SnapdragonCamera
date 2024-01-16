@@ -556,15 +556,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private LinearLayout mGridLineView;
     private boolean mIsZoomKeyChanged = false;
 
-
-    private void previewUIReady() {
-        if (mSettingsManager.getPhysicalCameraId() == null &&
-                mSettingsManager.getSinglePhysicalCamera() == null) {
-            mModule.onPreviewUIReady();
-        } else {
-            checkSurfaceReady();
-        }
-
+    private void showThumbnail() {
         if ((mIsVideoUI || mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL)
                 && mThumbnail != null && mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA) {
             mThumbnail.setVisibility(View.INVISIBLE);
@@ -575,6 +567,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             if (mThumbnail == null)
                 mThumbnail = (ImageView) mRootView.findViewById(R.id.preview_thumb);
             mActivity.updateThumbnail(mThumbnail);
+        }
+    }
+
+    private void previewUIReady() {
+        if (mSettingsManager.getPhysicalCameraId() == null &&
+                mSettingsManager.getSinglePhysicalCamera() == null) {
+            mModule.onPreviewUIReady();
+        } else {
+            checkSurfaceReady();
         }
 
     }
@@ -2509,6 +2510,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mThumbnail.setVisibility(View.INVISIBLE);
         hideZoomSeekBar();
     }
+    private void hideUIInDepth(){
+        mFrontBackSwitcher.setVisibility(View.INVISIBLE);
+        mFilterModeSwitcher.setVisibility(View.INVISIBLE);
+        mSceneModeHDR.setVisibility(View.INVISIBLE);
+        mFlashButton.setVisibility(View.INVISIBLE);
+        mSettingsIcon.setVisibility(View.INVISIBLE);
+        mShutterButton.setVisibility(View.INVISIBLE);
+        mThumbnail.setVisibility(View.INVISIBLE);
+        hideZoomSeekBar();
+    }
 
     public void hideUIwhileRecording() {
         mCameraControls.setVideoMode(true);
@@ -2561,6 +2572,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mShutterButton.setVisibility(View.VISIBLE);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
         mMakeupButton.setVisibility(View.INVISIBLE);
+        mSettingsIcon.setVisibility(View.VISIBLE);
+        showThumbnail();
         //settings for each mode
         switch (mode) {
             case DEFAULT:
@@ -3726,6 +3739,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             viewStub.inflate();
             mDepthTextureView = mRootView.findViewById(R.id.depth_preview_texture_view);
         }
+        hideUIInDepth();
 
         FrameLayout.LayoutParams params1 =
                 new FrameLayout.LayoutParams(
@@ -3756,7 +3770,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         }
 
-        mCameraControls.setVisibility(View.GONE);
+       // mCameraControls.setVisibility(View.GONE);
         mGestures.setEnabled(false);
 
         if (mDepthSetting == null) {
@@ -3824,7 +3838,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT,
                             Gravity.BOTTOM | Gravity.START);
-            params.bottomMargin = 200;
+            params.bottomMargin = 400;
             params.leftMargin = 100;
             params.rightMargin = 100;
             mDepthSeekBar.setLayoutParams(params);

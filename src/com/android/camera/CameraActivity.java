@@ -1017,7 +1017,8 @@ public class CameraActivity extends Activity
                 if((mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
                         || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR ||
                         mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC)) ||
-                        (mMultiCameraModule != null && mMultiCameraModule.isRecordingVideo())){
+                        (mMultiCameraModule != null && mMultiCameraModule.isRecordingVideo()) ||
+                        mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH){
                     return;
                 }else {
                     mThumbnail.setVisibility(View.VISIBLE);
@@ -1045,8 +1046,9 @@ public class CameraActivity extends Activity
         if (mThumbnailDrawable != null) {
             mThumbnail.setImageDrawable(mThumbnailDrawable);
             if (!isSecureCamera() && !isCaptureIntent()) {
-                if(mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
-                || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR)){
+                if((mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
+                || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR)) ||
+                        mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH){
                     return;
                 }else {
                     mThumbnail.setVisibility(View.VISIBLE);
