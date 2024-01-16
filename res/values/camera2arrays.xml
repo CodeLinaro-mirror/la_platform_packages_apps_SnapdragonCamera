@@ -1259,19 +1259,25 @@ for time lapse recording -->
     <string-array name="pref_camera2_bsgc_entryvalues" translatable="false">
         <item>@string/pref_camera2_bsgc_entry_value_disable</item>
         <item>@string/pref_camera2_bsgc_entry_value_enable</item>
+        <item>@string/pref_camera2_bsgc_entry_value_display</item>
     </string-array>
 
     <string-array name="pref_camera2_bsgc_entries" translatable="false">
         <item>@string/pref_camera2_bsgc_entry_disable</item>
         <item>@string/pref_camera2_bsgc_entry_enable</item>
+        <item>@string/pref_camera2_bsgc_entry_display</item>
     </string-array>
 
     <string-array name="pref_camera2_facial_contour_entries" translatable="false">
         <item>@string/pref_camera2_bsgc_entry_disable</item>
-        <item>V1</item>
-        <item>V2</item>
-        <item>V3</item>
-        <item>V4</item>
+        <item>V1 Enable</item>
+        <item>V2 Enable</item>
+        <item>V3 Enable</item>
+        <item>V4 Enable</item>
+        <item>V1 Display</item>
+        <item>V2 Display</item>
+        <item>V3 Display</item>
+        <item>V4 Display</item>
     </string-array>
 
     <string-array name="pref_camera2_facial_contour_entryvalues" translatable="false">
@@ -1280,6 +1286,10 @@ for time lapse recording -->
         <item>2</item>
         <item>3</item>
         <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
     </string-array>
 
     <string-array name="pref_camera2_fd_gender_entryvalues" translatable="false">

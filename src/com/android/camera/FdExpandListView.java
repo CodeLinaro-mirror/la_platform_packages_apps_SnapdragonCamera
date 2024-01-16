@@ -38,8 +38,12 @@
  */
 package com.android.camera;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import com.android.camera.util.Log;
+
+import android.content.DialogInterface;
+import android.graphics.Color;
 import android.view.View;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -68,6 +72,9 @@ public class FdExpandListView  {
     private ExpandableListAdapter expandableAdapter = null;
     private Context mContext;
     private int mFDIndex = 0;
+    private int mSelectGroup = -1;
+    private int mSelectChild = -1;
+    private int mSelectContourV = -1;
 
     public FdExpandListView (Context context) {
         mContext = context;
@@ -78,201 +85,93 @@ public class FdExpandListView  {
 
     public void initFDSettingsData() {
         mFDIndex = 0;
-        mExpandKey.add("FD Face Detection Mode");
         mExpandKey.add("FD Mask Detection");
         mExpandKey.add("Upper Body Detection");
 
-        List<String> list = new ArrayList<String>();
-        CharSequence[] fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FACE_DETECTION_MODE);
-        for(int i = 0; i< fdEntry.length;i++){
-            list.add(fdEntry[i].toString());
-        }
-        mExpandMap.put((String) mExpandKey.get(0), list);
-
-        list = new ArrayList<String>();
-        CharSequence[] fdMaskEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FACE_MASK);
-        for(int i = 0; i< fdMaskEntry.length;i++){
-            list.add(fdMaskEntry[i].toString());
-        }
-        mExpandMap.put((String) mExpandKey.get(1), list);
-
-        list = new ArrayList<String>();
-        CharSequence[] upperBodyDetectionEntry = mSettingsManager.getEntries(
-                mSettingsManager.KEY_UPPER_BODY_DETECTION);
-        for(int i = 0; i< upperBodyDetectionEntry.length;i++){
-            list.add(upperBodyDetectionEntry[i].toString());
-        }
-        mExpandMap.put((String) mExpandKey.get(2), list);
-        list = null;
-    }
-
-    public void initFDFLData() {
-        mFDIndex = 1;
         mExpandKey.add("FD Facial contour");
         mExpandKey.add("FD Gaze Detection");
         mExpandKey.add("FD Blink Detection");
 
-        List<String> list = new ArrayList<String>();
-        CharSequence[] fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FACIAL_CONTOUR);
-        for(int i = 0; i< fdEntry.length;i++){
-            list.add(fdEntry[i].toString());
-        }
-        mExpandMap.put((String) mExpandKey.get(0), list);
-
-        list = new ArrayList<String>();
-        fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_GAZE);
-        for(int i = 0; i< fdEntry.length;i++){
-            list.add(fdEntry[i].toString());
-        }
-        mExpandMap.put((String) mExpandKey.get(1), list);
-
-        list = new ArrayList<String>();
-        fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_BLINK);
-        for(int i = 0; i< fdEntry.length;i++){
-            list.add(fdEntry[i].toString());
-        }
-        mExpandMap.put((String) mExpandKey.get(2), list);
-        list = null;
-    }
-
-    public void initFDFacialData() {
-        mFDIndex = 2;
         mExpandKey.add("FD Expression");
         mExpandKey.add("FD Gender");
 
-        List<String> list = new ArrayList<String>();
-        CharSequence[] fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_FACE_EXPRESSION);
-        for(int i = 0; i< fdEntry.length;i++){
-            list.add(fdEntry[i].toString());
-        }
-        mExpandMap.put((String) mExpandKey.get(0), list);
-
-        list = new ArrayList<String>();
-        fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_GENDER);
-        for(int i = 0; i< fdEntry.length;i++){
-            list.add(fdEntry[i].toString());
-        }
-        mExpandMap.put((String) mExpandKey.get(1), list);
-        list = null;
-    }
-
-    private void updateFDKey(int group ,int child) {
-        if (mFDIndex == 0) {
-            switch(group) {
-                case 0:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FACE_DETECTION_MODE,child);
-                    break;
-                case 1:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FACE_MASK,child);
-                    break;
-                case 2:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_UPPER_BODY_DETECTION,child);
-                    break;
+        for(int i=0;i<mExpandKey.size();i++){
+            String str = mExpandKey.get(i);
+            List<String> list = new ArrayList<String>();
+            String key =getKeyStr(str);
+            CharSequence[] fdEntry = mSettingsManager.getEntries(key);
+            for(int j = 0; j< fdEntry.length;j++){
+                list.add(fdEntry[j].toString());
             }
-        } else if (mFDIndex == 1) {
-            switch(group) {
-                case 0:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FACIAL_CONTOUR,child);
-                    break;
-                case 1:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FD_GAZE,child);
-                    break;
-                case 2:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FD_BLINK,child);
-                    break;
-            }
-        } else if (mFDIndex == 2) {
-            switch(group) {
-                case 0:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FD_FACE_EXPRESSION,child);
-                    break;
-                case 1:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FD_GENDER,child);
-                    break;
-            }
-        } else {
-            switch(group) {
-                case 0:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FACE_DETECTION_MODE,child);
-                    break;
-                case 1:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_FACE_MASK,child);
-                    break;
-                case 2:
-                    mSettingsManager.setValueIndex(mSettingsManager.KEY_UPPER_BODY_DETECTION,child);
-                    break;
-            }
+            mExpandMap.put(str, list);
         }
     }
-    public String getFDEntry(int group){
+    private int getSelected(String str){
+        int selected =0;
+        String key = getKeyStr(str);
+        String value = mSettingsManager.getValue(key);
+        if(value == null || value.equals("disable")) {
+            selected =0;
+        }else if(value.equals("enable")){
+            selected = 1;
+        }else if (value.equals("display")){
+            selected =2;
+        }else {
+            selected = Integer.valueOf(value);
+        }
+        return selected;
+    }
+
+    private String getKeyStr(String str){
+        String key ="";
+        switch (str){
+            case "FD Mask Detection":
+                key = mSettingsManager.KEY_FACE_MASK;
+                break;
+            case "Upper Body Detection":
+                key = mSettingsManager.KEY_UPPER_BODY_DETECTION;
+                break;
+            case "FD Facial contour":
+                key =mSettingsManager.KEY_FACIAL_CONTOUR;
+                break;
+            case "FD Gaze Detection":
+                key = mSettingsManager.KEY_FD_GAZE;
+                break;
+            case "FD Blink Detection":
+                key = mSettingsManager.KEY_FD_BLINK;
+                break;
+            case "FD Expression":
+                key = mSettingsManager.KEY_FD_FACE_EXPRESSION;
+                break;
+            case "FD Gender":
+                key = mSettingsManager.KEY_FD_GENDER;
+        }
+        return key;
+    }
+
+    private void updateFDKey(String keystr ,int child) {
+        String key = getKeyStr(keystr);
+        mSettingsManager.setValueIndex(key,child);
+    }
+    public String getFDEntry(String keystr){
         String valuestr = "";
         CharSequence[] fdEntry =null;
         int valueIndx = 0;
-        if (mFDIndex == 0) {
-            switch(group) {
-                case 0:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FACE_DETECTION_MODE);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FACE_DETECTION_MODE);
-                    break;
-                case 1:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FACE_MASK);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FACE_MASK);
-                    break;
-                case 2:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_UPPER_BODY_DETECTION);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_UPPER_BODY_DETECTION);
-                    break;
-            }
-        } else if (mFDIndex == 1) {
-            switch(group) {
-                case 0:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FACIAL_CONTOUR);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FACIAL_CONTOUR);
-                    break;
-                case 1:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_GAZE);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FD_GAZE);
-                    break;
-                case 2:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_BLINK);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FD_BLINK);
-                    break;
-            }
-        } else if (mFDIndex == 2) {
-            switch(group) {
-                case 0:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_FACE_EXPRESSION);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FD_FACE_EXPRESSION);
-                    break;
-                case 1:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FD_GENDER);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FD_GENDER);
-                    break;
-            }
-        } else {
-            switch(group) {
-                case 0:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FACE_DETECTION_MODE);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FACE_DETECTION_MODE);
-                    break;
-                case 1:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_FACE_MASK);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_FACE_MASK);
-                    break;
-                case 2:
-                    fdEntry = mSettingsManager.getEntries(mSettingsManager.KEY_UPPER_BODY_DETECTION);
-                    valueIndx = mSettingsManager.getValueIndex(mSettingsManager.KEY_UPPER_BODY_DETECTION);
-                    break;
-            }
+        String key = getKeyStr(keystr);
+        fdEntry = mSettingsManager.getEntries(key);
+        valueIndx = mSettingsManager.getValueIndex(key);
+        if(fdEntry != null) {
+            valuestr = (fdEntry[valueIndx]).toString();
         }
-        valuestr = (fdEntry[valueIndx]).toString();
         return valuestr;
     }
 
     public String getFDSummery(){
         StringBuilder summery=new StringBuilder();
         for (int i = 0;i < mExpandKey.size();i++){
-            summery.append(mExpandKey.get(i)).append(":").append(getFDEntry(i)).append("; ");
+            String str = mExpandKey.get(i);
+            String key = getKeyStr(str);
+            summery.append(str).append(":").append(getFDEntry(key)).append("; ");
         }
         return summery.toString();
     }
@@ -294,8 +193,8 @@ public class FdExpandListView  {
         @Override
         public View getChildView(final int groupPosition, final int childPosition,
                                  boolean isLastChild, View convertView, ViewGroup parent) {
-            String key = mExpandKey.get(groupPosition);
-            String info = mExpandMap.get(key).get(childPosition);
+            String keystr = mExpandKey.get(groupPosition);
+            String info = mExpandMap.get(keystr).get(childPosition);
             if (convertView == null) {
                 convertView = LayoutInflater.from(mContext).inflate(
                         R.layout.expandlist_child, parent, false);
@@ -303,14 +202,42 @@ public class FdExpandListView  {
             TextView tv = (TextView) convertView
                     .findViewById(R.id.second_textview);
             tv.setText(info);
+            mSelectChild = getSelected(keystr);
+            if(childPosition == mSelectChild){
+                tv.setTextColor(Color.BLUE);
+            }else{
+                tv.setTextColor(Color.BLACK);
+            }
             tv.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    updateFDKey(groupPosition,childPosition);
+                    mSelectChild = childPosition;
+                    mSelectGroup = groupPosition;
+/*                    if(keystr.equals("FD Facial contour") && childPosition >0){
+                        buildSelectDialog();
+                    }*/
+                    updateFDKey(keystr,childPosition);
+                    //v.setBackgroundColor(0xff33b5e5);
+
                     notifyDataSetChanged();
+
+
                 }
             });
             return convertView;
+        }
+        private void buildSelectDialog(){
+            final CharSequence[] items = {"Enable","Display"};
+            AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+            builder.setItems(items, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    mSelectContourV = which;
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+            dialog.getWindow().setLayout(500,400);
         }
         @Override
         public int getChildrenCount(int groupPosition) {
@@ -341,9 +268,9 @@ public class FdExpandListView  {
             }
             TextView tv = (TextView) convertView
                     .findViewById(R.id.parent_textview);
-            String key = mExpandKey.get(groupPosition);
-            String info = getFDEntry(groupPosition);
-            tv.setText(key);
+            String keystr = mExpandKey.get(groupPosition);
+            String info = getFDEntry(keystr);
+            tv.setText(keystr);
             TextView expandinfo =(TextView) convertView.findViewById(R.id.parent_info);
             expandinfo.setText(info);
             return convertView;

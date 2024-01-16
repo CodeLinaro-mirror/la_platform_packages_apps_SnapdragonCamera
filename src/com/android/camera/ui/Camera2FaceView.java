@@ -110,27 +110,32 @@ public class Camera2FaceView extends FaceView {
     }
 
     public void initMode() {
-        mFacialContourEnable = !"disable".equals(SettingsManager.getInstance().getValue(
-                SettingsManager.KEY_FACIAL_CONTOUR));
+        SettingsManager mSettingsManager= SettingsManager.getInstance();
+        String value =  mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
+        mFacialContourEnable = value.equals("5") || value.equals("6")
+                || value.equals("7") || value.equals("8");
+        value = mSettingsManager.getValue(SettingsManager.KEY_FD_GAZE);
+        mFdGazeEnable = "display".equals(value);
+        value = mSettingsManager.getValue(SettingsManager.KEY_FD_BLINK);
+        mFdBlinkEnable = "display".equals(value);
+        value = mSettingsManager.getValue(SettingsManager.KEY_FD_GENDER);
+        mGenderEnable = "display".equals(value);
+        mGenderConfidenceEnable = mGenderEnable && PersistUtil.isGenderConfidenceOn();
+        value = mSettingsManager.getValue(SettingsManager.KEY_FD_FACE_EXPRESSION);
+        mFaceExpressionEnable = "display".equals(value);
+        mFaceExpressionConfidenceEnable = mFaceExpressionEnable && PersistUtil.isFaceExpressionConfidenceOn();
+
+        value = mSettingsManager.getValue(SettingsManager.KEY_FACE_MASK);
+
         mFacePointsEnable = "2".equals(SettingsManager.getInstance().getValue(
                 SettingsManager.KEY_FACE_DETECTION_MODE));
+
         mFdSmileEnable = "enable".equals(SettingsManager.getInstance().getValue(
                 SettingsManager.KEY_FD_SMILE));
-        mFdGazeEnable = "enable".equals(SettingsManager.getInstance().getValue(
-                SettingsManager.KEY_FD_GAZE));
-        mFdBlinkEnable = "enable".equals(SettingsManager.getInstance().getValue(
-                SettingsManager.KEY_FD_BLINK));
+
+
         mPostZoomFov = PersistUtil.isCameraPostZoomFOV();
 
-        mGenderEnable = "enable".equals(SettingsManager.getInstance().
-                getValue(SettingsManager.KEY_FD_GENDER));
-
-        mGenderConfidenceEnable = mGenderEnable && PersistUtil.isGenderConfidenceOn();
-
-        mFaceExpressionEnable = "enable".equals(SettingsManager.getInstance().
-                getValue(SettingsManager.KEY_FD_FACE_EXPRESSION));
-
-        mFaceExpressionConfidenceEnable = mFaceExpressionEnable && PersistUtil.isFaceExpressionConfidenceOn();
 
         if ((mGenderEnable || mFaceExpressionEnable) && mTextPaint ==null) {
             mTextPaint = new Paint();
@@ -397,8 +402,7 @@ public class Camera2FaceView extends FaceView {
                     Log.v(TAG, FD_LOG,"onDraw extendFaceSize " + extendFaceSize + ", mExFaces[" + i + "] " + mExFaces[i]);
                 }
 
-                if (i < extendFaceSize && mExFaces != null &&
-                        mExFaces[i] != null) {
+                if ( mExFaces != null &&  i < mExFaces.length && mExFaces[i] != null ) {
                     ExtendedFace exFace = mExFaces[i];
                     Face face = mFaces[i];
 
