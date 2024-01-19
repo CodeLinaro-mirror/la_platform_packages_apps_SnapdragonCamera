@@ -21,6 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.graphics.Bitmap;
@@ -35,6 +36,7 @@ import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.MediaStore.MediaColumns;
+import android.util.LruCache;
 import com.android.camera.util.Log;
 
 import com.android.camera.app.CameraApp;
@@ -43,6 +45,7 @@ import com.android.camera.exif.ExifInterface;
 import com.android.camera.util.ApiHelper;
 import androidx.heifwriter.HeifWriter;
 import android.graphics.ImageFormat;
+import com.google.common.base.Optional;
 
 import android.media.Image;
 import android.hardware.camera2.TotalCaptureResult;
@@ -52,10 +55,12 @@ import java.io.OutputStream;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Matrix;
 import android.graphics.Rect;
+import com.android.camera.util.AndroidContext;
 import com.android.camera.CameraActivity;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
 
+import java.util.HashMap;
 
 public class Storage {
     private static final String TAG = "SnapCam_CameraStorage";
@@ -63,7 +68,7 @@ public class Storage {
     public static final String DCIM =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
 
-    public static final String DIRECTORY = DCIM + "/Camera";
+    public static String DIRECTORY = DCIM + "/Camera";
     public static final String RAW_DIRECTORY = DCIM + "/Camera/raw";
     public static final String JPEG_POSTFIX = ".jpg";
     public static final String HEIF_POSTFIX = ".heic";
@@ -76,11 +81,33 @@ public class Storage {
     public static final long UNAVAILABLE = -1L;
     public static final long PREPARING = -2L;
     public static final long UNKNOWN_SIZE = -3L;
+    public static final long ACCESS_FAILURE = -4L;
     public static final long LOW_STORAGE_THRESHOLD_BYTES = 60 * 1024 * 1024;
 
     public static Uri sImageBaseUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
     public static Uri sVideoBaseUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+
+    private HashMap<Uri, Uri> sContentUrisToSessions = new HashMap<>();
+    private LruCache<Uri, Bitmap> sSessionsToPlaceholderBitmap =
+    // 20MB cache as an upper bound for session bitmap storage
+    new LruCache<Uri, Bitmap>(20 * 1024 * 1024) {
+        @Override
+        protected int sizeOf(Uri key, Bitmap value) {
+            return value.getByteCount();
+        }
+    };
+
+    private static class Singleton {
+        private static final Storage INSTANCE = new Storage(AndroidContext.instance().get());
+    }
+
+    public static Storage instance() {
+        return Singleton.INSTANCE;
+    }
+
+    private Storage(Context context) {
+    }
 
     public static Uri getImageBaseUri() {
         if (sSaveSDCard && SDCard.sSdcardImageBaseUri != null) {
@@ -294,7 +321,6 @@ public class Storage {
         values.put(ImageColumns.DATE_TAKEN, date);
         // Clockwise rotation in degrees. 0, 90, 180, or 270.
         values.put(ImageColumns.ORIENTATION, orientation);
-        values.put(ImageColumns.DATA, path);
         values.put(ImageColumns.SIZE, jpegLength);
 
         setImageSize(values, width, height);
@@ -456,6 +482,16 @@ public class Storage {
                 width, height, mimeType);
     }
 
+    /**
+     * Takes a content URI and returns the original Session Uri if any
+     *
+     * @param contentUri the uri of the media store content
+     * @return The session uri of the original session, if it exists, or null.
+     */
+    public Uri getSessionUriFromContentUri(Uri contentUri) {
+        return sContentUrisToSessions.get(contentUri);
+    }
+
     // Updates the image values in MediaStore, or inserts the image if one does
     // not already exist.
     public static void updateImage(Uri imageUri, ContentResolver resolver, String title,
@@ -515,6 +551,16 @@ public class Storage {
         }else{
             return RAW_DIRECTORY + '/' + title + ".raw";
         }
+    }
+
+    /**
+     * Returns the jpeg bytes for a placeholder session
+     *
+     * @param uri the session uri to look up
+     * @return The bitmap or null
+     */
+    public Optional<Bitmap> getPlaceholderForSession(Uri uri) {
+        return Optional.fromNullable(sSessionsToPlaceholderBitmap.get(uri));
     }
 
     private static void mkdir(String path) {

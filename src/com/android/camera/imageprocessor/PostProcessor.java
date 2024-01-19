@@ -100,7 +100,7 @@ import com.android.camera.imageprocessor.filter.ImageFilter;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
 import com.android.camera.util.VendorTagUtil;
-
+import java.io.ByteArrayInputStream;
 public class PostProcessor{
 
     private CaptureModule mController;
@@ -176,7 +176,7 @@ public class PostProcessor{
     }
 
     private List<String> mLongImgTitle = new ArrayList<>();
-
+    private List<android.media.ExifInterface> mImagExif = new ArrayList<>();
     public ImageReader getZSLReprocessImageReader() { return mZSLReprocessImageReader; }
     public MultiResolutionImageReader getZSLReprocessMultiImageReader() { return mMultiOutputImageReader; }
 
@@ -491,6 +491,7 @@ public class PostProcessor{
             return false;
         mController.setJpegImageData(null);
         mLongImgTitle = new ArrayList<>();
+        mImagExif = new ArrayList<>();
         mController.setLongImageTitle(null);
         mController.setCaptureResult(null);
         ZSLQueue.ImageItem imageItem = mZSLQueue.tryToGetMatchingItem();
@@ -1346,45 +1347,55 @@ public class PostProcessor{
                     PhotoModule.NamedImages.NamedEntity name = mNamedImages.getNextNameEntity();
                     String title = (name == null) ? null : name.title;
                     Log.d(TAG,"ZSL onImageAvailable title="+title);
-                    mLongImgTitle.add(title);
-                    mController.setLongImageTitle(mLongImgTitle);
+                    byte[] imgeBytes;
                     long date = (name == null) ? -1 : name.date;
                     if(mController.mRawReprocessType == 2 || mController.mRawReprocessType == 3 || mController.mRawReprocessType == 5 ||mController.mRawReprocessType == 0){
                         image.getPlanes()[0].getBuffer().rewind();
                         int size = image.getPlanes()[0].getBuffer().remaining();
-                        byte[] bytes = new byte[size];
-                        image.getPlanes()[0].getBuffer().get(bytes, 0, size);
+                        imgeBytes = new byte[size];
+                        image.getPlanes()[0].getBuffer().get(imgeBytes, 0, size);
                         ExifInterface exif = null;
                         int orientation = 0;
                         if (image.getFormat() != ImageFormat.HEIC) {
-                            exif = Exif.getExif(bytes);
+                            exif = Exif.getExif(imgeBytes);
                             orientation = Exif.getOrientation(exif);
                         } else {
                             orientation = CameraUtil.getJpegRotation(mController.getMainCameraId(),mOrientation);
                         }
                         if (mController.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL &&
                             mController.getCurrentIntentMode() != CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA) {
-                            mController.setJpegImageData(bytes);
+                            mController.setJpegImageData(imgeBytes);
                             if (mController.isQuickCapture()) {
                                 mController.onCaptureDone();
                             } else {
-                                mController.showCapturedReview(bytes, orientation);
+                                mController.showCapturedReview(imgeBytes, orientation);
                             }
                         } else {
                             String saveFormat = image.getFormat() == ImageFormat.HEIC ? "heic" : "jpeg";
                             mActivity.getMediaSaveService().addImage(
-                                    bytes, title, date, null, image.getCropRect().width(), image.getCropRect().height(),
+                                    imgeBytes, title, date, null, image.getCropRect().width(), image.getCropRect().height(),
                                     orientation, exif, mController.getMediaSavedListener(), mActivity.getContentResolver(), saveFormat);
                             if (image.getFormat() != ImageFormat.HEIC){
-                                mController.updateThumbnailJpegData(bytes);
+                                mController.updateThumbnailJpegData(imgeBytes);
                             }
                             image.close();
                         }
                     }else{
-                        byte[] bytes = getYUVFromImage(image);
-                        mActivity.getMediaSaveService().addRawImage(bytes, title,
+                        imgeBytes = getYUVFromImage(image);
+                        mActivity.getMediaSaveService().addRawImage(imgeBytes, title,
                                 "yuv");
                         image.close();
+                    }
+                    if(mActivity.getAutoTest()) {
+                        mLongImgTitle.add(title);
+                        mController.setLongImageTitle(mLongImgTitle);
+                        try {
+                            android.media.ExifInterface myexif = new android.media.ExifInterface(new ByteArrayInputStream(imgeBytes));
+                            mImagExif.add(myexif);
+                            mController.setImagExif(mImagExif);
+                        }catch (Exception e){
+                            Log.i(TAG,"getexif e="+e);
+                        }
                     }
                 }
             });

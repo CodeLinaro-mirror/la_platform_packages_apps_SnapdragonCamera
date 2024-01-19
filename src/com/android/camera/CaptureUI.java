@@ -36,6 +36,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -82,6 +83,7 @@ import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.ImageView;
@@ -89,10 +91,13 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
 
+import com.android.camera.app.FilmstripBottomPanel;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;
 import com.android.camera.data.Camera2ModeAdapter;
+import com.android.camera.filmstrip.FilmstripContentPanel;
 import com.android.camera.ui.AutoFitSurfaceView;
 import com.android.camera.ui.AutoFitTextureView;
 import com.android.camera.ui.Camera2FaceView;
@@ -118,6 +123,8 @@ import com.android.camera.ui.AFView;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.deepportrait.GLCameraPreview;
 import com.android.camera.util.PersistUtil;
+import com.android.camera.widget.Cling;
+import com.android.camera.widget.FilmstripLayout;
 import android.hardware.camera2.CameraCharacteristics;
 import com.android.camera.ui.VerticalSeekBar;
 import android.hardware.camera2.CameraAccessException;
@@ -165,6 +172,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private View mRootView;
     private View mPreviewCover;
     private CaptureModule mModule;
+    private final FrameLayout mCameraRootView;
 
     private final Object mSurfaceTextureLock = new Object();
     private SurfaceTexture mSurfaceTexture;
@@ -183,6 +191,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TouchTrackFocusRenderer mT2TFocusRenderer;
     private StateNNTrackFocusRenderer mStatsNNFocusRenderer;
     private ImageView mThumbnail;
+    private final FilmstripLayout mFilmstripLayout;
+    private final FilmstripBottomPanel mFilmstripBottomControls;
+    private final FilmstripContentPanel mFilmstripPanel;
     private Camera2FaceView mFaceView;
     private Point mDisplaySize = new Point();
     private SelfieFlashView mSelfieView;
@@ -759,10 +770,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
 
-    public CaptureUI(CameraActivity activity, final CaptureModule module, View parent) {
+    public CaptureUI(CameraActivity activity, final CaptureModule module, FrameLayout rootView, View parent) {
         mActivity = activity;
         mModule = module;
         mRootView = parent;
+        mCameraRootView = rootView;
         mSettingsManager = SettingsManager.getInstance();
         mSettingsManager.registerListener(this);
         mActivity.getLayoutInflater().inflate(R.layout.capture_module,
@@ -916,6 +928,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
 
+        mFilmstripLayout = (FilmstripLayout) rootView.findViewById(R.id.filmstrip_layout);
+        mFilmstripBottomControls = new FilmstripBottomPanel(
+                (ViewGroup) rootView.findViewById(R.id.filmstrip_bottom_panel));
+        mFilmstripPanel = (FilmstripContentPanel) rootView.findViewById(R.id.filmstrip_layout);
         mExitBestMode.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1911,7 +1927,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void onCameraOpened(int cameraId) {
         mGestures.setCaptureUI(this);
         if (mModule.isDeepZoom() ||
-                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC) {
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) {
             mGestures.setZoomEnabled(false);
         } else {
             mGestures.setZoomEnabled(mSettingsManager.isZoomSupported(cameraId));
@@ -2145,7 +2162,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     private boolean isSupportFrontCamera(CaptureModule.CameraMode mode) {
-        return mode != CaptureModule.CameraMode.PRO_MODE;
+        return mode != CaptureModule.CameraMode.PRO_MODE && mode != CaptureModule.CameraMode.DEPTH;
     }
 
     public void initFlashButton() {
@@ -2836,8 +2853,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             @Override
             public void onClick(View v) {
                 if (!CameraControls.isAnimating() && !mModule.isTakingPicture() &&
-                        !mModule.isRecordingVideo())
-                    mActivity.gotoGallery();
+                        !mModule.isRecordingVideo()) {
+                    //mActivity.gotoGallery();
+                    mFilmstripLayout.showFilmstrip();
+                    showBottomControls();
+                }
             }
         });
         if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
@@ -3005,7 +3025,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return false;
     }
 
+    public FilmstripLayout getFilmstripLayout() {
+        return mFilmstripLayout;
+    }
+
     public boolean onBackPressed() {
+        if (mFilmstripLayout.getVisibility() == View.VISIBLE) {
+            return mFilmstripLayout.onBackPressed();
+        }
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) {
+            switchToPhotoModeDueToError(true);
+            return true;
+        }
         if (handleBackKeyOnMenu()) return true;
         if (mPieRenderer != null && mPieRenderer.showsItems()) {
             mPieRenderer.hide();
@@ -3018,6 +3049,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         return false;
     }
+
 
     public SurfaceHolder getSurfaceHolder() {
         return mSurfaceHolder;
@@ -3360,6 +3392,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
     private ArrayList<FocusIndicator> getFocusIndicator() {
         ArrayList<FocusIndicator> foucusList =new ArrayList<>();
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) {
+            return foucusList;
+        }
         if (mModule.isTrackingFocusSettingOn()) {
             if (mPieRenderer != null) {
                 mPieRenderer.clear();
@@ -3675,8 +3710,218 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+    private TextureView mDepthTextureView;
+    private ViewGroup.LayoutParams mPreviewLayoutParams;
+    private Switch mDepthSwitch;
+
+    private TextView mDepthFps;
+
+    private SeekBar mDepthSeekBar;
+
+    private ImageView mDepthSetting;
+
+    public void showDepthView(TextureView.SurfaceTextureListener listener) {
+        if (mDepthTextureView == null) {
+            ViewStub viewStub = mRootView.findViewById(R.id.depth_view_stub);
+            viewStub.inflate();
+            mDepthTextureView = mRootView.findViewById(R.id.depth_preview_texture_view);
+        }
+
+        FrameLayout.LayoutParams params1 =
+                new FrameLayout.LayoutParams(
+                        mPreviewHeight,
+                        mPreviewWidth,
+                        Gravity.CENTER);
+        mDepthTextureView.setLayoutParams(params1);
+        mDepthTextureView.setSurfaceTextureListener(listener);
+        mDepthTextureView.setVisibility(View.VISIBLE);
+
+        if (mPreviewLayoutParams == null) {
+            Point p = getPointInScreen(0, 0);
+            int height = p.y;
+            int width = (int) (height * 1.0f  / mPreviewWidth * mPreviewHeight);
+            FrameLayout.LayoutParams params =
+                    new FrameLayout.LayoutParams(
+                            width,
+                            height,
+                            Gravity.TOP | Gravity.START);
+            params.setMargins(0, height, 0, 0);
+
+            if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+                mPreviewLayoutParams = mSurfaceView.getLayoutParams();
+                mSurfaceView.setLayoutParams(params);
+            } else {
+                mPreviewLayoutParams = mTextureView.getLayoutParams();
+                mTextureView.setLayoutParams(params);
+            }
+        }
+
+        mCameraControls.setVisibility(View.GONE);
+        mGestures.setEnabled(false);
+
+        if (mDepthSetting == null) {
+            mDepthSetting = new ImageView(mActivity);
+            FrameLayout.LayoutParams params_ =
+                    new FrameLayout.LayoutParams(
+                            CameraUtil.dpToPixel(25),
+                            CameraUtil.dpToPixel(25),
+                            Gravity.TOP | Gravity.END);
+            params_.topMargin = 100;
+            params_.rightMargin = 50;
+            mDepthSetting.setLayoutParams(params_);
+            mDepthSetting.setImageResource(R.drawable.settings);
+            mDepthSetting.setOnClickListener((view) -> {
+                openSettingsMenu();
+            });
+            ((ViewGroup) mRootView).addView(mDepthSetting);
+        }
+
+        if (mDepthSwitch == null) {
+            mDepthSwitch = new Switch(mActivity);
+            mDepthSwitch.setTextOn("HW");
+            mDepthSwitch.setTextOff("SW");
+            FrameLayout.LayoutParams params2 =
+                    new FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            Gravity.TOP | Gravity.END);
+            params2.topMargin = 100;
+            params2.rightMargin = 200;
+            mDepthSwitch.setLayoutParams(params2);
+            mDepthSwitch.setChecked(mSettingsManager.getDepthMode() == 2);
+            ((ViewGroup) mRootView).addView(mDepthSwitch);
+            mDepthSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    mSettingsManager.setDepthMode(isChecked ? 2 : 0);
+                    if (mDepthTextureView != null) {
+                        mDepthTextureView.setVisibility(View.GONE);
+                    }
+                    mModule.onDepthEngineChanged(isChecked ? 2 : 0);
+                }
+            });
+        }
+
+        if (mDepthFps == null) {
+            mDepthFps = new TextView(mActivity);
+            FrameLayout.LayoutParams params2 =
+                    new FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            Gravity.TOP | Gravity.START);
+            params2.topMargin = 100;
+            params2.leftMargin = 100;
+            mDepthFps.setLayoutParams(params2);
+            mDepthFps.setTextColor(Color.RED);
+            mDepthFps.setTextSize(18f);
+            ((ViewGroup) mRootView).addView(mDepthFps);
+        }
+
+        if (mDepthSeekBar == null) {
+            mDepthSeekBar = new SeekBar(mActivity);
+            FrameLayout.LayoutParams params =
+                    new FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            Gravity.BOTTOM | Gravity.START);
+            params.bottomMargin = 200;
+            params.leftMargin = 100;
+            params.rightMargin = 100;
+            mDepthSeekBar.setLayoutParams(params);
+            mDepthSeekBar.setMax(3000);
+            mDepthSeekBar.setMin(500);
+            mDepthSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    Log.i(TAG, "onProgressChanged " + progress);
+                    mModule.onDepthFocusChanged(progress);
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+
+                }
+            });
+            ((ViewGroup) mRootView).addView(mDepthSeekBar);
+            mDepthSeekBar.setProgress(1000);
+        }
+
+    }
+
+    public void hideDepthView() {
+        if (mDepthTextureView != null) {
+            mDepthTextureView.setVisibility(View.GONE);
+        }
+
+        if (mPreviewLayoutParams != null) {
+            if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
+                mSurfaceView.setLayoutParams(mPreviewLayoutParams);
+            } else {
+                mTextureView.setLayoutParams(mPreviewLayoutParams);
+            }
+            mPreviewLayoutParams = null;
+        }
+
+        if (mDepthSetting != null) {
+            ((ViewGroup) mRootView).removeView(mDepthSetting);
+            mDepthSetting = null;
+        }
+
+        if (mDepthSwitch != null) {
+            ((ViewGroup) mRootView).removeView(mDepthSwitch);
+            mDepthSwitch = null;
+        }
+
+        if (mDepthFps != null) {
+            ((ViewGroup) mRootView).removeView(mDepthFps);
+            mDepthFps = null;
+        }
+
+        if (mDepthSeekBar != null) {
+            ((ViewGroup) mRootView).removeView(mDepthSeekBar);
+            mDepthSeekBar = null;
+        }
+
+        mGestures.setEnabled(true);
+    }
+
+    public void showControlUI() {
+        if (mCameraControls != null &&
+                mModule.getCurrenCameraMode() != CaptureModule.CameraMode.DEPTH &&
+                mCameraControls.getVisibility() != View.VISIBLE) {
+            mCameraControls.setVisibility(View.VISIBLE);
+        }
+    }
+
+    public void updateDepthFps(float fps) {
+        Log.v(TAG, "updateDepthFps " + fps);
+        if (mDepthFps != null) {
+            if (mSettingsManager.getDepthMode() == 0) {
+                fps = fps / 2f;
+            }
+            if (fps == 0f) {
+                mDepthFps.setText("");
+            } else {
+                mDepthFps.setText(String.format(Locale.getDefault(), "FPS:%.2f%n", fps));
+            }
+        }
+    }
+
+    public int getDepthProgress() {
+        if (mDepthSeekBar != null) {
+            return mDepthSeekBar.getProgress();
+        }
+        return 1000;
+    }
+
     public void showEvSeekbar(int x, int y) {
-        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE) return;
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) return;
         initEvSeekBar();
         int evX = x - mPieRenderer.getSize() / 2 - mPieRenderer.getSize() / 5;
         int evY = y + mPieRenderer.getSize() / 2;
@@ -4319,7 +4564,233 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mThumbnail.setSoundEffectsEnabled(enabled);
         }
     }
+
     public OneUICameraControls getmCameraControls(){
         return mCameraControls;
+    }
+
+    public FilmstripContentPanel getFilmstripContentPanel() {
+        return mFilmstripPanel;
+    }
+
+    /**
+     * Call to stop the preview from being rendered. Sets the entire capture
+     * root view to invisible which includes the preview plus focus indicator
+     * and any other auxiliary views for capture modes.
+     */
+    public void pausePreviewRendering() {
+        mCameraRootView.setVisibility(View.INVISIBLE);
+    }
+
+    /**
+     * Call to begin rendering the preview and auxiliary views again.
+     */
+    public void resumePreviewRendering() {
+        mCameraRootView.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * @return The {@link com.android.camera.app.CameraAppUI.BottomPanel} on the
+     * bottom of the filmstrip.
+     */
+    public BottomPanel getFilmstripBottomControls() {
+        return mFilmstripBottomControls;
+    }
+
+    public void showBottomControls() {
+        mFilmstripBottomControls.show();
+    }
+
+    public void hideBottomControls() {
+        mFilmstripBottomControls.hide();
+    }
+
+    /**
+     * @param listener The listener for bottom controls.
+     */
+    public void setFilmstripBottomControlsListener(BottomPanel.Listener listener) {
+        mFilmstripBottomControls.setListener(listener);
+    }
+
+    /**
+     * Clears the listeners for the cling and remove it from the view hierarchy.
+     *
+     * @param viewerType defines which viewer the cling is for.
+     */
+    public void clearClingForViewer(int viewerType) {
+        Cling clingToBeRemoved = mFilmstripBottomControls.getClingForViewer(viewerType);
+        if (clingToBeRemoved == null) {
+            // No cling is created for the specific viewer type.
+            return;
+        }
+        mFilmstripBottomControls.clearClingForViewer(viewerType);
+        clingToBeRemoved.setVisibility(View.GONE);
+        mCameraRootView.removeView(clingToBeRemoved);
+    }
+
+    /**
+     * The bottom controls on the filmstrip.
+     */
+    public static interface BottomPanel {
+        /** Values for the view state of the button. */
+        public final int VIEWER_NONE = 0;
+        public final int VIEWER_PHOTO_SPHERE = 1;
+        public final int VIEWER_REFOCUS = 2;
+        public final int VIEWER_OTHER = 3;
+
+        /**
+         * Sets a new or replaces an existing listener for bottom control events.
+         */
+        void setListener(Listener listener);
+
+        /**
+         * Sets cling for external viewer button.
+         */
+        void setClingForViewer(int viewerType, Cling cling);
+
+        /**
+         * Clears cling for external viewer button.
+         */
+        void clearClingForViewer(int viewerType);
+
+        /**
+         * Returns a cling for the specified viewer type.
+         */
+        Cling getClingForViewer(int viewerType);
+
+        /**
+         * Set if the bottom controls are visible.
+         * @param visible {@code true} if visible.
+         */
+        void setVisible(boolean visible);
+
+        /**
+         * @param visible Whether the button is visible.
+         */
+        void setEditButtonVisibility(boolean visible);
+
+        /**
+         * @param enabled Whether the button is enabled.
+         */
+        void setEditEnabled(boolean enabled);
+
+        /**
+         * Sets the visibility of the view-photosphere button.
+         *
+         * @param state one of {@link #VIEWER_NONE}, {@link #VIEWER_PHOTO_SPHERE},
+         *            {@link #VIEWER_REFOCUS}.
+         */
+        void setViewerButtonVisibility(int state);
+
+        /**
+         * @param enabled Whether the button is enabled.
+         */
+        void setViewEnabled(boolean enabled);
+
+        /**
+         * @param enabled Whether the button is enabled.
+         */
+        void setTinyPlanetEnabled(boolean enabled);
+
+        /**
+         * @param visible Whether the button is visible.
+         */
+        void setDeleteButtonVisibility(boolean visible);
+
+        /**
+         * @param enabled Whether the button is enabled.
+         */
+        void setDeleteEnabled(boolean enabled);
+
+        /**
+         * @param visible Whether the button is visible.
+         */
+        void setShareButtonVisibility(boolean visible);
+
+        /**
+         * @param enabled Whether the button is enabled.
+         */
+        void setShareEnabled(boolean enabled);
+
+        /**
+         * Sets the texts for progress UI.
+         *
+         * @param text The text to show.
+         */
+        void setProgressText(CharSequence text);
+
+        /**
+         * Sets the progress.
+         *
+         * @param progress The progress value. Should be between 0 and 100.
+         */
+        void setProgress(int progress);
+
+        /**
+         * Replaces the progress UI with an error message.
+         */
+        void showProgressError(CharSequence message);
+
+        /**
+         * Hide the progress error message.
+         */
+        void hideProgressError();
+
+        /**
+         * Shows the progress.
+         */
+        void showProgress();
+
+        /**
+         * Hides the progress.
+         */
+        void hideProgress();
+
+        /**
+         * Shows the controls.
+         */
+        void showControls();
+
+        /**
+         * Hides the controls.
+         */
+        void hideControls();
+
+        /**
+         * Classes implementing this interface can listen for events on the bottom
+         * controls.
+         */
+        public static interface Listener {
+            /**
+             * Called when the user pressed the "view" button to e.g. view a photo
+             * sphere or RGBZ image.
+             */
+            public void onExternalViewer();
+
+            /**
+             * Called when the "edit" button is pressed.
+             */
+            public void onEdit();
+
+            /**
+             * Called when the "tiny planet" button is pressed.
+             */
+            public void onTinyPlanet();
+
+            /**
+             * Called when the "delete" button is pressed.
+             */
+            public void onDelete();
+
+            /**
+             * Called when the "share" button is pressed.
+             */
+            public void onShare();
+
+            /**
+             * Called when the progress error message is clicked.
+             */
+            public void onProgressErrorClicked();
+        }
     }
 }

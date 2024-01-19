@@ -19,7 +19,7 @@
 -->
 <!--
     Changes from Qualcomm Innovation Center are provided under the following license:
-    Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+    Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
     SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <resources>
@@ -129,6 +129,10 @@
     <!-- Settings screen, HDR ANS mode dialog radio button choices -->
     <string name="pref_camera_hdrans_off">Off</string>
     <string name="pref_camera_hdrans_on">On</string>
+
+    <string name="pref_camera_frc_title">FRC Mode</string>
+    <string name="pref_camera_frc_disable">disable</string>
+    <string name="pref_camera_frc_enable">enable</string>
 
     <!-- Default Skin Tone Enhancement setting. Do not translate. -->
     <string name="pref_camera_skinToneEnhancement_default">disable</string>
@@ -1841,5 +1845,15 @@
     <!-- ML Video -->
     <string name="pref_camera2_ml_video_title" translatable="true">VideoRetouch</string>
     <string name="pref_camera2_ml_video_default" translatable="false">off</string>
+
+    <string name="pref_camera2_itof_tuning_set_title" translatable="true">iTof tuning set</string>
+    <string name="pref_camera2_itof_tuning_set_1" translatable="false">tuning set 1 (Default)</string>
+    <string name="pref_camera2_itof_tuning_set_2" translatable="false">tuning set 2</string>
+    <string name="pref_camera2_itof_tuning_set_3" translatable="false">tuning set 3</string>
+    <string name="pref_camera2_itof_tuning_set_4" translatable="false">tuning set 4</string>
+    <string name="pref_camera2_itof_tuning_set_5" translatable="false">tuning set 5</string>
+    <string name="pref_camera2_itof_tuning_set_6" translatable="false">tuning set 6</string>
+    <string name="pref_camera2_itof_tuning_set_7" translatable="false">tuning set 7</string>
+    <string name="pref_camera2_itof_tuning_set_8" translatable="false">tuning set 8</string>
 </resources>
 

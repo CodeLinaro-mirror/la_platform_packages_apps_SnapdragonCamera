@@ -103,4 +103,25 @@ public class PanoramaMetadataLoader {
         }
         mCallbacksWaiting = null;
     }
+
+    /**
+     * Extracts panorama metadata from the item with the given URI and fills the
+     * {@code metadata}.
+     */
+    public static boolean loadPanoramaMetadata(final Context context, Uri contentUri,
+            Metadata metadata) {
+        PhotoSphereHelper.PanoramaMetadata panoramaMetadata =
+              PhotoSphereHelper.getPanoramaMetadata(context, contentUri);
+        // Note: The use of '==' here is in purpose as this is a singleton that
+        // is returned if this is not a panorama, so pointer comparison works.
+        if (panoramaMetadata == null || panoramaMetadata == PhotoSphereHelper.NOT_PANORAMA) {
+            return false;
+        }
+
+        metadata.setPanorama(true);
+        metadata.setPanorama360(panoramaMetadata.mIsPanorama360);
+        metadata.setUsePanoramaViewer(panoramaMetadata.mUsePanoramaViewer);
+
+        return true;
+    }
 }

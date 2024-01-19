@@ -42,4 +42,5 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
     </com.android.camera.ui.CameraRootView>
+    <include layout="@layout/camera_filmstrip2" />
 </FrameLayout>

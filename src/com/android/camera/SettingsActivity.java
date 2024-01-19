@@ -117,6 +117,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.android.camera.CaptureModule.CameraMode.DEFAULT;
+import static com.android.camera.CaptureModule.CameraMode.DEPTH;
 import static com.android.camera.CaptureModule.CameraMode.HFR;
 import static com.android.camera.CaptureModule.CameraMode.RTB;
 import static com.android.camera.CaptureModule.CameraMode.SAT;
@@ -364,6 +365,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updateVideoMFHDRPreference();
                     updateSwitchIDInModePreference(false);
                     if(mSettingsManager.isMultiCameraEnabled()){
+                        mSettingsManager.buildMultiCameraPreference();
                         recreate();
                     }
                 }
@@ -1052,7 +1054,10 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateMFNRPreference() {
         ListPreference mfnrPref = (ListPreference)findPreference(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
         String longshotValue = mSettingsManager.getValue(SettingsManager.KEY_LONGSHOT);
-        if (longshotValue.equals("on") && !isPrefEnabled(SettingsManager.KEY_BURST_LIMIT)) {
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        if (longshotValue.equals("on") &&(!isPrefEnabled(SettingsManager.KEY_BURST_LIMIT) ||
+                mode == CaptureModule.CameraMode.RTB ) ) {
             if (mfnrPref != null) {
                 mfnrPref.setValue("0");
             } else {
@@ -1482,6 +1487,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_AUDIO_RECORDING_MODE);
                 add(SettingsManager.KEY_HDR_WNR_MODE);
                 add(SettingsManager.KEY_HDR_ANS_MODE);
+                add(SettingsManager.KEY_FRC_MODE);
                 add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                 add(SettingsManager.KEY_ML_VIDEO);
             }
@@ -1573,6 +1579,9 @@ public class SettingsActivity extends PreferenceActivity {
             removePreference(SettingsManager.KEY_RAW_CB_INFO, developer);
         }
         removePreference(SettingsManager.KEY_VIDEO_HDR_VALUE, developer);
+        if (mode != DEPTH) {
+            removePreference(SettingsManager.KEY_ITOF_TUNING_SET, developer);
+        }
         switch (mode) {
             case DEFAULT:
                 removePreferenceGroup("video", parentPre);
@@ -1693,11 +1702,12 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> RTBList = new ArrayList<>(multiCameraSettingList);
                     RTBList.add(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+                    RTBList.add(SettingsManager.KEY_MANUAL_HDR);
                     RTBList.add(SettingsManager.KEY_INSENSOR_ZOOM);
+                    RTBList.add(SettingsManager.KEY_INSTANT_ZOOM);
                     RTBList.add(SettingsManager.KEY_FD_SETTING);
                     RTBList.add(SettingsManager.KEY_FD_FL_SETTING);
                     RTBList.add(SettingsManager.KEY_FD_FACIAL_SETTING);
-                    RTBList.add(SettingsManager.KEY_INSTANT_ZOOM);
                     addDeveloperOptions(developer, RTBList);
                 }
                 break;
@@ -1725,6 +1735,16 @@ public class SettingsActivity extends PreferenceActivity {
                     proModeOnlyList.add(SettingsManager.KEY_TONE_MAPPING);
                     proModeOnlyList.add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
                     addDeveloperOptions(developer, proModeOnlyList);
+                }
+                break;
+            case DEPTH:
+                removePreferenceGroup("general", parentPre);
+                removePreferenceGroup("photo", parentPre);
+                removePreferenceGroup("video", parentPre);
+                if (mDeveloperMenuEnabled && developer != null) {
+                    ArrayList<String> depthList = new ArrayList<>();
+                    depthList.add(SettingsManager.KEY_ITOF_TUNING_SET);
+                    addDeveloperOptions(developer, depthList);
                 }
                 break;
             default:
@@ -2077,18 +2097,31 @@ public class SettingsActivity extends PreferenceActivity {
         updateViullPreference();
         updateCinematicOptions(fromRestore);
         updateHfrBufferMode();
+        updateFRCPreference();
     }
-    public void updateHfrBufferMode(){
-        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_HFR_BUFFER_MODE);
+    public void updateHfrBufferMode() {
+        ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_HFR_BUFFER_MODE);
+        if (pref == null) {
+            return;
+        }
+        if (mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())) {
+            pref.setEnabled(true);
+        } else {
+            pref.setEnabled(false);
+            pref.setValue("0");
+        }
+    }
+    public void updateFRCPreference(){
+        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_FRC_MODE);
         if(pref == null){
             return;
         }
-        if (mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())){
-                pref.setEnabled(true);
-            }else{
-                pref.setEnabled(false);
-                pref.setValue("0");
-            }
+        if (mSettingsManager.getFRCRatio() >0 ){
+            pref.setEnabled(true);
+        }else{
+            pref.setEnabled(false);
+            pref.setValue("0");
+        }
     }
     private void updateAudioEncoderPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_AUDIO_ENCODER);
@@ -2331,6 +2364,13 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setValue("off");
             pref.setEnabled(false);
             return;
+        }
+
+        String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        String hdrmode = mSettingsManager.getVideoHdrMode();
+        int videoSize = CameraUtil.getSize(videoSizeStr);
+        if(videoSize >= 7680*4320 && hdrmode != null && (hdrmode.indexOf("MFHDR")>=0)){
+            pref.setValue("off");
         }
     }
 
@@ -2877,17 +2917,25 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void updateMultiPreference(String key) {
+
         MultiSelectListPreference pref = (MultiSelectListPreference) findPreference(key);
         if (pref != null) {
             if (mSettingsManager.getEntries(key) != null) {
                 pref.setEntries(mSettingsManager.getEntries(key));
                 pref.setEntryValues(mSettingsManager.getEntryValues(key));
                 String values = mSettingsManager.getValue(key);
+                CharSequence[] entryvalue = mSettingsManager.getEntryValues(key);
                 Set<String> valueSet = new HashSet<String>();
                 if (values != null) {
                     String[] splitValues = values.trim().split(";");
                     for (String str : splitValues) {
-                        valueSet.add(str);
+                        for(int i=0;i <entryvalue.length ;i++){
+                            if(str.equals(entryvalue[i])){
+                                valueSet.add(str);
+                                break;
+                            }
+                        }
+
                     }
                 }
                 pref.setValues(valueSet);
@@ -3000,7 +3048,7 @@ public class SettingsActivity extends PreferenceActivity {
                         final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
                         alert.setMessage("Donnot support "+title+" " +
                                 "when Video FPS >=60 or enabled SaveRaw or inSensor zoom" +
-                                " or quadBayerSensor or videoSize >=4k in MCX mode");
+                                " or quadBayerSensor or videoSize >=8k in MCX mode");
                         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
                             }

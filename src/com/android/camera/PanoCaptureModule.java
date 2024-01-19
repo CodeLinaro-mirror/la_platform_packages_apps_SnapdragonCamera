@@ -287,6 +287,10 @@ public class PanoCaptureModule implements CameraModule, PhotoController {
 
     }
 
+    @Override
+    public void onCreateAfterSuper() {
+    }
+
     public void changePanoStatus(boolean newStatus, boolean isCancelling) {
         mUI.onPanoStatusChange(newStatus);
         if(mFrameProcessor != null) {

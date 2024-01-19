@@ -25,6 +25,8 @@ public interface CameraModule {
 
     public void init(CameraActivity activity, View frame);
 
+    public void onCreateAfterSuper();
+
     public void onPreviewFocusChanged(boolean previewFocused);
 
     public void onPauseBeforeSuper();

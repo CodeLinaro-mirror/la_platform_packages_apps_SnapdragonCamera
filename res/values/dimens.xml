@@ -172,6 +172,12 @@
     <dimen name="tsmakeup_mode_paddingBottom">96dp</dimen>
     <dimen name="tsmakeup_mode_level_size">96dp</dimen>
 
+    <!-- Filmstrip bottom controls -->
+    <dimen name="filmstrip_bottom_control_button_size">48dp</dimen>
+    <dimen name="filmstrip_bottom_control_spacing">16dp</dimen>
+    <dimen name="filmstrip_bottom_control_middle_two_buttons_layout_size">144dp</dimen>
+    <dimen name="filmstrip_bottom_control_layout_size">240dp</dimen>
+
     <!-- Margins for 4:3 preview on 16:9 screen with 640dp height -->
     <dimen name="preview_top_margin">57dp</dimen>
     <dimen name="preview_bottom_margin">103dp</dimen>
@@ -184,4 +190,13 @@
 
     <dimen name="one_ui_bottom_large">75dp</dimen>
     <dimen name="one_ui_bottom_small">55dp</dimen>
+
+    <dimen name="rounded_thumbnail_padding">12dp</dimen>
+    <dimen name="rounded_thumbnail_diameter_normal">48dp</dimen>
+    <dimen name="rounded_thumbnail_diameter_min">24dp</dimen>
+    <dimen name="rounded_thumbnail_diameter_max">54dp</dimen>
+    <dimen name="rounded_thumbnail_ripple_ring_diameter_min">40dp</dimen>
+    <dimen name="rounded_thumbnail_ripple_ring_diameter_max">70dp</dimen>
+    <dimen name="rounded_thumbnail_ripple_ring_thick_max">5dp</dimen>
+    <dimen name="rounded_thumbnail_ripple_ring_thick_min">1dp</dimen>
 </resources>

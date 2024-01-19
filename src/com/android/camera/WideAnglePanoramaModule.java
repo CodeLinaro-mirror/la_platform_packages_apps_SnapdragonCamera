@@ -353,6 +353,10 @@ public class WideAnglePanoramaModule
     }
 
     @Override
+    public void onCreateAfterSuper() {
+    }
+
+    @Override
     public void onPreviewFocusChanged(boolean previewFocused) {
         mPreviewFocused = previewFocused;
         mUI.onPreviewFocusChanged(previewFocused);

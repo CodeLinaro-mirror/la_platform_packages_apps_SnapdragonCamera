@@ -2824,6 +2824,15 @@ public class FilmStripView extends ViewGroup implements BottomControlsListener {
         }
 
         @Override
+        public void onLongPress(float x, float y) {
+        }
+
+        @Override
+        public boolean onMouseScroll(float hscroll, float vscroll) {
+            return true;
+        }
+
+        @Override
         public boolean onScroll(float x, float y, float dx, float dy) {
             if (mPreviewGestures != null && mPreviewGestures.waitUntilNextDown())
                 return false;

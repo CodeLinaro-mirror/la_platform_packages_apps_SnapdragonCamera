@@ -160,7 +160,7 @@ public abstract class LocalMediaData implements LocalData {
 
     @Override
     public void viewPhotoSphere(PhotoSphereHelper.PanoramaViewHelper helper) {
-        helper.showPanorama(getContentUri());
+        helper.showPanorama(null, getContentUri());
     }
 
     @Override

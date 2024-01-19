@@ -543,6 +543,10 @@ public class VideoModule implements CameraModule,
     }
 
     @Override
+    public void onCreateAfterSuper() {
+    }
+
+    @Override
     public void waitingLocationPermissionResult(boolean result) {
         mLocationManager.waitingLocationPermissionResult(result);
     }
