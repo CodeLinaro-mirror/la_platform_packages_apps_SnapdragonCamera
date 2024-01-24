@@ -177,8 +177,8 @@ public class PostProcessor{
         mTotalCaptureResultList.clear();
     }
 
-    private List<String> mLongImgTitle = new ArrayList<>();
-    private List<android.media.ExifInterface> mImagExif = new ArrayList<>();
+    private List<String> mLongImgTitle;
+    private List<android.media.ExifInterface> mImagExif;
 
     public ImageReader getZSLReprocessImageReader() { return mZSLReprocessImageReader; }
     public MultiResolutionImageReader getZSLReprocessMultiImageReader() { return mMultiOutputImageReader; }
@@ -493,10 +493,12 @@ public class PostProcessor{
         if (mZSLQueue == null)
             return false;
         mController.setJpegImageData(null);
-        mLongImgTitle = new ArrayList<>();
-        mImagExif = new ArrayList<>();
-        mController.setLongImageTitle(null);
-        mController.setCaptureResult(null);
+        if(mActivity.getAutoTest()) {
+            mLongImgTitle = new ArrayList<>();
+            mImagExif = new ArrayList<>();
+            mController.setLongImageTitle(null);
+            mController.setCaptureResult(null);
+        }
         ZSLQueue.ImageItem imageItem = mZSLQueue.tryToGetMatchingItem();
         if(mController.getPreviewCaptureResult() == null ||
                 mController.getPreviewCaptureResult().get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED) {

@@ -215,7 +215,6 @@ public class SettingsActivity extends PreferenceActivity {
             } else if (key.equals(SettingsManager.KEY_SELECT_MODE)) {
                 CaptureModule.CameraMode mode = (CaptureModule.CameraMode)
                         getIntent().getSerializableExtra(CAMERA_MODULE);
-                updateEISPreference();
                 updatePdnetTogglePreference();
                 updateViullPreference();
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
@@ -359,6 +358,7 @@ public class SettingsActivity extends PreferenceActivity {
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                     updatePreference(SettingsManager.KEY_SCENE_MODE);
                     updateZslPreference();
+                    updateForceAUXPreference();
                     updateLongShotPreference();
                     updatePictureFormatPreference();
                     updateVideoMFHDRPreference();
@@ -379,7 +379,6 @@ public class SettingsActivity extends PreferenceActivity {
 
                 if (pref.getKey().equals(SettingsManager.KEY_VIDEO_QUALITY) ||
                         pref.getKey().equals(SettingsManager.KEY_SELECT_MODE)){
-                    updateEISPreference();
                     updateVideoVariableFpsPreference();
                     updateVideoHfrFpsPreference();
                     CaptureModule.CameraMode mode =
@@ -388,7 +387,9 @@ public class SettingsActivity extends PreferenceActivity {
                         mSettingsManager.filterVideoEncoderProfileOptions();
                         updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
                     }
+                    updateForceAUXPreference();
                     updateAICameraPerf();
+                    updateEISPreference();
                 }
                 if(pref.getKey().equals(SettingsManager.KEY_HFR_BUFFER_MODE)){
                     updateVideoHfrFpsPreference();
@@ -414,7 +415,6 @@ public class SettingsActivity extends PreferenceActivity {
                     mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                     updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
-                    updateEISPreference();
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
                     updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
@@ -1823,7 +1823,7 @@ public class SettingsActivity extends PreferenceActivity {
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         ListPreference aiCamera = (ListPreference)findPreference(SettingsManager.KEY_AI_CAMERA);
         Log.d(TAG,"isAICameraOn:" + mSettingsManager.isAICameraOn() + ",selectMode: " + selectMode);
-        if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") && mode == VIDEO  &&
+        if (selectMode.equals("rtb") && mode == VIDEO  &&
                 mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID){
             if(aiCamera != null) {
                 aiCamera.setValue("0");
@@ -1834,7 +1834,7 @@ public class SettingsActivity extends PreferenceActivity {
                 aiCamera.setEnabled(true);
             }
         }
-        if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") && mode == VIDEO  &&
+        if (selectMode.equals("rtb") && mode == VIDEO  &&
                 mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID){
             aiCameraList.add(SettingsManager.KEY_AI_CAMERA);
             aiCameraList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
@@ -2064,6 +2064,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         updateZslPreference();
+        updateForceAUXPreference();
         updateVideoEncoderProfile();
         updateSwitchIDInModePreference(true);
         updateTimeLapsePreference();
@@ -2208,8 +2209,6 @@ public class SettingsActivity extends PreferenceActivity {
             }
             if(!perfEnable){
                 pref.setValue("default");
-            } else if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
-                pref.setValue("default");
             } else {
                 pref.setValueIndex(idx);
             }
@@ -2240,10 +2239,6 @@ public class SettingsActivity extends PreferenceActivity {
             return;
         }
         pref.setEnabled(true);
-        if (mSettingsManager.isLimitedHDR()) {
-            pref.setEnabled(false);
-            pref.setValue("-1");
-        }
     }
     private void updateQLLPreference() {
         ListPreference mixHDRPref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
@@ -2331,17 +2326,24 @@ public class SettingsActivity extends PreferenceActivity {
                 return;
             }
         }
-        if(mSettingsManager.getValueIndex(SettingsManager.KEY_SCENE_MODE) == 1 ) {
-            pref.setValue("off");
-            pref.setEnabled(false);
-            return;
-        }
 
         String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
         String hdrmode = mSettingsManager.getVideoHdrMode();
         int videoSize = CameraUtil.getSize(videoSizeStr);
         if(videoSize >= 7680*4320 && hdrmode != null && (hdrmode.indexOf("MFHDR")>=0)){
             pref.setValue("off");
+        }
+    }
+
+    private void updateForceAUXPreference() {
+        ListPreference forceAUX = (ListPreference)findPreference(SettingsManager.KEY_FORCE_AUX);
+        if (forceAUX == null) return;
+        String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
+        if ((selectMode != null && selectMode.equals("single_rear_cameraid")) || mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+            forceAUX.setValue("off");
+            forceAUX.setEnabled(false);
+        } else {
+            forceAUX.setEnabled(true);
         }
     }
 
@@ -2570,7 +2572,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         String qllStr = mSettingsManager.getValue(SettingsManager.KEY_QLL);
-        if (qllStr.equals("1")) {
+        if (qllStr != null && qllStr.equals("1")) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;
