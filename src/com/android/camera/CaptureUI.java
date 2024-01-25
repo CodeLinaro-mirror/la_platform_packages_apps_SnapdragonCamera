@@ -1583,7 +1583,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR && !mModule.isHighSpeedRateCapture());
     }
 
-    private boolean isRTBModeInSelectMode() {
+    public boolean isRTBModeInSelectMode() {
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         if(selectMode != null && selectMode.equals("rtb")){
             return true;
@@ -2060,7 +2060,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mZoomRenderer.setZoomMax(zoomMax);
         }
         String zoomStr = mSettingsManager.getValue(SettingsManager.KEY_ZOOM);
-        int zoom = Integer.parseInt(zoomStr);
+        float zoom = Float.parseFloat(zoomStr);
 
         mZoomRenderer.setZoom(zoom > zoomMin ? zoom : zoomMin);
         mZoomRenderer.setOnZoomChangeListener(new ZoomChangeListener());
