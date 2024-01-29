@@ -8252,6 +8252,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public boolean isT2TFocusSettingOn() {
         try {
             String value = mSettingsManager.getValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS);
+            if(mCurrentSceneMode.mode == CameraMode.CINEMATIC){
+                value = mSettingsManager.getValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC);
+            }
             if (value != null && value.equals("on")) {
                 return true;
             }
@@ -15353,6 +15356,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyTouchTrackFocus(CaptureRequest.Builder request) {
         boolean t2tSupported = false;
         String value = mSettingsManager.getValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS);
+        if(mCurrentSceneMode.mode == CameraMode.CINEMATIC){
+            value = mSettingsManager.getValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC);
+        }
         if (value != null && value.equals("on")) {
             t2tSupported = true;
         } else {
@@ -15801,6 +15807,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         final Integer afState = resultAFState;
         // Report state change when AF state has changed.
+
         Log.d(TAG,BIG_LOG,"resultAFState="+resultAFState+",mLastResultAFState="+mLastResultAFState+",mIsDepthFocus="+mIsDepthFocus);
         if ((resultAFState != mLastResultAFState
                 || mUI.isChangeFocus()

@@ -208,6 +208,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_SELFIE_FLASH = "pref_selfie_flash_key";
     public static final String KEY_SHUTTER_SOUND = "pref_camera2_shutter_sound_key";
     public static final String KEY_TOUCH_TRACK_FOCUS = "pref_camera2_touch_track_focus_key";
+    public static final String KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC = "pref_camera2_touch_track_focus_for_cinematic_key";
     public static final String KEY_DEVELOPER_MENU = "pref_camera2_developer_menu_key";
     public static final String KEY_RESTORE_DEFAULT = "pref_camera2_restore_default_key";
     public static final String KEY_FOCUS_DISTANCE = "pref_camera2_focus_distance_key";

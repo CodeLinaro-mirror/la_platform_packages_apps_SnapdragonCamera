@@ -1511,6 +1511,7 @@ public class SettingsActivity extends PreferenceActivity {
         if (mSettingsManager.getInitialCameraId() == CaptureModule.FRONT_ID || !isSupportedT2T) {
             removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, photoPre);
             removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, videoPre);
+            removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC, videoPre);
         }
         boolean isStatsNN = mSettingsManager.isStatsNNSupported();
         if (!isStatsNN) {
@@ -1648,6 +1649,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }else {
                     removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
                 }
+                removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC, videoPre);
                 break;
             case CINEMATIC:
                 removePreferenceGroup("photo", parentPre);
@@ -1660,6 +1662,7 @@ public class SettingsActivity extends PreferenceActivity {
                 removePreference(SettingsManager.KEY_PICTURE_FORMAT, videoPre);
                 removePreference(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
                 removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
+                removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, videoPre);
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> cinematicList = new ArrayList<>();
                     cinematicList.add(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC);
@@ -2068,7 +2071,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateMultiResReprocess();
         updatePreviewStabilizationPreference();
         updateViullPreference();
-        updateCinematicOptions(fromRestore);
         updateHfrBufferMode();
         updateFRCPreference();
     }
@@ -2874,20 +2876,6 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
-    }
-
-    private void updateCinematicOptions(boolean fromRestore) {
-        CaptureModule.CameraMode mode =
-                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-        if (mode == CaptureModule.CameraMode.CINEMATIC) {
-            String t2t = mLocalSharedPref.getString(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "on");
-            SwitchPreference t2TFocus = (SwitchPreference) findPreference(
-                    SettingsManager.KEY_TOUCH_TRACK_FOCUS);
-            if (t2t.equals("on") || fromRestore) {
-                t2TFocus.setChecked(true);
-            }
-        }
-
     }
 
     private void updatePreference(String key) {
