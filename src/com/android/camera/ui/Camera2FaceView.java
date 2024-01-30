@@ -50,6 +50,8 @@ import com.android.camera.SettingsManager;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
 
+import java.util.Arrays;
+
 public class Camera2FaceView extends FaceView {
 
     private final int smile_threashold_no_smile = 30;
@@ -326,20 +328,64 @@ public class Camera2FaceView extends FaceView {
             if (mFacialContourEnable || mFacePointsEnable) {
                 if (extendFaceSize != 0 && mExFaces[0] != null) {
                     int[] data = null;
+                    int[] visibility = null;
                     if (mFacialContourEnable) {
                         data = mExFaces[0].getContour();
                     } else if (mFacePointsEnable) {
                         data = mExFaces[0].getLandMarks();
                     }
                     if (data != null && data.length != 0){
-                        float[] points = new float[data.length];
+                        float[] points  = new float[data.length];
+                        visibility = mExFaces[0].getVisibility();
+                        int visnum = 0;
+                        int invisnum = 0;
+                        int unknnum = 0;
                         for (int i = 0; i < data.length; i++) {
                             points[i] = (float)data[i];
                         }
+
                         bsgcTranslateMatrix.mapPoints(points);
                         mMatrix.mapPoints(points);
                         pointTranslateMatrix.mapPoints(points);
-                        canvas.drawPoints(points,mPointPaint);
+                        if(visibility == null){
+                            canvas.drawPoints(points,mPointPaint);
+                        }else {
+                            for (int i = 0; i < visibility.length; i++) {
+                                if (visibility[i] == 1) {
+                                    visnum++;
+                                } else if (visibility[i] == 0) {
+                                    invisnum++;
+                                } else if (visibility[i] == -1) {
+                                    unknnum++;
+                                }
+                            }
+                            float[] points_visible = new float[visnum*2];
+                            float[] points_invisible = new float[invisnum*2];
+                            float[] points_unknown = new float[unknnum*2];
+                            int visi = 0;
+                            int invisi = 0;
+                            int unknwi = 0;
+                            int pointi = 0;
+                            for (int i = 0; i < visibility.length && pointi < points.length - 1; i ++) {
+                                if (visibility[i] == 1) {
+                                    points_visible[visi] = points[pointi];
+                                    points_visible[visi + 1] = points[pointi + 1];
+                                    visi = visi + 2;
+                                } else if (visibility[i] == 0) {
+                                    points_invisible[invisi] = points[pointi];
+                                    points_invisible[invisi + 1] = points[pointi + 1];
+                                    invisi = invisi +2;
+                                } else if (visibility[i] == -1) {
+                                    points_unknown[unknwi] = points[pointi];
+                                    points_unknown[unknwi + 1] = points[pointi + 1];
+                                    unknwi = unknwi + 2;
+                                }
+                                pointi = pointi + 2;
+                            }
+                            canvas.drawPoints(points_visible, mPointPaint);
+                            canvas.drawPoints(points_invisible, mPaintInvisible);
+                            canvas.drawPoints(points_unknown, mPaintUnknown);
+                        }
                     }
                 }
             }

@@ -43,6 +43,7 @@ public class ExtendedFace {
     private int mGazeDirection = 0;
     private int mRollDirection = 0;
     private int[] mContour;
+    private int[] mVisibility;
     private int[] mLandMarks;
     private int[] mFacialMarks;
     private int mId;
@@ -105,9 +106,15 @@ public class ExtendedFace {
     public void setContour(int[] contour) {
         mContour = contour;
     }
+    public void setVisibility(int[] visibility) {
+        mVisibility = visibility;
+    }
 
     public int[] getContour() {
         return mContour;
+    }
+    public int[] getVisibility() {
+        return mVisibility;
     }
 
     public void setLandMarks(int[] landMarks){

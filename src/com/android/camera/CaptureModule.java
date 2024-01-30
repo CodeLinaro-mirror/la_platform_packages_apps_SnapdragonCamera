@@ -463,9 +463,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CaptureResult.Key<byte[]> gazeDegree =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.gaze_degree",
                     byte[].class);
-    public static CaptureResult.Key<int[]> contourPointsExtend =
+    public static CaptureResult.Key<byte[]> contourPointsExtend =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.contour_results",
-                    int[].class);
+                    byte[].class);
     private static CaptureResult.Key<byte[]> facialMaskResults =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.mask_results",
                     byte[].class);
@@ -492,6 +492,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Byte.class);
     public static final CaptureRequest.Key<Byte> FACE_EXPRESSION_ENABLE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.face_expression_enable",
+                    Byte.class);
+    public static final CaptureRequest.Key<Byte> facialContourVisib  =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.contour_visibility_mode",
                     Byte.class);
 
     public static final CaptureRequest.Key<Byte> GENDER_ENABLE =
@@ -9404,21 +9407,42 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if (contourEnable || facePointEnable) {
                 String contourMode = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
-                int[] contour_all = null;
-                int[] contourPoints = null;
+                byte[] contour_all = null;
+                byte[] contourPoints = null;
+                int[] visibility = null;
+                int[]points = null;
+                int[]visib = null;
                 if ("5".equals(contourMode) || "6".equals(contourMode) ||
                         "7".equals(contourMode) || "8".equals(contourMode)) {
                     contourPoints = captureResult.get(CaptureModule.contourPointsExtend);
                     contour_all = captureResult.get(CaptureModule.contourPointsExtend);
                     int faceContour = PersistUtil.getPersistFaceContourHeaderSize();
-                    Log.d(FD_TAG, FD_LOG,"FaceContour result header size is "+ faceContour);
-                    if (contour_all != null) {
-                        contourPoints = Arrays.copyOfRange(contour_all,faceContour,contour_all.length);
+                     int numPointsPerFace = byteArray2Int(contour_all,8);
+                     int numFaces = byteArray2Int(contour_all,12);
+                     int offSet = byteArray2Int(contour_all,16);
+                    Log.d(FD_TAG, FD_LOG,"FaceContour result header size is "+ faceContour+
+                            ",contour_all.length="+contour_all.length+",numPointsPerFace="+numPointsPerFace
+                    +",numFaces="+numFaces+",offset="+offSet);
+
+                    int arrayindex = faceContour*4;
+                    points = new int[numPointsPerFace*numFaces*2];
+
+                    for (int i = 0; i < numPointsPerFace*numFaces*2; i++) {
+                        points[i] = byteArray2Int(contour_all,arrayindex);
+                        arrayindex += 4;
+                    }
+                    Log.d(FD_TAG,FD_LOG,"000Version=V "+ contourMode +",points="+Arrays.toString(points)
+                            +",point.len="+points.length);
+                    if(isFdFeatureDisplay(mSettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY) && offSet > 0) {
+                        visib = new int[numPointsPerFace*numFaces];
+                        for (int i = 0; i < numPointsPerFace * numFaces; i++) {
+                            visib[i] = contour_all[arrayindex];
+                            arrayindex += 1;
+                        }
+                        Log.d(FD_TAG,FD_LOG,",visibility="+Arrays.toString(visib)
+                                +",point.len="+points.length+",visib.len="+visib.length);
                     }
                 }
-
-                Log.d(FD_TAG,FD_LOG,"Version=V"+ contourMode + ", contour_results = " +
-                            Arrays.toString(contour_all));
                 int[] landmarkPoints = new int[6 * faces.length];
                 try {
                     for (int i = 0; i < faces.length; i++) {
@@ -9439,7 +9463,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     tmp = extendedFaces[0];
                 }
-                tmp.setContour(contourPoints);
+                tmp.setVisibility(visib);
+                tmp.setContour(points);
                 tmp.setLandMarks(landmarkPoints);
             }
 
@@ -9539,7 +9564,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
         } catch (IllegalArgumentException|NullPointerException e){
-            Log.w(TAG,"getBsgcInfo =" + e.fillInStackTrace());
+            Log.w(TAG,"getBsgcInfo =" + e);
         }
         return extendedFaces;
     }
@@ -15456,6 +15481,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (isFdFeatureEnable(SettingsManager.KEY_FD_FACE_EXPRESSION)) {
                     Log.d(FD_TAG,FD_LOG,"face detection set FACE_EXPRESSION_ENABLE");
                     request.set(CaptureModule.FACE_EXPRESSION_ENABLE, (byte)1);
+                }
+
+                String contour_vis = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY);
+                if(contour_vis == null || contour_vis.equals("disable")){
+                    request.set(CaptureModule.facialContourVisib, (byte) 0);
+                }else if (contour_vis.equals("enable")) {
+                    request.set(CaptureModule.facialContourVisib, (byte) 1);
+                } else if (contour_vis.equals("display")) {
+                    request.set(CaptureModule.facialContourVisib, (byte) 2);
                 }
 
                 if (facialContour != null) {

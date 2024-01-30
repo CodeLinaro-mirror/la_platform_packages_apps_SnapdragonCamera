@@ -1274,10 +1274,10 @@ for time lapse recording -->
         <item>V2 Enable</item>
         <item>V3 Enable</item>
         <item>V4 Enable</item>
-        <item>V1 Display</item>
-        <item>V2 Display</item>
-        <item>V3 Display</item>
-        <item>V4 Display</item>
+        <item>V1 Enable&amp;Display</item>
+        <item>V2 Enable&amp;Display</item>
+        <item>V3 Enable&amp;Display</item>
+        <item>V4 Enable&amp;Display</item>
     </string-array>
 
     <string-array name="pref_camera2_facial_contour_entryvalues" translatable="false">

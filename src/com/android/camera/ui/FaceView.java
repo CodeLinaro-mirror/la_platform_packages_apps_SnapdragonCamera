@@ -64,6 +64,8 @@ public class FaceView extends View
     private final int mFailColor;
     protected Paint mPaint;
     protected Paint mPointPaint;
+    protected Paint mPaintInvisible;
+    protected Paint mPaintUnknown;
     protected volatile boolean mBlocked;
 
     protected int mUncroppedWidth;
@@ -105,13 +107,21 @@ public class FaceView extends View
         mPaint.setColor(Color.WHITE);//setColor(0xFFFFFF00);
         mPaint.setStrokeCap(Paint.Cap.ROUND);
 
-        mPointPaint = new Paint();
-        mPointPaint.setAntiAlias(true);
-        mPointPaint.setStyle(Style.STROKE);
-        mPointPaint.setStrokeWidth(res.getDimension(R.dimen.face_points_stroke));
-        mPointPaint.setDither(true);
-        mPointPaint.setColor(Color.BLUE);
-        mPointPaint.setStrokeCap(Paint.Cap.ROUND);
+        mPointPaint = getPointPaint(Color.BLUE,res);
+        mPaintInvisible = getPointPaint(Color.RED,res);
+        mPaintUnknown = getPointPaint(Color.DKGRAY,res);
+
+    }
+
+    private Paint getPointPaint(int color,Resources res){
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setStyle(Style.STROKE);
+        paint.setStrokeWidth(res.getDimension(R.dimen.face_points_stroke));
+        paint.setDither(true);
+        paint.setColor(color);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        return paint;
     }
 
     @Override

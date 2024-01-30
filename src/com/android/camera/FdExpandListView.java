@@ -87,8 +87,8 @@ public class FdExpandListView  {
         mFDIndex = 0;
         mExpandKey.add("FD Mask Detection");
         mExpandKey.add("Upper Body Detection");
-
-        mExpandKey.add("FD Facial contour");
+        mExpandKey.add("FD Contour Detection");
+        mExpandKey.add("FD Contour Visibility Detection");
         mExpandKey.add("FD Gaze Detection");
         mExpandKey.add("FD Blink Detection");
 
@@ -131,8 +131,11 @@ public class FdExpandListView  {
             case "Upper Body Detection":
                 key = mSettingsManager.KEY_UPPER_BODY_DETECTION;
                 break;
-            case "FD Facial contour":
+            case "FD Contour Detection":
                 key =mSettingsManager.KEY_FACIAL_CONTOUR;
+                break;
+            case "FD Contour Visibility Detection":
+                key =mSettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY;
                 break;
             case "FD Gaze Detection":
                 key = mSettingsManager.KEY_FD_GAZE;

@@ -299,6 +299,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_FD_GENDER = "pref_camera2_fd_gender_key";
     public static final String KEY_FD_FACE_EXPRESSION = "pref_camera2_fd_face_expression_key";
     public static final String KEY_FACIAL_CONTOUR = "pref_camera2_facial_contour_key";
+    public static final String KEY_FACIAL_CONTOUR_VISIBILITY = "pref_camera2_fd_contour_visibility_key";
     public static final String KEY_FACE_DETECTION_MODE = "pref_camera2_face_detection_mode";
     public static final String KEY_FD_SETTING = "pref_camera2_fd_setting_key";
     public static final String KEY_FD_FL_SETTING = "pref_camera2_fd_fl_setting_key";
