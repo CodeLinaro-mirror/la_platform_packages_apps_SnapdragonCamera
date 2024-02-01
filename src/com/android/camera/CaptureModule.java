@@ -10707,12 +10707,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 shouldAddToMediaStoreNow = true;
             } catch (RuntimeException e) {
                 Log.w(TAG, "MediaRecoder stop fail =" + e);
-                if (mCurrentVideoUri != null) {
+                if (mCurrentVideoUri != null &&
+                        Storage.isSaveSDCard() && SDCard.instance().isWriteable()) {
                     mContentResolver.delete(mCurrentVideoUri, null);
                     mCurrentVideoUri = null;
                 }
                 for (int i = 0; i < mPhysicalUris.length; i++) {
-                    if (mPhysicalUris[i] != null) {
+                    if (mPhysicalUris[i] != null && Storage.isSaveSDCard()
+                            && SDCard.instance().isWriteable()) {
                         mContentResolver.delete(mPhysicalUris[i], null);
                         mPhysicalUris[i] = null;
                     }
@@ -10728,7 +10730,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (RuntimeException e){
                 Log.w(TAG, "MediaRecoder stop fail =" + e);
                 for (int i = 0; i < mPhysicalUris.length; i++) {
-                    if (mPhysicalUris[i] != null) {
+                    if (mPhysicalUris[i] != null  && Storage.isSaveSDCard()
+                            && SDCard.instance().isWriteable()) {
                         mContentResolver.delete(mPhysicalUris[i], null);
                         mPhysicalUris[i] = null;
                     }
