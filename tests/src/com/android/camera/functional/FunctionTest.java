@@ -208,6 +208,22 @@ public class FunctionTest extends TestBase  {
         //checkPreview("2",CaptureModule.CameraMode.HFR);
         runVideoCase("2",CaptureModule.CameraMode.CINEMATIC);
     }
+    @Test
+    public void testInDepth() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInDepth")){
+            return;
+        }
+        int[] loc = mModeIconR.get("Depth");
+        if(loc == null){
+            loc = mModeIconL.get("Depth");
+        }else{
+            switchModeTextToR(true);
+        }
+        Log.i(TAG, "testInCinema mdepthLoc="+loc[0]+"*"+loc[1]);
+        executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
+        //checkPreview("2",CaptureModule.CameraMode.HFR);
+        runPhotoCase("0",CaptureModule.CameraMode.DEPTH);
+    }
 
     @Test
     public void testInVideoIntent() throws Exception {
