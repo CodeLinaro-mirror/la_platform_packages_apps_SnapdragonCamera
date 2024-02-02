@@ -3666,7 +3666,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
 
                     if (!mSettingsManager.isHeifWriterEncoding() && mRawReprocessType != 1) {
-                        if (!isMultiResolutionImageReaderEnabled() && mDepthImageReader == null) {
+                        if (!isMultiResolutionImageReaderEnabled() &&
+                                (mCurrentSceneMode.mode != CameraMode.DEPTH)) {
                             list.add(mImageReader[id].getSurface());
                         }
                     }
@@ -4550,6 +4551,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (cameraIdList == null || cameraIdList.length == 0) {
             return;
         }
+        boolean foundDepth = false;
         for (int i = 0; i < cameraIdList.length; i++) {
             boolean isLogicalCamera = false;
             String cameraId = cameraIdList[i];
@@ -4567,11 +4569,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
             int[] capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
-            boolean foundDepth = false;
+
             for (int capability : capabilities) {
                 if (capability == CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_DEPTH_OUTPUT) {
-                    Log.d(TAG, "Found depth camera with id " + cameraId);
-                    foundDepth = true;
+                    Log.i(TAG, "Found depth camera with id " + cameraId);
+                    //foundDepth = true;
                 }
                 if (CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA == capability) {
                     Log.d(TAG, "Found logical multi camera with id " + cameraId);
@@ -4589,8 +4591,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
             if (!foundDepth) {
-                mDepthSize = mSettingsManager.getSupportedDepthSize(characteristics);
+                Size[] sizes = mSettingsManager.getSupportedOutputSize(Integer.valueOf(cameraId), ImageFormat.DEPTH16);
+                if(sizes != null){
+                    Log.i(TAG,"getdepthsize ="+sizes[0].getWidth()+"*"+sizes[0].getHeight());
+                    mDepthSize = sizes[0];
+                }
+                if(mDepthSize == null) {
+                    mDepthSize = mSettingsManager.getSupportedDepthSize(characteristics);
+                }
                 foundDepth = mDepthSize != null;
+                Log.i(TAG,"mDepthSize="+mDepthSize+",foundDepth="+foundDepth);
             }
 
             initQuadBayerPhsicalCameraIds(isLogicalCamera, cameraId, manager, characteristics, capabilities);
@@ -6261,7 +6271,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 for (int capability : capabilities) {
                     if (capability == CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_DEPTH_OUTPUT) {
                         DEPTH_CAM_ID = cameraId;
-                        Log.d(TAG, "Found depth camera with id " + cameraId);
+                        Log.i(TAG, "Found depth camera with id " + cameraId);
                         foundDepth = true;
                     }
                 }
