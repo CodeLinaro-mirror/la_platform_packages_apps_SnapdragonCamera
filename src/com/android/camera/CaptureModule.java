@@ -10447,7 +10447,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         mRecordingPauseTime = SystemClock.uptimeMillis();
         mRecordingTotalTime += mRecordingPauseTime - mRecordingStartTime;
         String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
-        boolean noNeedEndofStreamWhenPause = value != null && value.equals("V3");
+        boolean noNeedEndofStreamWhenPause = value != null && value.equals("V3")
+                && (!mSettingsManager.isMultiCameraEnabled());
         // As EIS is not supported for HFR case (>=120 )
         // and FOVC also currently don’t require this for >=120 case
         // so use noNeedEndOfStreamInHFR to control
@@ -12555,7 +12556,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         mStreamConfigOptMode = 0;
         boolean previewStabilizationOn = false;
-        if (value != null) {
+        if (value != null && (!mSettingsManager.isMultiCameraEnabled())) {
             if (value.equals("V2")) {
                 mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
                 previewStabilizationOn = "enable".equals(mSettingsManager.
@@ -13171,7 +13172,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mRecordingPausing && isUseVideoPreview) {
             captureRequest = mVideoPreviewRequestBuilder;
             String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
-            boolean noNeedEndofStreamWhenPause = value != null && value.equals("V3");
+            boolean noNeedEndofStreamWhenPause = value != null && value.equals("V3")
+                    && (!mSettingsManager.isMultiCameraEnabled());
             // app use preview + video buffers when select EIS V3 usecase
             if (noNeedEndofStreamWhenPause) {
                 captureRequest = mVideoRecordRequestBuilder;
