@@ -2396,10 +2396,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 afdinfo_data[9] = Integer.toString(afdLinesFrame[1]);
                 afdinfo_data[10] = Integer.toString(afdLinesFrame[2]);
                 afdinfo_data[11] = Integer.toString(afdLinesFrame[3]);
-                afdinfo_data[12] = Float.toString(result.get(avg_rolling_conf));
-                afdinfo_data[13] = Float.toString(result.get(avg_static_conf));
-                afdinfo_data[14] = Float.toString(result.get(avg_rolling_energy));
-                afdinfo_data[15] = Float.toString(result.get(avg_static_energy));
+                afdinfo_data[12] =  String.format("%.5f",result.get(avg_rolling_conf));
+                afdinfo_data[13] = String.format("%.5f",result.get(avg_static_conf));
+                afdinfo_data[14] = String.format("%.5f",result.get(avg_rolling_energy));
+                afdinfo_data[15] = String.format("%.5f",result.get(avg_static_energy));
             }catch (NullPointerException|IllegalArgumentException e){
 
             }
