@@ -1558,7 +1558,11 @@ public class FilmstripView extends ViewGroup {
 
         invalidate();
     }
-
+    public String getDateTitle(int index){
+        FilmstripItem data = mDataAdapter.getFilmstripItemAt(index);
+        String title = data.getData().getTitle();
+        return title;
+    }
     private void setDataAdapter(FilmstripDataAdapter adapter) {
         mDataAdapter = adapter;
         int maxEdge = (int) (Math.max(this.getHeight(), this.getWidth())
