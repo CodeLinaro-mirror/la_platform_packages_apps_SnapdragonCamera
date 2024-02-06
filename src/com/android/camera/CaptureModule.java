@@ -4108,6 +4108,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }else if(mSaveRaw) {
             for (int i = 0; i < mPhysicalRawId.length; i++) {
+                if (mPhysicalRawReader[i] == null) {
+                    break;
+                }
                 String id = mPhysicalRawId[i];
                 OutputConfiguration configuration = new OutputConfiguration(mPhysicalRawReader[i].getSurface());
                 if (!isLogicalId(id)) {
