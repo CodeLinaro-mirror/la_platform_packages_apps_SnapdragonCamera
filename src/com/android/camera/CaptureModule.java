@@ -3741,11 +3741,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (mRawReprocessType != 0) {
                         for (int i = 0; i < mRawCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mRAWImageReader[i].getSurface());
-                            configuration.setPhysicalCameraId(mSettingsManager.getRawReprocessPhysicalId());
+                            if(mSettingsManager.getRawReprocessPhysicalId() != null && !mSettingsManager.getRawReprocessPhysicalId().equals("logical")) {
+                                configuration.setPhysicalCameraId(mSettingsManager.getRawReprocessPhysicalId());
+                            }
                             outputConfigurations.add(configuration);
                         }
                         for (int i = 0; i < mYUVCount; i++) {
                             OutputConfiguration configuration = new OutputConfiguration(mYUVImageReader[i].getSurface());
+                            if(mSettingsManager.getRawReprocessPhysicalId() != null && !mSettingsManager.getRawReprocessPhysicalId().equals("logical")) {
+                                configuration.setPhysicalCameraId(mSettingsManager.getRawReprocessPhysicalId());
+                            }
                             outputConfigurations.add(configuration);
                         }
                     }
@@ -6313,7 +6318,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         if (mRawReprocessType != 0) {
                                             waitForRawMetaData();
                                             Log.i(TAG, "start reprocess-image");
-                                            if (mSettingsManager.getRawReprocessPhysicalId() != null) {
+                                            if(mSettingsManager.getRawReprocessPhysicalId() != null && !mSettingsManager.getRawReprocessPhysicalId().equals("logical")){
                                                 String physicalId = mSettingsManager.getRawReprocessPhysicalId();
                                                 TotalCaptureResult physicalMetaData = mRawInputMeta.getPhysicalCameraTotalResults().get(physicalId);
                                                 mPostProcessor.reprocessImage(image, physicalMetaData);
@@ -9802,28 +9807,41 @@ public class CaptureModule implements CameraModule, PhotoController,
         int currentId = getMainCameraId();
         int rawFormat = mSettingsManager.getRawFormat() ;
         mPictureSize = parsePictureSize(pictureSize);
+        String physicalId = "0";
+        if(mSettingsManager.getRawReprocessPhysicalId() != null && !mSettingsManager.getRawReprocessPhysicalId().equals("logical")){
+            physicalId = mSettingsManager.getRawReprocessPhysicalId();
+        }
         if(PersistUtil.isRawReprocessQcfa()){
-            mPictureSize = new Size(8000,6000);
+            List<Size> sizes = mSettingsManager.getSupportedQCFAMaxPictureSizeList(physicalId, ImageFormat.PRIVATE);
+            if(sizes != null && sizes.size() != 0){
+                mPictureSize = sizes.get(0);
+            }
         }
         Size[] prevSizes = mSettingsManager.getSupportedOutputSize(currentId,
                 SurfaceHolder.class);
         List<Size> prevSizeList = Arrays.asList(prevSizes);
         prevSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
         mSupportedMaxPictureSize = prevSizeList.get(0);
-        Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(currentId, ImageFormat.PRIVATE);
+        Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(currentId, ImageFormat.YUV_420_888);
         List<Size> yuvSizeList = Arrays.asList(yuvSizes);
         yuvSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
         for (int i = 0; i< mYUVCount; i++) {
             if(PersistUtil.isRawReprocessQcfa()){
-                mYUVsize[i] = new Size(8000,6000);
+                List<Size> sizes = mSettingsManager.getSupportedQCFAMaxPictureSizeList(physicalId, ImageFormat.YUV_420_888);
+                if(sizes != null && sizes.size() != 0){
+                    mYUVsize[i] = sizes.get(0);
+                }
             }else{
                 mYUVsize[i] = yuvSizeList.get(0);
             }
         }
         if( mRawCount == 1){
-            Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(mSettingsManager.getRawReprocessPhysicalId()), rawFormat);
+            Size[] rawSize = mSettingsManager.getSupportedOutputSize(Integer.parseInt(physicalId), rawFormat);
             if(PersistUtil.isRawReprocessQcfa()){
-                mRawSize[0] = new Size(8000,6000);
+                List<Size> sizes = mSettingsManager.getSupportedQCFAMaxPictureSizeList(physicalId, rawFormat);
+                if(sizes != null && sizes.size() != 0){
+                    mRawSize[0] = sizes.get(0);
+                }
             }else{
                 mRawSize[0] = rawSize[0];
             }

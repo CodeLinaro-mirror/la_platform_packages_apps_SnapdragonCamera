@@ -283,8 +283,8 @@ public class SettingsActivity extends PreferenceActivity {
 
             if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
                 updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
-                updatePreference(SettingsManager.KEY_RAWINFO_TYPE);
                 updatePreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+                updateRawInfoPref();
                 updatePictureFormatPreference();
             }
             if (key.equals(SettingsManager.KEY_REMOSAIC_REPROCESSING)) {
@@ -417,8 +417,8 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
                     updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
-                    updatePreference(SettingsManager.KEY_RAWINFO_TYPE);
                     updatePreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+                    updateRawInfoPref();
                     updatePictureFormatPreference();
                 }
                 if (pref.getKey().equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
@@ -2795,8 +2795,8 @@ public class SettingsActivity extends PreferenceActivity {
 
     private void updateRawInfoPref(){
         String reprocessType = mSettingsManager.getValue(SettingsManager.KEY_RAW_REPROCESS_TYPE);
+        ListPreference rawInfoPref = (ListPreference)findPreference(SettingsManager.KEY_RAWINFO_TYPE);
         if(reprocessType != null && !reprocessType.equals("disable") && !reprocessType.equals("off") && Integer.valueOf(reprocessType) != 0){
-            ListPreference rawInfoPref = (ListPreference)findPreference(SettingsManager.KEY_RAWINFO_TYPE);
             String rawFormat = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
             int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
             if(rawFormatType == 10){
@@ -2817,6 +2817,11 @@ public class SettingsActivity extends PreferenceActivity {
                     rawInfoPref.setValueIndex(idx);
                     rawInfoPref.setEnabled(true);
                 }
+            }
+        }else{
+            if (rawInfoPref != null) {
+                rawInfoPref.setValue("0");
+                rawInfoPref.setEnabled(false);
             }
         }
     }
