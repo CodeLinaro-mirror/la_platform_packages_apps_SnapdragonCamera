@@ -8407,7 +8407,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         return false;
     }
 
-    private boolean isRTBModeInSelectMode() {
+    public boolean isRTBModeInSelectMode() {
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         if(selectMode != null && selectMode.equals("rtb")){
             return true;
@@ -9204,9 +9204,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void updateZoom() {
         String zoomStr = mSettingsManager.getValue(SettingsManager.KEY_ZOOM);
-        int zoom = Integer.parseInt(zoomStr);
-        if ( zoom !=0 ) {
-            mZoomValue = (float)zoom;
+        float zoom = Float.parseFloat(zoomStr);
+        if ( zoom > 0 ) {
+            mZoomValue = zoom;
             mUI.updateZoomSeekBar(mZoomValue);
         }else{
             mZoomValue = 1.0f;
