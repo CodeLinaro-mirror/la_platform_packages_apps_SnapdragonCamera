@@ -191,7 +191,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TouchTrackFocusRenderer mT2TFocusRenderer;
     private StateNNTrackFocusRenderer mStatsNNFocusRenderer;
     private ImageView mThumbnail;
-    private final FilmstripLayout mFilmstripLayout;
+    public final FilmstripLayout mFilmstripLayout;
     private final FilmstripBottomPanel mFilmstripBottomControls;
     private final FilmstripContentPanel mFilmstripPanel;
     private Camera2FaceView mFaceView;
@@ -556,15 +556,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private LinearLayout mGridLineView;
     private boolean mIsZoomKeyChanged = false;
 
-
-    private void previewUIReady() {
-        if (mSettingsManager.getPhysicalCameraId() == null &&
-                mSettingsManager.getSinglePhysicalCamera() == null) {
-            mModule.onPreviewUIReady();
-        } else {
-            checkSurfaceReady();
-        }
-
+    private void showThumbnail() {
         if ((mIsVideoUI || mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL)
                 && mThumbnail != null && mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA) {
             mThumbnail.setVisibility(View.INVISIBLE);
@@ -575,6 +567,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             if (mThumbnail == null)
                 mThumbnail = (ImageView) mRootView.findViewById(R.id.preview_thumb);
             mActivity.updateThumbnail(mThumbnail);
+        }
+    }
+
+    private void previewUIReady() {
+        if (mSettingsManager.getPhysicalCameraId() == null &&
+                mSettingsManager.getSinglePhysicalCamera() == null) {
+            mModule.onPreviewUIReady();
+        } else {
+            checkSurfaceReady();
         }
 
     }
@@ -2509,6 +2510,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mThumbnail.setVisibility(View.INVISIBLE);
         hideZoomSeekBar();
     }
+    private void hideUIInDepth(){
+        mFrontBackSwitcher.setVisibility(View.INVISIBLE);
+        mFilterModeSwitcher.setVisibility(View.INVISIBLE);
+        mSceneModeHDR.setVisibility(View.INVISIBLE);
+        mFlashButton.setVisibility(View.INVISIBLE);
+        mSettingsIcon.setVisibility(View.INVISIBLE);
+        mShutterButton.setVisibility(View.INVISIBLE);
+        mThumbnail.setVisibility(View.INVISIBLE);
+        hideZoomSeekBar();
+    }
 
     public void hideUIwhileRecording() {
         mCameraControls.setVideoMode(true);
@@ -2561,6 +2572,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mShutterButton.setVisibility(View.VISIBLE);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
         mMakeupButton.setVisibility(View.INVISIBLE);
+        mSettingsIcon.setVisibility(View.VISIBLE);
+        showThumbnail();
         //settings for each mode
         switch (mode) {
             case DEFAULT:
@@ -2617,6 +2630,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         }
     }
+    private int mFilterHight,mFilterWidth;
+    public int getFilterHight(){
+        return  mFilterHight;
+    }
+    public int getFilterWidth(){
+        return  mFilterWidth;
+    }
     public void addFilterMode() {
         if (mSettingsManager.getValue(SettingsManager.KEY_COLOR_EFFECT) == null)
             return;
@@ -2667,6 +2687,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mFilterLayout.setLayoutParams(params);
             ((ViewGroup) mRootView).addView(mFilterLayout);
             mFilterLayout.setY(display.getHeight() - 2 * size);
+            if(mActivity.getAutoTest()) {
+                mFilterHight = display.getHeight() - 2 * size;
+            }
         }
         gridOuterLayout.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams
                 .MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
@@ -2678,6 +2701,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             RotateLayout filterBox = (RotateLayout) inflater.inflate(
                     R.layout.filter_mode_view, null, false);
             ImageView imageView = (ImageView) filterBox.findViewById(R.id.image);
+
             final int j = i;
 
             filterBox.setOnTouchListener(new View.OnTouchListener() {
@@ -2708,6 +2732,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             TextView label = (TextView) filterBox.findViewById(R.id.label);
 
             imageView.setImageResource(thumbnails[i]);
+            if(mActivity.getAutoTest() && i ==0 ){
+                mFilterWidth = imageView.getMeasuredWidth();
+            }
+
+
             label.setText(entries[i]);
             gridLayout.addView(filterBox);
         }
@@ -2864,7 +2893,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mCameraControls.setIntentMode(mModule.getCurrentIntentMode());
         }
     }
-
+    public String getTitleFromFilm(int index){
+       return mFilmstripLayout.getTitleFromFilm(index);
+    }
     public void doShutterAnimation() {
         AnimationDrawable frameAnimation = (AnimationDrawable) mShutterButton.getDrawable();
         frameAnimation.stop();
@@ -3726,6 +3757,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             viewStub.inflate();
             mDepthTextureView = mRootView.findViewById(R.id.depth_preview_texture_view);
         }
+        hideUIInDepth();
 
         FrameLayout.LayoutParams params1 =
                 new FrameLayout.LayoutParams(
@@ -3756,7 +3788,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         }
 
-        mCameraControls.setVisibility(View.GONE);
+       // mCameraControls.setVisibility(View.GONE);
         mGestures.setEnabled(false);
 
         if (mDepthSetting == null) {
@@ -3824,7 +3856,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT,
                             Gravity.BOTTOM | Gravity.START);
-            params.bottomMargin = 200;
+            params.bottomMargin = 400;
             params.leftMargin = 100;
             params.rightMargin = 100;
             mDepthSeekBar.setLayoutParams(params);
@@ -4154,8 +4186,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         }
 
-        if ( mSceneModeInstructionalDialog != null && mSceneModeInstructionalDialog.isShowing() &&
-                !mActivity.getAutoTest()) {
+        if ( mSceneModeInstructionalDialog != null && mSceneModeInstructionalDialog.isShowing()) {
             mSceneModeInstructionalDialog.dismiss();
             mSceneModeInstructionalDialog = null;
             showSceneInstructionalDialog(orientation);

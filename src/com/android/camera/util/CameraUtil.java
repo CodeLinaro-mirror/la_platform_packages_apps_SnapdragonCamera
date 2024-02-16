@@ -93,7 +93,9 @@ import android.util.Range;
 import java.util.StringTokenizer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
-
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.InputStreamReader;
 import com.android.camera.SettingsManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -1797,6 +1799,26 @@ public class CameraUtil {
             mHeight = null;
         }
 
+    }
+    public static String ReadFile(String filePath) {
+        FileInputStream fis = null;
+        InputStreamReader isr = null;
+        BufferedReader br = null;
+        String temp = "";
+        StringBuffer strBuffer = new StringBuffer();
+        try {
+            File file = new File(filePath);
+            fis = new FileInputStream(file);
+            isr = new InputStreamReader(fis);
+            br = new BufferedReader(isr);
+            while ((temp = br.readLine()) != null) {
+                strBuffer.append(temp);
+                strBuffer.append("\n");
+            }
+        } catch (Exception e) {
+            Log.i(TAG, "exception e=" + e +",filepath="+filePath);
+        }
+        return strBuffer.toString();
     }
     public static class IntegerLock {
         private int value;

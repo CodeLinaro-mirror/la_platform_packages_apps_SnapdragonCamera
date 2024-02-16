@@ -133,7 +133,7 @@ import android.widget.ExpandableListAdapter;
 import android.widget.RelativeLayout;
 import com.android.camera.FdExpandListView.FdExpandListViewAdapter;
 public class SettingsActivity extends PreferenceActivity {
-    private static final String TAG = "SettingsActivity";
+    private static final String TAG = "SnapCam_SettingsActivity";
 
     private static final boolean DEV_LEVEL_ALL =
             PersistUtil.getDevOptionLevel() == PersistUtil.CAMERA2_DEV_OPTION_ALL  ;
@@ -179,69 +179,6 @@ public class SettingsActivity extends PreferenceActivity {
             } else if (p instanceof MultiSelectListPreference) {
                 Set<String> valueSet = ((MultiSelectListPreference)p).getValues();
                 mSettingsManager.setValue(key,valueSet);
-                if (key.equals(SettingsManager.KEY_PHYSICAL_CAMERA) ||
-                        key.equals(SettingsManager.KEY_PHYSICAL_CAMCORDER)) {
-                    updateMultiVideoFPSPreference();
-                }
-                if (key.equals(SettingsManager.KEY_PHYSICAL_CAMCORDER)) {
-                    updateEISPreference();
-                }
-            }
-            if (key.equals(SettingsManager.KEY_VIDEO_QUALITY)) {
-                updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-                updatePreference(SettingsManager.KEY_VIDEO_ENCODER);
-                updateVideoMFHDRPreference();
-                updateVideoFlipPreference();
-                updateVsrPreference();
-                updateViullPreference();
-            } else if (key.equals(SettingsManager.KEY_VIDEO_ENCODER)) {
-                updateVideoEncoderProfile();
-            } else if (key.equals(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE)) {
-                value = ((ListPreference) p).getValue();
-                if (!value.equals("off")) {
-                    int fpsRate = Integer.parseInt(value.substring(3));
-                    if (fpsRate == 480) {
-                        mSettingsManager.filterVideoDurationFor480fps();
-                    } else {
-                        mSettingsManager.filterVideoDuration();
-                    }
-                } else {
-                    mSettingsManager.filterVideoDuration();
-                }
-                updateVideoVariableFpsPreference();
-                updatePreference(SettingsManager.KEY_VIDEO_DURATION);
-                updateVideoMFHDRPreference();
-                updateViullPreference();
-                updateVsrPreference();
-            } else if (key.equals(SettingsManager.KEY_SELECT_MODE)) {
-                CaptureModule.CameraMode mode = (CaptureModule.CameraMode)
-                        getIntent().getSerializableExtra(CAMERA_MODULE);
-                updateEISPreference();
-                updatePdnetTogglePreference();
-                updateViullPreference();
-            } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
-                //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
-                value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
-                Preference picSize = findPreference(SettingsManager.KEY_PICTURE_SIZE);
-                ListPreference picFormat = (ListPreference)findPreference(SettingsManager.KEY_PICTURE_FORMAT);
-                if (PersistUtil.isMultiResolutionImageReaderEnabled() && value != null && "1".equals(value)) {
-                    picSize.setEnabled(false);
-                    if (picFormat != null) {
-                        picFormat.setValue("0");
-                        picFormat.setEnabled(false);
-                    }
-                } else {
-                    picSize.setEnabled(true);
-                    if (picFormat != null) {
-                        picFormat.setEnabled(true);
-                    }
-                }
-            } else if (key.equals(SettingsManager.KEY_VIDEO_ENCODER_PROFILE)){
-                CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-                if(mode == CaptureModule.CameraMode.VIDEO) {
-                    updateSwitchIDInModePreference(true);
-                }
-                updateViullPreference();
             }
             List<String> list = mSettingsManager.getDependentKeys(key);
             if (list != null) {
@@ -250,211 +187,244 @@ public class SettingsActivity extends PreferenceActivity {
                     updatePreferenceButton(dependentKey);
                 }
             }
-            // If Enable KEY_BURST_LIMIT, KEY_CAPTURE_MFNR_VALUE and KEY_LONGSHOT can same use
-            // if diable KEY_BURST_LIMIT, enable KEY_CAPTURE_MFNR_VALUE, KEY_LONGSHOT is diable
-            if (key.equals(SettingsManager.KEY_BURST_LIMIT) ||
-                    key.equals(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
-                updateLongShotPreference();
-            }
-
-            if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
-                updateCaptureProfilePref();
-            }
-
-            if (key.equals(SettingsManager.KEY_MANUAL_HDR)) {
-                value = ((ListPreference) p).getValue();
-                if (value.equals("manual")) {
-                    updateManualHDRSetting();
-                }
-                updateHdrRefOp();
-                updateQuadBayerPreference();
-            }
-
-            if (key.equals(SettingsManager.KEY_MANUAL_HDR) ||
-                    key.equals(SettingsManager.KEY_QLL)) {
-                updateQLLPreference();
-            }
-
-            if (key.equals(SettingsManager.KEY_PICTURE_FORMAT) ||
-                    key.equals(SettingsManager.KEY_PREVIEW_PROFILE) ||
-                    key.equals(SettingsManager.KEY_CAPTURE_PROFILE) ||
-                    key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
-                updateColorSpacePreference();
-            }
-
-            if (key.equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
-                updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
-                updatePreference(SettingsManager.KEY_RAWINFO_TYPE);
-                updatePreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
-                updatePictureFormatPreference();
-            }
-            if (key.equals(SettingsManager.KEY_REMOSAIC_REPROCESSING)) {
-                updateRawFormatPref();
-            }
-            if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
-                updateRawInfoPref();
-            }
-            if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE)){
-                updateVideoMFHDRPreference();
-            }
-            if(key.equals(SettingsManager.KEY_INSENSOR_ZOOM)){
-                updateVideoMFHDRPreference();
-            }
-            if (SettingsManager.KEY_PREVIEW_PROFILE.equals(key)) {
-                updateViullPreference();
-            }
-            if (SettingsManager.KEY_LONGSHOT.equals(key)) {
-                updateMFNRPreference();
-            }
         }
     };
 
-    private SettingsManager.Listener mListener = new SettingsManager.Listener(){
+    private SettingsManager.Listener mListener = new SettingsManager.Listener() {
         @Override
-        public void onSettingsChanged(List<SettingsManager.SettingState> settings){
+        public void onSettingsChanged(List<SettingsManager.SettingState> settings) {
             Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
-            for( SettingsManager.SettingState state : settings) {
+            CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+            String key;
+            String value;
+            for (SettingsManager.SettingState state : settings) {
                 SettingsManager.Values values = map.get(state.key);
                 boolean enabled = true;
-                if(values != null) enabled = values.overriddenValue == null;
+                if (values != null) enabled = values.overriddenValue == null;
                 Preference pref = findPreference(state.key);
                 if (pref == null) continue;
                 pref.setEnabled(enabled);
-
-                Log.i(TAG, "onSettingsChanged key :" + state.key + ", enabled :" + enabled);
-
-                if (pref.getKey().equals(SettingsManager.KEY_MANUAL_EXPOSURE)) {
-                    UpdateManualExposureSettings();
-                }
-                if (pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT) ||
-                        pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
-                    mSettingsManager.updatePictureAndVideoSize();
-                    updatePreference(SettingsManager.KEY_PICTURE_SIZE);
-                    updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
-                    updateCaptureProfilePref();
-                }
-
-                if (pref.getKey().equals(SettingsManager.KEY_MANUAL_WB)) {
-                    updateManualWBSettings();
-                }
-
-                if(pref.getKey().equals(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
-                    updateZslPreference();
-                    updatePictureFormatPreference();
-                    updateHDRSceneDetection();
-                    if(isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)){
-                        CaptureModule.CameraMode mode =
-                                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-                        if(CaptureModule.CameraMode.RTB == mode) {
-                            mSettingsManager.setValueIndex(SettingsManager.KEY_SCENE_MODE, 0);
-                        }
-                    }
-                }
-                if(pref.getKey().equals(SettingsManager.KEY_MULTIRESREPROCESS)) {
-                    updateZslPreference();
-                    updateMultiResReprocess();
-                }
-                if(pref.getKey().equals(SettingsManager.KEY_QUAD_BAYER_SENSOR)) {
-                    mSettingsManager.updatePictureAndVideoSize();
-                    mSettingsManager.updateHDRSceneMode();
-                    updatePreference(SettingsManager.KEY_PICTURE_SIZE);
-                    updatePreference(SettingsManager.KEY_SCENE_MODE);
-                    updateZslPreference();
-                    updateLongShotPreference();
-                    updatePictureFormatPreference();
-                    updateVideoMFHDRPreference();
-                    updateSwitchIDInModePreference(false);
-                    if(mSettingsManager.isMultiCameraEnabled()){
-                        mSettingsManager.buildMultiCameraPreference();
+                key = state.key;
+                value = mSettingsManager.getValue(key);
+              //  value = values.overriddenValue == null values.value : values.overriddenValue;
+                Log.i(TAG, "onSettingsChanged key :" + key + ", enabled :" + enabled
+                        + "values.overriddenValue=" + values.overriddenValue + ",values.value="
+                        + values.value+",value="+value);
+                switch (key) {
+                    case SettingsManager.KEY_MULTI_CAMERA_MODE:
                         recreate();
-                    }
-                }
-
-                if (pref.getKey().equals(SettingsManager.KEY_TONE_MAPPING)) {
-                    updateToneMappingSettings();
-                }
-
-                if (pref.getKey().equals(SettingsManager.KEY_MULTI_CAMERA_MODE)){
-                    recreate();
-                }
-
-                if (pref.getKey().equals(SettingsManager.KEY_VIDEO_QUALITY) ||
-                        pref.getKey().equals(SettingsManager.KEY_SELECT_MODE)){
-                    updateEISPreference();
-                    updateVideoVariableFpsPreference();
-                    updateVideoHfrFpsPreference();
-                    CaptureModule.CameraMode mode =
-                            (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-                    if(mode == CaptureModule.CameraMode.VIDEO) {
+                    case SettingsManager.KEY_PHYSICAL_CAMERA:
+                        updateMultiVideoFPSPreference();
+                        updatePreviewStabilizationPreference();
+                        break;
+                    case SettingsManager.KEY_PHYSICAL_CAMCORDER:
+                        updateMultiVideoFPSPreference();
+                        updateEISPreference();
+                        break;
+                    case SettingsManager.KEY_MULTIRESREPROCESS:
+                        updateZslPreference();
+                        updateMultiResReprocess();
+                    case SettingsManager.KEY_RAW_REPROCESS_TYPE:
+                        updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
+                        updateRawInfoPref();
+                        updatePreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
+                        updatePictureFormatPreference();
+                        break;
+                    case SettingsManager.KEY_MULTIRESIMAGEREADER:
+                        //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
+                        value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
+                        Preference picSize = findPreference(SettingsManager.KEY_PICTURE_SIZE);
+                        ListPreference picFormat = (ListPreference) findPreference(SettingsManager.KEY_PICTURE_FORMAT);
+                        if (PersistUtil.isMultiResolutionImageReaderEnabled() && value != null && "1".equals(value)) {
+                            picSize.setEnabled(false);
+                            if (picFormat != null) {
+                                picFormat.setValue("0");
+                                picFormat.setEnabled(false);
+                            }
+                        } else {
+                            picSize.setEnabled(true);
+                            if (picFormat != null) {
+                                picFormat.setEnabled(true);
+                            }
+                        }
+                        break;
+                    case SettingsManager.KEY_RAW_FORMAT_TYPE:
+                        updateRawInfoPref();
+                        updateVideoMFHDRPreference();
+                        updateCaptureProfilePref();
+                        updateColorSpacePreference();
+                        break;
+                    case SettingsManager.KEY_SELECT_MODE:
+                        updatePdnetTogglePreference();
+                        updateViullPreference();
+                        updateAICameraPerf();
+                        updateT2TPreference();
+                        mSettingsManager.updatePictureAndVideoSize();
+                        updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+                        updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                         mSettingsManager.filterVideoEncoderProfileOptions();
                         updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-                    }
-                    updateAICameraPerf();
-                }
-                if(pref.getKey().equals(SettingsManager.KEY_HFR_BUFFER_MODE)){
-                    updateVideoHfrFpsPreference();
-                }
-
-                if (pref.getKey().equals(SettingsManager.KEY_SCENE_MODE)) {
-                   String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
-                   if (!scene.equals("18")) {
-                       ListPreference lp = (ListPreference)findPreference(
-                               SettingsManager.KEY_SNAPSHOT_HDRMODE);
-                       if (lp != null) {
-                           lp.setValue("default");
-                           lp.setEnabled(false);
-                       }
-                   }
-                    updateViullPreference();
-                    updateVideoMFHDRPreference();
-                }
-
-                if (pref.getKey().equals(SettingsManager.KEY_MANUAL_HDR) ||
-                        pref.getKey().equals(SettingsManager.KEY_SELECT_MODE) ||
-                        pref.getKey().equals(SettingsManager.KEY_SWITCH_CAMERA)) {
-                    mSettingsManager.updatePictureAndVideoSize();
-                    updatePreference(SettingsManager.KEY_PICTURE_SIZE);
-                    updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
-                    updateEISPreference();
-                }
-                if (pref.getKey().equals(SettingsManager.KEY_RAW_REPROCESS_TYPE)) {
-                    updatePreference(SettingsManager.KEY_PHYSICAL_RAW_REPROCESS);
-                    updatePreference(SettingsManager.KEY_RAWINFO_TYPE);
-                    updatePreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
-                    updatePictureFormatPreference();
-                }
-                if (pref.getKey().equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
-                    updateRawInfoPref();
-                }
-                if(pref.getKey().equals(SettingsManager.KEY_VSR)){
-                    updateVideoHfrFpsPreference();
-                    mSettingsManager.updatePictureAndVideoSize();
-                    updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
-                    updateViullPreference();
-                }
-                if (pref.getKey().equals(SettingsManager.KEY_AI_CAMERA)){
-                    updateSwitchIDInModePreference(true);
-                    updateEISPreference();
-                }
-                if (pref.getKey().equals(SettingsManager.KEY_EIS_VALUE)) {
-                    updateVideoMFHDRPreference();
-                }
-
-                if (SettingsManager.KEY_PHOTO_EIS_VALUE.equals(pref.getKey())
-                        || SettingsManager.KEY_EIS_VALUE.equals(pref.getKey()) ||
-                        SettingsManager.KEY_PHYSICAL_CAMERA.equals(pref.getKey()) ||
-                        SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK.equals(pref.getKey())) {
-                    updatePreviewStabilizationPreference();
-                }
-                if (mSettingsManager.KEY_FACE_DETECTION.equals(pref.getKey()) ||
-                        mSettingsManager.KEY_SELECT_MODE.equals(pref.getKey())) {
-                    updateT2TPreference();
-                }
-                if(mSettingsManager.KEY_SWITCH_CAMERA .equals(pref.getKey())){
-                    checkExposurTimeValue();
-                }
-                if(mSettingsManager.KEY_EXTENDED_MAX_ZOOM .equals(pref.getKey())){
-                    updateZoomPreference();
+                        updateVideoHfrFpsPreference();
+                        updateEISPreference();
+                        break;
+                    case SettingsManager.KEY_VIDEO_QUALITY:
+                        updateVideoVariableFpsPreference();
+                        updateVideoHfrFpsPreference();
+                        mSettingsManager.filterVideoEncoderProfileOptions();
+                        updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
+                        updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+                        updatePreference(SettingsManager.KEY_VIDEO_ENCODER);
+                        updateAICameraPerf();
+                        updateEISPreference();
+                        updateVideoMFHDRPreference();
+                        updateVideoFlipPreference();
+                        updateVsrPreference();
+                        updateViullPreference();
+                        break;
+                    case SettingsManager.KEY_VIDEO_ENCODER:
+                        mSettingsManager.updatePictureAndVideoSize();
+                        updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
+                        updateVideoHfrFpsPreference();
+                        updateVideoEncoderProfile();
+                        break;
+                    case SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE:
+                        if (!value.equals("off")) {
+                            int fpsRate = Integer.parseInt(value.substring(3));
+                            if (fpsRate == 480) {
+                                mSettingsManager.filterVideoDurationFor480fps();
+                            } else {
+                                mSettingsManager.filterVideoDuration();
+                            }
+                        } else {
+                            mSettingsManager.filterVideoDuration();
+                        }
+                        updateVideoVariableFpsPreference();
+                        updatePreference(SettingsManager.KEY_VIDEO_DURATION);
+                        updateVideoMFHDRPreference();
+                        updateViullPreference();
+                        updateVsrPreference();
+                        break;
+                    case SettingsManager.KEY_VIDEO_ENCODER_PROFILE:
+                        if (mode == CaptureModule.CameraMode.VIDEO) {
+                            updateSwitchIDInModePreference(true);
+                        }
+                        updateViullPreference();
+                        break;
+                    case SettingsManager.KEY_BURST_LIMIT:
+                        // If Enable KEY_BURST_LIMIT, KEY_CAPTURE_MFNR_VALUE and KEY_LONGSHOT can same use
+                        // if diable KEY_BURST_LIMIT, enable KEY_CAPTURE_MFNR_VALUE, KEY_LONGSHOT is diable
+                        updateLongShotPreference();
+                        updateMFNRPreference();
+                        break;
+                    case SettingsManager.KEY_CAPTURE_MFNR_VALUE:
+                        updateLongShotPreference();
+                        updateZslPreference();
+                        updatePictureFormatPreference();
+                        updateHDRSceneDetection();
+                        if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
+                            if (CaptureModule.CameraMode.RTB == mode) {
+                                mSettingsManager.setValueIndex(SettingsManager.KEY_SCENE_MODE, 0);
+                            }
+                        }
+                        break;
+                    case SettingsManager.KEY_LONGSHOT:
+                        updateMFNRPreference();
+                        break;
+                    case SettingsManager.KEY_REMOSAIC_REPROCESSING:
+                        updateRawFormatPref();
+                        break;
+                    case SettingsManager.KEY_PREVIEW_PROFILE:
+                        updateViullPreference();
+                        updateColorSpacePreference();
+                        break;
+                    case SettingsManager.KEY_CAPTURE_PROFILE:
+                        updateColorSpacePreference();
+                        break;
+                    case SettingsManager.KEY_MANUAL_EXPOSURE:
+                        UpdateManualExposureSettings();
+                        break;
+                    case SettingsManager.KEY_MANUAL_WB:
+                        updateManualWBSettings();
+                    case SettingsManager.KEY_PICTURE_FORMAT:
+                        mSettingsManager.updatePictureAndVideoSize();
+                        updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+                        updateColorSpacePreference();
+                        break;
+                    case SettingsManager.KEY_EIS_VALUE:
+                        mSettingsManager.updatePictureAndVideoSize();
+                        updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
+                        updateVideoMFHDRPreference();
+                        updatePreviewStabilizationPreference();
+                        break;
+                    case SettingsManager.KEY_INSENSOR_ZOOM:
+                        updateVideoMFHDRPreference();
+                    case SettingsManager.KEY_PHOTO_EIS_VALUE:
+                    case SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK:
+                        updatePreviewStabilizationPreference();
+                        break;
+                    case SettingsManager.KEY_MANUAL_HDR:
+                        if (value.equals("manual")) {
+                            updateManualHDRSetting();
+                        }
+                        updateHdrRefOp();
+                        updateQuadBayerPreference();
+                        updateQLLPreference();
+                        mSettingsManager.updatePictureAndVideoSize();
+                        updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+                        updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
+                        break;
+                    case SettingsManager.KEY_QUAD_BAYER_SENSOR:
+                        mSettingsManager.updatePictureAndVideoSize();
+                        mSettingsManager.updateHDRSceneMode();
+                        updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+                        updatePreference(SettingsManager.KEY_SCENE_MODE);
+                        updateZslPreference();
+                        updateLongShotPreference();
+                        updatePictureFormatPreference();
+                        updateVideoMFHDRPreference();
+                        updateSwitchIDInModePreference(false);
+                        if (mSettingsManager.isMultiCameraEnabled()) {
+                            recreate();
+                        }
+                        break;
+                    case SettingsManager.KEY_TONE_MAPPING:
+                        updateToneMappingSettings();
+                        break;
+                    case SettingsManager.KEY_HFR_BUFFER_MODE:
+                        updateVideoHfrFpsPreference();
+                        break;
+                    case SettingsManager.KEY_SCENE_MODE:
+                        String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
+                        if (!scene.equals("18")) {
+                            ListPreference lp = (ListPreference) findPreference(
+                                    SettingsManager.KEY_SNAPSHOT_HDRMODE);
+                            if (lp != null) {
+                                lp.setValue("default");
+                                lp.setEnabled(false);
+                            }
+                        }
+                        updateViullPreference();
+                        updateVideoMFHDRPreference();
+                        break;
+                    case SettingsManager.KEY_SWITCH_CAMERA:
+                        mSettingsManager.updatePictureAndVideoSize();
+                        updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+                        updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
+                        checkExposurTimeValue();
+                        break;
+                    case SettingsManager.KEY_VSR:
+                        updateVideoHfrFpsPreference();
+                        mSettingsManager.updatePictureAndVideoSize();
+                        updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
+                        updateViullPreference();
+                        break;
+                    case SettingsManager.KEY_AI_CAMERA:
+                        updateSwitchIDInModePreference(true);
+                        updateEISPreference();
+                        break;
+                    case SettingsManager.KEY_EXTENDED_MAX_ZOOM:
+                        updateZoomPreference();
+                        break;
                 }
             }
         }
@@ -496,8 +466,12 @@ public class SettingsActivity extends PreferenceActivity {
                 key_zsl.add("APP-ZSL");
                 value_zsl.add("app-zsl");
             }
-            ZSLPref.setEntries(key_zsl.toArray(new CharSequence[key_zsl.size()]));
-            ZSLPref.setEntryValues(value_zsl.toArray(new CharSequence[value_zsl.size()]));
+            CharSequence[]entries = key_zsl.toArray(new CharSequence[key_zsl.size()]);
+            CharSequence[] values = value_zsl.toArray(new CharSequence[value_zsl.size()]);
+            ZSLPref.setEntries(entries);
+            ZSLPref.setEntryValues(values);
+            mSettingsManager.setEntries(SettingsManager.KEY_ZSL,entries);
+            mSettingsManager.setValues(SettingsManager.KEY_ZSL,values);
             int idx = ZSLPref.findIndexOfValue(ZSLPref.getValue());;
             if (idx < 0 ) {
                 idx = 0;
@@ -1151,7 +1125,6 @@ public class SettingsActivity extends PreferenceActivity {
         }
         final SharedPreferences.Editor editor = mLocalSharedPref.edit();
         String orderLists = mLocalSharedPref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
-        Log.v(TAG, " updateManualHDRSetting orderLists:" + orderLists);
         if (orderLists != null) {
             listData.clear();
             for (String title : orderLists.split("#")) {
@@ -2201,6 +2174,7 @@ public class SettingsActivity extends PreferenceActivity {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_SELECT_MODE);
         List<String> key = new ArrayList<String>(Arrays.asList("Single rear cameraID", "SAT", "Default" ));
         List<String> value = new ArrayList<String>(Arrays.asList( "single_rear_cameraid", "sat", "default"));
+
         boolean isBack = false;
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
         if (pref != null) {
@@ -2221,8 +2195,12 @@ public class SettingsActivity extends PreferenceActivity {
                 key = new ArrayList<String>(Arrays.asList("Default", "RTB"));
                 value = new ArrayList<String>(Arrays.asList( "default", "rtb"));
             }
-            pref.setEntries(key.toArray(new CharSequence[key.size()]));
-            pref.setEntryValues(value.toArray(new CharSequence[value.size()]));
+            CharSequence[]entries = key.toArray(new CharSequence[key.size()]);
+            CharSequence[] values = value.toArray(new CharSequence[value.size()]);
+            pref.setEntries(entries);
+            pref.setEntryValues(values);
+            mSettingsManager.setEntries(SettingsManager.KEY_SELECT_MODE,entries);
+            mSettingsManager.setValues(SettingsManager.KEY_SELECT_MODE,values);
             int idx = pref.findIndexOfValue(pref.getValue());;
             if (idx < 0 ) {
                 idx = 0;
@@ -2296,8 +2274,12 @@ public class SettingsActivity extends PreferenceActivity {
             List<String> list = new ArrayList<String>(Arrays.asList("DISABLE", "SRGB"));
             List<String> values = new ArrayList<String>(Arrays.asList("0", "1"));
             if (colorSpacePref != null) {
-                colorSpacePref.setEntries(list.toArray(new CharSequence[list.size()]));
-                colorSpacePref.setEntryValues(values.toArray(new CharSequence[values.size()]));
+                CharSequence[]entries = list.toArray(new CharSequence[list.size()]);
+                CharSequence[] value = values.toArray(new CharSequence[values.size()]);
+                colorSpacePref.setEntries(entries);
+                colorSpacePref.setEntryValues(value);
+                mSettingsManager.setEntries(SettingsManager.KEY_COLOR_SPACE,entries);
+                mSettingsManager.setValues(SettingsManager.KEY_COLOR_SPACE,value);
             }
         } else if (mode == CaptureModule.CameraMode.DEFAULT) {
             int cameraId = mSettingsManager.getCurrentCameraId();
@@ -2334,7 +2316,6 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
-
     }
     private void updateVideoMFHDRPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
@@ -2716,8 +2697,12 @@ public class SettingsActivity extends PreferenceActivity {
             List<String> list = new ArrayList<String>(Arrays.asList("disable", "V3"));
             List<String> values = new ArrayList<String>(Arrays.asList("disable", "V3"));
             if (eisPref != null) {
-                eisPref.setEntries(list.toArray(new CharSequence[list.size()]));
-                eisPref.setEntryValues(values.toArray(new CharSequence[values.size()]));
+                CharSequence[]entries = list.toArray(new CharSequence[list.size()]);
+                CharSequence[] value = values.toArray(new CharSequence[values.size()]);
+                eisPref.setEntries(entries);
+                eisPref.setEntryValues(value);
+                mSettingsManager.setEntries(SettingsManager.KEY_EIS_VALUE,entries);
+                mSettingsManager.setValues(SettingsManager.KEY_EIS_VALUE,value);
             }
         }
     }
@@ -2797,8 +2782,8 @@ public class SettingsActivity extends PreferenceActivity {
 
     private void updateRawInfoPref(){
         String reprocessType = mSettingsManager.getValue(SettingsManager.KEY_RAW_REPROCESS_TYPE);
+        ListPreference rawInfoPref = (ListPreference)findPreference(SettingsManager.KEY_RAWINFO_TYPE);
         if(reprocessType != null && !reprocessType.equals("disable") && !reprocessType.equals("off") && Integer.valueOf(reprocessType) != 0){
-            ListPreference rawInfoPref = (ListPreference)findPreference(SettingsManager.KEY_RAWINFO_TYPE);
             String rawFormat = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
             int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
             if(rawFormatType == 10){
@@ -2819,6 +2804,11 @@ public class SettingsActivity extends PreferenceActivity {
                     rawInfoPref.setValueIndex(idx);
                     rawInfoPref.setEnabled(true);
                 }
+            }
+        }else{
+            if (rawInfoPref != null) {
+                rawInfoPref.setValue("0");
+                rawInfoPref.setEnabled(false);
             }
         }
     }

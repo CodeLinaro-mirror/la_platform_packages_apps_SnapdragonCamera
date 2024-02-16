@@ -37,6 +37,7 @@ package com.android.camera.util;
 
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.CaptureRequest;
 
 public class VendorTagUtil {
@@ -85,6 +86,13 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.HDRMode", Integer.class);
     private static final CaptureRequest.Key<int[]> hdr_modes =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.HDRModePreference", int[].class);
+    public static final CaptureResult.Key<Integer> get_autohdr_enable =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableAutoHDR", Integer.class);
+    public static final CaptureResult.Key<Integer> get_hdr_enable =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.sessionParameters.HDRMode", Integer.class);
+    public static final CaptureResult.Key<int[]> get_hdr_modes =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.sessionParameters.HDRModePreference", int[].class);
+
     private static final CaptureRequest.Key<Integer> qll_enable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableQLL", Integer.class);
     private static final CaptureRequest.Key<Integer> vsr_enable =
@@ -108,12 +116,14 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVideoRetouch", byte.class);
     private static final CaptureRequest.Key<Integer> EIS_MODE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EISMode", Integer.class);
+    public static final CaptureResult.Key<Integer> Get_EIS_MODE =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.sessionParameters.EISMode", Integer.class);
 
     public static final CaptureRequest.Key<Integer> DEPTH_MODE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.DepthMode",Integer.class);
 
     public static final CaptureRequest.Key<Integer> ITOF_TUNING_SET =
-            new CaptureRequest.Key<>("com.qti.node.itofpreprocess.ITOFTuningSet", Integer.class);
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.DepthTuningSet", Integer.class);
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
     private static final int MANUAL_WB_GAINS_MODE = 2;

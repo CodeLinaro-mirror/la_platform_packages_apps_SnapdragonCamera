@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Iterator;
+import com.android.camera.util.CameraUtil;
 import com.android.camera.util.Log;
 
 @RunWith(AndroidJUnit4.class)
@@ -53,33 +54,47 @@ public class PerformanceTest extends TestBase {
     private static final String PERFORMENCE_BOKEH = "/data/data/org.codeaurora.snapcam/files/performence_bokeh.json";
     private static final String PERFORMENCE_HFR = "/data/data/org.codeaurora.snapcam/files/performence_hfr.json";
     private static final String PERFORMENCE_VIDEO = "/data/data/org.codeaurora.snapcam/files/performence_video.json";
+    private static final String testFile = "/data/data/org.codeaurora.snapcam/files/PerformanceTestParam.txt";
+    private static String performenceTestMode;
 
 
+    @BeforeClass
+    public static void initJson(){
+        Log.i("autotest_initJson","initJson beforeTest");
+        String testStr = CameraUtil.ReadFile(testFile);
+        int indexM = testStr.indexOf("-m");
+        if(indexM != -1) {
+            performenceTestMode = getIndexStr(testStr, indexM + 2);
+        }
+        Log.i("autotest_initJson","initJson testStr="+testStr+",indexm="+indexM+",performenceTestMode="+performenceTestMode);
+    }
+    @AfterClass
+    public static void resetTestItem(){
+        Log.i("autotest_initJson","resetTestItem AfterTest");
+        functionTestMode = null;
+    }
     @Before
     public void beforeEachTest() throws Exception {
         Log.i(TAG, "beforeEachTest");
         init();
         OpenAndResetCamera();
-        mActivity.setPerformenceTest(true);
         isPerformenceTest = true;
-        mCaptureModule.resetHashMapTimes();
     }
 
     @After
     public void afterEachTest() throws Exception {
         Log.i(TAG, "afterEachTest");
-        mActivity.setAutoTest(false);
-        mActivity.setPerformenceTest(false);
         isPerformenceTest = false;
-        resetPreview();
-        resetCapture();
-        resetVideo();
         performenceValues.clear();
+        mCaptureModule.resetHashMapTimes();
         mActivityRule.finishActivity();
     }
 
     @Test
     public void testPhoto() throws Exception {
+        if(performenceTestMode != null && !performenceTestMode.contains("testPhoto")){
+            return;
+        }
         for (int i = 0; i < CYCLE_TIMES; i++) {
             Log.i(TAG, "start this time i=" + i);
             if(i==0) {
@@ -90,12 +105,12 @@ public class PerformanceTest extends TestBase {
                 OpenCamera();
                 continue;
             }
+
             resetPreview();
             mActivityRule.finishActivity();
             Thread.sleep(OPEN_CAMERA_DURATION);
             mActivityRule = new ActivityTestRule<>(CameraActivity.class);
             OpenCamera();
-            mActivity.setPerformenceTest(true);
             performenceValues = new HashMap<String,HashMap<String,Long>>();
 
             HashMap<String,Long>  coldStartHash = getHashMapValue(mCaptureModule.getHashMapTimes());
@@ -108,6 +123,9 @@ public class PerformanceTest extends TestBase {
     }
     @Test
     public void testBokeh() throws Exception {
+        if(performenceTestMode != null && !performenceTestMode.contains("testBokeh")){
+            return;
+        }
         for (int i = 0; i < CYCLE_TIMES; i++) {
             Log.i(TAG, "start this time i=" + i);
             if(i==0) {
@@ -134,6 +152,9 @@ public class PerformanceTest extends TestBase {
     }
     @Test
     public void testHFR() throws Exception {
+        if(performenceTestMode != null && !performenceTestMode.contains("testHFR")){
+            return;
+        }
         for (int i = 0; i < CYCLE_TIMES; i++) {
             Log.i(TAG, "start this time i=" + i);
             if(i==0) {
@@ -161,6 +182,9 @@ public class PerformanceTest extends TestBase {
     }
     @Test
     public void testVideo() throws Exception {
+        if(performenceTestMode != null && !performenceTestMode.contains("testVideo")){
+            return;
+        }
         for (int i = 0; i < CYCLE_TIMES; i++) {
             Log.i(TAG, "start this time i=" + i);
             if(i==0) {

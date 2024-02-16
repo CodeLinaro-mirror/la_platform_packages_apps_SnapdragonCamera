@@ -21,7 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import com.android.camera.util.Log;
-
+import android.util.Range;
 import android.content.Intent;
 import android.support.test.InstrumentationRegistry;
 import org.codeaurora.snapcam.R;
@@ -32,10 +32,10 @@ import com.android.camera.CaptureModule;
 import android.content.SharedPreferences;
 import com.android.camera.CameraSettings;
 import android.preference.PreferenceManager;
-
+import android.content.Context;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.CameraMetadata;
-
+import com.android.camera.Storage;
 import android.app.Activity;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.InstrumentationRegistry;
@@ -62,13 +62,16 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import java.io.FileWriter;
-
+import com.android.camera.util.VendorTagUtil;
 import android.hardware.camera2.CameraCaptureSession;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.graphics.Point;
+import com.android.camera.Storage;
+import android.hardware.camera2.CaptureRequest;
+import com.android.camera.widget.FilmstripLayout;
 
 
 
@@ -92,7 +95,7 @@ public class TestBase{
     public static final int VIDEO_DURATION = 6000;
     public static final int VIDEO_LENGTH = 10240;
     public static final int NORMAL_PIC_LENG_MIN = 10;
-    public static final int SWIPE_STEP = 200;
+    public static final int SWIPE_STEP = 500;
     public static final int FLASH_ON = 9;
     public static final int FLASH_OFF = 16;
     public static final int FLASH_AUTO_OFF = 24;
@@ -102,8 +105,6 @@ public class TestBase{
     public static final int CONTROL_MODE_AUTO = 1;
     private static final String OUTPUT_JSON = "/data/data/org.codeaurora.snapcam/files/testResult.json";
     public static final String INPUT_JSON = "/data/data/org.codeaurora.snapcam/files/autoTest.json";
-
-
     public int[] mShutterLoc = new  int[2];
     public int[] mFlashLoc = new  int[2];
     public int[] mHdrLoc = new  int[2];
@@ -127,6 +128,7 @@ public class TestBase{
     public int[]mDoneLoc = new  int[2];
     public int[]mRetakeLoc = new  int[2];
     public int[]mThumbLoc = new  int[2];
+    public int[]mFilterLoc = new  int[2];
 
     public int mCurrentImgNum;
     public int mZoomBarWidth;
@@ -164,22 +166,76 @@ public class TestBase{
     public HashMap<String, int[]> mIconLoc = new HashMap<>();
     public HashMap<String, int[]> mRecordLoc = new HashMap<>();
     public HashMap<String, int[]> mProLoc = new HashMap<>();
+    public static String  functionTestMode;
+    public static String  functionTestItem;
+    public static String  functionTestItemDel;
+    public DisplayMetrics displayMetrics;
+    private int checkModeIndex = 5;
+    private int burstNum = 0;
+
+    private static CharSequence[] Entryvalues;
+    private static String defalutValue;
+
+
 
     public static void init(){
         uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
         mActivityRule = new ActivityTestRule<>(CameraActivity.class);
+
     }
+
 
     public void OpenAndResetCamera() throws Exception{
         openCameraByIntent(mMainIntent);
         mActivity.mSettingsManager.restoreSettings();
         Thread.sleep(SMALL_WAIT_DURATION);
-        testSettingIcon("0", CaptureModule.CameraMode.DEFAULT);
+        //testSettingIcon("0", CaptureModule.CameraMode.DEFAULT);
         isOpenFromIntent = false;
     }
     public void OpenCamera() throws Exception{
         openCameraByIntent(mMainIntent);
-        checkPreview("0", CaptureModule.CameraMode.DEFAULT);
+        // checkPreview(cameraid, mode);
+    }
+
+
+    private void getRecordingLoc(){
+        View mPauseButton = mActivity.findViewById(R.id.video_pause);
+        mPauseButton.getLocationInWindow(mPauseLoc);
+    }
+    public void getIntentLoc(){
+        View mCancelButn = mActivity.findViewById(R.id.cancel_button);
+        View mReviewCancelButton = mActivity.findViewById(R.id.preview_btn_cancel);
+        View mDoneButton = mActivity.findViewById(R.id.done_button);
+        View mRetakeButton = mActivity.findViewById(R.id.preview_btn_retake);
+        mCancelButn.getLocationInWindow(mCancelLoc);
+        mReviewCancelButton.getLocationInWindow(mReviewCancelLoc);
+        mDoneButton.getLocationInWindow(mDoneLoc);
+        mRetakeButton.getLocationInWindow(mRetakeLoc);
+    }
+    public void getIconLoctionInPro(){
+        View mProLayout = mActivity.findViewById(R.id.pro_mode_layout);
+        mProLayout.getLocationInWindow(mProLayoutLoc);
+        String[]proList = {"EV","FocusDistance","ShutterSpeed","WB","ISO"};
+        int proItem = proList.length;
+        int prolen = CameraUtil.metrics.widthPixels/proItem;
+        for(int j =0; j < proItem;j++){
+            int x = j*prolen +prolen/2;
+            int[] proloc = {x,mProLayoutLoc[1]};
+            mProLoc.put(proList[j],proloc);
+        }
+        int[] promin = {mProMode.getCurveLeft(),mProMode.getCurveY()};
+        int[]promid = {mProMode.getMidX(),mProMode.getMidY()};
+        int[]promax = {mProMode.getCurveRight(),mProMode.getCurveY()};
+        View mShutter = mActivity.findViewById(R.id.shutter_button);
+        int[] snaploc  = new int[2];
+        mShutter.getLocationInWindow(snaploc);
+        mProLoc.put("proMinValue",promin);
+        mProLoc.put("proMidValue",promid);
+        mProLoc.put("proMaxValue",promax);
+        mProLoc.put("Shutter",snaploc);
+        mProLoc.put("Flash",mFlashLoc);
+        mProLoc.put("Setting",mSettingLoc);
+        mProLoc.put("Thumb",mThumbLoc);
     }
     public static void updateAndSavejson(String inputJson,String childNm,String parentNm,String value){
         JSONObject mObj= CameraUtil.getJsonObj(inputJson);
@@ -217,7 +273,7 @@ public class TestBase{
         JSONObject mObj = CameraUtil.getJsonObj(jsonFile);
         if (mObj == null || values == null) {
             Log.e(TAG, "Json file not exit,will not save the test result.jsonFile is " + jsonFile
-            +"mobj="+mObj+",values="+values);
+                    +"mobj="+mObj+",values="+values);
             return;
         }
         try {
@@ -255,102 +311,263 @@ public class TestBase{
 
     }
     public void runPhotoCase(String cameraId,CaptureModule.CameraMode mode) throws Exception {
-        Log.i(TAG,"testphotocase mode="+mode+",id="+cameraId);
-        checkPreview(cameraId,mode);
-        if(!testResult){
+        Log.i(TAG, "testphotocase mode=" + mode + ",id=" + cameraId);
+        checkPreview(cameraId, mode);
+        if (!testResult) {
             return;
         }
-        testSnapshot(mode);
-        if(isOpenFromIntent){
-            openCameraByIntent(mImageIntent);
-            Thread.sleep(OPEN_CAMERA_DURATION);
-        }
-        testSettingIcon(cameraId,mode);
-        testHdr(mode);
-        if(isOpenFromIntent){
-            openCameraByIntent(mImageIntent);
-            Thread.sleep(OPEN_CAMERA_DURATION);
-        }
-        testFlash(cameraId,mode,false);
-        if(isOpenFromIntent){
-            openCameraByIntent(mImageIntent);
-            Thread.sleep(OPEN_CAMERA_DURATION);
-        }
-        testZoomBar(mode);
-        if(isOpenFromIntent){
-            openCameraByIntent(mImageIntent);
-            Thread.sleep(OPEN_CAMERA_DURATION);
-        }
-        if(cameraId.equals("1")) {
-            testToggleBackFront(mode,false);
-        }else{
-            testToggleBackFront(mode,true);
-        }
-        if(isOpenFromIntent){
-            return;
-        }
-        mActivity.setDevOption(true);
-        testLongShot(cameraId,mode);
-        mActivity.setDevOption(false);
-        testPictureSize(cameraId,mode);
-        if (mode != CaptureModule.CameraMode.PRO_MODE) {
-            testMFNR(cameraId,mode);
-            if(mode != CaptureModule.CameraMode.RTB){
-                testZSL(cameraId,mode);
-                if(!cameraId.equals("1")) {
-                    testCamID(mode);//This testcase should be the last one due to the "checkpreview" will return if failed.
-                }
+        if (testItem("testSnapshot") ) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mImageIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
             }
-        } else {
-            testEV();
-            testWB();
-            testISO();
-            testShutterSpeed();
-            testFocusDistance();
-            testAllInPro();
+            testSnapshot(mode);
         }
+        if (testItem("testSettingIcon")) {
+            if (isOpenFromIntent  && mCaptureModule.getPaused()) {
+                openCameraByIntent(mImageIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testSettingIcon(cameraId, mode);
+        }
+        if (testItem("testHdr") ) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mImageIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testHdr(mode);
+        }
+        if (testItem("testFlash")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mImageIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testFlash(cameraId, mode, false);
+
+        }
+        if (testItem("testZoom")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mImageIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testZoom(mode);
+        }
+        if (testItem("testToggleBackFront")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mImageIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            if (cameraId.equals("1")) {
+                testToggleBackFront(mode, false);
+            } else {
+                testToggleBackFront(mode, true);
+            }
+
+        }
+        if(testItem("testFilter")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mImageIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testFilter(mode);
+        }
+        if (isOpenFromIntent) {
+            return;
+        }
+        if (testItem("testLongShot")) {
+            mActivity.setDevOption(true);
+            testLongShot(cameraId,mode);
+            mActivity.setDevOption(false);
+        }
+        if (testItem("testPictureSize")) {
+            testPictureSize(cameraId, mode);
+        }
+
+        if(testItem("testPicFormat")) {
+            testPicFormat(mode);
+        }
+
+        if(testItem("testTAF") && !cameraId.equals("1")){
+            testTAF(mode);
+        }
+        if(testItem("testThumbnail")){
+            testThumbnail(cameraId ,mode);
+        }
+
+        if (mode != CaptureModule.CameraMode.PRO_MODE) {
+            if (testItem("testMFNR")) {
+                testMFNR(cameraId, mode);
+            }
+            if(testItem("testBurstLimit")){
+                testBurstLimit(mode);
+            }
+            if(testItem("testMixedHDR")) {
+                testMixedHDR(mode);
+            }
+        }else {
+            if (testItem("testEV")) {
+                testEV();
+            }
+            if (testItem("testWB")) {
+                testWB();
+            }
+            if (testItem("testISO")) {
+                testISO();
+            }
+            if (testItem("testShutterSpeed")) {
+                testShutterSpeed();
+            }
+            if (testItem("testFocusDistance")) {
+                testFocusDistance();
+            }
+            if (testItem("testAllInPro")) {
+                testAllInPro();
+            }
+        }
+        if (mode == CaptureModule.CameraMode.DEFAULT) {
+
+            if (testItem("testZSL")) {
+                mActivity.setDevOption(true);
+                testZSL(cameraId, mode);
+                mActivity.setDevOption(false);
+            }
+            if (testItem("testEIS")) {
+                testEIS(mode);
+            }
+            if(testItem("testSelectMode") && !cameraId.equals("1")) {
+                testSelectMode(mode);
+            }
+            if(testItem("testSaveRaw")) {
+                testSaveRaw(mode);
+            }
+
+            if(testItem("testLivePreview")){
+                testLivePreview(mode);
+            }
+            if(testItem("testExtendZoom")){
+                testExtendZoom(mode);
+            }
+            if (testItem("testCamID") && !cameraId.equals("1")) {
+                testCamID(mode);//This testcase should be the last one due to the "checkpreview" will return if failed.
+            }
+        }
+
+
     }
 
     public void runVideoCase(String cameraId,CaptureModule.CameraMode mode) throws Exception {
-        checkPreview(cameraId,mode);
-        if(!testResult){
+        checkPreview(cameraId, mode);
+        if (!testResult) {
             return;
         }
-        testVideo(mode,true);
-        if(isOpenFromIntent){
-            openCameraByIntent(mVideoIntent);
-            Thread.sleep(OPEN_CAMERA_DURATION);
+        if (testItem("testRecording")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mVideoIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testRecording(mode, true);
         }
-        testSettingIcon(cameraId,mode);
-        testHdr(mode);
-        testFlash(cameraId,mode,false);
-        if(isOpenFromIntent){
-            openCameraByIntent(mVideoIntent);
-            Thread.sleep(OPEN_CAMERA_DURATION);
+        if (testItem("testSettingIcon")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mVideoIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testSettingIcon(cameraId, mode);
         }
-        testZoomBar(mode);
-        if(isOpenFromIntent){
-            openCameraByIntent(mVideoIntent);
-            Thread.sleep(OPEN_CAMERA_DURATION);
+        if (testItem("testHdr")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mVideoIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testHdr(mode);
         }
-        testVideoPauseAndResume();
-        if(isOpenFromIntent){
-            openCameraByIntent(mVideoIntent);
-            Thread.sleep(OPEN_CAMERA_DURATION);
+        if (testItem("testFlash")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mVideoIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testFlash(cameraId, mode, false);
+
         }
-        if(cameraId.equals("1")) {
-            testToggleBackFront(mode,false);
-        }else{
-            testToggleBackFront(mode,true);
+        if (testItem("testZoom")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mVideoIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testZoom(mode);
+
         }
-        if(isOpenFromIntent){
+        if (testItem("testVideoPauseAndResume")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mVideoIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testVideoPauseAndResume();
+
+        }
+        if (testItem("testToggleBackFront")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mVideoIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            if (cameraId.equals("1")) {
+                testToggleBackFront(mode, false);
+            } else {
+                testToggleBackFront(mode, true);
+            }
+        }
+        if(testItem("testFilter") ) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mVideoIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testFilter(mode);
+        }
+
+        if (isOpenFromIntent) {
             return;
         }
-        testVideoSizeAndFrameRate(cameraId,mode);
-        if (mode != CaptureModule.CameraMode.HFR &&  !cameraId.equals("1")
-        && mode != CaptureModule.CameraMode.CINEMATIC) {
-            testCamID(mode);
+        if(testItem("testTAF") && !cameraId.equals("1") && mode != CaptureModule.CameraMode.CINEMATIC){
+            testTAF(mode);
         }
+        if(testItem("testThumbnail")){
+            testThumbnail(cameraId ,mode);
+        }
+
+        if (testItem("testVideoSizeAndFrameRate")) {
+            testVideoSizeAndFrameRate(cameraId, mode);
+        }
+
+        if (mode != CaptureModule.CameraMode.HFR && !cameraId.equals("1")
+                && mode != CaptureModule.CameraMode.CINEMATIC) {
+            if (testItem("testCamID")) {
+                testCamID(mode);
+            }
+        }
+        if(mode == CaptureModule.CameraMode.VIDEO) {
+            if(testItem("testPicFormat")) {
+                testPicFormat(mode);
+            }
+            if (testItem("testEIS")) {
+                testEIS(mode);
+            }
+            if(testItem("testMixedHDR")) {
+                testMixedHDR(mode);
+            }
+            if(testItem("testSelectMode") && !cameraId.equals("1")) {
+                testSelectMode(mode);
+            }
+            if(testItem("testDynamicFPS")) {
+                testDynamicFPS(mode);
+            }
+            if(testItem("testMediaCodec")){
+                testMediaCodec(cameraId,mode);
+            }
+            if (testItem("testCamID") && !cameraId.equals("1")) {
+                testCamID(mode);
+            }
+        }
+
     }
     private void testSnapshot(CaptureModule.CameraMode mode)throws Exception {
         testSnapshot(mode,true);
@@ -401,7 +618,7 @@ public class TestBase{
         }
         if(isOpenFromIntent){
             if(isVideoMode(mode)){
-                testVideo(mode,true);
+                testRecording(mode,true);
                 openCameraByIntent(mVideoIntent);
             }else{
                 testSnapshot(mode);
@@ -426,7 +643,7 @@ public class TestBase{
         }
         if(isOpenFromIntent){
             if(isVideoMode(mode)){
-                testVideo(mode,true);
+                testRecording(mode,true);
             }else{
                 testSnapshot(mode);
             }
@@ -442,7 +659,6 @@ public class TestBase{
     }
     private void testSettingIcon(String cameraid,CaptureModule.CameraMode mode) throws Exception{
         updateJson(5,null);
-        Log.i(TAG,"click setting="+mSettingLoc[0]+"*"+mSettingLoc[1]);
         executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
         Thread.sleep(SMALL_WAIT_DURATION);
         Log.i(TAG,"click setting getPaused="+mCaptureModule.getPaused());
@@ -472,7 +688,7 @@ public class TestBase{
                 testResult = true;
                 mSupported = false;
             }else{
-               testFail = getFailStr("flash_button.getVisibility",mFlash.getVisibility(),"INVISIBLE");
+                testFail = getFailStr("flash_button.getVisibility",mFlash.getVisibility(),"INVISIBLE");
             }
             if(testResult){
                 updateJson(5,testPass);
@@ -543,7 +759,7 @@ public class TestBase{
                     checkPreview("0",mode);
                     intentoff = intentoff && testResult;
                 }
-             /*   if(!testResult)return;*/
+                /*   if(!testResult)return;*/
                 if(isPerformenceTest){
                     HashMap<String,Long> snapShotWithFlashOff = getHashMapValue(mCaptureModule.getHashMapTimes());
                     performenceValues.put("snapFlashOff",snapShotWithFlashOff);
@@ -588,10 +804,10 @@ public class TestBase{
         View mHdr = mActivity.findViewById(R.id.scene_mode_hdr);
         if (!mCaptureUI.showHDRScene()) {
             mSupported = false;
-          if(mHdr.getVisibility() != View.VISIBLE){
+            if(mHdr.getVisibility() != View.VISIBLE){
                 testResult = true;
             }else{
-              testResult =false;
+                testResult =false;
             }
             if(testResult) updateJson(5,testPass);
             else{
@@ -697,9 +913,9 @@ public class TestBase{
             int framelen = frameRateList.get(j).length;
             for(int k = 0;k <framelen;k++){
                 mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, k);
-               testSettingIcon(cameraid, mode);
+                testSettingIcon(cameraid, mode);
                 if(testResult) {
-                  testVideo(mode,false);
+                    testRecording(mode,false);
                     if(!testResult){
                         checkresult = false;
                         break;
@@ -721,34 +937,30 @@ public class TestBase{
         //if(testResult) updateJson(5,testPass);
     }
 
-/*    public void testVideoSize(CaptureModule.CameraMode mode) throws Exception {
-        int length = mActivity.mSettingsManager.getEntryValues(SettingsManager.KEY_VIDEO_QUALITY).length;
-        int defvalue = mActivity.mSettingsManager.getValueIndex(SettingsManager.KEY_VIDEO_QUALITY);
-        for (int i = 0; i < length; i++) {
-            mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_QUALITY, i);
-            String videosize = mActivity.mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-            List<String> framerate = mActivity.mSettingsManager.getSupportedHighFrameRate(mode,videosize,mCaptureModule.getMainCameraId());
-            if(framerate.size() < 1){
-                throw new AssertionError("There is no framerate for this size "+videosize);
-            }
-            for(int j = 0;j < framerate.size();j++){
-                mFrameRate = framerate.get(j);
-                mActivity.mSettingsManager.setValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE,mFrameRate);
-                mCaptureModule.restartSession(false);
-                Thread.sleep(OPEN_CAMERA_DURATION);
-                testVideo(mode);
-            }
-        }
-    }*/
-    public void testLongShot(String cameraId,CaptureModule.CameraMode mode)throws Exception {
-        updateJson(5, null);
+
+    public void testLongShot(String cameraid,CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5,null);
         boolean resetmfnr = false;
-       if(mCaptureModule.isMFNREnabled()){
-           mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE,"0");
-           resetmfnr = true;
-       }
-        mActivity.mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "on");
-        testSettingIcon(cameraId,mode);
+        executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
+        Thread.sleep(SMALL_WAIT_DURATION);
+        if(!mCaptureModule.getPaused()) {
+            testFail = getFailStr("Open Setting failed,mPaused", mCaptureModule.getPaused(), true);
+            return;
+        }
+        String burstLimit = mSettingsManager.getValue(SettingsManager.KEY_BURST_LIMIT);
+        if(mCaptureModule.isMFNREnabled() && (burstLimit != null && burstLimit.equals("0"))){
+            mActivity.runOnUiThread(()->{
+                mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE,"0");
+            });
+            resetmfnr = true;
+        }
+        mActivity.runOnUiThread(()->{
+            mActivity.mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "on");
+        });
+
+        Thread.sleep(SMALL_WAIT_DURATION);
+        executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
+        checkPreview(cameraid, mode);
         resetCapture();
         mLongShotNum = 0;
         if (mode != CaptureModule.CameraMode.PRO_MODE) {
@@ -756,19 +968,9 @@ public class TestBase{
             Thread.sleep(SNAPSHOT_NORMAL_FLAH_OFF * 3);
             checkLongShot(false);
             resetCapture();
-            if(!testResult){
-                mActivity.mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
-                updateJson(5, testFail);
-                if(resetmfnr){
-                    mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE,"1");
-                    testSettingIcon(cameraId,mode);
-                }
-                return;
-            }
             executeShellCommand("input swipe " + mShutterLoc[0] + " " + mShutterLoc[1] + " " + mShutterLoc[0] + " " + mShutterLoc[1] + " " + 5000);
             Thread.sleep(SNAPSHOT_NORMAL_FLAH_OFF * 5);
             checkLongShot(true);
-            resetCapture();
         }else{
             InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
                 @Override
@@ -779,23 +981,29 @@ public class TestBase{
             Thread.sleep(SNAPSHOT_NORMAL_DURATION);
             checkLongShot(false);
         }
-        mActivity.mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
+
         if (testResult) updateJson(5, testPass);
         else{
             updateJson(5, testFail);
         }
+        mActivity.runOnUiThread(()->{
+            mActivity.mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
+
+        });
         if(resetmfnr){
-            mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE,"1");
-            testSettingIcon(cameraId,mode);
+            mActivity.runOnUiThread(()->{
+                mSettingsManager.setValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE,"1");
+            });
         }
     }
     private void checkLongShot(boolean max)throws Exception{
         List<String> patharry = mActivity.getCaptureModule().getLongImageTitle();
-        if(patharry == null){
-            testFail = getFailStr("imagepath",patharry,"NotNull");
+        List<String> typearry = mActivity.getCaptureModule().getImgType();
+        if(patharry == null || typearry == null){
+            testFail = getFailStr("imagepath or imagetype is" + patharry +", imagetype is ",typearry,"NotNull");
             return;
         }
-       // assertNotNull(patharry);
+        // assertNotNull(patharry);
 
         if(patharry.size() > PersistUtil.getLongshotShotLimit() || patharry.size() ==0){
             testFail = getFailStr("image_num",patharry.size(),"below "+  PersistUtil.getLongshotShotLimit());
@@ -805,13 +1013,14 @@ public class TestBase{
             testFail = getFailStr("image_num",patharry.size(),"above 0");
             return;
         }
-        if(mLongShotNum == patharry.size()){
+        String burstlimit = mSettingsManager.getValue(SettingsManager.KEY_BURST_LIMIT);
+        if(mLongShotNum == patharry.size() &&(burstlimit == null || burstlimit.equals("0"))){
             testFail = getFailStr("imag_num shoule different","mLongShotNum == patharry.size()","different");
             return;
         }
         for(int i=0;i<patharry.size();i++){
-            String path = mNormalPath + patharry.get(i)+NORMAL_IMG;
             List<ExifInterface> exif = mCaptureModule.getImagExif();
+            String path = Storage.generateFilepath(patharry.get(i),typearry.get(i));
             checkSnapShot(path,exif.get(i));
         }
         //assertNotEquals(mLongShotNum,patharry.size());
@@ -862,7 +1071,7 @@ public class TestBase{
                 testResult = true;
             }
             if(longshotInZslResult) {
-                testLongShot(cameraId, mode);
+                testLongShot(cameraId,mode);
                 longshotInZslResult &= testResult;
                 if (!longshotInZslResult) {
                     longshotvalue = testFail;
@@ -904,20 +1113,20 @@ public class TestBase{
             updateJson(5,testFail);
         }
     }
-private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
-    Thread.sleep(OPEN_CAMERA_DURATION);
-    if(mode == CaptureModule.CameraMode.VIDEO || mode == CaptureModule.CameraMode.HFR){
-        testVideo(mode);
-    }else {
-        snapByLocation();
-    }
+    private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
+        Thread.sleep(OPEN_CAMERA_DURATION);
+        if(mode == CaptureModule.CameraMode.VIDEO || mode == CaptureModule.CameraMode.HFR){
+            testVideo(mode);
+        }else {
+            snapByLocation();
+        }
 
-}
-    public void testZoomBar(CaptureModule.CameraMode mode) throws Exception {
+    }
+    public void testZoom(CaptureModule.CameraMode mode) throws Exception {
         boolean checkloc1 = false;
         boolean checkloc2 = false;
         boolean checkloc3 = false;
-        updateJson(5, null);
+        updateJson(5,null);
         mOldZoomstr = mActivity.getCaptureModule().getZoomValue();
         mOldZoomRegion = mCurrentPreviewResult.get(CaptureResult.SCALER_CROP_REGION);
         if (mode == CaptureModule.CameraMode.PRO_MODE || mode == CaptureModule.CameraMode.CINEMATIC) {
@@ -940,7 +1149,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 checkZoomValue(mode);
                 checkloc1 = testResult;
 
-              /*  if (!testResult) return;*/
+                /*  if (!testResult) return;*/
                 if(isOpenFromIntent){
                     pressDone();
                     boolean checkintent1 = testResult;
@@ -953,10 +1162,11 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                     executeShellCommand("input tap " + mZoomBarWidth + " " + mZoomBarLoc[1]);
                     clickShutterButton(mode);
                     checkZoomValue(mode);
-                    pressDone();
                     boolean checkintent2 = testResult;
-                    if (checkintent1 && checkintent2) updateJson(5, testPass);
-                    else{
+                    pressDone();
+                    if (checkintent1 && checkintent2) {
+                        updateJson(5, testPass);
+                    }else{
                         updateJson(5, testFail);
                     }
                     return;
@@ -972,19 +1182,27 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 checkloc3 = testResult;
                 /*if (!testResult) return;*/
             }
-            executeShellCommand("input tap " + mZoomBarLoc[0] + 5 + " " + mZoomBarLoc[1]);
+            executeShellCommand("input tap " + mZoomBarWidth /2 + " " + mZoomBarLoc[1]);
             clickShutterButton(mode);
             checkZoomValue(mode);
             boolean checkbar1 = testResult;
-           /* if (!testResult) return;*/
-            executeShellCommand("input tap " + mZoomBarWidth / 3 + " " + mZoomBarLoc[1]);
+            /* if (!testResult) return;*/
+            executeShellCommand("input tap " + mZoomBarWidth / 5 + " " + mZoomBarLoc[1]);
             clickShutterButton(mode);
             checkZoomValue(mode);
             boolean checkbar2 = testResult;
             /*if (!testResult) return;*//**/
-            executeShellCommand("input tap " + mZoomBarWidth + " " + mZoomBarLoc[1]);
+            int x = mZoomBarWidth+20;
+            executeShellCommand("input tap " + x + " " + mZoomBarLoc[1]);
             clickShutterButton(mode);
             checkZoomValue(mode);
+            if(mCaptureModule.isExtendedMaxZoomEnable()){
+                float zoomStr = mActivity.getCaptureModule().getZoomValue();
+                if(zoomStr <100){
+                    testFail = getFailStr("max zoom is ",zoomStr,100);
+                    return;
+                }
+            }
             boolean checkbar3 = testResult;
 
             if(mode != CaptureModule.CameraMode.RTB){
@@ -1014,7 +1232,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             Thread.sleep(OPEN_CAMERA_DURATION);
             String value = mActivity.mSettingsManager.getValue(SettingsManager.KEY_SWITCH_CAMERA);
             testSettingIcon(value,mode);
-           // checkPreview(value,mode);
+            // checkPreview(value,mode);
             if(mode == CaptureModule.CameraMode.DEFAULT) {
                 snapByLocation();
             }else if(mode == CaptureModule.CameraMode.VIDEO){
@@ -1077,7 +1295,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
     public void testISO() throws Exception {
         updateJson(5,null);
         pressISOtext();
-       // executeShellCommand("input tap "+ mISOLoc[0]  +" "+mISOLoc[1]);
+        // executeShellCommand("input tap "+ mISOLoc[0]  +" "+mISOLoc[1]);
         int defidx = mActivity.mSettingsManager.getValueIndex(SettingsManager.KEY_ISO);
         for(int i = 0;i < isovalue.length ;i++){
             String value = String.valueOf(isovalue[i]);
@@ -1160,7 +1378,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         }
         if(diffvalue > mProMode.mLongExpTm || diffvalue < -mProMode.mLongExpTm){
             testFail = getFailStr("Exposuretime value diff between value in setting and value in exif"
-            ,diffvalue,"less than "+mProMode.mLongExpTm);
+                    ,diffvalue,"less than "+mProMode.mLongExpTm);
             return;
         }
 
@@ -1184,7 +1402,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         int mControlAFMode = mActivity.getCaptureModule().getCaptureResult().get(CaptureResult.CONTROL_AF_MODE);
         float valuediff = valueSet - valueInResult;
         String valueInExif = mCurrentexif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH);
-            //assertEquals(setvalue,valueInSet);
+        //assertEquals(setvalue,valueInSet);
         //assertEquals(mControlAFMode,CaptureResult.CONTROL_AF_MODE_OFF);
         if (setvalue != valueInSet){
             testFail = getFailStr("KEY_FOCUS_DISTANCE",valueInSet,setvalue);
@@ -1222,7 +1440,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         checkISO(false,String.valueOf(isovalue[isovalue.length -1]));
         checkShutterSpeed(1);
         checkFocusDistance(1);
-       // testVideoFlash(true);
+        // testVideoFlash(true);
         if(testResult) updateJson(5,testPass);
         else{
             updateJson(5,testFail);
@@ -1242,7 +1460,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         int valueindex = mActivity.mSettingsManager.getValueIndex(SettingsManager.KEY_ISO);
         String valueInExif= mCurrentexif.getAttribute(ExifInterface.TAG_ISO);
         int isoInResult =mCurrentCaptureResult.get(CaptureResult.SENSOR_SENSITIVITY);
-       // assertNotNull(valueinset);
+        // assertNotNull(valueinset);
         //assertEquals(setvalue,valueinset);
         if(valueinset == null || !valueinset.equals(setvalue)){
             testResult = false;
@@ -1250,7 +1468,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             return;
         }
         if(!isauto) {
-           // assertEquals(isoInResult,Integer.parseInt(valueInExif));
+            // assertEquals(isoInResult,Integer.parseInt(valueInExif));
             int isoset = Integer.parseInt(setvalue);
             int isodiff = isoset - isoInResult;
             if(isoInResult != Integer.parseInt(valueInExif)){
@@ -1277,15 +1495,15 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             testFail = getFailStr("CONTROL_AWB_MODE",wbInResult,wbInSet);
             return;
         }
-       // assertNotNull(valueinset);
-       // assertEquals(setvalue,valueinset);
-       // assertEquals(wbInSet,wbInResult);
+        // assertNotNull(valueinset);
+        // assertEquals(setvalue,valueinset);
+        // assertEquals(wbInSet,wbInResult);
         if(isauto){
             if(!valueInExif.equals("0")){
                 testFail = getFailStr("ExifInterface.TAG_WHITE_BALANCE",valueInExif,"0");
                 return;
             }
-           // assertEquals("0",valueInExif);
+            // assertEquals("0",valueInExif);
         }else{
             //assertEquals("1",valueInExif);
             if(!valueInExif.equals("1")){
@@ -1302,7 +1520,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             testFail = getFailStr("KEY_EXPOSURE",value,"NotNull");
             return;
         }
-       // assertNotNull(value);
+        // assertNotNull(value);
         int aeInSet = Integer.parseInt(value);
         int aeInResult = mActivity.getCaptureModule().getCaptureResult().get(CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION);
         if(!indexvalue.equals(value)){
@@ -1314,29 +1532,27 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             return;
         }
         //assertEquals(indexvalue,value);
-       // assertEquals(aeInSet,aeInResult);
+        // assertEquals(aeInSet,aeInResult);
     }
 
     public void snapByLocation(CaptureModule.CameraMode mode) throws Exception{
-        resetCapture();
         if(mode != CaptureModule.CameraMode.PRO_MODE && !mCaptureModule.mIsRecordingVideo) {
-            snapByLocation(SNAPSHOT_NORMAL_DURATION, NORMAL_IMG);
+            snapByLocation();
         }else{
             snapByButton();
         }
     }
     public void snapByLocation() throws Exception{
-        resetCapture();
         if(mCaptureModule.getCurrenCameraMode() != CaptureModule.CameraMode.PRO_MODE
                 && !mCaptureModule.mIsRecordingVideo) {
-            snapByLocation(SNAPSHOT_NORMAL_DURATION, NORMAL_IMG);
+            snapByLocation(SNAPSHOT_NORMAL_DURATION);
         }else{
             snapByButton();
         }
     }
 
     private <T>void reportErrorInfo(String str,T currentvalue,T needvalue){
-      String stackstr = jsonParentNm +"->"+jsonChildNm+" TestFail reason:";
+        String stackstr = jsonParentNm +"->"+jsonChildNm+" TestFail reason:";
         Log.e(TAG,"TestFail reason:"+stackstr+"the value of "+ str  +" is "+currentvalue
                 +",but we need the value is "+needvalue);
     }
@@ -1347,9 +1563,10 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         reportErrorInfo(str,currentvalue,needvalue);
         return failstr;
     }
-    public void snapByLocation(int time,String format) throws Exception{
+    public void snapByLocation(int time) throws Exception{
         Thread.sleep(OPEN_CAMERA_DURATION);
-        getPicSize();
+        resetCapture();
+        // getPicSize();
         executeShellCommand("input tap "+ mShutterLoc[0] +" "+mShutterLoc[1]);
         Thread.sleep(time);
         snapShotCheck();
@@ -1360,11 +1577,16 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         executeShellCommand("input tap "+ mVideoLoc[0] +" "+mVideoLoc[1]);
     }
     public void testVideo(CaptureModule.CameraMode mode)throws Exception{
-        testVideo(mode,false);
+        if(isOpenFromIntent) {
+            testRecording(mode, true);
+        }else {
+            testRecording(mode, false);
+        }
     }
-    public void testVideo(CaptureModule.CameraMode mode,boolean pressdone)throws Exception{
+    public void testRecording(CaptureModule.CameraMode mode,boolean pressdone)throws Exception{
         updateJson(5,null);
         resetVideo();
+        resetCapture();
         executeShellCommand("input tap "+ mVideoLoc[0] +" "+mVideoLoc[1]);
         long startime = System.currentTimeMillis();
         Thread.sleep(VIDEO_DURATION);
@@ -1372,7 +1594,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             HashMap<String,Long> startVideo = getHashMapValue(mCaptureModule.getHashMapTimes());
             performenceValues.put("startVideo",startVideo);
         }
-        if(mode == CaptureModule.CameraMode.VIDEO && !isOpenFromIntent) {
+        if(snapShotInVideo(mode)) {
             snapByLocation(mode);
         }
 /*        if(!testResult){
@@ -1423,56 +1645,711 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         }
     }
 
+    private void testFilter(CaptureModule.CameraMode mode)throws Exception{
+        updateJson(5,null);
+        View mFliter = mActivity.findViewById(R.id.filter_mode_switcher);
+        if(mode == CaptureModule.CameraMode.PRO_MODE || !mSettingsManager.isFilterShow()) {
+            if (mFliter.getVisibility() != View.VISIBLE) {
+                testResult = true;
+                mSupported = false;
+            } else {
+                testFail = getFailStr("filter_mode_switcher.getVisibility", mFliter.getVisibility(), "INVISIBLE");
+            }
+            if(testResult) updateJson(5,testPass);
+            else{
+                updateJson(5,testFail);
+            }
 
+        }else{
+            executeShellCommand("input tap " + mFilterLoc[0] + " " + mFilterLoc[1]);
+            Thread.sleep(SMALL_WAIT_DURATION);
+            int width = 500;//mCaptureUI.getFilterWidth();
+            int height = mCaptureUI.getFilterHight()+100;
+            executeShellCommand("input tap " + width + " " + height);
+
+
+            Thread.sleep(SMALL_WAIT_DURATION);
+
+            if(mode == CaptureModule.CameraMode.DEFAULT || mode == CaptureModule.CameraMode.RTB){
+                snapByLocation();
+            }else if (mode == CaptureModule.CameraMode.VIDEO
+                    || mode == CaptureModule.CameraMode.CINEMATIC || mode == CaptureModule.CameraMode.HFR){
+                testVideo(mode);
+            }
+
+            if(testResult) {
+                String value  =mSettingsManager.getValue(SettingsManager.KEY_COLOR_EFFECT);
+                checkFilter(mode,Integer.valueOf(value));
+            }
+            if(testResult) updateJson(5,testPass);
+            else{
+                updateJson(5,testFail);
+            }
+            //   executeShellCommand("input tap " + 0 + " " + height);//reset Filter 0
+            if(isOpenFromIntent && mCaptureModule.getPaused()){
+                if(isVideoMode(mode)) {
+                    openCameraByIntent(mVideoIntent);
+                }else{
+                    openCameraByIntent(mImageIntent);
+                }
+                Thread.sleep(SMALL_WAIT_DURATION);
+            }
+            mSettingsManager.setValueIndex(SettingsManager.KEY_COLOR_EFFECT,0);
+            executeShellCommand("input tap 500 500");
+            Thread.sleep(SMALL_WAIT_DURATION);
+        }
+    }
+    private String getTestMode(CaptureModule.CameraMode mode){
+        String str = "";
+        switch (mode){
+            case HFR:
+                str = "HFR";
+                break;
+            case VIDEO:
+                str = "Video";
+                break;
+            case CINEMATIC:
+                str = "Cinematic";
+                break;
+            case DEFAULT:
+                str = "Photo";
+                break;
+            case RTB:
+                str = "Bokeh";
+                break;
+            case PRO_MODE:
+                str = "Pro";
+                break;
+            case DEPTH:
+                str = "Depth";
+                break;
+        }
+        return str;
+
+    }
+    private void testMediaCodec(String cameraid,CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        executeShellCommand("setprop persist.sys.cameraapp.mediarecorder false");
+        resetPreview();
+        resetVideo();
+        mActivityRule.finishActivity();
+        Thread.sleep(SMALL_WAIT_DURATION);
+        mActivityRule = new ActivityTestRule<>(CameraActivity.class);
+        OpenCamera();
+        String str = getTestMode(mode);
+        int[] loc = mModeIconL.get(str);
+        executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
+        Thread.sleep(OPEN_CAMERA_DURATION);
+        if(mCaptureModule.getMainCameraId() != Integer.valueOf(cameraid)){
+            testFail = getFailStr("getMainCameraId",mCaptureModule.getMainCameraId(),cameraid);
+        }
+        if(CaptureModule.CURRENT_MODE != mode){
+            testFail = getFailStr("CaptureModule.CURRENT_MODE",CaptureModule.CURRENT_MODE,cameraid);
+        }
+        if(testResult) {
+            testRecording(mode, false);
+        }
+        executeShellCommand("setprop persist.sys.cameraapp.mediarecorder true");
+        mActivityRule.finishActivity();
+        Thread.sleep(SMALL_WAIT_DURATION);
+        mActivityRule = new ActivityTestRule<>(CameraActivity.class);
+        OpenCamera();
+        executeShellCommand("input tap " + loc[0] + " " + loc[1]);
+        Thread.sleep(SMALL_WAIT_DURATION);
+        if (mCaptureModule.getMainCameraId() != Integer.valueOf(cameraid)) {
+            testFail = getFailStr("getMainCameraId", mCaptureModule.getMainCameraId(), cameraid);
+        }
+        if (CaptureModule.CURRENT_MODE != mode) {
+            testFail = getFailStr("CaptureModule.CURRENT_MODE", CaptureModule.CURRENT_MODE, cameraid);
+        }
+
+        if (testResult) updateJson(5, testPass);
+        else {
+            updateJson(5, testFail);
+        }
+    }
+    private void testLivePreview(CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        String strkey = SettingsManager.KEY_LIVE_PREVIEW;
+        checkSettingValue(strkey,null,mode,true);
+        if (testResult) updateJson(5, testPass);
+        else {
+            updateJson(5, testFail);
+        }
+    }
+    private void testBurstLimit(CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        String strkey = SettingsManager.KEY_BURST_LIMIT;
+        checkSettingValue(strkey,null,mode,true);
+        if (testResult) {
+            updateJson(5, testPass+"(imgNum:"+burstNum+")");
+            burstNum = 0;
+        }
+        else {
+            updateJson(5, testFail);
+        }
+    }
+
+    private void testPicFormat(CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        String strkey = SettingsManager.KEY_PICTURE_FORMAT;
+        checkSettingValue(strkey,null,mode,false);
+        if (testResult) updateJson(5, testPass);
+        else {
+            updateJson(5, testFail);
+        }
+    }
+    private void testSaveRaw(CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        String strkey = SettingsManager.KEY_RAW_FORMAT_TYPE;
+        checkSettingValue(strkey,null,mode,true);
+        if (testResult) updateJson(5, testPass);
+        else {
+            updateJson(5, testFail);
+        }
+    }
+    private void testMixedHDR(CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        String strkey = SettingsManager.KEY_MANUAL_HDR;
+        checkSettingValue(strkey,null,mode,true);
+        if (testResult) updateJson(5, testPass);
+        else {
+            updateJson(5, testFail);
+        }
+    }
+    private void testSelectMode(CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        String strkey = SettingsManager.KEY_SELECT_MODE;
+        checkSettingValue(strkey,null,mode,true);
+        if (testResult) updateJson(5, testPass);
+        else {
+            updateJson(5, testFail);
+        }
+    }
+    private void testDynamicFPS(CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        String strkey = SettingsManager.KEY_VARIABLE_FPS;
+        String subkey = SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE;
+        checkSettingValue(strkey,subkey,mode,true);
+        if (testResult) updateJson(5, testPass);
+        else {
+            updateJson(5, testFail);
+        }
+    }
+    private void testExtendZoom(CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        String strkey = SettingsManager.KEY_EXTENDED_MAX_ZOOM;
+        checkSettingValue(strkey,null,mode,true);
+        if (testResult) updateJson(5, testPass);
+        else {
+            updateJson(5, testFail);
+        }
+    }
+    private void testTAF(CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        int x = displayMetrics.widthPixels/2;
+        int y = displayMetrics.heightPixels/2;
+        executeShellCommand("input tap "+ x +" " +y);
+        Thread.sleep(SNAPSHOT_NORMAL_DURATION);
+        mCurrentPreviewResult = mCaptureModule.getPreviewCaptureResult();
+        Integer resultAFState = mCurrentPreviewResult.get(CaptureResult.CONTROL_AF_STATE);
+        if(resultAFState != CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED){
+            testFail = getFailStr("CONTROL_AF_STATE", resultAFState, "CONTROL_AF_STATE_FOCUSED_LOCKED");
+        }
+        x = x + 300;
+        y = y + 300;
+        executeShellCommand("input tap "+ x +" " +y);
+        Thread.sleep(SNAPSHOT_NORMAL_DURATION);
+        mCurrentPreviewResult = mCaptureModule.getPreviewCaptureResult();
+        resultAFState = mCurrentPreviewResult.get(CaptureResult.CONTROL_AF_STATE);
+        if(resultAFState != CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED){
+            testFail = getFailStr("CONTROL_AF_STATE", resultAFState, "CONTROL_AF_STATE_FOCUSED_LOCKED");
+        }
+        if (testResult) updateJson(5, testPass);
+        else {
+            updateJson(5, testFail);
+        }
+    }
+    private void testThumbnail(String cameraId,CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        String path = "";
+        if(!isVideoMode(mode)) {
+            testSnapshot(mode);
+            List<String>  patharry = mActivity.getCaptureModule().getLongImageTitle();
+            path = patharry.get(0);
+        }else{
+            testVideo(mode);
+            path = mCaptureModule.getVideoFilePath();
+            int index = path.lastIndexOf("/");
+            int index1 = path.lastIndexOf(".");
+            path = path.substring(index+1,index1);
+        }
+        executeShellCommand("input tap "+ mThumbLoc[0]  +" "+mThumbLoc[1]);
+        Thread.sleep(SMALL_WAIT_DURATION);
+        if (mCaptureUI.mFilmstripLayout.getVisibility() != View.VISIBLE) {
+            testFail = getFailStr("FilmstripLayout.getVisibility()", mCaptureUI.mFilmstripLayout.getVisibility(), "VISIBLE");
+            return;
+        }
+        String title =mCaptureUI.getTitleFromFilm(0);
+        if(!path.equals(title)){
+            testFail = getFailStr("The first image title in Thumbnail is ", title, path);
+        }
+        executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
+        checkPreview(cameraId, mode);
+        if (mCaptureUI.mFilmstripLayout.getVisibility() != View.INVISIBLE) {
+            testFail = getFailStr("FilmstripLayout.getVisibility()", mCaptureUI.mFilmstripLayout.getVisibility(), "INVISIBLE");
+        }
+        if (testResult) updateJson(5, testPass);
+        else {
+            updateJson(5, testFail);
+        }
+    }
+
+    private void testEIS(CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5, null);
+        String strkey = SettingsManager.KEY_PHOTO_EIS_VALUE;
+        if (mode == CaptureModule.CameraMode.VIDEO || mode == CaptureModule.CameraMode.CINEMATIC) {
+            strkey = SettingsManager.KEY_EIS_VALUE;
+        }
+        String defvalue = mSettingsManager.getValue(strkey);
+        if (mode == CaptureModule.CameraMode.DEFAULT) {
+            if (!"disable".equals(defvalue)) {
+                testFail = getFailStr("KEY_PHOTO_EIS_VALUE default—value", defvalue, "disable");
+                updateJson(5, testFail);
+                return;
+            }
+        } else if ((mode == CaptureModule.CameraMode.VIDEO)) {
+            if (!"V3".equals(defvalue)) {
+                testFail = getFailStr("KEY_PHOTO_EIS_VALUE default—value", defvalue, "V3");
+                updateJson(5, testFail);
+                return;
+            }
+        }
+        checkSettingValue(strkey,null,mode,true);
+        if (testResult) updateJson(5, testPass);
+        else {
+            updateJson(5, testFail);
+        }
+    }
+    private boolean checkSettingValue(String strkey,String subkey,CaptureModule.CameraMode mode,boolean devoption) throws Exception {
+        if(devoption){
+            mActivity.setDevOption(true);
+        }
+        executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
+        Thread.sleep(SMALL_WAIT_DURATION);
+        mActivity.runOnUiThread(()-> {
+            Entryvalues = mSettingsManager.getEntryValues(strkey);
+            defalutValue = mSettingsManager.getValue(strkey);
+        });
+        executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
+        Thread.sleep(SMALL_WAIT_DURATION);
+        String subdefValue = null;
+
+        for (int i = 0; i < Entryvalues.length; i++) {
+            final String setvalue = Entryvalues[i].toString();
+            executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
+            Thread.sleep(SMALL_WAIT_DURATION);
+            Log.i(TAG, " start to  setvalue=" + setvalue+",setkey="+strkey+
+                    ",clickSetting="+mSettingLoc[0]+"*"+mSettingLoc[1]+
+                    ",mCaptureModule.getPaused()="+mCaptureModule.getPaused());
+            if(!mCaptureModule.getPaused()) {
+                testFail = getFailStr("Open Setting failed,mPaused", mCaptureModule.getPaused(), true);
+                return false;
+            }
+            mActivity.runOnUiThread(()->{
+                mSettingsManager.setValue(strkey,setvalue);
+                if(strkey.equals(SettingsManager.KEY_MANUAL_HDR)){
+                    if(setvalue.equals("manual")){
+                        mCaptureModule.setAutoSetting(true);
+                    }
+                }else if (strkey.equals(SettingsManager.KEY_SELECT_MODE) && setvalue.equals("single_rear_aibokeh")){
+                    String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA);
+                    if(!value.equals("2")){
+                        mSettingsManager.setValue(SettingsManager.KEY_AI_CAMERA,"2");
+                    }
+                }
+            });
+            Thread.sleep(SMALL_WAIT_DURATION);
+            if(subkey != null){
+                CharSequence[] subvalues = mSettingsManager.getEntryValues(subkey);
+                subdefValue = mSettingsManager.getValue(subkey);
+                checkSettingValue(subkey,null,mode,devoption);
+            }else {
+                executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
+                if(strkey.equals(SettingsManager.KEY_MANUAL_HDR) && setvalue.equals("manual")){
+                    executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
+                }
+                Thread.sleep(SMALL_WAIT_DURATION);
+                String endvalue = mActivity.mSettingsManager.getValue(strkey);
+                if (!endvalue.equals(setvalue)) {
+                    testFail = getFailStr("getValue from " + strkey + " is", endvalue, setvalue);
+                    //updateJson(5, testFail);
+                    break;
+                }
+                if (!isVideoMode(mode)) {
+                    snapByLocation();
+                } else {
+                    testVideo(mode);
+                }
+                if (!testResult) {
+                    break;
+                }
+                switch (strkey) {
+                    case SettingsManager.KEY_PHOTO_EIS_VALUE:
+                    case SettingsManager.KEY_EIS_VALUE:
+                        checkEIS(setvalue);
+                        break;
+                    case SettingsManager.KEY_SELECT_MODE:
+                        checkSelectMode(setvalue);
+                        break;
+                    case SettingsManager.KEY_VARIABLE_FPS:
+                    case SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE:
+                        checkDynamicFPS(setvalue);
+                        break;
+                    case SettingsManager.KEY_LIVE_PREVIEW:
+                        checkLivePreview(setvalue);
+                        break;
+                    case SettingsManager.KEY_BURST_LIMIT:
+                        checkBurstLimit(setvalue);
+                        break;
+                    case SettingsManager.KEY_MANUAL_HDR:
+                        checkMixedHDR(setvalue);
+                        break;
+                    case SettingsManager.KEY_EXTENDED_MAX_ZOOM:
+                        checkExtendZoom(mode,setvalue);
+                        break;
+                }
+            }
+            if(!testResult){
+                break;
+            }
+
+        }
+
+        changeSettingInMain(strkey,defalutValue);
+        if(subkey != null){
+            changeSettingInMain(subkey,subdefValue);
+        }
+        mCaptureModule.setAutoSetting(false);
+
+
+        if(devoption){
+            mActivity.setDevOption(false);
+        }
+        return true;
+    }
+    private void changeSettingInMain(String key,String value)throws Exception{
+        executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
+        Thread.sleep(SMALL_WAIT_DURATION);
+        mActivity.runOnUiThread(()-> {
+            mSettingsManager.setValue(key,value);
+        });
+        executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
+        Thread.sleep(SMALL_WAIT_DURATION);
+    }
+    private void checkExtendZoom(CaptureModule.CameraMode mode,String setvalue)  throws Exception {
+        testZoom(mode);
+        int mMaxZoomP = mCurrentPreviewResult.get(CaptureModule.getExtendedMaxZoom);
+        int mMaxZoomC = mCurrentCaptureResult.get(CaptureModule.getExtendedMaxZoom);
+        int value = Integer.valueOf(setvalue);
+        if(value != mMaxZoomP || value != mMaxZoomC){
+            testFail = getFailStr("ExtendedMaxZoom in preview is" + mMaxZoomP + ",in capture is ",
+                    mMaxZoomC, value);
+            return;
+        }
+    }
+    private void checkMixedHDR(String setvalue)  throws Exception {
+        int mautoP = mCurrentPreviewResult.get(VendorTagUtil.get_autohdr_enable);
+        int mautoC = mCurrentCaptureResult.get(VendorTagUtil.get_autohdr_enable);
+        int mhdrP = mCurrentPreviewResult.get(VendorTagUtil.get_hdr_enable);
+        int mhdrC = mCurrentCaptureResult.get(VendorTagUtil.get_hdr_enable);
+        int[] mhdrmodeP = mCurrentPreviewResult.get(VendorTagUtil.get_hdr_modes);
+        int[] mhdrmodeC = mCurrentCaptureResult.get(VendorTagUtil.get_hdr_modes);
+        String hdrmode = mSettingsManager.getVideoHdrMode();
+        Log.i(TAG, "mautoP=" + mautoP + ",mautoC=" + mautoC + ",mhdrP=" + mhdrP + ",mhdrC=" + mhdrC +
+                ",mhdrmodeP=" + mhdrmodeP + ",mhdrmodeC=" + mhdrmodeC+",hdrmode="+hdrmode);
+        if (hdrmode != null) {
+            if (hdrmode.equals("auto")) {
+                if (mautoP != 1 || mautoC != 1){
+                    testFail = getFailStr("EnableAutoHDR in preview is" + mautoP + ",in capture is ",
+                            mautoC, 1);
+                    return;
+                }
+            } else if (!hdrmode.equals("off")) {
+                String[] modeLists = hdrmode.split(" ");
+                if(modeLists == null){
+                    testFail = getFailStr("hdrmode in setting is" , modeLists ,"NotNull");
+                    return;
+                }
+                int[] modes =mCaptureModule.getHDRModes();
+                int value = mCaptureModule.getHDRValues();
+                mCaptureModule.setHDRModes(null);
+                mCaptureModule.setHDRValues(0);
+                if (value != mhdrP || value != mhdrC) {
+                    testFail = getFailStr("HDRMode in preview is" + mhdrP + ",in capture is ",
+                            mhdrC, value);
+                    return;
+                }
+                if(mhdrmodeP == null || mhdrmodeC == null || modes == null){
+                    testFail = getFailStr("HDRModePreference in preview is" + mhdrmodeP + ",in capture is "
+                                    +mhdrmodeC +",in setting is ",
+                            modes, "NotNull");
+                }
+                for (int i =0;i<mhdrmodeP.length;i++) {
+                    if(mhdrmodeP[i]!=modes[i] || mhdrmodeC[i]!=modes[i]){
+                        testFail = getFailStr("hdrmode in preview is"+mhdrmodeP[i]+",in capture is" , mhdrmodeC[i] ,modes[i]);
+                        return;
+                    }
+                }
+            }else if (hdrmode.equals("off")) {
+                if (mautoP != 0 || mautoC != 0){
+                    testFail = getFailStr("EnableAutoHDR in preview is" + mautoP + ",in capture is ",
+                            mautoC, 0);
+                    return;
+                }
+                if (mhdrP != 0 || mhdrP != 0){
+                    testFail = getFailStr("HDRMode in preview is" + mhdrP + ",in capture is ",
+                            mhdrP, 0);
+                    return;
+                }
+            }
+        }
+    }
+    private void checkBurstLimit(String value)  throws Exception {
+        testLongShot(String.valueOf(mCaptureModule.getMainCameraId()), CaptureModule.CURRENT_MODE);
+        mCurrentCaptureResult = mCaptureModule.getCaptureResult();
+        Object burstag = mCurrentCaptureResult.getRequest().getTag();
+
+        if (burstag == null) {
+            testFail = getFailStr("request.getTag() is", burstag, "NotNull");
+            return;
+        }
+        String tag = String.valueOf(burstag);
+        if (value.equals("0") && !burstag.equals("capture")) {
+            testFail = getFailStr("request.getTag() is", burstag, "capture");
+            return;
+        }
+        if (value.equals("1") && !tag.equals("capture-limit")) {
+            testFail = getFailStr("request.getTag() is", burstag, "capture-limit");
+            return;
+        }
+        List<String> patharry = mActivity.getCaptureModule().getLongImageTitle();
+        burstNum = patharry.size();
+    }
+    private void checkLivePreview(String value){
+        int intValue = Integer.parseInt(value);
+        int mLiveModeP = mCurrentPreviewResult.get(mCaptureModule.getLivePreview);
+        int mLiveModeC = mCurrentCaptureResult.get(mCaptureModule.getLivePreview);
+        if (intValue != mLiveModeP || intValue != mLiveModeP){
+            testFail = getFailStr("livePreview in preview is"+mLiveModeP+",in capture is ",
+                    mLiveModeC,intValue);
+        }
+    }
+    private void checkDynamicFPS(String value){
+        float[] setFpsConfig = mCaptureModule.getDynamicFpsConfig();
+        Range setRange = mCaptureModule.getFPSRange();
+        float[] mConfigP = mCurrentPreviewResult.get(mCaptureModule.getdynamicFSPConfigKey);
+        float[] mConfigC = mCurrentCaptureResult.get(mCaptureModule.getdynamicFSPConfigKey);
+        Range mRangeP = mCurrentPreviewResult.get(CaptureResult.CONTROL_AE_TARGET_FPS_RANGE);
+        Range mRangeC = mCurrentCaptureResult.get(CaptureResult.CONTROL_AE_TARGET_FPS_RANGE);
+        if(setRange.getLower() != mRangeP.getLower() || setRange.getLower() != mRangeC.getLower()
+                || setRange.getUpper() != mRangeP.getUpper() || setRange.getUpper() != mRangeC.getUpper()){
+            testFail = getFailStr("When DynamicFPS is "+value+"CONTROL_AE_TARGET_FPS_RANGE in preview is"+mRangeP+",in capture is ",
+                    mRangeC,setRange);
+            return;
+        }
+        if (mCaptureModule.isVariableFPSEnabled()) {
+            if(setFpsConfig != null &&(mConfigP == null || mConfigC == null)){
+                testFail = getFailStr("When DynamicFPS is "+value+"dynamicFPSConfig in preview is"+mConfigP+",in capture is ",
+                        mConfigC,setFpsConfig);
+                return;
+            }
+            for(int i = 0; i<setFpsConfig.length;i++){
+                if(setFpsConfig[i]!=mConfigP[i]||setFpsConfig[i]!=mConfigC[i]){
+                    testFail = getFailStr("Config i is"+i+" dynamicFPSConfig i in preview  is"+mConfigP[i]+",in capture is ",
+                            mConfigC[i],setFpsConfig[i]);
+                    return;
+                }
+            }
+        }else{
+            if(mConfigP != null || mConfigC != null){
+                testFail = getFailStr("When isVariableFPSEnabled is "+mCaptureModule.isVariableFPSEnabled()+",dynamicFPSConfig in preview is"+mConfigP+",in capture is ",
+                        mConfigC,"NULL");
+                return;
+            }
+        }
+
+    }
+    private void checkSelectMode(String value) {
+        int cameraId = mCaptureModule.getMainCameraId();
+        int mSceneModeP = mCurrentPreviewResult.get(CaptureResult.CONTROL_EXTENDED_SCENE_MODE);
+        int mSceneModeC = mCurrentCaptureResult.get(CaptureResult.CONTROL_EXTENDED_SCENE_MODE);
+        if (value.equals("single_rear_cameraid") || value.equals("single_rear_aibokeh")) {
+            if (cameraId == 0) {
+                testFail = getFailStr("cameraid   in " + value,cameraId, "!0");
+            }
+        } else {
+            if (cameraId != 0) {
+                testFail = getFailStr("cameraid  in " + value,cameraId, "0");
+            }
+        }
+        if (value.equals("rtb") || value.equals("single_rear_aibokeh") ){
+            if (mSceneModeP != CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS ||
+                    mSceneModeC != CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS) {
+                testFail = getFailStr("CONTROL_EXTENDED_SCENE_MODE in  " + value + "is" + mSceneModeP +
+                        " in mCurrentCaptureResult is", mSceneModeC, CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS);
+            }
+        }
+
+
+    }
+
+    private boolean snapShotInVideo(CaptureModule.CameraMode mode){
+        if(mode == CaptureModule.CameraMode.VIDEO && !isOpenFromIntent) {
+            return true;
+        }else{
+            return false;
+        }
+    }
+    private void checkFilter(CaptureModule.CameraMode mode,int value){
+        int mFilterModeP = mCurrentPreviewResult.get(CaptureResult.CONTROL_EFFECT_MODE);
+        if(snapShotInVideo(mode) ) {
+            int mFilterModeC = mCurrentCaptureResult.get(CaptureResult.CONTROL_EFFECT_MODE);
+            if (value != mFilterModeC || value != mFilterModeP) {
+                testFail = getFailStr("CONTROL_EFFECT_MODE in preview is" + mFilterModeP + ",in capture is ",
+                        mFilterModeC, value);
+                return;
+            }
+        }else if(value != mFilterModeP) {
+            testFail = getFailStr("CONTROL_EFFECT_MODE in preview is " , mFilterModeP,value);
+            return;
+        }
+    }
+    private boolean checkEIS(String value) {
+        int videoStabModeP = mCurrentPreviewResult.get(CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE);
+        int videoStabModeC = mCurrentCaptureResult.get(CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE);
+        boolean previewStabilizationOn = false;
+        String stablevalue = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_STABILIZATION);
+        if (value.equals("V2") || value.equals("dynamic")) {
+            previewStabilizationOn = "enable".equals(mSettingsManager.
+                    getValue(SettingsManager.KEY_PREVIEW_STABILIZATION));
+        }
+        if (!previewStabilizationOn && "disable".equals(value) && (videoStabModeP != 0 || videoStabModeC != 0)) {
+            testFail = getFailStr("KEY_PREVIEW_STABILIZATION in  PreviewResult is "
+                            + videoStabModeP+ ",in CaptureResult is ",videoStabModeC
+                    , "disable");
+            return false;
+        }else if (previewStabilizationOn && (videoStabModeP != 2 || videoStabModeC != 2)){
+            testFail = getFailStr("KEY_PREVIEW_STABILIZATION in  PreviewResult is "+ videoStabModeP+
+                    ", in CaptureResult is ", videoStabModeC,"2");
+            return false;
+        }else if (!previewStabilizationOn && !("disable".equals(value)) && (videoStabModeP != 1 || videoStabModeC != 1)){
+            testFail = getFailStr("KEY_PREVIEW_STABILIZATION in  PreviewResult is "+ videoStabModeP+
+                    ", in CaptureResult is ", videoStabModeC,"1");
+            return false;
+        }
+        if(!value.equals("disable")) {
+            try {
+                int eisModeP = mCurrentPreviewResult.get(VendorTagUtil.Get_EIS_MODE);
+                int eisModeC = mCurrentCaptureResult.get(VendorTagUtil.Get_EIS_MODE);
+                if (!previewStabilizationOn) {
+                    if (value.equals("V2") && (eisModeP != 1 || eisModeC != 1)) {
+                        testFail = getFailStr("EISMode in  PreviewResult is " + eisModeP +
+                                "EISMode in CaptureResult is ", eisModeC, "1");
+                        return false;
+                    } else if (value.equals("V3") && (eisModeP != 0 || eisModeC != 0)) {
+                        testFail = getFailStr("EISMode in  PreviewResult is " + eisModeP +
+                                "EISMode in CaptureResult is ", eisModeC, "0");
+                        return false;
+                    } else if (value.equals("dynamic") && (eisModeP != 2 || eisModeC != 2)) {
+                        testFail = getFailStr("EISMode in  PreviewResult is " + eisModeP +
+                                "EISMode in CaptureResult is ", eisModeC, "2");
+                        return false;
+                    }
+                } else {
+                    if (value.equals("dynamic") && (eisModeP != 2 || eisModeC != 2)) {
+                        testFail = getFailStr("EISMode in  PreviewResult is " + eisModeP +
+                                "EISMode in CaptureResult is ", eisModeC, "2");
+                        return false;
+                    }
+                }
+            }catch(NullPointerException exception){
+                Log.i(TAG," exception="+exception);
+            }
+        }
+        return true;
+    }
     private void snapByKeyCode()throws Exception{
         //mCurrentImgNum = getCameraDirectoryJpegAmount();
         Thread.sleep(OPEN_CAMERA_DURATION);
-        getPicSize();
+        // getPicSize();
         InstrumentationRegistry.getInstrumentation().sendCharacterSync(KeyEvent.KEYCODE_CAMERA);
         Thread.sleep(SNAPSHOT_NORMAL_DURATION);
         List<String> patharry = mActivity.getCaptureModule().getLongImageTitle();
         assertNotNull(patharry);
         assertEquals(1,patharry.size());
-        String path =mNormalPath + patharry.get(0) + NORMAL_IMG;
         List<ExifInterface> exif = mCaptureModule.getImagExif();
-        checkSnapShot(path,exif.get(0));
+        checkSnapShot(patharry.get(0),exif.get(0));
     }
-    private void snapShotCheck()throws Exception{
+    private void snapShotCheck()throws Exception {
         mCurrentCaptureResult = mCaptureModule.getCaptureResult();
         mCurrentPreviewResult = mCaptureModule.getPreviewCaptureResult();
-        if( mCurrentPreviewResult == null){
-            testFail = getFailStr("CurrentPreviewResult",mCurrentPreviewResult,"NotNull");
+        if (mCurrentPreviewResult == null || mCurrentCaptureResult == null) {
+            testFail = getFailStr("CurrentPreviewResult is" + mCurrentPreviewResult +
+                    ",mCurrentCaptureResult is  ", mCurrentCaptureResult, "NotNull");
             return;
         }
-        if(mCurrentCaptureResult == null ){
-            testResult = false;
-            testFail = getFailStr("mCurrentCaptureResult",mCurrentCaptureResult,"NotNull");
+        if(isOpenFromIntent){
+            return;
         }
+
         List<String> patharry = mActivity.getCaptureModule().getLongImageTitle();
-        if(patharry == null && !isOpenFromIntent){
+        List<String> typearry = mActivity.getCaptureModule().getImgType();
+
+        if (patharry == null || typearry == null) {
+            testFail = getFailStr("imagepath is " +patharry+"imgetype is" , typearry, "NotNull");
             testResult = false;
             return;
         }
-        if(patharry.size() != 1 && !isOpenFromIntent){
-            testFail = getFailStr("image_num",patharry.size(),1);
+        int imgnm = getImageNum();
+        if (patharry.size() < imgnm) {
+            testFail = getFailStr("image_num", patharry.size(), imgnm);
             return;
         }
-        String path =mNormalPath + patharry.get(0) + NORMAL_IMG;
-        List<ExifInterface> exif = mCaptureModule.getImagExif();
-        if(exif.size() != 1 ){
-            testFail = getFailStr("exifinfo",exif.size(),1);
-            return;
+        String raw = mSettingsManager.getKeyValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        for (int i = 0; i < imgnm; i++) {
+            if(i == 0 && !raw.equals("0")){
+                String type = typearry.get(i);
+                if (raw.equals("10") && !type.equals("raw")) {
+                    testFail = getFailStr("raw foramt  ",type,"raw");
+                    return;
+                } else if ((raw.equals("54") || raw.equals("99")) && !type.equals("yuv") ) {
+                    testFail = getFailStr("raw foramt  ",type,"yuv");
+                    return;
+                } else if (raw.equals("16")&& !type.equals("dng")) {
+                    testFail = getFailStr("raw foramt  ",type,"dng");
+                    return;
+                }
+            }
+            List<ExifInterface> exif = mCaptureModule.getImagExif();
+            if (exif.size() < imgnm) {
+                testFail = getFailStr("exifinfo", exif.size(), imgnm);
+                return;
+            }
+            String path = Storage.generateFilepath(patharry.get(i),typearry.get(i));
+            checkSnapShot(path, exif.get(i));
         }
-        checkSnapShot(path,exif.get(0));
     }
+
     private void snapByButton()throws Exception{
         //mCurrentImgNum = getCameraDirectoryJpegAmount();
         Thread.sleep(OPEN_CAMERA_DURATION);
-        if(!mCaptureModule.mIsRecordingVideo) {
+        resetCapture();
+/*        if(!mCaptureModule.mIsRecordingVideo) {
             getPicSize();
         }else{
             getVideoSize();
-        }
+        }*/
         InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
             @Override
             public void run() {
@@ -1560,15 +2437,12 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             mActivity.mSettingsManager.restoreSettings();
             Thread.sleep(4000);
         }
-            mActivity.getCaptureModule().restartAll();
+        mActivity.getCaptureModule().restartAll();
     }
 
     public void openCameraByIntent(Intent intent)throws Exception{
         mActivityRule.launchActivity(intent);
         Thread.sleep(OPEN_CAMERA_DURATION);
-        mActivity = mActivityRule.getActivity();
-        mActivity.setAutoTest(true);
-        executeShellCommand("input tap 500 500");
         mActivity = mActivityRule.getActivity();
         mCaptureModule = mActivity.getCaptureModule();
         mCaptureUI = mCaptureModule.getCaptureUI();
@@ -1588,42 +2462,44 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         View mSwitch = mActivity.findViewById(R.id.front_back_switcher);
         View mVideoShutter = mActivity.findViewById(R.id.video_button);
 
-       // View mModeItem = mActivity.findViewById(R.id.camera2_mode_item);
+        // View mModeItem = mActivity.findViewById(R.id.camera2_mode_item);
         View mSettingsButton = mActivity.findViewById(R.id.settings);
+        View mThumbnail = mActivity.findViewById(R.id.preview_thumb);
+        View mFilterwitcher = mActivity.findViewById(R.id.filter_mode_switcher);
         int mSetWidth = mSettingsButton.getMeasuredWidth();
         int mSetHeight = mSettingsButton.getMeasuredHeight();
-        View mThumbnail = mActivity.findViewById(R.id.preview_thumb);
         mZoomBarWidth = mZoomBar.getWidth();
         mZoomValueWidth = mZoomValue.getWidth();
         mShutter.getLocationInWindow(mShutterLoc);
         mIconLoc.put("Shutter",mShutterLoc);
         mFlash.getLocationInWindow(mFlashLoc);
         mIconLoc.put("Flash",mFlashLoc);
-        mRecordLoc.put("Flash",mFlashLoc);
         mHdr.getLocationInWindow(mHdrLoc);
         mIconLoc.put("Hdr",mHdrLoc);
         mZoomBar.getLocationInWindow(mZoomBarLoc);
         mIconLoc.put("ZoomBarMin",mZoomBarLoc);
-        mRecordLoc.put("ZoomBarMin",mZoomBarLoc);
         int[]maxzoom = {mZoomBarWidth,mZoomBarLoc[1]};
         mIconLoc.put("ZoomBarMax", maxzoom);
-        mRecordLoc.put("ZoomBarMin",mZoomBarLoc);
         mZoomValue.getLocationInWindow(mZoomValueLoc);
         mIconLoc.put("ZoomValue",mZoomValueLoc);
-        mRecordLoc.put("ZoomValue",mZoomValueLoc);
         mSwitch.getLocationInWindow(mSwitchLoc);
         mIconLoc.put("SwitchCam",mSwitchLoc);
-        mRecordLoc.put("SwitchCam",mSwitchLoc);
         mVideoShutter.getLocationInWindow(mVideoLoc);
         mSettingsButton.getLocationInWindow(mSettingLoc);
         mSettingLoc[0] += mSetWidth/2;
         mSettingLoc[1] += mSetHeight/2;
         mIconLoc.put("Setting",mSettingLoc);
         mThumbnail.getLocationInWindow(mThumbLoc);
+        mFilterwitcher.getLocationInWindow(mFilterLoc);
         mIconLoc.put("Thumb",mThumbLoc);
+        mRecordLoc.put("Flash",mFlashLoc);
+        mRecordLoc.put("ZoomValue",mZoomValueLoc);
+        mRecordLoc.put("ZoomBarMax", maxzoom);
+
         Log.i(TAG,"thumb="+mThumbLoc[0]+"*"+mThumbLoc[1]+",settingloc="+mSettingLoc[0]+"*"+mSettingLoc[1]
-        +",mHdrLoc="+mHdrLoc[0]+"*"+mHdrLoc[1]+",mFlashLoc="+mFlashLoc[0]+"*"+mFlashLoc[1]+"shutterloc="
+                +",mHdrLoc="+mHdrLoc[0]+"*"+mHdrLoc[1]+",mFlashLoc="+mFlashLoc[0]+"*"+mFlashLoc[1]+"shutterloc="
                 + mShutterLoc[0]+"*"+ mShutterLoc[1]);
+        getModeLoc();
     }
     public void getModeLoc(){
         View mCameraModeText = mActivity.findViewById(R.id.mode_text);
@@ -1634,87 +2510,40 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         int modeListSize = modeList.size();
         int modelen = mCameraModeText.getMeasuredWidth();
         int modehigh = mCameraModeText.getMeasuredHeight();
-        DisplayMetrics metrics = CameraUtil.metrics;
+        displayMetrics = CameraUtil.metrics;
         for(int i = 0;i <modeListSize; i++){
             int x = i * modelen + modelen/2;
-            if(modeList.get(i).equals("Pro") && x > metrics.widthPixels){
-                for(int j = 0;j < modeListSize;j++) {
-                    int y = metrics.widthPixels - modelen / 2 - j*modelen;
-                    String modenm =  modeList.get(modeListSize-j-1);
-                    int[] locr = {y,mModeLoc[1]};
-                    mModeIconR.put(modenm,locr);
-                    //mIconLoc.put(modenm,locr);
-                }
-            }
             int[] modemloc = {x,mModeLoc[1]};
-            mModeIconL.put(modeList.get(i),modemloc);
-            mIconLoc.put(modeList.get(i),modemloc);
+            String mode = modeList.get(i);
+            if( x > displayMetrics.widthPixels){
+                for(int j = 0;j < modeListSize;j++) {
+                    int y = displayMetrics.widthPixels - modelen / 2 - j*modelen;
+                    String modenm =  modeList.get(modeListSize-j-1);
+                    if(modenm.equals(mode)){
+                        int[] locr = {y,mModeLoc[1]};
+                        mModeIconR.put(modenm,locr);
+                        Log.i(TAG,"mModeIconR put mode="+modenm+",loc="+locr[0]+"*"+locr[1]);
+                        mIconLoc.put(modenm,locr);
+                        break;
+                    }
+                }
+            }else {
+                mModeIconL.put(mode, modemloc);
+                mIconLoc.put(mode, modemloc);
+            }
+
+
         }
         // mModeItem.getLocationInWindow(mModeItemLoc);
 
-        int value = metrics.widthPixels < metrics.heightPixels ? metrics.widthPixels : metrics.heightPixels;
+        int value = displayMetrics.widthPixels < displayMetrics.heightPixels ? displayMetrics.widthPixels : displayMetrics.heightPixels;
         swipevalue = value / 2 ;
         int[] modetext = {swipevalue,mModeLoc[1]};
         int[] modeswipe = {swipevalue,swipevalue};
         mModeIconR.put("SlideModeTxt",modetext);
-       // mIconLoc.put("SwipeModeL",modeswipe);
+        // mIconLoc.put("SwipeModeL",modeswipe);
         //mIconLoc.put("SwipeModeR",modeswipe);
         mIconLoc.put("Focus",modeswipe);
-    }
-    private void getRecordingLoc(){
-        View mPauseButton = mActivity.findViewById(R.id.video_pause);
-        mPauseButton.getLocationInWindow(mPauseLoc);
-    }
-    public void getIntentLoc(){
-        View mCancelButn = mActivity.findViewById(R.id.cancel_button);
-        View mReviewCancelButton = mActivity.findViewById(R.id.preview_btn_cancel);
-        View mDoneButton = mActivity.findViewById(R.id.done_button);
-        View mRetakeButton = mActivity.findViewById(R.id.preview_btn_retake);
-        mCancelButn.getLocationInWindow(mCancelLoc);
-        mReviewCancelButton.getLocationInWindow(mReviewCancelLoc);
-        mDoneButton.getLocationInWindow(mDoneLoc);
-        mRetakeButton.getLocationInWindow(mRetakeLoc);
-    }
-    public void getIconLoctionInPro(){
-/*        mProModeLayout = (ViewGroup) findViewById(R.id.pro_mode_layout);
-        View mEVtext = mActivity.findViewById(R.id.exposure_text);
-        View mFocustext = mActivity.findViewById(R.id.focusdistance_text);
-        View mShuttertext = mActivity.findViewById(R.id.shutterspeed_text);
-        View mWBtext = mActivity.findViewById(R.id.whitebalance_text);
-        View mISOtext = mActivity.findViewById(R.id.iso_text);
-        mEVtext.getLocationInWindow(mEVLoc);
-        mFocustext.getLocationInWindow(mFocDisLoc);
-        mShuttertext.getLocationInWindow(mShutterLoc);
-        mWBtext.getLocationInWindow(mWBLoc);
-        mISOtext.getLocationInWindow(mISOLoc);
-        mProLoc.put("EV",mEVLoc);
-        mProLoc.put("FocusDistance",mFocDisLoc);
-        mProLoc.put("ShutterSpeed",mShutterLoc);
-        mProLoc.put("WB",mWBLoc);
-        mProLoc.put("ISO",mISOLoc);*/
-        View mProLayout = mActivity.findViewById(R.id.pro_mode_layout);
-        mProLayout.getLocationInWindow(mProLayoutLoc);
-        String[]proList = {"EV","FocusDistance","ShutterSpeed","WB","ISO"};
-        int proItem = proList.length;
-        int prolen = CameraUtil.metrics.widthPixels/proItem;
-        for(int j =0; j < proItem;j++){
-            int x = j*prolen +prolen/2;
-            int[] proloc = {x,mProLayoutLoc[1]};
-            mProLoc.put(proList[j],proloc);
-        }
-        int[] promin = {mProMode.getCurveLeft(),mProMode.getCurveY()};
-        int[]promid = {mProMode.getMidX(),mProMode.getMidY()};
-        int[]promax = {mProMode.getCurveRight(),mProMode.getCurveY()};
-        View mShutter = mActivity.findViewById(R.id.shutter_button);
-        int[] snaploc  = new int[2];
-        mShutter.getLocationInWindow(snaploc);
-        mProLoc.put("proMinValue",promin);
-        mProLoc.put("proMidValue",promid);
-        mProLoc.put("proMaxValue",promax);
-        mProLoc.put("Shutter",snaploc);
-        mProLoc.put("Flash",mFlashLoc);
-        mProLoc.put("Setting",mSettingLoc);
-        mProLoc.put("Thumb",mThumbLoc);
     }
 
     public String executeShellCommand(String cmd) {
@@ -1728,15 +2557,15 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         }
     }
     private Map<String, String> getCameraIdMapping(){
-            String raw = executeShellCommand("dumpsys media.camera").replace("\n", "");
-            Matcher m = Pattern.compile("device@[\\d.]+/[\\w]+/(\\d+) [v\\d.()]* static.*?Facing: (Front|Back)").matcher(raw);
-            this.mCameraIdMapping.clear();
-            while (m.find()) {
-                Log.d(TAG, "getCameraIdMapping m.group=" + m.group(1)+","+m.group(2)+",m="+m);
-                this.mCameraIdMapping.put(m.group(1), m.group(2));
-            }
-            Log.d(TAG, "getCameraIdMapping mCameraIdMapping=" + mCameraIdMapping);
-            return this.mCameraIdMapping;
+        String raw = executeShellCommand("dumpsys media.camera").replace("\n", "");
+        Matcher m = Pattern.compile("device@[\\d.]+/[\\w]+/(\\d+) [v\\d.()]* static.*?Facing: (Front|Back)").matcher(raw);
+        this.mCameraIdMapping.clear();
+        while (m.find()) {
+            Log.d(TAG, "getCameraIdMapping m.group=" + m.group(1)+","+m.group(2)+",m="+m);
+            this.mCameraIdMapping.put(m.group(1), m.group(2));
+        }
+        Log.d(TAG, "getCameraIdMapping mCameraIdMapping=" + mCameraIdMapping);
+        return this.mCameraIdMapping;
 
     }
     public void getPicSize(){
@@ -1745,39 +2574,40 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         mPicWidInSet = pictureSize.substring(0, indexX);
         mPicHeiInSet = pictureSize.substring(indexX + 1);
     }
+
     public void getVideoSize(){
         String videoSize = mActivity.mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
         int indexX = videoSize.indexOf('x');
         mVideoWidInSet = videoSize.substring(0, indexX);
         mVideoHeiInSet = videoSize.substring(indexX + 1);
-        Size snapsize = mCaptureModule.getVideoSnapSize();
+/*        Size snapsize = mCaptureModule.getVideoSnapSize();
         mPicWidInSet = String.valueOf(snapsize.getWidth());
-        mPicHeiInSet = String.valueOf(snapsize.getHeight());
+        mPicHeiInSet = String.valueOf(snapsize.getHeight());*/
     }
 
     public String getActiveCameraId()
     {
-            String raw = executeShellCommand("dumpsys media.camera").replace("\n", "");
-            Matcher m = Pattern.compile("Active Camera Clients.{3,}Camera ID: (\\d+)").matcher(raw);
-            Log.d(TAG, "getActiveCameraFace m="+m );
-            String cameraId = "";
-            while (m.find()) {
-                cameraId = m.group(1);
-                return cameraId;
-            }
-            return null;
+        String raw = executeShellCommand("dumpsys media.camera").replace("\n", "");
+        Matcher m = Pattern.compile("Active Camera Clients.{3,}Camera ID: (\\d+)").matcher(raw);
+        Log.d(TAG, "getActiveCameraFace m="+m );
+        String cameraId = "";
+        while (m.find()) {
+            cameraId = m.group(1);
+            return cameraId;
+        }
+        return null;
     }
     public int getCameraDirectoryJpegAmount()
     {
 /*            List<String> results = Arrays.asList(executeShellCommand("find sdcard/DCIM/Camera/ -size +100k | grep -i '\\.jpg' | wc -l")
                     .trim().split("\n"));*/
-            String raw = executeShellCommand("find "+mNormalPath+" -size +1M ").replace("\n", "");
-            Matcher m = Pattern.compile(NORMAL_IMG).matcher(raw);
-            int num = 0;
-            while(m.find()){
-                num++;
-            }
-            return num;//Integer.valueOf(file.size());
+        String raw = executeShellCommand("find "+mNormalPath+" -size +1M ").replace("\n", "");
+        Matcher m = Pattern.compile(NORMAL_IMG).matcher(raw);
+        int num = 0;
+        while(m.find()){
+            num++;
+        }
+        return num;//Integer.valueOf(file.size());
 
     }
     private void updateJson(int level,String value){
@@ -1812,10 +2642,8 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         }
         Thread.sleep(OPEN_CAMERA_DURATION);
         mCurrentPreviewResult = mCaptureModule.getPreviewCaptureResult();
-        executeShellCommand("input tap 500 500");
-        Thread.sleep(OPEN_CAMERA_DURATION);
         if(mCurrentPreviewResult == null){
-           testFail = getFailStr("CurrentPreviewResult",mCurrentPreviewResult,"NotNull");
+            testFail = getFailStr("CurrentPreviewResult",mCurrentPreviewResult,"NotNull");
             updateJson(5,testFail);
             return;
         }
@@ -1831,7 +2659,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             updateJson(5,testFail);
             return;
         }
-       // assertEquals(mode,mCaptureModule.getCurrenCameraMode());
+        // assertEquals(mode,mCaptureModule.getCurrenCameraMode());
         String mainId = String.valueOf(mCaptureModule.getMainCameraId());
         if(!(id.equals(mainId))){
             testFail = getFailStr("getMainCameraId",mainId,id);
@@ -1865,14 +2693,13 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             mCaptureModule.setCaptureResult(null);
             mCaptureModule.setLongImageTitle(new ArrayList<>());
             mCaptureModule.setImagExif(new ArrayList<>());
+            mCaptureModule.setImgType(new ArrayList<>());
             mCurrentexif = null;
         }
     }
     public void resetPreview()throws Exception{
         if(mCaptureModule != null) {
             mCaptureModule.setPreviewCaptureResult(null);
-            mCaptureModule.setLongImageTitle(new ArrayList<>());
-            mCaptureModule.setImagExif(new ArrayList<>());
             mCaptureModule.resetHashMapTimes();
         }
     }
@@ -1880,6 +2707,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         if(mCaptureModule != null) {
             mCaptureModule.setVideFilePath(null);
             mCaptureModule.setLongImageTitle(new ArrayList<>());
+            mCaptureModule.setImgType(new ArrayList<>());
             mCaptureModule.setImagExif(new ArrayList<>());
         }
     }
@@ -1889,11 +2717,8 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         //assertFalse(mCaptureModule.mIsRecordingVideo);
         mCurrentPreviewResult = mCaptureModule.getPreviewCaptureResult();
         //assertNotNull(mCurrentPreviewResult);
-        //This if for 7.0 branch
-       // String videopath = mCaptureModule.getVideoFilePath();
-        //This is  for 8.0 branch
-        String videopath = mNormalPath + mCaptureModule.getVideoFilePath();
-       // assertNotNull(videopath);
+        String videopath = mCaptureModule.getVideoFilePath();
+        // assertNotNull(videopath);
         boolean isRecording = mCaptureModule.mIsRecordingVideo;
         mFrameRate = mActivity.mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         Log.i(TAG,"videopath="+videopath+",mIsRecordingVideo="+mCaptureModule.mIsRecordingVideo+
@@ -1952,7 +2777,7 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
         //assertEquals(mVideoHeiInSet,CameraUtil.mHeight);
         if(!mVideoWidInSet.equals(CameraUtil.mWidth) || !mVideoHeiInSet.equals(CameraUtil.mHeight)){
             testResult = false;
-           // reportErrorInfo("VideoSize.getWidth",CameraUtil.mWidth,mVideoWidInSet);
+            // reportErrorInfo("VideoSize.getWidth",CameraUtil.mWidth,mVideoWidInSet);
             testFail = getFailStr("VideoSize(width*height)",CameraUtil.mWidth+"*"+
                     CameraUtil.mHeight,mVideoWidInSet+"*"+mVideoHeiInSet);
             return;
@@ -1980,18 +2805,32 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             testFail = getFailStr("isShutterEnabled",mCaptureModule.getCaptureUI().isShutterEnabled(),true);
             return;
         }
+        int index = path.indexOf(".");
+        String type = path.substring(index);
+        String value = mSettingsManager.getValue(SettingsManager.KEY_PICTURE_FORMAT);
+        String format =".jpg";
+        String raw = mSettingsManager.getKeyValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        if(value.equals("1")){
+            format = ".heic";
+        }
+        if(!format.equals(type) && raw.equals("0") ){
+            testFail = getFailStr("image foramt ",type,format);
+            return;
+        }
 
+        if(type.equals(".raw")|| type.equals(".yuv")){
+            path = path + ".jpg";
+        }
         File f = new File(path);
-
         if(isOpenFromIntent){
             if(f.exists()){
-                testFail = getFailStr("imagepath.exit()",f.exists(),false);
+                testFail = getFailStr("file("+f+") is exit?",f.exists(),false);
             }
             return;
         }
         if(!f.exists()){
             testResult = false;
-            testFail = getFailStr("imagepath.exit()",f.exists(),true);
+            testFail = getFailStr("file("+f+") is exit?",f.exists(),true);
             return;
         }
         if(f.length() < 1024){
@@ -1999,28 +2838,53 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             testFail = getFailStr("imagepath.length()",f.length(),"above 1024");
             return;
         }
-        try {
-            mCurrentexif = new ExifInterface(path);
-        }catch(Exception e){
-            Log.i(TAG,"getexif e="+e);
-            mCurrentexif =exif;
-        }
-        if(mCurrentexif == null ){
-            testFail = getFailStr("imagepath.exif",mCurrentexif,"NotNull");
-            return;
-        }
+        if(type.equals(".jpg") || type.equals(".heic") || type.equals(".dng")) {
+            try {
+                mCurrentexif = new ExifInterface(path);
+            } catch (Exception e) {
+                Log.i(TAG, "getexif e=" + e);
+                mCurrentexif = exif;
+            }
+            if (mCurrentexif == null) {
+                testFail = getFailStr("imagepath.exif", mCurrentexif, "NotNull");
+                return;
+            }
 
-        String wInExif= mCurrentexif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH);
-        String hInExif= mCurrentexif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
-        if(!mPicWidInSet.equals(wInExif) || !mPicHeiInSet.equals(hInExif)){
-            Log.i(TAG,"imagepath="+path);
-            testFail = getFailStr("ImageSize in exif",wInExif+"*"+hInExif,
-                    mPicWidInSet+"*"+mPicHeiInSet);
-            return;
+            String wInExif = mCurrentexif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH);
+            String hInExif = mCurrentexif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
+            Size size = getImgSize(path);
+            if(mCaptureModule.isRecordingVideo()){
+                size = mCaptureModule.getVideoSnapSize();
+            }
+            if (size.getWidth() != Integer.valueOf(wInExif) || size.getHeight() != Integer.valueOf(hInExif)) {
+                testFail = getFailStr("ImageSize in exif", wInExif + "*" + hInExif,
+                        size.getWidth() + "*" + size.getHeight());
+                return;
+            }
         }
 
     }
-
+    private Size getImgSize(String path){
+        String format = mSettingsManager.getKeyValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        Size picSize = mCaptureModule.getSnapShotJPGSize();
+        int suffixindex = path.indexOf(".");
+        String suffix = path.substring(suffixindex);
+        if(".raw.jpg".equals(suffix) || ".dng".equals(suffix)){
+            picSize = mCaptureModule.getSnapShotRawSize();
+        }else if(".yuv.jpg".equals(suffix) && (format != null && (format.equals("54") ||
+                format.equals("99")))){
+            picSize = mCaptureModule.getYUVP010Size();
+        }
+        return picSize;
+    }
+    private int getImageNum(){
+        int imgnm = 1;
+        String value = mSettingsManager.getKeyValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        if(value != null && (value.equals("10") || value.equals("16"))){
+            imgnm =2;
+        }
+        return imgnm;
+    }
     private boolean isSupportSnapShot(CaptureModule.CameraMode mode) {
         if (mode == CaptureModule.CameraMode.HFR || (isOpenFromIntent && isVideoMode(mode))) {
             return false;
@@ -2198,18 +3062,18 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
             testFail = getFailStr("NOISE_REDUCTION_MODE",noiseInResult,noiseReduMode);
             return;
         }
-       // assertEquals(noiseReduMode,noiseInResult);
+        // assertEquals(noiseReduMode,noiseInResult);
     }
     public void checkZoomValue(CaptureModule.CameraMode mode)throws Exception{//HardSwitch with cameraid changed need hal support
-        if(!testResult) return;
         float zoomInPre = mCurrentPreviewResult.get(CaptureResult.CONTROL_ZOOM_RATIO );
         float zoomStr = mActivity.getCaptureModule().getZoomValue();
         if(zoomStr == mOldZoomstr){
-            testFail = getFailStr("zoom should be changed","currentzoom == beforezoom","different");
+            testFail = getFailStr("zoom should be changed,oldzoom is "+mOldZoomstr+
+                    ",new zoom is the same ",zoomStr,"different");
             return;
         }
         mOldZoomstr = zoomStr;
-       // assertNotEquals(zoomStr,mOldZoomstr);
+        // assertNotEquals(zoomStr,mOldZoomstr);
         if(mode != CaptureModule.CameraMode.HFR && !isOpenFromIntent){
             float zoomInCap = mCurrentCaptureResult.get(CaptureResult.CONTROL_ZOOM_RATIO);
             if(zoomStr != zoomInCap ){
@@ -2220,8 +3084,8 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 testFail = getFailStr("zoomInPreview:CONTROL_ZOOM_RATIO",zoomInPre,zoomStr);
                 return;
             }
-           // assertEquals(zoomStr,zoomInCap);
-           // assertEquals(zoomStr,zoomInPre);
+            // assertEquals(zoomStr,zoomInCap);
+            // assertEquals(zoomStr,zoomInPre);
         }else{
             Rect mCropRegion = mCurrentPreviewResult.get(CaptureResult.SCALER_CROP_REGION);
             if(mOldZoomRegion == mCropRegion){
@@ -2229,28 +3093,28 @@ private void clickShutterButton(CaptureModule.CameraMode mode)throws Exception{
                 testFail = getFailStr("SCALER_CROP_REGION should change","mCropRegion==mOldZoomRegion","different");
                 return;
             }
-           // assertNotEquals(mOldZoomRegion,mCropRegion);
+            // assertNotEquals(mOldZoomRegion,mCropRegion);
             mOldZoomRegion = mCropRegion;
         }
     }
     public void checkZSL(){
         if(!testResult) return;
         boolean zslset = mActivity.mSettingsManager.isZSLInHALEnabled();
-       boolean zslresult =  mCurrentCaptureResult.get(CaptureResult.CONTROL_ENABLE_ZSL);
-       if(zslset != zslresult){
-           testResult = false;
-           testFail = getFailStr("CONTROL_ENABLE_ZSL",zslresult,zslset);
-           return;
-       }
+        boolean zslresult =  mCurrentCaptureResult.get(CaptureResult.CONTROL_ENABLE_ZSL);
+        if(zslset != zslresult){
+            testResult = false;
+            testFail = getFailStr("CONTROL_ENABLE_ZSL",zslresult,zslset);
+            return;
+        }
         //assertEquals(zslset,zslresult);
     }
-public void swipFromLTR(int swipnum)throws Exception{
-    int changevalue = swipevalue - 100;
+    public void swipFromLTR(int swipnum)throws Exception{
+        int changevalue = swipevalue - 100;
         for(int i = 0;i < swipnum;i++){
             executeShellCommand("input swipe " +swipevalue + " "+swipevalue +" "+changevalue + " "+swipevalue);
             Thread.sleep(OPEN_CAMERA_DURATION);
         }
-}
+    }
     public void swipFromRTL(int swipnum)throws Exception{
         int changevalue = swipevalue + 100;
         for(int i = 0;i < swipnum;i++){
@@ -2362,5 +3226,63 @@ public void swipFromLTR(int swipnum)throws Exception{
         mCaptureModule.setStartedTime(0);
         mCaptureModule.resetHashMapTimes();
         return outHash;
+    }
+
+    public static String getIndexStr(String testStr,int index){
+        String item ="";
+        if(index >=0) {
+            String test = testStr.substring(index);
+            int tmp = test.indexOf("-");
+            if (tmp > 0) {
+                item = test.substring(0, tmp - 1);
+            } else {
+                item = test;
+            }
+            item = item.trim();
+            return item;
+        }else{
+            return null;
+        }
+    }
+
+    public static void getTestItem(String testStr) {
+        if (testStr != null) {
+            int indexM = testStr.indexOf("-m");
+            int indexT = testStr.indexOf("-t");
+            int indexNT = testStr.indexOf("-nt");
+            Log.i("getTestItem", "initJson indexM=" + indexM + ",indexT=" + indexT+",indexNT="+indexNT);
+            if(indexM != -1) {
+                functionTestMode = getIndexStr(testStr, indexM + 2);
+            }
+            if(indexT != -1) {
+                functionTestItem = getIndexStr(testStr, indexT + 2);
+            }
+            if(indexNT != -1) {
+                functionTestItemDel = getIndexStr(testStr, indexNT + 3);
+            }
+            Log.i("getTestItem", "initJson " +
+                    "functionTestItem=" + functionTestItem + ",functionTestItemDel=" + functionTestItemDel
+                    + ",functionTestMode=" + functionTestMode);
+        }
+    }
+    private boolean testItem(String testCase){
+        if(functionTestItem != null && !functionTestItem.contains(testCase)){
+            return false;
+        }else if(functionTestItemDel != null && functionTestItemDel.contains(testCase)){
+            return false;
+        }
+        return true;
+    }
+
+    public void switchModeTextToR(boolean lToR)throws Exception {
+        int[] SlideModeTxt = mModeIconR.get("SlideModeTxt");
+        int swipevalue = 0;
+        if(lToR){
+            swipevalue = SlideModeTxt[0] - SWIPE_STEP;
+        }else{
+            swipevalue = SlideModeTxt[0] + SWIPE_STEP;
+        }
+        executeShellCommand("input swipe " +SlideModeTxt[0] + " "+SlideModeTxt[1] +" "+ swipevalue + " "+SlideModeTxt[1]);
+        Thread.sleep(SMALL_WAIT_DURATION);
     }
 }

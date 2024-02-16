@@ -173,7 +173,9 @@ public class FilmstripLayout extends FrameLayout implements FilmstripContentPane
         }
         mFilmstripView.getController().setListener(listener);
     }
-
+    public String getTitleFromFilm(int index){
+       return mFilmstripView.getDateTitle(index);
+    }
     @Override
     public void hide() {
         translateContentLayout(1f);

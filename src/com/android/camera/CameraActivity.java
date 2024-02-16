@@ -22,8 +22,10 @@ package com.android.camera;
 
 import android.hardware.camera2.CameraAccessException;
 import android.media.ExifInterface;
+import android.os.Environment;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.provider.Settings;
 import android.view.Display;
 import android.graphics.Point;
 import android.Manifest;
@@ -1015,7 +1017,8 @@ public class CameraActivity extends Activity
                 if((mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
                         || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR ||
                         mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC)) ||
-                        (mMultiCameraModule != null && mMultiCameraModule.isRecordingVideo())){
+                        (mMultiCameraModule != null && mMultiCameraModule.isRecordingVideo()) ||
+                        mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH){
                     return;
                 }else {
                     mThumbnail.setVisibility(View.VISIBLE);
@@ -1043,8 +1046,9 @@ public class CameraActivity extends Activity
         if (mThumbnailDrawable != null) {
             mThumbnail.setImageDrawable(mThumbnailDrawable);
             if (!isSecureCamera() && !isCaptureIntent()) {
-                if(mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
-                || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR)){
+                if((mCaptureModule.isRecordingVideo() && (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO
+                || mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR)) ||
+                        mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH){
                     return;
                 }else {
                     mThumbnail.setVisibility(View.VISIBLE);
@@ -1907,8 +1911,9 @@ public class CameraActivity extends Activity
 
     private  void registerAutoTestReceiver() {
         IntentFilter filter = new IntentFilter(AUTO_TEST_INTENT);
-        registerReceiver(mAutoTestReceiver, filter);
+        registerReceiver(mAutoTestReceiver, filter, RECEIVER_EXPORTED);
     }
+
 
     @Override
     public void onCreate(Bundle state) {
@@ -2265,6 +2270,12 @@ public class CameraActivity extends Activity
             editor.putBoolean(CameraSettings.KEY_REQUEST_PERMISSION, true);
             editor.apply();
             isStartPermissionActivity = true;
+        }
+        if (!Environment.isExternalStorageManager()) {
+            Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+            Uri uri = Uri.fromParts("package", getPackageName(), null);
+            intent.setData(uri);
+            startActivity(intent);
         }
         return isStartPermissionActivity;
     }
@@ -2976,11 +2987,9 @@ public class CameraActivity extends Activity
         return mCaptureModule;
     }
     public boolean getAutoTest(){
-         return  mIsAutoTest || PersistUtil.isStressTestRunning();
+         return  PersistUtil.isFuncTestRunning();
     }
-    public void setAutoTest(boolean test){
-        mIsAutoTest = test;
-    }
+
     public boolean getDevOption(){
         return  mOpenDevOption;
     }
@@ -2988,11 +2997,9 @@ public class CameraActivity extends Activity
         mOpenDevOption = open;
     }
     public boolean getPerformenceTest(){
-        return  mIsPerformenceTest || mColdOpenCameraTime != 0;
+        return  PersistUtil.isPerfTestRunning();
     }
-    public void setPerformenceTest(boolean test){
-        mIsPerformenceTest = test;
-    }
+
 
    // method for autotest end
 

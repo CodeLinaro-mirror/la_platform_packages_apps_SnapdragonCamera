@@ -95,7 +95,7 @@ import android.util.Size;
 import java.util.TimeZone;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
-
+import com.android.camera.Storage;
 import com.android.camera.imageprocessor.filter.ImageFilter;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
@@ -174,9 +174,6 @@ public class PostProcessor{
     public void onStartCapturing() {
         mTotalCaptureResultList.clear();
     }
-
-    private List<String> mLongImgTitle = new ArrayList<>();
-    private List<android.media.ExifInterface> mImagExif = new ArrayList<>();
     public ImageReader getZSLReprocessImageReader() { return mZSLReprocessImageReader; }
     public MultiResolutionImageReader getZSLReprocessMultiImageReader() { return mMultiOutputImageReader; }
 
@@ -490,10 +487,11 @@ public class PostProcessor{
         if (mZSLQueue == null)
             return false;
         mController.setJpegImageData(null);
-        mLongImgTitle = new ArrayList<>();
-        mImagExif = new ArrayList<>();
-        mController.setLongImageTitle(null);
-        mController.setCaptureResult(null);
+        if(mActivity.getAutoTest()) {
+            mController.setLongImageTitle(new ArrayList<>());
+            mController.setImagExif(new ArrayList<>());
+            mController.setCaptureResult(null);
+        }
         ZSLQueue.ImageItem imageItem = mZSLQueue.tryToGetMatchingItem();
         if(mController.getPreviewCaptureResult() == null ||
                 mController.getPreviewCaptureResult().get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED) {
@@ -1346,7 +1344,12 @@ public class PostProcessor{
                     mNamedImages.nameNewImage(captureStartTime);
                     PhotoModule.NamedImages.NamedEntity name = mNamedImages.getNextNameEntity();
                     String title = (name == null) ? null : name.title;
-                    Log.d(TAG,"ZSL onImageAvailable title="+title);
+                    Log.i(TAG,"ZSL onImageAvailable title="+title);
+                    if(mActivity.getAutoTest()) {
+                        String path = Storage.DIRECTORY;
+                        String suffix = ".jpg";
+                        mController.mLongImgTitle.add(path+"/"+title+suffix);;
+                    }
                     byte[] imgeBytes;
                     long date = (name == null) ? -1 : name.date;
                     if(mController.mRawReprocessType == 2 || mController.mRawReprocessType == 3 || mController.mRawReprocessType == 5 ||mController.mRawReprocessType == 0){
@@ -1356,8 +1359,8 @@ public class PostProcessor{
                         image.getPlanes()[0].getBuffer().get(imgeBytes, 0, size);
                         ExifInterface exif = null;
                         int orientation = 0;
+                        exif = Exif.getExif(imgeBytes);
                         if (image.getFormat() != ImageFormat.HEIC) {
-                            exif = Exif.getExif(imgeBytes);
                             orientation = Exif.getOrientation(exif);
                         } else {
                             orientation = CameraUtil.getJpegRotation(mController.getMainCameraId(),mOrientation);
@@ -1382,17 +1385,16 @@ public class PostProcessor{
                         }
                     }else{
                         imgeBytes = getYUVFromImage(image);
-                        mActivity.getMediaSaveService().addRawImage(imgeBytes, title,
-                                "yuv");
+                        mActivity.getMediaSaveService().addRawImage(imgeBytes, title, "yuv");
                         image.close();
                     }
                     if(mActivity.getAutoTest()) {
-                        mLongImgTitle.add(title);
-                        mController.setLongImageTitle(mLongImgTitle);
+                        String path = Storage.DIRECTORY;
+                        String suffix = ".jpg";
+                        mController.mLongImgTitle.add(path+"/"+title+suffix);;
                         try {
                             android.media.ExifInterface myexif = new android.media.ExifInterface(new ByteArrayInputStream(imgeBytes));
-                            mImagExif.add(myexif);
-                            mController.setImagExif(mImagExif);
+                            mController.mImagExif.add(myexif);
                         }catch (Exception e){
                             Log.i(TAG,"getexif e="+e);
                         }
