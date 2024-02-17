@@ -116,9 +116,10 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVideoRetouch", byte.class);
     private static final CaptureRequest.Key<Integer> EIS_MODE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EISMode", Integer.class);
-    public static final CaptureResult.Key<Integer> Get_EIS_MODE =
+    public static final CaptureResult.Key<Integer> GET_EIS_MODE =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.sessionParameters.EISMode", Integer.class);
-
+    public static final CaptureResult.Key<Integer> GET_DEPTH_MODE =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.sessionParameters.DepthMode",Integer.class);
     public static final CaptureRequest.Key<Integer> DEPTH_MODE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.DepthMode",Integer.class);
 
