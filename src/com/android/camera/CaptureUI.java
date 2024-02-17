@@ -3433,6 +3433,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             foucusList.add(mTrackingFocusRenderer);
         }
         String value = mSettingsManager.getValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS);
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC) {
+            value = mSettingsManager.getValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC);
+        }
         if (value != null && value.equals("on")) {
             if (mPieRenderer != null) {
                 mPieRenderer.clear();

@@ -359,6 +359,12 @@
         camera:entryValues="@array/pref_camera2_touch_track_focus_entryvalues"
         camera:key="pref_camera2_touch_track_focus_key"
         camera:title="@string/pref_camera2_touch_track_focus_title" />
+    <ListPreference
+        camera:defaultValue="@string/pref_camera2_touch_track_focus_value_on"
+        camera:entries="@array/pref_camera2_touch_track_focus_entries"
+        camera:entryValues="@array/pref_camera2_touch_track_focus_entryvalues"
+        camera:key="pref_camera2_touch_track_focus_for_cinematic_key"
+        camera:title="@string/pref_camera2_touch_track_focus_title" />
 
     <ListPreference
         camera:defaultValue="@string/pref_camera2_videoencoderprofile_default"
