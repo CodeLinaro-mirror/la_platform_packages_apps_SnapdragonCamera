@@ -4104,8 +4104,20 @@ public class SettingsManager implements ListMenu.SettingsListener {
         float maxZoom = mCharacteristics.get(cameraId).get(CameraCharacteristics
                 .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
         ArrayList<String> supported = new ArrayList<String>();
+        float[] range = getZoomRange();
+        maxZoom = range[1];
+        boolean addMin = true;
         for (int zoomLevel = 0; zoomLevel <= maxZoom; zoomLevel++) {
-            supported.add(String.valueOf(zoomLevel));
+            int tmp = zoomLevel+1;
+            if(zoomLevel ==0){
+                supported.add(String.valueOf(zoomLevel));
+            }
+            if(range[0] > zoomLevel && range[0] < tmp && addMin){
+                supported.add(String.valueOf(range[0]));
+                addMin = false;
+            }else if(zoomLevel >= (int)range[0]){
+                supported.add(String.valueOf(zoomLevel));
+            }
         }
         return supported;
     }
@@ -4149,6 +4161,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.PRO_MODE ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR;
+    }
+    public float[] getZoomRange(){
+        float[] zoomRatioRange = getSupportedRatioZoomRange(
+                mCaptureModule.getMainCameraId());
+        if(mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
+                (isRTBModeInSelectMode() && !isAICameraOn())) {
+            zoomRatioRange =getSupportedBokenRatioZoomRange(
+                    mCaptureModule.getMainCameraId());
+        }
+        return zoomRatioRange;
     }
 
     public float[] getSupportedBokenRatioZoomRange(int cameraId) {
