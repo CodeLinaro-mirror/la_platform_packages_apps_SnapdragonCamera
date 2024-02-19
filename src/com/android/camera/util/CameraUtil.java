@@ -192,6 +192,7 @@ public class CameraUtil {
     public static long timeInMillisec;
     public static String mWidth,mHeight,mFrameRate,mTitle;
     public static int mFps;
+    public static int modeLayHeigh;
 
     private static long mStartTime;
     private static String mStartStr;
@@ -1816,9 +1817,12 @@ public class CameraUtil {
                 strBuffer.append("\n");
             }
         } catch (Exception e) {
-            Log.i(TAG, "exception e=" + e +",filepath="+filePath);
+            Log.i(TAG, "exception e=" + e + ",filepath=" + filePath);
         }
         return strBuffer.toString();
+    }
+    public static void setModeLayHeight(int height){
+        modeLayHeigh = height;
     }
     public static class IntegerLock {
         private int value;

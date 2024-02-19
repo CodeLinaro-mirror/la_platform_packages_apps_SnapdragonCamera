@@ -23,7 +23,7 @@
  */
 
 package com.android.camera.ui;
-
+import android.support.v7.widget.RecyclerView;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -41,6 +41,8 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.RelativeLayout;
+
+import com.android.camera.util.CameraUtil;
 import com.android.camera.util.Log;
 
 import com.android.camera.CaptureModule;
@@ -545,7 +547,6 @@ public class OneUICameraControls extends RotatableLayout {
     @Override
     public void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-
         mWidth = w;
         mHeight = h;
         if (mMakeupSeekBar != null) {
@@ -562,11 +563,15 @@ public class OneUICameraControls extends RotatableLayout {
         b = b - t;
         l = 0;
         t = 0;
-
         setLocation(r - l, b - t);
         layoutRemaingPhotos();
         initializeProMode(mProModeOn);
         initializeAIBlurSlide(mBlurModeOn);
+        RecyclerView bottom = (RecyclerView) findViewById(R.id.mode_select_layout);
+        int[]mModeLoc = new int[2];
+        bottom.getLocationInWindow(mModeLoc);
+        CameraUtil.setModeLayHeight(mModeLoc[1]);
+
     }
 
     public boolean isControlRegion(int x, int y) {
