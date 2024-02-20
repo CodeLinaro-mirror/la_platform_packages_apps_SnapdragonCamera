@@ -4337,9 +4337,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mIsPreviewingVideo = true;
             if (isHighSpeedRateCapture()) {
-                if (PersistUtil.enableMediaRecorder() && (mVideoRecordingSurface != null)) {
-                    mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
-                }
                 createHighSpeedSession(cameraId);
             } else {
                 createRegularSession(cameraId);
@@ -12063,13 +12060,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
+        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
         if (!PersistUtil.enableMediaRecorder()) {
             mFrameProcessor.setVideoOutputSurface(null);
             mFrameProcessor.onClose();
             if (mLiveShotInitHeifWriter != null) {
                 mLiveShotInitHeifWriter.close();
             }
-            mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+
         } else {
             //stop without config stream
             if( (mCurrentSession != null) && mCameraDevice[getMainCameraId()] != null) {
