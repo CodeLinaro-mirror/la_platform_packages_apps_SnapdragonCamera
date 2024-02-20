@@ -3798,7 +3798,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         for (int mode : sceneModes) {
             //remove scene mode like "Sunset", "Night" such as, only keep "HDR" mode
             // QuadBayerSensor didn`t support HDR
-            if (mode == SCENE_MODE_HDR_INT && !getQuadBayerSensorPrefEnabled()) {
+            if (mode == SCENE_MODE_HDR_INT) {
                 modes.add("" + mode);
             }
         }
@@ -4297,7 +4297,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         int videoSize = CameraUtil.getSize(videoSizeStr);
         if(((rawFormat != null && rawFormat.equals("0")) || rawFormat == null) &&
             ((inSensorZoom != null && inSensorZoom.equals("0")) || inSensorZoom == null) &&
-                (videoSize < 7680*4320) && !getQuadBayerSensorPrefEnabled()){
+                (videoSize < 7680*4320) ){
              return true;
         }
         return false;
