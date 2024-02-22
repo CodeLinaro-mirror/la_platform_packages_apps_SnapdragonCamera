@@ -9371,7 +9371,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private boolean isTouchToFocusAllowed() {
-        if ((isTakingPicture() || isTouchAfEnabledSceneMode()) &&
+        if (isTakingPicture() &&
                 !(mT2TFocusRenderer != null && mT2TFocusRenderer.isShown())) {
             return false;
         }
@@ -16937,7 +16937,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         public int getNextCameraId(CameraMode nextMode) {
             int cameraId = isBackCamera() ? rearCameraId : frontCameraId;
             cameraId = isForceAUXOn(this.mode) ? auxCameraId : cameraId;
-
             Log.i(TAG, " getNextCameraId cameraId=" + cameraId + ",mode=" + this.mode +
                     ",swithCameraId=" + swithCameraId);
             if ((this.mode == CameraMode.DEFAULT || this.mode == CameraMode.VIDEO ||
