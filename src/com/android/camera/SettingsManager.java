@@ -633,12 +633,36 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
     }
 
+    private void setPreferenceDefaultValue(){
+        ListPreference mfnrPref = mPreferenceGroup.findPreference(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+        if(getKeyValue(CameraSettings.KEY_FIRST_OPEN).equals("false")){
+            return;
+        }
+        String value = "1";
+        if (PersistUtil.getModelInfo().contains("6650") || PersistUtil.getModelInfo().contains("7635") || PersistUtil.getModelInfo().contains("7550")) {
+            value = "0";
+        }
+        if (mfnrPref != null) {
+            mfnrPref.setValue(value);
+        } else {
+            setKeyValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE, true, value);
+        }
+        ListPreference pref = mPreferenceGroup.findPreference(SettingsManager.KEY_VIULL);
+        if (pref != null) {
+            pref.setValue(value);
+        } else {
+            setKeyValue(SettingsManager.KEY_VIULL, true, value);
+        }
+        setKeyValue(CameraSettings.KEY_FIRST_OPEN, false, "false");
+    }
+
     public void init() {
         Log.i(TAG, "SettingsManager init current camera id : " + CaptureModule.CURRENT_ID);
         final int cameraId = getInitialCameraId();
         reloadCharacteristics(cameraId);
         setLocalIdAndInitialize(cameraId);
         autoTestBroadcast(cameraId);
+        setPreferenceDefaultValue();
     }
 
     public void reinit(int cameraId) {

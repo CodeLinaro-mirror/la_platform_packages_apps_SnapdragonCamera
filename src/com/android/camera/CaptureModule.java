@@ -4434,7 +4434,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCurrentSceneMode == null) {
             int index = mIntentMode == INTENT_MODE_VIDEO ?
                     CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
-
             mCurrentModeIndex =  mNextModeIndex = index;
             mCurrentSceneMode = mSceneCameraIds.get(index);
         }
@@ -4448,6 +4447,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                     break;
                 }
             }
+        }
+        if((PersistUtil.getModelInfo().contains("6650") || PersistUtil.getModelInfo().contains("7635") || PersistUtil.getModelInfo().contains("7550") ) &&
+                mIntentMode != INTENT_MODE_VIDEO){
+            mCurrentModeIndex =  mNextModeIndex = CameraMode.DEFAULT.ordinal() -1;
         }
     }
 
@@ -4518,7 +4521,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             case TYPE_DEFAULT:// default
                 removeList[CameraMode.DEFAULT.ordinal()] = false;
                 removeList[CameraMode.VIDEO.ordinal()] = false;
-                removeList[CameraMode.CINEMATIC.ordinal()] = false;
+                if (PersistUtil.getModelInfo().contains("6650") || PersistUtil.getModelInfo().contains("7635") || PersistUtil.getModelInfo().contains("7550")) {
+                    removeList[CameraMode.CINEMATIC.ordinal()] = true;
+                }else {
+                    removeList[CameraMode.CINEMATIC.ordinal()] = false;
+                }
                 removeList[CameraMode.PRO_MODE.ordinal()] = false;
                 if (physical_ids != null && physical_ids.size() == 0 &&
                         facing != CameraCharacteristics.LENS_FACING_FRONT){
@@ -7171,7 +7178,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public boolean isMFNREnabled() {
         boolean mfnrEnable = false;
         if (mSettingsManager != null && showMFNR()) {
-            String mfnrValue = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+            String mfnrValue = mSettingsManager.getKeyValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
             if (mfnrValue != null) {
                 mfnrEnable = mfnrValue.equals("1");
             }
