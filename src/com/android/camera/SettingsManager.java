@@ -2796,7 +2796,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             videoEncoderProfilePref.reloadInitialEntriesAndEntryValues();
             boolean isSupported = isDynamicRangeTenBitSupported();
             Log.d(TAG, " isDynamicRangeTenBitSupported, isSupported : " + isSupported);
-            if (isSupported && !PersistUtil.isVideoEncoderProfileByVendorTag()) {
+            if (isSupported) {
                 VIDEO_ENCODER_PROFILE_TABLE.clear();
                 try {
                     DynamicRangeProfiles dynamicProfiles = mCharacteristics.get(

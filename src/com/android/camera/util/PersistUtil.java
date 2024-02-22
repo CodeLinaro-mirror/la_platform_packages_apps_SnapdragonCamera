@@ -454,10 +454,6 @@ public class PersistUtil {
         return getBoolean("persist.sys.cameraapp.needaudio", true);
     }
 
-    public static boolean isVideoEncoderProfileByVendorTag() {
-        return getBoolean("persist.sys.cameraapp.videoprofilevendortag", true);
-    }
-
     public static boolean isPersistVideoLiveshot(){
         return PERSIST_VIDEO_LIVESHOT;
     }

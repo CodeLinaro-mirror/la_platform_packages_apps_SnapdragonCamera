@@ -723,10 +723,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.HorizonLevelControl", Integer.class);
     private static final CaptureRequest.Key<Integer> cinematic_mode_enable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableCinematicMode", Integer.class);
-    //HDRVideo MODE
-    public static final CaptureRequest.Key<Integer> hdr_video_mode = new CaptureRequest.Key<>(
-            "org.codeaurora.qcamera3.sessionParameters.HDRVideoMode", Integer.class);
-    // Session Parameters vendorTag END
 
     public static final CaptureRequest.Key<Integer> offline_dump_trigger_enabled =
             new CaptureRequest.Key<>("org.quic.camera.offlinedump.isEnabled", Integer.class);
@@ -7762,7 +7758,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             if (!mSettingsManager.isMultiCameraEnabled()) {
                 applyOfflineDumpTrigger(builder);
-                applyVideoEncoderProfile(builder);
             }
             if(mCurrentSceneMode.mode == CameraMode.HFR){
                 applyBufferMode(builder);
@@ -10698,8 +10693,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
                     Log.v(TAG, " video OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
                 }
-                if (mSettingsManager.isDynamicRangeTenBitSupported() &&
-                        !PersistUtil.isVideoEncoderProfileByVendorTag()) {
+                if (mSettingsManager.isDynamicRangeTenBitSupported()) {
                     String encoderProfile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
                     if (encoderProfile != null) {
                         String profile = SettingsManager.VIDEO_ENCODER_PROFILE_MAP.get(encoderProfile);
@@ -11622,31 +11616,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else {
             builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CaptureRequest
                     .CONTROL_VIDEO_STABILIZATION_MODE_ON);
-        }
-    }
-
-    private void applyVideoEncoderProfileByVendorTag(CaptureRequest.Builder builder) {
-        String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-        int mode = 0;
-        if (profile.equals("HEVCProfileMain10HDR10")) {
-            mode = 2;
-        } else if (profile.equals("HEVCProfileMain10")) {
-            mode = 1;
-        } else if (profile.equals("HEVCProfileMain10HDR10Plus")) {
-            mode = 3;
-        }
-        Log.d(TAG, "setHDRVideoMode: " + mode);
-        builder.set(hdr_video_mode, mode);
-        VendorTagUtil.setHDRVideoMode(builder, (byte)mode);
-    }
-
-    private void applyVideoEncoderProfile(CaptureRequest.Builder builder) {
-        if (mSettingsManager.isDynamicRangeTenBitSupported()) {
-            if (PersistUtil.isVideoEncoderProfileByVendorTag()) {
-                applyVideoEncoderProfileByVendorTag(builder);
-            }
-        } else {
-            applyVideoEncoderProfileByVendorTag(builder);
         }
     }
 
