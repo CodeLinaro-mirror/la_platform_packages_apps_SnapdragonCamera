@@ -49,8 +49,6 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.params.Capability;
 import android.hardware.camera2.params.DynamicRangeProfiles;
-import android.hardware.camera2.params.MandatoryStreamCombination;
-import android.hardware.camera2.params.MandatoryStreamCombination.MandatoryStreamInformation;
 import android.hardware.camera2.params.MultiResolutionStreamConfigurationMap;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaCodecInfo;
@@ -69,20 +67,8 @@ import android.util.Range;
 import android.util.Rational;
 import android.util.Size;
 
-import com.android.camera.app.CameraApp;
-import com.android.camera.imageprocessor.filter.BestpictureFilter;
-import com.android.camera.imageprocessor.filter.BlurbusterFilter;
-import com.android.camera.imageprocessor.filter.ChromaflashFilter;
-import com.android.camera.imageprocessor.filter.DeepPortraitFilter;
-import com.android.camera.imageprocessor.filter.OptizoomFilter;
-import com.android.camera.imageprocessor.filter.SharpshooterFilter;
-import com.android.camera.imageprocessor.filter.TrackingFocusFrameListener;
-import com.android.camera.imageprocessor.filter.UbifocusFilter;
-import com.android.camera.imageprocessor.filter.DeepZoomFilter;
 import com.android.camera.ui.ListMenu;
-import com.android.camera.ui.PanoCaptureProcessView;
 import com.android.camera.util.PersistUtil;
-import com.android.camera.util.ApiHelper;
 import com.android.camera.util.SettingTranslation;
 import com.android.camera.util.AutoTestUtil;
 
@@ -91,11 +77,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
 import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -107,8 +89,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.lang.StringBuilder;
-import com.android.camera.util.PersistUtil;
-
 
 public class SettingsManager implements ListMenu.SettingsListener {
     public static final int RESOURCE_TYPE_THUMBNAIL = 0;
@@ -241,6 +221,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MANUAL_MFHDR = "MFHDR";
     public static final String KEY_MANUAL_SHDR = "SHDR";
     public static final String KEY_MANUAL_QHDR = "QHDR";
+    public static final String KEY_MANUAL_HVX_MFHDR = "HVX_MFHDR";
+    public static final String KEY_MANUAL_HVX_SHDR = "HVX_SHDR";
     public static final HashMap<String, Integer> KEY_HDR_MODES_ORDER = new HashMap<String, Integer>();
 
     //tone mapping
@@ -407,6 +389,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         KEY_HDR_MODES_ORDER.put("SHDR", 1);
         KEY_HDR_MODES_ORDER.put("MFHDR", 2);
         KEY_HDR_MODES_ORDER.put("QHDR", 3);
+        KEY_HDR_MODES_ORDER.put("HVX_SHDR", 4);
+        KEY_HDR_MODES_ORDER.put("HVX_MFHDR", 5);
         VIDEO_ENCODER_PROFILE_MAP.put("off", "0");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10", "2");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10HDR10", "4");
@@ -769,21 +753,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } else
             return null;
     }
-    private Size getMaxSize(Size... sizes) {
-        if (sizes == null || sizes.length == 0) {
-            return null;
-        }
-
-        Size sz = sizes[0];
-        for (Size size : sizes) {
-            if (size.getWidth() * size.getHeight() > sz.getWidth() * sz.getHeight()) {
-                sz = size;
-            }
-        }
-
-        return sz;
-    }
-
 
     private void autoTestBroadcast(int cameraId) {
         final SharedPreferences pref = mContext.getSharedPreferences(
@@ -993,7 +962,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             Log.w(TAG,EXCEPTION_LOG, "getMaxPreviewSize no vendorTag max_preview_size:");
         }
         int[] hdrMaxSize = getHdrMaxResolution();
-        if(isMfhdrEnabled() && hdrMaxSize != null){
+        if((ishwMfhdrEnabled() || ishwShdrEnabled()) && hdrMaxSize != null){
             if((maxPreviewSize != null && (maxPreviewSize[0]*maxPreviewSize[1] > hdrMaxSize[0]*hdrMaxSize[1] && hdrMaxSize[0] > 0 && hdrMaxSize[1] > 0)) ||
                     maxPreviewSize == null){
                maxPreviewSize = hdrMaxSize;
@@ -1012,12 +981,51 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return maxHdrSize;
     }
 
-    public boolean isMfhdrEnabled() {
+    public boolean ishwMfhdrEnabled() {
         String hdrmode = getVideoHdrMode();
         if (hdrmode != null && !hdrmode.equals("off")) {
             String[] modeLists = hdrmode.split(" ");
             for (int i = 0; i < modeLists.length; i ++) {
-                if(modeLists[i].equals("MFHDR") || modeLists[i].equals("SHDR")) {
+                if(modeLists[i].equals("MFHDR")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean ishwShdrEnabled() {
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            String[] modeLists = hdrmode.split(" ");
+            for (int i = 0; i < modeLists.length; i ++) {
+                if(modeLists[i].equals("SHDR")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean ishvxMfhdrEnabled() {
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            String[] modeLists = hdrmode.split(" ");
+            for (int i = 0; i < modeLists.length; i ++) {
+                if(modeLists[i].equals("HVX_MFHDR")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean ishvxShdrEnabled() {
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            String[] modeLists = hdrmode.split(" ");
+            for (int i = 0; i < modeLists.length; i ++) {
+                if(modeLists[i].equals("HVX_SHDR")) {
                     return true;
                 }
             }
@@ -3344,6 +3352,47 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return true;
     }
 
+    public boolean isHvxMFHDRSupported() {
+        boolean result = false;
+        try {
+            if (mCharacteristics.size() >0){
+                byte isSupported = mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.hvxMFHDRSupported);
+                result = (isSupported == 1);
+            }
+        } catch (IllegalArgumentException|NullPointerException e) {
+            e.printStackTrace();
+            Log.w(TAG, "Supported hvxMFHDRSupported is null.");
+        }
+        Log.d(TAG,"isHvxMFHDRSupported()" + result);
+        return result;
+    }
+
+    public boolean isHvxShdrSupported() {
+        boolean ret = false;
+        try{
+            if (mCharacteristics.size() >0){
+                byte hvx_shdr_available = mCharacteristics.get(getCurrentCameraId()).get(
+                        CaptureModule.support_hvx_shdr);
+                ret = hvx_shdr_available == 1;
+            }
+        } catch(IllegalArgumentException|NullPointerException e){
+            e.printStackTrace();
+        }
+        Log.d(TAG,"isHvxShdrSupported()" + ret);
+        return ret;
+    }
+
+    public int[] isScreenGrabSupported() {
+        int modes[] = null;
+        try {
+            modes = mCharacteristics.get(getCurrentCameraId())
+                    .get(CaptureModule.support_screen_grab_modes);
+        } catch (Exception e) {
+            Log.d(TAG,"isScreenGrabSupported(), cant read supportedScreenGrabmodes");
+        }
+        return modes;
+    }
+
     private boolean isFastShutterModeSupported(int id) {
         boolean result = false;
         try {
@@ -3570,21 +3619,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return  modes;
     }
 
-    private List<String> getSupportedVideoMFHDR(int[] modes) {
-        int[] videoDurations = {0, 1, 2};
-        List<String> supportModes = new ArrayList<>();
-        supportModes.add("0");
-        for (int i : videoDurations) {
-            for (int j : modes) {
-                if (i == j) {
-                    supportModes.add(""+i);
-                    Log.v(TAG, " getSupportedVideoMFHDR : " + j);
-                }
-            }
-        }
-        return supportModes;
-    }
-
     public List<String> getSupportedVideoSize(int cameraId) {
         if (cameraId > mCharacteristics.size())return null;
         List<String> res = new ArrayList<>();
@@ -3805,27 +3839,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
-    private List<String> getSupportedFlashModes(int cameraId) {
-        int[] flashModes = mCharacteristics.get(cameraId).get(CameraCharacteristics
-                .CONTROL_AE_AVAILABLE_MODES);
-        List<String> modes = new ArrayList<>();
-        for (int mode : flashModes) {
-            modes.add("" + mode);
-        }
-        return modes;
-    }
-
     private boolean isFlashAvailable(int cameraId) {
         if (mCharacteristics.size() > 0) {
             return mCharacteristics.get(cameraId).get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
         } else {
             return false;
         }
-    }
-
-    public StreamConfigurationMap getStreamConfigurationMap(int cameraId){
-        return mCharacteristics.get(cameraId)
-                .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
     }
 
     public List<String> getSupportedColorEffects(int cameraId) {
@@ -4134,15 +4153,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return -1;
     }
 
-    public boolean getRemosaicReprocPrefEnabled() {
-        ListPreference remosaicRepro = mPreferenceGroup.findPreference(KEY_REMOSAIC_REPROCESSING);
-        String value = remosaicRepro.getValue();
-        if(value != null && value.equals("enable")) {
-            return true;
-        }
-        return false;
-    }
-
     public boolean getDeepportraitEnabled() {
         String dp = getValue(KEY_SCENE_MODE);
         if( dp!= null && Integer.valueOf(dp) == SCENE_MODE_DEEPPORTRAIT_INT) {
@@ -4285,7 +4295,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (supportHeic == 1 && !getQuadBayerSensorPrefEnabled()){
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
         }
-        if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB) {
+        if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB && isDynamicRangeTenBitSupported()) {
             ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
         }
         return ret;
