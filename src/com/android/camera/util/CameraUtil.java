@@ -1801,7 +1801,7 @@ public class CameraUtil {
         }
 
     }
-    public static String ReadFile(String filePath) {
+    public static String readFile(String filePath) {
         FileInputStream fis = null;
         InputStreamReader isr = null;
         BufferedReader br = null;

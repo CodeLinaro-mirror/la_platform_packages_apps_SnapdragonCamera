@@ -9238,6 +9238,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     @Override
     public void onSingleTapUp(View view, int x, int y) {
+
         if (mPaused || !mCamerasOpened || !mFirstTimeInitialized || !mAutoFocusRegionSupported
                 || !mAutoExposureRegionSupported || !isTouchToFocusAllowed()
                 || mCaptureSession[getMainCameraId()] == null || mCurrentSessionClosed
@@ -16801,6 +16802,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             public int onItemClick(int mode) {
                 if (!getCameraModeSwitcherAllowed()) {
                     return -1;
+                }
+                if(mActivity.getPerformenceTest()) {
+                    mStartedTime = System.currentTimeMillis();
                 }
                 mUI.smoothSelectedPosition(mode);
                 return selectCameraMode(mode);

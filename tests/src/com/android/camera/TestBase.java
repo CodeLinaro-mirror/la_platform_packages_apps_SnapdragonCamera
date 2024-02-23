@@ -263,6 +263,7 @@ public class TestBase{
         try {
             for (String jsonArray : values.keySet()) {
                 JSONArray array = mObj.getJSONArray(jsonArray);
+                Log.i(TAG,"jsonArray ="+jsonArray);
                 for (int i = 0; i < array.length(); i++) {
                     JSONObject obj = array.getJSONObject(i);
                     int count = obj.getInt("testTimes");
@@ -755,6 +756,10 @@ public class TestBase{
                     mode == CaptureModule.CameraMode.HFR) {
                 clickShutterButton(mode);
                 checkFlash("on");
+                if(isPerformenceTest){
+                    HashMap<String,Long> snapShotWithFlashOn = getHashMapValue(mCaptureModule.getHashMapTimes());
+                    performenceValues.put("snapFlashOn",snapShotWithFlashOn);
+                }
                 boolean videoon = testResult;
                 if(isOpenFromIntent){
                     pressDone();
@@ -763,9 +768,14 @@ public class TestBase{
                     checkPreview("0",mode);
                     intenton = intenton && testResult;
                 }
+
                 executeShellCommand("input tap "+ mFlashLoc[0] +" "+mFlashLoc[1]);
                 clickShutterButton(mode);
                 checkFlash("off");
+                if(isPerformenceTest){
+                    HashMap<String,Long> snapShotWithFlashOff = getHashMapValue(mCaptureModule.getHashMapTimes());
+                    performenceValues.put("snapFlashOff",snapShotWithFlashOff);
+                }
                 boolean videooff = testResult;
                 if(isOpenFromIntent){
                     pressDone();

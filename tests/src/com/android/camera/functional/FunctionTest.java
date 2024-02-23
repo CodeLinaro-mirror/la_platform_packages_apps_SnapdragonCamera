@@ -73,7 +73,7 @@ public class FunctionTest extends TestBase  {
         Log.i("autotest_initJson","initJson beforeTest");
         init();
         updateAndSavejson(INPUT_JSON,null,null,null);
-        String testStr = CameraUtil.ReadFile(testFile);
+        String testStr = CameraUtil.readFile(testFile);
         Log.i("autotest_initJson","initJson testStr="+testStr);
         getTestItem(testStr);
     }
@@ -203,6 +203,10 @@ public class FunctionTest extends TestBase  {
             return;
         }
         int[] loc = mModeIconL.get("Cinematic");
+        if(loc == null){
+            Log.i(TAG,"Cannot find this mode");
+            return;
+        }
         Log.i(TAG, "testInCinema mVideoModeLoc="+loc[0]+"*"+loc[1]);
         executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
         //checkPreview("2",CaptureModule.CameraMode.HFR);
@@ -218,6 +222,10 @@ public class FunctionTest extends TestBase  {
             loc = mModeIconL.get("Depth");
         }else{
             switchModeTextToR(true);
+        }
+        if(loc == null){
+            Log.i(TAG,"Cannot find this mode");
+            return;
         }
         Log.i(TAG, "testInCinema mdepthLoc="+loc[0]+"*"+loc[1]);
         executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);

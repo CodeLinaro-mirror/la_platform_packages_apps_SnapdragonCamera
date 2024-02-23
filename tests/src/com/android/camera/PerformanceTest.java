@@ -54,6 +54,9 @@ public class PerformanceTest extends TestBase {
     private static final String PERFORMENCE_BOKEH = "/data/data/org.codeaurora.snapcam/files/performence_bokeh.json";
     private static final String PERFORMENCE_HFR = "/data/data/org.codeaurora.snapcam/files/performence_hfr.json";
     private static final String PERFORMENCE_VIDEO = "/data/data/org.codeaurora.snapcam/files/performence_video.json";
+    private static final String PERFORMENCE_PRO = "/data/data/org.codeaurora.snapcam/files/performence_pro.json";
+    private static final String PERFORMENCE_DEPTH = "/data/data/org.codeaurora.snapcam/files/performence_depth.json";
+    private static final String PERFORMENCE_CINEMA = "/data/data/org.codeaurora.snapcam/files/performence_cinema.json";
     private static final String testFile = "/data/data/org.codeaurora.snapcam/files/PerformanceTestParam.txt";
     private static String performenceTestMode;
 
@@ -61,7 +64,7 @@ public class PerformanceTest extends TestBase {
     @BeforeClass
     public static void initJson(){
         Log.i("autotest_initJson","initJson beforeTest");
-        String testStr = CameraUtil.ReadFile(testFile);
+        String testStr = CameraUtil.readFile(testFile);
         int indexM = testStr.indexOf("-m");
         if(indexM != -1) {
             performenceTestMode = getIndexStr(testStr, indexM + 2);
@@ -210,4 +213,145 @@ public class PerformanceTest extends TestBase {
             updatePerformenceJson(PERFORMENCE_VIDEO,performenceValues,i);
         }
     }
+    @Test
+    public void testCinema() throws Exception {
+        if(performenceTestMode != null && !performenceTestMode.contains("testCinema")){
+            return;
+        }
+        int[] cinemaLoc = mModeIconR.get("Cinematic");
+        int[] photoLoc = mModeIconL.get("Photo");
+        for (int i = 0; i < CYCLE_TIMES; i++) {
+            Log.i(TAG, "start this time i=" + i);
+            if(i==0) {
+                resetPreview();
+                if(cinemaLoc == null){
+                    cinemaLoc = mModeIconL.get("Cinematic");
+                }else{
+                    switchModeTextToR(true);
+                }
+                if(cinemaLoc == null){
+                    return;
+                }
+                Log.i(TAG, "testCinema cinemaLoc="+cinemaLoc[0]+"*"+cinemaLoc[1]);
+                executeShellCommand("input tap "+ cinemaLoc[0]  +" "+cinemaLoc[1]);
+                checkPreview("0", CaptureModule.CameraMode.CINEMATIC);
+                executeShellCommand("input tap "+ photoLoc[0]  +" "+photoLoc[1]);
+                checkPreview("0", CaptureModule.CameraMode.DEFAULT);
+                continue;
+            }
+            resetPreview();
+            executeShellCommand("input tap "+ cinemaLoc[0]  +" "+cinemaLoc[1]);
+            checkPreview("0", CaptureModule.CameraMode.CINEMATIC);
+            performenceValues = new HashMap<String,HashMap<String,Long>>();
+            HashMap<String,Long> photoToCinema = getHashMapValue(mCaptureModule.getHashMapTimes());
+            performenceValues.put("photoToCinema",photoToCinema);
+            testVideo(CaptureModule.CameraMode.CINEMATIC);
+            executeShellCommand("input tap "+ photoLoc[0]  +" "+photoLoc[1]);
+            checkPreview("0", CaptureModule.CameraMode.DEFAULT);
+            HashMap<String,Long> cinemaToPhoto = getHashMapValue(mCaptureModule.getHashMapTimes());
+            performenceValues.put("cinemaToPhoto",cinemaToPhoto);
+            updatePerformenceJson(PERFORMENCE_CINEMA,performenceValues,i);
+        }
+    }
+    @Test
+    public void testDepth() throws Exception {
+        if(performenceTestMode != null && !performenceTestMode.contains("testDepth")){
+            return;
+        }
+        int[] depthLoc = mModeIconR.get("Depth");
+        int[] photoLoc = mModeIconL.get("Photo");
+        boolean switchtext = false;
+        for (int i = 0; i < CYCLE_TIMES; i++) {
+            Log.i(TAG, "start this time i=" + i);
+            if(i==0) {
+                resetPreview();
+                if(depthLoc == null){
+                    depthLoc = mModeIconL.get("Depth");
+                }else{
+                    switchModeTextToR(true);
+                    switchtext = true;
+                }
+                if(depthLoc == null){
+                    Log.i(TAG,"Cannot find depth mode");
+                    return;
+                }
+                Log.i(TAG, "testCinema depthLoc="+depthLoc[0]+"*"+depthLoc[1]);
+                executeShellCommand("input tap "+ depthLoc[0]  +" "+depthLoc[1]);
+                checkPreview("0", CaptureModule.CameraMode.DEPTH);
+                if(switchtext) {
+                    switchModeTextToR(false);
+                }
+                executeShellCommand("input tap "+ photoLoc[0]  +" "+photoLoc[1]);
+                checkPreview("0", CaptureModule.CameraMode.DEFAULT);
+                continue;
+            }
+            resetPreview();
+            if(switchtext) {
+                switchModeTextToR(true);
+            }
+            executeShellCommand("input tap "+ depthLoc[0]  +" "+depthLoc[1]);
+            checkPreview("0", CaptureModule.CameraMode.DEPTH);
+            performenceValues = new HashMap<String,HashMap<String,Long>>();
+            HashMap<String,Long> photoToDepth = getHashMapValue(mCaptureModule.getHashMapTimes());
+            performenceValues.put("photoToDepth",photoToDepth);
+            if(switchtext) {
+                switchModeTextToR(false);
+            }
+            executeShellCommand("input tap "+ photoLoc[0]  +" "+photoLoc[1]);
+            checkPreview("0", CaptureModule.CameraMode.DEFAULT);
+            HashMap<String,Long> depthToPhoto = getHashMapValue(mCaptureModule.getHashMapTimes());
+            performenceValues.put("depthToPhoto",depthToPhoto);
+            updatePerformenceJson(PERFORMENCE_DEPTH,performenceValues,i);
+        }
+    }
+    @Test
+    public void testPro() throws Exception {
+        if(performenceTestMode != null && !performenceTestMode.contains("testPro")){
+            return;
+        }
+        int[] proLoc = mModeIconR.get("Pro");
+        int[] photoLoc = mModeIconL.get("Photo");
+        boolean switchtext = false;
+        for (int i = 0; i < CYCLE_TIMES; i++) {
+            Log.i(TAG, "start this time i=" + i);
+            if(i==0) {
+                resetPreview();
+                if(proLoc == null){
+                    proLoc = mModeIconL.get("Pro");
+                }else{
+                    switchModeTextToR(true);
+                    switchtext = true;
+                }
+                Log.i(TAG, "testPro loc="+proLoc[0]+"*"+proLoc[1]);
+                executeShellCommand("input tap "+ proLoc[0]  +" "+proLoc[1]);
+                checkPreview("0", CaptureModule.CameraMode.PRO_MODE);
+                if(switchtext) {
+                    switchModeTextToR(false);
+                }
+                executeShellCommand("input tap "+ photoLoc[0]  +" "+photoLoc[1]);
+                checkPreview("0", CaptureModule.CameraMode.DEFAULT);
+                continue;
+            }
+            resetPreview();
+            if(switchtext) {
+                switchModeTextToR(true);
+            }
+            executeShellCommand("input tap "+ proLoc[0]  +" "+proLoc[1]);
+            checkPreview("0", CaptureModule.CameraMode.PRO_MODE);
+            performenceValues = new HashMap<String,HashMap<String,Long>>();
+            HashMap<String,Long> photoToPro = getHashMapValue(mCaptureModule.getHashMapTimes());
+            performenceValues.put("photoToPro",photoToPro);
+            testFlash("0",CaptureModule.CameraMode.PRO_MODE,true);
+            if(switchtext) {
+                switchModeTextToR(false);
+            }
+            executeShellCommand("input tap "+ photoLoc[0]  +" "+photoLoc[1]);
+            checkPreview("0", CaptureModule.CameraMode.DEFAULT);
+            HashMap<String,Long> proToPhoto = getHashMapValue(mCaptureModule.getHashMapTimes());
+            performenceValues.put("proToPhoto",proToPhoto);
+            updatePerformenceJson(PERFORMENCE_PRO,performenceValues,i);
+        }
+    }
+
+
 }
