@@ -59,11 +59,13 @@ public class AideUtil {
     public native int nativeAIDenoiserEngineCreateV2(int[] pInputFrameDim, int[] pDsInputFrameDim, int[] pOutputFrameDim, int imageformat, int mode);
 
     public native int nativeAIDenoiserEngineProcessFrameV2(ByteBuffer inputY, ByteBuffer inputC, ByteBuffer dsinputY, ByteBuffer dsinput, byte[] output,
-        long expTimeInNs, int iso, float denoiseStrength, float adrcGain, int rGain, int bGain, int gGain, int[] roi);
+        long expTimeInNs, int iso, float denoiseStrength, float adrcGain, int rGain, int bGain, int gGain, int[] roi, float enhancefactor, byte gainThresholdY, byte gainThresholdUV);
 
     public native int nativeAIDenoiserEngineAbortV2();
 
     public native int nativeAIDenoiserEngineDestroyV2();
+
+    public native int nativeCvtYuvToRgb(byte[] input, byte[] output, int width, int height, int stride, int type);
 
     static {
         try {
