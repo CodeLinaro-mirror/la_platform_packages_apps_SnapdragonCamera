@@ -1037,12 +1037,6 @@ public class SettingsActivity extends PreferenceActivity {
             } else {
                 mSettingsManager.setKeyValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE, true, "0");
             }
-        } else {
-            if (mfnrPref != null) {
-                mfnrPref.setValue("1");
-            } else {
-                mSettingsManager.setKeyValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE, true, "1");
-            }
         }
     }
 
