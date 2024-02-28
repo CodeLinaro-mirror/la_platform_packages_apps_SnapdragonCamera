@@ -1718,9 +1718,9 @@
     <!-- inStant Zoom value-->
     <string name="pref_camera2_instant_zoom_title" translatable="true">inStant Zoom</string>
 
-    <!-- VSR 2.0 value-->
-    <string name="pref_camera2_vsr_title" translatable="true">VSR 2.0</string>
-    <string name="pref_camera2_vsr_default" translatable="false">0</string>
+    <!-- VSR value-->
+    <string name="pref_camera2_vsr_title" translatable="true">VSR</string>
+    <string name="pref_camera2_vsr_default" translatable="false">1</string>
     <string name="pref_camera2_vsr_entry_disable" translatable="true">Disable</string>
     <string name="pref_camera2_vsr_entry_enable" translatable="true">Enable</string>
     <string name="pref_camera2_vsr_entry_value_disable" translatable="false">0</string>

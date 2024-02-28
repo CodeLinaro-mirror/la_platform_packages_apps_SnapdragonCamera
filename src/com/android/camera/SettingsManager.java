@@ -3723,11 +3723,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         //Video size should`t be larger than VGA(640x480) in HFR mode
                         continue;
                     }
-                    if (getValue(SettingsManager.KEY_VSR) != null &&
-                            getValue(SettingsManager.KEY_VSR).equals("1") &&
-                            videoSizes.get(i).toString().equals("7680x4320")) {
-                        continue;
-                    }
                     if (mode == CaptureModule.CameraMode.HFR &&
                         getSupportedHighFrameRate(mode, videoSizes.get(i).toString(), cameraId)
                                 .size() == 0) {
