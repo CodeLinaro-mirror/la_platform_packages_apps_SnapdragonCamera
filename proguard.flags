@@ -37,6 +37,13 @@
 # Disable the warnings of using dynamic method calls in EffectsRecorder
 -dontnote com.android.camera.EffectsRecorder
 
+# glide
+-keep class com.bumptech.glide.** { *; }
+-keep interface com.bumptech.glide.** { *; }
+-keepclassmembers class **.R$* {
+  public static <fields>;
+}
+
 # For unit testing:
 
 # - Required for running exif tests on userdebug
