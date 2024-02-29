@@ -1312,7 +1312,6 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_EIS_VALUE);
                 add(SettingsManager.KEY_FOVC_VALUE);
                 add(SettingsManager.KEY_VARIABLE_FPS);
-                //add(SettingsManager.KEY_VIDEO_HDR_VALUE);
                 add(SettingsManager.KEY_VIDEO_FLIP);
                 add(SettingsManager.KEY_PHYSICAL_CAMCORDER);
                 for (String key: SettingsManager.KEY_PHYSICAL_VIDEO_SIZE)
@@ -1674,7 +1673,6 @@ public class SettingsActivity extends PreferenceActivity {
         } else if (mode == VIDEO){
             if (mSettingsManager.isMultiCameraEnabled()){
                 multiCameraVideoList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
-                multiCameraVideoList.add(SettingsManager.KEY_EIS_VALUE);
                 multiCameraVideoList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
                 addDeveloperOptions(developer,multiCameraVideoList);
             } else {
@@ -2381,7 +2379,8 @@ public class SettingsActivity extends PreferenceActivity {
             zoomLevelLists.add(String.valueOf(maxZoom));
         }
         List<String> zoomEntriesLists = new ArrayList<String>();
-        for (int i = 0; i< zoomLevelLists.size(); i++) {
+        zoomEntriesLists.add("Default");
+        for (int i = 1; i< zoomLevelLists.size(); i++) {
             zoomEntriesLists.add(zoomLevelLists.get(i) + "x");
         }
         if(zoomPref != null) {

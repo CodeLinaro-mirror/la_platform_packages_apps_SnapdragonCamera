@@ -8407,7 +8407,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         return false;
     }
 
-    private boolean isRTBModeInSelectMode() {
+    public boolean isRTBModeInSelectMode() {
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         if(selectMode != null && selectMode.equals("rtb")){
             return true;
@@ -9204,9 +9204,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void updateZoom() {
         String zoomStr = mSettingsManager.getValue(SettingsManager.KEY_ZOOM);
-        int zoom = Integer.parseInt(zoomStr);
-        if ( zoom !=0 ) {
-            mZoomValue = (float)zoom;
+        float zoom = Float.parseFloat(zoomStr);
+        if ( zoom > 0 ) {
+            mZoomValue = zoom;
             mUI.updateZoomSeekBar(mZoomValue);
         }else{
             mZoomValue = 1.0f;
@@ -10447,7 +10447,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         mRecordingPauseTime = SystemClock.uptimeMillis();
         mRecordingTotalTime += mRecordingPauseTime - mRecordingStartTime;
         String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
-        boolean noNeedEndofStreamWhenPause = value != null && value.equals("V3");
+        boolean noNeedEndofStreamWhenPause = value != null && value.equals("V3")
+                && (!mSettingsManager.isMultiCameraEnabled());
         // As EIS is not supported for HFR case (>=120 )
         // and FOVC also currently don’t require this for >=120 case
         // so use noNeedEndOfStreamInHFR to control
@@ -10707,12 +10708,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 shouldAddToMediaStoreNow = true;
             } catch (RuntimeException e) {
                 Log.w(TAG, "MediaRecoder stop fail =" + e);
-                if (mCurrentVideoUri != null) {
+                if (mCurrentVideoUri != null &&
+                        Storage.isSaveSDCard() && SDCard.instance().isWriteable()) {
                     mContentResolver.delete(mCurrentVideoUri, null);
                     mCurrentVideoUri = null;
                 }
                 for (int i = 0; i < mPhysicalUris.length; i++) {
-                    if (mPhysicalUris[i] != null) {
+                    if (mPhysicalUris[i] != null && Storage.isSaveSDCard()
+                            && SDCard.instance().isWriteable()) {
                         mContentResolver.delete(mPhysicalUris[i], null);
                         mPhysicalUris[i] = null;
                     }
@@ -10728,7 +10731,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (RuntimeException e){
                 Log.w(TAG, "MediaRecoder stop fail =" + e);
                 for (int i = 0; i < mPhysicalUris.length; i++) {
-                    if (mPhysicalUris[i] != null) {
+                    if (mPhysicalUris[i] != null  && Storage.isSaveSDCard()
+                            && SDCard.instance().isWriteable()) {
                         mContentResolver.delete(mPhysicalUris[i], null);
                         mPhysicalUris[i] = null;
                     }
@@ -12555,7 +12559,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         mStreamConfigOptMode = 0;
         boolean previewStabilizationOn = false;
-        if (value != null) {
+        if (value != null && (!mSettingsManager.isMultiCameraEnabled())) {
             if (value.equals("V2")) {
                 mStreamConfigOptMode = STREAM_CONFIG_MODE_QTIEIS_REALTIME;
                 previewStabilizationOn = "enable".equals(mSettingsManager.
@@ -13171,7 +13175,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mRecordingPausing && isUseVideoPreview) {
             captureRequest = mVideoPreviewRequestBuilder;
             String value = mSettingsManager.getValue(SettingsManager.KEY_EIS_VALUE);
-            boolean noNeedEndofStreamWhenPause = value != null && value.equals("V3");
+            boolean noNeedEndofStreamWhenPause = value != null && value.equals("V3")
+                    && (!mSettingsManager.isMultiCameraEnabled());
             // app use preview + video buffers when select EIS V3 usecase
             if (noNeedEndofStreamWhenPause) {
                 captureRequest = mVideoRecordRequestBuilder;
