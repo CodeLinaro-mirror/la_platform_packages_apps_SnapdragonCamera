@@ -1023,7 +1023,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (hdrmode != null && !hdrmode.equals("off")) {
             String[] modeLists = hdrmode.split(" ");
             for (int i = 0; i < modeLists.length; i ++) {
-                if(modeLists[i].equals("MFHDR") || modeLists[i].equals("SHDR")) {
+                if(modeLists[i].equals("MFHDR")) {
                     return true;
                 }
             }
@@ -3713,7 +3713,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         //Video size should be 1080P and 720P in CINEMATIC mode
                         continue;
                     }
-                    if (mode != CaptureModule.CameraMode.HFR && isEISV3Enabled && Math.min(videoSizes.get(i).getWidth(),videoSizes.get(i).getHeight()) < 720) {
+                    if (mode != CaptureModule.CameraMode.HFR && isEISV3Enabled && Math.min(videoSizes.get(i)
+                            .getWidth(),videoSizes.get(i).getHeight()) < 720) {
                         //video size should't be larger than 720p when EIS V3 is enabled
                         continue;
                     }
@@ -3739,8 +3740,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         } catch (IllegalArgumentException | NullPointerException e) {
                             Log.w(TAG, "getHdrMaxResolution occurs exception");
                         }
-                        if (maxHdrSize != null && (maxHdrSize[0] * maxHdrSize[1] < videoSizes.get(i).getWidth() * videoSizes.get(i).getHeight())
-                                && (hdrmode != null && !hdrmode.equals("off"))) {
+                        if (maxHdrSize != null && (maxHdrSize[0] * maxHdrSize[1] < videoSizes.get(i).getWidth() 
+                                * videoSizes.get(i).getHeight()) && (hdrmode != null && hdrmode.equals("MFHDR"))) {
                             continue;
                         }
                     }
@@ -3749,9 +3750,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
             }
         }
-        if(hdrmode != null && !hdrmode.equals("off") && videoSize != null && maxHdrSize !=null &&
+        if (hdrmode != null && hdrmode.equals("MFHDR") && videoSize != null && maxHdrSize !=null &&
                 videoSize.getWidth() * videoSize.getHeight() > maxHdrSize[0] * maxHdrSize[1]) {
-            setValue(KEY_VIDEO_QUALITY,res.get(0) );
+            if (res.size() > 0) {
+                setValue(KEY_VIDEO_QUALITY,res.get(0));
+            } else {
+                Log.w(TAG, "No supported video size for camera id " + cameraId + ", set to 1080p");
+                setValue(KEY_VIDEO_QUALITY, "1920x1080");
+            }
         }
         return res;
     }
