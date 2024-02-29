@@ -160,6 +160,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import com.android.camera.ui.ProMode;
+import java.util.ArrayList;
 
 import static com.android.camera.CameraManager.CameraOpenErrorCallback;
 
@@ -1923,6 +1925,8 @@ public class CameraActivity extends Activity
             //Print version info here
             String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
             Log.i(TAG, "snapdragoncamera_version: " + versionName);
+
+
         } catch (PackageManager.NameNotFoundException e) {
            Log.w(TAG,e.toString());
         }
@@ -2145,6 +2149,9 @@ public class CameraActivity extends Activity
             mUI.getFilmstripContentPanel().setFilmstripListener(mFilmstripListener);
         }
         preloadFilmstripItems();
+        if(PersistUtil.runFuncBeforeAutoTest()){
+            runAutoTestFunc();
+        }
     }
 
     private void setRotationAnimation() {
@@ -2779,7 +2786,68 @@ public class CameraActivity extends Activity
             mIsEditActivityInProgress = true;
         }
     }
-
+   private void runAutoTestFunc() {
+       getResultData();
+       setDevOption(false);
+       getCaptureModule();
+       CameraUtil.readFile(null);
+       CameraUtil.getJsonObj(null);
+       CameraUtil.getMp4Info(null);
+       mSettingsManager.isFilterShow();
+       mSettingsManager.getVideoHdrMode();
+       mSettingsManager.isZSLInHALEnabled();
+       mCaptureModule.setPreviewCaptureResult(null);
+       mCaptureModule.setCaptureResult(null);
+       mCaptureModule.setVideFilePath(null);
+       mCaptureModule.setLongImageTitle(new ArrayList<>());
+       mCaptureModule.setImgType(new ArrayList<>());
+       mCaptureModule.setImagExif(new ArrayList<>());
+       mCaptureModule.setCaptureResult(null);
+       mCaptureModule.setAutoSetting(false);
+       mCaptureModule.setHDRModes(null);
+       mCaptureModule.setHDRValues(0);
+       mCaptureModule.setStartedTime(0);
+       getCaptureModule();
+       mCaptureModule.getPreviewCaptureResult();
+       mCaptureModule.getCaptureResult();
+       mCaptureModule.getVideoUri();
+       mCaptureModule.getVideoFilePath();
+       CaptureUI mCaptureUI = mCaptureModule.getCaptureUI();
+       ProMode mProMode = mCaptureModule.getmCameraControls().getmProMode();
+       mCaptureModule.getVideoSnapSize();
+       mCaptureModule.getSnapShotJPGSize();
+       mCaptureModule.getSnapShotRawSize();
+       mCaptureModule.getYUVP010Size();
+       mCaptureModule.getCurrenCameraMode();
+       mCaptureModule.getCameraRegion();
+       mCaptureModule.getImagExif();
+       mCaptureModule.isSessionClosed(0);
+       mCaptureModule.getCurrentSession(0);
+       mCaptureModule.getLongImageTitle();
+       mCaptureModule.getImgType();
+       mCaptureModule.getHDRModes();
+       mCaptureModule.getHDRValues();
+       mCaptureModule.getDynamicFpsConfig();
+       mCaptureModule.getFPSRange();
+       mCaptureModule.resetHashMapTimes();
+       mCaptureModule.getHashMapTimes();
+       mCaptureModule.getPaused();
+       mCaptureUI.getSettingMargin();
+       mCaptureUI.getBarMargin();
+       mCaptureUI.getSwitchMargin();
+       mCaptureUI.showHDRScene();
+       mCaptureUI.getTitleFromFilm(0);
+       mCaptureUI.getDepthSwitch();
+       mCaptureUI.getFilterHight();
+       mProMode.setIndex(0,false);
+       mProMode.setSlider(0,false);
+       mProMode.getExposuretimeVaule(0);
+       mProMode.getCurveLeft();
+       mProMode.getCurveRight();
+       mProMode.getCurveY();
+       mProMode.getMidX();
+       mProMode.getMidY();
+   }
     public void launchEditor(FilmstripItem data) {
         Intent intent = new Intent(Intent.ACTION_EDIT)
                 .setDataAndType(data.getData().getUri(), data.getData().getMimeType())

@@ -470,6 +470,9 @@ public class ProMode extends View {
         mExpTmList.add(String.valueOf(mExposureTime[1]));
     }
     public String getExposuretimeVaule(float slider){
+        if(mExpTmList == null){
+            return null;
+        }
         int index =(int) (slider * mExpTmList.size());
         if (index > mExpTmList.size() -1 ) index = mExpTmList.size() -1;
         String valuestr = mExpTmList.get(index);

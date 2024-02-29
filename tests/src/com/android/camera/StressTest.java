@@ -114,9 +114,13 @@ public class StressTest extends TestBase {
     }
 
     private void clickRightMode(String mode)throws Exception{
-        switchModeTextToR(true);
-        int[] proloc = mModeIconR.get(mode);
-        executeShellCommand("input tap " + proloc[0] + " " + proloc[1]);
+        int[] loc =  mModeIconR.get(mode);
+        if(loc == null){
+            loc = mModeIconL.get(mode);
+        }else {
+            switchModeTextToR(true);
+        }
+        executeShellCommand("input tap " + loc[0] + " " + loc[1]);
         Thread.sleep(SMALL_WAIT_DURATION);
 
     }

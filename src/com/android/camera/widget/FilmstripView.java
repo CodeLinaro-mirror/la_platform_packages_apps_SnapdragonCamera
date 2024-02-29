@@ -1560,8 +1560,12 @@ public class FilmstripView extends ViewGroup {
     }
     public String getDateTitle(int index){
         FilmstripItem data = mDataAdapter.getFilmstripItemAt(index);
-        String title = data.getData().getTitle();
-        return title;
+        if(data != null && data.getData() != null) {
+            String title = data.getData().getTitle();
+            return title;
+        }else{
+            return null;
+        }
     }
     private void setDataAdapter(FilmstripDataAdapter adapter) {
         mDataAdapter = adapter;

@@ -234,14 +234,14 @@ public class PerformanceTest extends TestBase {
                 }
                 Log.i(TAG, "testCinema cinemaLoc="+cinemaLoc[0]+"*"+cinemaLoc[1]);
                 executeShellCommand("input tap "+ cinemaLoc[0]  +" "+cinemaLoc[1]);
-                checkPreview("0", CaptureModule.CameraMode.CINEMATIC);
+                checkPreview("2", CaptureModule.CameraMode.CINEMATIC);
                 executeShellCommand("input tap "+ photoLoc[0]  +" "+photoLoc[1]);
                 checkPreview("0", CaptureModule.CameraMode.DEFAULT);
                 continue;
             }
             resetPreview();
             executeShellCommand("input tap "+ cinemaLoc[0]  +" "+cinemaLoc[1]);
-            checkPreview("0", CaptureModule.CameraMode.CINEMATIC);
+            checkPreview("2", CaptureModule.CameraMode.CINEMATIC);
             performenceValues = new HashMap<String,HashMap<String,Long>>();
             HashMap<String,Long> photoToCinema = getHashMapValue(mCaptureModule.getHashMapTimes());
             performenceValues.put("photoToCinema",photoToCinema);

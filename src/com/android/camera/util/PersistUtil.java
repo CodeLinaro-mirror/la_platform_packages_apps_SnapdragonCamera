@@ -523,6 +523,8 @@ public class PersistUtil {
     public static boolean useTextureViewToPreview() {
         return getBoolean("persist.sys.camera.use_texture_view_to_preview", false);
     }
+    public static boolean runFuncBeforeAutoTest() {
+        return getBoolean("persist.sys.camera.runfunc_before_autotest", false);}
     public static boolean isStressTestRunning() {
         return getBoolean("persist.sys.camera.stress.test.run", false);}
     public static boolean isFuncTestRunning() {

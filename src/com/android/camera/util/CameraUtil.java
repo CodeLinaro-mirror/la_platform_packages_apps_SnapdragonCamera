@@ -1745,6 +1745,9 @@ public class CameraUtil {
     }
 
     public static JSONObject getJsonObj(String filePath) {
+        if(filePath == null){
+            return null;
+        }
         String json;
         try {
             FileInputStream file = new FileInputStream(filePath);
@@ -1802,6 +1805,9 @@ public class CameraUtil {
 
     }
     public static String readFile(String filePath) {
+        if(filePath == null ){
+            return null;
+        }
         FileInputStream fis = null;
         InputStreamReader isr = null;
         BufferedReader br = null;
