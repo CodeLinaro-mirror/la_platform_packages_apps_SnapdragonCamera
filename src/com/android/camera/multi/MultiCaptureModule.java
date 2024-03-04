@@ -874,16 +874,6 @@ public class MultiCaptureModule implements MultiCamera {
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
                 mCharacteristics.add(i, characteristics);
-                int[] maxPreviewSize = null;
-                try {
-                    maxPreviewSize = characteristics.get(CaptureModule.max_preview_size);
-                } catch (IllegalArgumentException e) {
-                    Log.e(TAG, "getMaxPreviewSize no vendorTag max_preview_size:");
-                }
-                if (maxPreviewSize != null) {
-                    Log.d(TAG, " init cameraId :" + cameraId + ", i :" + i +
-                            ", maxPreviewSize :" + maxPreviewSize[0]+ "x" + maxPreviewSize[1]);
-                }
             }
         } catch (CameraAccessException e) {
             e.printStackTrace();

@@ -448,16 +448,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.logicalCameraType.logical_camera_type", Byte.class);
     public static CaptureRequest.Key<Integer> support_video_hdr_values =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.available_video_hdr_modes.video_hdr_values", Integer.class);
-    public static CameraCharacteristics.Key<int[]> max_preview_size =
-            new CameraCharacteristics.Key<>("org.quic.camera.MaxPreviewSize.MaxPreviewSize", int[].class);
-    public static CameraCharacteristics.Key<Byte> is_burstshot_supported =
-            new CameraCharacteristics.Key<>("org.quic.camera.BurstFPS.isBurstShotSupported", Byte.class);
-    public static CameraCharacteristics.Key<Float> max_burstshot_fps =
-            new CameraCharacteristics.Key<>("org.quic.camera.BurstFPS.MaxBurstShotFPS", Float.class);
-    public static CameraCharacteristics.Key<Byte> is_liveshot_size_same_as_video =
-            new CameraCharacteristics.Key<>("org.quic.camera.LiveshotSize.isLiveshotSizeSameAsVideoSize", Byte.class);
-    public static CameraCharacteristics.Key<Byte> is_FD_Rendering_In_Video_UI_Supported =
-            new CameraCharacteristics.Key<>("org.quic.camera.FDRendering.isFDRenderingInVideoUISupported", Byte.class);
 
     public static CameraCharacteristics.Key<Byte> bsgcAvailable =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.stats.bsgc_available", Byte.class);
@@ -5681,30 +5671,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         };
 
-    private float calculateMaxFps(){
-        float maxFps = mSettingsManager.getmaxBurstShotFPS();
-        if(maxFps > 0) {
-            double size = mPictureSize.getWidth() * mPictureSize.getHeight();
-            Size maxPictureSize = mSettingsManager.getMaxPictureSize(getMainCameraId(), SurfaceHolder.class);
-            double maxsizefloat = maxPictureSize.getWidth() * maxPictureSize.getHeight();
-            maxFps = (float)((maxsizefloat * maxFps) / size);
-                Log.d(TAG, "maxPictureSize:" + maxPictureSize.getWidth() + "*" + maxPictureSize.getHeight() + ",maxsize:" + maxsizefloat
-                +",PictureSize="+ mPictureSize.getWidth() +"*"+ mPictureSize.getHeight() + ",size:" + size+",maxFps="+maxFps);
-            maxFps = maxFps > 30 ? 30 : maxFps;
-            maxFps = PersistUtil.getMaxBurstShotFPS() > 0 ? PersistUtil.getMaxBurstShotFPS() : maxFps;
-            Log.i(TAG, "maxFps:" + maxFps);
-        }
-        return maxFps;
-    }
-
     private void captureStillPictureForLongshot(CaptureRequest.Builder captureBuilder, int id) throws CameraAccessException{
         mBurstLimit = "1".equals(mSettingsManager.getValue(SettingsManager.KEY_BURST_LIMIT));
         if (!mBurstLimit) {
             List<CaptureRequest> burstList = new ArrayList<>();
             float previewProportion = 0f;
-            if (calculateMaxFps() > 0f) {
-                previewProportion = 30f / calculateMaxFps() - 1f;
-            }
             Log.i(TAG, "burstShot, previewProportion:" + previewProportion);
             float captureProportion = 1.0f;
             int previewCount = 0;
@@ -10133,8 +10104,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updateVideoSnapshotSize() {
         mVideoSnapshotSize = getMaxPictureSizeLiveshot(getMainCameraId(),mVideoSize.getWidth(),
                 mVideoSize.getHeight());
-        if(mSettingsManager.isLiveshotSizeSameAsVideoSize() ||
-                getCurrenCameraMode() == CameraMode.CINEMATIC){
+        if (getCurrenCameraMode() == CameraMode.CINEMATIC){
             mVideoSnapshotSize = mVideoSize;
         }
         String mlVideo = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
@@ -10172,8 +10142,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     break;
                 if (persistSize != null){
                     mPhysicalVideoSnapshotSizes[i] = persistSize;
-                } else if(mSettingsManager.isLiveshotSizeSameAsVideoSize()){
-                    mPhysicalVideoSnapshotSizes[i] = mPhysicalVideoSizes[i];
                 } else {
                     if (mQuadBayerPhysicalIds.size() != 0 && mQuadBayerPhysicalIds.contains(id)) {
                         mPhysicalVideoSnapshotSizes[i] = mPhysicalVideoSizes[i];
@@ -16255,23 +16223,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         Point[] points = new Point[prevSizes.length];
         double targetRatio = (double) pictureSize.getWidth() / pictureSize.getHeight();
         int index = 0;
-        int point_max[]  = mSettingsManager.getMaxPreviewSize();
-        int max_size = -1;
-        if (point_max != null){
-            max_size = point_max[0] * point_max[1];
-        }
         for (Size s : prevSizes) {
-            if (max_size != -1){
-                int size = s.getWidth() * s.getHeight();
-                if (s.getWidth() == s.getHeight()){
-                    if (s.getWidth() > Math.max(point_max[0],point_max[1]))
-                        continue;
-                } else if (size > max_size || size == 0) {
-                    continue;
-                } else if (s.getWidth() > point_max[0] ||  s.getHeight() > point_max[1]) {
-                    continue;
-                }
-            }
             points[index++] = new Point(s.getWidth(), s.getHeight());
         }
 
@@ -16284,21 +16236,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         Point[] points = new Point[prevSizes.length];
 
         int index = 0;
-        int point_max[]  = mSettingsManager.getMaxPreviewSize();
-        int max_size = -1;
-        if (point_max != null){
-            max_size = point_max[0] * point_max[1];
-        }
         for (Size s : prevSizes) {
-            if (max_size != -1){
-                int size = s.getWidth() * s.getHeight();
-                if (s.getWidth() == s.getHeight()){
-                    if (s.getWidth() > Math.max(point_max[0],point_max[1]))
-                        continue;
-                } else if (size > max_size || size == 0) {
-                    continue;
-                }
-            }
             points[index++] = new Point(s.getWidth(), s.getHeight());
         }
 

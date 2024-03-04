@@ -1725,7 +1725,7 @@ public class SettingsActivity extends PreferenceActivity {
                 break;
         }
         Preference longshotPref = findPreference(SettingsManager.KEY_LONGSHOT);
-        if (longshotPref != null && !mSettingsManager.isBurstShotSupported() && photoPre != null){
+        if (longshotPref != null && photoPre != null){
             photoPre.removePreference(longshotPref);
         }
     }

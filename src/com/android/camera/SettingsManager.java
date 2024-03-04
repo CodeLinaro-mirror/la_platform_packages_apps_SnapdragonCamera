@@ -954,10 +954,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return false;
         }
         boolean isFDRenderingInUI = false;
-        if( CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO ||
-                CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR) {
-            isFDRenderingInUI = isFDRenderingInVideoUISupported();
-        }else{
+        if (CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.VIDEO &&
+                CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.HFR) {
             isFDRenderingInUI = isCameraFDSupported();
         }
         return isFDRenderingInUI;
@@ -1010,43 +1008,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return supportted;
     }
 
-    public boolean isBurstShotSupported(){
-        boolean isBurstShotSupported = true;
-        try {
-            isBurstShotSupported = mCharacteristics.get(mCameraId).get(CaptureModule.is_burstshot_supported) == 1 ? true : false;
-        } catch (IllegalArgumentException | NullPointerException e) {
-            Log.w(TAG, EXCEPTION_LOG,"isBurstShotSupported no vendor tag");
-        }
-        return isBurstShotSupported;
-    }
-
-    public float getmaxBurstShotFPS(){
-        float maxBurstShotFPS = 0;
-        try {
-            maxBurstShotFPS = mCharacteristics.get(mCameraId).get(CaptureModule.max_burstshot_fps);
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG, EXCEPTION_LOG,"getmaxBurstShotFPS no vendorTag maxBurstShotFPS:");
-        }
-        return maxBurstShotFPS;
-    }
-
-    public int[] getMaxPreviewSize(){
-        int[] maxPreviewSize = null;
-        try {
-            maxPreviewSize = mCharacteristics.get(mCameraId).get(CaptureModule.max_preview_size);
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG,EXCEPTION_LOG, "getMaxPreviewSize no vendorTag max_preview_size:");
-        }
-        int[] hdrMaxSize = getHdrMaxResolution();
-        if(isMfhdrEnabled() && hdrMaxSize != null){
-            if((maxPreviewSize != null && (maxPreviewSize[0]*maxPreviewSize[1] > hdrMaxSize[0]*hdrMaxSize[1] && hdrMaxSize[0] > 0 && hdrMaxSize[1] > 0)) ||
-                    maxPreviewSize == null){
-               maxPreviewSize = hdrMaxSize;
-            }
-        }
-        return maxPreviewSize;
-    }
-
     public int[] getHdrMaxResolution() {
         int[] maxHdrSize = null;
         try {
@@ -1068,16 +1029,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         return false;
-    }
-
-    public boolean isLiveshotSizeSameAsVideoSize(){
-        boolean isLiveshotSizeSameAsVideoSize = false;
-        try {
-            isLiveshotSizeSameAsVideoSize = mCharacteristics.get(mCameraId).get(CaptureModule.is_liveshot_size_same_as_video) == 1 ? true : false;
-        } catch (IllegalArgumentException | NullPointerException e) {
-            Log.w(TAG, EXCEPTION_LOG,"isLiveshotSizeSameAsVideoSize no vendorTag isLiveshotSizeSameAsVideoSize:");
-        }
-        return isLiveshotSizeSameAsVideoSize;
     }
 
     private Size parseSize(String value) {
@@ -3402,20 +3353,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         return false;
-    }
-
-    private boolean isFDRenderingInVideoUISupported(){
-        boolean isFDRenderingInVideoUISupported = false;
-        isFDRenderingInVideoUISupported = PersistUtil.isFDRENDERINGSUPPORTED();
-        if(!isFDRenderingInVideoUISupported) {
-            try {
-                isFDRenderingInVideoUISupported = mCharacteristics.get(mCameraId).get(CaptureModule.is_FD_Rendering_In_Video_UI_Supported) == 1;
-            } catch (IllegalArgumentException | NullPointerException e) {
-                isFDRenderingInVideoUISupported = true;
-                Log.w(TAG, EXCEPTION_LOG,"isFDRenderingInVideoUISupported no vendorTag isFDRenderingInVideoUISupported:");
-            }
-        }
-        return isFDRenderingInVideoUISupported;
     }
 
     public boolean isFaceDetectionModeSupported(int id) {
