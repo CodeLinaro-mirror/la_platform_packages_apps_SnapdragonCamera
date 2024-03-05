@@ -1676,6 +1676,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if (mode != VIDEO) {
                     removePreference(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
+                    removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, videoPre);
                     if(mode == HFR && !mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())){
                         removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
                     }
@@ -1701,6 +1702,7 @@ public class SettingsActivity extends PreferenceActivity {
                 removePreference(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
                 removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
                 removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, videoPre);
+                removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, videoPre);
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> cinematicList = new ArrayList<>();
                     cinematicList.add(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC);
@@ -1713,6 +1715,7 @@ public class SettingsActivity extends PreferenceActivity {
             case RTB:
                 removePreferenceGroup("video", parentPre);
                 removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, photoPre);
+                removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, photoPre);
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> RTBList = new ArrayList<>(multiCameraSettingList);
                     RTBList.add(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
@@ -1737,6 +1740,7 @@ public class SettingsActivity extends PreferenceActivity {
                 break;
             case PRO_MODE:
                 removePreferenceGroup("video", parentPre);
+                removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, photoPre);
                 removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, photoPre);
                 if (mDeveloperMenuEnabled) {
                     if (DEV_LEVEL_ALL || mShowAllDevOption) {
