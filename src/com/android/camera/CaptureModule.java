@@ -441,6 +441,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.inSensorZoomCapability", Integer.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
+    public static CameraCharacteristics.Key<int[]> support_dcg_bits_tags =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedHDRmodes.HDRDCGBits", int[].class);
 
     public static CameraCharacteristics.Key<Byte> support_hvx_shdr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.hvxSHDRMode.hvxSHDRSupported", Byte.class);
@@ -7576,6 +7578,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             applyEnableCinematic(builder);
         }
+        applyDcgModes(builder);
+    }
+
+    private void applyDcgModes(CaptureRequest.Builder builder){
+        int value = mSettingsManager.getDcgMode();
+        Log.d(TAG,"set applyDcgModes: " + value);
+        VendorTagUtil.enableDcgMode(builder, value);
     }
 
     private void applyeHardSwitchParam(CaptureRequest.Builder builder){
