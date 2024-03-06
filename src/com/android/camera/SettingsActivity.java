@@ -57,17 +57,13 @@ import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnDismissListener;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.ColorSpace;
-import android.graphics.ColorSpace.Named;
-import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.ColorSpaceProfiles;
-import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.MultiSelectListPreference;
@@ -77,20 +73,20 @@ import android.preference.PreferenceGroup;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
 import android.preference.SwitchPreference;
-import androidx.annotation.NonNull;
 import android.view.Window;
 import android.view.WindowManager;
 import com.android.camera.util.Log;
 import android.util.ArraySet;
 import android.util.Size;
+import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.view.LayoutInflater;
@@ -100,18 +96,13 @@ import android.text.InputType;
 
 import org.codeaurora.snapcam.R;
 import com.android.camera.util.CameraUtil;
-import com.android.camera.CaptureModule.CameraMode;
 import com.android.camera.ui.RotateTextToast;
 import com.android.camera.util.PersistUtil;
-import com.android.camera.DragonListView;
-
-import org.codeaurora.snapcam.R;
 
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -122,15 +113,9 @@ import static com.android.camera.CaptureModule.CameraMode.HFR;
 import static com.android.camera.CaptureModule.CameraMode.RTB;
 import static com.android.camera.CaptureModule.CameraMode.SAT;
 import static com.android.camera.CaptureModule.CameraMode.VIDEO;
-import android.app.Dialog;
 
-import android.widget.CheckBox;
-import com.android.camera.FdExpandListView;
-import android.widget.ExpandableListView.OnChildClickListener;
-import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListView;
-import android.widget.ExpandableListAdapter;
-import android.widget.RelativeLayout;
+
 import com.android.camera.FdExpandListView.FdExpandListViewAdapter;
 public class SettingsActivity extends PreferenceActivity {
     private static final String TAG = "SnapCam_SettingsActivity";
@@ -155,6 +140,7 @@ public class SettingsActivity extends PreferenceActivity {
     private FdExpandListViewAdapter fdFacialExpandableAdapter = null;
     private boolean mIsSingleCameraMode = false;
     private boolean mShowAllDevOption = false;
+    AlertDialog mManualHDRDialog = null;
 
     private ArrayList<CameraCharacteristics> mCharacteristics;
 
@@ -361,6 +347,8 @@ public class SettingsActivity extends PreferenceActivity {
                     case SettingsManager.KEY_MANUAL_HDR:
                         if (value.equals("manual")) {
                             updateManualHDRSetting();
+                        }else{
+                            mSettingsManager.setDcgMode("off");
                         }
                         updateHdrRefOp();
                         updateQuadBayerPreference();
@@ -1097,6 +1085,98 @@ public class SettingsActivity extends PreferenceActivity {
         alert.show();
     }
 
+    public class RadioListAdapter extends BaseAdapter{
+        Context context;
+        List<String> listItems;
+        LayoutInflater mInflater;
+
+        public RadioListAdapter(Context context,List<String> mList){
+            this.context = context;
+            this.listItems = mList;
+            mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        }
+        @Override
+        public int getCount() {
+            return listItems.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return position;
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+        @Override
+        public View getView(final int position, View convertView, ViewGroup parent) {
+
+            RadioListViewHolder viewHolder = null;
+            if(convertView == null){
+                convertView = mInflater.inflate(R.layout.radio_button_list_item,parent,false);
+                viewHolder = new RadioListViewHolder();
+                viewHolder.name = (TextView)convertView.findViewById(R.id.tv_item);
+                viewHolder.select = (RadioButton)convertView.findViewById(R.id.rb_item);
+                convertView.setTag(viewHolder);
+            }else{
+                viewHolder = (RadioListViewHolder)convertView.getTag();
+            }
+            viewHolder.name.setText(listItems.get(position));
+            if(mSettingsManager.getDcgMode() == position){
+                viewHolder.select.setChecked(true);
+            }
+            else{
+                viewHolder.select.setChecked(false);
+            }
+            return convertView;
+        }
+    }
+
+    public class RadioListViewHolder {
+        TextView name;
+        RadioButton select;
+    }
+
+    private void updateDcgBitsTagPref(){
+        View view = View.inflate(getApplicationContext(), R.layout.manual_hdr_layout, null);
+        TextView dcgModeTitle = (TextView)view.findViewById(R.id.dcg_mode_text);
+        ListView dcgItems = (ListView)view.findViewById(R.id.dcg_list);
+        if(mManualHDRDialog != null && mManualHDRDialog.isShowing()){
+            dcgModeTitle = mManualHDRDialog.findViewById(R.id.dcg_mode_text);
+            dcgItems = mManualHDRDialog.findViewById(R.id.dcg_list);
+        }
+        if(mSettingsManager.isSHDREnable()) {
+            dcgModeTitle.setVisibility(View.VISIBLE);
+            dcgItems.setVisibility(View.VISIBLE);
+            List<String> dcgData = new ArrayList<String>();
+            dcgData.add("off");
+            int[] supportedModes = mSettingsManager.getSupportedDcgBitsTags();
+            if(supportedModes != null || supportedModes.length > 0){
+                for (int i = 0; i < supportedModes.length; i++) {
+                    if (supportedModes[i] == 1) {
+                        dcgData.add("12BIT");
+                    } else if (supportedModes[i] == 2) {
+                        dcgData.add("14BIT");
+                    }
+                }
+            }
+            RadioListAdapter arrayDapter = new RadioListAdapter(this, dcgData);
+            dcgItems.setAdapter(arrayDapter);
+            dcgItems.setOnItemClickListener(new OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                    mSettingsManager.setDcgMode(dcgData.get(i));
+                    arrayDapter.notifyDataSetChanged();
+                }
+            });
+        }else{
+            dcgModeTitle.setVisibility(View.INVISIBLE);
+            dcgItems.setVisibility(View.INVISIBLE);
+            mSettingsManager.setDcgMode("off");
+        }
+    }
+
     private void updateManualHDRSetting() {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
@@ -1126,7 +1206,9 @@ public class SettingsActivity extends PreferenceActivity {
             editor.putString(SettingsManager.KEY_MIXED_HDR_ORDER, defaultHDROrder.toString());
             editor.apply();
         }
-        final DragonListView listView = new DragonListView(SettingsActivity.this);
+        View view = View.inflate(getApplicationContext(), R.layout.manual_hdr_layout, null);
+        final DragonListView listView = (DragonListView)view.findViewById(R.id.dragon_list);
+        listView.setContext(SettingsActivity.this);
         DragListViewAdapter adapter = new DragListViewAdapter(this, listData);
         listView.setAdapter(adapter);
         adapter.setChecked(new CheckBoxChanged() {
@@ -1138,12 +1220,14 @@ public class SettingsActivity extends PreferenceActivity {
                 updateHdrRefOp();
                 mSettingsManager.updatePictureAndVideoSize();
                 updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+                if(title.equals("SHDR")) {
+                    updateDcgBitsTagPref();
+                }
             }
         });
-
         final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
         alert.setTitle("MANUAL HDR Settings");
-        alert.setView(listView);
+        alert.setView(view);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface Dialog, int id) {
             }
@@ -1167,8 +1251,11 @@ public class SettingsActivity extends PreferenceActivity {
                 editor.apply();
             }
         });
-        alert.show();
+        mManualHDRDialog = alert.create();
+        mManualHDRDialog.show();
+        updateDcgBitsTagPref();
     }
+
     private void updateHdrRefOp(){
         CaptureModule.CameraMode mode =
                     (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
@@ -2837,6 +2924,9 @@ public class SettingsActivity extends PreferenceActivity {
         super.onDestroy();
         mSettingsManager.unregisterListener(mListener);
         mSharedPreferences.unregisterOnSharedPreferenceChangeListener(mSharedPreferenceChangeListener);
+        if(mManualHDRDialog != null && mManualHDRDialog.isShowing()) {
+            mManualHDRDialog.dismiss();
+        }
     }
 
     private void setShowInLockScreen() {
