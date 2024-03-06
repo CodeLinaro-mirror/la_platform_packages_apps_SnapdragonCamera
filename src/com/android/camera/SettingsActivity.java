@@ -1171,15 +1171,6 @@ public class SettingsActivity extends PreferenceActivity {
         }
         String orderLists = mLocalSharedPref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
         Log.v(TAG, " updateManualHDRSetting orderLists:" + orderLists);
-        if (orderLists != null) {
-            listData.clear();
-            for (String title : orderLists.split("#")) {
-                listData.add(title);
-            }
-        }else{
-            editor.putString(SettingsManager.KEY_MIXED_HDR_ORDER, defaultHDROrder.toString());
-            editor.apply();
-        }
         final DragonListView listView = new DragonListView(SettingsActivity.this);
         DragListViewAdapter adapter = new DragListViewAdapter(this, listData);
         listView.setAdapter(adapter);
