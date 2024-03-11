@@ -3437,6 +3437,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                             if(mPreviewOutputConfiguration != null) {
                                 Surface previewSur = getPreviewSurfaceForSession(id);
+                                waitForPreviewSurfaceReady();
                                 if (mSurfaceReady && previewSur.isValid()) {
                                     mPreviewOutputConfiguration.addSurface(previewSur);
                                     try {
