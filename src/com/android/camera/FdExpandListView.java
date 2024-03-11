@@ -87,6 +87,7 @@ public class FdExpandListView  {
         mFDIndex = 0;
         mExpandKey.add("FD Mask Detection");
         mExpandKey.add("Upper Body Detection");
+        mExpandKey.add("Pet Detection");
         mExpandKey.add("FD Contour Detection");
         mExpandKey.add("FD Contour Visibility Detection");
         mExpandKey.add("FD Gaze Detection");
@@ -130,6 +131,9 @@ public class FdExpandListView  {
                 break;
             case "Upper Body Detection":
                 key = mSettingsManager.KEY_UPPER_BODY_DETECTION;
+                break;
+            case "Pet Detection":
+                key = mSettingsManager.KEY_PET_DETECTION;
                 break;
             case "FD Contour Detection":
                 key =mSettingsManager.KEY_FACIAL_CONTOUR;

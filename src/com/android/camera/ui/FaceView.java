@@ -63,6 +63,7 @@ public class FaceView extends View
     private final int mFocusedColor;
     private final int mFailColor;
     protected Paint mPaint;
+    protected Paint mHeadTorsePaint;
     protected Paint mPointPaint;
     protected Paint mPaintInvisible;
     protected Paint mPaintUnknown;
@@ -110,6 +111,7 @@ public class FaceView extends View
         mPointPaint = getPointPaint(Color.BLUE,res);
         mPaintInvisible = getPointPaint(Color.RED,res);
         mPaintUnknown = getPointPaint(Color.DKGRAY,res);
+        mHeadTorsePaint = getPointPaint(Color.WHITE,res);
 
     }
 

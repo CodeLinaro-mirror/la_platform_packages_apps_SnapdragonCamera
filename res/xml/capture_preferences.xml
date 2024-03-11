@@ -544,6 +544,12 @@
         camera:title="@string/pref_camera_upperbodydetection_title"
         camera:entries="@array/pref_camera2_bsgc_entries"
         camera:entryValues="@array/pref_camera2_bsgc_entryvalues" />
+    <ListPreference
+        camera:key="pref_camera2_pet_detection_key"
+        camera:defaultValue="@string/pref_camera2_bsgc_default"
+        camera:title="@string/pref_camera_petdetection_title"
+        camera:entries="@array/pref_camera2_bsgc_entries"
+        camera:entryValues="@array/pref_camera2_bsgc_entryvalues" />
 
     <ListPreference
         camera:key="pref_camera2_fd_gender_key"

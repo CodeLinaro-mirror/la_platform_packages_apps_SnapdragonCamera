@@ -204,6 +204,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_FACE_DETECTION = "pref_camera2_facedetection_key";
     public static final String KEY_FACE_MASK = "pref_camera2_facemask_key";
     public static final String KEY_UPPER_BODY_DETECTION = "pref_camera2_upper_body_detection_key";
+    public static final String KEY_PET_DETECTION = "pref_camera2_pet_detection_key";
     public static final String KEY_VIDEO_HIGH_FRAME_RATE = "pref_camera2_hfr_key";
     public static final String KEY_SELFIE_FLASH = "pref_selfie_flash_key";
     public static final String KEY_SHUTTER_SOUND = "pref_camera2_shutter_sound_key";
@@ -3290,7 +3291,26 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Log.d(TAG, " isInSensorZoomSupported result :" + isSupported);
         return isSupported;
     }
-
+    public boolean isFdFeatureDisplay(String key){
+        String value = getValue(key);
+        if (value == null) return false;
+        if(key.equals(KEY_FACIAL_CONTOUR)){
+            if (value.equals("disable")){
+                return false;
+            }else if(Integer.valueOf(value) >4){
+                return  true;
+            }else{
+                return false;
+            }
+        }else {
+            return value.equals("display");
+        }
+    }
+    public boolean isFdFeatureEnable(String key){
+        String value = getValue(key);
+        if (value == null) return false;
+        return  !value.equals("disable");
+    }
     public boolean isMLVideoSupported() {
         boolean isSupported = false;
         try {
