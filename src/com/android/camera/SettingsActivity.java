@@ -2537,14 +2537,8 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-        if ("HEVCProfileMain10HDR10Plus".equals(profile)) {
-            pref.setValue("0");
-            pref.setEnabled(false);
-            return;
-        }
-
         String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
-        if (previewProfile != null && !"0".equals(previewProfile)) {
+        if (profile != null && previewProfile != null && !(SettingsManager.VIDEO_ENCODER_PROFILE_MAP.get(profile).equals(previewProfile))) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;
