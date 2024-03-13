@@ -549,4 +549,9 @@ public class PersistUtil {
     public static String getModelInfo(){
         return get("ro.soc.model", "");
     }
+
+    public static boolean isSnapshotWithPreview() {
+        return getBoolean("persist.sys.camera.snapshot_with_preview", false);
+    }
+
 }

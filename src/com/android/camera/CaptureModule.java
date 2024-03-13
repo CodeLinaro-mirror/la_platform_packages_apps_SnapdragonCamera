@@ -5114,7 +5114,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if (!mSettingsManager.isMultiCameraEnabled() && !mMultiResReprocessEnabled) {
                 if (!(isDeepZoom() || (fs2Value ==1) ||
-                        mSettingsManager.getQuadBayerSensorPrefEnabled())) {
+                        mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
+                        PersistUtil.isSnapshotWithPreview()) {
                     addPreviewSurface(captureBuilder, null, id);
                 }
             }
@@ -15326,6 +15327,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void addPreviewSurface(CaptureRequest.Builder builder, List<Surface> surfaceList, int id) {
+        Log.d(TAG,"addPreviewSurface");
         if (mSettingsManager.getPhysicalCameraId() != null) {
             List<Surface> previews = mUI.getPhysicalSurfaces();
             if(mSettingsManager.isLogicalEnable()){
