@@ -1151,8 +1151,10 @@ public class SettingsActivity extends PreferenceActivity {
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_QHDR);
             }
         }
+        String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        int videoSize = CameraUtil.getSize(videoSizeStr);
         if(mSettingsManager.isHvxMFHDRSupported()) {
-            if(mIsSingleCameraMode && mode == VIDEO) {
+            if(mIsSingleCameraMode && mode == VIDEO && videoSize <= 1920*1080) {
                 listData.add(SettingsManager.KEY_MANUAL_HVX_MFHDR);
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_HVX_MFHDR);
             }else {
@@ -2347,7 +2349,8 @@ public class SettingsActivity extends PreferenceActivity {
         String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
         String hdrmode = mSettingsManager.getVideoHdrMode();
         int videoSize = CameraUtil.getSize(videoSizeStr);
-        if(videoSize >= 7680*4320 && hdrmode != null && (hdrmode.indexOf("MFHDR")>=0)){
+        if((videoSize >= 7680*4320 && hdrmode != null && (hdrmode.indexOf("MFHDR")>=0)) ||
+                (videoSize > 1920*1080 && hdrmode != null && (hdrmode.indexOf("HVX_MFHDR")>=0))){
             pref.setValue("off");
         }
     }
