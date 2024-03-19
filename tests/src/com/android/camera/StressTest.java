@@ -95,7 +95,7 @@ public class StressTest extends TestBase {
         }
     }
     private void stressTestInPro()throws Exception{
-        clickProMode();
+        clickRightMode("Pro");
         List<String> keyList = new ArrayList<String>(mProLoc.keySet());
         for(int i = 0 ;i < keyList.size();i++) {
             if (mActivity.isFinishing()) {
@@ -113,23 +113,31 @@ public class StressTest extends TestBase {
         switchModeTextToR(false);
     }
 
-    private void clickProMode()throws Exception{
-        switchModeTextToR(true);
-        int[] proloc = mModeIconR.get("Pro");
-        executeShellCommand("input tap " + proloc[0] + " " + proloc[1]);
+    private void clickRightMode(String mode)throws Exception{
+        int[] loc =  mModeIconR.get(mode);
+        if(loc == null){
+            loc = mModeIconL.get(mode);
+        }else {
+            switchModeTextToR(true);
+        }
+        executeShellCommand("input tap " + loc[0] + " " + loc[1]);
         Thread.sleep(SMALL_WAIT_DURATION);
+
     }
     @Test
     public void readIconLoc()throws Exception{
         //getModeLoc();
-        clickProMode();
+        clickRightMode("Pro");
         getIconLoctionInPro();
+        clickRightMode("Depth");
+        getDepthUILoc();
         JSONObject saveObj = new JSONObject();
         addObject(saveObj,"iconLoc",mIconLoc);
         addObject(saveObj,"proLoc",mProLoc);
         addObject(saveObj,"modeRLoc",mModeIconR);
         addObject(saveObj,"modeLLoc",mModeIconL);
         addObject(saveObj,"recordLoc",mRecordLoc);
+        addObject(saveObj,"depthLoc",mDepthLoc);
         saveJson(ICON_LOC_JSON,saveObj);
     }
     private void addObject(JSONObject obj,String arrayStr, HashMap<String, int[]> mapkey)throws Exception{

@@ -26,6 +26,7 @@ import com.android.camera.ui.RenderOverlay;
 import com.android.camera.ui.TrackingFocusRenderer;
 import com.android.camera.ui.ZoomRenderer;
 import com.android.camera.multi.MultiCameraUI;
+import com.android.camera.util.CameraUtil;
 
 /* PreviewGestures disambiguates touch events received on RenderOverlay
  * and dispatch them to the proper recipient (i.e. zoom renderer or pie renderer).
@@ -94,8 +95,7 @@ public class PreviewGestures
 
             int deltaX = (int) (e1.getX() - e2.getX());
             int deltaY = (int) (e1.getY() - e2.getY());
-
-            if((Math.abs(deltaX) > 40 || Math.abs(deltaY) > 40) && Math.abs(e1.getY()) < 1800) {
+            if((Math.abs(deltaX) > 40 || Math.abs(deltaY) > 40) && Math.abs(e1.getY()) < CameraUtil.modeLayHeigh) {
                 int orientation = 0;
                 if (mCaptureUI != null)
                     orientation = mCaptureUI.getOrientation();

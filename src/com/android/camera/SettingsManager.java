@@ -208,6 +208,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_SELFIE_FLASH = "pref_selfie_flash_key";
     public static final String KEY_SHUTTER_SOUND = "pref_camera2_shutter_sound_key";
     public static final String KEY_TOUCH_TRACK_FOCUS = "pref_camera2_touch_track_focus_key";
+    public static final String KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC = "pref_camera2_touch_track_focus_for_cinematic_key";
     public static final String KEY_DEVELOPER_MENU = "pref_camera2_developer_menu_key";
     public static final String KEY_RESTORE_DEFAULT = "pref_camera2_restore_default_key";
     public static final String KEY_FOCUS_DISTANCE = "pref_camera2_focus_distance_key";
@@ -358,6 +359,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public static final String KEY_ITOF_TUNING_SET = "pref_camera2_itof_tuning_set_key";
 
+    public static final String KEY_AUDIO_BLE = "pref_camera2_audio_ble_key";
+
     private static final String TAG = "SnapCam_SettingsManager";
 
     private static SettingsManager sInstance;
@@ -496,6 +499,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         int facing = mCharacteristics.get(cameraId).get(CameraCharacteristics.LENS_FACING);
         return facing == CameraCharacteristics.LENS_FACING_BACK;
+    }
+
+    public boolean isBLEConnected() {
+        return mCaptureModule.isBLEConnected();
     }
 
     public void setDepthMode(int mode) {
@@ -947,10 +954,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return false;
         }
         boolean isFDRenderingInUI = false;
-        if( CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO ||
-                CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR) {
-            isFDRenderingInUI = isFDRenderingInVideoUISupported();
-        }else{
+        if (CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.VIDEO &&
+                CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.HFR) {
             isFDRenderingInUI = isCameraFDSupported();
         }
         return isFDRenderingInUI;
@@ -1003,43 +1008,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return supportted;
     }
 
-    public boolean isBurstShotSupported(){
-        boolean isBurstShotSupported = true;
-        try {
-            isBurstShotSupported = mCharacteristics.get(mCameraId).get(CaptureModule.is_burstshot_supported) == 1 ? true : false;
-        } catch (IllegalArgumentException | NullPointerException e) {
-            Log.w(TAG, EXCEPTION_LOG,"isBurstShotSupported no vendor tag");
-        }
-        return isBurstShotSupported;
-    }
-
-    public float getmaxBurstShotFPS(){
-        float maxBurstShotFPS = 0;
-        try {
-            maxBurstShotFPS = mCharacteristics.get(mCameraId).get(CaptureModule.max_burstshot_fps);
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG, EXCEPTION_LOG,"getmaxBurstShotFPS no vendorTag maxBurstShotFPS:");
-        }
-        return maxBurstShotFPS;
-    }
-
-    public int[] getMaxPreviewSize(){
-        int[] maxPreviewSize = null;
-        try {
-            maxPreviewSize = mCharacteristics.get(mCameraId).get(CaptureModule.max_preview_size);
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG,EXCEPTION_LOG, "getMaxPreviewSize no vendorTag max_preview_size:");
-        }
-        int[] hdrMaxSize = getHdrMaxResolution();
-        if(isMfhdrEnabled() && hdrMaxSize != null){
-            if((maxPreviewSize != null && (maxPreviewSize[0]*maxPreviewSize[1] > hdrMaxSize[0]*hdrMaxSize[1] && hdrMaxSize[0] > 0 && hdrMaxSize[1] > 0)) ||
-                    maxPreviewSize == null){
-               maxPreviewSize = hdrMaxSize;
-            }
-        }
-        return maxPreviewSize;
-    }
-
     public int[] getHdrMaxResolution() {
         int[] maxHdrSize = null;
         try {
@@ -1055,22 +1023,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (hdrmode != null && !hdrmode.equals("off")) {
             String[] modeLists = hdrmode.split(" ");
             for (int i = 0; i < modeLists.length; i ++) {
-                if(modeLists[i].equals("MFHDR") || modeLists[i].equals("SHDR")) {
+                if(modeLists[i].equals("MFHDR")) {
                     return true;
                 }
             }
         }
         return false;
-    }
-
-    public boolean isLiveshotSizeSameAsVideoSize(){
-        boolean isLiveshotSizeSameAsVideoSize = false;
-        try {
-            isLiveshotSizeSameAsVideoSize = mCharacteristics.get(mCameraId).get(CaptureModule.is_liveshot_size_same_as_video) == 1 ? true : false;
-        } catch (IllegalArgumentException | NullPointerException e) {
-            Log.w(TAG, EXCEPTION_LOG,"isLiveshotSizeSameAsVideoSize no vendorTag isLiveshotSizeSameAsVideoSize:");
-        }
-        return isLiveshotSizeSameAsVideoSize;
     }
 
     private Size parseSize(String value) {
@@ -2795,7 +2753,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             videoEncoderProfilePref.reloadInitialEntriesAndEntryValues();
             boolean isSupported = isDynamicRangeTenBitSupported();
             Log.d(TAG, " isDynamicRangeTenBitSupported, isSupported : " + isSupported);
-            if (isSupported && !PersistUtil.isVideoEncoderProfileByVendorTag()) {
+            if (isSupported) {
                 VIDEO_ENCODER_PROFILE_TABLE.clear();
                 try {
                     DynamicRangeProfiles dynamicProfiles = mCharacteristics.get(
@@ -3397,20 +3355,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return false;
     }
 
-    private boolean isFDRenderingInVideoUISupported(){
-        boolean isFDRenderingInVideoUISupported = false;
-        isFDRenderingInVideoUISupported = PersistUtil.isFDRENDERINGSUPPORTED();
-        if(!isFDRenderingInVideoUISupported) {
-            try {
-                isFDRenderingInVideoUISupported = mCharacteristics.get(mCameraId).get(CaptureModule.is_FD_Rendering_In_Video_UI_Supported) == 1;
-            } catch (IllegalArgumentException | NullPointerException e) {
-                isFDRenderingInVideoUISupported = true;
-                Log.w(TAG, EXCEPTION_LOG,"isFDRenderingInVideoUISupported no vendorTag isFDRenderingInVideoUISupported:");
-            }
-        }
-        return isFDRenderingInVideoUISupported;
-    }
-
     public boolean isFaceDetectionModeSupported(int id) {
 //        always enable FaceDetectionMode by default
 //        int[] faceDetection = mCharacteristics.get(id).get
@@ -3769,7 +3713,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         //Video size should be 1080P and 720P in CINEMATIC mode
                         continue;
                     }
-                    if (mode != CaptureModule.CameraMode.HFR && isEISV3Enabled && Math.min(videoSizes.get(i).getWidth(),videoSizes.get(i).getHeight()) < 720) {
+                    if (mode != CaptureModule.CameraMode.HFR && isEISV3Enabled && Math.min(videoSizes.get(i)
+                            .getWidth(),videoSizes.get(i).getHeight()) < 720) {
                         //video size should't be larger than 720p when EIS V3 is enabled
                         continue;
                     }
@@ -3795,8 +3740,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         } catch (IllegalArgumentException | NullPointerException e) {
                             Log.w(TAG, "getHdrMaxResolution occurs exception");
                         }
-                        if (maxHdrSize != null && (maxHdrSize[0] * maxHdrSize[1] < videoSizes.get(i).getWidth() * videoSizes.get(i).getHeight())
-                                && (hdrmode != null && !hdrmode.equals("off"))) {
+                        if (maxHdrSize != null && (maxHdrSize[0] * maxHdrSize[1] < videoSizes.get(i).getWidth() 
+                                * videoSizes.get(i).getHeight()) && (hdrmode != null && hdrmode.equals("MFHDR"))) {
                             continue;
                         }
                     }
@@ -3805,9 +3750,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
             }
         }
-        if(hdrmode != null && !hdrmode.equals("off") && videoSize != null && maxHdrSize !=null &&
+        if (hdrmode != null && hdrmode.equals("MFHDR") && videoSize != null && maxHdrSize !=null &&
                 videoSize.getWidth() * videoSize.getHeight() > maxHdrSize[0] * maxHdrSize[1]) {
-            setValue(KEY_VIDEO_QUALITY,res.get(0) );
+            if (res.size() > 0) {
+                setValue(KEY_VIDEO_QUALITY,res.get(0));
+            } else {
+                Log.w(TAG, "No supported video size for camera id " + cameraId + ", set to 1080p");
+                setValue(KEY_VIDEO_QUALITY, "1920x1080");
+            }
         }
         return res;
     }
@@ -4103,8 +4053,20 @@ public class SettingsManager implements ListMenu.SettingsListener {
         float maxZoom = mCharacteristics.get(cameraId).get(CameraCharacteristics
                 .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
         ArrayList<String> supported = new ArrayList<String>();
+        float[] range = getZoomRange();
+        maxZoom = range[1];
+        boolean addMin = true;
         for (int zoomLevel = 0; zoomLevel <= maxZoom; zoomLevel++) {
-            supported.add(String.valueOf(zoomLevel));
+            int tmp = zoomLevel+1;
+            if(zoomLevel ==0){
+                supported.add(String.valueOf(zoomLevel));
+            }
+            if(range[0] > zoomLevel && range[0] < tmp && addMin){
+                supported.add(String.valueOf(range[0]));
+                addMin = false;
+            }else if(zoomLevel >= (int)range[0]){
+                supported.add(String.valueOf(zoomLevel));
+            }
         }
         return supported;
     }
@@ -4148,6 +4110,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.PRO_MODE ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR;
+    }
+    public float[] getZoomRange(){
+        float[] zoomRatioRange = getSupportedRatioZoomRange(
+                mCaptureModule.getMainCameraId());
+        if(mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
+                (isRTBModeInSelectMode() && !isAICameraOn())) {
+            zoomRatioRange =getSupportedBokenRatioZoomRange(
+                    mCaptureModule.getMainCameraId());
+        }
+        return zoomRatioRange;
     }
 
     public float[] getSupportedBokenRatioZoomRange(int cameraId) {

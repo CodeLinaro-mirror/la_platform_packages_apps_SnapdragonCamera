@@ -1723,9 +1723,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             return;
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(AEC_INFO_TITLE[0]+info[0]).append("\r\n")
-                .append(AEC_INFO_TITLE[1]+info[1]+" "+info[2]+" "+info[3]).append("\r\n")
-                .append(AEC_INFO_TITLE[2]+info[4]+" "+info[5]+" "+info[6]).append("\r\n")
-                .append(AEC_INFO_TITLE[3]+info[7]+" "+info[8]+" "+info[9]).append("\r\n")
+                .append(AEC_INFO_TITLE[1]+info[1]+" "+info[2]).append("\r\n")
+                .append(" "+info[3]).append("\r\n")
+                .append(AEC_INFO_TITLE[2]+info[4]).append("\r\n")
+                .append( " "+info[5]+" "+info[6]).append("\r\n")
+                .append(AEC_INFO_TITLE[3]+info[7]).append("\r\n")
+                .append(" "+info[8]+" "+info[9]).append("\r\n")
                 .append(STATS_EXTENSION_TITLE[0]+" "+info[10]).append("\r\n")
                 .append(STATS_EXTENSION_TITLE[1]+" "+info[11]).append("\r\n")
                 .append(STATS_EXTENSION_TITLE[2]+" "+info[12]).append("\r\n")
@@ -1772,7 +1775,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         stringBuilder.append(AFD_INFO_TITLE[0]+info[0]).append("\r\n")
                 .append(AFD_INFO_TITLE[1]+info[1]).append("\r\n")
                 .append(AFD_INFO_TITLE[2]+info[2]).append("\r\n")
-                .append(AFD_INFO_TITLE[3]+info[3]+" "+info[4]+" "+info[5]+" "+info[6]).append("\r\n")
+                .append(AFD_INFO_TITLE[3]+info[3]+" "+info[4]).append("\r\n")
+                .append(" "+info[5]+" "+info[6]).append("\r\n")
                 .append(AFD_INFO_TITLE[4]+info[7]).append("\r\n")
                 .append(AFD_INFO_TITLE[5]+info[8]+" "+info[9]+" "+info[10]+" "+info[11]).append("\r\n")
                 .append(AFD_INFO_TITLE[6]+info[12]+" "+info[13]).append("\r\n")
@@ -2213,12 +2217,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
     public boolean showHDRScene() {
+        CaptureModule.CameraMode currentMode = mModule.getCurrenCameraMode();
+        if (CaptureModule.CameraMode.DEPTH == currentMode) {
+            return false;
+        }
         String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
         String hdrmode = mSettingsManager.getVideoHdrMode();
         String multiCam = mSettingsManager.getValue(SettingsManager.KEY_MULTI_CAMERAS_MODE);
         if (value == null || mSettingsManager.getQuadBayerSensorPrefEnabled() ||
                 (multiCam != null && multiCam.equals("on"))) return false;
-        CaptureModule.CameraMode currentMode = mModule.getCurrenCameraMode();
+
         if (CaptureModule.CameraMode.DEFAULT != currentMode && CaptureModule.CameraMode.RTB != currentMode && CaptureModule.CameraMode.SAT != currentMode) {
             return false;
         }
@@ -3433,6 +3441,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             foucusList.add(mTrackingFocusRenderer);
         }
         String value = mSettingsManager.getValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS);
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC) {
+            value = mSettingsManager.getValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC);
+        }
         if (value != null && value.equals("on")) {
             if (mPieRenderer != null) {
                 mPieRenderer.clear();
@@ -3750,6 +3761,21 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private SeekBar mDepthSeekBar;
 
     private ImageView mDepthSetting;
+    private int[] mSwitchMargin = new int[2];
+    private int[] mSettingMargin = new int[2];
+    private int[] mSeekBarMargin = new int[2];
+    public int[] getSwitchMargin(){
+        return mSwitchMargin;
+    }
+    public int[] getSettingMargin(){
+        return mSettingMargin;
+    }
+    public int[] getBarMargin(){
+        return mSeekBarMargin;
+    }
+    public Switch getDepthSwitch(){
+        return mDepthSwitch;
+    }
 
     public void showDepthView(TextureView.SurfaceTextureListener listener) {
         if (mDepthTextureView == null) {
@@ -3800,12 +3826,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                             Gravity.TOP | Gravity.END);
             params_.topMargin = 100;
             params_.rightMargin = 50;
+
             mDepthSetting.setLayoutParams(params_);
             mDepthSetting.setImageResource(R.drawable.settings);
             mDepthSetting.setOnClickListener((view) -> {
                 openSettingsMenu();
             });
             ((ViewGroup) mRootView).addView(mDepthSetting);
+            mSettingMargin[0]= params_.rightMargin;
+            mSettingMargin[1]= params_.topMargin;;
         }
 
         if (mDepthSwitch == null) {
@@ -3820,6 +3849,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             params2.topMargin = 100;
             params2.rightMargin = 200;
             mDepthSwitch.setLayoutParams(params2);
+            mSwitchMargin[0] =  params2.rightMargin;
+            mSwitchMargin[1] =  params2.topMargin;
             mDepthSwitch.setChecked(mSettingsManager.getDepthMode() == 2);
             ((ViewGroup) mRootView).addView(mDepthSwitch);
             mDepthSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -3862,6 +3893,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mDepthSeekBar.setLayoutParams(params);
             mDepthSeekBar.setMax(3000);
             mDepthSeekBar.setMin(500);
+            mSeekBarMargin[0] = params.rightMargin;
+            mSeekBarMargin[1] = params.bottomMargin;
             mDepthSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {

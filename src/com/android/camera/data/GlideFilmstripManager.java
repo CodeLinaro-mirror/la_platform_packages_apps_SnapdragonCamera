@@ -130,7 +130,7 @@ public final class GlideFilmstripManager {
      */
     public final DrawableRequestBuilder<Uri> loadFull(Uri uri, Key key, Size original, int orientation, int format) {
         Size size = clampSize(original, MAXIMUM_FULL_RES_PIXELS, getMaxImageDisplaySize());
-        if(format == 0) {
+        if(format == 0 || format == 1) {
             orientation = 0;
         }
         return mLargeImageBuilder
@@ -148,7 +148,7 @@ public final class GlideFilmstripManager {
      */
     public DrawableRequestBuilder<Uri> loadScreen(Uri uri, Key key, Size original, int orientation, int format) {
         Size size = clampSize(original, MAXIMUM_SMOOTH_PIXELS, getMaxImageDisplaySize());
-        if(format == 0) {
+        if(format == 0 || format == 1) {
             orientation = 0;
         }
         return mLargeImageBuilder
@@ -167,7 +167,7 @@ public final class GlideFilmstripManager {
      */
     public GenericRequestBuilder<Uri, ?, ?, GlideDrawable> loadMediaStoreThumb(Uri uri, Key key, int orientation, int format) {
         Size size = clampSize(MEDIASTORE_THUMB_SIZE, MAXIMUM_SMOOTH_PIXELS, getMaxImageDisplaySize());
-        if(format == 0) {
+        if(format == 0 || format == 1) {
             orientation = 0;
         }
         return mTinyImageBuilder
@@ -187,7 +187,7 @@ public final class GlideFilmstripManager {
      */
     public GenericRequestBuilder<Uri, ?, ?, GlideDrawable> loadTinyThumb(Uri uri, Key key, float orientation, int format) {
         Size size = clampSize(TINY_THUMB_SIZE, MAXIMUM_SMOOTH_PIXELS,  getMaxImageDisplaySize());
-        if(format == 0) {
+        if(format == 0 || format == 1) {
             orientation = 0;
         }
         return mTinyImageBuilder

@@ -175,6 +175,7 @@
             android:layout="@layout/preference"
             android:title="@string/pref_camera2_touch_track_focus_title" />
 
+
         <SwitchPreference
             android:defaultValue="false"
             android:key="pref_camera2_mono_only_key"
@@ -227,6 +228,12 @@
             android:defaultValue="false"
             android:icon="@drawable/shutter_sound"
             android:key="pref_camera2_touch_track_focus_key"
+            android:layout="@layout/preference"
+            android:title="@string/pref_camera2_touch_track_focus_title" />
+        <SwitchPreference
+            android:defaultValue="on"
+            android:icon="@drawable/shutter_sound"
+            android:key="pref_camera2_touch_track_focus_for_cinematic_key"
             android:layout="@layout/preference"
             android:title="@string/pref_camera2_touch_track_focus_title" />
 
@@ -384,6 +391,14 @@
             android:layout="@layout/preference"
             android:summary="%s"
             android:title="@string/pref_camera2_anti_banding_level_title" />
+        <ListPreference
+            android:defaultValue="@string/pref_camera2_audio_ble_default"
+            android:entries="@array/pref_camera2_audio_ble_entry"
+            android:entryValues="@array/pref_camera2_audio_ble_entryvalues"
+            android:key="pref_camera2_audio_ble_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_audio_ble_title" />
         <ListPreference
             android:defaultValue="@string/pref_camera2_hdr_default"
             android:entries="@array/pref_camera2_hdr_entries"

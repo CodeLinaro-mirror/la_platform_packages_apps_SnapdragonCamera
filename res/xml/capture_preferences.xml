@@ -359,6 +359,12 @@
         camera:entryValues="@array/pref_camera2_touch_track_focus_entryvalues"
         camera:key="pref_camera2_touch_track_focus_key"
         camera:title="@string/pref_camera2_touch_track_focus_title" />
+    <ListPreference
+        camera:defaultValue="@string/pref_camera2_touch_track_focus_value_on"
+        camera:entries="@array/pref_camera2_touch_track_focus_entries"
+        camera:entryValues="@array/pref_camera2_touch_track_focus_entryvalues"
+        camera:key="pref_camera2_touch_track_focus_for_cinematic_key"
+        camera:title="@string/pref_camera2_touch_track_focus_title" />
 
     <ListPreference
         camera:defaultValue="@string/pref_camera2_videoencoderprofile_default"
@@ -401,6 +407,13 @@
         camera:entryValues="@array/pref_camera2_anti_banding_level_entryvalues"
         camera:key="pref_camera2_anti_banding_level_key"
         camera:title="@string/pref_camera2_anti_banding_level_title" />
+
+    <ListPreference
+        camera:key="pref_camera2_audio_ble_key"
+        camera:defaultValue="@string/pref_camera2_audio_ble_default"
+        camera:title="@string/pref_camera2_audio_ble_title"
+        camera:entries="@array/pref_camera2_audio_ble_entry"
+        camera:entryValues="@array/pref_camera2_audio_ble_entryvalues" />
 
     <ListPreference
         camera:defaultValue="@string/pref_camera2_auto_hdr_default"
