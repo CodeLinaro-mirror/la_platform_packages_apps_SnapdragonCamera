@@ -187,6 +187,13 @@
     "h264":{"pref_camera2_videoencoderprofile_key":"off"},
     "h265":{}
   },
+  "pref_camera2_videoencoderprofile_key":
+  {
+    "off":{"pref_camera2_hdr10p_stats_key":"off"},
+    "HEVCProfileMain10":{"pref_camera2_hdr10p_stats_key":"off"},
+    "HEVCProfileMain10HDR10":{"pref_camera2_hdr10p_stats_key":"off"},
+    "HEVCProfileMain10HDR10Plus":{}
+  },
   "pref_camera2_audioencoder_key":
   {
     "amr-nb":{"pref_camera2_audiorecordingmode_key":"default"},

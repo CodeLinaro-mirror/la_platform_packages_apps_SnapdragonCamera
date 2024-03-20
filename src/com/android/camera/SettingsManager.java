@@ -362,6 +362,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_ITOF_TUNING_SET = "pref_camera2_itof_tuning_set_key";
 
     public static final String KEY_AUDIO_BLE = "pref_camera2_audio_ble_key";
+    public static final String KEY_HDR10P_STATS_KEY = "pref_camera2_hdr10p_stats_key";
 
     public static final String KEY_DCG_BIT_TAG = "pref_camera2_dcg_bit_tag_key";
     private static final String TAG = "SnapCam_SettingsManager";

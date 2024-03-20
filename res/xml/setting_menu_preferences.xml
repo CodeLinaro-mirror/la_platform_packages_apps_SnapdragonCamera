@@ -1221,5 +1221,14 @@
             android:title="@string/pref_camera2_itof_tuning_set_title"
             />
 
+        <ListPreference
+            android:defaultValue="@string/setting_off_value"
+            android:entries="@array/pref_camera2_camera2_entries"
+            android:entryValues="@array/pref_camera2_camera2_entryvalues"
+            android:key="pref_camera2_hdr10p_stats_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_hdr10p_stats_title"
+            />
     </PreferenceCategory>
 </PreferenceScreen>

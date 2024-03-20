@@ -12945,6 +12945,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.e(TAG, "enableProSight faild:"+e);
             }
         }
+        if(mSettingsManager.getValue(mSettingsManager.KEY_HDR10P_STATS_KEY) != null &&
+                mSettingsManager.getValue(mSettingsManager.KEY_HDR10P_STATS_KEY).equals("on")){
+            Log.d(TAG,"set hdr10p status enable value");
+            mVideoFormat.setInteger("vendor.qti-ext-enc-hdr10plus-stats-gen.value", 1);
+
+        }
         mVideoEncoder.configure(mVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
     }
 
