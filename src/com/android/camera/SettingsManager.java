@@ -957,8 +957,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.VIDEO &&
                 CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.HFR) {
             isFDRenderingInUI = isCameraFDSupported();
+        }else{
+            isFDRenderingInUI = true;
         }
         return isFDRenderingInUI;
+
     }
 
     public boolean isSwMctfSupported() {
