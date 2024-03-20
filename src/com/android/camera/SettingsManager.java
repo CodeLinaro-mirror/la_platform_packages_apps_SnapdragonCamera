@@ -633,12 +633,36 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
     }
 
+    private void setPreferenceDefaultValue(){
+        ListPreference mfnrPref = mPreferenceGroup.findPreference(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+        if(getKeyValue(CameraSettings.KEY_FIRST_OPEN).equals("false")){
+            return;
+        }
+        String value = "1";
+        if (PersistUtil.getModelInfo().contains("6650") || PersistUtil.getModelInfo().contains("7635") || PersistUtil.getModelInfo().contains("7550")) {
+            value = "0";
+        }
+        if (mfnrPref != null) {
+            mfnrPref.setValue(value);
+        } else {
+            setKeyValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE, true, value);
+        }
+        ListPreference pref = mPreferenceGroup.findPreference(SettingsManager.KEY_VIULL);
+        if (pref != null) {
+            pref.setValue(value);
+        } else {
+            setKeyValue(SettingsManager.KEY_VIULL, true, value);
+        }
+        setKeyValue(CameraSettings.KEY_FIRST_OPEN, false, "false");
+    }
+
     public void init() {
         Log.i(TAG, "SettingsManager init current camera id : " + CaptureModule.CURRENT_ID);
         final int cameraId = getInitialCameraId();
         reloadCharacteristics(cameraId);
         setLocalIdAndInitialize(cameraId);
         autoTestBroadcast(cameraId);
+        setPreferenceDefaultValue();
     }
 
     public void reinit(int cameraId) {
@@ -4006,8 +4030,20 @@ public class SettingsManager implements ListMenu.SettingsListener {
         float maxZoom = mCharacteristics.get(cameraId).get(CameraCharacteristics
                 .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
         ArrayList<String> supported = new ArrayList<String>();
+        float[] range = getZoomRange();
+        maxZoom = range[1];
+        boolean addMin = true;
         for (int zoomLevel = 0; zoomLevel <= maxZoom; zoomLevel++) {
-            supported.add(String.valueOf(zoomLevel));
+            int tmp = zoomLevel+1;
+            if(zoomLevel ==0){
+                supported.add(String.valueOf(zoomLevel));
+            }
+            if(range[0] > zoomLevel && range[0] < tmp && addMin){
+                supported.add(String.valueOf(range[0]));
+                addMin = false;
+            }else if(zoomLevel >= (int)range[0]){
+                supported.add(String.valueOf(zoomLevel));
+            }
         }
         return supported;
     }
@@ -4051,6 +4087,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.PRO_MODE ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.HFR;
+    }
+    public float[] getZoomRange(){
+        float[] zoomRatioRange = getSupportedRatioZoomRange(
+                mCaptureModule.getMainCameraId());
+        if(mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
+                (isRTBModeInSelectMode() && !isAICameraOn())) {
+            zoomRatioRange =getSupportedBokenRatioZoomRange(
+                    mCaptureModule.getMainCameraId());
+        }
+        return zoomRatioRange;
     }
 
     public float[] getSupportedBokenRatioZoomRange(int cameraId) {

@@ -545,4 +545,8 @@ public class PersistUtil {
     public static boolean isProSightEnabled() {
         return PERSIST_ENABLE_PROSIGHT;
     }
+
+    public static String getModelInfo(){
+        return get("ro.soc.model", "");
+    }
 }
