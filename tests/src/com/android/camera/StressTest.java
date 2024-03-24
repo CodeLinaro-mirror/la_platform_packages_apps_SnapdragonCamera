@@ -138,6 +138,7 @@ public class StressTest extends TestBase {
         addObject(saveObj,"modeLLoc",mModeIconL);
         addObject(saveObj,"recordLoc",mRecordLoc);
         addObject(saveObj,"depthLoc",mDepthLoc);
+        addObject(saveObj,"thumbLoc",mThumLoc);
         saveJson(ICON_LOC_JSON,saveObj);
     }
     private void addObject(JSONObject obj,String arrayStr, HashMap<String, int[]> mapkey)throws Exception{

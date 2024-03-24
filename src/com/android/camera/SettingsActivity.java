@@ -1586,8 +1586,8 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled && developer != null) {
                     removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
                     removePreference(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC, developer);
-		    removePreference(SettingsManager.KEY_AUDIO_BLE, developer);
-                    if (!(DEV_LEVEL_ALL)) {
+                    removePreference(SettingsManager.KEY_AUDIO_BLE, developer);
+                    if (!(DEV_LEVEL_ALL || mShowAllDevOption)) {
                         removePreference(SettingsManager.KEY_SWITCH_CAMERA, developer);
                     }
                     for (String removeKey : videoOnlyList) {
@@ -1610,7 +1610,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> videoAddList = new ArrayList<>();
                     videoAddList.add(SettingsManager.KEY_ZOOM);
-                    if (DEV_LEVEL_ALL) {
+                    if (DEV_LEVEL_ALL || mShowAllDevOption) {
                         videoAddList.add(SettingsManager.KEY_SWITCH_CAMERA);
                     }
                     videoAddList.addAll(videoOnlyList);
@@ -1729,9 +1729,8 @@ public class SettingsActivity extends PreferenceActivity {
                 removePreferenceGroup("video", parentPre);
                 removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, photoPre);
                 if (mDeveloperMenuEnabled) {
-                    if (DEV_LEVEL_ALL) {
+                    if (DEV_LEVEL_ALL || mShowAllDevOption) {
                         proModeOnlyList.add(SettingsManager.KEY_SWITCH_CAMERA);
-
                     }
                     proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
@@ -1839,11 +1838,15 @@ public class SettingsActivity extends PreferenceActivity {
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         ListPreference aiCamera = (ListPreference)findPreference(SettingsManager.KEY_AI_CAMERA);
         Log.d(TAG,"isAICameraOn:" + mSettingsManager.isAICameraOn() + ",selectMode: " + selectMode);
-        if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") && mode == VIDEO  &&
-                mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID){
+        if ( mode == VIDEO  && mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID){
             if(aiCamera != null) {
-                aiCamera.setValue("0");
-                aiCamera.setEnabled(false);
+                if(mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb")) {
+                    aiCamera.setValue("0");
+                    aiCamera.setEnabled(false);
+                }else if(mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("single_rear_aibokeh")){
+                    aiCamera.setValue("2");
+                    aiCamera.setEnabled(false);
+                }
             }
         }else{
             if(aiCamera != null) {
@@ -2212,7 +2215,7 @@ public class SettingsActivity extends PreferenceActivity {
                 key.remove("SAT");
                 value.remove("sat");
             }
-            if (mSettingsManager.isAICameraOn() && mode == CaptureModule.CameraMode.VIDEO && mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID) {
+            if (mode == CaptureModule.CameraMode.VIDEO && mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID) {
                 key.add("Single Rear AIbokeh");
                 value.add("single_rear_aibokeh");
             }

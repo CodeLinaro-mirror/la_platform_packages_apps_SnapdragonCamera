@@ -19,7 +19,6 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 package com.android.camera;
-
 import android.hardware.camera2.CameraAccessException;
 import android.media.ExifInterface;
 import android.os.Environment;
@@ -164,6 +163,7 @@ import com.android.camera.ui.ProMode;
 import java.util.ArrayList;
 
 import static com.android.camera.CameraManager.CameraOpenErrorCallback;
+
 
 public class CameraActivity extends Activity
         implements ModuleSwitcher.ModuleSwitchListener,
@@ -1746,13 +1746,14 @@ public class CameraActivity extends Activity
     }
 
     private void bindMediaSaveService() {
-        Intent intent = new Intent(this, MediaSaveService.class);
+        Intent intent = new Intent(this.getApplicationContext(), MediaSaveService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void unbindMediaSaveService() {
         if (mConnection != null && mMediaSaveService != null) {
             unbindService(mConnection);
+            mMediaSaveService = null;
         }
     }
 
@@ -1765,6 +1766,7 @@ public class CameraActivity extends Activity
     private void unbindAIDenoiserService() {
         if (mAideConnection != null && mAIDenoiserService != null) {
             unbindService(mAideConnection);
+            mAIDenoiserService = null;
         }
     }
     @Override
@@ -2134,6 +2136,7 @@ public class CameraActivity extends Activity
         if (mAutoTestEnabled) {
             registerAutoTestReceiver();
         }
+        bindMediaSaveService();
         bindAIDenoiserService();
 
         ContentResolver appContentResolver = this.getContentResolver();
@@ -2414,7 +2417,6 @@ public class CameraActivity extends Activity
         if (mSecureCamera && !hasCriticalPermissions()) {
             return;
         }
-        bindMediaSaveService();
         mPanoramaViewHelper.onStart();
     }
 
@@ -2425,7 +2427,6 @@ public class CameraActivity extends Activity
             return;
         }
         mPanoramaViewHelper.onStop();
-        unbindMediaSaveService();
     }
 
     @Override
@@ -2448,6 +2449,7 @@ public class CameraActivity extends Activity
         if(mCurrentModule != null){
             mCurrentModule.onDestroy();
         }
+        unbindMediaSaveService();
         unbindAIDenoiserService();
         if (mLocalImagesObserver != null) {
             getContentResolver().unregisterContentObserver(mLocalImagesObserver);

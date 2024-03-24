@@ -1345,11 +1345,6 @@ public class PostProcessor{
                     PhotoModule.NamedImages.NamedEntity name = mNamedImages.getNextNameEntity();
                     String title = (name == null) ? null : name.title;
                     Log.i(TAG,"ZSL onImageAvailable title="+title);
-                    if(mActivity.getAutoTest()) {
-                        String path = Storage.DIRECTORY;
-                        String suffix = ".jpg";
-                        mController.mLongImgTitle.add(path+"/"+title+suffix);;
-                    }
                     byte[] imgeBytes;
                     long date = (name == null) ? -1 : name.date;
                     if(mController.mRawReprocessType == 2 || mController.mRawReprocessType == 3 || mController.mRawReprocessType == 5 ||mController.mRawReprocessType == 0){
@@ -1389,9 +1384,8 @@ public class PostProcessor{
                         image.close();
                     }
                     if(mActivity.getAutoTest()) {
-                        String path = Storage.DIRECTORY;
-                        String suffix = ".jpg";
-                        mController.mLongImgTitle.add(path+"/"+title+suffix);;
+                        mController.mLongImgTitle.add(title);
+                        mController.mImgType.add("jpeg");
                         try {
                             android.media.ExifInterface myexif = new android.media.ExifInterface(new ByteArrayInputStream(imgeBytes));
                             mController.mImagExif.add(myexif);
