@@ -38,7 +38,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.Camera;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -68,7 +67,6 @@ import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.LensShadingMap;
 import android.location.Location;
-import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -160,7 +158,7 @@ import com.android.camera.aide.AideUtil.*;
 
 import org.codeaurora.snapcam.R;
 import org.codeaurora.snapcam.filter.ClearSightImageProcessor;
-import android.util.Range;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileDescriptor;
@@ -197,13 +195,7 @@ import com.android.camera.ui.OneUICameraControls;
 import qti.video.QMediaCodecCapabilities;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.Executor;
 
 public class CaptureModule implements CameraModule, PhotoController,
         MediaSaveService.Listener, ClearSightImageProcessor.Callback,
@@ -3859,13 +3851,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                             createCameraSessionWithSessionConfiguration(id, outputConfigurations, inputConfig,
                                     captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         }
-                    } else {
-                        if (mSettingsManager.isHeifWriterEncoding() && outputConfigurations != null) {
-                            createCameraSessionWithSessionConfiguration(id, outputConfigurations, null,
-                                    captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
-                        } else {
-                            mCameraDevice[id].createCaptureSession(list, captureSessionCallback, mCameraHandler);
-                        }
+                    } else if (outputConfigurations != null){
+                        createCameraSessionWithSessionConfiguration(id, outputConfigurations, null,
+                                captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                     }
                 } else {
                     if (outputConfigurations != null) {
@@ -4505,10 +4493,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
         CURRENT_MODE = mCurrentSceneMode.mode;
         mSettingsManager.init();
-        updateSettingDependencyId();
         mPostProcessor = new PostProcessor(mActivity, this);
-        if(mPostProcessor.isJniAPISupported())
+        if(mPostProcessor.isJniAPISupported()) {
             mPostProcessor.nativeEnablePerfLock();
+            mPostProcessor.nativeC2paSetUp();
+        }
         mFrameProcessor = new FrameProcessor(mActivity, this);
         mContentResolver = mActivity.getContentResolver();
         mLocationManager = new LocationManager(mActivity, this);
@@ -6418,6 +6407,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         mImagExif.add(exif);
                                         mLongImgTitle.add(title);
                                     }
+                                    if(mPostProcessor.isJPEGC2PAEnabled()){
+                                        mPostProcessor.reprocessC2PAImage(title, bytes, image.getWidth(), image.getHeight(), date, orientation,
+                                                mOnMediaSavedListener, mContentResolver);
+                                        image.close();
+                                        return;
+                                    }
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         saveRawImg(bytes, image, name, title);
                                         if (mRawReprocessType != 0) {
@@ -8171,6 +8166,10 @@ private boolean isDevOptionSetting(){
     @Override
     public void onResumeBeforeSuper() {
         onResumeBeforeSuper(false);
+        //dont need to do enroll at app side, has auto enroll feature
+//        if((mPostProcessor.isJPEGC2PAEnabled() || mPostProcessor.isYUVC2PAEnabled()) && mPostProcessor.isJniAPISupported() && mEnrollResult != 0){
+//            mEnrollResult = mPostProcessor.nativeC2paEnroll("lens_test_PBivUzTH6Ci2SkEi5TrMpLSAw5PQ4GY8KQc32_UqUjRyuAscVYpdxeNltRmQ0Q4g", "/vendor/etc/ssg/license.txt");
+//        }
     }
 
     public void onResumeBeforeSuper(boolean resumeFromRestartAll) {
@@ -8601,7 +8600,7 @@ private boolean isDevOptionSetting(){
     }
 
     private boolean needYUVStream() {
-        if (mPostProcessor.isFilterOn() || getFrameFilters().size() != 0 || mPostProcessor.isSelfieMirrorOn()) {
+        if (mPostProcessor.isFilterOn() || getFrameFilters().size() != 0 || mPostProcessor.isSelfieMirrorOn() || (mPostProcessor.isYUVC2PAEnabled())) {
             return true;
         }
         return false;
@@ -8775,8 +8774,10 @@ private boolean isDevOptionSetting(){
         if (mCameraRender != null) {
             mCameraRender.destroy();
         }
-        if(mPostProcessor.isJniAPISupported())
+        if(mPostProcessor.isJniAPISupported()) {
             mPostProcessor.nativePerfLockRelease(1);
+            mPostProcessor.nativeC2paTearDown();
+        }
     }
 
     @Override

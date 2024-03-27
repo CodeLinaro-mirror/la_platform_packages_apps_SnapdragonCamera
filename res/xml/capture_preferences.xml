@@ -1061,6 +1061,14 @@
         camera:key="pref_camera2_multi_cameras_key"
         camera:title="@string/pref_camera2_multi_cameras_title" />
 
+    <ListPreference
+        camera:defaultValue="off"
+        camera:entries="@array/pref_camera2_camera2_entries"
+        camera:entryValues="@array/pref_camera2_camera2_entryvalues"
+        camera:key="pref_camera2_c2pa_key"
+        camera:title="@string/pref_camera2_c2pa_title"
+        />
+
     <IconListPreference
         camera:defaultValue="@string/setting_off_value"
         camera:entries="@array/pref_camera2_camera2_entries"

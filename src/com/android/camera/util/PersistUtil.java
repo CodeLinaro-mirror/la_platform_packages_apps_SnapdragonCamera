@@ -532,6 +532,9 @@ public class PersistUtil {
     public static boolean isPerfTestRunning() {
         return getBoolean("persist.sys.camera.perf.test.run", false);}
 
+    public static final int getC2PAImageFormat() {
+        return getInt("persist.sys.camera.c2pa.format",1);
+    }
     private static final int PERSIST_FOCUS_ASSIST_MODE_TIMEOUT =
             getInt("persist.sys.camera.focus_assist_mode.timeout", 8000);
 

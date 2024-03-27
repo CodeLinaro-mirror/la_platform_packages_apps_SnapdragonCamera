@@ -31,12 +31,66 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+#include <stdio.h>
+#ifdef ENABLE_C2PA_LIB
+#include <aidl/android/hardware/common/Ashmem.h>
+#include <aidl/vendor/qti/hardware/c2pa/BnC2PA.h>
+#include <android/binder_manager.h>
+#include <android/binder_process.h>
+#include <cutils/ashmem.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <utils/Log.h>
+#include <map>
+
+using ::aidl::android::hardware::common::Ashmem;
+using ::ndk::ScopedAIBinder_DeathRecipient;
+using ::ndk::ScopedAStatus;
+using ::ndk::SpAIBinder;
+using namespace std;
+using namespace ::aidl::vendor::qti::hardware::c2pa;
+#endif
 
 #ifdef __ANDROID__
 #include "android/log.h"
 #define printf(...) __android_log_print( ANDROID_LOG_ERROR, "ImageUtil", __VA_ARGS__ )
 #endif
 
+#ifdef ENABLE_C2PA_LIB
+#define SIZE_2MB 0x200000
+
+#define T_ERROR(error_code)                                                      \
+    ret = (error_code);                                                          \
+    ALOGE("%s::%d err=0x%x errno:%d(%s)", __func__, __LINE__, error_code, errno, \
+          strerror(errno));                                                      \
+    goto exit;
+
+#define T_CHECK_ERR(cond, error_code) \
+    if (!(cond)) {                    \
+        T_ERROR(error_code)           \
+    }
+
+#define T_CHECK(cond)                        \
+    if (!(cond)) {                           \
+        ALOGE("%s::%d", __func__, __LINE__); \
+        goto exit;                           \
+    }
+
+#define LOGD_PRINT(...)      \
+    do {                     \
+        ALOGD(__VA_ARGS__);  \
+        printf(__VA_ARGS__); \
+        printf("\n");        \
+    } while (0)
+
+#define LOGE_PRINT(...)      \
+    do {                     \
+        ALOGE(__VA_ARGS__);  \
+        printf(__VA_ARGS__); \
+        printf("\n");        \
+    } while (0)
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -56,6 +110,14 @@ JNIEXPORT jint JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nati
         JNIEnv* env, jobject thiz, jint handle, jint duration, jintArray resource,jint numArgs);
 JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativePerfLockRelease(
         JNIEnv* env, jobject thiz, jint handle);
+//API for C2PA
+JNIEXPORT int JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSetUp(JNIEnv* env, jobject thiz);
+JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paTearDown(JNIEnv* env, jobject thiz);
+JNIEXPORT int JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paEnroll(JNIEnv* env, jobject thiz, jstring apiKey, jstring licenseFile);
+JNIEXPORT jbyteArray JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignMedia(
+        JNIEnv* env, jobject thiz, jint imageType, jint height, jint width, jint stride, jint compression, jint maxThumbnailSize, jint thumbnailCompression, jstring jinputFile);
+JNIEXPORT int JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paValidateMedia(
+        JNIEnv* env, jobject thiz, jint handle);
 #ifdef __cplusplus
 }
 #endif
@@ -65,6 +127,12 @@ void *perf_handle;
 int (*perflock_acq)(int handle, int duration, int list[], int numArgs);
 int (*perflock_rel)(int handle);
 int (*perflock_hint)(int hint_id, char* package, int duration, int type);
+
+#ifdef ENABLE_C2PA_LIB
+shared_ptr<IC2PA> c2paService = nullptr;
+ScopedAIBinder_DeathRecipient deathRecipient;
+SpAIBinder c2paBinder;
+#endif
 
 void getPerfhandle(){
     perf_handle = dlopen("libqti-perfd-client.so", RTLD_NOW);
@@ -375,4 +443,254 @@ jint JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeResizeIm
     env->ReleaseByteArrayElements(newBuf, (jbyte *)new_buf, JNI_ABORT);
 
     return R;
+}
+
+#ifdef ENABLE_C2PA_LIB
+void serviceDied(void* cookie) {
+    ALOGI("C2PA AIDL died");
+    c2paService = nullptr;
+}
+
+int32_t loadFile(string filePath, Ashmem& ashmemFile)
+{
+    int32_t ret = 0;
+    int32_t imageFd = -1, ashmemFd = -1;
+    struct stat appStat = {};
+    void *imageBuff = nullptr, *outImageBuffer = nullptr;
+    size_t imageFileSize = 0;
+
+    imageFd = open(filePath.c_str(), O_RDONLY);
+    T_CHECK_ERR(imageFd > 0, imageFd);
+
+    ret = fstat(imageFd, &appStat);
+    T_CHECK_ERR(ret == 0, -1);
+
+    imageFileSize = appStat.st_size;
+    T_CHECK_ERR(imageFileSize > 0, -1);
+
+    imageBuff = malloc(imageFileSize);
+    T_CHECK_ERR(imageBuff != nullptr, -1);
+
+    ret = read(imageFd, imageBuff, imageFileSize);
+    T_CHECK_ERR(ret == imageFileSize, -1);
+    ret = 0;
+
+    LOGD_PRINT("Load image of size :%d", imageFileSize);
+    ashmemFd = ashmem_create_region("C2PA_ADIL_Client", imageFileSize);
+    T_CHECK_ERR(ashmemFd > 0, imageFd);
+
+    outImageBuffer = mmap(NULL, imageFileSize, PROT_READ | PROT_WRITE, MAP_SHARED, ashmemFd, 0);
+    T_CHECK_ERR(outImageBuffer != MAP_FAILED, -1);
+
+    memcpy(outImageBuffer, imageBuff, imageFileSize);
+    ashmemFile.fd.set(ashmemFd);
+    ashmemFile.size = imageFileSize;
+
+    LOGD_PRINT("Successfully loaded image into ashmem memory");
+
+exit:
+    if (outImageBuffer != nullptr) {
+        munmap(outImageBuffer, imageFileSize);
+    }
+    if (ret != 0 && ashmemFd >= 0) {
+        close(ashmemFd);
+    }
+    if (imageBuff != NULL) {
+        free(imageBuff);
+    }
+    if (imageFd > 0) {
+        close(imageFd);
+    }
+    return ret;
+}
+
+
+uint8_t * dumpAshmemFile(Ashmem &inFile)
+{
+    size_t fileSize = (size_t) inFile.size;
+    if(fileSize <= 0){
+        return nullptr;
+    }
+
+    uint8_t * data = (uint8_t*) mmap(NULL, fileSize, PROT_READ, MAP_SHARED, inFile.fd.get(), 0);
+    if (data == MAP_FAILED) {
+        ALOGE("%s::%d mmap of buffer fd failed with error: %s", __func__, __LINE__, strerror(errno));
+        return nullptr;
+    }
+    ALOGD("Succefully loaded ashmem file %d at vaddr = %x", inFile.fd.get(), data);
+    return data;
+}
+#endif
+
+JNIEXPORT int Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSetUp(JNIEnv* env, jobject thiz)
+{
+    int ret = -1;
+#ifdef ENABLE_C2PA_LIB
+    ScopedAStatus status = ScopedAStatus::ok();
+    const string instance = string() + IC2PA::descriptor +"/default";
+
+    if (!AServiceManager_isDeclared(instance.c_str())) {
+        LOGE_PRINT("%s:%d AIDL service is not declared in VINTF manifest", __func__, __LINE__);
+        return ret;
+    }
+
+    c2paBinder = ::ndk::SpAIBinder(AServiceManager_waitForService(instance.c_str()));
+    T_CHECK_ERR(c2paBinder.get() != nullptr, -1);
+
+    deathRecipient = ScopedAIBinder_DeathRecipient(AIBinder_DeathRecipient_new(&serviceDied));
+    status = ScopedAStatus::fromStatus(AIBinder_linkToDeath(c2paBinder.get(),
+                                                            deathRecipient.get(),(void*) serviceDied));
+
+    T_CHECK_ERR(status.isOk(), -1);
+
+    c2paService = IC2PA::fromBinder(c2paBinder);
+
+    T_CHECK_ERR (c2paService != nullptr, -1);
+
+    LOGD_PRINT("Connected to C2PA AIDL service");
+#endif
+exit:
+    return ret;
+}
+
+JNIEXPORT void Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paTearDown(JNIEnv* env, jobject thiz)
+{
+#ifdef ENABLE_C2PA_LIB
+    ScopedAStatus status = ScopedAStatus::ok();
+    if(c2paService != nullptr) {
+        status = ScopedAStatus::fromStatus(AIBinder_unlinkToDeath(c2paBinder.get(),
+                                                                  deathRecipient.get(), (void*) serviceDied));
+        if (!status.isOk()) {
+            LOGD_PRINT("Failed to unlinking from death recipient %d: %s",
+                   status.getStatus(), status.getMessage());
+        }
+        c2paService = nullptr;
+    }
+#endif
+}
+
+JNIEXPORT int Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paEnroll(JNIEnv* env, jobject thiz, jstring japiKey, jstring jlicenseFile)
+{
+    printf("nativeC2paEnroll start");
+    int32_t ret = -1;
+#ifdef ENABLE_C2PA_LIB
+    const char *apikey = env->GetStringUTFChars(japiKey, 0);
+    const char *licenseFile = env->GetStringUTFChars(jlicenseFile, 0);
+
+    if (apikey == NULL || licenseFile == NULL) {
+        return ret;
+    }
+    EnrollResponse result = EnrollResponse::ENROLL_RESPONSE_FAILED;
+    ScopedAStatus status = ScopedAStatus::ok();
+
+    vector<C2PADataTypePair> enrollParam;
+
+    C2PADataTypePair outPair;
+    outPair.key = "CLOUD_CREDENTIALS";
+    outPair.value = C2PADataType::make<C2PADataType::stringValue>(apikey);
+    enrollParam.push_back(std::move(outPair));
+
+    outPair.key = "FEATURE_LICENSE";
+    outPair.value = C2PADataType::make<C2PADataType::fdValue>();
+    ret = loadFile(licenseFile, outPair.value.get<C2PADataType::fdValue>());
+    T_CHECK_ERR(ret == 0, -1);
+    enrollParam.push_back(std::move(outPair));
+
+    status = c2paService->enroll(enrollParam, &result);
+    T_CHECK_ERR(status.isOk() &&
+                result == EnrollResponse::ENROLL_RESPONSE_SUCCESS, (int32_t) result);
+    env->ReleaseStringUTFChars(japiKey, apikey);
+    env->ReleaseStringUTFChars(jlicenseFile, licenseFile);
+#endif
+exit:
+    return ret;
+}
+
+JNIEXPORT jbyteArray Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignMedia(JNIEnv* env, jobject thiz, jint imageType, jint height, jint width, jint stride, jint compression, jint maxThumbnailSize, jint thumbnailCompression, jstring jinputFile)
+{
+    uint8_t *coutput;
+    jbyteArray output;
+    int32_t ret = -1;
+#ifdef ENABLE_C2PA_LIB
+    const char *inputFile = env->GetStringUTFChars(jinputFile, 0);
+    SignResponse result = SignResponse::SIGN_RESPONSE_FAILED;
+    ScopedAStatus status = ScopedAStatus::ok();
+    Ashmem imageFd, outImageFd;
+    vector<C2PADataTypePair> inputParam;
+    vector<C2PADataTypePair> customAssertion;
+
+
+    C2PADataTypePair outPair;
+    outPair.key = "MEDIA_TYPE";
+    outPair.value = C2PADataType::make<C2PADataType::intValue>(0);
+    inputParam.push_back(std::move(outPair));
+    outPair.key = "IMAGE_TYPE";
+    outPair.value = C2PADataType::make<C2PADataType::intValue>(imageType);
+    inputParam.push_back(std::move(outPair));
+    outPair.key = "IMAGE_HEIGHT";
+    outPair.value = C2PADataType::make<C2PADataType::intValue>(height);
+    inputParam.push_back(std::move(outPair));
+    outPair.key = "IMAGE_WIDTH";
+    outPair.value = C2PADataType::make<C2PADataType::intValue>(width);
+    inputParam.push_back(std::move(outPair));
+    outPair.key = "IMAGE_STRIDE";
+    outPair.value = C2PADataType::make<C2PADataType::intValue>(stride);
+    inputParam.push_back(std::move(outPair));
+    outPair.key = "IMAGE_COMPRESSION";
+    outPair.value = C2PADataType::make<C2PADataType::intValue>(compression);
+    inputParam.push_back(std::move(outPair));
+    outPair.key = "THUMBNAIL_MAX_SIZE";
+    outPair.value = C2PADataType::make<C2PADataType::intValue>(maxThumbnailSize);
+    inputParam.push_back(std::move(outPair));
+    outPair.key = "THUMBNAIL_QUALITY";
+    outPair.value = C2PADataType::make<C2PADataType::intValue>(thumbnailCompression);
+    inputParam.push_back(std::move(outPair));
+
+    ret = loadFile(inputFile, imageFd);
+    T_CHECK_ERR(ret == 0 && (imageFd.fd.get()) >= 0, -1);
+
+    status = c2paService->signMedia(imageFd, inputParam, customAssertion, &outImageFd, &result);
+    T_CHECK_ERR(status.isOk() && result == SignResponse::SIGN_RESPONSE_SUCCESS &&
+                (outImageFd.fd.get()) > 0, (int32_t) result);
+    ret = 0;
+
+    LOGD_PRINT("Successfully signed media using AIDL service");
+    coutput = dumpAshmemFile(outImageFd);
+    if(coutput == nullptr) goto exit;
+    output = env->NewByteArray((size_t) outImageFd.size);
+    env->SetByteArrayRegion(output, 0, (size_t) outImageFd.size, (jbyte *)coutput);
+    LOGD_PRINT("Successfully wrote signed media to file");
+    env->ReleaseStringUTFChars(jinputFile, inputFile);
+    LOGD_PRINT("sign result: %d", ret );
+#endif
+exit:
+    return output;
+}
+
+JNIEXPORT int JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paValidateMedia(JNIEnv* env, jobject thiz, jstring jinputFile)
+{
+    int32_t ret = -1;
+#ifdef ENABLE_C2PA_LIB
+    ValidateResponse result;
+    vector<C2PADataTypePair> output;
+    ScopedAStatus status = ScopedAStatus::ok();
+    Ashmem imageFd;
+    vector<C2PADataTypePair> inputParam;
+    const char *inputFile = env->GetStringUTFChars(jinputFile, 0);
+
+    C2PADataTypePair outPair;
+
+    outPair.key = "MEDIA_TYPE";
+    outPair.value = C2PADataType::make<C2PADataType::intValue>(0);
+    inputParam.push_back(std::move(outPair));
+
+    ret = loadFile(inputFile, imageFd);
+    T_CHECK_ERR(ret == 0 && (imageFd.fd.get()) >= 0, -1);
+
+    status = c2paService->validateMedia(imageFd, inputParam, &output, &result);
+    T_CHECK_ERR(result != ValidateResponse::VALIDATION_RESPONSE_FAILED, (uint32_t) result);
+    LOGD_PRINT("Result of validate image output: %d", (uint8_t) result);
+#endif
+exit:
+return ret;
 }
