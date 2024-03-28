@@ -15763,7 +15763,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (count == 0) restartSession(false);
                     return;
                 case SettingsManager.KEY_SCENE_MODE:
-                    restartAll();
+                    restartSession(false);
                     return;
                 case SettingsManager.KEY_AI_BLUR_SHAPE:
                 case SettingsManager.KEY_AI_BLUR_STRENGTH:
