@@ -13459,10 +13459,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             mMediaRecorder.prepare();
             mMediaRecorder.setOnErrorListener(this);
             mMediaRecorder.setOnInfoListener(this);
-            if (mBleInputDevice != null) {
+            if (mSettingsManager.getValue(SettingsManager.KEY_AUDIO_BLE).equals("On")
+                    && mBleInputDevice != null) {
                 List<MicrophoneInfo> microphoneInfos =  mMediaRecorder.getActiveMicrophones();
                 for (MicrophoneInfo microphoneInfo : microphoneInfos) {
-                    Log.i(TAG, "BLE, Active microphone info " + microphoneInfo.getType());
+                    Log.i(TAG, "BLE On, Active microphone info " + microphoneInfo.getType());
                 }
             }
             return true;
