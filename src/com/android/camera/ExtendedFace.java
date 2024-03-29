@@ -93,10 +93,9 @@ public class ExtendedFace {
         this.mReyeBlink = right;
     }
 
-    public void setGazeDirection(int topbottomGaze, int leftrightGaze, int rollDirection) {
-        this.mTopbottomGaze = topbottomGaze;
+    public void setGazeDirection (int leftrightGaze,int topbottomGaze) {
         this.mLeftrightGaze = leftrightGaze;
-        this.mRollDirection = rollDirection;
+        this.mTopbottomGaze = topbottomGaze;
     }
 
     public void setGazeAngle(byte gazeAngle) {

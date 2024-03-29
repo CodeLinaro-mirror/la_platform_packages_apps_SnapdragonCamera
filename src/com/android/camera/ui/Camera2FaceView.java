@@ -528,13 +528,12 @@ public class Camera2FaceView extends FaceView {
                                         point[2] + dx, point[3] + dy, mPaint);
                             }
                         }
-
                         if ((exFace.getLeftrightGaze() != 0
                                 || exFace.getTopbottomGaze() != 0)
                                 && face.getLeftEyePosition() != null
                                 && face.getRightEyePosition() != null) {
 
-                            double length =
+                           /* double length =
                                     Math.sqrt((face.getLeftEyePosition().x - face.getRightEyePosition().x) *
                                             (face.getLeftEyePosition().x - face.getRightEyePosition().x) +
                                             (face.getLeftEyePosition().y - face.getRightEyePosition().y) *
@@ -558,20 +557,21 @@ public class Camera2FaceView extends FaceView {
                                                     Math.cos(nGazeYaw / 180.0 * Math.PI) *
                                                     Math.cos(-exFace.getRollDirection() /
                                                             180.0 * Math.PI)) *
-                                            (-length) + 0.5);
+                                            (-length) + 0.5);*/
+                            float[]gazeXY = getGazeXY(exFace.getLeftrightGaze(),exFace.getTopbottomGaze());
 
                             if (mFdGazeEnable && exFace.getLeyeBlink() < blink_threshold) {
                                 if ((mDisplayRotation == 90) ||
                                         (mDisplayRotation == 270)) {
                                     point[0] = face.getLeftEyePosition().x;
                                     point[1] = face.getLeftEyePosition().y;
-                                    point[2] = face.getLeftEyePosition().x + gazeRollX;
-                                    point[3] = face.getLeftEyePosition().y + gazeRollY;
+                                    point[2] = face.getLeftEyePosition().x + gazeXY[0];
+                                    point[3] = face.getLeftEyePosition().y + gazeXY[1];
                                 } else {
                                     point[0] = face.getLeftEyePosition().x;
                                     point[1] = face.getLeftEyePosition().y;
-                                    point[2] = face.getLeftEyePosition().x + gazeRollY;
-                                    point[3] = face.getLeftEyePosition().y + gazeRollX;
+                                    point[2] = face.getLeftEyePosition().x + gazeXY[0];
+                                    point[3] = face.getLeftEyePosition().y + gazeXY[1];
                                 }
                                 bsgcTranslateMatrix.mapPoints(point);
                                 mMatrix.mapPoints(point);
@@ -584,13 +584,13 @@ public class Camera2FaceView extends FaceView {
                                         (mDisplayRotation == 270)) {
                                     point[0] = face.getRightEyePosition().x;
                                     point[1] = face.getRightEyePosition().y;
-                                    point[2] = face.getRightEyePosition().x + gazeRollX;
-                                    point[3] = face.getRightEyePosition().y + gazeRollY;
+                                    point[2] = face.getRightEyePosition().x + gazeXY[0];
+                                    point[3] = face.getRightEyePosition().y + gazeXY[1];
                                 } else {
                                     point[0] = face.getRightEyePosition().x;
                                     point[1] = face.getRightEyePosition().y;
-                                    point[2] = face.getRightEyePosition().x + gazeRollY;
-                                    point[3] = face.getRightEyePosition().y + gazeRollX;
+                                    point[2] = face.getRightEyePosition().x + gazeXY[0];
+                                    point[3] = face.getRightEyePosition().y + gazeXY[1];
                                 }
                                 bsgcTranslateMatrix.mapPoints(point);
                                 mMatrix.mapPoints(point);
@@ -672,6 +672,17 @@ public class Camera2FaceView extends FaceView {
             canvas.restore();
         }
         super.onDraw(canvas);
+    }
+    private float[] getGazeXY(float lrgaze,float tbgaze){
+        float[]xy= new float[2];
+        int length = 100;
+        float leftrigt = (float) (lrgaze / 180.0 * Math.PI);
+        float topbottom = (float) (tbgaze / 180.0 * Math.PI);
+        float lrtan = (float) (Math.tan(leftrigt) * Math.tan(leftrigt));
+        float tbtan = (float) (Math.tan(topbottom) * Math.tan(topbottom));
+        xy[0] = (float) (Math.sqrt((length*length)/(1+tbtan+lrtan))*Math.tan(leftrigt));
+        xy[1] = (float)(Math.sqrt((length*length)/(1+tbtan+lrtan))*Math.tan(topbottom));
+        return xy;
     }
     private void drawFaceMark(Matrix bsgcMatrix,Matrix mMatrix,Matrix pointMatrix,int[]data,Canvas canvas) {
         if (data != null && data.length != 0) {

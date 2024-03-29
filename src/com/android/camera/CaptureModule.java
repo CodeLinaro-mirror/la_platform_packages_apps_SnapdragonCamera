@@ -9369,7 +9369,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.d(FD_TAG, FD_LOG, "blinkDetectedArray=" + Arrays.toString(blinkDetectedArray));
                 byte[] blinkDegreesArray = captureResult.get(blinkDegree);
                 Log.d(FD_TAG, FD_LOG, "blinkDegreesArray=" + Arrays.toString(blinkDegreesArray));
-                int[] gazeDirectionArray = captureResult.get(gazeDirection);
+                byte[] gazeDirectionArray = captureResult.get(gazeDegree);
                 Log.d(FD_TAG, FD_LOG, "gazeDirectionArray=" + Arrays.toString(gazeDirectionArray));
                 byte[] gazeAngleArray = captureResult.get(gazeAngle);
 
@@ -9377,8 +9377,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 for (int i = 0; i < size; i++) {
                     ExtendedFace tmp = new ExtendedFace(faces[i].getId());
                     try {
-                        if (gazeDirectionArray != null && (3 * i + 2) < gazeDirectionArray.length) {
-                            tmp.setGazeDirection(gazeDirectionArray[3 * i], gazeDirectionArray[3 * i + 1], gazeDirectionArray[3 * i + 2]);
+                        if (gazeDirectionArray != null && (2 * i + 1) < gazeDirectionArray.length) {
+                            tmp.setGazeDirection(gazeDirectionArray[2 * i], gazeDirectionArray[2 * i + 1]);
                         }
                         if (gazeAngleArray != null && i < gazeAngleArray.length) {
                             tmp.setGazeAngle(gazeAngleArray[i]);
