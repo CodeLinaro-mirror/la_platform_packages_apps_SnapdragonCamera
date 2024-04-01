@@ -2039,7 +2039,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
     }
-
     private void initializeZoom(int id) {
         if (!mSettingsManager.isZoomSupported(id) || (mZoomRenderer == null))
             return;
@@ -2215,6 +2214,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 }
             });
         }
+    }
+    private boolean isShowHelp(){
+        if(PersistUtil.isPerfTestRunning() || PersistUtil.isFuncTestRunning() ||
+                PersistUtil.isStressTestRunning()){
+            return false;
+        }
+        return true;
     }
     public boolean showHDRScene() {
         CaptureModule.CameraMode currentMode = mModule.getCurrenCameraMode();
@@ -4239,7 +4245,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void showFirstTimeHelp() {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
         boolean isMenuShown = prefs.getBoolean(CameraSettings.KEY_SHOW_MENU_HELP, false);
-        if(!isMenuShown && !mActivity.getAutoTest()) {
+        if(!isMenuShown && isShowHelp()) {
             showFirstTimeHelp(mTopMargin, mBottomMargin);
             SharedPreferences.Editor editor = prefs.edit();
             editor.putBoolean(CameraSettings.KEY_SHOW_MENU_HELP, true);
@@ -4376,7 +4382,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 if ( value.equals("104") ) {//panorama
                     mSceneModeLabelRect.setVisibility(View.GONE);
                 }else{
-                    if ( needShowInstructional() && !mActivity.getAutoTest() ) {
+                    if ( needShowInstructional() && isShowHelp() ) {
                         showSceneInstructionalDialog(mOrientation);
                     }
                     if(value.equals("18")) {//hdr
