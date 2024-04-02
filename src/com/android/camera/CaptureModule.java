@@ -7205,10 +7205,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mActivity.getMediaSaveService().addImage(bytes, title, date,
                                 null, image.getWidth(), image.getHeight(), orientation, null,
                                 mOnMediaSavedListener, mContentResolver, saveFormat);
-
-                        if (image.getFormat() != ImageFormat.HEIC){
-                            mActivity.updateThumbnail(bytes);
-                        }
+                        mActivity.updateThumbnail(bytes);
                         image.close();
                     }
                 }, mImageAvailableHandler);
