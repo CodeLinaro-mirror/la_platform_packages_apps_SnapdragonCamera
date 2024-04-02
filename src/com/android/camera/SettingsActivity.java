@@ -330,6 +330,7 @@ public class SettingsActivity extends PreferenceActivity {
                     case SettingsManager.KEY_PICTURE_FORMAT:
                         mSettingsManager.updatePictureAndVideoSize();
                         updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+                        updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                         updateColorSpacePreference();
                         break;
                     case SettingsManager.KEY_EIS_VALUE:
