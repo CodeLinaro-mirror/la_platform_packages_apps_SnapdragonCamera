@@ -14305,9 +14305,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (value != null ) {
             int mode = Integer.parseInt(value);
             Log.v(TAG, " applyVSR mode :" + mode);
-            if (mode != 0) {
-                VendorTagUtil.setVSRMode(request, mode);
-            }
+            VendorTagUtil.setVSRMode(request, mode);
         }
     }
 

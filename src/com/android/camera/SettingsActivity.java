@@ -278,7 +278,6 @@ public class SettingsActivity extends PreferenceActivity {
                         updateEISPreference();
                         updateVideoMFHDRPreference();
                         updateVideoFlipPreference();
-                        updateVsrPreference();
                         updateViullPreference();
                         break;
                     case SettingsManager.KEY_VIDEO_ENCODER:
@@ -302,7 +301,6 @@ public class SettingsActivity extends PreferenceActivity {
                         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
                         updateVideoMFHDRPreference();
                         updateViullPreference();
-                        updateVsrPreference();
                         break;
                     case SettingsManager.KEY_VIDEO_ENCODER_PROFILE:
                         if (mode == CaptureModule.CameraMode.VIDEO) {
@@ -2059,7 +2057,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateRawFormatPref();
         updateRawInfoPref();
         updatePictureSizePreferenceButton();
-        updateVsrPreference();
         updateCaptureProfilePref();
         updateMultiResReprocess();
         updatePreviewStabilizationPreference();
@@ -2439,14 +2436,6 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
-        String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-        String fps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-        String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
-        int size = CameraUtil.getSize(videoSize);
-        if (vsr != null && vsr.equals("1") && size >= 3840*2160 ){
-            pref.setValue("off");
-            pref.setEnabled(false);
-        }
         if (pref.isEnabled()) {
             updateMultiVideoFPSPreference();
         }
@@ -2485,22 +2474,6 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
-    }
-    private void updateVsrPreference(){
-         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_VSR);
-         if(pref == null) return;
-         ListPreference Vieopref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_QUALITY);
-         if(Vieopref != null){
-             String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-             String fps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-             int size = CameraUtil.getSize(videoSize);
-             if(size >= 7680*4320 || (size >= 3840*2160 && fps != null && !fps.equals("off")) ){
-                 pref.setValue("0");
-                 pref.setEnabled(false);
-                 return;
-             }
-         }
-         pref.setEnabled(true);
     }
 
     private void updateCaptureProfilePref() {
