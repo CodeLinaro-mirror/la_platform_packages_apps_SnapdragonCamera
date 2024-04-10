@@ -1554,6 +1554,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled && developer != null) {
                     removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
                     removePreference(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC, developer);
+		    removePreference(SettingsManager.KEY_AUDIO_BLE, developer);
                     if (!(DEV_LEVEL_ALL)) {
                         removePreference(SettingsManager.KEY_SWITCH_CAMERA, developer);
                     }
