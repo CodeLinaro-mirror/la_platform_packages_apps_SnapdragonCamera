@@ -542,11 +542,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
          }else{
             flashEnable =false;
          }
-       if (getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("manual")){
+       if (getValue(KEY_MANUAL_HDR) != null){
            String hdrmode = getVideoHdrMode();
-           if (hdrmode != null && !hdrmode.equals("off")) return torchHDREnable && flashEnable;
-       }else if(getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("auto")){
-            return  torchHDREnable && flashEnable && isTorchHdrTag;
+           if (hdrmode != null && !hdrmode.equals("off")) {
+               return torchHDREnable && flashEnable && isTorchHdrTag;
+           }
        }
        return false;
     }
