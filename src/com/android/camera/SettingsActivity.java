@@ -1103,11 +1103,13 @@ public class SettingsActivity extends PreferenceActivity {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
         StringBuilder defaultHDROrder = new StringBuilder();
+        CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+
         for (int i = 0; i < modes.length; i++) {
-            if (modes[i] == 1) {
+            if (modes[i] == 1 && mode != RTB) {
                 listData.add(SettingsManager.KEY_MANUAL_SHDR);
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_SHDR).append("#");
-            } else if (modes[i] == 2 && !mSettingsManager.isAIBokehMode()) {
+            } else if (modes[i] == 2 && !mSettingsManager.isAIBokehMode() && mode != RTB) {
                 listData.add(SettingsManager.KEY_MANUAL_MFHDR);
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_MFHDR).append("#");
             } else if (modes[i] == 3) {
