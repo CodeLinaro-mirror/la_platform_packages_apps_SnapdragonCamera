@@ -1093,7 +1093,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             new MediaSaveService.OnMediaSavedListener() {
                 @Override
                 public void onMediaSaved(Uri uri) {
-                    if (mLongshotActive) {
+                    if (mLongshotActive || mPostProcessor.isSelfieMirrorOn()) {
                         if (mediaSaveNotifyThread == null) {
                             mediaSaveNotifyThread = new MediaSaveNotifyThread(uri);
                             mediaSaveNotifyThread.start();
