@@ -204,6 +204,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_FACE_DETECTION = "pref_camera2_facedetection_key";
     public static final String KEY_FACE_MASK = "pref_camera2_facemask_key";
     public static final String KEY_UPPER_BODY_DETECTION = "pref_camera2_upper_body_detection_key";
+    public static final String KEY_PET_DETECTION = "pref_camera2_pet_detection_key";
     public static final String KEY_VIDEO_HIGH_FRAME_RATE = "pref_camera2_hfr_key";
     public static final String KEY_SELFIE_FLASH = "pref_selfie_flash_key";
     public static final String KEY_SHUTTER_SOUND = "pref_camera2_shutter_sound_key";
@@ -299,6 +300,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_FD_GENDER = "pref_camera2_fd_gender_key";
     public static final String KEY_FD_FACE_EXPRESSION = "pref_camera2_fd_face_expression_key";
     public static final String KEY_FACIAL_CONTOUR = "pref_camera2_facial_contour_key";
+    public static final String KEY_FACIAL_CONTOUR_VISIBILITY = "pref_camera2_fd_contour_visibility_key";
     public static final String KEY_FACE_DETECTION_MODE = "pref_camera2_face_detection_mode";
     public static final String KEY_FD_SETTING = "pref_camera2_fd_setting_key";
     public static final String KEY_FD_FL_SETTING = "pref_camera2_fd_fl_setting_key";
@@ -542,11 +544,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
          }else{
             flashEnable =false;
          }
-       if (getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("manual")){
+       if (getValue(KEY_MANUAL_HDR) != null){
            String hdrmode = getVideoHdrMode();
-           if (hdrmode != null && !hdrmode.equals("off")) return torchHDREnable && flashEnable;
-       }else if(getValue(KEY_MANUAL_HDR) != null && getValue(KEY_MANUAL_HDR).equals("auto")){
-            return  torchHDREnable && flashEnable && isTorchHdrTag;
+           if (hdrmode != null && !hdrmode.equals("off")) {
+               return torchHDREnable && flashEnable && isTorchHdrTag;
+           }
        }
        return false;
     }
@@ -957,8 +959,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.VIDEO &&
                 CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.HFR) {
             isFDRenderingInUI = isCameraFDSupported();
+        }else{
+            isFDRenderingInUI = true;
         }
         return isFDRenderingInUI;
+
     }
 
     public boolean isSwMctfSupported() {
@@ -2176,13 +2181,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 removePreference(mPreferenceGroup, KEY_CAPTURE_PROFILE);
             }
         } else {
-            if (previewProfile != null) {
-                if (filterUnsupportedOptions(previewProfile,
-                        getSupportedCapturePreviewProfile())) {
-                    mFilteredKeys.add(previewProfile.getKey());
-                }
-                previewProfile.print();
-            }
             if (captureProfile != null) {
                 if (filterUnsupportedOptions(captureProfile,
                         getSupportedCapturePreviewProfile())) {
@@ -3293,7 +3291,26 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Log.d(TAG, " isInSensorZoomSupported result :" + isSupported);
         return isSupported;
     }
-
+    public boolean isFdFeatureDisplay(String key){
+        String value = getValue(key);
+        if (value == null) return false;
+        if(key.equals(KEY_FACIAL_CONTOUR)){
+            if (value.equals("disable")){
+                return false;
+            }else if(Integer.valueOf(value) >4){
+                return  true;
+            }else{
+                return false;
+            }
+        }else {
+            return value.equals("display");
+        }
+    }
+    public boolean isFdFeatureEnable(String key){
+        String value = getValue(key);
+        if (value == null) return false;
+        return  !value.equals("disable");
+    }
     public boolean isMLVideoSupported() {
         boolean isSupported = false;
         try {
@@ -3721,11 +3738,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     if (mode == CaptureModule.CameraMode.HFR &&
                             Math.min(videoSizes.get(i).getWidth(), videoSizes.get(i).getHeight()) < 480) {
                         //Video size should`t be larger than VGA(640x480) in HFR mode
-                        continue;
-                    }
-                    if (getValue(SettingsManager.KEY_VSR) != null &&
-                            getValue(SettingsManager.KEY_VSR).equals("1") &&
-                            videoSizes.get(i).toString().equals("7680x4320")) {
                         continue;
                     }
                     if (mode == CaptureModule.CameraMode.HFR &&

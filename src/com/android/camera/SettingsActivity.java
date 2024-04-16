@@ -147,8 +147,6 @@ public class SettingsActivity extends PreferenceActivity {
     private int privateCounter = 0;
     private final int DEVELOPER_MENU_TOUCH_COUNT = 10;
     private FdExpandListView fdExpandListView;
-    private FdExpandListView fdFLExpandListView;
-    private FdExpandListView fdFacialExpandListView;
     private ExpandableListView expandableListView = null;
     private FdExpandListViewAdapter expandableAdapter = null;
     private ExpandableListView fdFLExpandableListView = null;
@@ -278,7 +276,6 @@ public class SettingsActivity extends PreferenceActivity {
                         updateEISPreference();
                         updateVideoMFHDRPreference();
                         updateVideoFlipPreference();
-                        updateVsrPreference();
                         updateViullPreference();
                         break;
                     case SettingsManager.KEY_VIDEO_ENCODER:
@@ -302,7 +299,6 @@ public class SettingsActivity extends PreferenceActivity {
                         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
                         updateVideoMFHDRPreference();
                         updateViullPreference();
-                        updateVsrPreference();
                         break;
                     case SettingsManager.KEY_VIDEO_ENCODER_PROFILE:
                         if (mode == CaptureModule.CameraMode.VIDEO) {
@@ -1105,11 +1101,13 @@ public class SettingsActivity extends PreferenceActivity {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
         StringBuilder defaultHDROrder = new StringBuilder();
+        CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+
         for (int i = 0; i < modes.length; i++) {
-            if (modes[i] == 1) {
+            if (modes[i] == 1 && mode != RTB) {
                 listData.add(SettingsManager.KEY_MANUAL_SHDR);
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_SHDR).append("#");
-            } else if (modes[i] == 2 && !mSettingsManager.isAIBokehMode()) {
+            } else if (modes[i] == 2 && !mSettingsManager.isAIBokehMode() && mode != RTB) {
                 listData.add(SettingsManager.KEY_MANUAL_MFHDR);
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_MFHDR).append("#");
             } else if (modes[i] == 3) {
@@ -1261,7 +1259,7 @@ public class SettingsActivity extends PreferenceActivity {
                             View listView = (SettingsActivity.this).getLayoutInflater().inflate(
                                     R.layout.expandlistview, null);
                             final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
-                            alert.setTitle("FD Settings");
+                            alert.setTitle("FD Features");
                             alert.setView(listView);
                             expandableListView = (ExpandableListView) listView.findViewById(R.id.main_expandablelistview);
                             expandableAdapter = fdExpandListView.new FdExpandListViewAdapter();
@@ -1279,53 +1277,6 @@ public class SettingsActivity extends PreferenceActivity {
                             });
                             alert.show();
                         }
-
-                        if( preference.getKey().equals(SettingsManager.KEY_FD_FL_SETTING)) {
-                            View listView = (SettingsActivity.this).getLayoutInflater().inflate(
-                                    R.layout.expandlistview, null);
-                            final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
-                            alert.setTitle("FD FL Attributes");
-                            alert.setView(listView);
-                            fdFLExpandableListView = (ExpandableListView) listView.findViewById(R.id.main_expandablelistview);
-                            fdFLExpandableAdapter = fdFLExpandListView.new FdExpandListViewAdapter();
-                            fdFLExpandableListView.setAdapter(fdFLExpandableAdapter);
-                            alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog,int id) {
-                                    dialog.cancel();
-                                }
-                            });
-                            alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                @Override
-                                public void onDismiss(DialogInterface Dialog) {
-                                    preference.setSummary(fdFLExpandListView.getFDSummery());
-                                }
-                            });
-                            alert.show();
-                        }
-
-                        if( preference.getKey().equals(SettingsManager.KEY_FD_FACIAL_SETTING)) {
-                            View listView = (SettingsActivity.this).getLayoutInflater().inflate(
-                                    R.layout.expandlistview, null);
-                            final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
-                            alert.setTitle("FD Facial Attributes");
-                            alert.setView(listView);
-                            fdFacialExpandableListView = (ExpandableListView) listView.findViewById(R.id.main_expandablelistview);
-                            fdFacialExpandableAdapter = fdFacialExpandListView.new FdExpandListViewAdapter();
-                            fdFacialExpandableListView.setAdapter(fdFacialExpandableAdapter);
-                            alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog,int id) {
-                                    dialog.cancel();
-                                }
-                            });
-                            alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                @Override
-                                public void onDismiss(DialogInterface Dialog) {
-                                    preference.setSummary(fdFacialExpandListView.getFDSummery());
-                                }
-                            });
-                            alert.show();
-                        }
-
                         if (preference.getKey().equals(SettingsManager.KEY_MANUAL_HDR)) {
                             String value = ((ListPreference) preference).getValue();
                             if (value.equals("manual")) {
@@ -1520,21 +1471,9 @@ public class SettingsActivity extends PreferenceActivity {
             removePreference(SettingsManager.KEY_FD_GAZE, developer);
             removePreference(SettingsManager.KEY_FD_BLINK, developer);
             removePreference(SettingsManager.KEY_FACIAL_CONTOUR, developer);
-            removePreference(SettingsManager.KEY_FACE_DETECTION_MODE, developer);
+            //removePreference(SettingsManager.KEY_FACE_DETECTION_MODE, developer);
             removePreference(SettingsManager.KEY_FD_GENDER, developer);
             removePreference(SettingsManager.KEY_FD_FACE_EXPRESSION, developer);
-        }
-        Preference pdFL = findPreference(SettingsManager.KEY_FD_FL_SETTING);
-        if(pdFL != null) {
-            fdFLExpandListView = new FdExpandListView(SettingsActivity.this);
-            fdFLExpandListView.initFDFLData();
-            pdFL.setSummary(fdFLExpandListView.getFDSummery());
-        }
-        Preference fdFacial = findPreference(SettingsManager.KEY_FD_FACIAL_SETTING);
-        if(fdFacial != null) {
-            fdFacialExpandListView = new FdExpandListView(SettingsActivity.this);
-            fdFacialExpandListView.initFDFacialData();
-            fdFacial.setSummary(fdFacialExpandListView.getFDSummery());
         }
         if(!PersistUtil.isRawReprocessEnable() && developer != null){
             removePreference(SettingsManager.KEY_RAW_REPROCESS_TYPE, developer);
@@ -1556,6 +1495,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled && developer != null) {
                     removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
                     removePreference(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC, developer);
+		    removePreference(SettingsManager.KEY_AUDIO_BLE, developer);
                     if (!(DEV_LEVEL_ALL)) {
                         removePreference(SettingsManager.KEY_SWITCH_CAMERA, developer);
                     }
@@ -1723,10 +1663,6 @@ public class SettingsActivity extends PreferenceActivity {
             default:
                 //don't filter
                 break;
-        }
-        Preference longshotPref = findPreference(SettingsManager.KEY_LONGSHOT);
-        if (longshotPref != null && photoPre != null){
-            photoPre.removePreference(longshotPref);
         }
     }
 
@@ -2063,7 +1999,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateRawFormatPref();
         updateRawInfoPref();
         updatePictureSizePreferenceButton();
-        updateVsrPreference();
         updateCaptureProfilePref();
         updateMultiResReprocess();
         updatePreviewStabilizationPreference();
@@ -2443,14 +2378,6 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
-        String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-        String fps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-        String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
-        int size = CameraUtil.getSize(videoSize);
-        if (vsr != null && vsr.equals("1") && size >= 3840*2160 ){
-            pref.setValue("off");
-            pref.setEnabled(false);
-        }
         if (pref.isEnabled()) {
             updateMultiVideoFPSPreference();
         }
@@ -2489,22 +2416,6 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
-    }
-    private void updateVsrPreference(){
-         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_VSR);
-         if(pref == null) return;
-         ListPreference Vieopref = (ListPreference)findPreference(SettingsManager.KEY_VIDEO_QUALITY);
-         if(Vieopref != null){
-             String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-             String fps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-             int size = CameraUtil.getSize(videoSize);
-             if(size >= 7680*4320 || (size >= 3840*2160 && fps != null && !fps.equals("off")) ){
-                 pref.setValue("0");
-                 pref.setEnabled(false);
-                 return;
-             }
-         }
-         pref.setEnabled(true);
     }
 
     private void updateCaptureProfilePref() {
@@ -2565,14 +2476,8 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-        if ("HEVCProfileMain10HDR10Plus".equals(profile)) {
-            pref.setValue("0");
-            pref.setEnabled(false);
-            return;
-        }
-
         String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
-        if (previewProfile != null && !"0".equals(previewProfile)) {
+        if (profile != null && previewProfile != null && !(SettingsManager.VIDEO_ENCODER_PROFILE_MAP.get(profile).equals(previewProfile))) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;

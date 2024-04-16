@@ -1939,10 +1939,18 @@ public class TestBase{
         if(!isVideoMode(mode)) {
             testSnapshot(mode);
             List<String>  patharry = mActivity.getCaptureModule().getLongImageTitle();
+            if(patharry.size() == 0){
+                testFail = getFailStr("imagesize", 0, 1);
+                return;
+            }
             path = patharry.get(0);
         }else{
             testVideo(mode);
             path = mCaptureModule.getVideoFilePath();
+            if(path == null){
+                testFail = getFailStr("getVideoFilePath", null, "NotNull");
+                return;
+            }
             int index = path.lastIndexOf("/");
             int index1 = path.lastIndexOf(".");
             path = path.substring(index+1,index1);
@@ -1954,7 +1962,7 @@ public class TestBase{
             return;
         }
         String title =mCaptureUI.getTitleFromFilm(0);
-        if(!path.equals(title)){
+        if(title == null || !path.equals(title) ){
             testFail = getFailStr("The first image title in Thumbnail is ", title, path);
         }
         executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
@@ -2416,6 +2424,10 @@ public class TestBase{
         int imgnm = getImageNum();
         if (patharry.size() < imgnm) {
             testFail = getFailStr("image_num", patharry.size(), imgnm);
+            return;
+        }
+        if (typearry.size() < imgnm) {
+            testFail = getFailStr("typearry_num", typearry.size(), imgnm);
             return;
         }
         String raw = mSettingsManager.getKeyValue(SettingsManager.KEY_RAW_FORMAT_TYPE);

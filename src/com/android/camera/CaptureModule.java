@@ -299,6 +299,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mIsRTBCameraId = false;
     private boolean mIsFacialMaskSupported = true;
     private boolean mIsUpperBodySupported = true;
+    private boolean mIsPetDetectionSupported = true;
 
     /** For temporary save warmstart gains and cct value*/
     private float mRGain = -1.0f;
@@ -463,14 +464,17 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CaptureResult.Key<byte[]> gazeDegree =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.gaze_degree",
                     byte[].class);
-    public static CaptureResult.Key<int[]> contourPointsExtend =
+    public static CaptureResult.Key<byte[]> contourPointsExtend =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.contour_results",
-                    int[].class);
+                    byte[].class);
     private static CaptureResult.Key<byte[]> facialMaskResults =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.mask_results",
                     byte[].class);
     private static CaptureResult.Key<byte[]> upperbodyResults =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.upperbody_results",
+                    byte[].class);
+    private static CaptureResult.Key<byte[]> petResults =
+            new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.pet_results",
                     byte[].class);
     public static CaptureRequest.Key<Byte> facialContourVersion =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.contour_version",
@@ -490,9 +494,16 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final CaptureRequest.Key<Byte> upperBodyEnable =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.upperbody_enable",
                     Byte.class);
+    public static final CaptureRequest.Key<Byte> petEnable  =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.pet_detection_mode",
+                    Byte.class);
     public static final CaptureRequest.Key<Byte> FACE_EXPRESSION_ENABLE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.face_expression_enable",
                     Byte.class);
+    public static final CaptureRequest.Key<Byte> facialContourVisib  =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.contour_visibility_mode",
+                    Byte.class);
+
 
     public static final CaptureRequest.Key<Byte> GENDER_ENABLE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.gender_enable",
@@ -1647,9 +1658,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Face[] faces = partialResult.get(CaptureResult.STATISTICS_FACES);
                 Log.d(FD_TAG,BIG_LOG," Detected Face size = " + Integer.toString(faces == null? 0 : faces.length));
                 if (faces != null && mSettingsManager.isFDRenderingAtPreview() && isCinematicDebugOn()){
-                    if (isBsgcDetecionOn() || isFacialContourOn() || isFacePointOn()
-                            || isFaceExpressionOn()
-                            || isGenderOn()) {
+                    boolean bsgEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_SMILE)||
+                            mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GAZE)||
+                            mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_BLINK);
+                    boolean contourEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FACIAL_CONTOUR);
+                    if (bsgEnable || contourEnable || isFacePointOn()
+                            || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_FACE_EXPRESSION)
+                            || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GENDER)) {
                         updateFaceView(faces, getBsgcInfo(partialResult, faces));
                     } else {
                         updateFaceView(faces, null);
@@ -1688,18 +1703,25 @@ public class CaptureModule implements CameraModule, PhotoController,
                     faces == null ? 0 : faces.length) + ", Frame Number  :" + mVideoFrameNumber);
                 if (faces != null && mSettingsManager.isFDRenderingAtPreview() && isCinematicDebugOn()
                         && !mSettingsManager.isMultiCameraEnabled()) {
-                    if (isBsgcDetecionOn() || isFacialContourOn() || isFacePointOn()
-                            || isFaceExpressionOn()
-                            || isGenderOn()) {
+                    boolean bsgEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_SMILE)||
+                            mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GAZE)||
+                            mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_BLINK);
+                    boolean contourEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FACIAL_CONTOUR);
+                    if (bsgEnable || contourEnable || isFacePointOn()
+                            || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_FACE_EXPRESSION)
+                            || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GENDER)) {
                         updateFaceView(faces, getBsgcInfo(result, faces));
                     } else {
                         updateFaceView(faces, null);
                     }
-                    if (isFdMaskOn() && mIsFacialMaskSupported) {
+                    if (mIsFacialMaskSupported && mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FACE_MASK)) {
                         updateFacialMask(result);
                     }
-                    if (isUpperBodyDetectionOn() && mIsUpperBodySupported) {
+                    if (mIsUpperBodySupported && mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_UPPER_BODY_DETECTION)) {
                         updateUpperBodyDetection(result);
+                    }
+                    if (mIsPetDetectionSupported && mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_PET_DETECTION)) {
+                        updatePetDetection(result);
                     }
                 }
                 updateT2tTrackerView(result);
@@ -1900,6 +1922,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }catch(Exception e){
             Log.e(TAG,"src ="+src+",exception is "+e);
         }
+
         return value;
     }
     public float byteArray2float(byte[] arr, int index) {
@@ -2924,58 +2947,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (value == null) return false;
         return isBackCamera() && getCameraMode() == DUAL_MODE && value.equals("on");
     }
-
-    private boolean isGenderOn() {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_FD_GENDER);
-        if (value == null) return false;
-        return  value.equals("enable");
-    }
-    private boolean isFaceExpressionOn() {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_FD_FACE_EXPRESSION);
-        if (value == null) return false;
-        return  value.equals("enable");
-    }
-
-    private boolean isBsgcDetecionOn() {
-        return  isFdSmileOn() || isFdGazeOn() || isFdBlinkOn();
-    }
-
-    private boolean isFdSmileOn(){
-        String value = mSettingsManager.getValue(SettingsManager.KEY_FD_SMILE);
-        if (value == null) return false;
-        return  value.equals("enable");
-    }
-
-    private boolean isFdMaskOn(){
-        String value = mSettingsManager.getValue(SettingsManager.KEY_FACE_MASK);
-        if (value == null) return false;
-        return  value.equals("enable");
-    }
-
-    private boolean isUpperBodyDetectionOn(){
-        String value = mSettingsManager.getValue(SettingsManager.KEY_UPPER_BODY_DETECTION);
-        if (value == null) return false;
-        return  value.equals("enable");
-    }
-
-    private boolean isFdGazeOn(){
-        String value = mSettingsManager.getValue(SettingsManager.KEY_FD_GAZE);
-        if (value == null) return false;
-        return  value.equals("enable");
-    }
-
-    private boolean isFdBlinkOn(){
-        String value = mSettingsManager.getValue(SettingsManager.KEY_FD_BLINK);
-        if (value == null) return false;
-        return  value.equals("enable");
-    }
-
-    private boolean isFacialContourOn() {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
-        if (value == null) return false;
-        return  !value.equals("disable");
-    }
-
     private boolean isFacePointOn() {
         String value = mSettingsManager.getValue(SettingsManager.KEY_FACE_DETECTION_MODE);
         if (value == null) return false;
@@ -3437,6 +3408,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
                             if(mPreviewOutputConfiguration != null) {
                                 Surface previewSur = getPreviewSurfaceForSession(id);
+                                waitForPreviewSurfaceReady();
                                 if (mSurfaceReady && previewSur.isValid()) {
                                     mPreviewOutputConfiguration.addSurface(previewSur);
                                     try {
@@ -9386,8 +9358,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             return null;
         }
         ExtendedFace[] extendedFaces = new ExtendedFace[size];
-        boolean bsgEnable = isBsgcDetecionOn();
-        boolean contourEnable = isFacialContourOn();
+        boolean bsgEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_SMILE)||
+                mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GAZE)||
+                mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_BLINK);
+        boolean contourEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FACIAL_CONTOUR);
         boolean facePointEnable = isFacePointOn();
         try {
             if (bsgEnable) {
@@ -9395,7 +9369,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.d(FD_TAG, FD_LOG, "blinkDetectedArray=" + Arrays.toString(blinkDetectedArray));
                 byte[] blinkDegreesArray = captureResult.get(blinkDegree);
                 Log.d(FD_TAG, FD_LOG, "blinkDegreesArray=" + Arrays.toString(blinkDegreesArray));
-                int[] gazeDirectionArray = captureResult.get(gazeDirection);
+                byte[] gazeDirectionArray = captureResult.get(gazeDegree);
                 Log.d(FD_TAG, FD_LOG, "gazeDirectionArray=" + Arrays.toString(gazeDirectionArray));
                 byte[] gazeAngleArray = captureResult.get(gazeAngle);
 
@@ -9403,8 +9377,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 for (int i = 0; i < size; i++) {
                     ExtendedFace tmp = new ExtendedFace(faces[i].getId());
                     try {
-                        if (gazeDirectionArray != null && (3 * i + 2) < gazeDirectionArray.length) {
-                            tmp.setGazeDirection(gazeDirectionArray[3 * i], gazeDirectionArray[3 * i + 1], gazeDirectionArray[3 * i + 2]);
+                        if (gazeDirectionArray != null && (2 * i + 1) < gazeDirectionArray.length) {
+                            tmp.setGazeDirection(gazeDirectionArray[2 * i], gazeDirectionArray[2 * i + 1]);
                         }
                         if (gazeAngleArray != null && i < gazeAngleArray.length) {
                             tmp.setGazeAngle(gazeAngleArray[i]);
@@ -9422,21 +9396,42 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             if (contourEnable || facePointEnable) {
                 String contourMode = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
-                int[] contour_all = null;
-                int[] contourPoints = null;
-                if ("1".equals(contourMode) || "2".equals(contourMode) ||
-                        "3".equals(contourMode) || "4".equals(contourMode)) {
+                byte[] contour_all = null;
+                byte[] contourPoints = null;
+                int[] visibility = null;
+                int[]points = null;
+                int[]visib = null;
+                if ("5".equals(contourMode) || "6".equals(contourMode) ||
+                        "7".equals(contourMode) || "8".equals(contourMode)) {
                     contourPoints = captureResult.get(CaptureModule.contourPointsExtend);
                     contour_all = captureResult.get(CaptureModule.contourPointsExtend);
                     int faceContour = PersistUtil.getPersistFaceContourHeaderSize();
-                    Log.d(FD_TAG, FD_LOG,"FaceContour result header size is "+ faceContour);
-                    if (contour_all != null) {
-                        contourPoints = Arrays.copyOfRange(contour_all,faceContour,contour_all.length);
+                     int numPointsPerFace = byteArray2Int(contour_all,8);
+                     int numFaces = byteArray2Int(contour_all,12);
+                     int offSet = byteArray2Int(contour_all,16);
+                    Log.d(FD_TAG, FD_LOG,"FaceContour result header size is "+ faceContour+
+                            ",contour_all.length="+contour_all.length+",numPointsPerFace="+numPointsPerFace
+                    +",numFaces="+numFaces+",offset="+offSet);
+
+                    int arrayindex = faceContour*4;
+                    points = new int[numPointsPerFace*numFaces*2];
+
+                    for (int i = 0; i < numPointsPerFace*numFaces*2; i++) {
+                        points[i] = byteArray2Int(contour_all,arrayindex);
+                        arrayindex += 4;
+                    }
+                    Log.d(FD_TAG,FD_LOG,"000Version=V "+ contourMode +",points="+Arrays.toString(points)
+                            +",point.len="+points.length);
+                    if(mSettingsManager.isFdFeatureDisplay(mSettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY) && offSet > 0) {
+                        visib = new int[numPointsPerFace*numFaces];
+                        for (int i = 0; i < numPointsPerFace * numFaces; i++) {
+                            visib[i] = contour_all[arrayindex];
+                            arrayindex += 1;
+                        }
+                        Log.d(FD_TAG,FD_LOG,",visibility="+Arrays.toString(visib)
+                                +",point.len="+points.length+",visib.len="+visib.length);
                     }
                 }
-
-                Log.d(FD_TAG,FD_LOG,"Version=V"+ contourMode + ", contour_results = " +
-                            Arrays.toString(contour_all));
                 int[] landmarkPoints = new int[6 * faces.length];
                 try {
                     for (int i = 0; i < faces.length; i++) {
@@ -9457,11 +9452,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     tmp = extendedFaces[0];
                 }
-                tmp.setContour(contourPoints);
+                tmp.setVisibility(visib);
+                tmp.setContour(points);
                 tmp.setLandMarks(landmarkPoints);
             }
 
-            if (isGenderOn()) {
+            if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GENDER)) {
                 try {
                     byte[] genderArray = captureResult.get(GENDER);
                     Log.d(FD_TAG, FD_LOG, "genderArray=" + Arrays.toString(genderArray));
@@ -9511,7 +9507,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             }
 
-            if (isFaceExpressionOn()) {
+            if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_FACE_EXPRESSION)) {
                 try {
                     byte[] expressionArray = captureResult.get(FACE_EXPRESSION);
                     Log.d(FD_TAG, FD_LOG, "expressionArray=" + Arrays.toString(expressionArray));
@@ -9557,7 +9553,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
         } catch (IllegalArgumentException|NullPointerException e){
-            Log.w(TAG,"getBsgcInfo =" + e.fillInStackTrace());
+            Log.w(TAG,"getBsgcInfo =" + e);
         }
         return extendedFaces;
     }
@@ -9615,6 +9611,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         int headNums = 0;
         try {
             upperBodys = result.get(upperbodyResults);
+            Log.d(FD_TAG,FD_LOG,"upperbodyResults="+Arrays.toString(upperBodys));
         } catch (IllegalArgumentException e) {
             mIsUpperBodySupported = false;
             Log.w(TAG, "can`t get vendorTag upperbodyResults :" + upperbodyResults);
@@ -9626,7 +9623,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             headInts = new int[40];
             torsoValidInts = new int[10];
             torsoInts = new int[40];
-            Log.w(TAG, " updateUpperBodyDetection size :" + size);
+            Log.d(FD_TAG,FD_LOG," updateUpperBodyDetection size :" + size);
             int j = 0;
             // why int i = 44
             // struct FDMetadataUpperBodyResults
@@ -9645,7 +9642,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         break;
                     }
                     headInts[j] = byteArray2Int(upperBodys, i);
-                    Log.w(TAG, " updateUpperBodyDetection head j :" + j + ", i :" + i + " headInts[j] :" + headInts[j]);
+                    Log.d(FD_TAG,FD_LOG, " updateUpperBodyDetection head j :" + j + ", i :" + i + " headInts[j] :" + headInts[j]);
                     j++;
                 }
 
@@ -9655,7 +9652,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         break;
                     }
                     torsoValidInts[j] = byteArray2Int(upperBodys, i);
-                    Log.w(TAG, " updateUpperBodyDetection torsoValid j :" + j + ", i :" + i + " torsoValidInts[j] :" + torsoValidInts[j]);
+                    Log.d(FD_TAG,FD_LOG, " updateUpperBodyDetection torsoValid j :" + j + ", i :" + i + " torsoValidInts[j] :" + torsoValidInts[j]);
                     j++;
                 }
 
@@ -9665,7 +9662,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         break;
                     }
                     torsoInts[j] = byteArray2Int(upperBodys, i);
-                    Log.w(TAG, " updateUpperBodyDetection torso j :" + j + ", i :" + i + " torsoInts[j] :" + torsoInts[j]);
+                    Log.d(FD_TAG,FD_LOG," updateUpperBodyDetection torso j :" + j + ", i :" + i + " torsoInts[j] :" + torsoInts[j]);
                     j++;
                 }
             } catch (Exception e) {
@@ -9674,13 +9671,128 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
 
-        Log.w(TAG, " updateUpperBodyDetection headNums :" + headNums);
+        Log.d(FD_TAG,FD_LOG, " updateUpperBodyDetection headNums :" + headNums);
         try {
             mUI.onUpperBodyDetection(headNums, headInts, torsoValidInts, torsoInts);
         } catch(Exception e) {
             Log.e(TAG, " updateUpperBodyDetection occur exception");
         }
     }
+
+    private void updatePetDetection(CaptureResult result) {
+        byte[] petresults = null;
+        int[] headInts = null;
+        int[] markInts = null;
+        int[] torsoInts = null;
+        int headNums = 0;
+        try {
+            petresults = result.get(petResults);
+            Log.d(FD_TAG,FD_LOG,"petresults="+Arrays.toString(petresults));
+        } catch (IllegalArgumentException e) {
+            mIsPetDetectionSupported = false;
+            Log.w(TAG, "can`t get vendorTag petResults :" + petResults);
+        } catch (NullPointerException e) {
+            Log.w(TAG, " petResults get NULL");
+        }
+        if (petresults != null) {
+            int size = petresults.length;
+            headInts = new int[40];
+            torsoInts = new int[40];
+            markInts = new int[60];
+            Log.d(FD_TAG,FD_LOG, " petresults size :" + size);
+            int j = 0;
+              /// @brief Metadata for pet detection ROI results with respect to active array.
+          /* struct FDMetadataPetResults
+          //  {
+                INT32         numHeads;                         /// 4 byte< Number of the detected head(s)
+                INT32         petID[FDMaxFaceCount];            ///40 byte< ID of the pet ROI
+                FDROIData     headROI[FDMaxFaceCount];          /// (4+4+16)*10=240< Array of stabilized pet head ROI data.
+                FDROIData     fullROI[FDMaxFaceCount];          /// 240< Array of stabilized whole pet ROI data.
+                FDPetLandmark faceLandmark[FDMaxFaceCount];     ///(4+24)*10=280 < Points that indicate pet face sparse landmarks.
+            }
+            */
+          /*  struct FDROIData
+            {
+                BOOL        valid;      ///4 byte< indicator of whether pet head/body is detected.
+                UINT32      confidence; ///4 byte< Score of the confidence for a detected pet.
+                FDROIRegion ROIRegion;  ///4*4=16 byte < A detected pet region.
+            } */
+/*
+            struct FDPetLandmark
+            {
+                BOOL    valid;                             /// 4 byte< Point that indicates the left eye is centered.
+                FDPoint points[FDPetFaceSparseLMPointMax]; ///4*6=24 byte< Array of points where pet landmarks are centered.
+            }
+            */
+            try {
+                headNums = byteArray2Int(petresults, 0);
+                Log.d(FD_TAG,FD_LOG,"headNums="+headNums);
+                for (int i = 44; i < 284; i += 24) {
+                    if (j == 40){
+                        break;
+                    }
+                    int  valid = byteArray2Int(petresults, i);
+                    Log.d(FD_TAG,FD_LOG,"valid="+valid+",i="+i);
+                    if (valid > 0){
+                        headInts[j] = byteArray2Int(petresults, i+8);
+                        headInts[j+1] = byteArray2Int(petresults, i+12);
+                        headInts[j+2] = byteArray2Int(petresults, i+16);
+                        headInts[j+3] = byteArray2Int(petresults, i+20);
+                        Log.d(FD_TAG,FD_LOG,"  head j :" + j + ", i :" + i + ", headInts[j] :" + headInts[j]
+                        +","+headInts[j+1]+","+headInts[j+2]+","+headInts[j+3]+",petresults="+
+                                petresults[i+8]+","+ petresults[i+12]+","+ petresults[i+16]+","+ petresults[i+20]);
+                        j = j+4;
+                    }
+                }
+
+                j = 0;
+                for (int i = 284; i < 524; i += 24) {
+                    if (j == 40){
+                        break;
+                    }
+                    int  valid = byteArray2Int(petresults, i);
+                    Log.d(FD_TAG,FD_LOG,"valid="+valid+",i="+i);
+                    if (valid > 0){
+                        torsoInts[j] = byteArray2Int(petresults, i+8);
+                        torsoInts[j+1] = byteArray2Int(petresults, i+12);
+                        torsoInts[j+2] = byteArray2Int(petresults, i+16);
+                        torsoInts[j+3] = byteArray2Int(petresults, i+20);
+                        Log.d(FD_TAG,FD_LOG, "  head j :" + j + ", i :" + i + ", torsoInts[j] :" + torsoInts[j]
+                                +","+torsoInts[j+1]+","+torsoInts[j+2]+","+torsoInts[j+3]+",petresults="+
+                                petresults[i+8]+","+ petresults[i+12]+","+ petresults[i+16]+","+ petresults[i+20]);;
+                        j = j+4;
+                    }
+                }
+                j = 0;
+                markInts = new int[6*headNums];
+                int inum = 524+6*headNums;
+                for (int i = 524; i < inum; i += 28) {
+                    if (j == 6*headNums){
+                        break;
+                    }
+                    markInts[j] =byteArray2Int(petresults, i+4);
+                    markInts[j+1] =byteArray2Int(petresults, i+8);
+                    markInts[j+2] =byteArray2Int(petresults, i+12);
+                    markInts[j+3] =byteArray2Int(petresults, i+16);
+                    markInts[j+4] =byteArray2Int(petresults, i+20);
+                    markInts[j+5] =byteArray2Int(petresults, i+24);
+                    Log.d(FD_TAG,FD_LOG, " head j :" + j + ", i :" + i + " markInts[j] :" + markInts[j]
+                            +","+markInts[j+1]+","+markInts[j+2]+","+markInts[j+3]
+                            +","+markInts[j+4]+","+markInts[j+5]);
+                    j=j+6;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "  byteArray2Int occur exception e="+e);
+                e.printStackTrace();
+            }
+        }
+        try {
+            mUI.onPetDetection(headInts, torsoInts,markInts);
+        } catch(Exception e) {
+            Log.e(TAG, "  occur exception e="+e);
+        }
+    }
+
 
     private void updateFaceView(final Face[] faces, final ExtendedFace[] extendedFaces) {
         mPreviewFaces = faces;
@@ -13458,10 +13570,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             mMediaRecorder.prepare();
             mMediaRecorder.setOnErrorListener(this);
             mMediaRecorder.setOnInfoListener(this);
-            if (mBleInputDevice != null) {
+            if (mSettingsManager.getValue(SettingsManager.KEY_AUDIO_BLE).equals("On")
+                    && mBleInputDevice != null) {
                 List<MicrophoneInfo> microphoneInfos =  mMediaRecorder.getActiveMicrophones();
                 for (MicrophoneInfo microphoneInfo : microphoneInfos) {
-                    Log.i(TAG, "BLE, Active microphone info " + microphoneInfo.getType());
+                    Log.i(TAG, "BLE On, Active microphone info " + microphoneInfo.getType());
                 }
             }
             return true;
@@ -14305,9 +14418,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (value != null ) {
             int mode = Integer.parseInt(value);
             Log.v(TAG, " applyVSR mode :" + mode);
-            if (mode != 0) {
-                VendorTagUtil.setVSRMode(request, mode);
-            }
+            VendorTagUtil.setVSRMode(request, mode);
         }
     }
 
@@ -14315,7 +14426,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
         String hfr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         String videoQuality = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-        if ("HEVCProfileMain10HDR10Plus".equals(profile) || !"off".equals(hfr) || "1280x720".equals(videoQuality)) {
+        if (!"off".equals(hfr) || "1280x720".equals(videoQuality)) {
             Log.w(TAG, " applyVIULL mode : 0, video profile " + profile + ", hfr " + hfr + ", videoQuality " + videoQuality);
             VendorTagUtil.setVIULLMode(request, 0);
             return;
@@ -15378,16 +15489,17 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyFaceContourVersion(CaptureRequest.Builder request) {
         String facialContour = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
         byte facialContour_version = 0;
-        if ("1".equals(facialContour)) {
+        if ("1".equals(facialContour) || "5".equals(facialContour)) {
             facialContour_version = 1;
-        } else if ("2".equals(facialContour)) {
+        } else if ("2".equals(facialContour) || "6".equals(facialContour)) {
             facialContour_version = 2;
-        } else if ("3".equals(facialContour)) {
+        } else if ("3".equals(facialContour)  || "7".equals(facialContour)) {
             facialContour_version = 3;
-        } else if ("4".equals(facialContour)) {
+        } else if ("4".equals(facialContour)  || "8".equals(facialContour)) {
             facialContour_version = 4;
         }
         try {
+            Log.d(FD_TAG,FD_LOG,"face detection set facialContourVersion ="+facialContour_version);
             request.set(CaptureModule.facialContourVersion, facialContour_version);
         } catch (IllegalArgumentException e) {
             Log.w(TAG, EXCEPTION_LOG,"hal no vendorTag : " + facialContour_version);
@@ -15412,6 +15524,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.w(TAG, EXCEPTION_LOG,"hal no vendorTag : " + statsVisualizerOptionMask);
         }
     }
+    private void setFaceFeature(CaptureRequest.Builder request,String setkey,CaptureRequest.Key<Byte> requestkey){
+        String keyvalue = mSettingsManager.getValue(setkey);
+        if(keyvalue == null || keyvalue.equals("disable")){
+            request.set(requestkey, (byte) 0);
+        }else if (keyvalue.equals("enable")) {
+            request.set(requestkey, (byte) 1);
+        } else if (keyvalue.equals("display")) {
+            request.set(requestkey, (byte) 2);
+        }
+    }
 
     private void applyFaceDetection(CaptureRequest.Builder request) {
         if (CURRENT_MODE == CameraMode.DEPTH) {
@@ -15422,7 +15544,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         String facialContour = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
         String facialMask = mSettingsManager.getValue(SettingsManager.KEY_FACE_MASK);
         Log.d(FD_TAG,FD_LOG,"face detection mode="+mode+" facialContour="+facialContour);
-        boolean bsgc = isBsgcDetecionOn();
+        boolean bsgc = mSettingsManager.isFdFeatureEnable(SettingsManager.KEY_FD_SMILE)||
+                mSettingsManager.isFdFeatureEnable(SettingsManager.KEY_FD_GAZE)||
+                mSettingsManager.isFdFeatureEnable(SettingsManager.KEY_FD_BLINK);
         if (value != null) {
             try {
                 boolean FdEnable = value.equals("on");
@@ -15446,37 +15570,45 @@ public class CaptureModule implements CameraModule, PhotoController,
                     } else {
                         bsgc_enable = 0;
                     }
+                    Log.d(FD_TAG,FD_LOG,"face detection set gazeEnable and blinkEnable ="+bsgc_enable);
                     request.set(CaptureModule.gazeEnable, bsgc_enable);
                     request.set(CaptureModule.blinkEnable, bsgc_enable);
                 }
-
-                Log.d(FD_TAG,FD_LOG,"face detection faceMask is ="+isFdMaskOn());
-                byte maskEnable = (byte)(isFdMaskOn() ? 1 : 0);
+                byte maskEnable = (byte)(mSettingsManager.isFdFeatureEnable(SettingsManager.KEY_FACE_MASK) ? 1 : 0);
+                Log.d(FD_TAG,FD_LOG,"face detection maskEnable is ="+maskEnable);
                 try {
                     request.set(CaptureModule.faceMaskEnable, maskEnable);
                 } catch (IllegalArgumentException e) {
                 }
 
-                byte upperBodyEnabled = (byte)(isUpperBodyDetectionOn() ? 1 : 0);
+                byte upperBodyEnabled = (byte)(mSettingsManager.isFdFeatureEnable(SettingsManager.KEY_UPPER_BODY_DETECTION) ? 1 : 0);
+                Log.d(FD_TAG,FD_LOG,"face detection upperBodyEnabled is ="+upperBodyEnabled);
                 try {
                     request.set(CaptureModule.upperBodyEnable, upperBodyEnabled);
                 } catch (IllegalArgumentException e) {
                 }
 
-                if (isGenderOn()) {
+                if (mSettingsManager.isFdFeatureEnable(SettingsManager.KEY_FD_GENDER)) {
+                    Log.d(FD_TAG,FD_LOG,"face detection set GENDER_ENABLE");
                     request.set(CaptureModule.GENDER_ENABLE, (byte)1);
                 }
 
-                if (isFaceExpressionOn()) {
+                if (mSettingsManager.isFdFeatureEnable(SettingsManager.KEY_FD_FACE_EXPRESSION)) {
+                    Log.d(FD_TAG,FD_LOG,"face detection set FACE_EXPRESSION_ENABLE");
                     request.set(CaptureModule.FACE_EXPRESSION_ENABLE, (byte)1);
                 }
-
+                setFaceFeature(request,SettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY,CaptureModule.facialContourVisib);
+                setFaceFeature(request,SettingsManager.KEY_PET_DETECTION,CaptureModule.petEnable);
                 if (facialContour != null) {
                     final byte facialContour_enable;
+                    int contour = -1;
+                    if (!facialContour.equals("disable")){
+                        contour = Integer.valueOf(facialContour);
+                    }
                     if (FdEnable) {
-                        if ("0".equals(facialContour) || "1".equals(facialContour) || "2".equals(facialContour)
-                                || "3".equals(facialContour) || "4".equals(facialContour)) {
+                        if (contour >= 0) {
                             facialContour_enable = 1;
+                            Log.d(FD_TAG,FD_LOG,"face detection set facialContourEnable");
                             request.set(CaptureModule.facialContourEnable, facialContour_enable);
                         } else {
                             facialContour_enable = 0;
