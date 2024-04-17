@@ -2742,8 +2742,7 @@ public class SettingsActivity extends PreferenceActivity {
             if(isPrefEnabled(SettingsManager.KEY_BURST_LIMIT) ){
                 longShot.setEnabled(true);
             } else {
-                if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE) ||
-                        mSettingsManager.getQuadBayerSensorPrefEnabled()) {
+                if (isPrefEnabled(SettingsManager.KEY_CAPTURE_MFNR_VALUE)) {
                     longShot.setChecked(false);
                 }
             }
