@@ -9387,7 +9387,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             tmp.setBlinkDetected(blinkDetectedArray[i]);
                         }
                         if (blinkDegreesArray != null && (2 * i + 1) < blinkDegreesArray.length) {
-                            tmp.setBlinkDegree(blinkDegreesArray[2 * i], blinkDegreesArray[2 * i + 1]);
+                            tmp.setBlinkDegree(blinkDegreesArray[2 * i + 1], blinkDegreesArray[2 * i]);
                         }
                     } catch (ArrayIndexOutOfBoundsException e) {
                     }
