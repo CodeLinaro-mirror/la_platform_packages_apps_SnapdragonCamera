@@ -336,7 +336,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_INSTANT_ZOOM = "pref_camera2_instant_zoom_key";
     public static final String KEY_VSR = "pref_camera2_vsr_key";
     public static final String KEY_VIULL = "pref_camera2_viull_key";
-
+    public static final String KEY_LOWLIGHT_BOOST = "pref_camera2_lowlight_boost_key";
     public static final String KEY_MULTIRESIMAGEREADER = "pref_camera2_multiresimagereader_key";
     public static final String KEY_MULTIRESREPROCESS = "pref_camera2_multiresimagereader_reprocess_key";
     public static final String KEY_MULTIRESREPROCESS_INPUT = "pref_camera2_multiresreprocess_input_key";
@@ -3317,7 +3317,27 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return isSupported;
     }
-
+   public boolean isLowLightBoostSupported(){
+        boolean isSupported = false;
+        int id = mCaptureModule.getMainCameraId();
+        int[]aeModes = mCharacteristics.get(id).get(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES);
+        if(aeModes == null){
+            return  false;
+        }
+        for(int aeMode:aeModes){
+            Log.d(TAG," aemode="+aeMode);
+            if(aeMode == CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY){
+                isSupported = true;
+                break;
+            }
+        }
+        if(isSupported){
+            Range<Float>lumRange = mCharacteristics.get(id).get(CameraCharacteristics.CONTROL_LOW_LIGHT_BOOST_INFO_LUMINANCE_RANGE);
+            isSupported = lumRange != null;
+            Log.d(TAG," lumRange="+lumRange);
+        }
+        return isSupported;
+   }
     public boolean isInSensorZoomSupported() {
         boolean isSupported = false;
         try {

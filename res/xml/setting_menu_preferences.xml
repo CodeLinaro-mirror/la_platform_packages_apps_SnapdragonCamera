@@ -1162,6 +1162,14 @@
             android:entryValues="@array/pref_camera2_viull_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s" />
+        <ListPreference
+            android:key="pref_camera2_lowlight_boost_key"
+            android:defaultValue="@string/pref_camera2_lowlightboost_default"
+            android:title="@string/pref_camera2_lowlightboost_title"
+            android:entries="@array/pref_camera2_viull_entries"
+            android:entryValues="@array/pref_camera2_viull_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s" />
 
         <ListPreference
             android:key="pref_camera2_insensor_zoom_key"
