@@ -10813,7 +10813,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 return false;
             }
 
-
             int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                     mSettingsManager.getVideoFPS());
             if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
@@ -11929,7 +11928,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 mCameraHandler);
 
                     } else {
-                        mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
+                        mCurrentSession.setRepeatingRequest(mPreviewRequestBuilder[CURRENT_ID].build(),
                                 mCaptureCallback, mCameraHandler);
                     }
                 } catch (CameraAccessException e) {
@@ -14420,7 +14419,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyZoom(captureRequest, id);
             }
         }
-
         if (mState[id] == STATE_WAITING_TOUCH_FOCUS) {
             cancelTouchFocus(id);
         }
