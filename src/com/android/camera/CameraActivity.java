@@ -2346,6 +2346,10 @@ public class CameraActivity extends Activity
         }
         // The share button might be disabled to avoid double tapping.
         mUI.getFilmstripBottomControls().setShareEnabled(true);
+        if(mUI.getFilmstripLayout().getVisibility() == View.VISIBLE){
+            mUI.getFilmstripLayout().invalidate();
+        }
+
         // Default is showing the preview, unless disabled by explicitly
         // starting an activity we want to return from to the filmstrip rather
         // than the preview.
