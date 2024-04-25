@@ -112,7 +112,7 @@ public class SettingsActivity extends PreferenceActivity {
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                               String key) {
             Preference p = findPreference(key);
-            if (p == null) return;
+            if (p == null || null == key) return;
             String value;
             if (p instanceof SwitchPreference) {
                 boolean checked = ((SwitchPreference) p).isChecked();
@@ -210,16 +210,12 @@ public class SettingsActivity extends PreferenceActivity {
         ListPreference mfnrPref = (ListPreference) findPreference(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
         ListPreference selectModePref = (ListPreference)findPreference(SettingsManager.KEY_SELECT_MODE);
         String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
-        String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         String saveRaw = mSettingsManager.getValue(SettingsManager.KEY_SAVERAW);
         String autoHdr = mSettingsManager.getValue(SettingsManager.KEY_AUTO_HDR);
         String qcfa = mSettingsManager.getValue(SettingsManager.KEY_QCFA);
         Size pictureSize = parsePictureSize(mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE));
-
         if (mfnrPref != null && mSettingsManager.isSWMFNRSupport()) {
             if((scene != null && Integer.parseInt(scene) == SettingsManager.SCENE_MODE_HDR_INT) ||
-                    (selectModePref != null && selectModePref.isEnabled() && selectMode != null &&
-                            (selectMode.equals("sat") || selectMode.equals("default"))) ||
                     (saveRaw != null  && saveRaw.equals("enable")) ||
                     (autoHdr != null  && autoHdr.equals("enable")) ||
                     (qcfa != null && qcfa.equals("enable")) ||
