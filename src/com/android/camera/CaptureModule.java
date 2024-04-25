@@ -47,6 +47,7 @@ import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.Face;
 import android.hardware.camera2.params.InputConfiguration;
 import android.hardware.camera2.params.MeteringRectangle;
@@ -5664,25 +5665,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         Log.v(TAG, " createCameraSessionWithSessionConfiguration opMode: " + opMode);
-        Method method_setSessionParameters = null;
-        Method method_createCaptureSession = null;
-        Object sessionConfig = null;
         try {
-            Class clazz = Class.forName("android.hardware.camera2.params.SessionConfiguration");
-            sessionConfig = clazz.getConstructors()[0].newInstance(
-                    opMode, outConfigurations,
+            SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                     new HandlerExecutor(handler), listener);
-            if (method_setSessionParameters == null) {
-                method_setSessionParameters = clazz.getDeclaredMethod(
-                        "setSessionParameters", CaptureRequest.class);
-            }
-            method_setSessionParameters.invoke(sessionConfig, initialRequest.build());
-            method_createCaptureSession = CameraDevice.class.getDeclaredMethod(
-                    "createCaptureSession", clazz);
-            method_createCaptureSession.invoke(mCameraDevice[cameraId], sessionConfig);
-        } catch (Exception exception) {
-            Log.w(TAG, "createCameraSessionWithSessionConfiguration method is not exist");
-            exception.printStackTrace();
+            sessionConfig.setSessionParameters(initialRequest.build());
+            mCameraDevice[cameraId].createCaptureSession(sessionConfig);
+        } catch (CameraAccessException cae) {
         }
     }
 
@@ -5722,25 +5710,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.v(TAG, "configureCameraSessionWithParameters mStreamConfigOptMode :"
                     + mStreamConfigOptMode);
         }
-
-        Method method_setSessionParameters = null;
-        Method method_createCaptureSession = null;
-        Object sessionConfig = null;
         try {
-            Class clazz = Class.forName("android.hardware.camera2.params.SessionConfiguration");
-            sessionConfig = clazz.getConstructors()[0].newInstance(
-                    SESSION_REGULAR | mStreamConfigOptMode, outConfigurations,
-                    new HandlerExecutor(handler), listener);
-            if (method_setSessionParameters == null) {
-                method_setSessionParameters = clazz.getDeclaredMethod(
-                        "setSessionParameters", CaptureRequest.class);
-            }
-            method_setSessionParameters.invoke(sessionConfig, initialRequest.build());
-            method_createCaptureSession = CameraDevice.class.getDeclaredMethod(
-                    "createCaptureSession", clazz);
-            method_createCaptureSession.invoke(mCameraDevice[cameraId], sessionConfig);
+            SessionConfiguration sessionConfig = new SessionConfiguration(SESSION_REGULAR | mStreamConfigOptMode,
+                   outConfigurations, new HandlerExecutor(handler), listener);
+            sessionConfig.setSessionParameters(initialRequest.build());
+            mCameraDevice[cameraId].createCaptureSession(sessionConfig);
         } catch (Exception exception) {
-            exception.printStackTrace();
         }
     }
 
@@ -5752,24 +5727,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         for (Surface surface : outputSurfaces) {
             outConfigurations.add(new OutputConfiguration(surface));
         }
-        Method method_setSessionParameters = null;
-        Method method_createCaptureSession = null;
-        Object sessionConfig = null;
         try {
-            Class clazz = Class.forName("android.hardware.camera2.params.SessionConfiguration");
-            sessionConfig = clazz.getConstructors()[0].newInstance(optionMode,
+            SessionConfiguration sessionConfig = new SessionConfiguration(optionMode,
                     outConfigurations, new HandlerExecutor(handler), sessionListener);
-            if (method_setSessionParameters == null) {
-                method_setSessionParameters = clazz.getDeclaredMethod(
-                        "setSessionParameters", CaptureRequest.class);
-            }
-            method_setSessionParameters.invoke(sessionConfig, initialRequest.build());
-
-            method_createCaptureSession = CameraDevice.class.getDeclaredMethod(
-                    "createCaptureSession", clazz);
-            method_createCaptureSession.invoke(camera, sessionConfig);
+            sessionConfig.setSessionParameters(initialRequest.build());
+            camera.createCaptureSession(sessionConfig);
         } catch (Exception exception) {
-            exception.printStackTrace();
         }
     }
 
