@@ -250,6 +250,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
                         updateVideoHfrFpsPreference();
                         updateEISPreference();
+                        updateZoomPreference();
                         break;
                     case SettingsManager.KEY_VIDEO_QUALITY:
                         updateVideoVariableFpsPreference();
@@ -396,6 +397,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                         checkExposurTimeValue();
+                        updateZoomPreference();
                         break;
                     case SettingsManager.KEY_VSR:
                         updateVideoHfrFpsPreference();
