@@ -68,7 +68,7 @@ public class FilmstripContentQueries {
         if (cursor != null) {
             while (cursor.moveToNext()) {
                 I item = factory.get(cursor);
-                if (item != null) {
+                if (item != null && item.getData().getFilePath().indexOf("DCIM/Camera") > 0) {
                     result.add(item);
                 } else {
                     final int dataIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
