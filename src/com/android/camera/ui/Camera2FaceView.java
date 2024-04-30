@@ -505,6 +505,19 @@ public class Camera2FaceView extends FaceView {
                             if (mFdBlinkEnable && exFace.getLeyeBlink() >= blink_threshold) {
                                 canvas.drawLine(point[0] + dx, point[1] + dy,
                                         point[2] + dx, point[3] + dy, mPaint);
+                            }else if(exFace.getLeyeBlink() < blink_threshold && !mFdGazeEnable){
+                                float[] circlpoint = new float[2];
+                                if ((mDisplayRotation == 0) ||
+                                        (mDisplayRotation == 180)) {
+                                    circlpoint[0] = face.getLeftEyePosition().x;
+                                    circlpoint[1] = face.getLeftEyePosition().y - delta_y / 2;
+                                }else{
+                                    circlpoint[0] = face.getLeftEyePosition().x - delta_x / 2;
+                                    circlpoint[1] = face.getLeftEyePosition().y;
+                                }
+                                bsgcTranslateMatrix.mapPoints(circlpoint);
+                                mMatrix.mapPoints(circlpoint);
+                                canvas.drawCircle(circlpoint[0]+dx,circlpoint[1]+dy,delta_x/8,mPaint);
                             }
                         }
                         if (face.getRightEyePosition() != null) {
@@ -526,6 +539,19 @@ public class Camera2FaceView extends FaceView {
                                 //Add offset to the points if the rect has an offset
                                 canvas.drawLine(point[0] + dx, point[1] + dy,
                                         point[2] + dx, point[3] + dy, mPaint);
+                            }else if(exFace.getReyeBlink() < blink_threshold && !mFdGazeEnable){
+                                float[] circlpoint = new float[2];
+                                if ((mDisplayRotation == 0) ||
+                                        (mDisplayRotation == 180)) {
+                                    circlpoint[0] = face.getRightEyePosition().x;
+                                    circlpoint[1] = face.getRightEyePosition().y - delta_y / 2;
+                                }else{
+                                    circlpoint[0] = face.getRightEyePosition().x - delta_x / 2;
+                                    circlpoint[1] = face.getRightEyePosition().y;
+                                }
+                                bsgcTranslateMatrix.mapPoints(circlpoint);
+                                mMatrix.mapPoints(circlpoint);
+                                canvas.drawCircle(circlpoint[0]+dx,circlpoint[1]+dy,delta_x/8,mPaint);
                             }
                         }
                         if ((exFace.getLeftrightGaze() != 0

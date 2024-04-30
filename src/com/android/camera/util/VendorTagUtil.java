@@ -116,6 +116,7 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVideoRetouch", byte.class);
     private static final CaptureRequest.Key<Integer> EIS_MODE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EISMode", Integer.class);
+
     public static final CaptureResult.Key<Integer> GET_EIS_MODE =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.sessionParameters.EISMode", Integer.class);
     public static final CaptureResult.Key<Integer> GET_DEPTH_MODE =
@@ -125,6 +126,10 @@ public class VendorTagUtil {
 
     public static final CaptureRequest.Key<Integer> ITOF_TUNING_SET =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.DepthTuningSet", Integer.class);
+
+    public static final CaptureRequest.Key<Integer> enableHDRDCGBits =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHDRDCGBits", Integer.class);
+
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
     private static final int MANUAL_WB_GAINS_MODE = 2;
@@ -380,6 +385,13 @@ public class VendorTagUtil {
         Log.i(TAG,"setITofTuningSet: " + tuningSet);
         if (isSupported(builder, ITOF_TUNING_SET)) {
             builder.set(ITOF_TUNING_SET, tuningSet);
+        }
+    }
+
+    public static void enableDcgMode(CaptureRequest.Builder builder, int enable) {
+        Log.i(TAG,"set enableDcgMode: " + enable);
+        if (isSupported(builder, enableHDRDCGBits)) {
+            builder.set(enableHDRDCGBits, enable);
         }
     }
 }

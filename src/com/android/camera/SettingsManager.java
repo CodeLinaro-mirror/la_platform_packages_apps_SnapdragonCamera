@@ -363,6 +363,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public static final String KEY_AUDIO_BLE = "pref_camera2_audio_ble_key";
 
+    public static final String KEY_DCG_BIT_TAG = "pref_camera2_dcg_bit_tag_key";
     private static final String TAG = "SnapCam_SettingsManager";
 
     private static SettingsManager sInstance;
@@ -3228,6 +3229,20 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
+    public int[] getSupportedDcgBitsTags() {
+        int modes[] = {0,1,2};
+        try {
+            modes = mCharacteristics.get(getCurrentCameraId())
+                    .get(CaptureModule.support_dcg_bits_tags);
+            for(int mode: modes){
+                Log.d(TAG,"getSupportedDcgBitsTags, mode:" +mode);
+            }
+        } catch (Exception e) {
+            Log.d(TAG,"getSupportedDcgBitsTags failed");
+        }
+        return modes;
+    }
+
     private boolean isAutoHDRSupported() {
         byte isAutoHdrSupported = 0;
         try {
@@ -3472,6 +3487,42 @@ public class SettingsManager implements ListMenu.SettingsListener {
         boolean isMfHDR = pref.getBoolean(KEY_MANUAL_MFHDR, false);
         boolean isSHDR = pref.getBoolean(KEY_MANUAL_SHDR, false);
         return isMfHDR || isSHDR;
+    }
+
+    public boolean isSHDREnable() {
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            String[] modeLists = hdrmode.split(" ");
+            for (int i = 0; i < modeLists.length; i ++) {
+                if(modeLists[i].equals("SHDR")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public int getDcgMode(){
+        final SharedPreferences pref = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext,
+                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        int mode = pref.getInt(KEY_DCG_BIT_TAG, 0);
+        return mode;
+    }
+
+    public void setDcgMode(String name){
+        int mode = 0;
+        if(name.equals("12BIT")){
+            mode = 1;
+        }else if(name.equals("14BIT")){
+            mode = 2;
+        }
+        final SharedPreferences pref = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext,
+                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putInt(KEY_DCG_BIT_TAG, mode);
+        editor.apply();
     }
 
     public Size getSupportedDepthSize(CameraCharacteristics characteristics) {
