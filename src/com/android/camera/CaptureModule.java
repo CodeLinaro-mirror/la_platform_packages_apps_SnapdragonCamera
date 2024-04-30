@@ -16333,6 +16333,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         Point[] points = new Point[prevSizes.length];
         DisplayMetrics dm = mActivity.getResources().getDisplayMetrics();
         double targetRatio = (double) pictureSize.getWidth() / pictureSize.getHeight();
+
         int index = 0;
         int point_max[]  = new int[]{dm.heightPixels/2,dm.widthPixels/2};
         int max_size = -1;
