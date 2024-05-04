@@ -1593,6 +1593,9 @@ public class SettingsActivity extends PreferenceActivity {
                     for (String removeKey : videoOnlyList) {
                         removePreference(removeKey, developer);
                     }
+                    if (!mSettingsManager.isIntegratedModeSupported()) {
+                        removePreference(SettingsManager.KEY_INTEGRATED_MODE, developer);
+                    }
                     if (!PersistUtil.isMultiResolutionImageReaderEnabled() ||
                             !mSettingsManager.isMultiResolutionSupported()) {
                         removePreference(SettingsManager.KEY_MULTIRESIMAGEREADER, developer);

@@ -366,6 +366,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static final CaptureRequest.Key<Byte> beStatsMode =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.bayer_exposure.enable", byte.class);
 
+    public static final CaptureRequest.Key<Integer> INTEGRATED_MODE =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMultiCameraIntegratedMode", Integer.class);
+
     public static CameraCharacteristics.Key<int[]> ISO_AVAILABLE_MODES =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.iso_exp_priority.iso_available_modes", int[].class);
     public static CameraCharacteristics.Key<long[]> EXPOSURE_RANGE =
@@ -897,6 +900,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private TextView mMFNRSwitch;
     private SeekBar mMfnrSeekBar;
     private TextView mMFNRText;
+    private TextView mBokehText;
     public boolean mMFNREnable;
     /*HDR Test*/
     private boolean mCaptureHDRTestEnable = false;
@@ -3069,12 +3073,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         mBeStatsLabel = (TextView) mRootView.findViewById(R.id.be_stats_graph_label);
         mRsStatsLabel = (TextView) mRootView.findViewById(R.id.rs_stats_graph_label);
         mDrawAutoHDR2 = (DrawAutoHDR2 )mRootView.findViewById(R.id.autohdr_view);
-        mMFNRDrawer = (MFNRDrawer )mRootView.findViewById(R.id.mfnr_view);
-        mMFNRSwitch = (TextView ) mRootView.findViewById(R.id.mfnr_switch);
-        mMFNRText = (TextView ) mRootView.findViewById(R.id.mfnr_text);
+        mMFNRDrawer = (MFNRDrawer) mRootView.findViewById(R.id.mfnr_view);
+        mMFNRSwitch = (TextView) mRootView.findViewById(R.id.mfnr_switch);
+        mMFNRText = (TextView) mRootView.findViewById(R.id.mfnr_text);
         mMfnrSeekBar = (SeekBar) mRootView.findViewById(R.id.mfnr_seekbar);
-        mLockAFAEText = (TextView ) mRootView.findViewById(R.id.lock_af_ae_label);
+        mLockAFAEText = (TextView) mRootView.findViewById(R.id.lock_af_ae_label);
         mGapGraphView = (Camera2RequestGapGraphView) mRootView.findViewById(R.id.graph_view_gap);
+        mBokehText = (TextView) mRootView.findViewById(R.id.bokeh_text);
         if (mGapGraphView != null){
             mGapGraphView.setCaptureModuleObject(this);
         }
@@ -3109,6 +3114,21 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mMFNRDrawer != null) {
             mMFNRDrawer.setCaptureModuleObject(this);
         }
+        if (mBokehText != null) {
+            mBokehText.setText("Bokeh Off");
+            mBokehText.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mBokehText.getText().equals("Bokeh On")) {
+                        mBokehText.setText("Bokeh Off");
+                        applyBokehMode(false);
+                    } else {
+                        mBokehText.setText("Bokeh On");
+                        applyBokehMode(true);
+                    }
+                }
+            });
+        }
         if(mMFNRSwitch != null){
             if(isMFNREnabled()) mMFNRSwitch.setText("ON");
             else mMFNRSwitch.setText("OFF");
@@ -3129,7 +3149,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             });
         }
-
         mFirstTimeInitialized = true;
     }
 
@@ -7731,7 +7750,7 @@ private boolean isDevOptionSetting(){
         }
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         Log.d(TAG,"selectMode : " +selectMode);
-        if(selectMode != null && (selectMode.equals("rtb") || selectMode.equals("single_rear_aibokeh"))){
+        if (selectMode != null && (selectMode.equals("rtb") || selectMode.equals("single_rear_aibokeh"))){
             builder.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE, CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS);
         }
         if (!mSettingsManager.isMultiCameraEnabled()) {
@@ -7744,6 +7763,7 @@ private boolean isDevOptionSetting(){
             applyMctf(builder);
             applyQLL(builder);
             applyInSensorZoom(builder);
+            applyIntegratedMode(builder);
             applyEnableStatsVisualizer(builder);
             applyShadingCorrection(builder);
             applyNumHDRExposure(builder);
@@ -7760,7 +7780,6 @@ private boolean isDevOptionSetting(){
         if(raw_ids != null && raw_ids.size() > 0){
             applyMcxRawCbInfo(builder);
         }
-
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.HFR ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
@@ -8680,6 +8699,7 @@ private boolean isDevOptionSetting(){
             updateZoomSeekBarVisible();
             updateAICameraSeekBar();
             updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
+            updateBokehText();
             mUI.showRelatedIcons(mCurrentSceneMode.mode);
             updateFlashIcon();
         });
@@ -13987,6 +14007,14 @@ private boolean isDevOptionSetting(){
         request.set(CaptureModule.INSTANT_AEC_MODE, intValue);
     }
 
+    private void applyIntegratedMode(CaptureRequest.Builder request) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_INTEGRATED_MODE);
+        if (value == null || !mSettingsManager.isIntegratedModeSupported()) 
+            return;
+        int intValue = (value.equals("Off") ? 0 : 1);
+        request.set(INTEGRATED_MODE, intValue);
+    }
+
     private void applySaturationLevel(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SATURATION_LEVEL);
         if (value != null) {
@@ -14002,6 +14030,27 @@ private boolean isDevOptionSetting(){
             request.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, intValue);
         }
     }
+
+    private void applyBokehMode(boolean enable) {
+        CaptureRequest.Builder captureRequest = mPreviewRequestBuilder[getMainCameraId()];
+        if (!checkSessionAndBuilder(mCaptureSession[getMainCameraId()], captureRequest) ||
+                mCurrentSessionClosed ||mPaused) {
+            return;
+        }
+        try {
+            if (enable) {
+                captureRequest.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE,
+                        CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS);
+            } else {
+                captureRequest.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE,
+                        CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_DISABLED);
+            }
+            mCaptureSession[getMainCameraId()].setRepeatingRequest(captureRequest.build(), mCaptureCallback, mCameraHandler);
+        } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException e) {
+            Log.e(TAG, "Camera Exception in applyBokehMode, apply failed e="+e);
+        }
+    }
+
     private void applyBufferMode(CaptureRequest.Builder request){
         try {
             String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
@@ -17006,6 +17055,17 @@ private boolean isDevOptionSetting(){
             mUI.showAICameraSeekBar();
         }else{
             mUI.hideAICameraSeekBar();
+        }
+    }
+
+    private void updateBokehText() {
+        if(mSettingsManager.isIntegratedModeSupported()) {
+            String value = mSettingsManager.getValue(SettingsManager.KEY_INTEGRATED_MODE);
+            if (value != null && value.equals("On")) {
+                mBokehText.setVisibility(View.VISIBLE);
+            } else {
+                mBokehText.setVisibility(View.INVISIBLE);
+            }
         }
     }
 
