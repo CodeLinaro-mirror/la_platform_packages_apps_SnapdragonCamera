@@ -9050,6 +9050,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyZoomAndUpdate();
             }
         }
+        Log.d(TAG, "stopRecordingVideo done. Time=" +
+                (System.currentTimeMillis() - mStopRecordingTime) + "ms");
 
         AccessibilityUtils.makeAnnouncement(mUI.getVideoButton(),
                 mActivity.getString(R.string.video_recording_stopped));
