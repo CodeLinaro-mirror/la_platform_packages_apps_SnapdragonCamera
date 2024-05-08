@@ -2562,13 +2562,6 @@ public class SettingsActivity extends PreferenceActivity {
             return;
         }
 
-        String videoHdrMode = mSettingsManager.getVideoHdrMode();
-        if (videoHdrMode != null && videoHdrMode.toLowerCase().contains("mfhdr")) {
-            pref.setValue("0");
-            pref.setEnabled(false);
-            return;
-        }
-
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
         String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
         if (profile != null && previewProfile != null && !(SettingsManager.VIDEO_ENCODER_PROFILE_MAP.get(profile).equals(previewProfile))) {
