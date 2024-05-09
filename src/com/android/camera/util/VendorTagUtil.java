@@ -128,7 +128,7 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.DepthTuningSet", Integer.class);
 
     public static final CaptureRequest.Key<Integer> enableHDRDCGBits =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHDRDCGBits", Integer.class);
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHDRDCGMode", Integer.class);
 
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
