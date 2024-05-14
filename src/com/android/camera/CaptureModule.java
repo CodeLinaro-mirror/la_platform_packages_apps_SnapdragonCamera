@@ -5576,15 +5576,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(mAideAECLuxIndex < lux_index_threadhold){//high light only do HWMFNR and no need to crop
                 aiDenoiserService.wantImagesNum(mCaptureRequestNum);
                 Size yuvSize = new Size(mAideFullImage.getWidth(), mAideFullImage.getHeight());
-                Log.i(TAG,"save jpeg for mfnr aide start, yuv size:" + yuvSize.toString());
                 byte[] yuv = getYUVFromImage(mAideFullImage);
                 int stride = mAideFullImage.getPlanes()[0].getRowStride();
+                Log.i(TAG,"save jpeg for mfnr aide start, yuv size:" + yuvSize.toString() + ",stride:" + stride + ",picture size:" + mPictureSize.toString());
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
                 Rect rect = aiDenoiserService.getCropRegion(yuvSize.getWidth(), yuvSize.getHeight(), mPictureSize.getWidth(), mPictureSize.getHeight());
                 if(mAideFullImage.getWidth() != rect.width() || mAideFullImage.getHeight() != rect.height()) {
                     yuv = aiDenoiserService.cropYuvImage(yuv, stride, yuvSize.getWidth(), yuvSize.getHeight(), rect);
+                    mActivity.getMediaSaveService().addRawImage(yuv,"croped","yuv");
                 }
-                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,rect.width(), rect.height(), stride,
+                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,rect.width(), rect.height(), rect.width(),
                         mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
                 byte[] jpeg = aiDenoiserService.bitmapToJpeg(bitmap, orientation, mCaptureResult, quality);
                 mActivity.getMediaSaveService().addImage(
