@@ -9251,6 +9251,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.e(TAG, "cannot access the file: " + e);
             }
 
+            if (mCurrentVideoValues == null) {
+                Log.e(TAG, "Invalid video values");
+                return;
+            }
             mActivity.getMediaSaveService().addVideo(mVideoFilename,
                     duration, mCurrentVideoValues,
                     mOnVideoSavedListener, mContentResolver);
