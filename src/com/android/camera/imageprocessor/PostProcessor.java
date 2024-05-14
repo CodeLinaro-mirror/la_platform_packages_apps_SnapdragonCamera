@@ -1532,6 +1532,8 @@ public class PostProcessor{
     public native void nativeC2paTearDown();
     public native int nativeC2paEnroll(String apiKey, String licenseFile);
     public native byte[] nativeC2paSignMedia(int imageType, int height, int width, int stride, int compression, int maxThumbnailSize, int thumbnailCompression, String inputFile);
+    public native void nativeC2paSignVideo(int height, int width, String inputFile);
+
     public native int nativeC2paValidateMedia(int handle);
 
     static {

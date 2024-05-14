@@ -1336,6 +1336,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 @Override
                 public void onMediaSaved(Uri uri) {
                     Log.d(TAG, "mOnVideoSavedListener onMediaSaved uri :" + uri);
+                    if(mSettingsManager.getValue(SettingsManager.KEY_C2PA) != null &&
+                            mSettingsManager.getValue(SettingsManager.KEY_C2PA).equals("on")){
+                        mPostProcessor.nativeC2paSignVideo(mVideoSize.getHeight(), mVideoSize.getWidth(), mVideoFilename);
+                    }
                     if (uri != null) {
                         mActivity.notifyNewMedia(uri);
                     }
