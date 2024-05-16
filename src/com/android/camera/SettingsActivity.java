@@ -1136,6 +1136,9 @@ public class SettingsActivity extends PreferenceActivity {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
         StringBuilder defaultHDROrder = new StringBuilder();
+        CaptureModule.CameraMode mode =
+                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        final SharedPreferences.Editor editor = mLocalSharedPref.edit();
         for (int i = 0; i < modes.length; i++) {
             if (modes[i] == 1) {
                 listData.add(SettingsManager.KEY_MANUAL_SHDR);
@@ -1148,18 +1151,28 @@ public class SettingsActivity extends PreferenceActivity {
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_QHDR);
             }
         }
-        final SharedPreferences.Editor editor = mLocalSharedPref.edit();
+        String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        int videoSize = CameraUtil.getSize(videoSizeStr);
+        if(mSettingsManager.isHvxMFHDRSupported()) {
+            if(mIsSingleCameraMode && mode == VIDEO && videoSize <= 1920*1080) {
+                listData.add(SettingsManager.KEY_MANUAL_HVX_MFHDR);
+                defaultHDROrder.append(SettingsManager.KEY_MANUAL_HVX_MFHDR);
+            }else {
+                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_MFHDR, false);
+                editor.commit();
+            }
+        }
+        if(mSettingsManager.isHvxShdrSupported()) {
+            if(mIsSingleCameraMode && mode == DEFAULT) {
+                listData.add(SettingsManager.KEY_MANUAL_HVX_SHDR);
+                defaultHDROrder.append(SettingsManager.KEY_MANUAL_HVX_SHDR);
+            }else{
+                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_SHDR, false);
+                editor.commit();
+            }
+        }
         String orderLists = mLocalSharedPref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
         Log.v(TAG, " updateManualHDRSetting orderLists:" + orderLists);
-        if (orderLists != null) {
-            listData.clear();
-            for (String title : orderLists.split("#")) {
-                listData.add(title);
-            }
-        }else{
-            editor.putString(SettingsManager.KEY_MIXED_HDR_ORDER, defaultHDROrder.toString());
-            editor.apply();
-        }
         final DragonListView listView = new DragonListView(SettingsActivity.this);
         DragListViewAdapter adapter = new DragListViewAdapter(this, listData);
         listView.setAdapter(adapter);
@@ -2265,6 +2278,12 @@ public class SettingsActivity extends PreferenceActivity {
                 colorSpacePref.setEntries(list.toArray(new CharSequence[list.size()]));
                 colorSpacePref.setEntryValues(values.toArray(new CharSequence[values.size()]));
             }
+            ColorSpaceProfiles colorSpaceProfiles = mCharacteristics.get(mSettingsManager.getCurrentCameraId()).get(
+                    CameraCharacteristics.REQUEST_AVAILABLE_COLOR_SPACE_PROFILES);
+            if (colorSpaceProfiles == null && colorSpacePref != null) {
+                 colorSpacePref.setValue("0");
+                 colorSpacePref.setEnabled(false);
+            }
         } else if (mode == CaptureModule.CameraMode.DEFAULT) {
             int cameraId = mSettingsManager.getCurrentCameraId();
             Set<ColorSpace.Named> colorSpaceSet = null;
@@ -2330,7 +2349,8 @@ public class SettingsActivity extends PreferenceActivity {
         String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
         String hdrmode = mSettingsManager.getVideoHdrMode();
         int videoSize = CameraUtil.getSize(videoSizeStr);
-        if(videoSize >= 7680*4320 && hdrmode != null && (hdrmode.indexOf("MFHDR")>=0)){
+        if((videoSize >= 7680*4320 && hdrmode != null && (hdrmode.indexOf("MFHDR")>=0)) ||
+                (videoSize > 1920*1080 && hdrmode != null && (hdrmode.indexOf("HVX_MFHDR")>=0))){
             pref.setValue("off");
         }
     }
@@ -2558,14 +2578,8 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-        if ("HEVCProfileMain10HDR10Plus".equals(profile)) {
-            pref.setValue("0");
-            pref.setEnabled(false);
-            return;
-        }
-
         String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
-        if (previewProfile != null && !"0".equals(previewProfile)) {
+        if (profile != null && previewProfile != null && !(SettingsManager.VIDEO_ENCODER_PROFILE_MAP.get(profile).equals(previewProfile))) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;
