@@ -14649,6 +14649,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void changeExpoure(String value){
         int cameraId = getMainCameraId();
         int ev = CameraUtil.strToInt(value,0);
+        mSettingsManager.setValue(SettingsManager.KEY_EXPOSURE, value);
         if(mPreviewRequestBuilder[cameraId] != null) {
             mPreviewRequestBuilder[cameraId].set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, ev);
             updatePreview();
