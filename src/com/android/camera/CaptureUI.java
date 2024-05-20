@@ -545,7 +545,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private SparseArray<Size> mPhysicalPreviewSizes = new SparseArray<>(CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT);
 
     private boolean[] mSurfaceReady = {false,false,false,false};
-    private SurfaceView[] mPhysicalViews = new SurfaceView[CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
+    private AutoFitSurfaceView[] mPhysicalViews = new AutoFitSurfaceView[CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     private SurfaceHolder[] mPhysicalHolders = new SurfaceHolder[CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT];
     List<Surface> mPreviewSurfaces = new ArrayList<>();
     private int mPreviewCount = 0;
@@ -802,6 +802,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mSeekbarBody = mRootView.findViewById(R.id.seekbar_body);
         mSeekbarToggleButton = (ImageView) mRootView.findViewById(R.id.seekbar_toggle);
         mSceneModeSwitcher.setVisibility(View.GONE);
+        mSurfaceView.setActivity(mActivity);
+        for (int i = 0; i < CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT; i++) {
+            mPhysicalViews[i].setActivity(mActivity);
+        }
         mSeekbarToggleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -2215,13 +2219,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             });
         }
     }
-    private boolean isShowHelp(){
-        if(PersistUtil.isPerfTestRunning() || PersistUtil.isFuncTestRunning() ||
-                PersistUtil.isStressTestRunning()){
-            return false;
-        }
-        return true;
-    }
+
     public boolean showHDRScene() {
         CaptureModule.CameraMode currentMode = mModule.getCurrenCameraMode();
         if (CaptureModule.CameraMode.DEPTH == currentMode) {
@@ -2269,6 +2267,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mSceneModeHDR.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if(!mModule.getCameraModeSwitcherAllowed()){
+                        return;
+                    }
                     mScreenHDRindex = (mScreenHDRindex + 1) % mScreenHDRIcon.length;
                     mSettingsManager.setValueIndex(SettingsManager.KEY_SCENE_MODE, mScreenHDRindex);
                     mSceneModeHDR.setImageResource(mScreenHDRIcon[mScreenHDRindex]);
@@ -3181,9 +3182,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 + ", physicalPreviewSizes " + Arrays.toString(physicalPreviewSizes));
 
         if (logicalPreviewSize != null){
-            mLogicalPreviewSize = new Size(logicalPreviewSize.getHeight(),logicalPreviewSize.getWidth());
+            mLogicalPreviewSize = new Size(logicalPreviewSize.getWidth(),logicalPreviewSize.getHeight());
         } else {
-            mLogicalPreviewSize = new Size(mPreviewHeight/2,mPreviewWidth/2);
+            mLogicalPreviewSize = new Size(mPreviewWidth/2,mPreviewHeight/2);
         }
         Log.d(TAG, "logical surface " + 0 + " preview size=" + mLogicalPreviewSize.toString());
         if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
@@ -3191,6 +3192,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mSurfaceView.setZOrderMediaOverlay(physical_id != null);
             mPhysicalHolders[0] = mPhysicalViews[0].getHolder();
             mPhysicalHolders[0].setFixedSize(mLogicalPreviewSize.getWidth(), mLogicalPreviewSize.getHeight());
+            mPhysicalViews[0].setAspectRatio(mLogicalPreviewSize.getHeight(),mLogicalPreviewSize.getWidth());
             mPhysicalViews[0].setVisibility(View.VISIBLE);
             int i = 1;
             for (String id : physicalIds) {
@@ -3200,15 +3202,17 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     int physicalSizeIndex = mModule.getIndexByPhysicalId(id);
                     if (physicalSizeIndex < physicalPreviewSizes.length
                             && physicalPreviewSizes[physicalSizeIndex] != null) {
-                        preview = new Size(physicalPreviewSizes[physicalSizeIndex].getHeight(),
-                                physicalPreviewSizes[physicalSizeIndex].getWidth());
+                        preview = new Size(physicalPreviewSizes[physicalSizeIndex].getWidth(),
+                                physicalPreviewSizes[physicalSizeIndex].getHeight());
                     } else if (physical_id != null) {
-                        preview = new Size(mPreviewHeight, mPreviewWidth);
+                        preview = new Size(mPreviewWidth, mPreviewHeight);
                     } else {
-                        preview = new Size(mPreviewHeight / 2, mPreviewWidth / 2);
+                        preview = new Size(mPreviewWidth / 2, mPreviewHeight / 2);
                     }
                     Log.d(TAG, "physical surface " + i + " preview size=" + preview.toString());
                     mPhysicalHolders[i].setFixedSize(preview.getWidth(), preview.getHeight());
+                    mPhysicalViews[i].setAspectRatio(preview.getHeight(),preview.getWidth());
+
                     mPhysicalViews[i].setVisibility(View.VISIBLE);
                 }
                 i++;
@@ -3893,7 +3897,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT,
                             Gravity.BOTTOM | Gravity.START);
-            params.bottomMargin = 400;
+            params.bottomMargin = 500;
             params.leftMargin = 100;
             params.rightMargin = 100;
             mDepthSeekBar.setLayoutParams(params);
@@ -4371,7 +4375,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 R.drawable.ic_recording_indicator, 0, 0, 0);
         mModule.onButtonContinue();
     }
-
+    private boolean isShowHelp(){
+        if(PersistUtil.isPerfTestRunning() || PersistUtil.isFuncTestRunning() ||
+                PersistUtil.isStressTestRunning()){
+            return false;
+        }
+        return true;
+    }
     @Override
     public void onSettingsChanged(List<SettingsManager.SettingState> settings) {
         for( SettingsManager.SettingState state : settings) {

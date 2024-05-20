@@ -20,6 +20,11 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.SurfaceView;
 
+import com.android.camera.CameraActivity;
+import com.android.camera.SettingsManager;
+
+import java.util.Set;
+
 /**
  * A {@link SurfaceView} that can be adjusted to a specified aspect ratio.
  */
@@ -27,10 +32,12 @@ public class AutoFitSurfaceView extends SurfaceView {
 
     private int mRatioWidth = 0;
     private int mRatioHeight = 0;
+    private CameraActivity mActivity;
 
     public AutoFitSurfaceView(Context context) {
         this(context, null);
     }
+
 
     public AutoFitSurfaceView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
@@ -56,12 +63,21 @@ public class AutoFitSurfaceView extends SurfaceView {
         mRatioHeight = height;
         requestLayout();
     }
-
+    public void setActivity(CameraActivity activity){
+        mActivity = activity;
+    }
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
+        if(mActivity != null && mActivity.mSettingsManager != null) {
+            Set<String> physicalid = mActivity.mSettingsManager.getPhysicalCameraId();
+            if (physicalid != null && physicalid.size() > 0) {
+                width = MeasureSpec.getSize(widthMeasureSpec / 2);
+                height = MeasureSpec.getSize(heightMeasureSpec / 2);
+            }
+        }
         if (0 == mRatioWidth || 0 == mRatioHeight) {
             setMeasuredDimension(width, height);
         } else {

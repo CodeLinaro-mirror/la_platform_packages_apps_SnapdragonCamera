@@ -50,13 +50,13 @@ public class PerformanceTest extends TestBase {
     private String[]coldOpenCamera = {"onCreate->openCamera","openCamera->onOpened","onOpened->createSession",
     "createSession->onConfigured","onConfigured->FirstRequest","FirstRequest->onCaptureCompleted","Total"};
     private String[]snapShot = {"onShutterButtonClick->capture","capture->onImageAvailable","Total"};
-    private static final String PERFORMENCE_PHOTO = "/data/data/org.codeaurora.snapcam/files/performence_photo.json";
-    private static final String PERFORMENCE_BOKEH = "/data/data/org.codeaurora.snapcam/files/performence_bokeh.json";
-    private static final String PERFORMENCE_HFR = "/data/data/org.codeaurora.snapcam/files/performence_hfr.json";
-    private static final String PERFORMENCE_VIDEO = "/data/data/org.codeaurora.snapcam/files/performence_video.json";
-    private static final String PERFORMENCE_PRO = "/data/data/org.codeaurora.snapcam/files/performence_pro.json";
-    private static final String PERFORMENCE_DEPTH = "/data/data/org.codeaurora.snapcam/files/performence_depth.json";
-    private static final String PERFORMENCE_CINEMA = "/data/data/org.codeaurora.snapcam/files/performence_cinema.json";
+    private static final String PERFORMENCE_PHOTO = "/data/data/org.codeaurora.snapcam/files/performence_testPhoto.json";
+    private static final String PERFORMENCE_BOKEH = "/data/data/org.codeaurora.snapcam/files/performence_testBokeh.json";
+    private static final String PERFORMENCE_HFR = "/data/data/org.codeaurora.snapcam/files/performence_testHFR.json";
+    private static final String PERFORMENCE_VIDEO = "/data/data/org.codeaurora.snapcam/files/performence_testVideo.json";
+    private static final String PERFORMENCE_PRO = "/data/data/org.codeaurora.snapcam/files/performence_testPro.json";
+    private static final String PERFORMENCE_DEPTH = "/data/data/org.codeaurora.snapcam/files/performence_testDepth.json";
+    private static final String PERFORMENCE_CINEMA = "/data/data/org.codeaurora.snapcam/files/performence_testCinema.json";
     private static final String testFile = "/data/data/org.codeaurora.snapcam/files/PerformanceTestParam.txt";
     private static String performenceTestMode;
 

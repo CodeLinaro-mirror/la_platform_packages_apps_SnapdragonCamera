@@ -1438,7 +1438,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         return mStickyFaces;
     }
     /*----------- Add for autoTest start ------------*/
-    private HashMap<String,Long> mHasMapTimes = new HashMap<>();
+    private HashMap<String,Long> mHasMapTimes = new HashMap<>(); ;
+    private boolean mFromOnOpened;
     private long mLockFocusTime;
     private long mPreCaptureTime;
     private long mLockAETime;
@@ -2492,6 +2493,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mOpenCameraLatency = System.currentTimeMillis() - mOpenCameraLatency;
             if(mActivity.getPerformenceTest()) {
                 mHasMapTimes.put("openCamera->onOpened",mOpenCameraLatency);
+                mFromOnOpened = true;
             }
             mSettingInitLatency = System.currentTimeMillis();
             int id = Integer.parseInt(cameraDevice.getId());
@@ -2503,6 +2505,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             mCameraDevice[id] = cameraDevice;
             mCameraOpened[id] = true;
+            mIsCloseCamera = false;
 
             if (isBackCamera() && getCameraMode() == DUAL_MODE && id == BAYER_ID) {
                 Message msg = mCameraHandler.obtainMessage(OPEN_CAMERA, MONO_ID, 0);
@@ -5889,6 +5892,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mHasMapTimes.put("buttonClick->capture", mSnapshotLatency - mStartedTime);
                 }
             }
+            if(mIsCloseCamera){
+                return;
+            }
             mCaptureSession[id].capture(captureBuilder.build(), new CameraCaptureSession.CaptureCallback() {
                 @Override
                 public void onCaptureStarted (CameraCaptureSession session,
@@ -7270,11 +7276,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
                 applySettingsForUnlockExposure(mPreviewRequestBuilder[id], id);
             }
-            if (mSettingsManager.isDeveloperEnabled()) {
+            if (isDevOptionSetting()) {
                 applyCommonSettings(mPreviewRequestBuilder[id], id);
             }
             if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
-                int afMode = (mSettingsManager.isDeveloperEnabled() && getDevAfMode() != -1) ?
+                int afMode = (isDevOptionSetting() && getDevAfMode() != -1) ?
                         getDevAfMode() : mControlAFMode;
                 setAFModeToPreview(id, mUI.getCurrentProMode() == ProMode.MANUAL_MODE ?
                         CaptureRequest.CONTROL_AF_MODE_OFF : afMode);
@@ -7285,7 +7291,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.w(TAG, "Session is already closed or session had been changed");
         }
     }
-
+private boolean isDevOptionSetting(){
+    return (mSettingsManager.isDeveloperEnabled() || mActivity.getDevOption());
+}
     public void enableShutterButtonOnMainThread(int id) {
         if (id == getMainCameraId()) {
             mActivity.runOnUiThread(new Runnable() {
@@ -8066,6 +8074,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mLockNums.incrementAndGet(1);
                         } catch (CameraAccessException|IllegalStateException e) {
                             Log.e(TAG,e);
+                            mLockNums.incrementAndGet(1);
                         }
                     }else{
                         mLockNums.incrementAndGet(1);
@@ -8111,6 +8120,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateLockAFAEVisibility();
                 mUI.initFlashButton();
             }
+            mIsCloseCamera = true;
         }
         writeXMLForWarmAwb();
         if (mLocationManager != null) mLocationManager.recordLocation(false);
@@ -8155,12 +8165,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 && isExitCamera && mJpegImageData != null) {
             //mActivity.setResultEx(Activity.RESULT_CANCELED, new Intent());
             mActivity.finish();
-        }
-        if (mActivity.getAutoTest()) {
-            mJpegImageData = null;
-            mLongImgTitle = null;
-            mImgType = null;
-            mImagExif = null;
         }
     }
 
@@ -10852,8 +10856,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
         mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
         if(mActivity.getPerformenceTest()) {
-            if (mIsCloseCamera) {
+            if (mIsCloseCamera || mFromOnOpened) {
                 mHasMapTimes.put("onOpened->createSession", mSettingInitLatency);
+                mFromOnOpened = false;
             } else if(mSessionAfterRecord == 0){
                 mHasMapTimes.put("swipeMode->createSession", System.currentTimeMillis() - mStartedTime);
             }else{
@@ -10928,8 +10933,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error ="+ e);
         }
         mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
-        if(mActivity.getPerformenceTest() && mIsCloseCamera) {
+        if(mActivity.getPerformenceTest() && (mIsCloseCamera || mFromOnOpened)) {
             mHasMapTimes.put("onOpened->createSession",mSettingInitLatency);
+            mFromOnOpened = false;
         }else if(mActivity.getPerformenceTest()){
             mHasMapTimes.put("swipeMode->createSession",System.currentTimeMillis() - mStartedTime);
         }
@@ -10962,8 +10968,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
         mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
         if(mActivity.getPerformenceTest()) {
-            if (mIsCloseCamera && mSessionAfterRecord == 0) {
+            if ((mIsCloseCamera || mFromOnOpened) && mSessionAfterRecord == 0 ) {
                 mHasMapTimes.put("onOpened->createSession", mSettingInitLatency);
+                mFromOnOpened = false;
             } else if(mSessionAfterRecord == 0){
                 mHasMapTimes.put("swipeMode->createSession", System.currentTimeMillis() - mStartedTime);
             }else{
@@ -12944,6 +12951,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (Exception e) {
                 Log.e(TAG, "enableProSight faild:"+e);
             }
+        }
+        if(mSettingsManager.getValue(mSettingsManager.KEY_HDR10P_STATS_KEY) != null &&
+                mSettingsManager.getValue(mSettingsManager.KEY_HDR10P_STATS_KEY).equals("on")){
+            Log.d(TAG,"set hdr10p status enable value");
+            mVideoFormat.setInteger("vendor.qti-ext-enc-hdr10plus-stats-gen.value", 1);
+
         }
         mVideoEncoder.configure(mVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
     }
@@ -15842,7 +15855,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO :
                 CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
         mIsAutoFocusStarted = false;
-        setAFModeToPreview(id, (mSettingsManager.isDeveloperEnabled() && getDevAfMode() != -1) ?
+        setAFModeToPreview(id, (isDevOptionSetting() && getDevAfMode() != -1) ?
                 getDevAfMode() : mControlAFMode);
     }
 
@@ -16327,6 +16340,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         Point[] points = new Point[prevSizes.length];
         DisplayMetrics dm = mActivity.getResources().getDisplayMetrics();
         double targetRatio = (double) pictureSize.getWidth() / pictureSize.getHeight();
+
         int index = 0;
         int point_max[]  = new int[]{dm.heightPixels/2,dm.widthPixels/2};
         int max_size = -1;
@@ -17030,7 +17044,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             cameraId = isForceAUXOn(this.mode) ? auxCameraId : cameraId;
             if ((this.mode == CameraMode.DEFAULT || this.mode == CameraMode.VIDEO ||
                       this.mode == CameraMode.HFR || this.mode == CameraMode.PRO_MODE)
-                    && (mSettingsManager.isDeveloperEnabled() || swithCameraId != -1)) {
+                    && (isDevOptionSetting() || swithCameraId != -1)) {
                 String value = mSettingsManager.getValue(SettingsManager.KEY_SWITCH_CAMERA);
                 if (value != null && !value.equals("-1")) {
                     cameraId = Integer.valueOf(value);
@@ -17062,7 +17076,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     ",swithCameraId=" + swithCameraId);
             if ((this.mode == CameraMode.DEFAULT || this.mode == CameraMode.VIDEO ||
                     this.mode == CameraMode.HFR || this.mode == CameraMode.PRO_MODE)
-                    && (mSettingsManager.isDeveloperEnabled() || swithCameraId != -1)) {
+                    && (isDevOptionSetting() || swithCameraId != -1)) {
                 final SharedPreferences pref = mActivity.getSharedPreferences(
                         ComboPreferences.getLocalSharedPreferencesName(mActivity,
                                 mSettingsManager.getNextPrepNameKey(nextMode)), Context.MODE_PRIVATE);
