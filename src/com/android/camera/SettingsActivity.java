@@ -2467,11 +2467,23 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref != null) {
             if (pref.getEntries() != null && pref.getEntries().length == 1) {
                 pref.setEnabled(false);
+                return;
             } else if (mode == CaptureModule.CameraMode.VIDEO) {
                 String hdrmode = mSettingsManager.getVideoHdrMode();
                 if (hdrmode.toLowerCase().contains("mfhdr")) {
                     pref.setValue("off");
                     pref.setEnabled(false);
+                    return;
+                }
+            }
+            ListPreference lapsepref = (ListPreference)findPreference(
+                    SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL);
+            if(lapsepref != null){
+                String lapsvalue = lapsepref.getValue();
+                if(lapsvalue != null && !lapsvalue.equals("0")){
+                    pref.setValue("off");
+                    pref.setEnabled(false);
+                    return;
                 }
             }
         }
