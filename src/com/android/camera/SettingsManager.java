@@ -3252,7 +3252,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public int[] getSupportedDcgBitsTags() {
-        int modes[] = {0,1,2};
+        int modes[] = {};
         try {
             modes = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_dcg_bits_tags);
