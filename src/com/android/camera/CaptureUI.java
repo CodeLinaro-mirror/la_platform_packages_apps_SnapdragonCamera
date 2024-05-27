@@ -1345,8 +1345,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return isEvChanging;
     }
     private void resetEv() {
-        String settingEV = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
-        mModule.changeExpoure(settingEV);
+        mModule.changeExpoure("0");
         if(PersistUtil.showVerticalEvBar() && mVerticalEvBar != null) {
             initVerticalEvBar();
         }
