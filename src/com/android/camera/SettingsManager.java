@@ -4136,7 +4136,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if (type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC)
-                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)) {
+                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)
+                        || type.equalsIgnoreCase("video/x-mvhevc")) {
                     capabilities = info.getCapabilitiesForType(type).getVideoCapabilities();
                     if (capabilities == null ||
                             !capabilities.getSupportedWidths().contains(videoSize.getWidth()) ||
