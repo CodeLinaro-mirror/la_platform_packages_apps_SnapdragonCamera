@@ -8838,6 +8838,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                 captureRequestBuilder = mVideoPreviewRequestBuilder;
                 captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
+                applyVideoCommentSettings(captureRequestBuilder, getMainCameraId());
                 Log.d(TAG, "Set endofstream TAG to 0");
                 if( (mCurrentSession != null) && mCameraDevice[getMainCameraId()] != null) {
                     mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
