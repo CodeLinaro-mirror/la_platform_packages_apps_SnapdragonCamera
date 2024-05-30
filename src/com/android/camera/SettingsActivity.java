@@ -146,6 +146,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 updateVideoVariableFpsPreference();
                 updatePreference(SettingsManager.KEY_VIDEO_DURATION);
+                updateFDPreference();
             } else if (key.equals(SettingsManager.KEY_SELECT_MODE)) {
                 value = ((ListPreference) p).getValue();
                 CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
@@ -1516,6 +1517,7 @@ public class SettingsActivity extends PreferenceActivity {
         update3AInfoPreference();
         updateHVXMFHDRDependcyPreference();
         updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
+        updateFDPreference();
     }
 
     private void updateAudioEncoderPreference() {
@@ -1736,6 +1738,29 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref != null) {
             if (pref.getEntries() != null && pref.getEntries().length == 1){
                 pref.setEnabled(false);
+            }
+        }
+    }
+    private void updateFDPreference(){
+        SwitchPreference pref = (SwitchPreference)findPreference(
+                SettingsManager.KEY_FACE_DETECTION);
+        if (pref != null) {
+            pref.setEnabled(true);
+        }
+        CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+        if (mode == CaptureModule.CameraMode.HFR) {
+            ListPreference hfrPref = (ListPreference) findPreference(
+                    SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+            if (hfrPref != null) {
+                String value = hfrPref.getValue();
+                if (!value.equals("off")) {
+                    int fpsRate = Integer.parseInt(value.substring(3));
+                    String project = PersistUtil.getModelInfo();
+                    if (fpsRate >= 120 && (project.contains("4635")|| project.contains("6375"))){
+                        pref.setEnabled(false);
+                        pref.setChecked(false);
+                    }
+                }
             }
         }
     }

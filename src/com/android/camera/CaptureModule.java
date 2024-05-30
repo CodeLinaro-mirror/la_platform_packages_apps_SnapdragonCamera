@@ -9050,6 +9050,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyZoomAndUpdate();
             }
         }
+        Log.d(TAG, "stopRecordingVideo done. Time=" +
+                (System.currentTimeMillis() - mStopRecordingTime) + "ms");
 
         AccessibilityUtils.makeAnnouncement(mUI.getVideoButton(),
                 mActivity.getString(R.string.video_recording_stopped));
@@ -9251,6 +9253,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.e(TAG, "cannot access the file: " + e);
             }
 
+            if (mCurrentVideoValues == null) {
+                Log.e(TAG, "Invalid video values");
+                return;
+            }
             mActivity.getMediaSaveService().addVideo(mVideoFilename,
                     duration, mCurrentVideoValues,
                     mOnVideoSavedListener, mContentResolver);

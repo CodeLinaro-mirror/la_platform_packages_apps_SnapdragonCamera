@@ -449,4 +449,8 @@ public class PersistUtil {
     }
 
     public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }
+
+    public static String getModelInfo() {
+        return get("ro.soc.model", "");
+    }
 }
