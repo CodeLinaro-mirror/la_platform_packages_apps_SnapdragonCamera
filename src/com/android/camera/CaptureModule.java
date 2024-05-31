@@ -7995,7 +7995,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mIsCloseCamera = true;
         }
         mSettingsManager.createCaptureModule(this);
-        initModeByIntent();
+        //initModeByIntent();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         String action = mActivity.getIntent().getAction();
