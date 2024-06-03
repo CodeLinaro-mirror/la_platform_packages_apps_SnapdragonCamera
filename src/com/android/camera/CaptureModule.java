@@ -4166,6 +4166,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mIsPreviewingVideo = true;
             if (isHighSpeedRateCapture()) {
+                if(isBatchMode() && mVideoRecordingSurface != null){
+                    mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                }
                 createHighSpeedSession(cameraId);
             } else {
                 createRegularSession(cameraId);
@@ -11909,7 +11912,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
-        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        if(!isBatchMode()) {
+            mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        }
         if (!PersistUtil.enableMediaRecorder()) {
             mFrameProcessor.setVideoOutputSurface(null);
             mFrameProcessor.onClose();
@@ -13718,7 +13723,13 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
         }
     }
-
+    private boolean isBatchMode(){
+        String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
+        if(buffermode != null && buffermode.equals("0")) {
+            return true;
+        }
+        return false;
+    }
     private void applySharpnessControlModes(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SHARPNESS_CONTROL_MODE);
         if (value != null) {
