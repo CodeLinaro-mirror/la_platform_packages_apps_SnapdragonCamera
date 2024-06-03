@@ -5584,8 +5584,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if(mAideFullImage.getWidth() != rect.width() || mAideFullImage.getHeight() != rect.height()) {
                     yuv = aiDenoiserService.cropYuvImage(yuv, stride, yuvSize.getWidth(), yuvSize.getHeight(), rect);
                     mActivity.getMediaSaveService().addRawImage(yuv,"croped","yuv");
+                    stride = rect.width();
                 }
-                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,rect.width(), rect.height(), rect.width(),
+                Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,rect.width(), rect.height(), stride,
                         mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
                 byte[] jpeg = aiDenoiserService.bitmapToJpeg(bitmap, orientation, mCaptureResult, quality);
                 mActivity.getMediaSaveService().addImage(
