@@ -313,7 +313,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int mAntiBandingMode = -1;
     private int mIsFickerDetected = -1;
     private float mAecFramecontrolLuxIndex = -1.0f;
-
+    private boolean isflashRequired;
     public static final int MAX_LOGICAL_PHYSICAL_CAMERA_COUNT = 4;
 
     public static final int PHYSICAL_CAMERA_COUNT = MAX_LOGICAL_PHYSICAL_CAMERA_COUNT - 1;
@@ -4894,7 +4894,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mUI.enableShutter(false);
         int cameraId = getMainCameraId();
-        boolean isflashRequired = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
+        isflashRequired = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
         if(mSettingsManager.isTorchHDREnabled(isflashRequired,mPreviewCaptureResult)){
             mCaptureTorchTrigger = true;
             applyFlash(mPreviewRequestBuilder[cameraId], getMainCameraId());
@@ -5296,6 +5296,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             applyCaptureBurstFps(captureBuilder);
             applyAICameraSnapshot(captureBuilder);
+            applyFlashMode(captureBuilder);
             String valueFS2 = mSettingsManager.getValue(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
             int fs2Value = 0;
             if (valueFS2 != null) {
@@ -7885,6 +7886,16 @@ private boolean isDevOptionSetting(){
         }
     }
 
+    private void applyFlashMode(CaptureRequest.Builder builder) {
+        String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
+        Log.i(TAG,"flashMode="+flashMode+",isflashRequired="+isflashRequired);
+        if (flashMode != null && flashMode.equalsIgnoreCase("on")) {
+            builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+        } else if (flashMode != null && flashMode.equalsIgnoreCase("auto") && isflashRequired){
+            builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+            isflashRequired = false;
+        }
+    }
     private void applyMFNRAIDEMode(CaptureRequest.Builder builder){
         if (isAIDE2Enabled()) {
             VendorTagUtil.enableMFNRAIDEMode(builder, (byte)0x01);
@@ -15536,7 +15547,6 @@ private boolean isDevOptionSetting(){
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
                 }else{
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
-                    request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
                 }
                 break;
             case "auto":
@@ -15550,7 +15560,6 @@ private boolean isDevOptionSetting(){
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
                 }else{
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
-                    request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
                 }
                 break;
             case "off":
