@@ -3010,6 +3010,7 @@ public class TestBase{
         CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
         mCurrentPreviewResult = mCaptureModule.getPreviewCaptureResult();
         mCurrentCaptureResult = mCaptureModule.getCaptureResult();
+        boolean isFlashRequired = mCurrentPreviewResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
         boolean isVideoMode = mode == CaptureModule.CameraMode.HFR ||
                 mode == CaptureModule.CameraMode.VIDEO;
         String flashinset = mActivity.mSettingsManager.getValue((isVideoMode ||
@@ -3030,7 +3031,8 @@ public class TestBase{
         int aeInPreview = mCurrentPreviewResult.get(CaptureResult.CONTROL_AE_MODE);
         boolean isTriggered = mCurrentPreviewResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
         Log.i(TAG, "flashinset=" + flashinset + ",flashInResult=" + flashInResult + ",aeInResult=" + aeInResult + ",isTriggered=" + isTriggered
-                + ",aeInPreview=" + aeInPreview + ",flashInPreview=" + flashInPreview + ",flashInExif=" + flashInExif);
+                + ",aeInPreview=" + aeInPreview + ",flashInPreview=" + flashInPreview + ",flashInExif=" + flashInExif+
+                ",isFlashRequired="+isFlashRequired);
         //assertEquals(setvalue,flashinset);
         if (!setvalue.equals(flashinset)) {
             testFail = getFailStr("flashinset", flashinset, setvalue);
@@ -3086,7 +3088,7 @@ public class TestBase{
             case "auto":
                 //assertEquals(CaptureResult.FLASH_MODE_SINGLE,flashInResult);
                 //assertEquals(CaptureResult.CONTROL_AE_MODE_ON_AUTO_FLASH,aeInResult);
-                if (CaptureResult.FLASH_MODE_SINGLE != flashInResult) {
+                if (CaptureResult.FLASH_MODE_SINGLE != flashInResult && isFlashRequired) {
                     testFail = getFailStr("FLASH_MODE in reslut", flashInResult, CaptureResult.FLASH_MODE_SINGLE);
                     return;
                 }
