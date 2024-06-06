@@ -205,7 +205,7 @@ public class VideoItem extends FilmstripItemBase<VideoItemData> {
     public void recycle(@Nonnull View view) {
         VideoViewHolder holder = getViewHolder(view);
         if (holder != null) {
-            Glide.clear(getViewHolder(view).mVideoView);
+            Glide.with(mContext).clear(getViewHolder(view).mVideoView);
         }
     }
 
