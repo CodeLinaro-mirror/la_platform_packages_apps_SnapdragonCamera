@@ -1149,19 +1149,17 @@ public class SettingsActivity extends PreferenceActivity {
             dcgModeTitle = mManualHDRDialog.findViewById(R.id.dcg_mode_text);
             dcgItems = mManualHDRDialog.findViewById(R.id.dcg_list);
         }
-        if(mSettingsManager.isSHDREnable()) {
+        int[] supportedModes = mSettingsManager.getSupportedDcgBitsTags();
+        if(mSettingsManager.isSHDREnable() && supportedModes != null && supportedModes.length > 0) {
             dcgModeTitle.setVisibility(View.VISIBLE);
             dcgItems.setVisibility(View.VISIBLE);
             List<String> dcgData = new ArrayList<String>();
             dcgData.add("off");
-            int[] supportedModes = mSettingsManager.getSupportedDcgBitsTags();
-            if(supportedModes != null || supportedModes.length > 0){
-                for (int i = 0; i < supportedModes.length; i++) {
-                    if (supportedModes[i] == 1) {
-                        dcgData.add("12BIT");
-                    } else if (supportedModes[i] == 2) {
-                        dcgData.add("14BIT");
-                    }
+            for (int i = 0; i < supportedModes.length; i++) {
+                if (supportedModes[i] == 1) {
+                    dcgData.add("12BIT");
+                } else if (supportedModes[i] == 2) {
+                    dcgData.add("14BIT");
                 }
             }
             RadioListAdapter arrayDapter = new RadioListAdapter(this, dcgData);
