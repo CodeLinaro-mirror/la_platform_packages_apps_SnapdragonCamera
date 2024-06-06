@@ -1644,6 +1644,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
                         videoAddList.add(SettingsManager.KEY_VIULL);
                         videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
+                        videoAddList.add(SettingsManager.KEY_C2PA);
                     } else {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);

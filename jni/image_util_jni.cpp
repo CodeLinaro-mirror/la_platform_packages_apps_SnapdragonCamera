@@ -116,6 +116,8 @@ JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nati
 JNIEXPORT int JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paEnroll(JNIEnv* env, jobject thiz, jstring apiKey, jstring licenseFile);
 JNIEXPORT jbyteArray JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignMedia(
         JNIEnv* env, jobject thiz, jint imageType, jint height, jint width, jint stride, jint compression, jint maxThumbnailSize, jint thumbnailCompression, jstring jinputFile);
+JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignVideo(
+        JNIEnv* env, jobject thiz, jint height, jint width, jstring jinputFile);
 JNIEXPORT int JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paValidateMedia(
         JNIEnv* env, jobject thiz, jint handle);
 #ifdef __cplusplus
@@ -520,6 +522,28 @@ uint8_t * dumpAshmemFile(Ashmem &inFile)
     ALOGD("Succefully loaded ashmem file %d at vaddr = %x", inFile.fd.get(), data);
     return data;
 }
+
+int32_t dumpFile(string filePath, uint8_t *vaddr, uint32_t size)
+{
+    int32_t ret = 0, destFd = -1;
+
+    ALOGD("%s::%d Write buffer at vaddr = %x to file %s", __func__, __LINE__,
+    vaddr, filePath.c_str());
+
+    destFd = open(filePath.c_str(), O_RDWR | O_CREAT, 0666);
+    T_CHECK_ERR(destFd >= 0, -1);
+
+    ret = write(destFd, vaddr, size);
+    T_CHECK_ERR(ret == size, -1);
+    ret = 0;
+
+    ALOGD("%s::%d Successfully wrote %d bytes to file", __func__, __LINE__, size);
+    exit:
+    if (destFd >= 0) {
+        close(destFd);
+    }
+    return ret;
+}
 #endif
 
 JNIEXPORT int Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSetUp(JNIEnv* env, jobject thiz)
@@ -665,6 +689,47 @@ JNIEXPORT jbyteArray Java_com_android_camera_imageprocessor_PostProcessor_native
 #endif
 exit:
     return output;
+}
+
+JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignVideo(
+        JNIEnv* env, jobject thiz, jint height, jint width, jstring jinputFile)
+{
+#ifdef ENABLE_C2PA_LIB
+    const char *inputFile = env->GetStringUTFChars(jinputFile, 0);
+    int32_t ret = -1;
+    SignResponse result = SignResponse::SIGN_RESPONSE_FAILED;
+    ScopedAStatus status = ScopedAStatus::ok();
+    Ashmem imageFd, outImageFd;
+    vector<C2PADataTypePair> inputParam;
+    vector<C2PADataTypePair> customAssertion;
+    uint8_t *coutput;
+
+    C2PADataTypePair outPair;
+    outPair.key = "MEDIA_TYPE";
+    outPair.value = C2PADataType::make<C2PADataType::intValue>(2);
+    inputParam.push_back(std::move(outPair));
+//    outPair.key = "IMAGE_HEIGHT";
+//    outPair.value = C2PADataType::make<C2PADataType::intValue>(height);
+//    inputParam.push_back(std::move(outPair));
+//    outPair.key = "IMAGE_WIDTH";
+//    outPair.value = C2PADataType::make<C2PADataType::intValue>(width);
+//    inputParam.push_back(std::move(outPair));
+
+    ret = loadFile(inputFile, imageFd);
+    T_CHECK_ERR(ret == 0 && (imageFd.fd.get()) >= 0, -1);
+
+    status = c2paService->signMedia(imageFd, inputParam, customAssertion, &outImageFd, &result);
+    T_CHECK_ERR(status.isOk() && result == SignResponse::SIGN_RESPONSE_SUCCESS &&
+                (outImageFd.fd.get()) > 0, (int32_t) result);
+    ret = 0;
+
+    LOGD_PRINT("Successfully signed media using AIDL service");
+    coutput = dumpAshmemFile(outImageFd);
+    if(coutput == nullptr) goto exit;
+    dumpFile(inputFile, coutput, (size_t) outImageFd.size);
+    exit:
+    LOGD_PRINT("sign result: %d", ret );
+#endif
 }
 
 JNIEXPORT int JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paValidateMedia(JNIEnv* env, jobject thiz, jstring jinputFile)
