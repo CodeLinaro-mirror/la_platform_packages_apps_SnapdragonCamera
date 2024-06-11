@@ -59,18 +59,30 @@ import android.support.test.InstrumentationRegistry;
 import org.codeaurora.snapcam.R;
 import android.view.KeyEvent;
 import android.support.test.rule.ActivityTestRule;
-
+import com.android.camera.util.CameraUtil;
 
 
 
 @RunWith(AndroidJUnit4.class)
 public class FunctionTest extends TestBase  {
     private String TAG = "autoTest_FunctionTest";
+    private static final String testFile = "/data/data/org.codeaurora.snapcam/files/fuctionTestParam.txt";
+
     @BeforeClass
     public static void initJson(){
         Log.i("autotest_initJson","initJson beforeTest");
         init();
         updateAndSavejson(INPUT_JSON,null,null,null);
+        String testStr = CameraUtil.ReadFile(testFile);
+        Log.i("autotest_initJson","initJson testStr="+testStr);
+        getTestItem(testStr);
+    }
+    @AfterClass
+    public static void resetTestItem(){
+        Log.i("autotest_initJson","resetTestItem AfterTest");
+        functionTestMode = null;
+        functionTestItem = null;
+        functionTestItemDel = null;
     }
 
     @Before
@@ -91,18 +103,27 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInPhoto() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInPhoto")){
+            return;
+        }
         Log.i(TAG, "testInPhotoModule");
         //checkPreview("0", CaptureModule.CameraMode.DEFAULT);
         runPhotoCase("0",CaptureModule.CameraMode.DEFAULT);
     }
     @Test
     public void testInFrontPhoto() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInFrontPhoto")){
+            return;
+        }
         Log.i(TAG, "testInPhotoModule");
         executeShellCommand("input tap "+ mSwitchLoc[0]  +" "+mSwitchLoc[1]);
         runPhotoCase("1",CaptureModule.CameraMode.DEFAULT);
     }
     @Test
     public void testInBokeh() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInBokeh")){
+            return;
+        }
         Log.i(TAG, "testInBokehModule");
         swipFromLTR(1);
        // checkPreview("0",CaptureModule.CameraMode.RTB);
@@ -111,6 +132,9 @@ public class FunctionTest extends TestBase  {
 
     @Test
     public void testInPro() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInPro")){
+            return;
+        }
         Log.i(TAG, "testInProModule");
         swipFromLTR(2);
        // checkPreview("0",CaptureModule.CameraMode.PRO_MODE);
@@ -121,6 +145,9 @@ public class FunctionTest extends TestBase  {
 
     @Test
     public void testInVideo() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInVideo")){
+            return;
+        }
         Log.i(TAG, "testInVideoModule");
         swipFromRTL(3);
         //checkPreview("0",CaptureModule.CameraMode.VIDEO);
@@ -128,6 +155,9 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInFrontVideo() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInFrontVideo")){
+            return;
+        }
         Log.i(TAG, "testInFrontVideo");
         swipFromRTL(3);
         checkPreview("0",CaptureModule.CameraMode.VIDEO);
@@ -136,6 +166,9 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInHFR() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInHFR")){
+            return;
+        }
         Log.i(TAG, "testInHFRModule");
         swipFromRTL(1);
         //checkPreview("2",CaptureModule.CameraMode.HFR);
@@ -143,6 +176,9 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInFrontHFR() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInFrontHFR")){
+            return;
+        }
         Log.i(TAG, "testInFrontHFR");
         swipFromRTL(1);
         checkPreview("2",CaptureModule.CameraMode.HFR);
@@ -151,6 +187,9 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInCinema() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInCinema")){
+            return;
+        }
         Log.i(TAG, "testInCinema");
         swipFromRTL(2);
         //checkPreview("2",CaptureModule.CameraMode.HFR);
@@ -161,20 +200,27 @@ public class FunctionTest extends TestBase  {
     public void testInVideoIntent() throws Exception {
         //setActivityIntent(mIntent);
         //recordVideo();
+        if(functionTestMode != null && !functionTestMode.contains("testInVideoIntent")){
+            return;
+        }
+        Log.i(TAG," testInVideoIntent");
         mActivityRule.finishActivity();
         Thread.sleep(OPEN_CAMERA_DURATION);
-        Log.i(TAG,"zcl videointent");
         openCameraByIntent(mVideoIntent);
         isOpenFromIntent = true;
         runVideoCase("0",CaptureModule.CameraMode.VIDEO);
     }
     @Test
     public void testInImageIntent() throws Exception {
+        if(functionTestMode != null && !functionTestMode.contains("testInImageIntent")){
+            return;
+        }
+        Log.i(TAG," testInImageIntent");
         //setActivityIntent(mIntent);
         //recordVideo();
         mActivityRule.finishActivity();
         Thread.sleep(OPEN_CAMERA_DURATION);
-        Log.i(TAG,"zcl videointent");
+
         openCameraByIntent(mImageIntent);
         isOpenFromIntent = true;
         runPhotoCase("0",CaptureModule.CameraMode.DEFAULT);

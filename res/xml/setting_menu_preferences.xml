@@ -896,7 +896,6 @@
 
         <ListPreference
             android:key="pref_camera2_capture_mfnr_key"
-            android:defaultValue="@string/pref_camera2_capture_mfnr_default"
             android:title="@string/pref_camera2_capture_mfnr_title"
             android:entries="@array/pref_camera2_capture_mfnr_entries"
             android:entryValues="@array/pref_camera2_capture_mfnr_entryvalues"
@@ -1147,7 +1146,6 @@
 
         <ListPreference
             android:key="pref_camera2_viull_key"
-            android:defaultValue="@string/pref_camera2_viull_default"
             android:title="@string/pref_camera2_viull_title"
             android:entries="@array/pref_camera2_viull_entries"
             android:entryValues="@array/pref_camera2_viull_entryvalues"
