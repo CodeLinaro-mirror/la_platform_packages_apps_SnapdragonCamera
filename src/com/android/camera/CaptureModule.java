@@ -1680,10 +1680,14 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(isAIDE2Enabled()){
                 try {
                     mAideAdrcGain = result.get(adrc_gain);
+                } catch (IllegalArgumentException e) {
+                    Log.d(TAG,EXCEPTION_LOG,"no adrc_gain tag");
+                }
+                try {
                     mMasterCameraId = result.get(CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID);
                     Log.d(TAG,"mMasterCameraId: " + mMasterCameraId);
                 } catch (IllegalArgumentException e) {
-                    Log.d(TAG,EXCEPTION_LOG,"no adrc_gain tag or LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID");
+                    Log.d(TAG,EXCEPTION_LOG,"no LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID");
                 }
             }
             if(isAIDE2Enabled() || mSaveRaw) {
