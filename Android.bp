@@ -105,7 +105,6 @@ android_app {
     ],
     jni_libs: ["libjni_imageutil"],
     sdk_version: "module_current",
-    certificate: "platform",
     vendor: true,
     overrides: ["Camera2"],
     privileged: true,
