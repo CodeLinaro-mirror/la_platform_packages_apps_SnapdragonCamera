@@ -11307,6 +11307,9 @@ private boolean isDevOptionSetting(){
             mRecordingStoped = true;
             return false;
         }
+        int[] list = {0x40800000, 0X3AC};
+        if(mPostProcessor.isJniAPISupported() && mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE).equals("HEVCProfileMain10HDR10Plus"))
+            mPostProcessor.nativePerfLockAcq(2, 0, list, list.length);
         requestAudioFocus();
         if (PersistUtil.enableMediaRecorder()) {
             if (!startMediaRecorder()) {
@@ -12292,6 +12295,8 @@ private boolean isDevOptionSetting(){
         if(mIntentMode != INTENT_MODE_VIDEO) {
             mStopRecPending = false;
         }
+        if(mPostProcessor.isJniAPISupported() && mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE).equals("HEVCProfileMain10HDR10Plus"))
+            mPostProcessor.nativePerfLockRelease(2);
     }
 
     private void setVideoFlashOff() {
