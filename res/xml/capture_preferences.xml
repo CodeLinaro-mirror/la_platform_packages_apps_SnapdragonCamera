@@ -367,6 +367,18 @@
         camera:title="@string/pref_camera2_touch_track_focus_title" />
 
     <ListPreference
+        camera:defaultValue="@string/pref_camera_manual_flash_default"
+        camera:entries="@array/pref_camera2_manual_flash_entries"
+        camera:entryValues="@array/pref_camera2_manual_flash_entryvalues"
+        camera:key="pref_camera2_manual_flash_key"
+        camera:title="@string/pref_camera_manual_flash_title" />
+    <ListPreference
+        camera:defaultValue="@string/pref_camera_manual_flash_level_default"
+        camera:key="pref_camera2_manual_flash_level_key"
+        camera:entryValues="@array/pref_camera2_manual_flash_level"
+    />
+
+    <ListPreference
         camera:defaultValue="@string/pref_camera2_videoencoderprofile_default"
         camera:entries="@array/pref_camera2_preview_profile_entry"
         camera:entryValues="@array/pref_camera2_preview_profile_entryvalues"
