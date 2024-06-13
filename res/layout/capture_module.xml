@@ -439,6 +439,15 @@
             android:layout_height="200dip"
             android:layout_marginTop="50dip"
             android:layout_marginLeft="15dip" />
+        <TextView
+            android:id="@+id/lowlightboost_text"
+            android:visibility="gone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#ffff00"
+            android:textSize="13sp"
+            android:layout_marginTop="100dip"
+            android:layout_marginLeft="15dip" />
 
     </FrameLayout>
 
