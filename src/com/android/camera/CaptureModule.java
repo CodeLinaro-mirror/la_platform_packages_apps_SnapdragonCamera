@@ -16216,9 +16216,10 @@ private boolean isDevOptionSetting(){
                     }
                     return;
                 case SettingsManager.KEY_FLASH_MODE:
-                    mUI.updateFlashBar();
-                    applyFlashForUIChange(mPreviewRequestBuilder[getMainCameraId()],
-                    getMainCameraId());
+                    if(CameraMode.DEFAULT == mCurrentSceneMode.mode ||  CameraMode.RTB == mCurrentSceneMode.mode) {
+                        mUI.updateFlashBar();
+                        applyFlashForUIChange(mPreviewRequestBuilder[getMainCameraId()], getMainCameraId());
+                    }
                     return;
                 case SettingsManager.KEY_CAMERA_MANUALFLASH:
                 case SettingsManager.KEY_MANUAL_EXPOSURE:
