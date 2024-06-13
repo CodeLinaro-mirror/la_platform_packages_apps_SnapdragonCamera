@@ -4348,6 +4348,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mIsPreviewingVideo = true;
             if (isHighSpeedRateCapture()) {
+                if(mSettingsManager.isBatchMode(getMainCameraId()) && mVideoRecordingSurface != null){
+                    mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                }
                 createHighSpeedSession(cameraId);
             } else {
                 createRegularSession(cameraId);
@@ -10482,7 +10485,7 @@ private boolean isDevOptionSetting(){
             throw new IllegalArgumentException("Input capture request must not be null");
         }
         String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
-        if(buffermode != null && buffermode.equals("1")){
+        if(buffermode != null && buffermode.equals("1") && mSettingsManager.isSupportedSuperBuffer(getMainCameraId())){
             highrequest = createMyHighSpeedRequestList(request);
         }else{
             highrequest = session.createHighSpeedRequestList(request);
@@ -12229,7 +12232,9 @@ private boolean isDevOptionSetting(){
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
-        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        if(!mSettingsManager.isBatchMode(getMainCameraId())) {
+            mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        }
         if (!PersistUtil.enableMediaRecorder()) {
             mFrameProcessor.setVideoOutputSurface(null);
             mFrameProcessor.onClose();
@@ -14087,6 +14092,9 @@ private boolean isDevOptionSetting(){
     }
 
     private void applyBufferMode(CaptureRequest.Builder request){
+        if(!mSettingsManager.isSupportedSuperBuffer(getMainCameraId())){
+            return;
+        }
         try {
             String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
             if(buffermode != null && buffermode.equals("1")) {
