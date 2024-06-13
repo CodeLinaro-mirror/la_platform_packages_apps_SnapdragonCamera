@@ -4170,7 +4170,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mIsPreviewingVideo = true;
             if (isHighSpeedRateCapture()) {
-                if(isBatchMode() && mVideoRecordingSurface != null){
+                if(mSettingsManager.isBatchMode(getMainCameraId()) && mVideoRecordingSurface != null){
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                 }
                 createHighSpeedSession(cameraId);
@@ -10147,7 +10147,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             throw new IllegalArgumentException("Input capture request must not be null");
         }
         String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
-        if(buffermode != null && buffermode.equals("1")){
+        if(buffermode != null && buffermode.equals("1") && mSettingsManager.isSupportedSuperBuffer(getMainCameraId())){
             highrequest = createMyHighSpeedRequestList(request);
         }else{
             highrequest = session.createHighSpeedRequestList(request);
@@ -11920,7 +11920,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
-        if(!isBatchMode()) {
+        if(!mSettingsManager.isBatchMode(getMainCameraId())) {
             mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
         }
         if (!PersistUtil.enableMediaRecorder()) {
@@ -13722,6 +13722,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
     private void applyBufferMode(CaptureRequest.Builder request){
+        if(!mSettingsManager.isSupportedSuperBuffer(getMainCameraId())){
+            return;
+        }
         try {
             String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
             if(buffermode != null && buffermode.equals("1")) {
@@ -13732,13 +13735,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         }catch (IllegalArgumentException e){
             Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
         }
-    }
-    private boolean isBatchMode(){
-        String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
-        if(buffermode != null && buffermode.equals("0")) {
-            return true;
-        }
-        return false;
     }
     private void applySharpnessControlModes(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SHARPNESS_CONTROL_MODE);
