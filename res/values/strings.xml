@@ -232,14 +232,6 @@
     <string name="pref_camera_savepath_entry_0">Phone</string>
     <string name="pref_camera_savepath_entry_1">SD Card</string>
 
-    <!-- Entry of manual flash -->
-    <string name="pref_camera_manual_flash_title">Manual Flash</string>
-    <string name="pref_camera_manual_flash_default">0</string>
-    <string name="pref_camera_manual_flash_entry_0">Disable</string>
-    <string name="pref_camera_manual_flash_entry_1">Enable</string>
-    <string name="pref_camera_manual_flash_level_default">0</string>
-
-
     <!-- Entry of a on/off setting. The setting is turned off. [CHAR LIMIT=15] -->
     <string name="setting_off">Off</string>
     <!-- Entry of a on/off setting. The setting is turned on. [CHAR LIMIT=15] -->

@@ -134,7 +134,6 @@ import org.codeaurora.snapcam.R;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -206,7 +205,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private int[] mScreenHDRIcon = {R.drawable.ic_hdr_off, R.drawable.ic_hdr};
     private int mScreenHDRindex;
     private SeekBar mEvSeekBar;
-    private SeekBar mFlashLevelBar;
     private boolean isEvChanging;
     private int mCurrentProgress;
     private int mTotalProgress;
@@ -532,8 +530,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TextView mDebugPerformancText;
 
     private LinearLayout mZoomLinearLayout;
-    private RelativeLayout mManualFlashLayout;
-    private TextView flashLevelTxt;
 
     private int mZoomIndex = 0;
 
@@ -1241,7 +1237,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
         mTorchReadText.setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = 33)
             @Override
             public void onClick(View v) {
                 try {
@@ -1382,67 +1377,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if(PersistUtil.showVerticalEvBar() && mVerticalEvBar != null) {
             initVerticalEvBar();
         }
-    }
-    public void updateFlashBar() {
-        if(CaptureModule.CameraMode.VIDEO != CaptureModule.CURRENT_MODE &&
-                CaptureModule.CameraMode.DEFAULT != CaptureModule.CURRENT_MODE){
-            return;
-        }
-        String value = mSettingsManager.getValue(mSettingsManager.KEY_CAMERA_MANUALFLASH);
-        String flashmode = mSettingsManager.getValue(CaptureModule.CURRENT_MODE  == CaptureModule.CameraMode.VIDEO ?
-                SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
-        int maxLevel = mSettingsManager.getMaxFlashLevel();
-        mManualFlashLayout= (RelativeLayout) mRootView.findViewById(R.id.manual_flash_layout);
-        if(value == null || value.equals("0") || maxLevel <=1 || flashmode == null ||
-            flashmode.equals("off")){
-            mManualFlashLayout.setVisibility(View.INVISIBLE);
-            return;
-        }
-        mManualFlashLayout.setVisibility(View.VISIBLE);
-        int defaultValue = mSettingsManager.getDefaultFlashLevel();
-        String keyvalue = mSettingsManager.getValue(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
-        if(keyvalue == null){
-            keyvalue = String.valueOf(defaultValue);
-            mSettingsManager.setValue(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL,keyvalue);
-        }
-        int index = mSettingsManager.getValueIndex(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
-        if(flashLevelTxt == null) {
-            flashLevelTxt = (TextView) mRootView.findViewById(R.id.flash_text);
-        }
-        flashLevelTxt.setText(keyvalue);
-        int level = 5;
-        final int section = maxLevel/level;
-        if (section == 0){
-            return;
-        }
-        if (mFlashLevelBar == null) {
-            mFlashLevelBar = (SeekBar) mRootView.findViewById(R.id.flash_seekbar);
-            mFlashLevelBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override
-                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                    int mindex = progress / section;
-                    if (mindex > level - 1) mindex = level - 1;
-                    int currentIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
-                    if (currentIndex != mindex) {
-                        mSettingsManager.setValueIndex(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL, mindex);
-                        String value = mSettingsManager.getValue(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
-                        flashLevelTxt.setText(value);
-
-                    }
-                }
-
-                @Override
-                public void onStartTrackingTouch(SeekBar seekBar) {
-                    isEvChanging = true;
-                }
-
-                @Override
-                public void onStopTrackingTouch(SeekBar seekBar) {
-                    isEvChanging = false;
-                }
-            });
-        }
-        setEvBarProgress(index, section, mFlashLevelBar);
     }
     private void initEvSeekBar() {
         final int length = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE).length;

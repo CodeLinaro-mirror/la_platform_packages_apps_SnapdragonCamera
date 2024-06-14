@@ -233,65 +233,6 @@
             android:thumb="@drawable/ic_beautify_oval"
             android:id="@id/zoom_seekbar"/>
     </LinearLayout>
-    <RelativeLayout
-        android:id="@+id/manual_flash_layout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        android:layout_marginTop="50dp"
-        android:layout_marginLeft="200dp"
-        android:visibility="gone"
-        android:orientation="vertical"
-   >
-    <SeekBar
-        android:layout_width="140dp"
-        android:layout_height="50dp"
-        android:maxHeight="3dip"
-        android:minHeight="1dip"
-        android:paddingTop="5dp"
-        android:progressDrawable="@drawable/beautify_progressbar_style"
-        android:thumb="@drawable/evbar_thumb"
-        android:thumbOffset="0dp"
-        android:id="@+id/flash_seekbar">
-    </SeekBar>
-        <TextView
-            android:id="@+id/flash_min_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14dip"
-            android:paddingLeft="5dp"
-            android:paddingTop="17dp"
-            android:alpha="0.7"
-            android:gravity="center"
-            android:text="1"
-            android:textColor="@android:color/white">
-        </TextView>
-        <TextView
-            android:id="@+id/flash_max_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14dip"
-            android:paddingLeft="129dp"
-            android:paddingTop="17dp"
-            android:alpha="0.7"
-            android:gravity="center"
-            android:text="5"
-            android:textColor="@android:color/white">
-        </TextView>
-        <TextView
-            android:id="@+id/flash_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14dip"
-            android:paddingLeft="70dp"
-            android:paddingTop="28dp"
-            android:alpha="0.7"
-            android:gravity="center"
-            android:text="1"
-            android:textColor="@android:color/white">
-        </TextView>
-    </RelativeLayout>
-
         <SeekBar
             android:layout_width="140dp"
             android:layout_height="50dp"
