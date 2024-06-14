@@ -34,16 +34,14 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.android.camera.imageprocessor;
 
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
-import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureFailure;
@@ -60,7 +58,9 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.preference.PreferenceManager;
+
 import com.android.camera.util.Log;
+
 import android.widget.Toast;
 
 import com.android.camera.CameraActivity;
@@ -84,7 +84,7 @@ import com.android.camera.imageprocessor.filter.DeepZoomFilter;
 import com.android.camera.ui.RotateTextToast;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -781,6 +781,24 @@ public class PostProcessor{
         return false;
     }
 
+    public boolean isYUVC2PAEnabled() {
+        if (SettingsManager.getInstance() != null &&
+                SettingsManager.getInstance().getValue(SettingsManager.KEY_C2PA) != null &&
+                SettingsManager.getInstance().getValue(SettingsManager.KEY_C2PA).equalsIgnoreCase("on") &&
+                PersistUtil.getC2PAImageFormat() == 0) {
+            return true;
+        }
+        return false;
+    }
+    public boolean isJPEGC2PAEnabled() {
+        if (SettingsManager.getInstance() != null &&
+                SettingsManager.getInstance().getValue(SettingsManager.KEY_C2PA) != null &&
+                SettingsManager.getInstance().getValue(SettingsManager.KEY_C2PA).equalsIgnoreCase("on") &&
+                PersistUtil.getC2PAImageFormat() == 1) {
+            return true;
+        }
+        return false;
+    }
     public void onOpen(int postFilterId, boolean isFlashModeOn, boolean isTrackingFocusOn,
                        boolean isT2TFocusOn, boolean isMakeupOn, boolean isSelfieMirrorOn,
                        boolean isSaveRaw, boolean isDeepPortrait) {
@@ -796,7 +814,7 @@ public class PostProcessor{
                 || "18".equals(SettingsManager.getInstance().getValue(
                                   SettingsManager.KEY_SCENE_MODE))
                 || mController.getCameraMode() == CaptureModule.DUAL_MODE
-                || isDeepPortrait) {
+                || isDeepPortrait || isYUVC2PAEnabled()) {
             mUseZSL = false;
         } else {
             mUseZSL = true;
@@ -1281,6 +1299,19 @@ public class PostProcessor{
                                     resultImage.height, resultImage.stride - resultImage.width,
                                     isVertical);
                         }
+                        //jiao
+                        if(isYUVC2PAEnabled()){
+                            String path = Storage.generateFilepath(title, "yuv");
+                            Storage.writeFile(path, resultImage.outBuffer.array(), null, "yuv");
+                            Log.d(TAG,"jiao, reprocess image, format: " + resultImage + ",path:" + path);
+                            byte[] output = nativeC2paSignMedia(0, resultImage.height, resultImage.width, resultImage.stride, 100, 100,100, path);
+                            if(output != null && output.length > 0) {
+                                mActivity.getMediaSaveService().addImage(
+                                        output, title, date, null, resultImage.width, resultImage.height,
+                                        mOrientation, null, mediaSavedListener, contentResolver, "jpeg");
+                                mController.updateThumbnailJpegData(output);
+                            }
+                        }
                     }
                     //End processing FrameProessor filter
                     clear();
@@ -1293,7 +1324,7 @@ public class PostProcessor{
                             (resultImage.outRoi.top + resultImage.outRoi.height() > resultImage.height)
                             ) {
                         Log.d(TAG, "Result image is not valid.");
-                    } else {
+                    } else if(!isYUVC2PAEnabled()){
                         bytes = nv21ToJpeg(resultImage, mOrientation, waitForMetaData(0));
                         if (mController.getCurrentIntentMode() ==
                                 CaptureModule.INTENT_MODE_CAPTURE) {
@@ -1315,6 +1346,31 @@ public class PostProcessor{
         });
     }
 
+    public void reprocessC2PAImage(String title, byte[] bytes,int width, int height, long date, int orientation, final MediaSaveService.OnMediaSavedListener mediaSavedListener,
+                                   final ContentResolver contentResolver){
+        String path = Storage.generateFilepath("c2pa_test", "jpeg");
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
+        width = options.outWidth;
+        height = options.outHeight;
+        Storage.writeFile(path, bytes, null, "jpeg");
+        Log.d(TAG,"jiao, reprocess jpeg image  path:" + path);
+        byte[] output = nativeC2paSignMedia(1, height, width, 0, 100, 100,100, path);
+        if(output != null && output.length > 0) {
+            mActivity.getMediaSaveService().addImage(
+                    output, title, date, null, width, height,
+                    orientation, null, mediaSavedListener, contentResolver, "jpeg");
+            mController.updateThumbnailJpegData(output);
+        }
+        if(PersistUtil.getCamera2Debug() == 0) {
+            Log.d(TAG, "after reprocess delete " + path);
+            File f = new File(path);
+            if (!f.delete()) {
+                Log.v(TAG, "Could not delete " + path);
+            }
+        }
+    }
     public TotalCaptureResult waitForMetaData(int index) {
         int timeout = 10; //100ms
     	while(timeout > 0) {
@@ -1472,6 +1528,14 @@ public class PostProcessor{
     public native void  nativeEnablePerfLock();
     public native int nativePerfLockAcq(int handle, int duration, int resource[],int numArgs);
     public native void nativePerfLockRelease(int handle);
+    public native void nativeC2paSetUp();
+    public native void nativeC2paTearDown();
+    public native int nativeC2paEnroll(String apiKey, String licenseFile);
+    public native byte[] nativeC2paSignMedia(int imageType, int height, int width, int stride, int compression, int maxThumbnailSize, int thumbnailCompression, String inputFile);
+    public native void nativeC2paSignVideo(int height, int width, String inputFile);
+
+    public native int nativeC2paValidateMedia(int handle);
+
     static {
         try {
             System.loadLibrary("jni_imageutil");

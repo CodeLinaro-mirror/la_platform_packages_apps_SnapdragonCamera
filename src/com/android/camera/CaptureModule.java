@@ -38,7 +38,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.Camera;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -68,7 +67,6 @@ import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.LensShadingMap;
 import android.location.Location;
-import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -160,7 +158,7 @@ import com.android.camera.aide.AideUtil.*;
 
 import org.codeaurora.snapcam.R;
 import org.codeaurora.snapcam.filter.ClearSightImageProcessor;
-import android.util.Range;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileDescriptor;
@@ -197,13 +195,7 @@ import com.android.camera.ui.OneUICameraControls;
 import qti.video.QMediaCodecCapabilities;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.Executor;
 
 public class CaptureModule implements CameraModule, PhotoController,
         MediaSaveService.Listener, ClearSightImageProcessor.Callback,
@@ -373,6 +365,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.bayer_grid.enable", byte.class);
     public static final CaptureRequest.Key<Byte> beStatsMode =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.bayer_exposure.enable", byte.class);
+
+    public static final CaptureRequest.Key<Integer> INTEGRATED_MODE =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMultiCameraIntegratedMode", Integer.class);
 
     public static CameraCharacteristics.Key<int[]> ISO_AVAILABLE_MODES =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.iso_exp_priority.iso_available_modes", int[].class);
@@ -905,6 +900,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private TextView mMFNRSwitch;
     private SeekBar mMfnrSeekBar;
     private TextView mMFNRText;
+    private TextView mBokehText;
     public boolean mMFNREnable;
     /*HDR Test*/
     private boolean mCaptureHDRTestEnable = false;
@@ -1340,6 +1336,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 @Override
                 public void onMediaSaved(Uri uri) {
                     Log.d(TAG, "mOnVideoSavedListener onMediaSaved uri :" + uri);
+                    if(mSettingsManager.getValue(SettingsManager.KEY_C2PA) != null &&
+                            mSettingsManager.getValue(SettingsManager.KEY_C2PA).equals("on")){
+                        mPostProcessor.nativeC2paSignVideo(mVideoSize.getHeight(), mVideoSize.getWidth(), mVideoFilename);
+                    }
                     if (uri != null) {
                         mActivity.notifyNewMedia(uri);
                     }
@@ -3077,12 +3077,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         mBeStatsLabel = (TextView) mRootView.findViewById(R.id.be_stats_graph_label);
         mRsStatsLabel = (TextView) mRootView.findViewById(R.id.rs_stats_graph_label);
         mDrawAutoHDR2 = (DrawAutoHDR2 )mRootView.findViewById(R.id.autohdr_view);
-        mMFNRDrawer = (MFNRDrawer )mRootView.findViewById(R.id.mfnr_view);
-        mMFNRSwitch = (TextView ) mRootView.findViewById(R.id.mfnr_switch);
-        mMFNRText = (TextView ) mRootView.findViewById(R.id.mfnr_text);
+        mMFNRDrawer = (MFNRDrawer) mRootView.findViewById(R.id.mfnr_view);
+        mMFNRSwitch = (TextView) mRootView.findViewById(R.id.mfnr_switch);
+        mMFNRText = (TextView) mRootView.findViewById(R.id.mfnr_text);
         mMfnrSeekBar = (SeekBar) mRootView.findViewById(R.id.mfnr_seekbar);
-        mLockAFAEText = (TextView ) mRootView.findViewById(R.id.lock_af_ae_label);
+        mLockAFAEText = (TextView) mRootView.findViewById(R.id.lock_af_ae_label);
         mGapGraphView = (Camera2RequestGapGraphView) mRootView.findViewById(R.id.graph_view_gap);
+        mBokehText = (TextView) mRootView.findViewById(R.id.bokeh_text);
         if (mGapGraphView != null){
             mGapGraphView.setCaptureModuleObject(this);
         }
@@ -3117,6 +3118,21 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mMFNRDrawer != null) {
             mMFNRDrawer.setCaptureModuleObject(this);
         }
+        if (mBokehText != null) {
+            mBokehText.setText("Bokeh Off");
+            mBokehText.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mBokehText.getText().equals("Bokeh On")) {
+                        mBokehText.setText("Bokeh Off");
+                        applyBokehMode(false);
+                    } else {
+                        mBokehText.setText("Bokeh On");
+                        applyBokehMode(true);
+                    }
+                }
+            });
+        }
         if(mMFNRSwitch != null){
             if(isMFNREnabled()) mMFNRSwitch.setText("ON");
             else mMFNRSwitch.setText("OFF");
@@ -3137,7 +3153,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             });
         }
-
         mFirstTimeInitialized = true;
     }
 
@@ -3859,13 +3874,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                             createCameraSessionWithSessionConfiguration(id, outputConfigurations, inputConfig,
                                     captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                         }
-                    } else {
-                        if (mSettingsManager.isHeifWriterEncoding() && outputConfigurations != null) {
-                            createCameraSessionWithSessionConfiguration(id, outputConfigurations, null,
-                                    captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
-                        } else {
-                            mCameraDevice[id].createCaptureSession(list, captureSessionCallback, mCameraHandler);
-                        }
+                    } else if (outputConfigurations != null){
+                        createCameraSessionWithSessionConfiguration(id, outputConfigurations, null,
+                                captureSessionCallback, mCameraHandler, mPreviewRequestBuilder[id]);
                     }
                 } else {
                     if (outputConfigurations != null) {
@@ -4505,10 +4516,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
         CURRENT_MODE = mCurrentSceneMode.mode;
         mSettingsManager.init();
-        updateSettingDependencyId();
         mPostProcessor = new PostProcessor(mActivity, this);
-        if(mPostProcessor.isJniAPISupported())
+        if(mPostProcessor.isJniAPISupported()) {
             mPostProcessor.nativeEnablePerfLock();
+            mPostProcessor.nativeC2paSetUp();
+        }
         mFrameProcessor = new FrameProcessor(mActivity, this);
         mContentResolver = mActivity.getContentResolver();
         mLocationManager = new LocationManager(mActivity, this);
@@ -6418,6 +6430,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         mImagExif.add(exif);
                                         mLongImgTitle.add(title);
                                     }
+                                    if(mPostProcessor.isJPEGC2PAEnabled()){
+                                        mPostProcessor.reprocessC2PAImage(title, bytes, image.getWidth(), image.getHeight(), date, orientation,
+                                                mOnMediaSavedListener, mContentResolver);
+                                        image.close();
+                                        return;
+                                    }
                                     if (image.getFormat() == ImageFormat.RAW10 || image.getFormat() == ImageFormat.RAW_SENSOR) {
                                         saveRawImg(bytes, image, name, title);
                                         if (mRawReprocessType != 0) {
@@ -7736,7 +7754,7 @@ private boolean isDevOptionSetting(){
         }
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         Log.d(TAG,"selectMode : " +selectMode);
-        if(selectMode != null && (selectMode.equals("rtb") || selectMode.equals("single_rear_aibokeh"))){
+        if (selectMode != null && (selectMode.equals("rtb") || selectMode.equals("single_rear_aibokeh"))){
             builder.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE, CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS);
         }
         if (!mSettingsManager.isMultiCameraEnabled()) {
@@ -7749,6 +7767,7 @@ private boolean isDevOptionSetting(){
             applyMctf(builder);
             applyQLL(builder);
             applyInSensorZoom(builder);
+            applyIntegratedMode(builder);
             applyEnableStatsVisualizer(builder);
             applyShadingCorrection(builder);
             applyNumHDRExposure(builder);
@@ -7765,7 +7784,6 @@ private boolean isDevOptionSetting(){
         if(raw_ids != null && raw_ids.size() > 0){
             applyMcxRawCbInfo(builder);
         }
-
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.HFR ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
@@ -8171,6 +8189,10 @@ private boolean isDevOptionSetting(){
     @Override
     public void onResumeBeforeSuper() {
         onResumeBeforeSuper(false);
+        //dont need to do enroll at app side, has auto enroll feature
+//        if((mPostProcessor.isJPEGC2PAEnabled() || mPostProcessor.isYUVC2PAEnabled()) && mPostProcessor.isJniAPISupported() && mEnrollResult != 0){
+//            mEnrollResult = mPostProcessor.nativeC2paEnroll("lens_test_PBivUzTH6Ci2SkEi5TrMpLSAw5PQ4GY8KQc32_UqUjRyuAscVYpdxeNltRmQ0Q4g", "/vendor/etc/ssg/license.txt");
+//        }
     }
 
     public void onResumeBeforeSuper(boolean resumeFromRestartAll) {
@@ -8601,7 +8623,7 @@ private boolean isDevOptionSetting(){
     }
 
     private boolean needYUVStream() {
-        if (mPostProcessor.isFilterOn() || getFrameFilters().size() != 0 || mPostProcessor.isSelfieMirrorOn()) {
+        if (mPostProcessor.isFilterOn() || getFrameFilters().size() != 0 || mPostProcessor.isSelfieMirrorOn() || (mPostProcessor.isYUVC2PAEnabled())) {
             return true;
         }
         return false;
@@ -8681,6 +8703,7 @@ private boolean isDevOptionSetting(){
             updateZoomSeekBarVisible();
             updateAICameraSeekBar();
             updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
+            updateBokehText();
             mUI.showRelatedIcons(mCurrentSceneMode.mode);
             updateFlashIcon();
         });
@@ -8775,8 +8798,10 @@ private boolean isDevOptionSetting(){
         if (mCameraRender != null) {
             mCameraRender.destroy();
         }
-        if(mPostProcessor.isJniAPISupported())
+        if(mPostProcessor.isJniAPISupported()) {
             mPostProcessor.nativePerfLockRelease(1);
+            mPostProcessor.nativeC2paTearDown();
+        }
     }
 
     @Override
@@ -13986,6 +14011,14 @@ private boolean isDevOptionSetting(){
         request.set(CaptureModule.INSTANT_AEC_MODE, intValue);
     }
 
+    private void applyIntegratedMode(CaptureRequest.Builder request) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_INTEGRATED_MODE);
+        if (value == null || !mSettingsManager.isIntegratedModeSupported()) 
+            return;
+        int intValue = (value.equals("Off") ? 0 : 1);
+        request.set(INTEGRATED_MODE, intValue);
+    }
+
     private void applySaturationLevel(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SATURATION_LEVEL);
         if (value != null) {
@@ -14001,6 +14034,27 @@ private boolean isDevOptionSetting(){
             request.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, intValue);
         }
     }
+
+    private void applyBokehMode(boolean enable) {
+        CaptureRequest.Builder captureRequest = mPreviewRequestBuilder[getMainCameraId()];
+        if (!checkSessionAndBuilder(mCaptureSession[getMainCameraId()], captureRequest) ||
+                mCurrentSessionClosed ||mPaused) {
+            return;
+        }
+        try {
+            if (enable) {
+                captureRequest.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE,
+                        CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS);
+            } else {
+                captureRequest.set(CaptureRequest.CONTROL_EXTENDED_SCENE_MODE,
+                        CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_DISABLED);
+            }
+            mCaptureSession[getMainCameraId()].setRepeatingRequest(captureRequest.build(), mCaptureCallback, mCameraHandler);
+        } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException e) {
+            Log.e(TAG, "Camera Exception in applyBokehMode, apply failed e="+e);
+        }
+    }
+
     private void applyBufferMode(CaptureRequest.Builder request){
         try {
             String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
@@ -17005,6 +17059,17 @@ private boolean isDevOptionSetting(){
             mUI.showAICameraSeekBar();
         }else{
             mUI.hideAICameraSeekBar();
+        }
+    }
+
+    private void updateBokehText() {
+        if(mSettingsManager.isIntegratedModeSupported()) {
+            String value = mSettingsManager.getValue(SettingsManager.KEY_INTEGRATED_MODE);
+            if (value != null && value.equals("On")) {
+                mBokehText.setVisibility(View.VISIBLE);
+            } else {
+                mBokehText.setVisibility(View.INVISIBLE);
+            }
         }
     }
 

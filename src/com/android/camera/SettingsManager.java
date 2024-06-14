@@ -216,6 +216,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_EV_FOR_LONGEXPOSURE = "pref_camera2_ev_for_longexposure_key";
     public static final String KEY_PREVIEW_EV = "pref_camera2_preview_ev_key";
     public static final String KEY_INSTANT_AEC = "pref_camera2_instant_aec_key";
+    public static final String KEY_INTEGRATED_MODE = "pref_camera2_integrated_mode_key";
     public static final String KEY_SATURATION_LEVEL = "pref_camera2_saturation_level_key";
     public static final String KEY_ANTI_BANDING_LEVEL = "pref_camera2_anti_banding_level_key";
     public static final String KEY_AUTO_HDR = "pref_camera2_auto_hdr_key";
@@ -365,6 +366,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_HDR10P_STATS_KEY = "pref_camera2_hdr10p_stats_key";
 
     public static final String KEY_DCG_BIT_TAG = "pref_camera2_dcg_bit_tag_key";
+    public static final String KEY_C2PA = "pref_camera2_c2pa_key";
+
     private static final String TAG = "SnapCam_SettingsManager";
 
     private static SettingsManager sInstance;
@@ -1308,6 +1311,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private void notifyListeners(List<SettingState> changes) {
         for (Listener listener : mListeners) {
             listener.onSettingsChanged(changes);
+        }
+    }
+
+    public boolean isIntegratedModeSupported() {
+        List<CaptureRequest.Key<?>> availableSessionKeys =
+                mCharacteristics.get(mCameraId).getAvailableSessionKeys();
+        if (availableSessionKeys != null) {
+            boolean sceneMode = availableSessionKeys.contains(
+                    CaptureRequest.CONTROL_EXTENDED_SCENE_MODE);
+            boolean integratedMode = availableSessionKeys.contains(CaptureModule.INTEGRATED_MODE);
+            Log.w(TAG, "is scene mode included: " + sceneMode + ", is IntegratedMode included: " + integratedMode);
+            if (sceneMode && !integratedMode) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return false;
         }
     }
 
@@ -3231,7 +3252,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public int[] getSupportedDcgBitsTags() {
-        int modes[] = {0,1,2};
+        int modes[] = {};
         try {
             modes = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_dcg_bits_tags);

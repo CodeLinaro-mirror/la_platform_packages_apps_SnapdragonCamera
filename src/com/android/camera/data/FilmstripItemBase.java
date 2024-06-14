@@ -87,7 +87,7 @@ public abstract class FilmstripItemBase<T extends FilmstripItemData> implements 
 
     @Override
     public void recycle(@Nonnull View view) {
-        Glide.clear(view);
+        Glide.with(mContext).clear(view);
     }
 
     @Override

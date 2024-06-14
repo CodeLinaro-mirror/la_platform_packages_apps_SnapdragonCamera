@@ -91,7 +91,11 @@ LOCAL_MODULE    := libjni_imageutil
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := image_util_jni.cpp
 LOCAL_CFLAGS    += -ffast-math -O3 -funroll-loops
-LOCAL_HEADER_LIBRARIES := jni_headers vendor_common_inc
-LOCAL_SHARED_LIBRARIES := liblog libcutils
+LOCAL_HEADER_LIBRARIES := jni_headers vendor_common_inc libbinder_ndk_headers libbinder_ndk_helper_headers
+LOCAL_SHARED_LIBRARIES := liblog libcutils libbinder_ndk libutils
+ifeq ($(TARGET_BOARD_PLATFORM),sun)
+    LOCAL_SHARED_LIBRARIES += vendor.qti.hardware.c2pa-V1-ndk
+    LOCAL_CFLAGS += -DENABLE_C2PA_LIB
+endif
 LOCAL_USE_VNDK := true
 include $(BUILD_SHARED_LIBRARY)
