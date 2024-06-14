@@ -72,25 +72,14 @@ public class FlashToggleButton extends RotateImageView {
         String userSetting = mContext.getString(
                 R.string.pref_camera_manual_exp_value_user_setting);
         String manualExposureMode = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_EXPOSURE);
-        String manualFlashMode = mSettingsManager.getValue(SettingsManager.KEY_CAMERA_MANUALFLASH);
-
         if (mIndex == -1 || (redeye != null && redeye.equals("on")) ||
-                (manualExposureMode.equals(userSetting) &&
-                        (manualFlashMode == null || manualFlashMode.equals("0")))||
+                manualExposureMode.equals(userSetting) ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.CINEMATIC ||
                 ((CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB ||
                 CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.SAT) && (!CaptureModule.MCXMODE))) {
             setVisibility(GONE);
-            mSettingsManager.setValue(key, "off");
             return;
         } else {
-            if(manualExposureMode.equals(userSetting) && !mIsVideoFlash
-                    && manualFlashMode != null && manualFlashMode.equals("1")
-                    && mIndex == 1){
-                mIndex = (mIndex + 1) % cameraFlashIcon.length;
-                mSettingsManager.setValueIndex(key, mIndex);
-                setImageResource(cameraFlashIcon[mIndex]);
-            }
             setVisibility(VISIBLE);
         }
 
@@ -108,11 +97,6 @@ public class FlashToggleButton extends RotateImageView {
                     key = SettingsManager.KEY_FLASH_MODE;
                 }
                 mIndex = (mIndex + 1) % icons.length;
-                if(manualExposureMode.equals(userSetting) && !mIsVideoFlash
-                        && manualFlashMode != null && manualFlashMode.equals("1")
-                        && mIndex == 1){
-                    mIndex = (mIndex + 1) % icons.length;
-                }
                 mSettingsManager.setValueIndex(key, mIndex);
                 update();
             }
@@ -138,20 +122,6 @@ public class FlashToggleButton extends RotateImageView {
         } else {
             icons = cameraFlashIcon;
         }
-        setImageResource(icons[mIndex]);
-    }
-    public void changeFlashMode(boolean videoflash){
-        String key;
-        int[] icons;
-        if (videoflash) {
-            icons = videoFlashIcon;
-            key = SettingsManager.KEY_VIDEO_FLASH_MODE;
-        } else {
-            icons = cameraFlashIcon;
-            key = SettingsManager.KEY_FLASH_MODE;
-        }
-        mIndex = (mIndex + 1) % icons.length;
-        mSettingsManager.setValueIndex(key, mIndex);
         setImageResource(icons[mIndex]);
     }
 }
