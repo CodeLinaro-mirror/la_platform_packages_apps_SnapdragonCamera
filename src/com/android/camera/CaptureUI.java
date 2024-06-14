@@ -44,8 +44,6 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Camera.Face;
-import android.hardware.camera2.CameraMetadata;
-import android.hardware.camera2.CaptureResult;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
@@ -216,7 +214,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TextView mTorchLevelApply;
     private TextView mTorchCloseText;
     private TextView mTorchOpenText;
-    private TextView mLowLightText;
     private VerticalSeekBar mTorchbar;
     private VerticalSeekBar mVerticalEvBar;
     private VerticalSeekBar mAICameraSeekBar;
@@ -923,7 +920,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         mStatsNNResult = mRootView.findViewById(R.id.stats_nn_result_info);
         mStatsNNResultText= mRootView.findViewById(R.id.stats_nn_result_text);
-        mLowLightText = mRootView.findViewById(R.id.lowlightboost_text);
 
         mMuteButton = (RotateImageView)mRootView.findViewById(R.id.mute_button);
         mMuteButton.setVisibility(View.VISIBLE);
@@ -1744,28 +1740,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 .append(STATS_EXTENSION_TITLE[4]+" "+info[14]);
         mStatsAecText.setText(stringBuilder.toString());
     }
-    public void updateLowLightText(CaptureResult result) {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_LOWLIGHT_BOOST);
-        if (value != null && value.equals("1")) {
-            try {
-                int aemode = result.get(CaptureResult.CONTROL_AE_MODE);
-                int lowLightBoostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE);
-                if (lowLightBoostState == CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE) {
-                    mLowLightText.setText("LowLightBoost_Active");
-                } else if (lowLightBoostState == CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_INACTIVE) {
-                    mLowLightText.setText("LowLightBoost_InActive");
-                } else {
-                    mLowLightText.setText("LowLightBoost_Unknown");
-                }
-            } catch (NullPointerException e) {
-                mLowLightText.setText("LowLightBoost_Unknown");
-            }
-            mLowLightText.setVisibility(View.VISIBLE);
-        } else {
-            mLowLightText.setVisibility(View.INVISIBLE);
-        }
-    }
-
 
     public void updateStatsNNResultText(byte statsNNWidth, byte statsNNHeight, byte statsNNMapdata, byte statsNNNumroi, int[] statsNNRoiData, int statsNNRoiWeight) {
         mStatsNNResultText.setText(STATS_NN_RESULT_TITLE[0]+Byte.toString(statsNNWidth) +" " + "\r\n" +

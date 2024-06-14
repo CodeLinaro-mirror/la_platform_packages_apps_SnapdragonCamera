@@ -412,13 +412,6 @@ public class SettingsActivity extends PreferenceActivity {
                     case SettingsManager.KEY_EXTENDED_MAX_ZOOM:
                         updateZoomPreference();
                         break;
-                    case SettingsManager.KEY_LOWLIGHT_BOOST:
-                        updateViullPreference();
-                        break;
-                    case SettingsManager.KEY_VIULL:
-                        updateLowLightBoostPreference();
-                        break;
-
                 }
             }
         }
@@ -1650,7 +1643,6 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
                         videoAddList.add(SettingsManager.KEY_VIULL);
-                        videoAddList.add(SettingsManager.KEY_LOWLIGHT_BOOST);
                         videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
                         videoAddList.add(SettingsManager.KEY_C2PA);
                     } else {
@@ -2109,7 +2101,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateMultiResReprocess();
         updatePreviewStabilizationPreference();
         updateViullPreference();
-        updateLowLightBoostPreference();
         updateHfrBufferMode();
         updateFRCPreference();
     }
@@ -2601,23 +2592,9 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setEnabled(false);
             return;
         }
+
         pref.setEnabled(true);
-    }
-    private  void updateLowLightBoostPreference(){
-        ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_LOWLIGHT_BOOST);
-        if (pref == null) return;
-        if(!mSettingsManager.isLowLightBoostSupported()){
-            pref.setValue("0");
-            pref.setEnabled(false);
-            return;
-        }
-        String viull = mSettingsManager.getValue(SettingsManager.KEY_VIULL);
-        if (viull.equals("0")) {
-            pref.setValue("0");
-            pref.setEnabled(false);
-            return;
-        }
-        pref.setEnabled(true);
+
     }
 
     private void updatePreferenceButton(String key) {
