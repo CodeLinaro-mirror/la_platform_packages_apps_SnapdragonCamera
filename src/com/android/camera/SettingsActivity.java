@@ -2078,9 +2078,7 @@ public class SettingsActivity extends PreferenceActivity {
         try {
             String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
             int index = versionName.indexOf(' ');
-            if(index >= 0) {
-                versionName = versionName.substring(0, index);
-            }
+            versionName = versionName.substring(0, index);
             findPreference("version_info").setSummary(versionName);
         } catch (PackageManager.NameNotFoundException e) {
             Log.w(TAG,e.toString());
