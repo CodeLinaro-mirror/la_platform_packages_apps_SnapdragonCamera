@@ -115,10 +115,9 @@ JNIEXPORT int JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativ
 JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paTearDown(JNIEnv* env, jobject thiz);
 JNIEXPORT int JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paEnroll(JNIEnv* env, jobject thiz, jstring apiKey, jstring licenseFile);
 JNIEXPORT jbyteArray JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignMedia(
-        JNIEnv* env, jobject thiz, jint imageType, jint height, jint width, jint stride, jint compression, jint maxThumbnailSize, jint thumbnailCompression, jstring jinputFile,
-        jdouble latitude, jdouble longitude, jdouble altitude, jdouble accuracy, jlong time);
+        JNIEnv* env, jobject thiz, jint imageType, jint height, jint width, jint stride, jint compression, jint maxThumbnailSize, jint thumbnailCompression, jstring jinputFile);
 JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignVideo(
-        JNIEnv* env, jobject thiz, jint height, jint width, jstring jinputFile, jdouble latitude, jdouble longitude, jdouble altitude, jdouble accuracy, jlong time);
+        JNIEnv* env, jobject thiz, jint height, jint width, jstring jinputFile);
 JNIEXPORT int JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paValidateMedia(
         JNIEnv* env, jobject thiz, jint handle);
 #ifdef __cplusplus
@@ -631,8 +630,7 @@ exit:
     return ret;
 }
 
-JNIEXPORT jbyteArray Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignMedia(JNIEnv* env, jobject thiz, jint imageType, jint height, jint width, jint stride, jint compression, jint maxThumbnailSize, jint thumbnailCompression, jstring jinputFile,
-                                                                                              jdouble latitude, jdouble longitude, jdouble altitude, jdouble accuracy, jlong time)
+JNIEXPORT jbyteArray Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignMedia(JNIEnv* env, jobject thiz, jint imageType, jint height, jint width, jint stride, jint compression, jint maxThumbnailSize, jint thumbnailCompression, jstring jinputFile)
 {
     uint8_t *coutput;
     jbyteArray output;
@@ -671,23 +669,7 @@ JNIEXPORT jbyteArray Java_com_android_camera_imageprocessor_PostProcessor_native
     outPair.key = "THUMBNAIL_QUALITY";
     outPair.value = C2PADataType::make<C2PADataType::intValue>(thumbnailCompression);
     inputParam.push_back(std::move(outPair));
-    //for location start
-    outPair.key = "LOCATION_LATITUDE";
-    outPair.value = latitude;
-    inputParam.push_back(std::move(outPair));
-    outPair.key = "LOCATION_LONGITUDE";
-    outPair.value = longitude;
-    inputParam.push_back(std::move(outPair));
-    outPair.key = "LOCATION_ALTITUDE";
-    outPair.value = altitude;
-    inputParam.push_back(std::move(outPair));
-    outPair.key = "LOCATION_ACCURACY";
-    outPair.value = accuracy;
-    inputParam.push_back(std::move(outPair));
-    outPair.key = "LOCATION_TIME";
-    outPair.value = time;
-    inputParam.push_back(std::move(outPair));
-    //for location end
+
     ret = loadFile(inputFile, imageFd);
     T_CHECK_ERR(ret == 0 && (imageFd.fd.get()) >= 0, -1);
 
@@ -710,7 +692,7 @@ exit:
 }
 
 JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignVideo(
-        JNIEnv* env, jobject thiz, jint height, jint width, jstring jinputFile, jdouble latitude, jdouble longitude, jdouble altitude, jdouble accuracy, jlong time)
+        JNIEnv* env, jobject thiz, jint height, jint width, jstring jinputFile)
 {
 #ifdef ENABLE_C2PA_LIB
     const char *inputFile = env->GetStringUTFChars(jinputFile, 0);
@@ -726,26 +708,12 @@ JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nati
     outPair.key = "MEDIA_TYPE";
     outPair.value = C2PADataType::make<C2PADataType::intValue>(2);
     inputParam.push_back(std::move(outPair));
-
-    outPair.key = "LOCATION_LATITUDE";
-    outPair.value = latitude;
-    inputParam.push_back(std::move(outPair));
-
-    outPair.key = "LOCATION_LONGITUDE";
-    outPair.value = longitude;
-    inputParam.push_back(std::move(outPair));
-
-    outPair.key = "LOCATION_ALTITUDE";
-    outPair.value = altitude;
-    inputParam.push_back(std::move(outPair));
-
-    outPair.key = "LOCATION_ACCURACY";
-    outPair.value = accuracy;
-    inputParam.push_back(std::move(outPair));
-
-    outPair.key = "LOCATION_TIME";
-    outPair.value = time;
-    inputParam.push_back(std::move(outPair));
+//    outPair.key = "IMAGE_HEIGHT";
+//    outPair.value = C2PADataType::make<C2PADataType::intValue>(height);
+//    inputParam.push_back(std::move(outPair));
+//    outPair.key = "IMAGE_WIDTH";
+//    outPair.value = C2PADataType::make<C2PADataType::intValue>(width);
+//    inputParam.push_back(std::move(outPair));
 
     ret = loadFile(inputFile, imageFd);
     T_CHECK_ERR(ret == 0 && (imageFd.fd.get()) >= 0, -1);

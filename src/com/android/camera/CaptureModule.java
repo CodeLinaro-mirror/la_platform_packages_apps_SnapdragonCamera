@@ -1338,18 +1338,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Log.d(TAG, "mOnVideoSavedListener onMediaSaved uri :" + uri);
                     if(mSettingsManager.getValue(SettingsManager.KEY_C2PA) != null &&
                             mSettingsManager.getValue(SettingsManager.KEY_C2PA).equals("on")){
-                        Location location = getLocationManager().getCurrentLocation();
-                        double latitude = 0, longitude = 0, altitude = 0, accuracy = 0;
-                        long time = 0;
-                        if(location != null && !location.isMock()) {
-                            Log.d(TAG, "start to do c2pa reprocess: " + location.toString());
-                            latitude = location.getLatitude();
-                            longitude = location.getLongitude();
-                            altitude = location.getAltitude();
-                            accuracy = location.getAccuracy();
-                            time = location.getTime();
-                        }
-                        mPostProcessor.nativeC2paSignVideo(mVideoSize.getHeight(), mVideoSize.getWidth(), mVideoFilename, latitude, longitude, altitude, accuracy, time);
+                        mPostProcessor.nativeC2paSignVideo(mVideoSize.getHeight(), mVideoSize.getWidth(), mVideoFilename);
                     }
                     if (uri != null) {
                         mActivity.notifyNewMedia(uri);
