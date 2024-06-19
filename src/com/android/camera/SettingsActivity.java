@@ -1156,9 +1156,9 @@ public class SettingsActivity extends PreferenceActivity {
             List<String> dcgData = new ArrayList<String>();
             dcgData.add("off");
             for (int i = 0; i < supportedModes.length; i++) {
-                if (supportedModes[i] == 1) {
+                if (supportedModes[i] == 12) {
                     dcgData.add("12BIT");
-                } else if (supportedModes[i] == 2) {
+                } else if (supportedModes[i] == 14) {
                     dcgData.add("14BIT");
                 }
             }

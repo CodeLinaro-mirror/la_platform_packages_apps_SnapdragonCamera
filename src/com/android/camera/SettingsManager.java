@@ -3263,17 +3263,21 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public int[] getSupportedDcgBitsTags() {
-        int modes[] = {};
+        Set<Integer> supported = new HashSet<>();
         try {
-            modes = mCharacteristics.get(getCurrentCameraId())
+            int[] modes = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_dcg_bits_tags);
             for(int mode: modes){
-                Log.d(TAG,"getSupportedDcgBitsTags, mode:" +mode);
+                Log.d(TAG,"getSupportedDcgBitsTags, mode:" +mode + ",value:" + (mode >> 8));
+                supported.add(mode >> 8);
             }
         } catch (Exception e) {
             Log.d(TAG,"getSupportedDcgBitsTags failed");
         }
-        return modes;
+        if(supported.size() > 0){
+            return  supported.stream().mapToInt(Integer::intValue).toArray();
+        }
+        return null;
     }
 
     private boolean isAutoHDRSupported() {

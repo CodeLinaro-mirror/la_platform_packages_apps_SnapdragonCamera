@@ -440,7 +440,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
     public static CameraCharacteristics.Key<int[]> support_dcg_bits_tags =
-            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedHDRmodes.HDRDCGBits", int[].class);
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedHDRmodes.HDRDCGModes", int[].class);
 
     public static CameraCharacteristics.Key<Byte> logical_camera_type =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.logicalCameraType.logical_camera_type", Byte.class);
