@@ -213,10 +213,9 @@ public class SettingsActivity extends PreferenceActivity {
                 updateViullPreference();
                 updateVsrPreference();
             } else if (key.equals(SettingsManager.KEY_SELECT_MODE)) {
-                CaptureModule.CameraMode mode = (CaptureModule.CameraMode)
-                        getIntent().getSerializableExtra(CAMERA_MODULE);
                 updatePdnetTogglePreference();
                 updateViullPreference();
+                updateZoomPreference();
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
                 value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
@@ -451,6 +450,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if(mSettingsManager.KEY_SWITCH_CAMERA .equals(pref.getKey())){
                     checkExposurTimeValue();
+                    updateZoomPreference();
                 }
                 if(mSettingsManager.KEY_EXTENDED_MAX_ZOOM .equals(pref.getKey())){
                     updateZoomPreference();
