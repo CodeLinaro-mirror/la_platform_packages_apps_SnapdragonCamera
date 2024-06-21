@@ -144,6 +144,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String SCENE_MODE_SUNSET_STRING = "10";
     public static final String SCENE_MODE_LANDSCAPE_STRING = "4";
     public static final String KEY_CAMERA_SAVEPATH = "pref_camera2_savepath_key";
+    public static final String KEY_CAMERA_MANUALFLASH = "pref_camera2_manual_flash_key";
+    public static final String KEY_CAMERA_MANUALFLASH_LEVEL = "pref_camera2_manual_flash_level_key";
     public static final String KEY_RECORD_LOCATION = "pref_camera2_recordlocation_key";
     public static final String KEY_JPEG_QUALITY = "pref_camera2_jpegquality_key";
     public static final String KEY_FOCUS_MODE = "pref_camera2_focusmode_key";
@@ -3493,6 +3495,51 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean isFacingFront(int id) {
         int facing = mCharacteristics.get(id).get(CameraCharacteristics.LENS_FACING);
         return facing == CameraCharacteristics.LENS_FACING_FRONT;
+    }
+
+    public int getMaxFlashLevel() {
+        int max = 0;
+        int id = mCaptureModule.getMainCameraId();
+        try {
+            max = mCharacteristics.get(id).get(CameraCharacteristics.FLASH_SINGLE_STRENGTH_MAX_LEVEL);
+            if (CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO) {
+                max = mCharacteristics.get(id).get(CameraCharacteristics.FLASH_TORCH_STRENGTH_MAX_LEVEL);
+            }
+        }catch(NoSuchFieldError e){
+            Log.i(TAG,"e="+e);
+        }
+        return max;
+    }
+
+    public int getDefaultFlashLevel() {
+        int value = 0;
+        int id = mCaptureModule.getMainCameraId();
+        try {
+            value = mCharacteristics.get(id).get(CameraCharacteristics.FLASH_SINGLE_STRENGTH_DEFAULT_LEVEL);
+            if (CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO) {
+                value = mCharacteristics.get(id).get(CameraCharacteristics.FLASH_TORCH_STRENGTH_DEFAULT_LEVEL);
+            }
+        }catch(NoSuchFieldError e){
+            Log.i(TAG,"e="+e);
+        }
+        return value;
+    }
+    public boolean applyManualFlash(){
+        if(CaptureModule.CameraMode.VIDEO != CaptureModule.CURRENT_MODE &&
+                CaptureModule.CameraMode.DEFAULT != CaptureModule.CURRENT_MODE){
+            return false;
+        }
+        String manual = getValue(KEY_CAMERA_MANUALFLASH);
+        String level = getValue(KEY_CAMERA_MANUALFLASH_LEVEL);
+        int maxlevel = getMaxFlashLevel();
+        String flashmode = getValue(CaptureModule.CURRENT_MODE  == CaptureModule.CameraMode.VIDEO ?
+                SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
+        if(manual == null || level == null || flashmode == null || flashmode.equals("off") || maxlevel <= 1){
+            return false;
+        }else if(manual.equals("enable")){
+            return true;
+        }
+        return false;
     }
 
     public boolean isFlashSupported(int id) {

@@ -1282,7 +1282,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int mLockAFAE = LOCK_AF_AE_STATE_NONE;
     private TextView mLockAFAEText;
     private int[] mClickPosition = new int[2];
-
+    private boolean isManualAEC = false;
     private boolean mCaptureTorchTrigger = false;
 
     private class SelfieThread extends Thread {
@@ -5239,7 +5239,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void captureStillPicture(final int id) {
-        Log.i(TAG, "captureStillPicture " + id);
+        Log.i(TAG, "captureStillPicture " + id+",isflashRequired="+isflashRequired);
         mJpegImageData = null;
         mIsRefocus = false;
         if (isDeepZoom()) mSupportZoomCapture = false;
@@ -8741,6 +8741,7 @@ private boolean isDevOptionSetting(){
             updateBokehText();
             mUI.showRelatedIcons(mCurrentSceneMode.mode);
             updateFlashIcon();
+            mUI.updateFlashBar();
         });
         mHandler.post(new Runnable() {
             @Override
@@ -11796,6 +11797,7 @@ private boolean isDevOptionSetting(){
             if (value == null) return;
             builder.set(CaptureRequest.FLASH_MODE, value.equals("on") ?
                     CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
+           setFlashLevel(builder,value);
         } else {
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
@@ -15152,7 +15154,9 @@ private boolean isDevOptionSetting(){
 
     private void setIsoAndExposureTime(CaptureRequest.Builder request, int isoValue, long exposureTime) {
         request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
-        request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+        if(!mSettingsManager.applyManualFlash()) {
+            request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+        }
         request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime);
         request.set(CaptureRequest.SENSOR_SENSITIVITY, isoValue);
 
@@ -15173,6 +15177,7 @@ private boolean isDevOptionSetting(){
         String gainsPriority = mActivity.getString(
                 R.string.pref_camera_manual_exp_value_gains_priority);
         String manualExposureMode = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_EXPOSURE);
+        isManualAEC =false;
         if (manualExposureMode == null) return result;
         if (manualExposureMode.equals(isoPriority)) {
             int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
@@ -15205,6 +15210,7 @@ private boolean isDevOptionSetting(){
                 setIsoValue(request, isoValue, longValue, true);
             }else if(newExpTime > 0 && isoValue >-1){
                 setIsoAndExposureTime(request, isoValue, newExpTime);
+                isManualAEC = true;
             }else{
                 result = false;
                 return  result;
@@ -15593,7 +15599,27 @@ private boolean isDevOptionSetting(){
         }
         applyLowLightBoost(request);
     }
+    private void setFlashLevel(CaptureRequest.Builder request,String flashmode) {
+        if (!mSettingsManager.applyManualFlash()) {
+            return;
+        }
+        String level = mSettingsManager.getValue(mSettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
+        try {
+            request.set(CaptureRequest.FLASH_STRENGTH_LEVEL, Integer.valueOf(level));
+            if (!isManualAEC) {
+                if(flashmode.equals("on")) {
+                    request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                }
+            } else {
+                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
+            }
+            Log.i(TAG, "setFlashLevel level=" + level+",isManualAEC="+isManualAEC+",flashmode="+flashmode);
+        } catch (NoSuchFieldError e) {
+            Log.i(TAG, "e=" + e);
+        }
 
+
+    }
     private void applyTouchTrackFocus(CaptureRequest.Builder request) {
         boolean t2tSupported = false;
         String value = mSettingsManager.getValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS);
@@ -16176,6 +16202,11 @@ private boolean isDevOptionSetting(){
                     mCurrentSceneMode.setSwithCameraId(id,false);
                     restartAll();
                     return;
+                    case SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL:
+                        if(CameraMode.VIDEO == mCurrentSceneMode.mode){
+                            updateVideoFlash(getMainCameraId());
+                            break;
+                        }
                 case SettingsManager.KEY_VIDEO_FLASH_MODE:
                     switch (mCurrentSceneMode.mode) {
                         case PRO_MODE:
@@ -16184,11 +16215,13 @@ private boolean isDevOptionSetting(){
                             break;
                         case VIDEO:
                         case HFR:
+                            mUI.updateFlashBar();
                             updateVideoFlash(getMainCameraId());
                             break;
                     }
                     return;
                 case SettingsManager.KEY_FLASH_MODE:
+                    mUI.updateFlashBar();
                     applyFlashForUIChange(mPreviewRequestBuilder[getMainCameraId()],
                     getMainCameraId());
                     return;
