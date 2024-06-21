@@ -1610,6 +1610,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+
+
     /**
      * A {@link CameraCaptureSession.CaptureCallback} that handles events related to JPEG capture.
      */
@@ -1739,6 +1741,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 }
                 updateT2tTrackerView(result);
+                mActivity.runOnUiThread(() -> {
+                    mUI.updateLowLightText(result);
+                });
             }
 
             detectHDRMode(result, id);
@@ -7966,6 +7971,7 @@ private boolean isDevOptionSetting(){
             applyAICameraStrength(builder);
             applyTargetZoom(builder, 0f);
             applyInStantZoom(builder);
+            //applyLowLightBoost(builder);
         }
         applyColorEffect(builder);
         applyWhiteBalance(builder);
@@ -11554,7 +11560,10 @@ private boolean isDevOptionSetting(){
         if (!mSettingsManager.isMultiCameraEnabled()) {
             if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
                 builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
-                builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                String value = mSettingsManager.getValue(SettingsManager.KEY_LOWLIGHT_BOOST);
+                if(value == null || !value.equals("1")) {
+                    builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                }
             }else{
                 lockAfAeForRequestBuilder(builder, cameraId);
             }
@@ -11790,6 +11799,7 @@ private boolean isDevOptionSetting(){
         } else {
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
+        applyLowLightBoost(builder);
 
     }
 
@@ -14556,6 +14566,14 @@ private boolean isDevOptionSetting(){
             }
         }
     }
+    private void applyLowLightBoost(CaptureRequest.Builder request){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_LOWLIGHT_BOOST);
+        if(value != null && value.equals("1")){
+            request.set(CaptureRequest.CONTROL_AE_MODE,
+                                     CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY);
+        }
+
+    }
     private void updateRGBGraghViewVisibility(final int visibility) {
         mActivity.runOnUiThread(new Runnable() {
             public void run() {
@@ -15573,6 +15591,7 @@ private boolean isDevOptionSetting(){
                 request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
                 break;
         }
+        applyLowLightBoost(request);
     }
 
     private void applyTouchTrackFocus(CaptureRequest.Builder request) {
@@ -17811,7 +17830,6 @@ class MFNRDrawer extends View {
         mCaptureModule = captureModule;
     }
 }
-
 abstract class PhysicalImageListener
         implements ImageReader.OnImageAvailableListener {
     private String mCamId;
