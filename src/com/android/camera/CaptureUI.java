@@ -1384,20 +1384,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
     public void updateFlashBar() {
-        if(CaptureModule.CameraMode.VIDEO != CaptureModule.CURRENT_MODE &&
-                CaptureModule.CameraMode.DEFAULT != CaptureModule.CURRENT_MODE){
-            return;
+        if(mManualFlashLayout == null){
+            mManualFlashLayout= (RelativeLayout) mRootView.findViewById(R.id.manual_flash_layout);
         }
-        String value = mSettingsManager.getValue(mSettingsManager.KEY_CAMERA_MANUALFLASH);
-        String flashmode = mSettingsManager.getValue(CaptureModule.CURRENT_MODE  == CaptureModule.CameraMode.VIDEO ?
-                SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
-        int maxLevel = mSettingsManager.getMaxFlashLevel();
-        mManualFlashLayout= (RelativeLayout) mRootView.findViewById(R.id.manual_flash_layout);
-        if(value == null || value.equals("0") || maxLevel <=1 || flashmode == null ||
-            flashmode.equals("off")){
+        if(!mSettingsManager.applyManualFlash()){
             mManualFlashLayout.setVisibility(View.INVISIBLE);
             return;
         }
+        int maxLevel = mSettingsManager.getMaxFlashLevel();
+
         mManualFlashLayout.setVisibility(View.VISIBLE);
         int defaultValue = mSettingsManager.getDefaultFlashLevel();
         String keyvalue = mSettingsManager.getValue(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
@@ -1410,8 +1405,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             flashLevelTxt = (TextView) mRootView.findViewById(R.id.flash_text);
         }
         flashLevelTxt.setText(keyvalue);
-        int level = 5;
-        final int section = maxLevel/level;
+        final int section = 100/maxLevel;
         if (section == 0){
             return;
         }
@@ -1421,13 +1415,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     int mindex = progress / section;
-                    if (mindex > level - 1) mindex = level - 1;
+                    if (mindex > maxLevel - 1) mindex = maxLevel - 1;
                     int currentIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
                     if (currentIndex != mindex) {
                         mSettingsManager.setValueIndex(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL, mindex);
                         String value = mSettingsManager.getValue(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
                         flashLevelTxt.setText(value);
-
                     }
                 }
 
@@ -2275,6 +2268,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mFlashButton.getVisibility()== View.VISIBLE) {
             mFlashButton.setEnabled(enable);
         }
+    }
+    public void changeFlashMode(boolean isVideoFlash){
+        mFlashButton.changeFlashMode(isVideoFlash);
+    }
+    public void  showFlashButton(){
+        mFlashButton.setVisibility(View.VISIBLE);
+        updateFlashButton(true);
     }
     public void hideFlashButton() {
         mFlashButton.setVisibility(View.GONE);

@@ -7941,7 +7941,7 @@ private boolean isDevOptionSetting(){
     }
 
     private void applyCommonSettings(CaptureRequest.Builder builder, int id) {
-        Log.d(TAG, " applyCommonSettings ZoomFixedSupport: " + mUI.getZoomFixedSupport() + ", mZoomValue :" + mZoomValue);
+        Log.d(TAG, "applyCommonSettings ZoomFixedSupport: " + mUI.getZoomFixedSupport() + ", mZoomValue :" + mZoomValue);
         if (mUI.getZoomFixedSupport()) {
             applyZoomRatio(builder, mZoomValue, id);
         } else {
@@ -11584,6 +11584,7 @@ private boolean isDevOptionSetting(){
             applyExposure(builder);
             applyInStantZoom(builder);
             applyAICameraStrength(builder);
+            applyIsoAndExposureTime(builder);
         }
         applyColorEffect(builder);
     }
@@ -11797,7 +11798,7 @@ private boolean isDevOptionSetting(){
             if (value == null) return;
             builder.set(CaptureRequest.FLASH_MODE, value.equals("on") ?
                     CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
-           setFlashLevel(builder,value);
+           setFlashLevel(builder);
         } else {
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
@@ -15577,6 +15578,7 @@ private boolean isDevOptionSetting(){
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
                 }else{
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
+                    setFlashLevel(request);
                 }
                 break;
             case "auto":
@@ -15599,26 +15601,22 @@ private boolean isDevOptionSetting(){
         }
         applyLowLightBoost(request);
     }
-    private void setFlashLevel(CaptureRequest.Builder request,String flashmode) {
+    private void setFlashLevel(CaptureRequest.Builder request) {
         if (!mSettingsManager.applyManualFlash()) {
             return;
         }
         String level = mSettingsManager.getValue(mSettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
         try {
-            request.set(CaptureRequest.FLASH_STRENGTH_LEVEL, Integer.valueOf(level));
+            request.set(CaptureRequest.FLASH_STRENGTH_LEVEL, CameraUtil.strToInt(level,1));
             if (!isManualAEC) {
-                if(flashmode.equals("on")) {
-                    request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-                }
+                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             } else {
                 request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
             }
-            Log.i(TAG, "setFlashLevel level=" + level+",isManualAEC="+isManualAEC+",flashmode="+flashmode);
+            Log.i(TAG, "setFlashLevel level=" + level+",isManualAEC="+isManualAEC);
         } catch (NoSuchFieldError e) {
             Log.i(TAG, "e=" + e);
         }
-
-
     }
     private void applyTouchTrackFocus(CaptureRequest.Builder request) {
         boolean t2tSupported = false;
@@ -16206,6 +16204,9 @@ private boolean isDevOptionSetting(){
                         if(CameraMode.VIDEO == mCurrentSceneMode.mode){
                             updateVideoFlash(getMainCameraId());
                             break;
+                        } else if(CameraMode.DEFAULT == mCurrentSceneMode.mode) {
+                            applyFlashForUIChange(mPreviewRequestBuilder[getMainCameraId()],
+                                    getMainCameraId());
                         }
                 case SettingsManager.KEY_VIDEO_FLASH_MODE:
                     switch (mCurrentSceneMode.mode) {
@@ -16224,6 +16225,18 @@ private boolean isDevOptionSetting(){
                     mUI.updateFlashBar();
                     applyFlashForUIChange(mPreviewRequestBuilder[getMainCameraId()],
                     getMainCameraId());
+                    return;
+                case SettingsManager.KEY_CAMERA_MANUALFLASH:
+                case SettingsManager.KEY_MANUAL_EXPOSURE:
+                    String manualExposureMode = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_EXPOSURE);
+                    String manualFlashMode = mSettingsManager.getValue(SettingsManager.KEY_CAMERA_MANUALFLASH);
+                    String flashMode =  mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
+                    if(manualExposureMode.equals("user-setting") &&
+                            (manualFlashMode != null && manualFlashMode.equals("1")) &&
+                            mCurrentSceneMode.mode == CameraMode.DEFAULT &&
+                       "auto".equals(flashMode)){
+                        mUI.changeFlashMode(false);
+                    }
                     return;
                 case SettingsManager.KEY_ZSL:
                 case SettingsManager.KEY_AUTO_HDR:

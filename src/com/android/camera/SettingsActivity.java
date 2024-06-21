@@ -1638,6 +1638,8 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_MANUAL_HDR);
                         videoAddList.add(SettingsManager.KEY_VSR);
                         videoAddList.add(SettingsManager.KEY_ONCAPTUREBUFFERLOST_HINT);
+                        videoAddList.add(SettingsManager.KEY_MANUAL_EXPOSURE);
+
                         if (PersistUtil.enableMediaRecorder()) {
                             videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                             if (mSettingsManager.isBLEConnected()) {
