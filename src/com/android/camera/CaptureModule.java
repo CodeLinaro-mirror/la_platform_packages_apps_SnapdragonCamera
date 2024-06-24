@@ -7905,6 +7905,34 @@ private boolean isDevOptionSetting(){
             isflashRequired = false;
         }
     }
+    public void updateFlashMode(boolean inThumbnail){
+        if(mCurrentSceneMode.mode != CameraMode.HFR && mCurrentSceneMode.mode != CameraMode.VIDEO){
+            return;
+        }
+        String flashMode = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_FLASH_MODE);
+        if(flashMode != null && !flashMode.equals("on")){
+            return;
+        }
+        if(mVideoRecordRequestBuilder != null) {
+            try {
+                mVideoRecordRequestBuilder.set(CaptureRequest.FLASH_MODE, inThumbnail ?
+                        CaptureRequest.FLASH_MODE_OFF : CaptureRequest.FLASH_MODE_TORCH);
+                if (isHighSpeedRateCapture()) {
+                    List<CaptureRequest> slowMoRequests = mSuperSlomoCapture ?
+                            createSSMBatchRequest(mVideoRecordRequestBuilder) :
+                            getHighSpeedList((CameraConstrainedHighSpeedCaptureSession) mCurrentSession, mVideoRecordRequestBuilder);
+                    mCurrentSession.setRepeatingBurst(slowMoRequests, mCaptureCallback,
+                            mCameraHandler);
+                } else {
+                    mCurrentSession.setRepeatingRequest(mVideoRecordRequestBuilder.build(),
+                            mCaptureCallback, mCameraHandler);
+                }
+            }catch (CameraAccessException e) {
+            Log.i(TAG, "updateFlashMode error inThumbnail= "+inThumbnail, e);
+        }
+        }
+
+    }
     private void applyMFNRAIDEMode(CaptureRequest.Builder builder){
         if (isAIDE2Enabled()) {
             VendorTagUtil.enableMFNRAIDEMode(builder, (byte)0x01);
@@ -11796,7 +11824,7 @@ private boolean isDevOptionSetting(){
         if (mSettingsManager.isFlashSupported(id)) {
             String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_FLASH_MODE);
             if (value == null) return;
-            builder.set(CaptureRequest.FLASH_MODE, value.equals("on") ?
+            builder.set(CaptureRequest.FLASH_MODE, value.equals("on") && mUI.getFilmstripLayout().getVisibility() != View.VISIBLE ?
                     CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
            setFlashLevel(builder);
         } else {

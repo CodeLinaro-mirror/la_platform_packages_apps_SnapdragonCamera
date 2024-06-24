@@ -2995,6 +2995,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     //mActivity.gotoGallery();
                     mFilmstripLayout.showFilmstrip();
                     showBottomControls();
+                    if (mFilmstripLayout.getVisibility() == View.VISIBLE) {
+                        mModule.updateFlashMode(true);
+                    }
                 }
             }
         });
@@ -3171,7 +3174,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public boolean onBackPressed() {
         if (mFilmstripLayout.getVisibility() == View.VISIBLE) {
-            return mFilmstripLayout.onBackPressed();
+            boolean hide = mFilmstripLayout.onBackPressed();
+            if(hide){
+                mModule.updateFlashMode(false);
+            }
+            return hide;
         }
         if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) {
             switchToPhotoModeDueToError(true);
