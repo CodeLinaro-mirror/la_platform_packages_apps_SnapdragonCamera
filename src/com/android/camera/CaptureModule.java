@@ -8792,40 +8792,36 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setEndOfStream(boolean isResume, boolean isStopRecord) {
-        if (mCurrentSession == null) {
-            return;
-        }
-        CaptureRequest.Builder captureRequestBuilder = null;
+        if (isHighSpeedRateCapture() || mCurrentSession == null) return;
+        CaptureRequest.Builder captureRequestBuilder = mVideoRecordRequestBuilder;
         try {
             if (isResume) {
-                captureRequestBuilder = mVideoRecordRequestBuilder;
                 try {
                     captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
-                } catch(IllegalArgumentException illegalArgumentException) {
+                    Log.i(TAG, "Set endofstream TAG to 0");
+                    mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
+                            mCaptureCallback, mCameraHandler);
+                } catch(IllegalArgumentException e) {
                     Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
                 }
             } else {
-                // is pause or stopRecord
-                if ((mRecordingPausing || mStopRecPending) && (mCurrentSession != null)) {
+                if ((mRecordingPausing || mStopRecPending) && (mCurrentSession != null) && mCameraDevice[getMainCameraId()] != null) {
                     mCurrentSession.stopRepeating();
                     try {
-                        mVideoRecordRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
+                        captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
+                        Log.i(TAG, "Set endofstream TAG to 1");
                     } catch (IllegalArgumentException illegalArgumentException) {
                         Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
                     }
-                    if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
-                        List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                                .createHighSpeedRequestList(
-                                mVideoRecordRequestBuilder.build());
-                        mCurrentSession.captureBurst(requestList, mCaptureCallback, mCameraHandler);
-                    } else if (isSSMEnabled()) {
-                        mCurrentSession.captureBurst(createSSMBatchRequest(mVideoRecordRequestBuilder),
+                    if (isSSMEnabled()) {
+                        mCurrentSession.captureBurst(createSSMBatchRequest(captureRequestBuilder),
                                 mCaptureCallback, mCameraHandler);
                     } else {
-                        mCurrentSession.capture(mVideoRecordRequestBuilder.build(), mCaptureCallback,
+                        mCurrentSession.capture(captureRequestBuilder.build(), mCaptureCallback,
                                 mCameraHandler);
                     }
-                    Log.d(TAG, "Set endofstream TAG is done from APP");
+                    Log.i(TAG, "Set endofstream TAG is done from APP");
+                    captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
                 }
                 if (!isStopRecord) {
                     //is pause record
@@ -8834,37 +8830,27 @@ public class CaptureModule implements CameraModule, PhotoController,
                     } else {
                         setVideoState(VideoState.VIDEO_PAUSE);
                     }
-                    for(MediaRecorder mediaRecorder:mPhysicalMediaRecorders) {
+                    for (MediaRecorder mediaRecorder : mPhysicalMediaRecorders) {
                         if (mediaRecorder != null) {
                             mediaRecorder.pause();
                         }
                     }
-                    captureRequestBuilder = mVideoPreviewRequestBuilder;
-                    applyVideoCommentSettings(captureRequestBuilder, getMainCameraId());
-                } else if (!(mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession)) {
-                    captureRequestBuilder = mVideoPreviewRequestBuilder;
-                    applyVideoCommentSettings(captureRequestBuilder, getMainCameraId());
+                }
+                captureRequestBuilder = mVideoPreviewRequestBuilder;
+                captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
+                applyVideoCommentSettings(captureRequestBuilder, getMainCameraId());
+                Log.d(TAG, "Set endofstream TAG to 0");
+                if( (mCurrentSession != null) && mCameraDevice[getMainCameraId()] != null) {
                     mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
                             mCaptureCallback, mCameraHandler);
                 }
             }
-
-            // set preview at resume and pause, no need repeating at stop
-            if (captureRequestBuilder != null && (mCurrentSession != null) && !isStopRecord) {
-                if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
-                    List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                            .createHighSpeedRequestList(captureRequestBuilder.build());
-                    mCurrentSession.setRepeatingBurst(requestList,
-                            mCaptureCallback, mCameraHandler);
-                } else {
-                    mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
-                            mCaptureCallback, mCameraHandler);
-                }
-            }
-        } catch (CameraAccessException | IllegalStateException | NullPointerException | IllegalArgumentException e) {
+        } catch (CameraAccessException | IllegalStateException | NullPointerException |
+                 IllegalArgumentException e) {
             e.printStackTrace();
         }
     }
+
 
     public void onButtonPause() {
         if (!isRecorderReady())
