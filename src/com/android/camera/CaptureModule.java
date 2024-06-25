@@ -8566,12 +8566,11 @@ private boolean isDevOptionSetting(){
                 if (i >= PHYSICAL_CAMERA_COUNT)
                     break;
                 String videoSize = mSettingsManager.getValue(SettingsManager.KEY_PHYSICAL_VIDEO_SIZE[i]);
-
-                if(videoSize.equals("7680x4320")){
-                    is8KInMulti = true;
-                }
                 if (videoSize != null){
                     mPhysicalVideoSizes[i] = parsePictureSize(videoSize);
+                    if(videoSize.equals("7680x4320")){
+                        is8KInMulti = true;
+                    }
                 } else {
                     mPhysicalVideoSizes[i] = mVideoSize;
                 }
