@@ -367,7 +367,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.bayer_exposure.enable", byte.class);
 
     public static final CaptureRequest.Key<Integer> INTEGRATED_MODE =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMultiCameraIntegratedMode", Integer.class);
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.MultiCameraMode", Integer.class);
 
     public static CameraCharacteristics.Key<int[]> ISO_AVAILABLE_MODES =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.iso_exp_priority.iso_available_modes", int[].class);
@@ -14051,7 +14051,7 @@ private boolean isDevOptionSetting(){
         String value = mSettingsManager.getValue(SettingsManager.KEY_INTEGRATED_MODE);
         if (value == null || !mSettingsManager.isIntegratedModeSupported()) 
             return;
-        int intValue = (value.equals("Off") ? 0 : 1);
+        int intValue = (value.equals("Off") ? 0 : 2);
         request.set(INTEGRATED_MODE, intValue);
     }
 
