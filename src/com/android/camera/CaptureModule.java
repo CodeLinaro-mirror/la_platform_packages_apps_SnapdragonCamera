@@ -976,6 +976,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private CaptureRequest.Builder mVideoPreviewRequestBuilder;
     private Surface mVideoPreviewSurface;
     private Surface mVideoRecordingSurface;
+    private Surface[] mPhysicalMediaSurfaces = new Surface[PHYSICAL_CAMERA_COUNT];
     private boolean mCameraModeSwitcherAllowed = true;
 
     private static final int STATS_DATA = 768;
@@ -2806,7 +2807,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             for (String id : physical_ids){
                 if (mPhysicalMediaRecorders[i] != null){
                     OutputConfiguration configuration = new OutputConfiguration(
-                            mPhysicalMediaRecorders[i].getSurface());
+                            mPhysicalMediaSurfaces[i]);
                     configuration.setPhysicalCameraId(id);
                     outputConfigurations.add(configuration);
                     Log.d(TAG, "add output for physical recording physicalId=" + id);
@@ -2886,8 +2887,16 @@ public class CaptureModule implements CameraModule, PhotoController,
             mVideoRecordRequestBuilder = null;
             setVideoState(VideoState.VIDEO_INIT);
             setupRecordingCommonSettings(cameraId);
+            Set<String> ids = mSettingsManager.getPhysicalFeatureEnableId(
+                    SettingsManager.KEY_PHYSICAL_CAMCORDER);
+            if (ids != null && ids.size() != 0){
+                for (int i=0;i<ids.size();i++) {
+                    mPhysicalMediaSurfaces[i] = MediaCodec.createPersistentInputSurface();
+                }
+            }
             setUpPhysicalMediaRecorder();
             if (PersistUtil.enableMediaRecorder()) {
+                mVideoRecordingSurface = MediaCodec.createPersistentInputSurface();
                 setUpMediaRecorder(cameraId);
             } else {
                 mOnlyVideoEncoder = true;
@@ -2969,9 +2978,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mFrameProcessor.setOutputSurface(surface);
             createVideoSnapshotImageReader();
             createPhysicalVideoSnapshotImageReader();
-            if (PersistUtil.enableMediaRecorder()) {
-                mVideoRecordingSurface = mMediaRecorder != null ? mMediaRecorder.getSurface() : null;
-            } else {
+            if (!PersistUtil.enableMediaRecorder()) {
                 mVideoRecordingSurface = mVideoEncoder.createInputSurface();
                 mVideoEncoder.start();
             }
@@ -2985,8 +2992,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (!PersistUtil.enableMediaRecorder() && (mVideoRecordingSurface != null)) {
                 mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
             }
-            if (mVideoPreviewSurface != null)
+            if (mVideoPreviewSurface != null) {
                 mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
+            }
             mPreviewRequestBuilder[cameraId] = mVideoRecordRequestBuilder;
             mIsPreviewingVideo = true;
 
@@ -5342,6 +5350,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     builder.addTarget(mPhysicalSnapshotImageReaders[i].getSurface());
                     ret++;
                 }
+                if (mPhysicalMediaRecorders[i] != null) {
+                    builder.addTarget(mPhysicalMediaSurfaces[i]);
+                }
             }
             return ret;
         }
@@ -5589,7 +5600,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         if (!(mCurrentSceneMode.mode == CameraMode.HFR && isHighSpeedRateCapture())) {
                             mCaptureSession[i].capture(mPreviewRequestBuilder[i].build(), null, mCameraHandler);
                         }
-                    } catch (CameraAccessException e) {
+                    } catch (CameraAccessException | IllegalArgumentException e) {
                         e.printStackTrace();
                     } catch (IllegalStateException e) {
                         e.printStackTrace();
@@ -6099,7 +6110,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void setRepeating(){
-        Log.i(TAG,"jiao, set repeating ");
         try{
             mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()]
                 .build(), mCaptureCallback, mCameraHandler);
@@ -7870,8 +7880,21 @@ public class CaptureModule implements CameraModule, PhotoController,
                 outConfigurations.add(new OutputConfiguration(mVideoRecordingSurface));
             }
             List<Surface> previewSurfaces = mUI.getPhysicalSurfaces();
+            if(previewSurfaces.size() != 0){
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mUI.hideSurfaceView();
+                    }
+                });
+            }
             for (int i=1;i < mUI.getPhysicalSurfaces().size();i++){
                 mVideoRecordRequestBuilder.addTarget(previewSurfaces.get(i));
+            }
+            for (int i =0; i < mPhysicalMediaRecorders.length; i++) {
+                if (mPhysicalMediaRecorders[i] != null) {
+                    mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
+                }
             }
             outConfigurations.addAll(getPhysicalPreviewOutput());
             outConfigurations.addAll(getPhysicalVideoOutputConfiguration());
@@ -7986,53 +8009,56 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mUI.clearFocus();
             }
             mUI.hideUIwhileRecording();
-            if (isHighSpeedRateCapture()) {
-                //This should be not needed since setRepeatingBurst don't change
-                //Will remove it in next version
-                List<CaptureRequest> slowMoRequests  = mSuperSlomoCapture ?
-                        createSSMBatchRequest(mVideoRecordRequestBuilder) :
-                        ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                                .createHighSpeedRequestList(mVideoRecordRequestBuilder.build());
-                mCurrentSession.setRepeatingBurst(slowMoRequests, mCaptureCallback,
-                        mCameraHandler);
-            } else {
-                if (mSettingsManager.getPhysicalCameraId() != null){
-                    Set<String> physicalId = mSettingsManager.getPhysicalCameraId();
-                    Set<String> physicalRecorderId = mSettingsManager.getPhysicalFeatureEnableId(
-                            SettingsManager.KEY_PHYSICAL_CAMCORDER);
-                    if (physicalRecorderId != null && !physicalId.containsAll(physicalRecorderId)){
-                        mStartRecPending = false;
-                        mIsRecordingVideo = false;
-                        mIsPreviewingVideo = true;
-                        warningToast("Please enable physical cameras of outputs first");
-                        return false;
-                    }
-                    if (mSettingsManager.isLogicalEnable()){
-                        mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
-                    }
-                    int i =0;
-                    for (MediaRecorder recorder:mPhysicalMediaRecorders){
-                        if (recorder != null){
-                            mVideoRecordRequestBuilder.addTarget(recorder.getSurface());
-                        }
-                        i++;
-                    }
-                } else {
-                    if (PersistUtil.enableMediaRecorder()) {
-                        mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
-                        String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
-                        if("3".equals(hvx_shdr)){
-                            for (ImageReader reader : mHvxShdrRawReader){
-                                if (reader != null)
-                                    mVideoRecordRequestBuilder.addTarget(reader.getSurface());
-                            }
-                        }
+            if (mSettingsManager.getPhysicalCameraId() != null){
+                cleanupEmptyFile();
+                setUpMediaRecorder(getMainCameraId());
+                setUpPhysicalMediaRecorder();
+                Set<String> physicalId = mSettingsManager.getPhysicalCameraId();
+                Set<String> physicalRecorderId = mSettingsManager.getPhysicalFeatureEnableId(
+                        SettingsManager.KEY_PHYSICAL_CAMCORDER);
+                if (physicalRecorderId != null && !physicalId.containsAll(physicalRecorderId)){
+                    mStartRecPending = false;
+                    mIsRecordingVideo = false;
+                    mIsPreviewingVideo = true;
+                    warningToast("Please enable physical cameras of outputs first");
+                    return false;
+                }
+                if (mSettingsManager.isLogicalEnable()){
+                    mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                }
+                for (int i =0; i < mPhysicalMediaRecorders.length; i++) {
+                    if (mPhysicalMediaRecorders[i] != null) {
+                        mVideoRecordRequestBuilder.addTarget(mPhysicalMediaSurfaces[i]);
                     }
                 }
-                int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
-                        mSettingsManager.getVideoFPS());
-                if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
-                    limitPreviewFPS();
+            } else {
+                if (PersistUtil.enableMediaRecorder()) {
+                    cleanupEmptyFile();
+                    setUpMediaRecorder(getMainCameraId());
+                    mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                    String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
+                    if("3".equals(hvx_shdr)){
+                        for (ImageReader reader : mHvxShdrRawReader){
+                            if (reader != null)
+                                mVideoRecordRequestBuilder.addTarget(reader.getSurface());
+                        }
+                    }
+                }else {
+                    mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                }
+            }
+
+            int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
+                    mSettingsManager.getVideoFPS());
+            if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                limitPreviewFPS();
+            } else {
+                if (isHighSpeedRateCapture()) {
+                    List<CaptureRequest> burstRequests =
+                            ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
+                                    .createHighSpeedRequestList(mVideoRecordRequestBuilder.build());
+                    mCurrentSession.setRepeatingBurst(burstRequests, mCaptureCallback,
+                            mCameraHandler);
                 } else {
                     mCurrentSession.setRepeatingRequest(mVideoRecordRequestBuilder.build(),
                             mCaptureCallback, mCameraHandler);
@@ -8067,18 +8093,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     keepScreenOn();
                 }
             });
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
+        } catch (IllegalArgumentException | IllegalStateException | NullPointerException | CameraAccessException | IOException e) {
+            Log.e(TAG,e.toString());
             quitRecordingWithError("IllegalArgumentException");
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
-            quitRecordingWithError("IllegalStateException");
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-            quitRecordingWithError("NullPointException");
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-            quitRecordingWithError("CameraAccessException");
         }
         mStartRecPending = false;
         return true;
@@ -8175,6 +8192,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         } catch (RuntimeException e) {
             Toast.makeText(mActivity, "Could not start recording.\n " +
                     "Can't start video recording.", Toast.LENGTH_LONG).show();
+            Log.w(TAG, "Can't start video recording =", e.fillInStackTrace());
             releaseMediaRecorder();
             releaseAudioFocus();
             mStartRecPending = false;
@@ -8774,40 +8792,36 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setEndOfStream(boolean isResume, boolean isStopRecord) {
-        if (mCurrentSession == null) {
-            return;
-        }
-        CaptureRequest.Builder captureRequestBuilder = null;
+        if (isHighSpeedRateCapture() || mCurrentSession == null) return;
+        CaptureRequest.Builder captureRequestBuilder = mVideoRecordRequestBuilder;
         try {
             if (isResume) {
-                captureRequestBuilder = mVideoRecordRequestBuilder;
                 try {
                     captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
-                } catch(IllegalArgumentException illegalArgumentException) {
+                    Log.i(TAG, "Set endofstream TAG to 0");
+                    mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
+                            mCaptureCallback, mCameraHandler);
+                } catch(IllegalArgumentException e) {
                     Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
                 }
             } else {
-                // is pause or stopRecord
-                if ((mRecordingPausing || mStopRecPending) && (mCurrentSession != null)) {
+                if ((mRecordingPausing || mStopRecPending) && (mCurrentSession != null) && mCameraDevice[getMainCameraId()] != null) {
                     mCurrentSession.stopRepeating();
                     try {
-                        mVideoRecordRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
+                        captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
+                        Log.i(TAG, "Set endofstream TAG to 1");
                     } catch (IllegalArgumentException illegalArgumentException) {
                         Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
                     }
-                    if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
-                        List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                                .createHighSpeedRequestList(
-                                mVideoRecordRequestBuilder.build());
-                        mCurrentSession.captureBurst(requestList, mCaptureCallback, mCameraHandler);
-                    } else if (isSSMEnabled()) {
-                        mCurrentSession.captureBurst(createSSMBatchRequest(mVideoRecordRequestBuilder),
+                    if (isSSMEnabled()) {
+                        mCurrentSession.captureBurst(createSSMBatchRequest(captureRequestBuilder),
                                 mCaptureCallback, mCameraHandler);
                     } else {
-                        mCurrentSession.capture(mVideoRecordRequestBuilder.build(), mCaptureCallback,
+                        mCurrentSession.capture(captureRequestBuilder.build(), mCaptureCallback,
                                 mCameraHandler);
                     }
-                    Log.d(TAG, "Set endofstream TAG is done from APP");
+                    Log.i(TAG, "Set endofstream TAG is done from APP");
+                    captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
                 }
                 if (!isStopRecord) {
                     //is pause record
@@ -8816,37 +8830,27 @@ public class CaptureModule implements CameraModule, PhotoController,
                     } else {
                         setVideoState(VideoState.VIDEO_PAUSE);
                     }
-                    for(MediaRecorder mediaRecorder:mPhysicalMediaRecorders) {
+                    for (MediaRecorder mediaRecorder : mPhysicalMediaRecorders) {
                         if (mediaRecorder != null) {
                             mediaRecorder.pause();
                         }
                     }
-                    captureRequestBuilder = mVideoPreviewRequestBuilder;
-                    applyVideoCommentSettings(captureRequestBuilder, getMainCameraId());
-                } else if (!(mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession)) {
-                    captureRequestBuilder = mVideoPreviewRequestBuilder;
-                    applyVideoCommentSettings(captureRequestBuilder, getMainCameraId());
+                }
+                captureRequestBuilder = mVideoPreviewRequestBuilder;
+                captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
+                applyVideoCommentSettings(captureRequestBuilder, getMainCameraId());
+                Log.d(TAG, "Set endofstream TAG to 0");
+                if( (mCurrentSession != null) && mCameraDevice[getMainCameraId()] != null) {
                     mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
                             mCaptureCallback, mCameraHandler);
                 }
             }
-
-            // set preview at resume and pause, no need repeating at stop
-            if (captureRequestBuilder != null && (mCurrentSession != null) && !isStopRecord) {
-                if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
-                    List requestList = ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
-                            .createHighSpeedRequestList(captureRequestBuilder.build());
-                    mCurrentSession.setRepeatingBurst(requestList,
-                            mCaptureCallback, mCameraHandler);
-                } else {
-                    mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
-                            mCaptureCallback, mCameraHandler);
-                }
-            }
-        } catch (CameraAccessException | IllegalStateException | NullPointerException | IllegalArgumentException e) {
+        } catch (CameraAccessException | IllegalStateException | NullPointerException |
+                 IllegalArgumentException e) {
             e.printStackTrace();
         }
     }
+
 
     public void onButtonPause() {
         if (!isRecorderReady())
@@ -8940,15 +8944,15 @@ public class CaptureModule implements CameraModule, PhotoController,
         mStopRecPending = true;
         mRecordingPausing = false;
         mIsRecordingVideo = false;
-        mIsPreviewingVideo = false;
+
+        if (PersistUtil.enableMediaRecorder()) {
+            mIsPreviewingVideo = true;
+        } else {
+            mIsPreviewingVideo = false;
+        }
         boolean shouldAddToMediaStoreNow = false;
         // Stop recording
         setEndOfStream(false, true);
-        mFrameProcessor.setVideoOutputSurface(null);
-        mFrameProcessor.onClose();
-        if (mLiveShotInitHeifWriter != null) {
-            mLiveShotInitHeifWriter.close();
-        }
         mRecordingStarted = false;
 
         if (PersistUtil.enableMediaRecorder()) {
@@ -8990,13 +8994,51 @@ public class CaptureModule implements CameraModule, PhotoController,
                 e.printStackTrace();
             }
         }
-        if (!mPaused && !isAbortCapturesEnable()) {
-            setVideoFlashOff();
-            closePreviewSession();
+        if(!isHighSpeedRateCapture()) {
+            mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        }
+        for (int i =0; i < mPhysicalMediaRecorders.length; i++) {
+            if (mPhysicalMediaRecorders[i] != null) {
+                mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
+            }
+        }
+        if (!PersistUtil.enableMediaRecorder()) {
+            mFrameProcessor.setVideoOutputSurface(null);
+            mFrameProcessor.onClose();
+            if (mLiveShotInitHeifWriter != null) {
+                mLiveShotInitHeifWriter.close();
+            }
+        } else {
+            //stop without config stream
+            if((mCurrentSession != null) && mCameraDevice[getMainCameraId()] != null) {
+                try {
+                    if (isHighSpeedRateCapture()) {
+                        List<CaptureRequest> burstRequests  =
+                                ((CameraConstrainedHighSpeedCaptureSession) mCurrentSession)
+                                        .createHighSpeedRequestList(mVideoRecordRequestBuilder.build());
+                        mCurrentSession.setRepeatingBurst(burstRequests, mCaptureCallback,
+                                mCameraHandler);
+                    } else {
+                        mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
+                                mCaptureCallback, mCameraHandler);
+                    }
+                } catch (CameraAccessException e) {
+                    Log.w(TAG, "stopRecordingVideo: " + e);
+                }
+            }
         }
 
+        if (!mPaused && !isAbortCapturesEnable()) {
+            if (!PersistUtil.enableMediaRecorder()) {
+                setVideoFlashOff();
+                closePreviewSession();
+            } else {
+                applyZoomAndUpdate();
+            }
+        }
         Log.d(TAG, "stopRecordingVideo done. Time=" +
                 (System.currentTimeMillis() - mStopRecordingTime) + "ms");
+
         AccessibilityUtils.makeAnnouncement(mUI.getVideoButton(),
                 mActivity.getString(R.string.video_recording_stopped));
         if (shouldAddToMediaStoreNow) {
@@ -9030,7 +9072,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             mFrameProcessor.onOpen(getFrameProcFilterId(), mPreviewSize);
         }
         if (mIntentMode != INTENT_MODE_VIDEO && !mPaused) {
-            createSessions();
+            if (!PersistUtil.enableMediaRecorder()) {
+                releaseAudioFocus();
+                createSessions();
+            }
         }
         mHandler.post(new Runnable() {
             @Override
@@ -9194,6 +9239,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.e(TAG, "cannot access the file: " + e);
             }
 
+            if (mCurrentVideoValues == null) {
+                Log.e(TAG, "Invalid video values");
+                return;
+            }
             mActivity.getMediaSaveService().addVideo(mVideoFilename,
                     duration, mCurrentVideoValues,
                     mOnVideoSavedListener, mContentResolver);
@@ -9274,6 +9323,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
                     int rotation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
                     recorder.setOrientationHint(rotation);
+                    recorder.setInputSurface(mPhysicalMediaSurfaces[i]);
                     mPhysicalMediaRecorders[i] = recorder;
                     try {
                         recorder.prepare();
@@ -10183,14 +10233,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 return;
             }
         }
+        mMediaRecorder.setInputSurface(mVideoRecordingSurface);
         prepareMediaRecorder();
-        mMediaRecorder.setOnErrorListener(this);
-        mMediaRecorder.setOnInfoListener(this);
     }
 
     private void prepareMediaRecorder() {
         try {
             mMediaRecorder.prepare();
+            mMediaRecorder.setOnErrorListener(this);
+            mMediaRecorder.setOnInfoListener(this);
         } catch (IOException e) {
             Log.e(TAG, "prepare failed for " + mVideoFilename, e);
             releaseMediaRecorder();
@@ -11426,25 +11477,31 @@ public class CaptureModule implements CameraModule, PhotoController,
                 ComboPreferences.getLocalSharedPreferencesName(mActivity,
                         String.valueOf(getMainCameraId())), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = pref.edit();
-        editor.putFloat(SettingsManager.KEY_AWB_RAGIN_VALUE, mRGain);
-        editor.putFloat(SettingsManager.KEY_AWB_GAGIN_VALUE, mGGain);
-        editor.putFloat(SettingsManager.KEY_AWB_BAGIN_VALUE, mBGain);
-        editor.putFloat(SettingsManager.KEY_AWB_CCT_VALUE, mCctAWB);
-        editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_0, mAWBDecisionAfterTC[0]);
-        editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_1, mAWBDecisionAfterTC[1]);
-        if (mAECSensitivity.length == 3) {
-            editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_0, mAECSensitivity[0]);
-            editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_1, mAECSensitivity[1]);
-            editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_2, mAECSensitivity[2]);
+        if(mExistAWBVendorTag) {
+            editor.putFloat(SettingsManager.KEY_AWB_RAGIN_VALUE, mRGain);
+            editor.putFloat(SettingsManager.KEY_AWB_GAGIN_VALUE, mGGain);
+            editor.putFloat(SettingsManager.KEY_AWB_BAGIN_VALUE, mBGain);
+            editor.putFloat(SettingsManager.KEY_AWB_CCT_VALUE, mCctAWB);
+            editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_0, mAWBDecisionAfterTC[0]);
+            editor.putFloat(SettingsManager.KEY_AWB_DECISION_AFTER_TC_1, mAWBDecisionAfterTC[1]);
         }
-        if (mAECLuxIndex != -1.0f) {
-            editor.putFloat(SettingsManager.KEY_AEC_LUX_INDEX, mAECLuxIndex);
+        if (mExistAECWarmTag) {
+            if (mAECSensitivity.length == 3) {
+                editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_0, mAECSensitivity[0]);
+                editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_1, mAECSensitivity[1]);
+                editor.putFloat(SettingsManager.KEY_AEC_SENSITIVITY_2, mAECSensitivity[2]);
+            }
+            if (mAECLuxIndex != -1.0f) {
+                editor.putFloat(SettingsManager.KEY_AEC_LUX_INDEX, mAECLuxIndex);
+            }
         }
-        if (mAdrcGain != -1.0f) {
-            editor.putFloat(SettingsManager.KEY_AEC_ADRC_GAIN, mAdrcGain);
-        }
-        if (mDarkBoostGain != -1.0f) {
-            editor.putFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, mDarkBoostGain);
+        if (mExistAECDarkGainTag) {
+            if (mAdrcGain != -1.0f) {
+                editor.putFloat(SettingsManager.KEY_AEC_ADRC_GAIN, mAdrcGain);
+            }
+            if (mDarkBoostGain != -1.0f) {
+                editor.putFloat(SettingsManager.KEY_AEC_DARK_BOOST_GAIN, mDarkBoostGain);
+            }
         }
         editor.apply();
     }
@@ -11632,6 +11689,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             List<Surface> previews = mUI.getPhysicalSurfaces();
             if(mSettingsManager.isLogicalEnable()){
                 builder.addTarget(previews.get(0));
+                if(isRecordingVideo()) {
+                    builder.addTarget(mVideoRecordingSurface);
+                }
                 if (surfaceList != null){
                     surfaceList.add(previews.get(0));
                 }
