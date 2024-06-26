@@ -418,6 +418,9 @@ public class SettingsActivity extends PreferenceActivity {
                     case SettingsManager.KEY_VIULL:
                         updateLowLightBoostPreference();
                         break;
+                    case SettingsManager.KEY_PHYSICAL_JPEG_R_CALLBACK:
+                        recreate();
+                        break;
 
                 }
             }
@@ -1879,7 +1882,13 @@ public class SettingsActivity extends PreferenceActivity {
             addDeveloperOptions(developer,aiCameraList);
         }
     }
-
+    private void clearKeyValue(String key){
+        String value = mSettingsManager.getValue(key);
+        if(value != null && !value.equals("")){
+            Set<String> valueSet = new HashSet<>();
+            mSettingsManager.setValue(key,valueSet);
+        }
+    }
     private void updatePhysicalPreferences() {
         PreferenceGroup developer = (PreferenceGroup) findPreference("developer");
         CaptureModule.CameraMode mode =
@@ -1888,11 +1897,20 @@ public class SettingsActivity extends PreferenceActivity {
         final ArrayList<String> multiCameraPhotoList = new ArrayList<String>() {
             {
                 add(SettingsManager.KEY_PHYSICAL_CAMERA);
-                add(SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK);
                 add(SettingsManager.KEY_PHYSICAL_JPEG_R_CALLBACK);
-                add(SettingsManager.KEY_PHYSICAL_YUV_CALLBACK);
-                add(SettingsManager.KEY_PHYSICAL_YUV10BIT_CALLBACK);
-                add(SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
+                Set<String> jpegR_ids = mSettingsManager.getPhysicalFeatureEnableId(
+                        SettingsManager.KEY_PHYSICAL_JPEG_R_CALLBACK);
+                if (jpegR_ids == null) {
+                    add(SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK);
+                    add(SettingsManager.KEY_PHYSICAL_YUV_CALLBACK);
+                    add(SettingsManager.KEY_PHYSICAL_YUV10BIT_CALLBACK);
+                    add(SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
+                }else{
+                    clearKeyValue(SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK);
+                    clearKeyValue(SettingsManager.KEY_PHYSICAL_YUV_CALLBACK);
+                    clearKeyValue(SettingsManager.KEY_PHYSICAL_YUV10BIT_CALLBACK);
+                    clearKeyValue(SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
+                }
                 if(!mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                     add(SettingsManager.KEY_PHYSICAL_HDR);
                     add(SettingsManager.KEY_PHYSICAL_MFNR);
