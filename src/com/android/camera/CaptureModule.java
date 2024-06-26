@@ -1039,9 +1039,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     private Handler mImageAvailableHandler;
     private Handler mCaptureCallbackHandler;
     private Handler mMpoSaveHandler;
-    private Handler mZoomHandler;
-    private long mZoomTime;
-
     /**
      * An {@link ImageReader} that handles still image capture.
      */
@@ -1362,34 +1359,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         CameraCaptureCallback(int cameraId) {
             mCamId = cameraId;
-        }
-    }
-
-    private class ZoomHandler extends Handler{
-        public static final int MSG_UPDATE_ZOOM = 0;
-        public static final int MSG_UPDATE_ZOOM_INSTANT = 1;
-        ZoomHandler(Looper looper){
-            super(looper);
-        }
-        @Override
-        public void handleMessage(Message msg) {
-            int what = msg.what;
-            int id = CURRENT_ID;
-            switch(what) {
-                case MSG_UPDATE_ZOOM:
-                    applyZoomAndUpdate(id,false);
-                    mUI.updateFaceViewCameraBound(mCropRegion[id]);
-                    mUI.updateT2TCameraBound(mCropRegion[id]);
-                    mUI.updateStatsNNCameraBound(mCropRegion[id]);
-                    mUI.updateAFBound(mCropRegion[id]);
-                    break;
-
-                case MSG_UPDATE_ZOOM_INSTANT:
-                    removeMessages(MSG_UPDATE_ZOOM);
-                    applyZoomAndUpdate(id,true);
-                    sendEmptyMessageDelayed(MSG_UPDATE_ZOOM,30);
-                    break;
-            }
         }
     }
 
@@ -7774,7 +7743,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         mImageAvailableHandler = new Handler(mImageAvailableThread.getLooper());
         mCaptureCallbackHandler = new Handler(mCaptureCallbackThread.getLooper());
         mMpoSaveHandler = new MpoSaveHandler(mMpoSaveThread.getLooper());
-        mZoomHandler = new ZoomHandler(mCaptureCallbackThread.getLooper());
         mBackgroundThreadFlag = true;
         Log.i(TAG, "startBackgroundThread");
     }
@@ -10050,12 +10018,10 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void applyZoomAndUpdate() {
-        long current = System.currentTimeMillis();
-        if(current - mZoomTime > 24 && mZoomHandler != null){
-            mZoomHandler.sendEmptyMessage(ZoomHandler.MSG_UPDATE_ZOOM_INSTANT);
-            mZoomTime = current;
-        }
-
+        applyZoomAndUpdate(getMainCameraId(),false);
+        mUI.updateFaceViewCameraBound(mCropRegion[getMainCameraId()]);
+        mUI.updateT2TCameraBound(mCropRegion[getMainCameraId()]);
+        mUI.updateStatsNNCameraBound(mCropRegion[getMainCameraId()]);
     }
 
     private void updateZoom() {
