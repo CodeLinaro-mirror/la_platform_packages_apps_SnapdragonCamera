@@ -1149,19 +1149,17 @@ public class SettingsActivity extends PreferenceActivity {
             dcgModeTitle = mManualHDRDialog.findViewById(R.id.dcg_mode_text);
             dcgItems = mManualHDRDialog.findViewById(R.id.dcg_list);
         }
-        if(mSettingsManager.isSHDREnable()) {
+        int[] supportedModes = mSettingsManager.getSupportedDcgBitsTags();
+        if(mSettingsManager.isSHDREnable() && supportedModes != null && supportedModes.length > 0) {
             dcgModeTitle.setVisibility(View.VISIBLE);
             dcgItems.setVisibility(View.VISIBLE);
             List<String> dcgData = new ArrayList<String>();
             dcgData.add("off");
-            int[] supportedModes = mSettingsManager.getSupportedDcgBitsTags();
-            if(supportedModes != null || supportedModes.length > 0){
-                for (int i = 0; i < supportedModes.length; i++) {
-                    if (supportedModes[i] == 1) {
-                        dcgData.add("12BIT");
-                    } else if (supportedModes[i] == 2) {
-                        dcgData.add("14BIT");
-                    }
+            for (int i = 0; i < supportedModes.length; i++) {
+                if (supportedModes[i] == 1) {
+                    dcgData.add("12BIT");
+                } else if (supportedModes[i] == 2) {
+                    dcgData.add("14BIT");
                 }
             }
             RadioListAdapter arrayDapter = new RadioListAdapter(this, dcgData);
@@ -1593,6 +1591,9 @@ public class SettingsActivity extends PreferenceActivity {
                     for (String removeKey : videoOnlyList) {
                         removePreference(removeKey, developer);
                     }
+                    if (!mSettingsManager.isIntegratedModeSupported()) {
+                        removePreference(SettingsManager.KEY_INTEGRATED_MODE, developer);
+                    }
                     if (!PersistUtil.isMultiResolutionImageReaderEnabled() ||
                             !mSettingsManager.isMultiResolutionSupported()) {
                         removePreference(SettingsManager.KEY_MULTIRESIMAGEREADER, developer);
@@ -1643,6 +1644,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
                         videoAddList.add(SettingsManager.KEY_VIULL);
                         videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
+                        videoAddList.add(SettingsManager.KEY_C2PA);
                     } else {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
@@ -2464,11 +2466,23 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref != null) {
             if (pref.getEntries() != null && pref.getEntries().length == 1) {
                 pref.setEnabled(false);
+                return;
             } else if (mode == CaptureModule.CameraMode.VIDEO) {
                 String hdrmode = mSettingsManager.getVideoHdrMode();
                 if (hdrmode.toLowerCase().contains("mfhdr")) {
                     pref.setValue("off");
                     pref.setEnabled(false);
+                    return;
+                }
+            }
+            ListPreference lapsepref = (ListPreference)findPreference(
+                    SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL);
+            if(lapsepref != null){
+                String lapsvalue = lapsepref.getValue();
+                if(lapsvalue != null && !lapsvalue.equals("0")){
+                    pref.setValue("off");
+                    pref.setEnabled(false);
+                    return;
                 }
             }
         }
@@ -2557,13 +2571,6 @@ public class SettingsActivity extends PreferenceActivity {
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         String selectMode = mSettingsManager.getValue(mSettingsManager.KEY_SELECT_MODE);
         if (selectMode.equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
-            pref.setValue("0");
-            pref.setEnabled(false);
-            return;
-        }
-
-        String videoHdrMode = mSettingsManager.getVideoHdrMode();
-        if (videoHdrMode != null && videoHdrMode.toLowerCase().contains("mfhdr")) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;

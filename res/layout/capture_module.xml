@@ -462,8 +462,7 @@
         android:textSize="13sp"
         android:gravity="center"
         android:text="ON"
-        android:visibility="gone"
-        />
+        android:visibility="gone" />
 
     <SeekBar
         android:layout_width="140dp"
@@ -488,8 +487,7 @@
         android:textColor="@android:color/white"
         android:textSize="15sp"
         android:text="3"
-        android:visibility="gone"
-        />
+        android:visibility="gone" />
     </FrameLayout>
     <TextView
         android:id="@+id/offline_dump_trigger"
@@ -505,7 +503,17 @@
         android:clickable="true"
         android:background="#D3D3D3"
         android:textSize="12sp"/>
-
+    <TextView
+        android:id="@+id/bokeh_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="63dip"
+        android:layout_marginLeft="280dip"
+        android:clickable="true"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:text="3"
+        android:visibility="gone" />
 
     <FrameLayout
         android:layout_width="match_parent"

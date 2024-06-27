@@ -18,6 +18,7 @@ package com.android.camera.data;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.opengl.EGL14;
 import android.opengl.EGLConfig;
@@ -29,16 +30,11 @@ import android.opengl.GLES20;
 import com.android.camera.util.Log;
 import com.android.camera.util.Size;
 import org.codeaurora.snapcam.R;
-import com.bumptech.glide.DrawableRequestBuilder;
-import com.bumptech.glide.GenericRequestBuilder;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.load.Key;
-import com.bumptech.glide.load.resource.bitmap.BitmapEncoder;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.load.resource.gif.GifResourceEncoder;
-import com.bumptech.glide.load.resource.gifbitmap.GifBitmapWrapperResourceEncoder;
-import com.bumptech.glide.load.resource.transcode.BitmapToGlideDrawableTranscoder;
+import com.bumptech.glide.request.RequestOptions;
 
 /**
  * Manage common glide image requests for the camera filmstrip.
@@ -93,33 +89,24 @@ public final class GlideFilmstripManager {
     public static final int MAXIMUM_FULL_RES_PIXELS = EST_PIXELS_PER_MILLI * 45 /* millis */;
     public static final int JPEG_COMPRESS_QUALITY = 90;
 
-    private final GenericRequestBuilder<Uri, ?, Bitmap, GlideDrawable> mTinyImageBuilder;
-    private final DrawableRequestBuilder<Uri> mLargeImageBuilder;
+    private final RequestBuilder<Drawable> mTinyImageBuilder;
+    private final RequestBuilder<Drawable> mLargeImageBuilder;
     private Context mContext;
 
     public GlideFilmstripManager(Context context) {
         mContext = context;
-        Glide glide = Glide.get(context);
-        BitmapEncoder bitmapEncoder = new BitmapEncoder(Bitmap.CompressFormat.JPEG,
-              JPEG_COMPRESS_QUALITY);
-        GifBitmapWrapperResourceEncoder drawableEncoder = new GifBitmapWrapperResourceEncoder(
-              bitmapEncoder,
-              new GifResourceEncoder(glide.getBitmapPool()));
         RequestManager request = Glide.with(context);
 
         mTinyImageBuilder = request
-              .fromMediaStore()
-              .asBitmap() // This prevents gifs from animating at tiny sizes.
-              .transcode(new BitmapToGlideDrawableTranscoder(context), GlideDrawable.class)
+                .asDrawable()
               .fitCenter()
-              .placeholder(DEFAULT_PLACEHOLDER_RESOURCE)
-              .dontAnimate();
+                .apply(new RequestOptions().placeholder(DEFAULT_PLACEHOLDER_RESOURCE))
+                .dontAnimate();
 
         mLargeImageBuilder = request
-              .fromMediaStore()
-              .encoder(drawableEncoder)
+                .asDrawable()
               .fitCenter()
-              .placeholder(DEFAULT_PLACEHOLDER_RESOURCE)
+                .apply(new RequestOptions().placeholder(DEFAULT_PLACEHOLDER_RESOURCE))
               .dontAnimate();
     }
 
@@ -128,7 +115,7 @@ public final class GlideFilmstripManager {
      * as large as we can reasonably load into a view without causing massive
      * jank problems or blank frames due to overly large textures.
      */
-    public final DrawableRequestBuilder<Uri> loadFull(Uri uri, Key key, Size original, int orientation, int format) {
+    public final RequestBuilder<Drawable> loadFull(Uri uri, Key key, Size original, int orientation, int format) {
         Size size = clampSize(original, MAXIMUM_FULL_RES_PIXELS, getMaxImageDisplaySize());
         if(format == 0 || format == 1) {
             orientation = 0;
@@ -146,7 +133,7 @@ public final class GlideFilmstripManager {
      * smaller than loadFull, but is intended be large enough to fill the screen
      * pixels.
      */
-    public DrawableRequestBuilder<Uri> loadScreen(Uri uri, Key key, Size original, int orientation, int format) {
+    public RequestBuilder<Drawable> loadScreen(Uri uri, Key key, Size original, int orientation, int format) {
         Size size = clampSize(original, MAXIMUM_SMOOTH_PIXELS, getMaxImageDisplaySize());
         if(format == 0 || format == 1) {
             orientation = 0;
@@ -165,7 +152,7 @@ public final class GlideFilmstripManager {
      *
      * If the Uri points at an animated gif, the gif will not play.
      */
-    public GenericRequestBuilder<Uri, ?, ?, GlideDrawable> loadMediaStoreThumb(Uri uri, Key key, int orientation, int format) {
+    public RequestBuilder<Drawable> loadMediaStoreThumb(Uri uri, Key key, int orientation, int format) {
         Size size = clampSize(MEDIASTORE_THUMB_SIZE, MAXIMUM_SMOOTH_PIXELS, getMaxImageDisplaySize());
         if(format == 0 || format == 1) {
             orientation = 0;
@@ -185,7 +172,7 @@ public final class GlideFilmstripManager {
      *
      * If the Uri points at an animated gif, the gif will not play.
      */
-    public GenericRequestBuilder<Uri, ?, ?, GlideDrawable> loadTinyThumb(Uri uri, Key key, float orientation, int format) {
+    public RequestBuilder<Drawable> loadTinyThumb(Uri uri, Key key, float orientation, int format) {
         Size size = clampSize(TINY_THUMB_SIZE, MAXIMUM_SMOOTH_PIXELS,  getMaxImageDisplaySize());
         if(format == 0 || format == 1) {
             orientation = 0;

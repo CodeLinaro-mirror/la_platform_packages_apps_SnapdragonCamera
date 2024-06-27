@@ -21,6 +21,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.view.View;
@@ -32,10 +33,8 @@ import com.android.camera.util.Log;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.Size;
 import org.codeaurora.snapcam.R;
-import com.bumptech.glide.DrawableRequestBuilder;
-import com.bumptech.glide.GenericRequestBuilder;
+import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.google.common.base.Optional;
 
 import java.io.FileInputStream;
@@ -152,7 +151,7 @@ public class PhotoItem extends FilmstripItemBase<FilmstripItemData> {
 
     @Override
     public void recycle(@Nonnull View view) {
-        Glide.clear(view);
+        Glide.with(mContext).clear(view);
         mSessionPlaceholderBitmap = Optional.absent();
     }
 
@@ -188,12 +187,12 @@ public class PhotoItem extends FilmstripItemBase<FilmstripItemData> {
         }
     }
 
-    private GenericRequestBuilder<Uri, ?, ?, GlideDrawable> renderTinySize(Uri uri) {
+    private RequestBuilder<Drawable> renderTinySize(Uri uri) {
         return mGlideManager.loadTinyThumb(uri, generateSignature(mData), mData.getOrientation(), mData.getFormat());
     }
 
-    private DrawableRequestBuilder<Uri> renderScreenSize(Uri uri) {
-        DrawableRequestBuilder<Uri> request =
+    private RequestBuilder<Drawable> renderScreenSize(Uri uri) {
+        RequestBuilder<Drawable> request =
               mGlideManager.loadScreen(uri, generateSignature(mData), mSuggestedSize, mData.getOrientation(), mData.getFormat());
 
         // If we have a non-null placeholder, use that and do NOT ever render a
@@ -210,7 +209,7 @@ public class PhotoItem extends FilmstripItemBase<FilmstripItemData> {
               .thumbnail(renderTinySize(uri));
     }
 
-    private DrawableRequestBuilder<Uri> renderFullSize(Uri uri) {
+    private RequestBuilder<Drawable> renderFullSize(Uri uri) {
         Size size = mData.getDimensions();
         return mGlideManager.loadFull(uri, generateSignature(mData), size, mData.getOrientation(), mData.getFormat())
               .thumbnail(renderScreenSize(uri));

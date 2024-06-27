@@ -20,16 +20,22 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 
+import androidx.annotation.NonNull;
+
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
+import com.bumptech.glide.load.resource.bitmap.FitCenter;
+
+import java.security.MessageDigest;
 
 public class RotateTransformation  extends BitmapTransformation{
  
     private float rotateRotationAngle = 0f;
- 
+    private static final String ID = "com.android.camera.data.RotateTransformation";
+    private static final byte[] ID_BYTES = ID.getBytes(CHARSET);
+
     public RotateTransformation(Context context ,float rotateRotationAngle)
     {
-        super(context);
         this.rotateRotationAngle = rotateRotationAngle ;
     }
  
@@ -39,10 +45,20 @@ public class RotateTransformation  extends BitmapTransformation{
         matrix.postRotate(rotateRotationAngle);
         return Bitmap.createBitmap(toTransform, 0, 0, toTransform.getWidth(), toTransform.getHeight(), matrix, true);
     }
- 
+
     @Override
-    public String getId() {
-        return rotateRotationAngle+"";
+    public boolean equals(Object o) {
+        return o instanceof FitCenter;
+    }
+
+    @Override
+    public int hashCode() {
+        return ID.hashCode();
+    }
+
+    @Override
+    public void updateDiskCacheKey(@NonNull MessageDigest messageDigest) {
+        messageDigest.update(ID_BYTES);
     }
 }
 
