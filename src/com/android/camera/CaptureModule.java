@@ -1073,6 +1073,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int mRawCount = 1;
     private String mMasterCameraId;
     private ArrayList<Integer> mActiveCameraIds = new ArrayList<Integer>();
+    private int mSnapshotedPhysicalCamera = 0;
     private HashMap<Integer, Boolean> mAideActiveCameraIds = new HashMap<Integer, Boolean>();//<cameraid, isPrimal>
     //used for aide capture request and callback
     private int mCaptureRequestNum = 0;
@@ -3833,6 +3834,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }else if(mSaveRaw){
             int physicalId = mActiveCameraIds.get(0);
+            mSnapshotedPhysicalCamera = physicalId;
             Log.d(TAG," mActiveCameraIds="+physicalId);
                     for( int i = 0;i < mPhysicalRawId.length;i++){
                         if(Integer.parseInt(mPhysicalRawId[i]) == physicalId ){
@@ -6469,7 +6471,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 String qcfaId = mSettingsManager.getQuadBayerPhysicalId(Integer.toString(getMainCameraId()));
                 if(qcfaId != null) activeCameraId = qcfaId;
             } else{
-                activeCameraId = String.valueOf(mActiveCameraIds.get(0));
+                activeCameraId = String.valueOf(mSnapshotedPhysicalCamera);
             }
             characteristics= manager.getCameraCharacteristics(activeCameraId);
             Log.d(TAG,"setInfoForDng mRawMeta="+mRawMeta+",characteristics="+characteristics);
