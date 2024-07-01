@@ -2760,8 +2760,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             result = false;
         } else {
             ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
-            result = getSupportedHighFrameRate(CaptureModule.CameraMode.HFR, videoQuality.getValue(),
-                    CaptureModule.FRONT_ID).size() != 0;
+            result = getSupportedVideoSize(CaptureModule.FRONT_ID).size() != 0;
         }
         Log.v(TAG, " isFrontIDHFRSupported result :" + result);
         return result;
