@@ -167,6 +167,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.lang.reflect.Array;
@@ -16106,7 +16107,7 @@ private boolean isDevOptionSetting(){
                     mIsDepthFocus = false;
                 }
             }
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | BufferUnderflowException e) {
             mIsDepthFocus = false;
             Log.w(TAG,EXCEPTION_LOG,e.toString());
         }
