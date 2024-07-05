@@ -1156,9 +1156,9 @@ public class SettingsActivity extends PreferenceActivity {
             List<String> dcgData = new ArrayList<String>();
             dcgData.add("off");
             for (int i = 0; i < supportedModes.length; i++) {
-                if (supportedModes[i] == 1) {
+                if (supportedModes[i] == 12) {
                     dcgData.add("12BIT");
-                } else if (supportedModes[i] == 2) {
+                } else if (supportedModes[i] == 14) {
                     dcgData.add("14BIT");
                 }
             }
@@ -1840,6 +1840,9 @@ public class SettingsActivity extends PreferenceActivity {
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         ListPreference aiCamera = (ListPreference)findPreference(SettingsManager.KEY_AI_CAMERA);
         Log.d(TAG,"isAICameraOn:" + mSettingsManager.isAICameraOn() + ",selectMode: " + selectMode);
+        if(aiCamera != null) {
+            aiCamera.setEnabled(true);
+        }
         if ( mode == VIDEO  && mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID){
             if(aiCamera != null) {
                 if(mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb")) {
@@ -1849,10 +1852,6 @@ public class SettingsActivity extends PreferenceActivity {
                     aiCamera.setValue("2");
                     aiCamera.setEnabled(false);
                 }
-            }
-        }else{
-            if(aiCamera != null) {
-                aiCamera.setEnabled(true);
             }
         }
         if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") && mode == VIDEO  &&

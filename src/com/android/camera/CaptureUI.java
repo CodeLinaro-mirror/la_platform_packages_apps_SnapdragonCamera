@@ -2176,7 +2176,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void initFlashButton() {
         mFlashButton.init(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE ||
-                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR);
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC);
     }
     public void updateFlashButton(boolean enable){
         if (mFlashButton.getVisibility()== View.VISIBLE) {
@@ -2188,7 +2189,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         String key;
         boolean isVideoFlash = mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE ||
-                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR;
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC;
         if (isVideoFlash) {
             key = SettingsManager.KEY_VIDEO_FLASH_MODE;
         } else {

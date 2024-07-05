@@ -2859,7 +2859,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return supported;
     }
-
+    public boolean isBatchMode(int cameraId){
+        if(!isSupportedSuperBuffer(cameraId)){
+            return  false;
+        }
+        String buffermode = getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
+        if(buffermode != null && buffermode.equals("0")) {
+            return true;
+        }
+        return  false;
+    }
     public boolean isSupportedSuperBuffer(int cameraId){
        boolean isSupported = false;
         try {
@@ -2873,7 +2882,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             Log.w(TAG,EXCEPTION_LOG,exception.toString());
             return isSupported;
         }
-        return isSupported;
+        CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
+        return isSupported && (mode == CaptureModule.CameraMode.HFR);
     }
     public int getFRCRatio(){
         int value = 0;
@@ -2978,7 +2988,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (mCharacteristics.size() > 0) {
             mExtendedHFRSize = mCharacteristics.get(cameraId).get(CaptureModule.hfrFpsTable);
             String buffermode = getValue(KEY_HFR_BUFFER_MODE);
-            if(mode == CaptureModule.CameraMode.HFR && buffermode != null && buffermode.equals("1")) {
+            if(mode == CaptureModule.CameraMode.HFR && isSupportedSuperBuffer(id) && buffermode != null && buffermode.equals("1")) {
                 try {
                     mSuperBufferSize = mCharacteristics.get(cameraId).get(CaptureModule.superBufferTable);
                 } catch (IllegalArgumentException exception) {
@@ -3007,7 +3017,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if (findVideoEncoder) break;
             }
 
-            if (mode == CaptureModule.CameraMode.HFR && getValue(KEY_HFR_BUFFER_MODE) != null && getValue(KEY_HFR_BUFFER_MODE).equals("1") &&
+            if (mode == CaptureModule.CameraMode.HFR && isSupportedSuperBuffer(id) &&
+                    getValue(KEY_HFR_BUFFER_MODE) != null && getValue(KEY_HFR_BUFFER_MODE).equals("1") &&
                     mSuperBufferSize != null && mSuperBufferSize.length >= 5) {
                 for (int i = 0; i < mSuperBufferSize.length; i += 5) {
                     String item = "hfr" + mSuperBufferSize[i + 2];
@@ -3252,17 +3263,21 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public int[] getSupportedDcgBitsTags() {
-        int modes[] = {};
+        Set<Integer> supported = new HashSet<>();
         try {
-            modes = mCharacteristics.get(getCurrentCameraId())
+            int[] modes = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_dcg_bits_tags);
             for(int mode: modes){
-                Log.d(TAG,"getSupportedDcgBitsTags, mode:" +mode);
+                Log.d(TAG,"getSupportedDcgBitsTags, mode:" +mode + ",value:" + (mode >> 8));
+                supported.add(mode >> 8);
             }
         } catch (Exception e) {
             Log.d(TAG,"getSupportedDcgBitsTags failed");
         }
-        return modes;
+        if(supported.size() > 0){
+            return  supported.stream().mapToInt(Integer::intValue).toArray();
+        }
+        return null;
     }
 
     private boolean isAutoHDRSupported() {
@@ -3829,6 +3844,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 * videoSizes.get(i).getHeight()) && (hdrmode != null && hdrmode.equals("MFHDR"))) {
                             continue;
                         }
+                    }
+                    if(isMultiCameraEnabled() && videoSizes.get(i).getWidth()*videoSizes.get(i).getHeight() >= 4320*7680){
+                        continue;
                     }
                     res.add(videoSizes.get(i).toString());
                 }

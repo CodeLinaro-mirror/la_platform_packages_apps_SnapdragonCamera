@@ -313,7 +313,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int mAntiBandingMode = -1;
     private int mIsFickerDetected = -1;
     private float mAecFramecontrolLuxIndex = -1.0f;
-
+    private boolean isflashRequired;
     public static final int MAX_LOGICAL_PHYSICAL_CAMERA_COUNT = 4;
 
     public static final int PHYSICAL_CAMERA_COUNT = MAX_LOGICAL_PHYSICAL_CAMERA_COUNT - 1;
@@ -440,7 +440,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
     public static CameraCharacteristics.Key<int[]> support_dcg_bits_tags =
-            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedHDRmodes.HDRDCGBits", int[].class);
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedHDRmodes.HDRDCGModes", int[].class);
 
     public static CameraCharacteristics.Key<Byte> logical_camera_type =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.logicalCameraType.logical_camera_type", Byte.class);
@@ -1338,7 +1338,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Log.d(TAG, "mOnVideoSavedListener onMediaSaved uri :" + uri);
                     if(mSettingsManager.getValue(SettingsManager.KEY_C2PA) != null &&
                             mSettingsManager.getValue(SettingsManager.KEY_C2PA).equals("on")){
-                        mPostProcessor.nativeC2paSignVideo(mVideoSize.getHeight(), mVideoSize.getWidth(), mVideoFilename);
+                        Location location = getLocationManager().getCurrentLocation();
+                        double latitude = 0, longitude = 0, altitude = 0, accuracy = 0;
+                        long time = 0;
+                        if(location != null && !location.isMock()) {
+                            Log.d(TAG, "start to do c2pa reprocess: " + location.toString());
+                            latitude = location.getLatitude();
+                            longitude = location.getLongitude();
+                            altitude = location.getAltitude();
+                            accuracy = location.getAccuracy();
+                            time = location.getTime();
+                        }
+                        mPostProcessor.nativeC2paSignVideo(mVideoSize.getHeight(), mVideoSize.getWidth(), mVideoFilename, latitude, longitude, altitude, accuracy, time);
                     }
                     if (uri != null) {
                         mActivity.notifyNewMedia(uri);
@@ -4337,6 +4348,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mIsPreviewingVideo = true;
             if (isHighSpeedRateCapture()) {
+                if(mSettingsManager.isBatchMode(getMainCameraId()) && mVideoRecordingSurface != null){
+                    mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                }
                 createHighSpeedSession(cameraId);
             } else {
                 createRegularSession(cameraId);
@@ -4880,7 +4894,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mUI.enableShutter(false);
         int cameraId = getMainCameraId();
-        boolean isflashRequired = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
+        isflashRequired = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
         if(mSettingsManager.isTorchHDREnabled(isflashRequired,mPreviewCaptureResult)){
             mCaptureTorchTrigger = true;
             applyFlash(mPreviewRequestBuilder[cameraId], getMainCameraId());
@@ -5282,6 +5296,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             applyCaptureBurstFps(captureBuilder);
             applyAICameraSnapshot(captureBuilder);
+            applyFlashMode(captureBuilder);
             String valueFS2 = mSettingsManager.getValue(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
             int fs2Value = 0;
             if (valueFS2 != null) {
@@ -7871,6 +7886,20 @@ private boolean isDevOptionSetting(){
         }
     }
 
+    private void applyFlashMode(CaptureRequest.Builder builder) {
+        String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
+        if(isCaptureBrustMode() || mCaptureTorchTrigger ||
+                flashMode == null || flashMode.equalsIgnoreCase("off")){
+            return;
+        }
+        Log.i(TAG,"flashMode="+flashMode+",isflashRequired="+isflashRequired);
+        if (flashMode.equalsIgnoreCase("on")) {
+            builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+        } else if (flashMode.equalsIgnoreCase("auto") && isflashRequired){
+            builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+            isflashRequired = false;
+        }
+    }
     private void applyMFNRAIDEMode(CaptureRequest.Builder builder){
         if (isAIDE2Enabled()) {
             VendorTagUtil.enableMFNRAIDEMode(builder, (byte)0x01);
@@ -10456,7 +10485,7 @@ private boolean isDevOptionSetting(){
             throw new IllegalArgumentException("Input capture request must not be null");
         }
         String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
-        if(buffermode != null && buffermode.equals("1")){
+        if(buffermode != null && buffermode.equals("1") && mSettingsManager.isSupportedSuperBuffer(getMainCameraId())){
             highrequest = createMyHighSpeedRequestList(request);
         }else{
             highrequest = session.createHighSpeedRequestList(request);
@@ -11307,6 +11336,9 @@ private boolean isDevOptionSetting(){
             mRecordingStoped = true;
             return false;
         }
+        int[] list = {0x40800000, 0X3AC};
+        if(mPostProcessor.isJniAPISupported() && mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE).equals("HEVCProfileMain10HDR10Plus"))
+            mPostProcessor.nativePerfLockAcq(2, 0, list, list.length);
         requestAudioFocus();
         if (PersistUtil.enableMediaRecorder()) {
             if (!startMediaRecorder()) {
@@ -12200,7 +12232,9 @@ private boolean isDevOptionSetting(){
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
-        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        if(!mSettingsManager.isBatchMode(getMainCameraId())) {
+            mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        }
         if (!PersistUtil.enableMediaRecorder()) {
             mFrameProcessor.setVideoOutputSurface(null);
             mFrameProcessor.onClose();
@@ -12292,6 +12326,8 @@ private boolean isDevOptionSetting(){
         if(mIntentMode != INTENT_MODE_VIDEO) {
             mStopRecPending = false;
         }
+        if(mPostProcessor.isJniAPISupported() && mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE).equals("HEVCProfileMain10HDR10Plus"))
+            mPostProcessor.nativePerfLockRelease(2);
     }
 
     private void setVideoFlashOff() {
@@ -14056,6 +14092,9 @@ private boolean isDevOptionSetting(){
     }
 
     private void applyBufferMode(CaptureRequest.Builder request){
+        if(!mSettingsManager.isSupportedSuperBuffer(getMainCameraId())){
+            return;
+        }
         try {
             String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
             if(buffermode != null && buffermode.equals("1")) {
@@ -15514,7 +15553,6 @@ private boolean isDevOptionSetting(){
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
                 }else{
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
-                    request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
                 }
                 break;
             case "auto":
@@ -15528,7 +15566,6 @@ private boolean isDevOptionSetting(){
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
                 }else{
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
-                    request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
                 }
                 break;
             case "off":
