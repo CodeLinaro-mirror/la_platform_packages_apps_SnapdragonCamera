@@ -2676,12 +2676,16 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void updateCaptureStateMachine(int id, CaptureResult result) {
         Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
         Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+        Log.d(TAG,BIG_LOG,"mState[id]="+mState[id]+ " afState:" + afState + " aeState:"+aeState
+                +",result.getRequest().hashCode()="+result.getRequest().hashCode());
         switch (mState[id]) {
             case STATE_PREVIEW: {
                 break;
             }
             case STATE_WAITING_AF_LOCK: {
-                Log.d(TAG, "STATE_WAITING_AF_LOCK id: " + id + " afState:" + afState + " aeState:" + aeState);
+                Log.d(TAG, "STATE_WAITING_AF_LOCK id: " + id + " afState:" + afState + " aeState:"
+                        + aeState+",LockRequestHashCode[id]="+mLockRequestHashCode[id]+
+                        ",result.getRequest().hashCode()="+result.getRequest().hashCode());
                 // AF_PASSIVE is added for continous auto focus mode
                 if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
                         CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState ||
@@ -2724,7 +2728,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             case STATE_WAITING_PRECAPTURE: {
                 // CONTROL_AE_STATE can be null on some devices
-                Log.d(TAG, "STATE_WAITING_PRECAPTURE id: " + id + " afState: " + afState + " aeState:" + aeState);
+                Log.d(TAG, "STATE_WAITING_PRECAPTURE id: " + id + " afState: " + afState + " aeState:"
+                        + aeState+",mPrecaptureRequestHashCode[id]="+mPrecaptureRequestHashCode[id]
+                        +",result.getRequest().hashCode()="+result.getRequest().hashCode());
+
                 if (aeState == null ||
                         aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
                         aeState == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED ||
@@ -5064,7 +5071,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             warningToast("Camera is not ready yet to take a picture.");
             return;
         }
-        Log.i(TAG, "lockFocus " + id);
+        Log.i(TAG, "lockFocus " + id+",mState[id]="+mState[id]+",mLockAFAE="+mLockAFAE);
         if(mActivity.getPerformenceTest()) {
             mLockFocusTime = System.currentTimeMillis();
             mHasMapTimes.put("buttonClick->lockFocus", mLockFocusTime - mStartedTime);
@@ -5114,6 +5121,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mLockRequestHashCode[id] = 0;
             }
             mState[id] = STATE_WAITING_AF_LOCK;
+            Log.d(TAG,"mState[id]="+mState[id] +",end capture mLockRequestHashCode[id]="+mLockRequestHashCode[id]+
+                    ",id="+id+",mLockAFAE="+mLockAFAE);
             if (mHiston) {
                 updateGraghViewVisibility(View.INVISIBLE);
                 updateRGBGraghViewVisibility(View.INVISIBLE);
@@ -6219,7 +6228,7 @@ public class CaptureModule implements CameraModule, PhotoController,
      * we get a response in {@link #mCaptureCallback} from {@link #lockFocus()}.
      */
     private void runPrecaptureSequence(int id) {
-        Log.i(TAG, "runPrecaptureSequence: " + id);
+        Log.i(TAG, "runPrecaptureSequence: " + id+",mLockAFAE="+mLockAFAE);
         if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id])) {
             return;
         }
@@ -6239,6 +6248,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mHasMapTimes.put("lockFocus->preCapture", mPreCaptureTime - mLockFocusTime);
             }
             mCaptureSession[id].capture(request, mCaptureCallback, mCameraHandler);
+            Log.d(TAG, "end capture mPrecaptureRequestHashCode: " + mPrecaptureRequestHashCode[id]);
             isFlashRequiredInDriver = false;
         } catch (CameraAccessException | IllegalStateException e) {
             Log.e(TAG,e.toString());
@@ -7903,8 +7913,8 @@ private boolean isDevOptionSetting(){
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
         } else if (flashMode.equalsIgnoreCase("auto") && isflashRequired){
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
-            isflashRequired = false;
         }
+        isflashRequired = false;
     }
     public void updateFlashMode(boolean inThumbnail){
         if(mCurrentSceneMode.mode != CameraMode.HFR && mCurrentSceneMode.mode != CameraMode.VIDEO){
@@ -8121,6 +8131,7 @@ private boolean isDevOptionSetting(){
         mBurstFps = 0;
         mActivity.mColdOpenCameraTime = 0;
         mPerformanceGapData.clear();
+        isflashRequired = false;
         cancelTouchFocus();
         mActivity.runOnUiThread(() -> mUI.clearFocus());
         mPaused = true;
@@ -14840,7 +14851,7 @@ private boolean isDevOptionSetting(){
                 ||mPaused) {
             return;
         }
-        Log.d(TAG,"applyZoomAndUpdate, mRecordingPausing:" + mRecordingPausing);
+        Log.d(TAG,"applyZoomAndUpdate, mRecordingPausing:" + mRecordingPausing+",mState[id]="+mState[id]);
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         boolean isUseVideoPreview = true;
         if (mCurrentSceneMode.mode == CameraMode.HFR ) {
@@ -16006,7 +16017,12 @@ private boolean isDevOptionSetting(){
     private void cancelTouchFocus(int id) {
         if(mPaused)
             return;
-        Log.v(TAG, "cancelTouchFocus " + id);
+        Log.v(TAG, "cancelTouchFocus " + id+",mLockAFAE="+mLockAFAE+",mUI.isShutterEnabled()="
+                +mUI.isShutterEnabled()+",isflashRequired="+isflashRequired
+        +",mUI.isShutterEnabled()="+mUI.isShutterEnabled());
+        if(isflashRequired && !mUI.isShutterEnabled()){
+            return;
+        }
         mInTAF = false;
         mState[id] = STATE_PREVIEW;
         if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE){
