@@ -16586,7 +16586,7 @@ private boolean isDevOptionSetting(){
             if (max_size != -1){
                 int size = s.getWidth() * s.getHeight();
                 if (s.getWidth() == s.getHeight()){
-                    if (s.getWidth() > Math.max(point_max[0],point_max[1]))
+                    if (s.getWidth() > Math.min(point_max[0],point_max[1]))
                         continue;
                 } else if (size > max_size || size == 0 || s.getHeight() > point_max[1]) {
                     continue;
