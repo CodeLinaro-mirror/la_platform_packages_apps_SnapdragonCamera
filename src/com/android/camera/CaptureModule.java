@@ -10301,15 +10301,31 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateVideoSize() {
-        String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-        if (videoSize != null) {
-            mVideoSize = parsePictureSize(videoSize);
+        Intent intent = mActivity.getIntent();
+        if (intent.hasExtra(MediaStore.EXTRA_VIDEO_QUALITY)) {
+            int size = 0;
+            int extraVideoQuality =
+                    intent.getIntExtra(MediaStore.EXTRA_VIDEO_QUALITY, 0);
+            if (extraVideoQuality > 0) {
+                size = CamcorderProfile.QUALITY_HIGH;
+            } else {
+                size = CamcorderProfile.QUALITY_LOW;
+            }
+            if (CamcorderProfile.hasProfile(getMainCameraId(), size)) {
+                mProfile = CamcorderProfile.get(getMainCameraId(), size);
+            }
+            mVideoSize = new Size(mProfile.videoFrameWidth, mProfile.videoFrameHeight);
         } else {
-            mVideoSize = new Size(1920, 1080);
-        }
-        Point videoSize2 = PersistUtil.getCameraVideoSize();
-        if (videoSize2 != null) {
-            mVideoSize = new Size(videoSize2.x, videoSize2.y);
+            String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+            if (videoSize != null) {
+                mVideoSize = parsePictureSize(videoSize);
+            } else {
+                mVideoSize = new Size(1920, 1080);
+            }
+            Point videoSize2 = PersistUtil.getCameraVideoSize();
+            if (videoSize2 != null) {
+                mVideoSize = new Size(videoSize2.x, videoSize2.y);
+            }
         }
         Size[] prevSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
                 MediaRecorder.class);
