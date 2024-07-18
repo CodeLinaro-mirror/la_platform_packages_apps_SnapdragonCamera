@@ -29,14 +29,17 @@ package com.android.camera;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.bluetooth.BluetoothLeAudio;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
@@ -4559,6 +4562,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         mUI = mActivity.getCaptureUI();
         mUI.initializeControlByIntent();
         mFocusStateListener = new FocusStateListener(mUI);
+        IntentFilter btFilter = new IntentFilter();
+        btFilter.addAction(BluetoothLeAudio.ACTION_LE_AUDIO_ACTIVE_DEVICE_CHANGED);
+        mActivity.registerReceiver(mBTConnectReceiver, btFilter);
     }
 
     public void restoreCameraIds(){
@@ -8868,6 +8874,7 @@ private boolean isDevOptionSetting(){
         }
         mSettingsManager.unregisterListener(this);
         mSettingsManager.unregisterListener(mUI);
+        mActivity.unregisterReceiver(mBTConnectReceiver);
         mSettingsManager.destroyCaptureModule();
         if (mCameraRender != null) {
             mCameraRender.destroy();
@@ -13547,6 +13554,21 @@ private boolean isDevOptionSetting(){
         am.setParameters("hdr_audio_channel_count=0");
         am.setParameters("hdr_audio_sampling_rate=0");
     }
+
+    private final BroadcastReceiver mBTConnectReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.i(TAG, "BLE, onReceive: " + intent.getAction());
+            if (mCurrentSceneMode.mode != CameraMode.VIDEO) return;
+            String action = intent.getAction();
+            if (BluetoothLeAudio.ACTION_LE_AUDIO_ACTIVE_DEVICE_CHANGED.equals(action)) {
+                if (mSettingsManager.getValue(SettingsManager.KEY_AUDIO_BLE).equals("On") && isBLEConnected()) {
+                    boolean result = mMediaRecorder.setPreferredDevice(mBleInputDevice);
+                    Log.i(TAG, "BLE, setPreferredDevice ble " + result);
+                }
+            }
+        }
+    };
 
     private void configurateAudio(int camId) {
         int audioEncoder = SettingTranslation
