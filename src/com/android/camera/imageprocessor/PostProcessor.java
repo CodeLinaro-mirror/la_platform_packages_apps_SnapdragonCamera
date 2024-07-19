@@ -1303,8 +1303,20 @@ public class PostProcessor{
                         if(isYUVC2PAEnabled()){
                             String path = Storage.generateFilepath(title, "yuv");
                             Storage.writeFile(path, resultImage.outBuffer.array(), null, "yuv");
-                            Log.d(TAG,"jiao, reprocess image, format: " + resultImage + ",path:" + path);
-                            byte[] output = nativeC2paSignMedia(0, resultImage.height, resultImage.width, resultImage.stride, 100, 100,100, path);
+                            Log.d(TAG,"reprocess image, format: " + resultImage + ",path:" + path);
+                            Location location = mController.getLocationManager().getCurrentLocation();
+                            double latitude = 0, longitude = 0, altitude = 0, accuracy = 0;
+                            long time = 0;
+                            if(location != null && !location.isMock()) {
+                                Log.d(TAG, "start to do c2pa reprocess: " + location.toString());
+                                latitude = location.getLatitude();
+                                longitude = location.getLongitude();
+                                altitude = location.getAltitude();
+                                accuracy = location.getAccuracy();
+                                time = location.getTime();
+                            }
+                            byte[] output = nativeC2paSignMedia(0, resultImage.height, resultImage.width, resultImage.stride, 100, 100,100, path,
+                                    latitude, longitude, altitude, accuracy, time);
                             if(output != null && output.length > 0) {
                                 mActivity.getMediaSaveService().addImage(
                                         output, title, date, null, resultImage.width, resultImage.height,
@@ -1356,7 +1368,19 @@ public class PostProcessor{
         height = options.outHeight;
         Storage.writeFile(path, bytes, null, "jpeg");
         Log.d(TAG,"jiao, reprocess jpeg image  path:" + path);
-        byte[] output = nativeC2paSignMedia(1, height, width, 0, 100, 100,100, path);
+        Location location = mController.getLocationManager().getCurrentLocation();
+        double latitude = 0, longitude = 0, altitude = 0, accuracy = 0;
+        long time = 0;
+        if(location != null && !location.isMock()) {
+            Log.d(TAG, "start to do c2pa reprocess: " + location.toString());
+            latitude = location.getLatitude();
+            longitude = location.getLongitude();
+            altitude = location.getAltitude();
+            accuracy = location.getAccuracy();
+            time = location.getTime();
+        }
+        byte[] output = nativeC2paSignMedia(1, height, width, 0, 100, 100,100, path,
+                latitude, longitude, altitude, accuracy, time);
         if(output != null && output.length > 0) {
             mActivity.getMediaSaveService().addImage(
                     output, title, date, null, width, height,
@@ -1531,8 +1555,9 @@ public class PostProcessor{
     public native void nativeC2paSetUp();
     public native void nativeC2paTearDown();
     public native int nativeC2paEnroll(String apiKey, String licenseFile);
-    public native byte[] nativeC2paSignMedia(int imageType, int height, int width, int stride, int compression, int maxThumbnailSize, int thumbnailCompression, String inputFile);
-    public native void nativeC2paSignVideo(int height, int width, String inputFile);
+    public native byte[] nativeC2paSignMedia(int imageType, int height, int width, int stride, int compression, int maxThumbnailSize, int thumbnailCompression, String inputFile,
+                                             double latitude, double longitude, double altitude, double accuracy, long time);
+    public native void nativeC2paSignVideo(int height, int width, String inputFile, double latitude, double longitude, double altitude, double accuracy, long time);
 
     public native int nativeC2paValidateMedia(int handle);
 

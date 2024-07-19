@@ -117,14 +117,10 @@ public final class GlideFilmstripManager {
      */
     public final RequestBuilder<Drawable> loadFull(Uri uri, Key key, Size original, int orientation, int format) {
         Size size = clampSize(original, MAXIMUM_FULL_RES_PIXELS, getMaxImageDisplaySize());
-        if(format == 0 || format == 1) {
-            orientation = 0;
-        }
         return mLargeImageBuilder
               .clone()
               .load(uri)
               .signature(key)
-                .transform(new RotateTransformation(mContext,orientation))
               .override(size.width(), size.height());
     }
 
@@ -135,14 +131,10 @@ public final class GlideFilmstripManager {
      */
     public RequestBuilder<Drawable> loadScreen(Uri uri, Key key, Size original, int orientation, int format) {
         Size size = clampSize(original, MAXIMUM_SMOOTH_PIXELS, getMaxImageDisplaySize());
-        if(format == 0 || format == 1) {
-            orientation = 0;
-        }
         return mLargeImageBuilder
                 .clone()
                 .load(uri)
                 .signature(key)
-                .transform(new RotateTransformation(mContext,orientation))
                 .override(size.width(), size.height());
     }
 
@@ -154,15 +146,11 @@ public final class GlideFilmstripManager {
      */
     public RequestBuilder<Drawable> loadMediaStoreThumb(Uri uri, Key key, int orientation, int format) {
         Size size = clampSize(MEDIASTORE_THUMB_SIZE, MAXIMUM_SMOOTH_PIXELS, getMaxImageDisplaySize());
-        if(format == 0 || format == 1) {
-            orientation = 0;
-        }
         return mTinyImageBuilder
               .clone()
               .load(uri)
               .signature(key)
                     // This attempts to ensure we load the cached media store version.
-                .transform(new RotateTransformation(mContext,orientation))
               .override(size.width(), size.height());
     }
 
@@ -174,14 +162,10 @@ public final class GlideFilmstripManager {
      */
     public RequestBuilder<Drawable> loadTinyThumb(Uri uri, Key key, float orientation, int format) {
         Size size = clampSize(TINY_THUMB_SIZE, MAXIMUM_SMOOTH_PIXELS,  getMaxImageDisplaySize());
-        if(format == 0 || format == 1) {
-            orientation = 0;
-        }
         return mTinyImageBuilder
               .clone()
               .load(uri)
               .signature(key)
-                .transform(new RotateTransformation(mContext,orientation))
               .override(size.width(), size.height());
     }
 

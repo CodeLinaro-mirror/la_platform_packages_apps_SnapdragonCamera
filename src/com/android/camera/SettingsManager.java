@@ -144,6 +144,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String SCENE_MODE_SUNSET_STRING = "10";
     public static final String SCENE_MODE_LANDSCAPE_STRING = "4";
     public static final String KEY_CAMERA_SAVEPATH = "pref_camera2_savepath_key";
+    public static final String KEY_CAMERA_MANUALFLASH = "pref_camera2_manual_flash_key";
+    public static final String KEY_CAMERA_MANUALFLASH_LEVEL = "pref_camera2_manual_flash_level_key";
     public static final String KEY_RECORD_LOCATION = "pref_camera2_recordlocation_key";
     public static final String KEY_JPEG_QUALITY = "pref_camera2_jpegquality_key";
     public static final String KEY_FOCUS_MODE = "pref_camera2_focusmode_key";
@@ -336,7 +338,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_INSTANT_ZOOM = "pref_camera2_instant_zoom_key";
     public static final String KEY_VSR = "pref_camera2_vsr_key";
     public static final String KEY_VIULL = "pref_camera2_viull_key";
-
+    public static final String KEY_LOWLIGHT_BOOST = "pref_camera2_lowlight_boost_key";
     public static final String KEY_MULTIRESIMAGEREADER = "pref_camera2_multiresimagereader_key";
     public static final String KEY_MULTIRESREPROCESS = "pref_camera2_multiresimagereader_reprocess_key";
     public static final String KEY_MULTIRESREPROCESS_INPUT = "pref_camera2_multiresreprocess_input_key";
@@ -2758,8 +2760,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             result = false;
         } else {
             ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
-            result = getSupportedHighFrameRate(CaptureModule.CameraMode.HFR, videoQuality.getValue(),
-                    CaptureModule.FRONT_ID).size() != 0;
+            result = getSupportedVideoSize(CaptureModule.FRONT_ID).size() != 0;
         }
         Log.v(TAG, " isFrontIDHFRSupported result :" + result);
         return result;
@@ -2859,7 +2860,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return supported;
     }
-
+    public boolean isBatchMode(int cameraId){
+        if(!isSupportedSuperBuffer(cameraId)){
+            return  false;
+        }
+        String buffermode = getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
+        if(buffermode != null && buffermode.equals("0")) {
+            return true;
+        }
+        return  false;
+    }
     public boolean isSupportedSuperBuffer(int cameraId){
        boolean isSupported = false;
         try {
@@ -2873,7 +2883,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             Log.w(TAG,EXCEPTION_LOG,exception.toString());
             return isSupported;
         }
-        return isSupported;
+        CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
+        return isSupported && (mode == CaptureModule.CameraMode.HFR);
     }
     public int getFRCRatio(){
         int value = 0;
@@ -2978,7 +2989,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (mCharacteristics.size() > 0) {
             mExtendedHFRSize = mCharacteristics.get(cameraId).get(CaptureModule.hfrFpsTable);
             String buffermode = getValue(KEY_HFR_BUFFER_MODE);
-            if(mode == CaptureModule.CameraMode.HFR && buffermode != null && buffermode.equals("1")) {
+            if(mode == CaptureModule.CameraMode.HFR && isSupportedSuperBuffer(id) && buffermode != null && buffermode.equals("1")) {
                 try {
                     mSuperBufferSize = mCharacteristics.get(cameraId).get(CaptureModule.superBufferTable);
                 } catch (IllegalArgumentException exception) {
@@ -3007,7 +3018,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if (findVideoEncoder) break;
             }
 
-            if (mode == CaptureModule.CameraMode.HFR && getValue(KEY_HFR_BUFFER_MODE) != null && getValue(KEY_HFR_BUFFER_MODE).equals("1") &&
+            if (mode == CaptureModule.CameraMode.HFR && isSupportedSuperBuffer(id) &&
+                    getValue(KEY_HFR_BUFFER_MODE) != null && getValue(KEY_HFR_BUFFER_MODE).equals("1") &&
                     mSuperBufferSize != null && mSuperBufferSize.length >= 5) {
                 for (int i = 0; i < mSuperBufferSize.length; i += 5) {
                     String item = "hfr" + mSuperBufferSize[i + 2];
@@ -3252,17 +3264,21 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public int[] getSupportedDcgBitsTags() {
-        int modes[] = {};
+        Set<Integer> supported = new HashSet<>();
         try {
-            modes = mCharacteristics.get(getCurrentCameraId())
+            int[] modes = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_dcg_bits_tags);
             for(int mode: modes){
-                Log.d(TAG,"getSupportedDcgBitsTags, mode:" +mode);
+                Log.d(TAG,"getSupportedDcgBitsTags, mode:" +mode + ",value:" + (mode >> 8));
+                supported.add(mode >> 8);
             }
         } catch (Exception e) {
             Log.d(TAG,"getSupportedDcgBitsTags failed");
         }
-        return modes;
+        if(supported.size() > 0){
+            return  supported.stream().mapToInt(Integer::intValue).toArray();
+        }
+        return null;
     }
 
     private boolean isAutoHDRSupported() {
@@ -3317,7 +3333,27 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return isSupported;
     }
-
+   public boolean isLowLightBoostSupported(){
+        boolean isSupported = false;
+        int id = mCaptureModule.getMainCameraId();
+        int[]aeModes = mCharacteristics.get(id).get(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES);
+        if(aeModes == null){
+            return  false;
+        }
+        for(int aeMode:aeModes){
+            Log.d(TAG," aemode="+aeMode);
+            if(aeMode == CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY){
+                isSupported = true;
+                break;
+            }
+        }
+        if(isSupported){
+            Range<Float>lumRange = mCharacteristics.get(id).get(CameraCharacteristics.CONTROL_LOW_LIGHT_BOOST_INFO_LUMINANCE_RANGE);
+            isSupported = lumRange != null;
+            Log.d(TAG," lumRange="+lumRange);
+        }
+        return isSupported;
+   }
     public boolean isInSensorZoomSupported() {
         boolean isSupported = false;
         try {
@@ -3458,6 +3494,51 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean isFacingFront(int id) {
         int facing = mCharacteristics.get(id).get(CameraCharacteristics.LENS_FACING);
         return facing == CameraCharacteristics.LENS_FACING_FRONT;
+    }
+
+    public int getMaxFlashLevel() {
+        int max = 0;
+        int id = mCaptureModule.getMainCameraId();
+        try {
+            max = mCharacteristics.get(id).get(CameraCharacteristics.FLASH_SINGLE_STRENGTH_MAX_LEVEL);
+            if (CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO) {
+                max = mCharacteristics.get(id).get(CameraCharacteristics.FLASH_TORCH_STRENGTH_MAX_LEVEL);
+            }
+        }catch(NoSuchFieldError e){
+            Log.i(TAG,"e="+e);
+        }
+        return max;
+    }
+
+    public int getDefaultFlashLevel() {
+        int value = 0;
+        int id = mCaptureModule.getMainCameraId();
+        try {
+            value = mCharacteristics.get(id).get(CameraCharacteristics.FLASH_SINGLE_STRENGTH_DEFAULT_LEVEL);
+            if (CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO) {
+                value = mCharacteristics.get(id).get(CameraCharacteristics.FLASH_TORCH_STRENGTH_DEFAULT_LEVEL);
+            }
+        }catch(NoSuchFieldError e){
+            Log.i(TAG,"e="+e);
+        }
+        return value;
+    }
+    public boolean applyManualFlash(){
+        if(CaptureModule.CameraMode.VIDEO != CaptureModule.CURRENT_MODE &&
+                CaptureModule.CameraMode.DEFAULT != CaptureModule.CURRENT_MODE){
+            return false;
+        }
+        String manual = getValue(KEY_CAMERA_MANUALFLASH);
+        String level = getValue(KEY_CAMERA_MANUALFLASH_LEVEL);
+        int maxlevel = getMaxFlashLevel();
+        String flashmode = getValue(CaptureModule.CURRENT_MODE  == CaptureModule.CameraMode.VIDEO ?
+                SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
+        if(manual == null || flashmode == null || !flashmode.equals("on") || maxlevel <= 1){
+            return false;
+        }else if(manual.equals("1")){
+            return true;
+        }
+        return false;
     }
 
     public boolean isFlashSupported(int id) {
@@ -3829,6 +3910,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 * videoSizes.get(i).getHeight()) && (hdrmode != null && hdrmode.equals("MFHDR"))) {
                             continue;
                         }
+                    }
+                    if(isMultiCameraEnabled() && videoSizes.get(i).getWidth()*videoSizes.get(i).getHeight() >= 4320*7680){
+                        continue;
                     }
                     res.add(videoSizes.get(i).toString());
                 }
