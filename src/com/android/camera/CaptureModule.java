@@ -4907,7 +4907,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mUI.enableShutter(false);
         int cameraId = getMainCameraId();
-        isflashRequired = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
+        String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
+        Integer aeState = CameraMetadata.CONTROL_AE_STATE_INACTIVE;
+        if (mPreviewCaptureResult != null) {
+            aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
+        }
+        isflashRequired = aeState ==  CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED ||
+                (flashMode != null && flashMode.equalsIgnoreCase("on"));
         if(mSettingsManager.isTorchHDREnabled(isflashRequired,mPreviewCaptureResult)){
             mCaptureTorchTrigger = true;
             applyFlash(mPreviewRequestBuilder[cameraId], getMainCameraId());
@@ -4918,10 +4924,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                Log.e(TAG,e.toString());
             }
         }
-        Integer aeState = CameraMetadata.CONTROL_AE_STATE_INACTIVE;
-        if (mPreviewCaptureResult != null) {
-            aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
-        }
+
         if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) &&
                 !isFlashOn(cameraId) && (aeState != CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED &&
                 mPreviewCaptureResult.getRequest().get(CaptureRequest.CONTROL_AE_LOCK) != Boolean.TRUE || mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE)) {
@@ -7904,14 +7907,10 @@ private boolean isDevOptionSetting(){
 
     private void applyFlashMode(CaptureRequest.Builder builder) {
         String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
-        if(isCaptureBrustMode() || mCaptureTorchTrigger ||
-                flashMode == null || flashMode.equalsIgnoreCase("off")){
+        if(isCaptureBrustMode() || mCaptureTorchTrigger){
             return;
         }
-        Log.i(TAG,"flashMode="+flashMode+",isflashRequired="+isflashRequired);
-        if (flashMode.equalsIgnoreCase("on")) {
-            builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
-        } else if (flashMode.equalsIgnoreCase("auto") && isflashRequired){
+        if (isflashRequired){
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
         }
         isflashRequired = false;
