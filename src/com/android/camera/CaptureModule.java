@@ -8272,7 +8272,7 @@ private boolean isDevOptionSetting(){
                             mLockNums.incrementAndGet(1);
                             if (TRACE_DEBUG) Trace.endSection();
                         } catch (CameraAccessException|IllegalStateException e) {
-                            Log.e(TAG,e);
+                            Log.w(TAG,"onPauseBeforeSuper -abortCaptures stopRepeating exception=" + e);
                             mLockNums.incrementAndGet(1);
                         }
                     }else{
