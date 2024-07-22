@@ -367,7 +367,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.bayer_exposure.enable", byte.class);
 
     public static final CaptureRequest.Key<Integer> INTEGRATED_MODE =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableMultiCameraIntegratedMode", Integer.class);
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.MultiCameraMode", Integer.class);
 
     public static CameraCharacteristics.Key<int[]> ISO_AVAILABLE_MODES =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.iso_exp_priority.iso_available_modes", int[].class);
@@ -1282,7 +1282,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int mLockAFAE = LOCK_AF_AE_STATE_NONE;
     private TextView mLockAFAEText;
     private int[] mClickPosition = new int[2];
-
+    private boolean isManualAEC = false;
     private boolean mCaptureTorchTrigger = false;
 
     private class SelfieThread extends Thread {
@@ -1610,6 +1610,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+
+
     /**
      * A {@link CameraCaptureSession.CaptureCallback} that handles events related to JPEG capture.
      */
@@ -1739,6 +1741,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                 }
                 updateT2tTrackerView(result);
+                mActivity.runOnUiThread(() -> {
+                    mUI.updateLowLightText(result);
+                });
             }
 
             detectHDRMode(result, id);
@@ -5234,7 +5239,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void captureStillPicture(final int id) {
-        Log.i(TAG, "captureStillPicture " + id);
+        Log.i(TAG, "captureStillPicture " + id+",isflashRequired="+isflashRequired);
         mJpegImageData = null;
         mIsRefocus = false;
         if (isDeepZoom()) mSupportZoomCapture = false;
@@ -7900,6 +7905,34 @@ private boolean isDevOptionSetting(){
             isflashRequired = false;
         }
     }
+    public void updateFlashMode(boolean inThumbnail){
+        if(mCurrentSceneMode.mode != CameraMode.HFR && mCurrentSceneMode.mode != CameraMode.VIDEO){
+            return;
+        }
+        String flashMode = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_FLASH_MODE);
+        if(flashMode != null && !flashMode.equals("on")){
+            return;
+        }
+        if(mVideoRecordRequestBuilder != null) {
+            try {
+                mVideoRecordRequestBuilder.set(CaptureRequest.FLASH_MODE, inThumbnail ?
+                        CaptureRequest.FLASH_MODE_OFF : CaptureRequest.FLASH_MODE_TORCH);
+                if (isHighSpeedRateCapture()) {
+                    List<CaptureRequest> slowMoRequests = mSuperSlomoCapture ?
+                            createSSMBatchRequest(mVideoRecordRequestBuilder) :
+                            getHighSpeedList((CameraConstrainedHighSpeedCaptureSession) mCurrentSession, mVideoRecordRequestBuilder);
+                    mCurrentSession.setRepeatingBurst(slowMoRequests, mCaptureCallback,
+                            mCameraHandler);
+                } else {
+                    mCurrentSession.setRepeatingRequest(mVideoRecordRequestBuilder.build(),
+                            mCaptureCallback, mCameraHandler);
+                }
+            }catch (CameraAccessException e) {
+            Log.i(TAG, "updateFlashMode error inThumbnail= "+inThumbnail, e);
+        }
+        }
+
+    }
     private void applyMFNRAIDEMode(CaptureRequest.Builder builder){
         if (isAIDE2Enabled()) {
             VendorTagUtil.enableMFNRAIDEMode(builder, (byte)0x01);
@@ -7936,7 +7969,7 @@ private boolean isDevOptionSetting(){
     }
 
     private void applyCommonSettings(CaptureRequest.Builder builder, int id) {
-        Log.d(TAG, " applyCommonSettings ZoomFixedSupport: " + mUI.getZoomFixedSupport() + ", mZoomValue :" + mZoomValue);
+        Log.d(TAG, "applyCommonSettings ZoomFixedSupport: " + mUI.getZoomFixedSupport() + ", mZoomValue :" + mZoomValue);
         if (mUI.getZoomFixedSupport()) {
             applyZoomRatio(builder, mZoomValue, id);
         } else {
@@ -7966,6 +7999,7 @@ private boolean isDevOptionSetting(){
             applyAICameraStrength(builder);
             applyTargetZoom(builder, 0f);
             applyInStantZoom(builder);
+            //applyLowLightBoost(builder);
         }
         applyColorEffect(builder);
         applyWhiteBalance(builder);
@@ -8532,12 +8566,11 @@ private boolean isDevOptionSetting(){
                 if (i >= PHYSICAL_CAMERA_COUNT)
                     break;
                 String videoSize = mSettingsManager.getValue(SettingsManager.KEY_PHYSICAL_VIDEO_SIZE[i]);
-
-                if(videoSize.equals("7680x4320")){
-                    is8KInMulti = true;
-                }
                 if (videoSize != null){
                     mPhysicalVideoSizes[i] = parsePictureSize(videoSize);
+                    if(videoSize.equals("7680x4320")){
+                        is8KInMulti = true;
+                    }
                 } else {
                     mPhysicalVideoSizes[i] = mVideoSize;
                 }
@@ -8735,6 +8768,7 @@ private boolean isDevOptionSetting(){
             updateBokehText();
             mUI.showRelatedIcons(mCurrentSceneMode.mode);
             updateFlashIcon();
+            mUI.updateFlashBar();
         });
         mHandler.post(new Runnable() {
             @Override
@@ -11554,7 +11588,10 @@ private boolean isDevOptionSetting(){
         if (!mSettingsManager.isMultiCameraEnabled()) {
             if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
                 builder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
-                builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                String value = mSettingsManager.getValue(SettingsManager.KEY_LOWLIGHT_BOOST);
+                if(value == null || !value.equals("1")) {
+                    builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                }
             }else{
                 lockAfAeForRequestBuilder(builder, cameraId);
             }
@@ -11574,6 +11611,7 @@ private boolean isDevOptionSetting(){
             applyExposure(builder);
             applyInStantZoom(builder);
             applyAICameraStrength(builder);
+            applyIsoAndExposureTime(builder);
         }
         applyColorEffect(builder);
     }
@@ -11785,11 +11823,13 @@ private boolean isDevOptionSetting(){
         if (mSettingsManager.isFlashSupported(id)) {
             String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_FLASH_MODE);
             if (value == null) return;
-            builder.set(CaptureRequest.FLASH_MODE, value.equals("on") ?
+            builder.set(CaptureRequest.FLASH_MODE, value.equals("on") && mUI.getFilmstripLayout().getVisibility() != View.VISIBLE ?
                     CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
+           setFlashLevel(builder);
         } else {
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
+        applyLowLightBoost(builder);
 
     }
 
@@ -14051,7 +14091,7 @@ private boolean isDevOptionSetting(){
         String value = mSettingsManager.getValue(SettingsManager.KEY_INTEGRATED_MODE);
         if (value == null || !mSettingsManager.isIntegratedModeSupported()) 
             return;
-        int intValue = (value.equals("Off") ? 0 : 1);
+        int intValue = (value.equals("Off") ? 0 : 2);
         request.set(INTEGRATED_MODE, intValue);
     }
 
@@ -14555,6 +14595,14 @@ private boolean isDevOptionSetting(){
                 VendorTagUtil.setVIULLMode(request, mode);
             }
         }
+    }
+    private void applyLowLightBoost(CaptureRequest.Builder request){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_LOWLIGHT_BOOST);
+        if(value != null && value.equals("1")){
+            request.set(CaptureRequest.CONTROL_AE_MODE,
+                                     CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY);
+        }
+
     }
     private void updateRGBGraghViewVisibility(final int visibility) {
         mActivity.runOnUiThread(new Runnable() {
@@ -15134,7 +15182,9 @@ private boolean isDevOptionSetting(){
 
     private void setIsoAndExposureTime(CaptureRequest.Builder request, int isoValue, long exposureTime) {
         request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
-        request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+        if(!mSettingsManager.applyManualFlash()) {
+            request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+        }
         request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime);
         request.set(CaptureRequest.SENSOR_SENSITIVITY, isoValue);
 
@@ -15155,6 +15205,7 @@ private boolean isDevOptionSetting(){
         String gainsPriority = mActivity.getString(
                 R.string.pref_camera_manual_exp_value_gains_priority);
         String manualExposureMode = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_EXPOSURE);
+        isManualAEC =false;
         if (manualExposureMode == null) return result;
         if (manualExposureMode.equals(isoPriority)) {
             int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
@@ -15187,6 +15238,7 @@ private boolean isDevOptionSetting(){
                 setIsoValue(request, isoValue, longValue, true);
             }else if(newExpTime > 0 && isoValue >-1){
                 setIsoAndExposureTime(request, isoValue, newExpTime);
+                isManualAEC = true;
             }else{
                 result = false;
                 return  result;
@@ -15553,6 +15605,7 @@ private boolean isDevOptionSetting(){
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
                 }else{
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
+                    setFlashLevel(request);
                 }
                 break;
             case "auto":
@@ -15573,8 +15626,25 @@ private boolean isDevOptionSetting(){
                 request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
                 break;
         }
+        applyLowLightBoost(request);
     }
-
+    private void setFlashLevel(CaptureRequest.Builder request) {
+        if (!mSettingsManager.applyManualFlash()) {
+            return;
+        }
+        String level = mSettingsManager.getValue(mSettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
+        try {
+            request.set(CaptureRequest.FLASH_STRENGTH_LEVEL, CameraUtil.strToInt(level,1));
+            if (!isManualAEC) {
+                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            } else {
+                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
+            }
+            Log.i(TAG, "setFlashLevel level=" + level+",isManualAEC="+isManualAEC);
+        } catch (NoSuchFieldError e) {
+            Log.i(TAG, "e=" + e);
+        }
+    }
     private void applyTouchTrackFocus(CaptureRequest.Builder request) {
         boolean t2tSupported = false;
         String value = mSettingsManager.getValue(SettingsManager.KEY_TOUCH_TRACK_FOCUS);
@@ -16157,6 +16227,14 @@ private boolean isDevOptionSetting(){
                     mCurrentSceneMode.setSwithCameraId(id,false);
                     restartAll();
                     return;
+                    case SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL:
+                        if(CameraMode.VIDEO == mCurrentSceneMode.mode){
+                            updateVideoFlash(getMainCameraId());
+                            break;
+                        } else if(CameraMode.DEFAULT == mCurrentSceneMode.mode) {
+                            applyFlashForUIChange(mPreviewRequestBuilder[getMainCameraId()],
+                                    getMainCameraId());
+                        }
                 case SettingsManager.KEY_VIDEO_FLASH_MODE:
                     switch (mCurrentSceneMode.mode) {
                         case PRO_MODE:
@@ -16165,13 +16243,27 @@ private boolean isDevOptionSetting(){
                             break;
                         case VIDEO:
                         case HFR:
+                            mUI.updateFlashBar();
                             updateVideoFlash(getMainCameraId());
                             break;
                     }
                     return;
                 case SettingsManager.KEY_FLASH_MODE:
+                    mUI.updateFlashBar();
                     applyFlashForUIChange(mPreviewRequestBuilder[getMainCameraId()],
                     getMainCameraId());
+                    return;
+                case SettingsManager.KEY_CAMERA_MANUALFLASH:
+                case SettingsManager.KEY_MANUAL_EXPOSURE:
+                    String manualExposureMode = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_EXPOSURE);
+                    String manualFlashMode = mSettingsManager.getValue(SettingsManager.KEY_CAMERA_MANUALFLASH);
+                    String flashMode =  mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
+                    if(manualExposureMode.equals("user-setting") &&
+                            (manualFlashMode != null && manualFlashMode.equals("1")) &&
+                            mCurrentSceneMode.mode == CameraMode.DEFAULT &&
+                       "auto".equals(flashMode)){
+                        mUI.changeFlashMode(false);
+                    }
                     return;
                 case SettingsManager.KEY_ZSL:
                 case SettingsManager.KEY_AUTO_HDR:
@@ -17811,7 +17903,6 @@ class MFNRDrawer extends View {
         mCaptureModule = captureModule;
     }
 }
-
 abstract class PhysicalImageListener
         implements ImageReader.OnImageAvailableListener {
     private String mCamId;

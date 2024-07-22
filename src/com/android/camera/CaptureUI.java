@@ -44,6 +44,8 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Camera.Face;
+import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureResult;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
@@ -132,6 +134,7 @@ import org.codeaurora.snapcam.R;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -203,6 +206,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private int[] mScreenHDRIcon = {R.drawable.ic_hdr_off, R.drawable.ic_hdr};
     private int mScreenHDRindex;
     private SeekBar mEvSeekBar;
+    private SeekBar mFlashLevelBar;
     private boolean isEvChanging;
     private int mCurrentProgress;
     private int mTotalProgress;
@@ -214,6 +218,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TextView mTorchLevelApply;
     private TextView mTorchCloseText;
     private TextView mTorchOpenText;
+    private TextView mLowLightText;
     private VerticalSeekBar mTorchbar;
     private VerticalSeekBar mVerticalEvBar;
     private VerticalSeekBar mAICameraSeekBar;
@@ -527,6 +532,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TextView mDebugPerformancText;
 
     private LinearLayout mZoomLinearLayout;
+    private RelativeLayout mManualFlashLayout;
+    private TextView flashLevelTxt;
 
     private int mZoomIndex = 0;
 
@@ -920,6 +927,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         mStatsNNResult = mRootView.findViewById(R.id.stats_nn_result_info);
         mStatsNNResultText= mRootView.findViewById(R.id.stats_nn_result_text);
+        mLowLightText = mRootView.findViewById(R.id.lowlightboost_text);
 
         mMuteButton = (RotateImageView)mRootView.findViewById(R.id.mute_button);
         mMuteButton.setVisibility(View.VISIBLE);
@@ -1233,6 +1241,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
         mTorchReadText.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = 33)
             @Override
             public void onClick(View v) {
                 try {
@@ -1373,6 +1382,60 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if(PersistUtil.showVerticalEvBar() && mVerticalEvBar != null) {
             initVerticalEvBar();
         }
+    }
+    public void updateFlashBar() {
+        if(mManualFlashLayout == null){
+            mManualFlashLayout= (RelativeLayout) mRootView.findViewById(R.id.manual_flash_layout);
+        }
+        if(!mSettingsManager.applyManualFlash()){
+            mManualFlashLayout.setVisibility(View.INVISIBLE);
+            return;
+        }
+        int maxLevel = mSettingsManager.getMaxFlashLevel();
+
+        mManualFlashLayout.setVisibility(View.VISIBLE);
+        int defaultValue = mSettingsManager.getDefaultFlashLevel();
+        String keyvalue = mSettingsManager.getValue(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
+        if(keyvalue == null){
+            keyvalue = String.valueOf(defaultValue);
+            mSettingsManager.setValue(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL,keyvalue);
+        }
+        int index = mSettingsManager.getValueIndex(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
+        if(flashLevelTxt == null) {
+            flashLevelTxt = (TextView) mRootView.findViewById(R.id.flash_text);
+        }
+        flashLevelTxt.setText(keyvalue);
+        final int section = 100/maxLevel;
+        if (section == 0){
+            return;
+        }
+        if (mFlashLevelBar == null) {
+            mFlashLevelBar = (SeekBar) mRootView.findViewById(R.id.flash_seekbar);
+            mFlashLevelBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    int mindex = progress / section;
+                    if (mindex > maxLevel - 1) mindex = maxLevel - 1;
+                    int currentIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
+                    if (currentIndex != mindex) {
+                        mSettingsManager.setValueIndex(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL, mindex);
+                        String value = mSettingsManager.getValue(SettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
+                        flashLevelTxt.setText(value);
+                    }
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                    isEvChanging = true;
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    isEvChanging = false;
+                }
+            });
+        }
+        setEvBarProgress(index, section, mFlashLevelBar);
     }
     private void initEvSeekBar() {
         final int length = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE).length;
@@ -1740,6 +1803,28 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 .append(STATS_EXTENSION_TITLE[4]+" "+info[14]);
         mStatsAecText.setText(stringBuilder.toString());
     }
+    public void updateLowLightText(CaptureResult result) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_LOWLIGHT_BOOST);
+        if (value != null && value.equals("1")) {
+            try {
+                int aemode = result.get(CaptureResult.CONTROL_AE_MODE);
+                int lowLightBoostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE);
+                if (lowLightBoostState == CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE) {
+                    mLowLightText.setText("LowLightBoost_Active");
+                } else if (lowLightBoostState == CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_INACTIVE) {
+                    mLowLightText.setText("LowLightBoost_InActive");
+                } else {
+                    mLowLightText.setText("LowLightBoost_Unknown");
+                }
+            } catch (NullPointerException e) {
+                mLowLightText.setText("LowLightBoost_Unknown");
+            }
+            mLowLightText.setVisibility(View.VISIBLE);
+        } else {
+            mLowLightText.setVisibility(View.INVISIBLE);
+        }
+    }
+
 
     public void updateStatsNNResultText(byte statsNNWidth, byte statsNNHeight, byte statsNNMapdata, byte statsNNNumroi, int[] statsNNRoiData, int statsNNRoiWeight) {
         mStatsNNResultText.setText(STATS_NN_RESULT_TITLE[0]+Byte.toString(statsNNWidth) +" " + "\r\n" +
@@ -2183,6 +2268,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mFlashButton.getVisibility()== View.VISIBLE) {
             mFlashButton.setEnabled(enable);
         }
+    }
+    public void changeFlashMode(boolean isVideoFlash){
+        mFlashButton.changeFlashMode(isVideoFlash);
+    }
+    public void  showFlashButton(){
+        mFlashButton.setVisibility(View.VISIBLE);
+        updateFlashButton(true);
     }
     public void hideFlashButton() {
         mFlashButton.setVisibility(View.GONE);
@@ -2903,6 +2995,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     //mActivity.gotoGallery();
                     mFilmstripLayout.showFilmstrip();
                     showBottomControls();
+                    if (mFilmstripLayout.getVisibility() == View.VISIBLE) {
+                        mModule.updateFlashMode(true);
+                    }
                 }
             }
         });
@@ -3079,7 +3174,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public boolean onBackPressed() {
         if (mFilmstripLayout.getVisibility() == View.VISIBLE) {
-            return mFilmstripLayout.onBackPressed();
+            boolean hide = mFilmstripLayout.onBackPressed();
+            if(hide){
+                mModule.updateFlashMode(false);
+            }
+            return hide;
         }
         if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) {
             switchToPhotoModeDueToError(true);

@@ -1,0 +1,115 @@
+soong_config_module_type {
+    name: "qticamera_apk_defaults",
+    module_type: "cc_defaults",
+    config_namespace: "qticamera",
+    bool_variables: [
+        "apk",
+    ],
+    properties: [
+        "enabled",
+    ],
+}
+
+qticamera_apk_defaults {
+    name: "qticamera_common_apk_defaults",
+    soong_config_variables: {
+         apk : {
+             enabled: false,
+             conditions_default: {
+                 enabled: true,
+             },
+         },
+     },
+}
+bootstrap_go_package {
+    // name and pkgPath need to  according to your module
+    name: "soong-c2pa_config",
+    pkgPath: "android/soong/c2pa_config",
+    deps: [
+        "soong",
+        "soong-android",
+        "soong-cc",
+        "soong-genrule",
+    ],
+    srcs: [
+          // include new add .go file
+          "c2pa_config.go",
+    ],
+    pluginFor: ["soong_build"],
+}
+
+c2pa_config {
+    name: "c2pa_config",
+}
+
+// ImageUtilForCamera2 with beautification
+cc_library_shared {
+    name: "libjni_imageutil",
+    vendor: true,
+
+    srcs: ["jni/image_util_jni.cpp"],
+    cflags: [
+        "-ffast-math",
+        "-O3",
+        "-funroll-loops",
+    ],
+    header_libs: [
+        "jni_headers",
+        "vendor_common_inc",
+    ],
+    shared_libs: [
+        "liblog",
+        "libcutils",
+        "libbinder_ndk",
+        "libutils",
+    ],
+    defaults: ["c2pa_config"],
+}
+android_app {
+    name: "SnapdragonCamera",
+
+    static_libs: [
+        "android-support-v13",
+        "android-support-v4",
+        "android-support-v7-recyclerview",
+        "androidx.heifwriter_heifwriter",
+        "xmp_toolkit",
+        "glide_4.16",
+        "guava",
+    ],
+    libs: [
+    "framework-mediaprovider",
+    "framework-location.stubs.module_lib"
+    ],
+    uses_libs: ["org.apache.http.legacy"],
+
+    srcs: [
+        "src/**/*.java",
+        "src_pd/**/*.java",
+        "src_pd_gcam/**/*.java",
+        "src_wrapper/**/*.java",
+    ],
+
+    resource_dirs: [
+        "res",
+    ],
+
+    aaptflags: [
+        "--auto-add-overlay",
+        "--version-name",
+        "2.08.179",
+        "--version-code",
+        "208179000",
+        "--extra-packages",
+        "com.bumptech.glide",
+    ],
+    jni_libs: ["libjni_imageutil"],
+    sdk_version: "module_current",
+    vendor: true,
+    overrides: ["Camera2"],
+    privileged: true,
+    optimize: {
+        proguard_flags_files: ["proguard.flags"],
+    },
+    defaults: ["qticamera_common_apk_defaults"],
+}

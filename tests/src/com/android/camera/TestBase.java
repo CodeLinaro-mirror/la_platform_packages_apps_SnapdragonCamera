@@ -107,6 +107,8 @@ public class TestBase{
     public static final int CONTROL_MODE_AUTO = 1;
     private static final String OUTPUT_JSON = "/data/data/org.codeaurora.snapcam/files/testResult.json";
     public static final String INPUT_JSON = "/data/data/org.codeaurora.snapcam/files/autoTest.json";
+    public static final int FLASH_STATE_READY = 2;
+    public static final int FLASH_STATE_FIRED = 3;
     public int[] mShutterLoc = new  int[2];
     public int[] mFlashLoc = new  int[2];
     public int[] mHdrLoc = new  int[2];
@@ -3007,6 +3009,7 @@ public class TestBase{
         int flashInResult = 0;
         int aeInResult = 0;
         int flashInExif = 0;
+        int flashStateInCap = 0;
         CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
         mCurrentPreviewResult = mCaptureModule.getPreviewCaptureResult();
         mCurrentCaptureResult = mCaptureModule.getCaptureResult();
@@ -3025,17 +3028,22 @@ public class TestBase{
             if (!isOpenFromIntent) {
                 flashInExif = mCurrentexif.getAttributeInt(ExifInterface.TAG_FLASH, 0);
             }
+            flashStateInCap = mCurrentCaptureResult.get(CaptureResult.FLASH_STATE);
         }
         int flashInPreview = mCurrentPreviewResult.get(CaptureResult.FLASH_MODE);
         int aeInPreview = mCurrentPreviewResult.get(CaptureResult.CONTROL_AE_MODE);
+        int flashStateInPre = mCurrentPreviewResult.get(CaptureResult.FLASH_STATE);
+
         boolean isTriggered = mCurrentPreviewResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
         Log.i(TAG, "flashinset=" + flashinset + ",flashInResult=" + flashInResult + ",aeInResult=" + aeInResult + ",isTriggered=" + isTriggered
-                + ",aeInPreview=" + aeInPreview + ",flashInPreview=" + flashInPreview + ",flashInExif=" + flashInExif);
+                + ",aeInPreview=" + aeInPreview + ",flashInPreview=" + flashInPreview + ",flashInExif=" + flashInExif
+        +",flashStateInCap="+flashStateInCap+",flashStateInPre="+flashStateInPre);
         //assertEquals(setvalue,flashinset);
         if (!setvalue.equals(flashinset)) {
             testFail = getFailStr("flashinset", flashinset, setvalue);
             return;
         }
+
         switch (flashinset) {
             case "on":
                 if (!isVideoMode) {
@@ -3049,8 +3057,13 @@ public class TestBase{
                     if (CaptureResult.CONTROL_AE_MODE_ON_ALWAYS_FLASH != aeInResult) {
                         testFail = getFailStr("CONTROL_AE_MODE in reslut", aeInResult, CaptureResult.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
                     }
-                    if (!isOpenFromIntent && flashInExif != FLASH_ON) {
+                  /*  if (!isOpenFromIntent && flashInExif != FLASH_ON) {
                         testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_ON);
+                        return;
+                    }*/
+                    if(FLASH_STATE_READY != flashStateInPre || FLASH_STATE_FIRED != flashStateInCap){
+                        testFail = getFailStr("FLASH_STATE in preview is"+flashStateInPre+",incapture is "+flashStateInCap
+                                , flashStateInCap, "in preview is"+FLASH_STATE_READY+",incapture is "+FLASH_STATE_FIRED);
                         return;
                     }
                 } else {
@@ -3060,6 +3073,11 @@ public class TestBase{
                     }
                     if (CaptureResult.CONTROL_AE_MODE_ON != aeInPreview) {
                         testFail = getFailStr("CONTROL_AE_MODE in preview", aeInPreview, CaptureResult.CONTROL_AE_MODE_ON);
+                        return;
+                    }
+                    if(FLASH_STATE_FIRED != flashStateInPre){
+                        testFail = getFailStr("FLASH_STATE in preview is", flashStateInPre,FLASH_STATE_FIRED);
+                        return;
                     }
                     //assertEquals(CaptureResult.FLASH_MODE_TORCH, flashInPreview);
                     // assertEquals(CaptureResult.CONTROL_AE_MODE_ON, aeInPreview);
@@ -3074,36 +3092,54 @@ public class TestBase{
                         if (CaptureResult.CONTROL_AE_MODE_ON != aeInResult) {
                             testFail = getFailStr("CONTROL_AE_MODE in reslut", aeInResult, CaptureResult.CONTROL_AE_MODE_ON);
                         }
-                        if (!isOpenFromIntent) {
+                        if(FLASH_STATE_FIRED != flashStateInCap){
+                            testFail = getFailStr("FLASH_STATE in capture is", flashStateInCap,FLASH_STATE_FIRED);
+                            return;
+                        }
+                      /*  if (!isOpenFromIntent) {
                             if (flashInExif != FLASH_ON) {
                                 testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_ON);
                                 return;
                             }
-                        }
+                        }*/
                     }
                 }
                 break;
             case "auto":
                 //assertEquals(CaptureResult.FLASH_MODE_SINGLE,flashInResult);
                 //assertEquals(CaptureResult.CONTROL_AE_MODE_ON_AUTO_FLASH,aeInResult);
-                if (CaptureResult.FLASH_MODE_SINGLE != flashInResult) {
-                    testFail = getFailStr("FLASH_MODE in reslut", flashInResult, CaptureResult.FLASH_MODE_SINGLE);
-                    return;
-                }
+
                 if (CaptureResult.CONTROL_AE_MODE_ON_AUTO_FLASH != aeInResult) {
                     testFail = getFailStr("CONTROL_AE_MODE in reslut", aeInResult, CaptureResult.CONTROL_AE_MODE_ON_AUTO_FLASH);
                     return;
                 }
+
+                if(FLASH_STATE_READY != flashStateInPre){
+                    testFail = getFailStr("FLASH_STATE in preview is", flashStateInPre,FLASH_STATE_FIRED);
+                    return;
+                }
                 if (isTriggered) {
                     // assertTrue((flashInExif & FLASH_ON) > 0);
-                    if (flashInExif != FLASH_AUTO_ON && !isOpenFromIntent) {
-                        testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_AUTO_ON);
+                    if (CaptureResult.FLASH_MODE_SINGLE != flashInResult) {
+                        testFail = getFailStr("FLASH_MODE in reslut", flashInResult, CaptureResult.FLASH_MODE_SINGLE);
                         return;
                     }
+                    if(FLASH_STATE_FIRED != flashStateInCap){
+                        testFail = getFailStr("FLASH_STATE in capture is", flashStateInCap,FLASH_STATE_FIRED);
+                        return;
+                    }
+                   /* if (flashInExif != FLASH_AUTO_ON && !isOpenFromIntent) {
+                        testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_AUTO_ON);
+                        return;
+                    }*/
                 } else {
                     // assertTrue((flashInExif & FLASH_OFF) > 0);
-                    if (flashInExif != FLASH_AUTO_OFF && !isOpenFromIntent) {
+/*                    if (flashInExif != FLASH_AUTO_OFF && !isOpenFromIntent) {
                         testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_AUTO_OFF);
+                        return;
+                    }*/
+                    if(FLASH_STATE_READY != flashStateInCap){
+                        testFail = getFailStr("FLASH_STATE in capture is", flashStateInCap,FLASH_STATE_FIRED);
                         return;
                     }
                 }
@@ -3121,10 +3157,14 @@ public class TestBase{
                         testFail = getFailStr("CONTROL_AE_MODE in reslut", aeInResult, CaptureResult.CONTROL_AE_MODE_ON);
                         return;
                     }
-                    if (!isOpenFromIntent && flashInExif != FLASH_OFF) {
-                        testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_OFF);
+                    if(FLASH_STATE_READY != flashStateInCap){
+                        testFail = getFailStr("FLASH_STATE in capture is", flashStateInCap,FLASH_STATE_FIRED);
                         return;
                     }
+/*                    if (!isOpenFromIntent && flashInExif != FLASH_OFF) {
+                        testFail = getFailStr("ExifInterface.TAG_FLASH", flashInExif, FLASH_OFF);
+                        return;
+                    }*/
                 }
                 //assertEquals(CaptureResult.FLASH_MODE_OFF,flashInPreview);
                 //assertEquals(CaptureResult.CONTROL_AE_MODE_ON,aeInPreview);
@@ -3134,6 +3174,10 @@ public class TestBase{
                 }
                 if (CaptureResult.CONTROL_AE_MODE_ON != aeInPreview) {
                     testFail = getFailStr("CONTROL_AE_MODE in preview", aeInPreview, CaptureResult.CONTROL_AE_MODE_ON);
+                    return;
+                }
+                if(FLASH_STATE_READY != flashStateInPre){
+                    testFail = getFailStr("FLASH_STATE in preview is", flashStateInPre,FLASH_STATE_FIRED);
                     return;
                 }
                 break;
