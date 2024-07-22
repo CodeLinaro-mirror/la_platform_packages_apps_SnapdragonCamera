@@ -1505,14 +1505,20 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 float[] zoomRatioRange = mSettingsManager.getSupportedRatioZoomRange(
                         mModule.getMainCameraId());
                 if (zoomRatioRange != null && zoomRatioRange[0] <1){
+                    if(mSettingsManager.isSHDRLimited() && zoomRatioRange[0] < 0.9 &&
+                            PersistUtil.getModelInfo().contains("8750")){
+                        zoomRatioRange[0] = 0.9f;
+                    }
                     String minZoomRatio = String.valueOf(zoomRatioRange[0]);
                     entries = mActivity.getResources().getStringArray(
                             R.array.pref_camera2_zomm_switch_wide_entries);
                     values = mActivity.getResources().getStringArray(
                             R.array.pref_camera2_zomm_switch_wide_entryvalues);
 
+
                     entries[0] = minZoomRatio + "x";
                     values[0] = minZoomRatio;
+
                 } else {
                     entries = mActivity.getResources().getStringArray(
                             R.array.pref_camera2_zomm_switch_entries);
