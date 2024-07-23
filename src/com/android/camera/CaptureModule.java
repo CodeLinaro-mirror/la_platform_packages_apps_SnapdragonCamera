@@ -17213,6 +17213,7 @@ private boolean isDevOptionSetting(){
             String value = mSettingsManager.getValue(SettingsManager.KEY_INTEGRATED_MODE);
             if (value != null && value.equals("On")) {
                 mBokehText.setVisibility(View.VISIBLE);
+                mBokehText.setText("Bokeh Off");
             } else {
                 mBokehText.setVisibility(View.INVISIBLE);
             }
