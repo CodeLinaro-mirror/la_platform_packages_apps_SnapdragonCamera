@@ -12516,7 +12516,6 @@ private boolean isDevOptionSetting(){
     private void saveVideo() {
         Log.i(TAG,"start to save video mCurrentVideoUri="+mCurrentVideoUri);
         long startSaveVideo = System.currentTimeMillis();
-
         if (mSettingsManager.isMultiCameraEnabled()) {
             Set<String> ids = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_CAMCORDER);
@@ -16855,6 +16854,7 @@ private boolean isDevOptionSetting(){
 
     public void startPlayVideoActivity() {
         Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         intent.setDataAndType(mCurrentVideoUri,
                 CameraUtil.convertOutputFormatToMimeType(mProfile.fileFormat));
         try {
