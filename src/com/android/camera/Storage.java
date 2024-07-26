@@ -294,7 +294,7 @@ public class Storage {
         values.put(ImageColumns.DATE_TAKEN, date);
         // Clockwise rotation in degrees. 0, 90, 180, or 270.
         values.put(ImageColumns.ORIENTATION, orientation);
-        values.put(ImageColumns.DATA, path);
+//        values.put(ImageColumns.DATA, path);
         values.put(ImageColumns.SIZE, jpegLength);
 
         setImageSize(values, width, height);
