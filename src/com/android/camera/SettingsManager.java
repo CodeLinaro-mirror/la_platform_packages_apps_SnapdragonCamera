@@ -4558,12 +4558,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
          return false;
     }
     public List<String> getSupportedPictureFormat(int cameraId){
-        byte supportHeic = 1;
-        try{
-            supportHeic = mCharacteristics.get(cameraId).get(CaptureModule.heic_support_enable);
-        } catch (Exception e){
+        byte supportHeic = 0;
+        MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
+        for (MediaCodecInfo info :list.getCodecInfos()) {
+            if(supportHeic == 1) break;
+            if (info.isEncoder()){
+                for (String type : info.getSupportedTypes()) {
+                    if (type.equalsIgnoreCase(MediaFormat.MIMETYPE_IMAGE_ANDROID_HEIC)) {
+                        supportHeic = 1;
+                        break;
+                    }
+                }
+            }
         }
-
         ArrayList<String> ret = new ArrayList<String>();
         ret.add(String.valueOf(SettingsManager.JPEG_FORMAT));
         if (supportHeic == 1){
