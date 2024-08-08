@@ -2068,7 +2068,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                     Log.v(TAG, BIG_LOG,"mT2TTrackState :" + mT2TTrackState +
                             ", trackerScore :" +trackerScore+", resultROI :" + resultROI);
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | BufferUnderflowException e) {
                 Log.d(TAG,EXCEPTION_LOG,e.toString());
             }
         }
@@ -2201,7 +2201,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                     int binCount = result.get(CaptureModule.buckets);
                     int statsType = result.get(CaptureModule.stats_type);
-                    Log.d(TAG, BIG_LOG,"binCount:" + binCount + ",statsType:" + statsType + ",data length:" + histogramStats.length);
+                    Log.d(TAG, "binCount:" + binCount + ",statsType:" + statsType + ",data length:" + histogramStats.length);
                     if (statsType == 6 && binCount == 256) {
                         updateRGBGraghViewVisibility(View.INVISIBLE);
                         updateGraghViewVisibility(View.VISIBLE);
@@ -2212,7 +2212,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         updateRGBGraghView();
                     }
                 }
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
 
@@ -2225,10 +2226,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 bgRStats = result.get(CaptureModule.bgRStats);
                 bgGStats = result.get(CaptureModule.bgGStats);
                 bgBStats = result.get(CaptureModule.bgBStats);
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | NullPointerException e) {
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
-            Log.i(TAG,"BG, bgRStats:" + bgRStats + ",bgGStats:" + bgGStats + ",bgBStats:" + bgBStats + ",mBGStatson:" + mBGStatson);
+            Log.d(TAG,"BG, bgRStats:" + bgRStats + ",bgGStats:" + bgGStats + ",bgBStats:" + bgBStats + ",mBGStatson:" + mBGStatson);
 
             if (bgRStats != null && bgGStats != null && bgBStats != null && mBGStatson) {
                 synchronized (bg_r_statsdata) {
@@ -2272,16 +2273,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 beRStats = result.get(CaptureModule.beRStats);
                 beGStats = result.get(CaptureModule.beGStats);
                 beBStats = result.get(CaptureModule.beBStats);
-
+                Log.d(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
                 norm_roi_x = result.get(CaptureModule.roiBeX);
                 norm_roi_y = result.get(CaptureModule.roiBeY);
                 norm_roi_dx = result.get(CaptureModule.roiBeWidth);
                 norm_roi_dy = result.get(CaptureModule.roiBeHeight);
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG, EXCEPTION_LOG,"there is no vendor roiBeX/roiBeY/roiBeWidth/roiBeHeight");
+            } catch (IllegalArgumentException | NullPointerException e ) {
+                Log.w(TAG, EXCEPTION_LOG," read vendor roiBeX/roiBeY/roiBeWidth/roiBeHeight exception="+e
+                +",CaptureModule.roiBeX ="+result.get(CaptureModule.roiBeX));
             }
-            Log.i(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
-
 
             if (beRStats != null && beGStats != null && beBStats != null && mBEStatson) {
 
@@ -2336,8 +2336,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 rsRStats = result.get(CaptureModule.rsStats);
                 rsGStats = result.get(CaptureModule.rsStats);
                 rsBStats = result.get(CaptureModule.rsStats);
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG, EXCEPTION_LOG,"there is no vendor for rs");
+            } catch (IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG, EXCEPTION_LOG, e.toString());
             }
 
             if (rsRStats != null && rsGStats != null && beBStats != null && mRSStatson) {
@@ -2380,7 +2380,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     });
                 }
             } catch (IllegalArgumentException | NullPointerException e) {
-                Log.w(TAG,e.toString());
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         } else {
             mUI.updateAWBInfoVisibility(View.GONE);
@@ -2401,8 +2401,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 aecinfo_data[7] = Long.toString(mAecFramecontrolExosureTime[0]);
                 aecinfo_data[8] = Long.toString(mAecFramecontrolExosureTime[2]);
                 aecinfo_data[9] = Long.toString(mAecFramecontrolExosureTime[1]);
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG,e.toString());
+            } catch (IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
 
             try{
@@ -2451,7 +2451,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 afdinfo_data[14] = String.format("%.5f",result.get(avg_rolling_energy));
                 afdinfo_data[15] = String.format("%.5f",result.get(avg_static_energy));
             }catch (NullPointerException|IllegalArgumentException e){
-
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
             synchronized (afdinfo_data) {
                 mActivity.runOnUiThread(new Runnable() {
@@ -2488,8 +2488,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
             synchronized (afinfo_data) {
-                mUI.updateAFInfoVisibility(View.VISIBLE);
-                mUI.updateAfInfoText(afinfo_data);
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mUI.updateAFInfoVisibility(View.VISIBLE);
+                        mUI.updateAfInfoText(afinfo_data);
+                    }
+                });
             }
             if (mAFRenderer == null) {
                 mAFRenderer = mUI.getAFRenderer();
@@ -10810,7 +10815,7 @@ private boolean isDevOptionSetting(){
                     mHasMapTimes.put("Total",System.currentTimeMillis() - mStartedTime);
                 }
             }
-            if(!PersistUtil.enableMediaRecorder() && !waitForAudioPrepare()){
+            if(!PersistUtil.enableMediaRecorder() && !mOnlyVideoEncoder && !waitForAudioPrepare()){
                 quitVideoToPhotoWithError("media codec prepare failed");
                 return;
             }

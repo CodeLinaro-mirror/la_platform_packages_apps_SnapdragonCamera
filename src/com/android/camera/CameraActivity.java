@@ -1085,6 +1085,7 @@ public class CameraActivity extends Activity
                 }
             }
             (new UpdateThumbnailTask(null, true)).execute();
+            mThumbnailDrawable = null;
         }
     }
 
