@@ -545,7 +545,9 @@ public class PersistUtil {
     private static final boolean PERSIST_ENABLE_PROSIGHT =
         getBoolean("persist.sys.camera.prosight", true);
 
-
+    public static String getModelInfo() {
+        return get("ro.soc.model", "");
+    }
 
     public static boolean isProSightEnabled() {
         return PERSIST_ENABLE_PROSIGHT;

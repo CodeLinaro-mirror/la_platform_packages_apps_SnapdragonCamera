@@ -97,9 +97,9 @@ android_app {
     aaptflags: [
         "--auto-add-overlay",
         "--version-name",
-        "2.08.180",
+        "2.08.181",
         "--version-code",
-        "208180000",
+        "208181000",
         "--extra-packages",
         "com.bumptech.glide",
     ],

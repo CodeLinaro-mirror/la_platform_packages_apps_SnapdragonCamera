@@ -4907,7 +4907,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mUI.enableShutter(false);
         int cameraId = getMainCameraId();
-        isflashRequired = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
+        String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
+        Integer aeState = CameraMetadata.CONTROL_AE_STATE_INACTIVE;
+        if (mPreviewCaptureResult != null) {
+            aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
+        }
+        isflashRequired = aeState ==  CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED ||
+                (flashMode != null && flashMode.equalsIgnoreCase("on"));
         if(mSettingsManager.isTorchHDREnabled(isflashRequired,mPreviewCaptureResult)){
             mCaptureTorchTrigger = true;
             applyFlash(mPreviewRequestBuilder[cameraId], getMainCameraId());
@@ -4918,10 +4924,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                Log.e(TAG,e.toString());
             }
         }
-        Integer aeState = CameraMetadata.CONTROL_AE_STATE_INACTIVE;
-        if (mPreviewCaptureResult != null) {
-            aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
-        }
+
         if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) &&
                 !isFlashOn(cameraId) && (aeState != CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED &&
                 mPreviewCaptureResult.getRequest().get(CaptureRequest.CONTROL_AE_LOCK) != Boolean.TRUE || mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE)) {
@@ -7904,14 +7907,10 @@ private boolean isDevOptionSetting(){
 
     private void applyFlashMode(CaptureRequest.Builder builder) {
         String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
-        if(isCaptureBrustMode() || mCaptureTorchTrigger ||
-                flashMode == null || flashMode.equalsIgnoreCase("off")){
+        if(isCaptureBrustMode() || mCaptureTorchTrigger){
             return;
         }
-        Log.i(TAG,"flashMode="+flashMode+",isflashRequired="+isflashRequired);
-        if (flashMode.equalsIgnoreCase("on")) {
-            builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
-        } else if (flashMode.equalsIgnoreCase("auto") && isflashRequired){
+        if (isflashRequired){
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
         }
         isflashRequired = false;
@@ -10301,15 +10300,31 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateVideoSize() {
-        String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-        if (videoSize != null) {
-            mVideoSize = parsePictureSize(videoSize);
+        Intent intent = mActivity.getIntent();
+        if (intent.hasExtra(MediaStore.EXTRA_VIDEO_QUALITY)) {
+            int size = 0;
+            int extraVideoQuality =
+                    intent.getIntExtra(MediaStore.EXTRA_VIDEO_QUALITY, 0);
+            if (extraVideoQuality > 0) {
+                size = CamcorderProfile.QUALITY_HIGH;
+            } else {
+                size = CamcorderProfile.QUALITY_LOW;
+            }
+            if (CamcorderProfile.hasProfile(getMainCameraId(), size)) {
+                mProfile = CamcorderProfile.get(getMainCameraId(), size);
+            }
+            mVideoSize = new Size(mProfile.videoFrameWidth, mProfile.videoFrameHeight);
         } else {
-            mVideoSize = new Size(1920, 1080);
-        }
-        Point videoSize2 = PersistUtil.getCameraVideoSize();
-        if (videoSize2 != null) {
-            mVideoSize = new Size(videoSize2.x, videoSize2.y);
+            String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+            if (videoSize != null) {
+                mVideoSize = parsePictureSize(videoSize);
+            } else {
+                mVideoSize = new Size(1920, 1080);
+            }
+            Point videoSize2 = PersistUtil.getCameraVideoSize();
+            if (videoSize2 != null) {
+                mVideoSize = new Size(videoSize2.x, videoSize2.y);
+            }
         }
         Size[] prevSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
                 MediaRecorder.class);
@@ -12500,7 +12515,6 @@ private boolean isDevOptionSetting(){
     private void saveVideo() {
         Log.i(TAG,"start to save video mCurrentVideoUri="+mCurrentVideoUri);
         long startSaveVideo = System.currentTimeMillis();
-
         if (mSettingsManager.isMultiCameraEnabled()) {
             Set<String> ids = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_CAMCORDER);
@@ -16839,6 +16853,7 @@ private boolean isDevOptionSetting(){
 
     public void startPlayVideoActivity() {
         Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         intent.setDataAndType(mCurrentVideoUri,
                 CameraUtil.convertOutputFormatToMimeType(mProfile.fileFormat));
         try {
@@ -17213,6 +17228,7 @@ private boolean isDevOptionSetting(){
             String value = mSettingsManager.getValue(SettingsManager.KEY_INTEGRATED_MODE);
             if (value != null && value.equals("On")) {
                 mBokehText.setVisibility(View.VISIBLE);
+                mBokehText.setText("Bokeh Off");
             } else {
                 mBokehText.setVisibility(View.INVISIBLE);
             }

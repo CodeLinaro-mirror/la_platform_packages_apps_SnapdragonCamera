@@ -72,7 +72,7 @@ public final class GlideFilmstripManager {
         return MAX_IMAGE_DISPLAY_SIZE;
     }
 
-    public static final Size MEDIASTORE_THUMB_SIZE = new Size(512, 384);
+    public static final Size MEDIASTORE_THUMB_SIZE = new Size(671, 1491);
     public static final Size TINY_THUMB_SIZE = new Size(256, 256);
 
     // Estimated memory bandwidth for N5 and N6 is about 500MB/s
@@ -118,10 +118,11 @@ public final class GlideFilmstripManager {
     public final RequestBuilder<Drawable> loadFull(Uri uri, Key key, Size original, int orientation, int format) {
         Size size = clampSize(original, MAXIMUM_FULL_RES_PIXELS, getMaxImageDisplaySize());
         return mLargeImageBuilder
-              .clone()
-              .load(uri)
-              .signature(key)
-              .override(size.width(), size.height());
+                .clone()
+                .load(uri)
+                .signature(key)
+                .skipMemoryCache(true)
+                .override(size.width(), size.height());
     }
 
     /**
@@ -135,6 +136,7 @@ public final class GlideFilmstripManager {
                 .clone()
                 .load(uri)
                 .signature(key)
+                .skipMemoryCache(true)
                 .override(size.width(), size.height());
     }
 
@@ -147,11 +149,11 @@ public final class GlideFilmstripManager {
     public RequestBuilder<Drawable> loadMediaStoreThumb(Uri uri, Key key, int orientation, int format) {
         Size size = clampSize(MEDIASTORE_THUMB_SIZE, MAXIMUM_SMOOTH_PIXELS, getMaxImageDisplaySize());
         return mTinyImageBuilder
-              .clone()
-              .load(uri)
-              .signature(key)
-                    // This attempts to ensure we load the cached media store version.
-              .override(size.width(), size.height());
+                .clone()
+                .load(uri)
+                .signature(key)
+                .skipMemoryCache(true)
+                .override(size.width(), size.height());
     }
 
     /**
@@ -163,10 +165,11 @@ public final class GlideFilmstripManager {
     public RequestBuilder<Drawable> loadTinyThumb(Uri uri, Key key, float orientation, int format) {
         Size size = clampSize(TINY_THUMB_SIZE, MAXIMUM_SMOOTH_PIXELS,  getMaxImageDisplaySize());
         return mTinyImageBuilder
-              .clone()
-              .load(uri)
-              .signature(key)
-              .override(size.width(), size.height());
+                .clone()
+                .load(uri)
+                .signature(key)
+                .skipMemoryCache(true)
+                .override(size.width(), size.height());
     }
 
     /**

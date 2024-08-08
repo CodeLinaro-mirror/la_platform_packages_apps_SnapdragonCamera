@@ -4267,7 +4267,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
             result[0] = range.getLower();
             result[1] = range.getUpper();
-            Log.v(TAG, " RatioZoom min :"+ result[0] + ", zoom max :" + result[1]);
+            if(isSHDRLimited() && result[0] <0.9 && PersistUtil.getModelInfo().contains("8750")){
+                result[0] = 0.9f;
+            }
+            Log.v(TAG, "RatioZoom min :"+ result[0] + ", zoom max :" + result[1]);
+
         } catch(IllegalArgumentException | NoSuchFieldError e) {
             result = null;
             Log.w(TAG, EXCEPTION_LOG," CONTROL_ZOOM_RATIO_RANGE error="+e);
@@ -5003,6 +5007,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return true;
         else{
             if(value.toLowerCase().contains("mfhdr")|| value.toLowerCase().contains("qhdr"))
+                return true;
+        }
+        return false;
+    }
+    public boolean isSHDRLimited(){
+        String value = getVideoHdrMode();
+        if (value == null)
+            return false;
+        else if (value.equals("auto"))
+            return true;
+        else{
+            if(value.toLowerCase().contains("shdr"))
                 return true;
         }
         return false;
