@@ -2258,16 +2258,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 beRStats = result.get(CaptureModule.beRStats);
                 beGStats = result.get(CaptureModule.beGStats);
                 beBStats = result.get(CaptureModule.beBStats);
-
+                Log.d(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
                 norm_roi_x = result.get(CaptureModule.roiBeX);
                 norm_roi_y = result.get(CaptureModule.roiBeY);
                 norm_roi_dx = result.get(CaptureModule.roiBeWidth);
                 norm_roi_dy = result.get(CaptureModule.roiBeHeight);
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG, EXCEPTION_LOG,"there is no vendor roiBeX/roiBeY/roiBeWidth/roiBeHeight");
+            } catch (IllegalArgumentException |NullPointerException e ) {
+                Log.w(TAG, " read vendor roiBeX/roiBeY/roiBeWidth/roiBeHeight exception="+e
+                +",CaptureModule.roiBeX ="+result.get(CaptureModule.roiBeX));
             }
-            Log.i(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
-
 
             if (beRStats != null && beGStats != null && beBStats != null && mBEStatson) {
 
