@@ -155,6 +155,7 @@ public class AIDenoiserService extends Service {
     private SwmfnrUtil mSwmfnrUtil;
     private static final String TAG = "snapcam_aideservice";
     private ZSLQueue mMfnrQueue;
+    long mMfnrSessionId;
     private ImageHandlerTask mImageHandlerTask;
     private Thread mThread;
     private HandlerThread mHandlerThread;
@@ -225,11 +226,12 @@ public class AIDenoiserService extends Service {
 
     public void createMfnr() {
         mMfnrQueue = new ZSLQueue(null);
-        long sessionId = mSwmfnrUtil.nativeMfnrCreate();
-        Log.i(TAG,"createMfnr, sessionId:" + sessionId);
+        mMfnrSessionId = mSwmfnrUtil.nativeMfnrCreate();
+        Log.i(TAG,"createMfnr, sessionId:" + mMfnrSessionId);
     }
 
     public void configureMfnr(int width, int height, MfnrTunableParams mfnrParams){
+        if(mMfnrSessionId == -1 ) return;
         Log.i(TAG,"configureMfnr, width" + width + ",height:" + height + ",mfnrParams:" + mfnrParams);
         int allocateResult = mSwmfnrUtil.nativeMfnrAllocate(width, height);
         Log.i(TAG,"configureMfnr, allocateResult" + allocateResult);
@@ -275,6 +277,7 @@ public class AIDenoiserService extends Service {
     }
 
     public void startMfnrProcess(CameraActivity activity, float imageGain, boolean isAIDEenabled) {
+        if(mMfnrSessionId == -1 ) return;
         mActivity = activity;
         mMfnrOut = ByteBuffer.allocateDirect(mStrideY * mHeight *3/2);
         Log.i(TAG,"mWidth:" + mWidth + ",mHeight:" + mHeight + ",strideY:" + mStrideY +",strideC:" + mStrideC);
@@ -394,6 +397,7 @@ public class AIDenoiserService extends Service {
     }
 
     public void destoryMfnr(){
+        if(mMfnrSessionId == -1 ) return;
         int destoryResult = mSwmfnrUtil.nativeMfnrDestroy();
         Log.i(TAG, " destoryResult:" + destoryResult);
     }
@@ -408,6 +412,7 @@ public class AIDenoiserService extends Service {
         public void onImageAvailable(ImageReader reader) {
             try {
                 Log.i(TAG,"onImageAvailable");
+                if(mMfnrSessionId == -1 ) return;
                 isDoingMfnr = true;
                 Image image = reader.acquireNextImage();
                 mWidth = image.getWidth();
