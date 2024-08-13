@@ -10736,7 +10736,7 @@ private boolean isDevOptionSetting(){
                     mHasMapTimes.put("Total",System.currentTimeMillis() - mStartedTime);
                 }
             }
-            if(!PersistUtil.enableMediaRecorder() && !waitForAudioPrepare()){
+            if(!PersistUtil.enableMediaRecorder() && !mOnlyVideoEncoder && !waitForAudioPrepare()){
                 quitVideoToPhotoWithError("media codec prepare failed");
                 return;
             }
