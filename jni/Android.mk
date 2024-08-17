@@ -85,8 +85,11 @@ LOCAL_MODULE    := libjni_mfnrutil
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := mfnr_util_jni.cpp
 LOCAL_ADDITIONAL_DEPENDENCIES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
+VENDOR_PROPRIETARY_PATH := $(LOCAL_PATH)/../../../../../qcom/proprietary
 LOCAL_C_INCLUDES :=  camxmfnrwrapper.h \
-                     $(TARGET_OUT_HEADERS)/camx
+                     $(TARGET_OUT_HEADERS)/camx \
+                     $(VENDOR_PROPRIETARY_PATH)/camx-api-kt/camx/utils
+
 LOCAL_SHARED_LIBRARIES := libmmcamera_mfnr liblog libcutils libm libGLESv3 libEGL libopencv
 LOCAL_HEADER_LIBRARIES := jni_headers vendor_common_inc
 LOCAL_CFLAGS    += -ffast-math -O3 -funroll-loops
