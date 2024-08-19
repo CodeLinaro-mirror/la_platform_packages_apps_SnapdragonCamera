@@ -4372,7 +4372,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         } catch (CameraAccessException | IOException | IllegalArgumentException |
                 NullPointerException | IllegalStateException e) {
-            Log.e(TAG,e.toString());
+            Log.e(TAG,"exception="+e);
+            e.printStackTrace();
             if (mIsCloseCamera && mCameraDevice[cameraId] == null) {
                 Log.w(TAG, "activity may be onPause, no need to pop up error msg.");
             } else {
@@ -6096,9 +6097,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else {
                 applyZoom(captureBuilder, id);
             }
-            if (mHighSpeedCapture && !isVariableFPSEnabled()) {
-                captureBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                        mHighSpeedFPSRange);
+            if (!isVariableFPSEnabled()) {
+                Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
+                captureBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
             }
 
             // send snapshot stream together with preview and video stream for snapshot request
@@ -7785,8 +7786,7 @@ private boolean isDevOptionSetting(){
         applyVideoFlash(builder, id);
         applyExposure(builder);
         applyAICameraSnapshot(builder);
-        Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
-        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
+
     }
 
     private void applySessionParameters(CaptureRequest.Builder builder){
@@ -11531,14 +11531,12 @@ private boolean isDevOptionSetting(){
                     cameraId,mSettingsManager.getPhysicalCameraId());
         }
         setTag(mVideoRecordRequestBuilder, "" + cameraId + "-" + getCurrenCameraMode().name());
-        if (mHighSpeedCapture && !isVariableFPSEnabled()) {
-            mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                    mHighSpeedFPSRange);
-        } else {
-            mHighSpeedFPSRange = new Range( mProfile.videoFrameRate,  mProfile.videoFrameRate);
-            mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                    mHighSpeedFPSRange);
+
+        if (!isVariableFPSEnabled()) {
+            Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
+            mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
         }
+
         if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
             mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest
                     .CONTROL_AF_MODE_CONTINUOUS_VIDEO);
@@ -11590,14 +11588,8 @@ private boolean isDevOptionSetting(){
             mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
         }
         if (!isVariableFPSEnabled()) {
-            if (mHighSpeedCapture && !isVariableFPSEnabled()) {
-                mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                        mHighSpeedFPSRange);
-            } else {
-                mHighSpeedFPSRange = new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
-                mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                        mHighSpeedFPSRange);
-            }
+            Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
+            mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
         }
             applyVideoCommentSettings(mVideoPreviewRequestBuilder, cameraId);
     }
