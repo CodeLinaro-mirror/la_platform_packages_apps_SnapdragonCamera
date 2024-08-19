@@ -1876,7 +1876,7 @@ public class TestBase{
     private void testDepthUI()throws Exception {
         updateJson(5, null);
         getDepthUILoc();
-
+        Log.i(TAG,"tap mDepthBarLoc="+mDepthBarLoc[0]+","+mDepthBarLoc[1]);
         executeShellCommand("input tap " + mDepthBarLoc[0] + " " + mDepthBarLoc[1]);
         Thread.sleep(SMALL_WAIT_DURATION);
         executeShellCommand("input tap " + mDepthBarMaxLoc[0] + " " + mDepthBarMaxLoc[1]);
@@ -2577,12 +2577,13 @@ public class TestBase{
         mDepthBarLoc = mCaptureUI.getBarMargin();
         mDepthSwitchLoc =  mCaptureUI.getSwitchMargin();
         mDepthSettingLoc[0] = displayMetrics.widthPixels -mDepthSettingLoc[0]-10;
-        mDepthBarLoc[0] = displayMetrics.widthPixels - mDepthBarLoc[0]-830;
-        mDepthBarLoc[1] = displayMetrics.heightPixels - mDepthBarLoc[1] + 100;
-        mDepthBarMaxLoc[0] =  mDepthBarLoc[0] + 800;
+        mDepthBarLoc[0] = mDepthBarLoc[0]+200;
+       // mDepthBarLoc[1] = displayMetrics.heightPixels - mDepthBarLoc[1] + 100;
+        mDepthBarLoc[1] = mModeLoc[1] - 50;
+        mDepthBarMaxLoc[0] =  displayMetrics.widthPixels  - 200;
         mDepthBarMaxLoc[1] =  mDepthBarLoc[1];
 
-        mDepthSwitchLoc[0] = displayMetrics.widthPixels - mDepthSwitchLoc[0]-200;
+        mDepthSwitchLoc[0] = displayMetrics.widthPixels - mDepthSwitchLoc[0] - 200;
         mDepthSwitchRLoc[0] = mDepthSwitchLoc[0]+100;
         mDepthSwitchRLoc[1] = mDepthSwitchLoc[1];
         mDepthLoc.put("depthSetting",mDepthSettingLoc);
@@ -2873,7 +2874,8 @@ public class TestBase{
         int fpsInVideo = 0;
         //long timeshow = mCaptureModule.getRecordingTime() ;
         //assertNotNull(mFrameRate);
-        if (mFrameRate != null && !mFrameRate.equals("off")) {
+        if (mFrameRate != null && !mFrameRate.equals("off")
+                && !mFrameRate.equals("24") && !mFrameRate.equals("30")) {
             String mode = mFrameRate.substring(0, 3);
             fps = Integer.parseInt(mFrameRate.substring(3));
             if (mode.equals("hfr")) {
