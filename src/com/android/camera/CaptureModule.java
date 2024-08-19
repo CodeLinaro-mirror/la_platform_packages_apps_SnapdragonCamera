@@ -29,14 +29,17 @@ package com.android.camera;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.bluetooth.BluetoothLeAudio;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
@@ -4559,6 +4562,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         mUI = mActivity.getCaptureUI();
         mUI.initializeControlByIntent();
         mFocusStateListener = new FocusStateListener(mUI);
+        IntentFilter btFilter = new IntentFilter();
+        btFilter.addAction(BluetoothLeAudio.ACTION_LE_AUDIO_ACTIVE_DEVICE_CHANGED);
+        mActivity.registerReceiver(mBTConnectReceiver, btFilter);
     }
 
     public void restoreCameraIds(){
@@ -4907,7 +4913,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         mUI.enableShutter(false);
         int cameraId = getMainCameraId();
-        isflashRequired = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) == CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED;
+        String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
+        Integer aeState = CameraMetadata.CONTROL_AE_STATE_INACTIVE;
+        if (mPreviewCaptureResult != null) {
+            aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
+        }
+        isflashRequired = aeState ==  CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED ||
+                (flashMode != null && flashMode.equalsIgnoreCase("on"));
         if(mSettingsManager.isTorchHDREnabled(isflashRequired,mPreviewCaptureResult)){
             mCaptureTorchTrigger = true;
             applyFlash(mPreviewRequestBuilder[cameraId], getMainCameraId());
@@ -4918,10 +4930,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                Log.e(TAG,e.toString());
             }
         }
-        Integer aeState = CameraMetadata.CONTROL_AE_STATE_INACTIVE;
-        if (mPreviewCaptureResult != null) {
-            aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
-        }
+
         if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) &&
                 !isFlashOn(cameraId) && (aeState != CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED &&
                 mPreviewCaptureResult.getRequest().get(CaptureRequest.CONTROL_AE_LOCK) != Boolean.TRUE || mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE)) {
@@ -7904,14 +7913,10 @@ private boolean isDevOptionSetting(){
 
     private void applyFlashMode(CaptureRequest.Builder builder) {
         String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
-        if(isCaptureBrustMode() || mCaptureTorchTrigger ||
-                flashMode == null || flashMode.equalsIgnoreCase("off")){
+        if(isCaptureBrustMode() || mCaptureTorchTrigger){
             return;
         }
-        Log.i(TAG,"flashMode="+flashMode+",isflashRequired="+isflashRequired);
-        if (flashMode.equalsIgnoreCase("on")) {
-            builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
-        } else if (flashMode.equalsIgnoreCase("auto") && isflashRequired){
+        if (isflashRequired){
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
         }
         isflashRequired = false;
@@ -8869,6 +8874,7 @@ private boolean isDevOptionSetting(){
         }
         mSettingsManager.unregisterListener(this);
         mSettingsManager.unregisterListener(mUI);
+        mActivity.unregisterReceiver(mBTConnectReceiver);
         mSettingsManager.destroyCaptureModule();
         if (mCameraRender != null) {
             mCameraRender.destroy();
@@ -10301,15 +10307,31 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateVideoSize() {
-        String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-        if (videoSize != null) {
-            mVideoSize = parsePictureSize(videoSize);
+        Intent intent = mActivity.getIntent();
+        if (intent.hasExtra(MediaStore.EXTRA_VIDEO_QUALITY)) {
+            int size = 0;
+            int extraVideoQuality =
+                    intent.getIntExtra(MediaStore.EXTRA_VIDEO_QUALITY, 0);
+            if (extraVideoQuality > 0) {
+                size = CamcorderProfile.QUALITY_HIGH;
+            } else {
+                size = CamcorderProfile.QUALITY_LOW;
+            }
+            if (CamcorderProfile.hasProfile(getMainCameraId(), size)) {
+                mProfile = CamcorderProfile.get(getMainCameraId(), size);
+            }
+            mVideoSize = new Size(mProfile.videoFrameWidth, mProfile.videoFrameHeight);
         } else {
-            mVideoSize = new Size(1920, 1080);
-        }
-        Point videoSize2 = PersistUtil.getCameraVideoSize();
-        if (videoSize2 != null) {
-            mVideoSize = new Size(videoSize2.x, videoSize2.y);
+            String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+            if (videoSize != null) {
+                mVideoSize = parsePictureSize(videoSize);
+            } else {
+                mVideoSize = new Size(1920, 1080);
+            }
+            Point videoSize2 = PersistUtil.getCameraVideoSize();
+            if (videoSize2 != null) {
+                mVideoSize = new Size(videoSize2.x, videoSize2.y);
+            }
         }
         Size[] prevSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
                 MediaRecorder.class);
@@ -12500,7 +12522,6 @@ private boolean isDevOptionSetting(){
     private void saveVideo() {
         Log.i(TAG,"start to save video mCurrentVideoUri="+mCurrentVideoUri);
         long startSaveVideo = System.currentTimeMillis();
-
         if (mSettingsManager.isMultiCameraEnabled()) {
             Set<String> ids = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_CAMCORDER);
@@ -13533,6 +13554,21 @@ private boolean isDevOptionSetting(){
         am.setParameters("hdr_audio_channel_count=0");
         am.setParameters("hdr_audio_sampling_rate=0");
     }
+
+    private final BroadcastReceiver mBTConnectReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.i(TAG, "BLE, onReceive: " + intent.getAction());
+            if (mCurrentSceneMode.mode != CameraMode.VIDEO) return;
+            String action = intent.getAction();
+            if (BluetoothLeAudio.ACTION_LE_AUDIO_ACTIVE_DEVICE_CHANGED.equals(action)) {
+                if (mSettingsManager.getValue(SettingsManager.KEY_AUDIO_BLE).equals("On") && isBLEConnected()) {
+                    boolean result = mMediaRecorder.setPreferredDevice(mBleInputDevice);
+                    Log.i(TAG, "BLE, setPreferredDevice ble " + result);
+                }
+            }
+        }
+    };
 
     private void configurateAudio(int camId) {
         int audioEncoder = SettingTranslation
@@ -14587,10 +14623,9 @@ private boolean isDevOptionSetting(){
 
     private void applyVIULL(CaptureRequest.Builder request) {
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-        String hfr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         String videoQuality = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-        if (!"off".equals(hfr) || "1280x720".equals(videoQuality)) {
-            Log.w(TAG, " applyVIULL mode : 0, video profile " + profile + ", hfr " + hfr + ", videoQuality " + videoQuality);
+        if ("1280x720".equals(videoQuality)) {
+            Log.w(TAG, " applyVIULL mode : 0, video profile " + profile + ", videoQuality " + videoQuality);
             VendorTagUtil.setVIULLMode(request, 0);
             return;
         }
@@ -16551,7 +16586,7 @@ private boolean isDevOptionSetting(){
             if (max_size != -1){
                 int size = s.getWidth() * s.getHeight();
                 if (s.getWidth() == s.getHeight()){
-                    if (s.getWidth() > Math.max(point_max[0],point_max[1]))
+                    if (s.getWidth() > Math.min(point_max[0],point_max[1]))
                         continue;
                 } else if (size > max_size || size == 0 || s.getHeight() > point_max[1]) {
                     continue;
@@ -16839,6 +16874,7 @@ private boolean isDevOptionSetting(){
 
     public void startPlayVideoActivity() {
         Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         intent.setDataAndType(mCurrentVideoUri,
                 CameraUtil.convertOutputFormatToMimeType(mProfile.fileFormat));
         try {
@@ -17213,6 +17249,7 @@ private boolean isDevOptionSetting(){
             String value = mSettingsManager.getValue(SettingsManager.KEY_INTEGRATED_MODE);
             if (value != null && value.equals("On")) {
                 mBokehText.setVisibility(View.VISIBLE);
+                mBokehText.setText("Bokeh Off");
             } else {
                 mBokehText.setVisibility(View.INVISIBLE);
             }

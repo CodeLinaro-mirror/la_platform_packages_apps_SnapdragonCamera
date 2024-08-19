@@ -2592,16 +2592,6 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
 
-        ListPreference hfrPref = (ListPreference) findPreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-        if (hfrPref != null) {
-            String value = hfrPref.getValue();
-            if (!"off".equals(value)) {
-                pref.setValue("0");
-                pref.setEnabled(false);
-                return;
-            }
-        }
-
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         String selectMode = mSettingsManager.getValue(mSettingsManager.KEY_SELECT_MODE);
         if (selectMode.equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
