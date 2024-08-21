@@ -3574,9 +3574,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             foucusList.add(mStatsNNFocusRenderer);
         }
         if (mModule.isSateAFSettingOn()) {
-            if (mPieRenderer != null) {
-                mPieRenderer.clear();
-            }
             foucusList.add(mAFViewRender);
         }
         FocusIndicator focusIndicator;
