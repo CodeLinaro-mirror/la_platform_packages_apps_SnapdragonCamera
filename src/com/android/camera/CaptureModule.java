@@ -9148,7 +9148,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         mCurrentVideoValues.put(MediaStore.Video.Media.DATE_TAKEN, dateTaken);
         mCurrentVideoValues.put(MediaStore.MediaColumns.DATE_MODIFIED, dateTaken / 1000);
         mCurrentVideoValues.put(MediaStore.Video.Media.MIME_TYPE, mime);
-        mCurrentVideoValues.put(MediaStore.Video.Media.DATA, path);
         mCurrentVideoValues.put(MediaStore.Video.Media.RESOLUTION,
                 "" + mVideoSize.getWidth() + "x" + mVideoSize.getHeight());
         Location loc = mLocationManager.getCurrentLocation();
@@ -9206,7 +9205,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     contentValues.put(MediaStore.Video.Media.DATE_TAKEN, dateTaken);
                     contentValues.put(MediaStore.MediaColumns.DATE_MODIFIED, dateTaken / 1000);
                     contentValues.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
-                    contentValues.put(MediaStore.Video.Media.DATA, physicalFileName);
                     mActivity.getMediaSaveService().addVideo(physicalFileName,
                             0L, contentValues,
                             mOnVideoSavedListener, mContentResolver);
