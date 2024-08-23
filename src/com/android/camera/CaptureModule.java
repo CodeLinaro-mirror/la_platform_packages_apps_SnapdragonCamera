@@ -3113,8 +3113,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 List requestList = session.createHighSpeedRequestList(mVideoRecordRequestBuilder.build());
                 session.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
             } else {
-                mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
-                        .build(), mCaptureCallback, mCameraHandler);
+                int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
+                        mSettingsManager.getVideoFPS());
+                if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    limitPreviewFPS();
+                } else {
+                    mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
+                            .build(), mCaptureCallback, mCameraHandler);
+                }
             }
         } catch (CameraAccessException | IllegalStateException | IllegalArgumentException e) {
             e.printStackTrace();
@@ -7766,11 +7772,21 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void limitPreviewFPS() {
         try {
             List<CaptureRequest> burstList = new ArrayList<>();
-            burstList.add(mVideoRecordRequestBuilder.build());
-            mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
-            burstList.add(mVideoRecordRequestBuilder.build());
-            mCurrentSession.setRepeatingBurst(burstList, mCaptureCallback, mCameraHandler);
-            mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
+            if(mIsRecordingVideo) {
+                burstList.add(mVideoRecordRequestBuilder.build());
+                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                burstList.add(mVideoRecordRequestBuilder.build());
+                mCurrentSession.setRepeatingBurst(burstList, mCaptureCallback, mCameraHandler);
+                mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
+            }else{
+                mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].addTarget(mVideoRecordingSurface);
+                burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoPreviewSurface);
+                burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                mCurrentSession.setRepeatingBurst(burstList, mCaptureCallback, mCameraHandler);
+                mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoRecordingSurface);
+                mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].addTarget(mVideoPreviewSurface);
+            }
         } catch (CameraAccessException e) {
             Log.e(TAG, "limit preview fps failed.");
         }
@@ -8834,13 +8850,22 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
                     }
                 }
+                List<CaptureRequest> burstList = new ArrayList<>();
+                burstList.add(captureRequestBuilder.build());
                 captureRequestBuilder = mVideoPreviewRequestBuilder;
                 captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
                 applyVideoCommentSettings(captureRequestBuilder, getMainCameraId());
                 Log.d(TAG, "Set endofstream TAG to 0");
                 if( (mCurrentSession != null) && mCameraDevice[getMainCameraId()] != null) {
-                    mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
-                            mCaptureCallback, mCameraHandler);
+                    int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
+                            mSettingsManager.getVideoFPS());
+                    if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                        burstList.add(captureRequestBuilder.build());
+                        mCurrentSession.setRepeatingBurst(burstList, mCaptureCallback, mCameraHandler);
+                    } else {
+                        mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
+                                mCaptureCallback, mCameraHandler);
+                    }
                 }
             }
         } catch (CameraAccessException | IllegalStateException | NullPointerException |
@@ -9017,8 +9042,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mCurrentSession.setRepeatingBurst(burstRequests, mCaptureCallback,
                                 mCameraHandler);
                     } else {
-                        mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
-                                mCaptureCallback, mCameraHandler);
+                        int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
+                                mSettingsManager.getVideoFPS());
+                        if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                            limitPreviewFPS();
+                        } else {
+                            mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
+                                    mCaptureCallback, mCameraHandler);
+                        }
                     }
                 } catch (CameraAccessException e) {
                     Log.w(TAG, "stopRecordingVideo: " + e);
