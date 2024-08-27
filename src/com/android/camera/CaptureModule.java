@@ -2540,8 +2540,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 Log.i(TAG,"is doing mfnr:" + mActivity.getAIDenoiserService().isDoingMfnr());
                                 if(!mActivity.getAIDenoiserService().isDoingMfnr()){
                                     enableShutter(true);
-                                } else {
-                                    warningToast("Camera is not ready yet to take a picture.");
                                 }
                             } else {
                                 enableShutter(true);
