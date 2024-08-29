@@ -4363,7 +4363,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mIsPreviewingVideo = true;
             if (isHighSpeedRateCapture()) {
-                if(mSettingsManager.isBatchMode(getMainCameraId()) && mVideoRecordingSurface != null){
+                if((mSettingsManager.isBatchMode(getMainCameraId()) || mCurrentSceneMode.mode == CameraMode.HFR) && mVideoRecordingSurface != null){
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                 }
                 createHighSpeedSession(cameraId);
@@ -12317,7 +12317,7 @@ private boolean isDevOptionSetting(){
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
-        if(!mSettingsManager.isBatchMode(getMainCameraId())) {
+        if(!mSettingsManager.isBatchMode(getMainCameraId()) && mCurrentSceneMode.mode != CameraMode.HFR) {
             mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
         }
         if (!PersistUtil.enableMediaRecorder()) {
