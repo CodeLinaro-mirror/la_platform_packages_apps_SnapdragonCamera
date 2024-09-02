@@ -1437,6 +1437,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return formats;
     }
 
+    public List<String> getSupportedPreviewProfile(){
+        List<String> results = new ArrayList<>();
+        results.add("0");
+        try {
+            DynamicRangeProfiles dynamicProfiles = mCharacteristics.get(
+                    getCurrentCameraId()).get(
+                    CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES);
+            if (dynamicProfiles != null) {
+                Set<Long> profiles = dynamicProfiles.getSupportedProfiles();
+                for (Long p : profiles) {
+                    results.add(p.toString());
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "getSupportedPreviewProfile", e.fillInStackTrace());
+        }
+        return results;
+    }
     public List<String> getSupportedCapturePreviewProfile() {
         String[] data = {"0", "2", "4"};
         List<String> profiles = new ArrayList<>();
@@ -2212,7 +2230,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         getSupportedCapturePreviewProfile())) {
                     mFilteredKeys.add(captureProfile.getKey());
                 }
-                captureProfile.print();
+                if (filterUnsupportedOptions(previewProfile,
+                        getSupportedPreviewProfile())) {
+                    mFilteredKeys.add(captureProfile.getKey());
+                }
             }
         }
 
