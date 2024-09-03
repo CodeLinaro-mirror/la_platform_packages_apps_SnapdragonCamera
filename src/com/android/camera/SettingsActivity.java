@@ -213,10 +213,9 @@ public class SettingsActivity extends PreferenceActivity {
                 updateViullPreference();
                 updateVsrPreference();
             } else if (key.equals(SettingsManager.KEY_SELECT_MODE)) {
-                CaptureModule.CameraMode mode = (CaptureModule.CameraMode)
-                        getIntent().getSerializableExtra(CAMERA_MODULE);
                 updatePdnetTogglePreference();
                 updateViullPreference();
+                updateZoomPreference();
             } else if (key.equals(SettingsManager.KEY_MULTIRESIMAGEREADER)) {
                 //when multiresolutionimagereader enabled, disable KEY_PICTURE_SIZE
                 value = mSettingsManager.getValue(SettingsManager.KEY_MULTIRESIMAGEREADER);
@@ -451,6 +450,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 if(mSettingsManager.KEY_SWITCH_CAMERA .equals(pref.getKey())){
                     checkExposurTimeValue();
+                    updateZoomPreference();
                 }
                 if(mSettingsManager.KEY_EXTENDED_MAX_ZOOM .equals(pref.getKey())){
                     updateZoomPreference();
@@ -2448,11 +2448,23 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref != null) {
             if (pref.getEntries() != null && pref.getEntries().length == 1) {
                 pref.setEnabled(false);
+                return;
             } else if (mode == CaptureModule.CameraMode.VIDEO) {
                 String hdrmode = mSettingsManager.getVideoHdrMode();
                 if (hdrmode.toLowerCase().contains("mfhdr")) {
                     pref.setValue("off");
                     pref.setEnabled(false);
+                    return;
+                }
+            }
+            ListPreference lapsepref = (ListPreference)findPreference(
+                    SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL);
+            if(lapsepref != null){
+                String lapsvalue = lapsepref.getValue();
+                if(lapsvalue != null && !lapsvalue.equals("0")){
+                    pref.setValue("off");
+                    pref.setEnabled(false);
+                    return;
                 }
             }
         }

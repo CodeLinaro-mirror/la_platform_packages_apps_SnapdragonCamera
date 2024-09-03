@@ -4166,6 +4166,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mIsPreviewingVideo = true;
             if (isHighSpeedRateCapture()) {
+                if(isBatchMode() && mVideoRecordingSurface != null){
+                    mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                }
                 createHighSpeedSession(cameraId);
             } else {
                 createRegularSession(cameraId);
@@ -5576,13 +5579,15 @@ public class CaptureModule implements CameraModule, PhotoController,
             if(mAideAECLuxIndex < lux_index_threadhold){//high light only do HWMFNR and no need to crop
                 aiDenoiserService.wantImagesNum(mCaptureRequestNum);
                 Size yuvSize = new Size(mAideFullImage.getWidth(), mAideFullImage.getHeight());
-                Log.i(TAG,"save jpeg for mfnr aide start, yuv size:" + yuvSize.toString());
                 byte[] yuv = getYUVFromImage(mAideFullImage);
                 int stride = mAideFullImage.getPlanes()[0].getRowStride();
+                Log.i(TAG,"save jpeg for mfnr aide start, yuv size:" + yuvSize.toString() + ",stride:" + stride + ",picture size:" + mPictureSize.toString());
                 if (TRACE_DEBUG) Trace.beginSection("save jpeg for aide2");
                 Rect rect = aiDenoiserService.getCropRegion(yuvSize.getWidth(), yuvSize.getHeight(), mPictureSize.getWidth(), mPictureSize.getHeight());
                 if(mAideFullImage.getWidth() != rect.width() || mAideFullImage.getHeight() != rect.height()) {
                     yuv = aiDenoiserService.cropYuvImage(yuv, stride, yuvSize.getWidth(), yuvSize.getHeight(), rect);
+                    mActivity.getMediaSaveService().addRawImage(yuv,"croped","yuv");
+                    stride = rect.width();
                 }
                 Bitmap bitmap = aiDenoiserService.yuvToRgbAndResize(yuv,rect.width(), rect.height(), stride,
                         mPictureSize.getWidth(), mPictureSize.getHeight(), Integer.parseInt(format));
@@ -7994,7 +7999,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mIsCloseCamera = true;
         }
         mSettingsManager.createCaptureModule(this);
-        initModeByIntent();
+        //initModeByIntent();
         // must change cameraId before "mPaused = false;"
         int facingOfIntentExtras = CameraUtil.getFacingOfIntentExtras(mActivity);
         String action = mActivity.getIntent().getAction();
@@ -9810,7 +9815,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         if(mSupportedRawPictureSize == null) {
             Size[] rawSize = mSettingsManager.getSupportedOutputSize(currentId, rawFormat);
-            Log.d(TAG, " rawsize==null? :" + (rawSize == null) + ",mSaveRaw=" + mSaveRaw + ",mSettingsManager.getRawFormat()=" + rawFormat);
+            Log.d(TAG, " rawsize==null? :" + (rawSize == null) + ",mSaveRaw=" + mSaveRaw + ",mSettingsManager.getRawFormat()=" + rawFormat + ",currentId:" + currentId);
             if ((rawSize == null || rawSize.length == 0 || rawFormat == 0)) {
                 mSaveRaw = false;
             }
@@ -9818,7 +9823,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 rawSize = mSettingsManager.getSupportedOutputSize(currentId, ImageFormat.RAW10);
             }
             Size maxRawSize = getMaxRawSize();
-            if (maxRawSize != null && (rawFormat == ImageFormat.RAW10 ||
+            if (maxRawSize != null && !isPhysicalRaw() && (rawFormat == ImageFormat.RAW10 ||
                     (rawFormat == ImageFormat.RAW_SENSOR && isRawReprocess()))) {
                 mSupportedRawPictureSize = maxRawSize;
             } else if ((mSupportedRawPictureSize == null || (rawFormat == ImageFormat.RAW_SENSOR && !isRawReprocess())) && rawSize != null) {
@@ -10812,7 +10817,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 warningToast("Please enable physical cameras of outputs first");
                 return false;
             }
-
 
             int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                     mSettingsManager.getVideoFPS());
@@ -11909,7 +11913,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
-        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        if(!isBatchMode()) {
+            mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        }
         if (!PersistUtil.enableMediaRecorder()) {
             mFrameProcessor.setVideoOutputSurface(null);
             mFrameProcessor.onClose();
@@ -11929,7 +11935,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 mCameraHandler);
 
                     } else {
-                        mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
+                        mCurrentSession.setRepeatingRequest(mPreviewRequestBuilder[CURRENT_ID].build(),
                                 mCaptureCallback, mCameraHandler);
                     }
                 } catch (CameraAccessException e) {
@@ -13718,7 +13724,13 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
         }
     }
-
+    private boolean isBatchMode(){
+        String buffermode = mSettingsManager.getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
+        if(buffermode != null && buffermode.equals("0")) {
+            return true;
+        }
+        return false;
+    }
     private void applySharpnessControlModes(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SHARPNESS_CONTROL_MODE);
         if (value != null) {
@@ -14420,7 +14432,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyZoom(captureRequest, id);
             }
         }
-
         if (mState[id] == STATE_WAITING_TOUCH_FOCUS) {
             cancelTouchFocus(id);
         }
@@ -14649,6 +14660,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void changeExpoure(String value){
         int cameraId = getMainCameraId();
         int ev = CameraUtil.strToInt(value,0);
+        mSettingsManager.setValue(SettingsManager.KEY_EXPOSURE, value);
         if(mPreviewRequestBuilder[cameraId] != null) {
             mPreviewRequestBuilder[cameraId].set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, ev);
             updatePreview();
