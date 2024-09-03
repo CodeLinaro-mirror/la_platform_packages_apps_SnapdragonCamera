@@ -384,6 +384,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CameraCharacteristics.Key<float[]> WB_RGB_GAINS_RANGE =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.manualWB.gains_range", float[].class);
 
+    public static final CaptureRequest.Key<Byte> spatialVideo =
+            new CaptureRequest.Key<>("com.qti.qualcomm.spatialVideo.SpatialVideoMode", byte.class);
+
     public static CaptureResult.Key<Integer> buckets =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.histogram.buckets", Integer.class);
     public static CameraCharacteristics.Key<Integer> maxCount =
@@ -758,9 +761,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.SensorModeFS", byte.class);
     public static CameraCharacteristics.Key<Byte> fs_mode_support =
             new CameraCharacteristics.Key<>("org.quic.camera.SensorModeFS.isFastShutterModeSupported", Byte.class);
-
-    public static final CameraCharacteristics.Key<Byte> heic_support_enable =
-            new CameraCharacteristics.Key<>("org.quic.camera.HEICSupport.HEICEnabled",Byte.class);
 
     // Touch Track Focus
     public static final CaptureRequest.Key<Byte> t2t_enable = new CaptureRequest.Key<>(
@@ -2261,16 +2261,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 beRStats = result.get(CaptureModule.beRStats);
                 beGStats = result.get(CaptureModule.beGStats);
                 beBStats = result.get(CaptureModule.beBStats);
-
+                Log.d(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
                 norm_roi_x = result.get(CaptureModule.roiBeX);
                 norm_roi_y = result.get(CaptureModule.roiBeY);
                 norm_roi_dx = result.get(CaptureModule.roiBeWidth);
                 norm_roi_dy = result.get(CaptureModule.roiBeHeight);
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG, EXCEPTION_LOG,"there is no vendor roiBeX/roiBeY/roiBeWidth/roiBeHeight");
+            } catch (IllegalArgumentException |NullPointerException e ) {
+                Log.w(TAG, " read vendor roiBeX/roiBeY/roiBeWidth/roiBeHeight exception="+e
+                +",CaptureModule.roiBeX ="+result.get(CaptureModule.roiBeX));
             }
-            Log.i(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
-
 
             if (beRStats != null && beGStats != null && beBStats != null && mBEStatson) {
 
@@ -4373,7 +4372,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         } catch (CameraAccessException | IOException | IllegalArgumentException |
                 NullPointerException | IllegalStateException e) {
-            Log.e(TAG,e.toString());
+            Log.e(TAG,"exception="+e);
+            e.printStackTrace();
             if (mIsCloseCamera && mCameraDevice[cameraId] == null) {
                 Log.w(TAG, "activity may be onPause, no need to pop up error msg.");
             } else {
@@ -4398,7 +4398,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         Size videoSize = parsePictureSize(videoSizeString);
         String rateValue = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-        if (rateValue == null || rateValue.substring(0, 3).equals("off")) {
+        if (rateValue == null || rateValue.equals("24") || rateValue.equals("30")) {
             Log.w(TAG, "KEY_VIDEO_HIGH_FRAME_RATE is null");
             return optimalSizeIndex;
         }
@@ -6088,6 +6088,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_SIZE, mVideoSnapshotThumbSize);
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_QUALITY, (byte)80);
             applyVideoSnapshot(captureBuilder, id);
+
             if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE) {
                 applySettingsForLockExposure(captureBuilder, id);
             }
@@ -6096,9 +6097,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else {
                 applyZoom(captureBuilder, id);
             }
-            if (mHighSpeedCapture && !isVariableFPSEnabled()) {
-                captureBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                        mHighSpeedFPSRange);
+            if (!isVariableFPSEnabled()) {
+                Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
+                captureBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
             }
 
             // send snapshot stream together with preview and video stream for snapshot request
@@ -6151,7 +6152,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (mSettingsManager.isMaxConfigureSize(id, mVideoSize)) {
                     captureBuilder.set(CaptureRequest.SENSOR_PIXEL_MODE,
                             CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
-                    Log.v(TAG, "VideoSnapshot builder set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+                    Log.i(TAG, " VideoSnapshot builder set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
                 }
 
                 Surface surface = getPreviewSurfaceForSession(id);
@@ -7739,7 +7740,7 @@ private boolean isDevOptionSetting(){
                 ((mCurrentSceneMode.mode == CameraMode.VIDEO ||
                         mCurrentSceneMode.mode == CameraMode.CINEMATIC) &&
                         !isVariableFPSEnabled())) {
-            Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(30, 30);
+            Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
             builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
         }
         applyAFRegions(builder, id);
@@ -7785,6 +7786,7 @@ private boolean isDevOptionSetting(){
         applyVideoFlash(builder, id);
         applyExposure(builder);
         applyAICameraSnapshot(builder);
+
     }
 
     private void applySessionParameters(CaptureRequest.Builder builder){
@@ -7834,6 +7836,7 @@ private boolean isDevOptionSetting(){
                 applyBufferMode(builder);
             }else if(mCurrentSceneMode.mode == CameraMode.VIDEO){
                 applyFRC(builder);
+                applySpatialVideo(builder);
             }
         }
         if (mCurrentSceneMode.mode == CameraMode.DEFAULT
@@ -10361,7 +10364,7 @@ private boolean isDevOptionSetting(){
             int height = Integer.parseInt(sourceStrArray[1]);
             mVideoSnapshotSize = new Size(width, height);
         }
-        Log.i(TAG, "updateVideoSnapshotSize final video snapShot size = " + mVideoSnapshotSize.toString());
+        Log.i(TAG, " updateVideoSnapshotSize final video snapShot size = " + mVideoSnapshotSize.toString());
         Size[] thumbSizes = mSettingsManager.getSupportedThumbnailSizes(getMainCameraId());
         mVideoSnapshotThumbSize = getOptimalPreviewSize(mVideoSnapshotSize, thumbSizes); // get largest thumb size
     }
@@ -10736,7 +10739,7 @@ private boolean isDevOptionSetting(){
                     mHasMapTimes.put("Total",System.currentTimeMillis() - mStartedTime);
                 }
             }
-            if(!PersistUtil.enableMediaRecorder() && !waitForAudioPrepare()){
+            if(!PersistUtil.enableMediaRecorder() && !mOnlyVideoEncoder && !waitForAudioPrepare()){
                 quitVideoToPhotoWithError("media codec prepare failed");
                 return;
             }
@@ -10901,7 +10904,7 @@ private boolean isDevOptionSetting(){
                     mVideoRecordRequestBuilder.addTarget(previewSurfaces.get(i));
                 }
                outConfigurations.addAll(getPhysicalPreviewOutput());
-            }else{
+            } else {
                mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
                OutputConfiguration videoPrevConfig = new OutputConfiguration(mVideoPreviewSurface);
                if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
@@ -10909,7 +10912,7 @@ private boolean isDevOptionSetting(){
                            CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
                    videoPrevConfig.addSensorPixelModeUsed(
                            CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
-                   Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT and " +
+                   Log.i(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT and " +
                            "SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
                }
                String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
@@ -10932,12 +10935,15 @@ private boolean isDevOptionSetting(){
                 mLiveShotOutput.enableSurfaceSharing();
                 outConfigurations.add(mLiveShotOutput);
             } else {
-                if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
-                    videoSnapshotConfig.addSensorPixelModeUsed(
-                            CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
-                    Log.v(TAG, " videoSnapShot OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+                String encoder  = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+                if (!("mvhevc").equals(encoder)) {
+                    if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
+                        videoSnapshotConfig.addSensorPixelModeUsed(
+                                CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
+                        Log.v(TAG, " videoSnapShot OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+                    }
+                    outConfigurations.add(videoSnapshotConfig);
                 }
-                outConfigurations.add(videoSnapshotConfig);
             }
             if (mVideoRecordingSurface != null) {
                 OutputConfiguration videoConfig = new OutputConfiguration(mVideoRecordingSurface);
@@ -11259,8 +11265,9 @@ private boolean isDevOptionSetting(){
                     mUI.resetPauseButton();
                     mRecordingTotalTime = 0L;
                     mRecordingStartTime = SystemClock.uptimeMillis();
+                    String encoder = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
                     if (!isHighSpeedRateCapture() && mSettingsManager.isLiveshotSupported(mVideoSize,
-                            mSettingsManager.getVideoFPS())) {
+                            mSettingsManager.getVideoFPS()) && !("mvhevc".equals(encoder))) {
                         mUI.enableShutter(true);
                     } else {
                         mUI.enableShutter(false);
@@ -11484,7 +11491,7 @@ private boolean isDevOptionSetting(){
         String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         Log.d(TAG,"framerate is ="+value);
         if (value == null) return;
-        if (value.equals("off")) {
+        if ( value.equals("24") || value.equals("30")) {
             mHighSpeedCapture = false;
             mHighSpeedCaptureRate = 0;
             mSuperSlomoCapture = false;
@@ -11524,10 +11531,12 @@ private boolean isDevOptionSetting(){
                     cameraId,mSettingsManager.getPhysicalCameraId());
         }
         setTag(mVideoRecordRequestBuilder, "" + cameraId + "-" + getCurrenCameraMode().name());
-        if (mHighSpeedCapture && !isVariableFPSEnabled()) {
-            mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                    mHighSpeedFPSRange);
+
+        if (!isVariableFPSEnabled()) {
+            Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
+            mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
         }
+
         if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
             mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest
                     .CONTROL_AF_MODE_CONTINUOUS_VIDEO);
@@ -11579,14 +11588,8 @@ private boolean isDevOptionSetting(){
             mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
         }
         if (!isVariableFPSEnabled()) {
-            if (mHighSpeedCapture && !isVariableFPSEnabled()) {
-                mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                        mHighSpeedFPSRange);
-            } else {
-                mHighSpeedFPSRange = new Range(30, 30);
-                mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                        mHighSpeedFPSRange);
-            }
+            Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(mProfile.videoFrameRate, mProfile.videoFrameRate);
+            mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
         }
             applyVideoCommentSettings(mVideoPreviewRequestBuilder, cameraId);
     }
@@ -13586,7 +13589,6 @@ private boolean isDevOptionSetting(){
                 .getHdrAnsMode(mSettingsManager.getValue(SettingsManager.KEY_HDR_ANS_MODE));
 
         boolean hfr = mHighSpeedCapture && !mHighSpeedRecordingMode;
-
         AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
         setDefaultHDRParameters(am);
         if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
@@ -13664,7 +13666,9 @@ private boolean isDevOptionSetting(){
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorder.setOutputFormat(mProfile.fileFormat);
         setVideoOutputFile(myExtras);
+        Log.i(TAG,"MediaRecorder.setVideoFrameRate:" + mProfile.videoFrameRate);
         mMediaRecorder.setVideoFrameRate(mProfile.videoFrameRate);
+        String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
         if (!mHighSpeedCapture) {
             updateBitrateForNonHFR(videoEncoder, mProfile.videoBitRate, videoHeight, videoWidth);
         }
@@ -13684,7 +13688,6 @@ private boolean isDevOptionSetting(){
         }
         mMediaRecorder.setMaxDuration(mMaxVideoDurationInMs);
 
-        Log.d(TAG, "Profile video frame rate: "+ mProfile.videoFrameRate);
         if (mCaptureTimeLapse) {
             double fps = 1000 / (double) mTimeBetweenTimeLapseFrameCaptureMs;
             mMediaRecorder.setCaptureRate(fps);
@@ -13692,10 +13695,11 @@ private boolean isDevOptionSetting(){
             mHighSpeedFPSRange = new Range(mHighSpeedCaptureRate, mHighSpeedCaptureRate);
             int fps = (int) mHighSpeedFPSRange.getUpper();
             int targetRate = mSuperSlomoCapture ? 30 : (mHighSpeedRecordingMode ? fps : 30);
-            mMediaRecorder.setCaptureRate(mSuperSlomoCapture ? 30 : fps);
+            int captureRate = mSuperSlomoCapture ? 30 : fps;
+            mMediaRecorder.setCaptureRate(captureRate);
             mMediaRecorder.setVideoFrameRate(targetRate);
             int scaledBitrate = mSettingsManager.getHighSpeedVideoEncoderBitRate(mProfile, targetRate, fps);
-            Log.i(TAG, "Capture rate: "+fps+", Target rate: "+targetRate+", Scaled video bitrate : " + scaledBitrate);
+            Log.i(TAG, "setCaptureRate: "+ captureRate +", setVideoFrameRate: "+targetRate+", Scaled video bitrate : " + scaledBitrate);
             mMediaRecorder.setVideoEncodingBitRate(scaledBitrate);
         }
 
@@ -15729,6 +15733,19 @@ private boolean isDevOptionSetting(){
             request.set(CaptureModule.facialContourVersion, facialContour_version);
         } catch (IllegalArgumentException e) {
             Log.w(TAG, EXCEPTION_LOG,"hal no vendorTag : " + facialContour_version);
+        }
+    }
+
+    private void applySpatialVideo(CaptureRequest.Builder request) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+        try {
+            if (value != null && value.equals("mvhevc")) {
+                request.set(spatialVideo, (byte) 1);
+            } else {
+                request.set(spatialVideo, (byte) 0);
+            }
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, EXCEPTION_LOG,"no vendorTag : " + spatialVideo);
         }
     }
 

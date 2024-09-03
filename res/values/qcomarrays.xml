@@ -431,7 +431,8 @@
         <item>@string/pref_camera_hfr_entry_2x_ssm_480</item>
         <item>@string/pref_camera_hfr_entry_2x_ssm_240</item>
         <item>@string/pref_camera_hfr_entry_2x_ssm_120</item>
-        <item>@string/pref_camera_hfr_entry_off</item>
+        <item>@string/pref_camera_hfr_entry_30</item>
+        <item>@string/pref_camera_hfr_entry_24</item>
     </string-array>
 
      <!-- Do not localize entryvalues -->
@@ -454,7 +455,8 @@
         <item>@string/pref_camera_hfr_value_2x_ssm_480</item>
         <item>@string/pref_camera_hfr_value_2x_ssm_240</item>
         <item>@string/pref_camera_hfr_value_2x_ssm_120</item>
-        <item>@string/pref_camera_hfr_value_off</item>
+        <item>@string/pref_camera_hfr_value_30</item>
+        <item>@string/pref_camera_hfr_value_24</item>
     </string-array>
 
      <!-- Video Preferences Noise Reduction dialog box entries -->

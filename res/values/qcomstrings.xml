@@ -69,6 +69,7 @@
     <string name="pref_camera_videoencoder_entry_1">H263</string>
     <string name="pref_camera_videoencoder_entry_2">H264</string>
     <string name="pref_camera_videoencoder_entry_3">H265</string>
+    <string name="pref_camera_videoencoder_entry_4">MVHEVC</string>
 
     <string name="pref_camera2_audio_ble_title">Audio Stereo BLE</string>
     <string name="pref_camera2_audio_ble_default">Off</string>
@@ -464,7 +465,8 @@
      <string name="pref_camera_hfr_title">Video High FrameRate</string>
 
      <!-- Settings screen, hfr radio button choices -->
-     <string name="pref_camera_hfr_entry_off">30FPS</string>
+    <string name="pref_camera_hfr_entry_24">24FPS</string>
+     <string name="pref_camera_hfr_entry_30">30FPS</string>
      <string name="pref_camera_hfr_entry_2x">HFR 60</string>
      <string name="pref_camera_hfr_entry_3x">HFR 90</string>
      <string name="pref_camera_hfr_entry_4x">HFR 120</string>
@@ -487,7 +489,8 @@
      <string name="pref_camera_hfr_entry_4x_ssm_960">Super SloMo 960->3840</string>
 
      <!-- HFR entry values. Do not translate. -->
-     <string name="pref_camera_hfr_value_off">off</string>
+     <string name="pref_camera_hfr_value_24">24</string>
+    <string name="pref_camera_hfr_value_30">30</string>
      <string name="pref_camera_hfr_value_2x">hfr60</string>
      <string name="pref_camera_hfr_value_3x">hfr90</string>
      <string name="pref_camera_hfr_value_4x">hfr120</string>

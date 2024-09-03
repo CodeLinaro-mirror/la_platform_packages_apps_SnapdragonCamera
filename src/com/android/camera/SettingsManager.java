@@ -2001,8 +2001,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
             final SharedPreferences pref = mContext.getSharedPreferences(
                     ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey()),
                     Context.MODE_PRIVATE);
-            String fpsStr = pref.getString(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, "off");
-            if (fpsStr != null && !fpsStr.equals("off")) {
+            String fpsStr = pref.getString(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, "30");
+            String str = getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+            if (fpsStr != null && !fpsStr.equals("") && !fpsStr.equals("24") && !fpsStr.equals("30")) {
                 int fpsRate = Integer.parseInt(fpsStr.substring(3));
                 if (fpsRate == 480) {
                     if (filterUnsupportedOptions(videoDuration, getSupportedVideoDurationFor480())) {
@@ -2351,7 +2352,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             filterHeifSizeOptions();
         } else if ((pref.getKey().equals(KEY_EIS_VALUE))) {
             String value = getValue(KEY_VIDEO_HIGH_FRAME_RATE);
-            if (value != null && !value.equals("off")) {
+            if (value != null &&  !value.equals("24") && !value.equals("30")) {
                 int fpsRate = Integer.parseInt(value.substring(3));
                 if (fpsRate == 480) {
                     filterVideoDurationFor480fps();
@@ -2966,6 +2967,27 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return supported;
     }
+    public String getMediaFrameRate(int cameraId){
+        CamcorderProfile profile = null;
+        String videoSize = getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        if(videoSize != null) {
+            int quality = CameraSettings.VIDEO_QUALITY_TABLE.get(videoSize);
+            if (CamcorderProfile.hasProfile(cameraId, quality)) {
+                profile = CamcorderProfile.get(cameraId, quality);
+            }
+            if(profile == null) {
+                return "30";
+            }else{
+                return String.valueOf(profile.videoFrameRate);
+            }
+        }else{
+            return "30";
+        }
+    }
+    public String getMediaFrameRate(){
+        int id = mCaptureModule.getMainCameraId();
+        return getMediaFrameRate(id);
+    }
 
     private List<String> getSupportedHighFrameRate(CaptureModule.CameraMode mode,
                                                    String videoSizeStr, int id) {
@@ -2979,7 +3001,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         ArrayList<String> supported = new ArrayList<String>();
         if(mode == CaptureModule.CameraMode.VIDEO || mode == CaptureModule.CameraMode.CINEMATIC) {
-            supported.add("off");
+            String mediaRate = getMediaFrameRate(id);
+               supported.add(mediaRate);
         }
         ListPreference videoEncoder = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
         if (videoSizeStr == null || videoEncoder == null) return supported;
@@ -3112,7 +3135,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
             }
         }
-        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported);
+        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported+",supported.size="+supported.size());
         return supported;
     }
 
@@ -4113,7 +4136,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if (type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC)
-                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)) {
+                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)
+                        || type.equalsIgnoreCase("video/x-mvhevc")) {
                     capabilities = info.getCapabilitiesForType(type).getVideoCapabilities();
                     if (capabilities == null ||
                             !capabilities.getSupportedWidths().contains(videoSize.getWidth()) ||
@@ -4535,12 +4559,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
          return false;
     }
     public List<String> getSupportedPictureFormat(int cameraId){
-        byte supportHeic = 1;
-        try{
-            supportHeic = mCharacteristics.get(cameraId).get(CaptureModule.heic_support_enable);
-        } catch (Exception e){
+        byte supportHeic = 0;
+        MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
+        for (MediaCodecInfo info :list.getCodecInfos()) {
+            if(supportHeic == 1) break;
+            if (info.isEncoder()){
+                for (String type : info.getSupportedTypes()) {
+                    if (type.equalsIgnoreCase(MediaFormat.MIMETYPE_IMAGE_ANDROID_HEIC)) {
+                        supportHeic = 1;
+                        break;
+                    }
+                }
+            }
         }
-
         ArrayList<String> ret = new ArrayList<String>();
         ret.add(String.valueOf(SettingsManager.JPEG_FORMAT));
         if (supportHeic == 1){
@@ -4961,8 +4992,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public int getVideoFPS(){
         String fpsStr = getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         int fpsRate = 30;
-        if (fpsStr != null && !fpsStr.equals("off")) {
+        if(fpsStr == null){
+            return 30;
+        }
+        if (!fpsStr.equals("24") && !fpsStr.equals("30")) {
             fpsRate = Integer.parseInt(fpsStr.substring(3));
+        }else{
+            return Integer.parseInt(fpsStr);
         }
         return fpsRate;
     }

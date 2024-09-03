@@ -272,7 +272,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updateVideoEncoderProfile();
                         break;
                     case SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE:
-                        if (!value.equals("off")) {
+                        if (!value.equals("24") && !value.equals("30")) {
                             int fpsRate = Integer.parseInt(value.substring(3));
                             if (fpsRate == 480) {
                                 mSettingsManager.filterVideoDurationFor480fps();
@@ -1494,7 +1494,6 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_EIS_VALUE);
                 add(SettingsManager.KEY_FOVC_VALUE);
                 add(SettingsManager.KEY_VARIABLE_FPS);
-                //add(SettingsManager.KEY_VIDEO_HDR_VALUE);
                 add(SettingsManager.KEY_VIDEO_FLIP);
                 add(SettingsManager.KEY_PHYSICAL_CAMCORDER);
                 add(SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
@@ -2451,11 +2450,12 @@ public class SettingsActivity extends PreferenceActivity {
         }
         ListPreference pref = (ListPreference)findPreference(
                 SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        String mediaRate = mSettingsManager.getMediaFrameRate();
         if (pref != null) {
             if (changeFPS) {
                 pref.setEnabled(true);
             } else {
-                pref.setValue("off");
+                pref.setValue(mediaRate);
                 pref.setEnabled(false);
             }
         }
@@ -2488,6 +2488,7 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref == null) {
             return;
         }
+        String mediaRate = mSettingsManager.getMediaFrameRate();
         pref.setEnabled(true);
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode)getIntent().getSerializableExtra(
                 CAMERA_MODULE);
@@ -2504,7 +2505,7 @@ public class SettingsActivity extends PreferenceActivity {
             } else if (mode == CaptureModule.CameraMode.VIDEO) {
                 String hdrmode = mSettingsManager.getVideoHdrMode();
                 if (hdrmode.toLowerCase().contains("mfhdr")) {
-                    pref.setValue("off");
+                    pref.setValue(mediaRate);
                     pref.setEnabled(false);
                     return;
                 }
@@ -2549,7 +2550,7 @@ public class SettingsActivity extends PreferenceActivity {
                 SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         if (hfrPref != null) {
             String value = hfrPref.getValue();
-            if (!value.equals("off")) {
+            if (!value.equals("24") && !value.equals("30")) {
                 int fpsRate = Integer.parseInt(value.substring(3));
                 if (fpsRate == 60) {
                     pref.setEnabled(true);
@@ -2559,7 +2560,6 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
     }
-
     private void updateCaptureProfilePref() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_CAPTURE_PROFILE);
         if(pref == null) return;
@@ -2591,7 +2591,6 @@ public class SettingsActivity extends PreferenceActivity {
                 return;
             }
         }
-
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         String selectMode = mSettingsManager.getValue(mSettingsManager.KEY_SELECT_MODE);
         if (selectMode.equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
@@ -2925,7 +2924,8 @@ public class SettingsActivity extends PreferenceActivity {
                 pref.setEntries(mSettingsManager.getEntries(key));
                 pref.setEntryValues(mSettingsManager.getEntryValues(key));
                 int idx = mSettingsManager.getValueIndex(key);
-                if (idx < 0 ) {
+                int length = mSettingsManager.getEntryValues(key).length;
+                if (idx < 0 || idx >= length) {
                     idx = 0;
                 }
                 pref.setValueIndex(idx);
@@ -3086,7 +3086,8 @@ public class SettingsActivity extends PreferenceActivity {
         private boolean isNotSupportedHdr(String hdr){
             String fpsStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
             if((hdr.equalsIgnoreCase("mfhdr") || hdr.equalsIgnoreCase("qhdr"))
-                    && (!mSettingsManager.isSupportedMixHdr() || (fpsStr != null && !fpsStr.equals("off")))){
+                    && (!mSettingsManager.isSupportedMixHdr() || (fpsStr != null &&
+                    !fpsStr.equals("24") && !fpsStr.equals("30")))){
                 return true;
             }
             return  false;

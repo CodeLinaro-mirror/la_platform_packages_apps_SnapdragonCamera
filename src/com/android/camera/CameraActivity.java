@@ -2351,6 +2351,8 @@ public class CameraActivity extends Activity
         mUI.getFilmstripBottomControls().setShareEnabled(true);
         if(mUI.getFilmstripLayout().getVisibility() == View.VISIBLE){
             mUI.getFilmstripLayout().invalidate();
+            mUI.getFilmstripLayout().showFilmstrip();
+            mUI.getFilmstripBottomControls().setVisible(true);
         }
 
         // Default is showing the preview, unless disabled by explicitly
