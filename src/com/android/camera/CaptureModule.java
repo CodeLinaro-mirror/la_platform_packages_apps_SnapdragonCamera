@@ -14979,8 +14979,8 @@ private boolean isDevOptionSetting(){
                         }
                     }
                     Integer aeState = mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
-                    if(aeState == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED ||
-                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE){
+                    if(aeState != null && (aeState == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED ||
+                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE)){
                         captureRequest.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                                 CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL);
                         mSetAePrecaptureTriggerIdel ++;
