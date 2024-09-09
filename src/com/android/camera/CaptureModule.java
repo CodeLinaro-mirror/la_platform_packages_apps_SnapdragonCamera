@@ -11062,6 +11062,11 @@ private boolean isDevOptionSetting(){
             Log.i(TAG, "  result :" + supported);
         } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
             Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error ="+ e);
+        }catch(UnsupportedOperationException e){
+            Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error ="+ e);
+            CameraUtil.showErrorDialog(mActivity,
+                    R.string.session_error);
+            return;
         }
         mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
         if(mActivity.getPerformenceTest() && (mIsCloseCamera || mFromOnOpened)) {
