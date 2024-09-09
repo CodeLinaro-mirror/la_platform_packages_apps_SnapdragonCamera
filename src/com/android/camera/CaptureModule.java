@@ -11120,11 +11120,25 @@ private boolean isDevOptionSetting(){
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
+        boolean session_supported = true;
         try{
-            boolean supported = camera.isSessionConfigurationSupported(sessionConfig);
-            Log.i(TAG, "  result :" + supported);
-        } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
+            session_supported = camera.isSessionConfigurationSupported(sessionConfig);
+            Log.i(TAG, "  isSessionConfigurationSupported :" + session_supported);
+        } catch (CameraAccessException | IllegalArgumentException | NullPointerException | UnsupportedOperationException e) {
             Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error ="+ e);
+            StringBuilder errstr = new StringBuilder();
+            errstr.append("Catch exception: ");
+            if (e instanceof CameraAccessException) {
+                errstr.append("CameraAccessException");
+            } else if (e instanceof IllegalArgumentException) {
+                errstr.append("IllegalArgumentException");
+            } else if (e instanceof NullPointerException) {
+                errstr.append("NullPointerException");
+            } else if (e instanceof UnsupportedOperationException) {
+                errstr.append("UnsupportedOperationException,please change the settings");
+            }
+            session_supported = false;
+            CameraUtil.showErrorDialog(mActivity, errstr);
         }
         mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
         if(mActivity.getPerformenceTest() && (mIsCloseCamera || mFromOnOpened)) {
@@ -11133,11 +11147,15 @@ private boolean isDevOptionSetting(){
         }else if(mActivity.getPerformenceTest()){
             mHasMapTimes.put("swipeMode->createSession",System.currentTimeMillis() - mStartedTime);
         }
-        try{
-            mCreateSessionLatency = System.currentTimeMillis();
-            camera.createCaptureSession(sessionConfig);
-        } catch (CameraAccessException e) {
-            Log.e(TAG, " error:",e);
+        if(session_supported) {
+            try {
+                mCreateSessionLatency = System.currentTimeMillis();
+                camera.createCaptureSession(sessionConfig);
+            } catch (CameraAccessException e) {
+                Log.e(TAG, "createCaptureSession  error:"+ e);
+            }
+        }else{
+            setCameraModeSwitcherAllowed(true);
         }
     }
 
