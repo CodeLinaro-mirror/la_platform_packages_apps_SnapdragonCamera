@@ -58,6 +58,7 @@ import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
+import android.media.EncoderProfiles;
 import android.media.MediaRecorder;
 import android.media.CamcorderProfile;
 import android.preference.PreferenceManager;
@@ -2966,6 +2967,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return supported;
     }
+    public boolean hasProfile(int cameraId, int quality) {
+        boolean res = false;
+        try {
+            EncoderProfiles encPros = CamcorderProfile.getAll(String.valueOf(cameraId), quality);
+            if (encPros != null) res = true;
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "hasProfile has exception: " + e.getMessage());
+        }
+        return res;
+    }
 
     private List<String> getSupportedHighFrameRate(CaptureModule.CameraMode mode,
                                                    String videoSizeStr, int id) {
@@ -3877,7 +3888,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
             if (CameraSettings.VIDEO_QUALITY_TABLE.containsKey(videoSizes.get(i).toString())) {
                 Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(videoSizes.get(i).toString());
-                if (profile != null && CamcorderProfile.hasProfile(cameraId, profile)) {
+                if (profile != null && hasProfile(cameraId, profile)) {
                     if (mode == CaptureModule.CameraMode.CINEMATIC &&
                             !(videoSizes.get(i).toString().equals("1920x1080") ||
                                     videoSizes.get(i).toString().equals("1280x720"))) {

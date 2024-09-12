@@ -10317,7 +10317,7 @@ private boolean isDevOptionSetting(){
             } else {
                 size = CamcorderProfile.QUALITY_LOW;
             }
-            if (CamcorderProfile.hasProfile(getMainCameraId(), size)) {
+            if (mSettingsManager.hasProfile(getMainCameraId(), size)) {
                 mProfile = CamcorderProfile.get(getMainCameraId(), size);
             }
             mVideoSize = new Size(mProfile.videoFrameWidth, mProfile.videoFrameHeight);
@@ -12640,7 +12640,7 @@ private boolean isDevOptionSetting(){
             int size = CameraSettings.VIDEO_QUALITY_TABLE.get(videoSize);
             String physicalid = (String)idsArray[i];
             int recordid = Integer.valueOf(physicalid);
-            if (CamcorderProfile.hasProfile(recordid, size)) {
+            if (mSettingsManager.hasProfile(recordid, size)) {
                 profile = CamcorderProfile.get(recordid, size);
                 if (profile != null) {
                     MediaRecorder recorder = new MediaRecorder();
@@ -12719,7 +12719,7 @@ private boolean isDevOptionSetting(){
             size = CameraSettings.getTimeLapseQualityFor(size);
         }
         closeVideoFileDescriptor();
-        if (CamcorderProfile.hasProfile(cameraId, size)) {
+        if (mSettingsManager.hasProfile(cameraId, size)) {
             mProfile = CamcorderProfile.get(cameraId, size);
         } else {
             warningToast(R.string.error_app_unsupported_profile);
