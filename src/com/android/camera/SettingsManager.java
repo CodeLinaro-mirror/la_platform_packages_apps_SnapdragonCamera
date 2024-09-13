@@ -3436,10 +3436,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return map.getOutputSizes(cl);
     }
 
-    public Size[] getAllSupportedOutputSize(int cameraId) {
+    public Size[] getAllSupportedOutputSize(int cameraId, boolean maxRes) {
         if (cameraId > mCharacteristics.size())return null;
-        StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
-                CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        StreamConfigurationMap map = null;
+        if (!maxRes) {
+            map = mCharacteristics.get(cameraId).get(
+                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        } else {
+            map = mCharacteristics.get(cameraId).get(
+                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
+        }
         Size[] picSize = map.getOutputSizes(ImageFormat.PRIVATE);
         Size[] highResSizes = map.getHighResolutionOutputSizes(ImageFormat.JPEG);
         Size[] allPicSizes = new Size[picSize.length + highResSizes.length];
