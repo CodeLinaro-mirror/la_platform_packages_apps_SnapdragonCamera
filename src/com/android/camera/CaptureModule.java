@@ -11486,11 +11486,11 @@ private boolean isDevOptionSetting(){
         if (mSettingsManager.getPhysicalFeatureEnableId
                 (SettingsManager.KEY_PHYSICAL_CAMCORDER) != null) {
             Log.d(TAG,"releasePhysicalRecorder");
-            for (MediaRecorder recorder:mPhysicalMediaRecorders){
-                if (recorder != null){
-                    recorder.reset();
-                    recorder.release();
-                    recorder = null;
+            for (int i = 0; i< mPhysicalMediaRecorders.length; i++){
+                if (mPhysicalMediaRecorders[i] != null){
+                    mPhysicalMediaRecorders[i].reset();
+                    mPhysicalMediaRecorders[i].release();
+                    mPhysicalMediaRecorders[i] = null;
                 }
             }
         }
@@ -16977,14 +16977,10 @@ private boolean isDevOptionSetting(){
             try{
                 mMediaRecorder.reset();
                 mMediaRecorder.release();
-                releasePhysicalRecorder();
             }catch (RuntimeException e) {
                 Log.e(TAG,e.toString());
             }
             mMediaRecorder = null;
-            for (int i=0;i<mPhysicalMediaRecorders.length;i++){
-                mPhysicalMediaRecorders[i] = null;
-            }
             if(mActivity.getPerformenceTest()){
                 mHasMapTimes.put("startReleaseMedia->endReleaseMedia",System.currentTimeMillis() - releaseMedia);
                 if(PersistUtil.enableMediaRecorder()) {
@@ -16992,6 +16988,7 @@ private boolean isDevOptionSetting(){
                 }
             }
         }
+        releasePhysicalRecorder();
         if (PersistUtil.needAudioEncoder()) {
             AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
             // Set default values for HDR settings
