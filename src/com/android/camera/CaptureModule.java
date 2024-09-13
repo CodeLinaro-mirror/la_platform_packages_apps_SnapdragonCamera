@@ -11457,10 +11457,7 @@ private boolean isDevOptionSetting(){
             return false;
         }
         long startMediaRecord = System.currentTimeMillis();
-        if(mActivity.getPerformenceTest()){
-            Log.i(TAG,"Will start mMediaRecorder mMediaRecorder="+mMediaRecorder);
-            mHasMapTimes.put("buttonClick->startRecorder",startMediaRecord - mStartedTime);
-        }
+
         try {
             if (mMediaRecorder != null)
                 mMediaRecorder.start(); // Recording is now started
@@ -13634,6 +13631,7 @@ private boolean isDevOptionSetting(){
 
     private void setDefaultHDRParameters(AudioManager am) {
         // Set default values for HDR/3D Audio settings
+        long startsetDefaultHDRParam = System.currentTimeMillis();
         am.setParameters("hdr_record_on=false");
         am.setParameters("wnr_on=false");
         am.setParameters("ans_on=false");
@@ -13645,6 +13643,10 @@ private boolean isDevOptionSetting(){
         am.setParameters("facing=none");
         am.setParameters("hdr_audio_channel_count=0");
         am.setParameters("hdr_audio_sampling_rate=0");
+        if(mActivity.getPerformenceTest()) {
+            long time = System.currentTimeMillis() - startsetDefaultHDRParam;
+            mHasMapTimes.put("startSetDefaultHDRParam->endSetDefaultHDRParam", System.currentTimeMillis() - startsetDefaultHDRParam);
+        }
     }
 
     private final BroadcastReceiver mBTConnectReceiver = new BroadcastReceiver() {
@@ -13682,7 +13684,6 @@ private boolean isDevOptionSetting(){
         AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
         setDefaultHDRParameters(am);
         if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
-            Log.d(TAG, "Enable audioHDR");
             am.setParameters("hdr_record_on=true");
             am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
             am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
@@ -13720,14 +13721,21 @@ private boolean isDevOptionSetting(){
 
     private boolean setUpMediaRecorder(int cameraId) throws IOException {
         long startSetMedia = System.currentTimeMillis();
+
         if (mSettingsManager.isMultiCameraEnabled() && !mSettingsManager.isLogicalEnable()){
             mMediaRecorder = null;
             return true;
         }
-        Log.i(TAG, "start setUpMediaRecorder");
+
         Bundle myExtras = mActivity.getIntent().getExtras();
         if (mMediaRecorder == null) mMediaRecorder = new MediaRecorder();
+        long startResetMedia = System.currentTimeMillis();
+
         mMediaRecorder.reset();
+        if(mActivity.getPerformenceTest()) {
+            mHasMapTimes.put("buttonClick->startResetMedia",startResetMedia - mStartedTime);
+            mHasMapTimes.put("startResetMedia->endResetMedia", System.currentTimeMillis() - startResetMedia);
+        }
 
         int videoWidth = mProfile.videoFrameWidth;
         int videoHeight = mProfile.videoFrameHeight;
@@ -13742,7 +13750,11 @@ private boolean isDevOptionSetting(){
         String audioSelected = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER);
         int audioEncoder = -1;
         if (PersistUtil.needAudioEncoder() && !audioSelected.equals("off")) {
+            long startconfigurateAudio = System.currentTimeMillis();
             configurateAudio(cameraId);
+            if(mActivity.getPerformenceTest()) {
+                mHasMapTimes.put("startConfigurateAudio->endConfigurateAudio", System.currentTimeMillis() - startconfigurateAudio);
+            }
         }
         if (isVideoEncoderProfileSupported()
                 && VendorTagUtil.isHDRVideoModeSupported(mCameraDevice[cameraId])) {
@@ -13752,7 +13764,6 @@ private boolean isDevOptionSetting(){
             mMediaRecorder.setVideoEncodingProfileLevel(videoEncoderProfile,
                     MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel1);
         }
-
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorder.setOutputFormat(mProfile.fileFormat);
         setVideoOutputFile(myExtras);
@@ -13816,8 +13827,8 @@ private boolean isDevOptionSetting(){
             }
         }
         mMediaRecorder.setInputSurface(mVideoRecordingSurface);
+        long startPrepareMedia = System.currentTimeMillis();
         boolean preparemedia = prepareMediaRecorder();
-        Log.i(TAG, "end setUpMediaRecorder preparemedia="+preparemedia);
         if(mActivity.getPerformenceTest()) {
             mHasMapTimes.put("startSetUpMedia->endSetUpMedia", System.currentTimeMillis() - startSetMedia);
         }
@@ -13826,7 +13837,11 @@ private boolean isDevOptionSetting(){
 
     private boolean prepareMediaRecorder() {
         try {
+            long startime = System.currentTimeMillis();
             mMediaRecorder.prepare();
+            if(mActivity.getPerformenceTest()) {
+                mHasMapTimes.put("startPrepareMedia->endPrepareMedia", System.currentTimeMillis()- startime);
+            }
             mMediaRecorder.setOnErrorListener(this);
             mMediaRecorder.setOnInfoListener(this);
             if (mSettingsManager.getValue(SettingsManager.KEY_AUDIO_BLE).equals("On")
@@ -13899,8 +13914,13 @@ private boolean isDevOptionSetting(){
                 || !PersistUtil.enableMediaRecorder()) {
             String fileName = generateVideoFilename(mProfile.fileFormat);
             Uri videoTable = Storage.getVideoBaseUri();
+            long startInsertVideo = System.currentTimeMillis();
             Uri videoUri = mContentResolver.insert(videoTable, mCurrentVideoValues);
+            if(mActivity.getPerformenceTest()) {
+                mHasMapTimes.put("startInsertVideoTable->endInsertVideoTable", System.currentTimeMillis() - startInsertVideo);
+            }
             Log.i(TAG, "New video filename: " + fileName + ",new video uri: " + videoUri);
+
             try {
                 mVideoFileDescriptor =
                         mContentResolver.openFileDescriptor(videoUri, "rw");
