@@ -7695,6 +7695,9 @@ private boolean isDevOptionSetting(){
         } else {
             builder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+            if(mSettingsManager.isOpenManualFlash() && !isManualAEC){
+                builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+            }
         }
 
         // For long shot, torch mode is used
@@ -7926,8 +7929,8 @@ private boolean isDevOptionSetting(){
 
     private void applyFlashMode(CaptureRequest.Builder builder) {
         String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
-        Log.d(TAG,"isflashRequired:" + isflashRequired  + ",mCaptureTorchTrigger:" + mCaptureTorchTrigger + ",isCaptureBrustMode():" + isCaptureBrustMode());
-        if(isCaptureBrustMode()){
+        Log.i(TAG,"isflashRequired:" + isflashRequired  + ",mCaptureTorchTrigger:" + mCaptureTorchTrigger + ",isCaptureBrustMode():" + isCaptureBrustMode());
+        if(isCaptureBrustMode() || "off".equals(flashMode)){
             return;
         }
         if (mCaptureTorchTrigger){
@@ -15252,7 +15255,7 @@ private boolean isDevOptionSetting(){
 
     private void setIsoAndExposureTime(CaptureRequest.Builder request, int isoValue, long exposureTime) {
         request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
-        if(!mSettingsManager.applyManualFlash()) {
+        if(!mSettingsManager.isOpenManualFlash()) {
             request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
         request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime);
@@ -15275,7 +15278,7 @@ private boolean isDevOptionSetting(){
         String gainsPriority = mActivity.getString(
                 R.string.pref_camera_manual_exp_value_gains_priority);
         String manualExposureMode = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_EXPOSURE);
-        isManualAEC =false;
+        isManualAEC = false;
         if (manualExposureMode == null) return result;
         if (manualExposureMode.equals(isoPriority)) {
             int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
@@ -15696,13 +15699,13 @@ private boolean isDevOptionSetting(){
                 request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
                 break;
         }
-        if(!mCaptureTorchTrigger) {
+        if(!mCaptureTorchTrigger && !(mSettingsManager.isOpenManualFlash() && "on".equals(flashMode))) {
             request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
         applyLowLightBoost(request);
     }
     private void setFlashLevel(CaptureRequest.Builder request) {
-        if (!mSettingsManager.applyManualFlash()) {
+        if (!mSettingsManager.isOpenManualFlash()) {
             return;
         }
         String level = mSettingsManager.getValue(mSettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);

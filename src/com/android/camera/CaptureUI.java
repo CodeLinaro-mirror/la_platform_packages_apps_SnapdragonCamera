@@ -1387,7 +1387,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if(mManualFlashLayout == null){
             mManualFlashLayout= (RelativeLayout) mRootView.findViewById(R.id.manual_flash_layout);
         }
-        if(!mSettingsManager.applyManualFlash()){
+        if(!mSettingsManager.isOpenManualFlash()){
             mManualFlashLayout.setVisibility(View.INVISIBLE);
             return;
         }

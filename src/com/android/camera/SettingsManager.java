@@ -3587,13 +3587,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return value;
     }
-    public boolean applyManualFlash(){
+    public boolean isOpenManualFlash(){
         if(CaptureModule.CameraMode.VIDEO != CaptureModule.CURRENT_MODE &&
                 CaptureModule.CameraMode.DEFAULT != CaptureModule.CURRENT_MODE){
             return false;
         }
         String manual = getValue(KEY_CAMERA_MANUALFLASH);
-        String level = getValue(KEY_CAMERA_MANUALFLASH_LEVEL);
         int maxlevel = getMaxFlashLevel();
         String flashmode = getValue(CaptureModule.CURRENT_MODE  == CaptureModule.CameraMode.VIDEO ?
                 SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
