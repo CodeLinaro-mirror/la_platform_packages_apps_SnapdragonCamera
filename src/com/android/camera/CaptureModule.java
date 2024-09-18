@@ -826,6 +826,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.HWMFNRandAIDenoiser.HWMFNRandAIDE2TuningParams", byte[].class);
     public static final CaptureResult.Key<byte[]> StreamCropInfo =
             new CaptureResult.Key<>("com.qti.camera.streamCropInfo.StreamCropInfo", byte[].class);
+    public static final CameraCharacteristics.Key<Integer> EnableAICameraHSR =
+            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableAICameraHSR", Integer.class);
     public static CameraCharacteristics.Key<int[]> supportedAICameraModes =
             new CameraCharacteristics.Key<>("org.quic.camera.capabilities.supportedAICameraModes", int[].class);
     private static final CaptureRequest.Key<Byte> EnableAISnapshot =
@@ -7816,6 +7818,7 @@ private boolean isDevOptionSetting(){
             applyMFNRAIDEMode(builder);
             applyAICameraParam(builder);
             applyAICameraBlurModeParam(builder);
+            applyAICameraHSR(builder);
             applyXCFAOptimization(builder);
             applyeHardSwitchParam(builder);
             applyMLVideoParam(builder);
@@ -7870,6 +7873,13 @@ private boolean isDevOptionSetting(){
         VendorTagUtil.enableMLVideo(builder, (byte)(value != null && value.equals("on") ? 0x01 : 0x00));
     }
 
+    private void applyAICameraHSR(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA_HSR);
+        if(value != null &&  !value.equals("disable")){
+            Log.d(TAG,"set applyAICameraHSR: " + value);
+            VendorTagUtil.setAICameraHSR(builder, Integer.parseInt(value));
+        }
+    }
     private void applyAICameraParam(CaptureRequest.Builder builder){
         String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA);
         if(mCurrentSceneMode.mode != CameraMode.VIDEO && mCurrentSceneMode.mode != CameraMode.DEFAULT){

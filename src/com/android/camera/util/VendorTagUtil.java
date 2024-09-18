@@ -99,6 +99,8 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVSR", Integer.class);
     private static final CaptureRequest.Key<Integer> ai_camera =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.AICameraMode", Integer.class);
+    private static final CaptureRequest.Key<Integer> ai_camera_hsr =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableAICameraHSR", Integer.class);
     private static final CaptureRequest.Key<Integer> BlurMode =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.BlurMode", Integer.class);
     public static final CaptureRequest.Key<Byte> enableMFNRAIDEMode =
@@ -320,6 +322,12 @@ public class VendorTagUtil {
     public static void setVSRMode(CaptureRequest.Builder builder, int enable) {
         if (isSupported(builder, vsr_enable)) {
             builder.set(vsr_enable, enable);
+        }
+    }
+
+    public static void setAICameraHSR(CaptureRequest.Builder builder, int enable) {
+        if (isSupported(builder, ai_camera_hsr)) {
+            builder.set(ai_camera_hsr, enable);
         }
     }
 

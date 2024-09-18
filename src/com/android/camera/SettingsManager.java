@@ -332,6 +332,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AI_BLUR_CHROMAV = "pref_camera2_blur_chromav_key";
     public static final String KEY_AI_BLUR_CHROMASTRENGTH = "pref_camera2_blur_chromastrength_key";
 
+    public static final String KEY_AI_CAMERA_HSR = "pref_camera2_ai_camera_hsr_key";
+
     public static final String KEY_AI_DENOISER = "pref_camera2_ai_denoiser_key";
     public static final String KEY_AI_DENOISER_FORMAT = "pref_camera2_ai_denoiser_format_key";
     public static final String KEY_AI_DENOISER_MODE = "pref_camera2_ai_denoiser_mode_key";
@@ -1049,6 +1051,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
         int width = Integer.parseInt(value.substring(0, indexX));
         int height = Integer.parseInt(value.substring(indexX + 1));
         return new Size(width, height);
+    }
+
+    public boolean isAICameraHSRSupported(int id) {
+        boolean isSupported = false;
+        try {
+            isSupported = mCharacteristics.get(id).get(CaptureModule.EnableAICameraHSR) == 1;
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
+                    CaptureModule.EnableAICameraHSR.toString());
+        }
+        return isSupported;
     }
 
     public List<String> getSupportedAICameraMode() {
@@ -1857,6 +1870,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference inSensorZoom = mPreferenceGroup.findPreference(KEY_INSENSOR_ZOOM);
         ListPreference aiCamera = mPreferenceGroup.findPreference(KEY_AI_CAMERA);
         ListPreference aiCameraSnapshot = mPreferenceGroup.findPreference(KEY_AI_CAMERA_SNAPSHOT);
+        ListPreference aiCamerahsr = mPreferenceGroup.findPreference(KEY_AI_CAMERA_HSR);
         ListPreference previewProfile = mPreferenceGroup.findPreference(KEY_PREVIEW_PROFILE);
         ListPreference captureProfile = mPreferenceGroup.findPreference(KEY_CAPTURE_PROFILE);
         ListPreference multireprocess_input = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_INPUT);
@@ -1899,6 +1913,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (filterUnsupportedOptions(aiCamera, getSupportedAICameraMode())) {
                 mFilteredKeys.add(aiCamera.getKey());
                 mFilteredKeys.add(aiCameraSnapshot.getKey());
+            }
+        }
+        if (aiCamerahsr != null) {
+            if (!isAICameraHSRSupported(mCameraId)) {
+                removePreference(mPreferenceGroup, KEY_AI_CAMERA_HSR);
+                mFilteredKeys.add(aiCamerahsr.getKey());
             }
         }
         if (fd_smile != null && fd_gaze != null && fd_blink != null) {

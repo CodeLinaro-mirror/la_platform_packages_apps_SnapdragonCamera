@@ -1507,6 +1507,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                 add(SettingsManager.KEY_ML_VIDEO);
                 add(SettingsManager.KEY_HDR10P_STATS_KEY);
+                add(SettingsManager.KEY_AI_CAMERA_HSR);
             }
         };
         final ArrayList<String> multiCameraSettingList = new ArrayList<String>() {

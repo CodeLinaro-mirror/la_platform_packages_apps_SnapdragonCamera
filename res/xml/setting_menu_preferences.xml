@@ -1092,6 +1092,15 @@
             android:summary="%s"/>
 
         <ListPreference
+            android:key="pref_camera2_ai_camera_hsr_key"
+            android:defaultValue="@string/pref_camera2_ai_camera_entry_value_enable"
+            android:title="@string/pref_camera2_ai_camera_hsr_title"
+            android:entries="@array/pref_camera2_ai_camera_entries"
+            android:entryValues="@array/pref_camera2_ai_camera_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+
+        <ListPreference
             android:key="pref_camera2_ai_denoiser_key"
             android:defaultValue="@string/pref_camera2_ai_denoiser_default"
             android:title="@string/pref_camera2_ai_denoiser_title"

@@ -220,7 +220,8 @@
   {
     "2":{},
     "1":{},
-    "0":{"pref_camera2_ai_camera_snapshot_key":"0"}
+    "0":{"pref_camera2_ai_camera_snapshot_key":"0",
+         "pref_camera2_ai_camera_hsr_key": "0"}
   },
   "pref_camera2_raw_format_key":
   {
