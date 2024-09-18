@@ -1768,6 +1768,7 @@
     <string name="pref_camera2_ai_camera_vsemode_entry_none" translatable="true">None </string>
     <string name="pref_camera2_ai_camera_vsemode_entry_luma" translatable="true">Luma</string>
     <string name="pref_camera2_ai_camera_vsemode_entry_chroma" translatable="true">Chroma</string>
+    <string name="pref_camera2_ai_camera_hsr_title" translatable="true">AI Camera HSR</string>
     <!-- raw reprocess type-->
     <string name="pref_camera2_raw_reprocess_default">0</string>
     <string name="pref_camera2_raw_reprocess_title">Raw Reprocess Callback Type</string>
