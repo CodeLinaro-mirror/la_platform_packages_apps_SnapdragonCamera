@@ -7916,10 +7916,13 @@ private boolean isDevOptionSetting(){
 
     private void applyFlashMode(CaptureRequest.Builder builder) {
         String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
-        if(isCaptureBrustMode() || mCaptureTorchTrigger){
+        Log.d(TAG,"isflashRequired:" + isflashRequired  + ",mCaptureTorchTrigger:" + mCaptureTorchTrigger + ",isCaptureBrustMode():" + isCaptureBrustMode());
+        if(isCaptureBrustMode()){
             return;
         }
-        if (isflashRequired){
+        if (mCaptureTorchTrigger){
+            builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+        }else if (isflashRequired){
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
         }
         isflashRequired = false;
@@ -15645,7 +15648,7 @@ private boolean isDevOptionSetting(){
     private void setFlashMode(CaptureRequest.Builder request, String flashMode) {
         if (request == null || flashMode == null || isIsoAndE()) return;
         boolean isCaptureBurst = isCaptureBrustMode();
-        Log.d(TAG,"setflashmode flashmode="+flashMode+",captureburst="+isCaptureBurst);
+        Log.d(TAG,"setflashmode flashmode="+flashMode+",captureburst="+isCaptureBurst + ",mCaptureTorchTrigger:" + mCaptureTorchTrigger);
         switch (flashMode) {
             case "on":
                 if (isCaptureBurst) {
@@ -15676,6 +15679,9 @@ private boolean isDevOptionSetting(){
                 request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
                 request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
                 break;
+        }
+        if(!mCaptureTorchTrigger) {
+            request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
         applyLowLightBoost(request);
     }
