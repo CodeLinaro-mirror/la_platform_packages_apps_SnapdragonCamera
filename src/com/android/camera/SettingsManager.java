@@ -3627,12 +3627,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return true;
     }
 
-    private boolean isMfSHDREnable() {
+    public boolean isMfSHDREnable() {
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext,
                         getCurrentPrepNameKey()), Context.MODE_PRIVATE);
         boolean isMfHDR = pref.getBoolean(KEY_MANUAL_MFHDR, false);
         boolean isSHDR = pref.getBoolean(KEY_MANUAL_SHDR, false);
+        Log.d(TAG,"isMfSHDREnable, isMfHDR:" + isMfHDR + ",isSHDR:" + isSHDR);
         return isMfHDR || isSHDR;
     }
 
