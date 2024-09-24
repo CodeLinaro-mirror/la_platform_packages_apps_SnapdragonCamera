@@ -2059,7 +2059,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                     Log.v(TAG, BIG_LOG,"mT2TTrackState :" + mT2TTrackState +
                             ", trackerScore :" +trackerScore+", resultROI :" + resultROI);
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException |BufferUnderflowException  e) {
                 Log.d(TAG,EXCEPTION_LOG,e.toString());
             }
         }
