@@ -271,6 +271,9 @@ public class SettingsActivity extends PreferenceActivity {
                         updateVideoHfrFpsPreference();
                         updateVideoEncoderProfile();
                         break;
+                    case SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL:
+                        updateVideoHfrFpsPreference();
+                        break;
                     case SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE:
                         if (!value.equals("24") && !value.equals("30")) {
                             int fpsRate = Integer.parseInt(value.substring(3));
@@ -2516,7 +2519,7 @@ public class SettingsActivity extends PreferenceActivity {
             if(lapsepref != null){
                 String lapsvalue = lapsepref.getValue();
                 if(lapsvalue != null && !lapsvalue.equals("0")){
-                    pref.setValue("off");
+                    pref.setValue(mediaRate);
                     pref.setEnabled(false);
                     return;
                 }
