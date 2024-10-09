@@ -21,8 +21,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.hardware.Camera.CameraInfo;
 import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 
 import com.android.camera.util.Log;
@@ -63,26 +63,31 @@ public class DisableCameraReceiver extends BroadcastReceiver {
     }
 
     private boolean hasCamera() {
-        int n = android.hardware.Camera.getNumberOfCameras();
         String[] cameraIdList = null;
         try {
             cameraIdList = mCameraManager.getCameraIdList();
-            Log.i(TAG, "getNumberOfCameras: " + n + ",getCameraIdList len =" + cameraIdList.length);
+            Log.i(TAG, "getCameraIdList len =" + cameraIdList.length);
         }catch (CameraAccessException e) {
             Log.e(TAG,"getCameraIdList error="+e);
         }
-        return (n > 0 || (cameraIdList != null && cameraIdList.length >0));
+        return (cameraIdList != null && cameraIdList.length >0);
     }
 
     private boolean hasBackCamera() {
-        int n = android.hardware.Camera.getNumberOfCameras();
-        CameraInfo info = new CameraInfo();
-        for (int i = 0; i < n; i++) {
-            android.hardware.Camera.getCameraInfo(i, info);
-            if (info.facing == CameraInfo.CAMERA_FACING_BACK) {
-                Log.i(TAG, "back camera found: " + i);
-                return true;
+        String[] cameraIdList = null;
+        try {
+            cameraIdList = mCameraManager.getCameraIdList();
+            for (int i = 0; i < cameraIdList.length; i++) {
+                String cameraId = cameraIdList[i];
+                CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(cameraId);
+                int facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                if (facing == CameraCharacteristics.LENS_FACING_BACK) {
+                    Log.i(TAG, "back camera found: " + i);
+                    return true;
+                }
             }
+        } catch (CameraAccessException e) {
+            Log.e(TAG,"getCameraIdList error="+e);
         }
         Log.i(TAG, "no back camera");
         return false;
