@@ -2106,6 +2106,9 @@ public class CameraActivity extends Activity
 
     @Override
     public void onModuleSelected(int moduleIndex) {
+        if (PersistUtil.isTraceEnable()) {
+            Trace.beginSection("onModuleSelected");
+        }
         boolean cam2on = PersistUtil.getCamera2Mode();
         mForceReleaseCamera = moduleIndex == ModuleSwitcher.CAPTURE_MODULE_INDEX ||
                 (cam2on && moduleIndex == ModuleSwitcher.PHOTO_MODULE_INDEX);
@@ -2132,6 +2135,9 @@ public class CameraActivity extends Activity
         // starts up.
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.edit().putInt(CameraSettings.KEY_STARTUP_MODULE_INDEX, moduleIndex).apply();
+        if (PersistUtil.isTraceEnable()) {
+            Trace.endSection();
+        }
     }
 
     /**
