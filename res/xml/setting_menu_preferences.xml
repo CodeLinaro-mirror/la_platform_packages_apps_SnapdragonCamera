@@ -28,7 +28,7 @@
 -->
 <!--
     Changes from Qualcomm Innovation Center are provided under the following license:
-    Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+    Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
     SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
@@ -338,6 +338,7 @@
     <PreferenceCategory
         android:layout="@layout/preferences_category"
         android:title="@string/pref_camera2_category_system"
+        android:key="system"
         android:textAllCaps="false">
         <Preference
             android:defaultValue="false"
@@ -345,6 +346,7 @@
             android:key="pref_camera2_restore_default_key"
             android:layout="@layout/preference"
             android:title="@string/pref_camera2_restore_default" />
+
         <Preference
             android:defaultValue="false"
             android:icon="@drawable/version_info"
@@ -352,6 +354,13 @@
             android:layout="@layout/preference"
             android:summary="Version"
             android:title="@string/perf_camera2_version_info" />
+
+        <Preference
+            android:defaultValue="false"
+            android:icon="@drawable/ic_search"
+            android:key="pref_camera2_search_settings"
+            android:layout="@layout/preference"
+            android:title="Search Settings" />
     </PreferenceCategory>
 
     <PreferenceCategory

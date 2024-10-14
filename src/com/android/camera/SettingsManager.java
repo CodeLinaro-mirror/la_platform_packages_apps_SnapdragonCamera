@@ -28,7 +28,7 @@
  */
  /*
   * Changes from Qualcomm Innovation Center are provided under the following license:
-  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
   * SPDX-License-Identifier: BSD-3-Clause-Clear
   */
 
@@ -216,6 +216,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC = "pref_camera2_touch_track_focus_for_cinematic_key";
     public static final String KEY_DEVELOPER_MENU = "pref_camera2_developer_menu_key";
     public static final String KEY_RESTORE_DEFAULT = "pref_camera2_restore_default_key";
+    public static final String KEY_SEARCH_SETTINGS = "pref_camera2_search_settings";
     public static final String KEY_FOCUS_DISTANCE = "pref_camera2_focus_distance_key";
     public static final String KEY_EV_FOR_LONGEXPOSURE = "pref_camera2_ev_for_longexposure_key";
     public static final String KEY_PREVIEW_EV = "pref_camera2_preview_ev_key";
