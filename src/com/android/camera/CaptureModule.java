@@ -4141,7 +4141,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mIsPreviewingVideo = true;
             if (isHighSpeedRateCapture()) {
-                if(mSettingsManager.isBatchMode(getMainCameraId()) && mVideoRecordingSurface != null){
+                if((mSettingsManager.isBatchMode(getMainCameraId()) || mCurrentSceneMode.mode == CameraMode.HFR) && mVideoRecordingSurface != null){
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                 }
                 createHighSpeedSession(cameraId);
@@ -10298,7 +10298,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mHasMapTimes.put("Total",System.currentTimeMillis() - mStartedTime);
                 }
             }
-            if(!PersistUtil.enableMediaRecorder() && !waitForAudioPrepare()){
+            if(!PersistUtil.enableMediaRecorder() && !mOnlyVideoEncoder && !waitForAudioPrepare()){
                 quitVideoToPhotoWithError("media codec prepare failed");
                 return;
             }
@@ -11888,7 +11888,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
-        if(!mSettingsManager.isBatchMode(getMainCameraId())) {
+        if(!mSettingsManager.isBatchMode(getMainCameraId()) && mCurrentSceneMode.mode != CameraMode.HFR) {
             mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
         }
         if (!PersistUtil.enableMediaRecorder()) {
