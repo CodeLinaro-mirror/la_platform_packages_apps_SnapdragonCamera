@@ -60,7 +60,7 @@ public class OneUICameraControls extends RotatableLayout {
 
     private static final String TAG = "SnapCam_Controls";
 
-    private static final float TOP_PANEL_SPACE_NUM = 4f;
+    private static final float TOP_PANEL_SPACE_NUM = 6f;
     private static final float BOTTOM_PANEL_SPACE_NUM = 5f;
     private static final float PANEL_INDEX_0 = 0f;
     private static final float PANEL_INDEX_1 = 1f;
@@ -68,6 +68,8 @@ public class OneUICameraControls extends RotatableLayout {
     private static final float PANEL_INDEX_3 = 3f;
     private static final float PANEL_INDEX_4 = 4f;
     private View mShutter,mLongShutterStop;
+    private static final float PANEL_INDEX_5 = 5f;
+
     private ShutterButtonAnim mShutterAnim;
     private int mTotalProgress;
     public RectF mShutterAnimRect;
@@ -76,6 +78,9 @@ public class OneUICameraControls extends RotatableLayout {
     private View mExitBestPhotpMode;
     private View mPauseButton;
     private FlashToggleButton mFlashButton;
+
+    private TextView mVideoPhotoSize;
+    private TextView mVideoFps;
     private View mMute;
     private View mFrontBackSwitcher;
     private View mTsMakeupSwitcher;
@@ -221,6 +226,8 @@ public class OneUICameraControls extends RotatableLayout {
         mMakeupSeekBarLayout = findViewById(R.id.makeup_seekbar_layout);
         ((SeekBar) mMakeupSeekBar).setMax(100);
         mFlashButton = (FlashToggleButton)findViewById(R.id.flash_button);
+        mVideoPhotoSize = (TextView) findViewById(R.id.video_photo_size);
+        mVideoFps = (TextView) findViewById(R.id.video_fps);
         mMute = findViewById(R.id.mute_button);
         mPreview = findViewById(R.id.preview_thumb);
         mSceneModeSwitcher = findViewById(R.id.scene_mode_switcher);
@@ -345,7 +352,7 @@ public class OneUICameraControls extends RotatableLayout {
 
         mViews = new View[]{
                 mSceneModeHDR, mFilterModeSwitcher, mFrontBackSwitcher,
-                mFlashButton, mShutter,
+                mFlashButton, mVideoPhotoSize, mVideoFps, mShutter,
                 mPreview, mPauseButton, mCancelButton, mSettingsButton
         };
         mBottomLargeSize = getResources().getDimensionPixelSize(
@@ -684,15 +691,17 @@ public class OneUICameraControls extends RotatableLayout {
         setLocation(mFilterModeSwitcher, true, PANEL_INDEX_1);
         if (mIsVideoMode) {
             setLocation(mMute, true, PANEL_INDEX_1);
-            setLocation(mFlashButton, true, PANEL_INDEX_2);
-            setLocation(mSettingsButton, true, PANEL_INDEX_3);
+            setLocation(mFlashButton, true, PANEL_INDEX_4);
+            setLocation(mSettingsButton, true, PANEL_INDEX_5);
             setLocation(mPauseButton, false, 3.4f);
             setLocation(mShutter, false, 0.5f);
             setLocation(mVideoShutter, false, PANEL_INDEX_2);
             setLocation(mExitBestPhotpMode, false, PANEL_INDEX_4);
         } else {
-            setLocation(mFlashButton, true, PANEL_INDEX_2);
-            setLocation(mSettingsButton, true, PANEL_INDEX_3);
+            setLocation(mVideoPhotoSize, true, PANEL_INDEX_2);
+            setLocation(mVideoFps, true, PANEL_INDEX_3);
+            setLocation(mFlashButton, true, PANEL_INDEX_4);
+            setLocation(mSettingsButton, true, PANEL_INDEX_5);
             setLocation(mFrontBackSwitcher, false, 3.4f);
             if (mIntentMode == CaptureModule.INTENT_MODE_CAPTURE) {
                 setLocation(mShutter, false, PANEL_INDEX_2);

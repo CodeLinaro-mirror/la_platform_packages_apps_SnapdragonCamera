@@ -474,7 +474,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private float mZoomFixedValue = 1.0f;
     private float mZoomBarRatio = 0.2f;
     private float mZoomMaxValue = 10.0f;
-
+    private TextView mVideoPhotoSize;
+    private TextView mVideoFps;
     private View mFilterModeSwitcher;
     private View mSceneModeSwitcher;
     private ImageView mSceneModeHDR;
@@ -582,7 +583,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private LinearLayout mGridLineView;
     private int mInvalidAFCount;
     private boolean mIsZoomKeyChanged = false;
-
+    List<String> mVideoSizes;
+    List<String> mVideoFpss;
+    int mVideoQualityIndex;
+    int mPhotoQualityIndex;
+    int mVideoFpsIndex;
     private void showThumbnail() {
         if ((mIsVideoUI || mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL)
                 && mThumbnail != null && mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA) {
@@ -822,6 +827,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mLongShutterStopButton = (ImageView) mRootView.findViewById(R.id.longshutter_stopbutton);
         mExitBestMode = (ImageView) mRootView.findViewById(R.id.exit_best_mode);
         mFilterModeSwitcher = mRootView.findViewById(R.id.filter_mode_switcher);
+        mVideoPhotoSize = (TextView) mRootView.findViewById(R.id.video_photo_size);
+        mVideoFps = (TextView) mRootView.findViewById(R.id.video_fps);
         mSceneModeSwitcher = mRootView.findViewById(R.id.scene_mode_switcher);
         mSceneModeHDR = (ImageView)mRootView.findViewById(R.id.scene_mode_hdr);
         mFrontBackSwitcher = mRootView.findViewById(R.id.front_back_switcher);
@@ -921,6 +928,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         });
 
         initFilterModeButton();
+        initResolutionFpsOption();
         initSceneModeHDR();
         initCameraSwitcher();
         initFlashButton();
@@ -2255,6 +2263,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void reInitUI() {
         initSceneModeHDR();
         initFilterModeButton();
+        initResolutionFpsOption();
         initFlashButton();
         initZoomSeekBar();
         initVerticalEvBar();
@@ -2615,6 +2624,75 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         });
     }
 
+    private void initResolutionFpsOption(){
+        mVideoPhotoSize.setVisibility(View.INVISIBLE);
+        mVideoFps.setVisibility(View.INVISIBLE);
+        if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR) {
+            mVideoSizes = mSettingsManager.getKeyAllValues(SettingsManager.KEY_VIDEO_QUALITY);
+            mVideoFpss = mSettingsManager.getKeyAllValues(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+            mVideoQualityIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_VIDEO_QUALITY);
+            mVideoFpsIndex = mSettingsManager.getValueIndex(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+            if (mVideoSizes == null || mVideoFpss == null) {
+                return;
+            }
+            mVideoPhotoSize.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_QUALITY, mVideoQualityIndex));
+            enableView(mVideoPhotoSize, SettingsManager.KEY_VIDEO_QUALITY);
+            mVideoPhotoSize.setVisibility(View.VISIBLE);
+            mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mVideoQualityIndex = (mVideoQualityIndex + 1) % mVideoSizes.size();
+                    mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_QUALITY, mVideoQualityIndex);
+                    mVideoPhotoSize.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_QUALITY, mVideoQualityIndex));
+                    //get new fps range based on new video size
+                    mVideoFpss = mSettingsManager.getSupportedHighFrameRate(mModule.getCurrenCameraMode(), mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY), CaptureModule.CURRENT_ID);
+                    boolean updatefps = true;
+                    for (int i = 0; i < mVideoFpss.size(); i++) {
+                        if (mVideoFpss.get(i).toString().equals(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE))) {
+                            updatefps = false;
+                            break;
+                        }
+                    }
+                    if (updatefps) {
+                        //if new fps list dont have original fps, then change to default one
+                        mVideoFpsIndex = 0;
+                        mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex);
+                        mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
+                    }
+                    mModule.restartAll();
+                }
+            });
+            enableView(mVideoFps, SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+            mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
+            mVideoFps.setVisibility(View.VISIBLE);
+            mVideoFps.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mVideoFpsIndex = (mVideoFpsIndex + 1) % mVideoFpss.size();
+                    mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex);
+                    mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
+                    mModule.restartAll();
+                }
+            });
+        }else if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEFAULT ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE){
+            mPhotoQualityIndex = mSettingsManager.getPhotoSizeIndex();
+            mVideoPhotoSize.setText(mSettingsManager.getDisplayValueForPhotoSize());
+            enableView(mVideoPhotoSize, SettingsManager.KEY_PICTURE_SIZE);
+            mVideoPhotoSize.setVisibility(View.VISIBLE);
+            mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mPhotoQualityIndex = (mPhotoQualityIndex + 1) % 3;
+                    mSettingsManager.setValueIndex(SettingsManager.KEY_PICTURE_SIZE, mSettingsManager.updatePhotoSize(mPhotoQualityIndex));
+                    mVideoPhotoSize.setText(mSettingsManager.getDisplayValueForPhotoSize());
+                    mModule.restartAll();
+                }
+            });
+        }
+    }
+    
     private void enableView(View view, String key) {
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         SettingsManager.Values values = map.get(key);
@@ -2662,6 +2740,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mMuteButton.setVisibility(View.INVISIBLE);
             updateOfflineDumpTrigger(View.GONE);
         }
+        mVideoPhotoSize.setVisibility(recording ? View.INVISIBLE : View.VISIBLE);
+        mVideoFps.setVisibility(recording ? View.INVISIBLE : View.VISIBLE);
     }
     private boolean showMuteButton(){
         String audioSelected = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER);

@@ -111,6 +111,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.lang.StringBuilder;
+import java.util.stream.Collectors;
+
 import com.android.camera.util.PersistUtil;
 
 
@@ -3003,7 +3005,64 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return res;
     }
 
-    private List<String> getSupportedHighFrameRate(CaptureModule.CameraMode mode,
+    public String getDisplayValue(String key, int index){
+        ListPreference listPreference = mPreferenceGroup.findPreference(key);
+        CharSequence[] entries = listPreference.getEntries();
+        String displayString = entries[index].toString();
+        return displayString;
+    }
+
+    public String getDisplayValueForPhotoSize(){
+        ListPreference listPreference = mPreferenceGroup.findPreference(KEY_PICTURE_SIZE);
+        Size picturesize = parseSize(listPreference.getValue());
+        StringBuilder result = new StringBuilder();
+        Size[] sizes = {new Size(1,1), new Size(4,3), new Size(16,9)};
+        for (int i = 0; i < sizes.length; i++) {
+            if(picturesize.getWidth() * sizes[i].getHeight() == picturesize.getHeight() * sizes[i].getWidth()){
+                return result.append(sizes[i].getWidth()).append(" : ").append(sizes[i].getHeight()).toString();
+            }
+        }
+        return "others";
+    }
+
+    public int updatePhotoSize(int index){
+        ListPreference listPreference = mPreferenceGroup.findPreference(KEY_PICTURE_SIZE);
+        CharSequence[] entryValues = listPreference.getEntryValues();
+        Size[] sizes = {new Size(1,1), new Size(4,3), new Size(16,9)};
+        if(entryValues != null) {
+            for (int i = 0; i < entryValues.length; i++) {
+                Size picturesize = parseSize(entryValues[i].toString());
+                if(picturesize.getWidth() * sizes[index].getHeight() == picturesize.getHeight() * sizes[index].getWidth()){
+                    return i;
+                }
+            }
+        }
+        return 0;
+    }
+
+    public int getPhotoSizeIndex(){
+        ListPreference listPreference = mPreferenceGroup.findPreference(KEY_PICTURE_SIZE);
+        Size[] sizes = {new Size(1,1), new Size(4,3), new Size(16,9)};
+        Size picturesize = parseSize(listPreference.getValue());
+        for (int i = 0; i < sizes.length; i++) {
+            if(picturesize.getWidth() * sizes[i].getHeight() == picturesize.getHeight() * sizes[i].getWidth()){
+                return i;
+            }
+        }
+        return -1;
+    }
+    public List<String> getKeyAllValues(String key){
+        List<String> values = new ArrayList<String>();
+        ListPreference listPreference = mPreferenceGroup.findPreference(key);
+        Object[] entryValues = listPreference.getEntryValues();
+        if(entryValues != null) {
+            for (int i = 0; i < entryValues.length; i++) {
+                values.add(entryValues[i].toString());
+            }
+        }
+        return values;
+    }
+    public List<String> getSupportedHighFrameRate(CaptureModule.CameraMode mode,
                                                    String videoSizeStr, int id) {
         int cameraId = id;
         String selectMode = getValue(KEY_SELECT_MODE);
@@ -3858,7 +3917,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public List<String> getSupportedVideoSize(int cameraId) {
         if (cameraId > mCharacteristics.size())return null;
         List<String> res = new ArrayList<>();
-        List<Size> videoSizes = new ArrayList<>();
+        List<Size> videoSizesAll = new ArrayList<>();
         Size videoSize = getVideoSize();
         int[] maxHdrSize = null;
         String cameravalue = getValue(KEY_SWITCH_CAMERA);
@@ -3882,16 +3941,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Size[] outRes = map.getOutputSizes(MediaRecorder.class);
         Size[] highRes = map.getHighResolutionOutputSizes(ImageFormat.PRIVATE);
         for (Size size : outRes) {
-            videoSizes.add(size);
+            videoSizesAll.add(size);
         }
         for (Size size : highRes) {
-            videoSizes.add(size);
+            videoSizesAll.add(size);
         }
         if (maxSizes != null) {
             for (Size size : maxSizes) {
-                videoSizes.add(size);
+                videoSizesAll.add(size);
             }
         }
+        List<Size> videoSizes = videoSizesAll.stream().distinct().collect(Collectors.toList());
+
         boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
         String eisValue = getValue(SettingsManager.KEY_EIS_VALUE);
         boolean isEISV3Enabled = "V3".equals(eisValue);
