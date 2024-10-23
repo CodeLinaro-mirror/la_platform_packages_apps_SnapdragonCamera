@@ -561,6 +561,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private boolean mIsVideoUI = false;
     private boolean mIsSceneModeLabelClose = false;
     private LinearLayout mGridLineView;
+    private int mInvalidAFCount;
     private boolean mIsZoomKeyChanged = false;
 
     private void showThumbnail() {
@@ -1879,9 +1880,26 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mStatsAfdText.setText(stringBuilder.toString());
     }
 
+    private boolean isInvalidString(String[] info) {
+        for (int i = 0; i < info.length; i++) {
+            if ("".equals(info[i])) {
+                continue;
+            } else {
+                return false;
+            }
+        }
+
+        return true;
+    }
     public void updateAfInfoText(String[] info) {
-        if (info == null || info.length <7)
-            return;
+        if (info == null || info.length <7 || isInvalidString(info)) {
+            mInvalidAFCount ++;
+            if(mInvalidAFCount < 2 && mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR) {
+                return;
+            }
+        }
+
+        mInvalidAFCount = 0;
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(AF_INFO_TITLE[0]+info[0]).append("\r\n")
                 .append(AF_INFO_TITLE[1]+info[1]).append("\r\n")
@@ -2084,6 +2102,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
 
         mZoomIncrease = true;
+        mInvalidAFCount = 0;
         mFaceView.initMode();
         if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
             mModeSelectLayout.setVisibility(View.GONE);
@@ -3496,7 +3515,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void onPause() {
         cancelCountDown();
         collapseCameraControls();
-
+        mInvalidAFCount = 0;
         if (mFaceView != null) mFaceView.clear();
         if(mTrackingFocusRenderer != null) {
             mTrackingFocusRenderer.setVisible(false);
