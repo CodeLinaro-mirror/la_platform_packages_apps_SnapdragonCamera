@@ -4229,6 +4229,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
                 if (type != -1){
                     str = SettingTranslation.getVideoEncoder(type);
+                    if("mvhevc".equalsIgnoreCase(str) && CaptureModule.CameraMode.HFR == CaptureModule.CURRENT_MODE){
+                        continue;
+                    }
                     Log.d(TAG,BIG_LOG,"type="+type+" str="+str);
                     if (isCurrentVideoResolutionSupportedByEncoder(info)) {
                         supported.add(str);
