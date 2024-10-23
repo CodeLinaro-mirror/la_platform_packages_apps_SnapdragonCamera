@@ -277,8 +277,6 @@ public class CameraSettings {
     public static final int CURRENT_LOCAL_VERSION = 2;
 
     public static final int DEFAULT_VIDEO_DURATION = 0; // no limit
-    private static final int MMS_VIDEO_DURATION = (CamcorderProfile.get(CamcorderProfile.QUALITY_LOW) != null) ?
-          CamcorderProfile.get(CamcorderProfile.QUALITY_LOW).duration :30;
     private static final int YOUTUBE_VIDEO_DURATION = 15 * 60; // 15 mins
 
     private static final String TAG = "CameraSettings";
@@ -1263,7 +1261,6 @@ public class CameraSettings {
 
     public static void upgradeGlobalPreferences(SharedPreferences pref, Context context) {
         upgradeOldVersion(pref, context);
-        upgradeCameraId(pref);
     }
 
     public static void upgradeOldVersion(SharedPreferences pref, Context context) {
@@ -1310,21 +1307,6 @@ public class CameraSettings {
 
         editor.putInt(KEY_VERSION, CURRENT_VERSION);
         editor.apply();
-    }
-
-    private static void upgradeCameraId(SharedPreferences pref) {
-        // The id stored in the preference may be out of range if we are running
-        // inside the emulator and a webcam is removed.
-        // Note: This method accesses the global preferences directly, not the
-        // combo preferences.
-        int cameraId = readPreferredCameraId(pref);
-        if (cameraId == 0) return;  // fast path
-
-        int n = CameraHolder.instance().getNumberOfCameras();
-        if (cameraId < 0 || cameraId >= n) {
-            cameraId = 0;
-        }
-        writePreferredCameraId(pref, cameraId);
     }
 
     public static int readPreferredCameraId(SharedPreferences pref) {
@@ -1385,102 +1367,6 @@ public class CameraSettings {
         initialCameraPictureSize(context, parameters);
         writePreferredCameraId(preferences, currentCameraId);
     }
-    private static boolean checkSupportedVideoQuality(Parameters parameters,int width, int height){
-        List <Size> supported = parameters.getSupportedVideoSizes();
-        int flag = 0;
-        for (Size size : supported){
-            //since we are having two profiles with same height, we are checking with height
-            if (size.height == 480) {
-                if (size.height == height && size.width == width) {
-                    flag = 1;
-                    break;
-                }
-            } else {
-                if (size.width == width) {
-                    flag = 1;
-                    break;
-                }
-            }
-        }
-        if (flag == 1)
-            return true;
-
-        return false;
-    }
-    private static ArrayList<String> getSupportedVideoQuality(int cameraId,Parameters parameters) {
-        ArrayList<String> supported = new ArrayList<String>();
-        // Check for supported quality
-        if (ApiHelper.HAS_FINE_RESOLUTION_QUALITY_LEVELS) {
-        getFineResolutionQuality(supported,cameraId,parameters);
-        } else {
-            supported.add(Integer.toString(CamcorderProfile.QUALITY_HIGH));
-            CamcorderProfile high = CamcorderProfile.get(
-                    cameraId, CamcorderProfile.QUALITY_HIGH);
-            CamcorderProfile low = CamcorderProfile.get(
-                    cameraId, CamcorderProfile.QUALITY_LOW);
-            if (high.videoFrameHeight * high.videoFrameWidth >
-                    low.videoFrameHeight * low.videoFrameWidth) {
-                supported.add(Integer.toString(CamcorderProfile.QUALITY_LOW));
-            }
-        }
-
-        return supported;
-    }
-
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    private static void getFineResolutionQuality(ArrayList<String> supported,
-                                                 int cameraId,Parameters parameters) {
-
-        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfileWrapper.QUALITY_4KDCI)) {
-           if (checkSupportedVideoQuality(parameters,4096,2160)) {
-              supported.add(Integer.toString(CamcorderProfileWrapper.QUALITY_4KDCI));
-           }
-        }
-
-        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_2160P)) {
-           if (checkSupportedVideoQuality(parameters,3840,2160)) {
-              supported.add(Integer.toString(CamcorderProfile.QUALITY_2160P));
-           }
-        }
-        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_1080P)) {
-           if (checkSupportedVideoQuality(parameters,1920,1080)){
-              supported.add(Integer.toString(CamcorderProfile.QUALITY_1080P));
-           }
-        }
-        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_720P)) {
-           if (checkSupportedVideoQuality(parameters,1280,720)){
-              supported.add(Integer.toString(CamcorderProfile.QUALITY_720P));
-           }
-        }
-        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_480P)) {
-           if (checkSupportedVideoQuality(parameters,720,480)){
-              supported.add(Integer.toString(CamcorderProfile.QUALITY_480P));
-           }
-        }
-
-        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfileWrapper.QUALITY_VGA)) {
-           if (checkSupportedVideoQuality(parameters,640,480)){
-              supported.add(Integer.toString(CamcorderProfileWrapper.QUALITY_VGA));
-           }
-        }
-
-        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_CIF)) {
-           if (checkSupportedVideoQuality(parameters,352,288)){
-              supported.add(Integer.toString(CamcorderProfile.QUALITY_CIF));
-           }
-        }
-        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_QVGA)) {
-           if (checkSupportedVideoQuality(parameters,320,240)){
-              supported.add(Integer.toString(CamcorderProfile.QUALITY_QVGA));
-           }
-        }
-        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_QCIF)) {
-           if (checkSupportedVideoQuality(parameters,176,144)){
-              supported.add(Integer.toString(CamcorderProfile.QUALITY_QCIF));
-           }
-        }
-
-    }
 
     public static ArrayList<String> getSupportedVideoQualities(int cameraId,Parameters parameters) {
         ArrayList<String> supported = new ArrayList<String>();
@@ -1494,14 +1380,6 @@ public class CameraSettings {
             }
         }
         return supported;
-    }
-    public static int getVideoDurationInMillis(String quality) {
-        if (VIDEO_QUALITY_MMS.equals(quality)) {
-            return MMS_VIDEO_DURATION * 1000;
-        } else if (VIDEO_QUALITY_YOUTUBE.equals(quality)) {
-            return YOUTUBE_VIDEO_DURATION * 1000;
-        }
-        return DEFAULT_VIDEO_DURATION * 1000;
     }
 
     public static boolean isInternalPreviewSupported(Parameters params) {

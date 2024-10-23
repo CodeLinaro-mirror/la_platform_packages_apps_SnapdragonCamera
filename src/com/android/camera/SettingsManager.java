@@ -58,6 +58,7 @@ import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
+import android.media.EncoderProfiles;
 import android.media.MediaRecorder;
 import android.media.CamcorderProfile;
 import android.preference.PreferenceManager;
@@ -330,6 +331,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AI_BLUR_CHROMAU = "pref_camera2_blur_chromau_key";
     public static final String KEY_AI_BLUR_CHROMAV = "pref_camera2_blur_chromav_key";
     public static final String KEY_AI_BLUR_CHROMASTRENGTH = "pref_camera2_blur_chromastrength_key";
+
+    public static final String KEY_AI_CAMERA_HSR = "pref_camera2_ai_camera_hsr_key";
 
     public static final String KEY_AI_DENOISER = "pref_camera2_ai_denoiser_key";
     public static final String KEY_AI_DENOISER_FORMAT = "pref_camera2_ai_denoiser_format_key";
@@ -1050,6 +1053,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return new Size(width, height);
     }
 
+    public boolean isAICameraHSRSupported(int id) {
+        boolean isSupported = false;
+        try {
+            isSupported = mCharacteristics.get(id).get(CaptureModule.EnableAICameraHSR) == 1;
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
+                    CaptureModule.EnableAICameraHSR.toString());
+        }
+        return isSupported;
+    }
+
     public List<String> getSupportedAICameraMode() {
         ArrayList<String> ret = new ArrayList<String>();
         //add only for test
@@ -1437,6 +1451,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return formats;
     }
 
+    public List<String> getSupportedPreviewProfile(){
+        List<String> results = new ArrayList<>();
+        results.add("0");
+        try {
+            DynamicRangeProfiles dynamicProfiles = mCharacteristics.get(
+                    getCurrentCameraId()).get(
+                    CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES);
+            if (dynamicProfiles != null) {
+                Set<Long> profiles = dynamicProfiles.getSupportedProfiles();
+                for (Long p : profiles) {
+                    results.add(p.toString());
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "getSupportedPreviewProfile", e.fillInStackTrace());
+        }
+        return results;
+    }
     public List<String> getSupportedCapturePreviewProfile() {
         String[] data = {"0", "2", "4"};
         List<String> profiles = new ArrayList<>();
@@ -1856,6 +1888,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference inSensorZoom = mPreferenceGroup.findPreference(KEY_INSENSOR_ZOOM);
         ListPreference aiCamera = mPreferenceGroup.findPreference(KEY_AI_CAMERA);
         ListPreference aiCameraSnapshot = mPreferenceGroup.findPreference(KEY_AI_CAMERA_SNAPSHOT);
+        ListPreference aiCamerahsr = mPreferenceGroup.findPreference(KEY_AI_CAMERA_HSR);
         ListPreference previewProfile = mPreferenceGroup.findPreference(KEY_PREVIEW_PROFILE);
         ListPreference captureProfile = mPreferenceGroup.findPreference(KEY_CAPTURE_PROFILE);
         ListPreference multireprocess_input = mPreferenceGroup.findPreference(KEY_MULTIRESREPROCESS_INPUT);
@@ -1898,6 +1931,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (filterUnsupportedOptions(aiCamera, getSupportedAICameraMode())) {
                 mFilteredKeys.add(aiCamera.getKey());
                 mFilteredKeys.add(aiCameraSnapshot.getKey());
+            }
+        }
+        if (aiCamerahsr != null) {
+            if (!isAICameraHSRSupported(mCameraId)) {
+                removePreference(mPreferenceGroup, KEY_AI_CAMERA_HSR);
+                mFilteredKeys.add(aiCamerahsr.getKey());
             }
         }
         if (fd_smile != null && fd_gaze != null && fd_blink != null) {
@@ -2212,7 +2251,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         getSupportedCapturePreviewProfile())) {
                     mFilteredKeys.add(captureProfile.getKey());
                 }
-                captureProfile.print();
+                if (filterUnsupportedOptions(previewProfile,
+                        getSupportedPreviewProfile())) {
+                    mFilteredKeys.add(captureProfile.getKey());
+                }
             }
         }
 
@@ -2967,20 +3009,30 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return supported;
     }
+    public boolean hasProfile(int cameraId, int quality) {
+        boolean res = false;
+        try {
+            EncoderProfiles encPros = CamcorderProfile.getAll(String.valueOf(cameraId), quality);
+            if (encPros != null) res = true;
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "hasProfile has exception: " + e.getMessage());
+        }
+        return res;
+    }
     public String getMediaFrameRate(int cameraId){
         CamcorderProfile profile = null;
         String videoSize = getValue(SettingsManager.KEY_VIDEO_QUALITY);
-        if(videoSize != null) {
+        if (videoSize != null) {
             int quality = CameraSettings.VIDEO_QUALITY_TABLE.get(videoSize);
-            if (CamcorderProfile.hasProfile(cameraId, quality)) {
+            if (hasProfile(cameraId, quality)) {
                 profile = CamcorderProfile.get(cameraId, quality);
             }
-            if(profile == null) {
+            if (profile == null) {
                 return "30";
-            }else{
+            } else {
                 return String.valueOf(profile.videoFrameRate);
             }
-        }else{
+        } else {
             return "30";
         }
     }
@@ -3546,13 +3598,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return value;
     }
-    public boolean applyManualFlash(){
+    public boolean isOpenManualFlash(){
         if(CaptureModule.CameraMode.VIDEO != CaptureModule.CURRENT_MODE &&
                 CaptureModule.CameraMode.DEFAULT != CaptureModule.CURRENT_MODE){
             return false;
         }
         String manual = getValue(KEY_CAMERA_MANUALFLASH);
-        String level = getValue(KEY_CAMERA_MANUALFLASH_LEVEL);
         int maxlevel = getMaxFlashLevel();
         String flashmode = getValue(CaptureModule.CURRENT_MODE  == CaptureModule.CameraMode.VIDEO ?
                 SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
@@ -3606,12 +3657,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return true;
     }
 
-    private boolean isMfSHDREnable() {
+    public boolean isMfSHDREnable() {
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext,
                         getCurrentPrepNameKey()), Context.MODE_PRIVATE);
         boolean isMfHDR = pref.getBoolean(KEY_MANUAL_MFHDR, false);
         boolean isSHDR = pref.getBoolean(KEY_MANUAL_SHDR, false);
+        Log.d(TAG,"isMfSHDREnable, isMfHDR:" + isMfHDR + ",isSHDR:" + isSHDR);
         return isMfHDR || isSHDR;
     }
 
@@ -3900,7 +3952,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
             if (CameraSettings.VIDEO_QUALITY_TABLE.containsKey(videoSizes.get(i).toString())) {
                 Integer profile = CameraSettings.VIDEO_QUALITY_TABLE.get(videoSizes.get(i).toString());
-                if (profile != null && CamcorderProfile.hasProfile(cameraId, profile)) {
+                if (profile != null && hasProfile(cameraId, profile)) {
                     if (mode == CaptureModule.CameraMode.CINEMATIC &&
                             !(videoSizes.get(i).toString().equals("1920x1080") ||
                                     videoSizes.get(i).toString().equals("1280x720"))) {
