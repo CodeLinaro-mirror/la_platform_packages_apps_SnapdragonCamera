@@ -222,6 +222,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private VerticalSeekBar mTorchbar;
     private VerticalSeekBar mVerticalEvBar;
     private VerticalSeekBar mAICameraSeekBar;
+    private TextView mAIStrengthValue;
+    private LinearLayout mAistrength;
+
 
     private boolean mIsTorchOn;
     private int mTorchLen ;
@@ -1133,8 +1136,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             public void onProgressChanged(VerticalSeekBar seekBar, int progresValue, boolean fromUser) {
                 int value = (int)(128*progresValue/100);
                 mModule.updateAIStrengthValue(value);
+                mAIStrengthValue.setText(new StringBuilder("AI ").append(value));
             }
         });
+        mAIStrengthValue = (TextView) mRootView.findViewById(R.id.aistrength_value);
+        mAistrength = (LinearLayout) mRootView.findViewById(R.id.aistrength);
     }
     public void hidenMFNRtext(){
         if(mMFNRText != null) mMFNRText.setVisibility(View.INVISIBLE);
@@ -1701,14 +1707,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void hideAICameraSeekBar() {
-        if (mAICameraSeekBar != null) {
+        if (mAICameraSeekBar != null && mAIStrengthValue != null && mAistrength != null) {
             mAICameraSeekBar.setVisibility(View.GONE);
+            mAIStrengthValue.setVisibility(View.GONE);
+            mAistrength.setVisibility(View.GONE);
         }
     }
 
     public void showAICameraSeekBar() {
-        if (mAICameraSeekBar != null) {
+        if (mAICameraSeekBar != null && mAIStrengthValue != null && mAistrength != null) {
+            mAIStrengthValue.setVisibility(View.VISIBLE);
             mAICameraSeekBar.setVisibility(View.VISIBLE);
+            mAistrength.setVisibility(View.VISIBLE);
         }
     }
 
