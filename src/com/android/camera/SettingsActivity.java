@@ -1665,9 +1665,6 @@ public class SettingsActivity extends PreferenceActivity {
                     removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
                     removePreference(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC, developer);
                     removePreference(SettingsManager.KEY_AUDIO_BLE, developer);
-                    if (!(DEV_LEVEL_ALL || mShowAllDevOption)) {
-                        removePreference(SettingsManager.KEY_SWITCH_CAMERA, developer);
-                    }
                     for (String removeKey : videoOnlyList) {
                         removePreference(removeKey, developer);
                     }
@@ -1691,9 +1688,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> videoAddList = new ArrayList<>();
                     videoAddList.add(SettingsManager.KEY_ZOOM);
-                    if (DEV_LEVEL_ALL || mShowAllDevOption) {
-                        videoAddList.add(SettingsManager.KEY_SWITCH_CAMERA);
-                    }
+                    videoAddList.add(SettingsManager.KEY_SWITCH_CAMERA);
                     videoAddList.addAll(videoOnlyList);
                     videoAddList.add(SettingsManager.KEY_ANTI_BANDING_LEVEL);
                     if (mode == VIDEO) {
@@ -1818,9 +1813,7 @@ public class SettingsActivity extends PreferenceActivity {
                 removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, photoPre);
                 removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, photoPre);
                 if (mDeveloperMenuEnabled) {
-                    if (DEV_LEVEL_ALL || mShowAllDevOption) {
-                        proModeOnlyList.add(SettingsManager.KEY_SWITCH_CAMERA);
-                    }
+                    proModeOnlyList.add(SettingsManager.KEY_SWITCH_CAMERA);
                     proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                     proModeOnlyList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);

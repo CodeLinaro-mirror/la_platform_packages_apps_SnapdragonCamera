@@ -675,24 +675,24 @@ public class OneUICameraControls extends RotatableLayout {
             setLocation(mMute, true, PANEL_INDEX_1);
             setLocation(mFlashButton, true, PANEL_INDEX_2);
             setLocation(mSettingsButton, true, PANEL_INDEX_3);
-            setLocation(mPauseButton, false, 3.15f);
-            setLocation(mShutter, false, 0.85f);
+            setLocation(mPauseButton, false, 3.4f);
+            setLocation(mShutter, false, 0.5f);
             setLocation(mVideoShutter, false, PANEL_INDEX_2);
             setLocation(mExitBestPhotpMode, false, PANEL_INDEX_4);
         } else {
             setLocation(mFlashButton, true, PANEL_INDEX_2);
             setLocation(mSettingsButton, true, PANEL_INDEX_3);
-            setLocation(mFrontBackSwitcher, false, 3.15f);
+            setLocation(mFrontBackSwitcher, false, 3.4f);
             if (mIntentMode == CaptureModule.INTENT_MODE_CAPTURE) {
                 setLocation(mShutter, false, PANEL_INDEX_2);
-                setLocation(mCancelButton, false, 0.85f);
+                setLocation(mCancelButton, false, 0.5f);
             } else if (mIntentMode == CaptureModule.INTENT_MODE_VIDEO) {
                 setLocation(mVideoShutter, false, PANEL_INDEX_2);
-                setLocation(mCancelButton, false, 0.85f);
+                setLocation(mCancelButton, false, 0.5f);
             } else {
                 setLocation(mVideoShutter, false, PANEL_INDEX_2);
                 setLocation(mShutter, false, PANEL_INDEX_2);
-                setLocation(mPreview, false, 0.85f);
+                setLocation(mPreview, false, 0.5f);
             }
             setLocation(mExitBestPhotpMode, false, PANEL_INDEX_4);
         }
