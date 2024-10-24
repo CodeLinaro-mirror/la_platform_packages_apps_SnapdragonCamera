@@ -97,7 +97,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.text.InputType;
-
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.widget.SearchView;
+import android.text.TextWatcher;
+import android.text.Editable;
+import android.widget.ImageView;
 import org.codeaurora.snapcam.R;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.ui.RotateTextToast;
@@ -1293,6 +1299,49 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.search_menu, menu);
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        View actionView = searchItem.getActionView();
+        ImageView searchIcon = (ImageView)actionView.findViewById(R.id.gosearch);
+        AutoCompleteTextView autoCompTextView = actionView.findViewById(R.id.autoCompleteTextView);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_dropdown_item_1line, mSearchSettingList);
+        autoCompTextView.setAdapter(adapter);
+        autoCompTextView.setThreshold(1);
+        setSearchView(autoCompTextView,searchIcon);
+        return true;
+
+    }
+
+private void setSearchView(AutoCompleteTextView autoCompTextView,ImageView searchIcon){
+
+    searchIcon.setOnClickListener(view -> {
+        String selectedText = autoCompTextView.getText().toString();
+        if(selectedText != null) {
+            scrollToPreference(selectedText);
+            autoCompTextView.setText("");
+            searchIcon.setVisibility(View.INVISIBLE);
+        }
+    });
+    autoCompTextView.addTextChangedListener(new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            searchIcon.setVisibility(View.VISIBLE);
+        }
+    });
+}
+
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         int flag = WindowManager.LayoutParams.FLAG_FULLSCREEN;
@@ -1301,7 +1350,6 @@ public class SettingsActivity extends PreferenceActivity {
         ActionBar actionBar = getActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setTitle(getResources().getString(R.string.settings_title));
         }
         final boolean isSecureCamera = getIntent().getBooleanExtra(
                 CameraUtil.KEY_IS_SECURE_CAMERA, false);
@@ -1335,7 +1383,7 @@ public class SettingsActivity extends PreferenceActivity {
             PreferenceCategory category = (PreferenceCategory) getPreferenceScreen().getPreference(i);
             for (int j = 0; j < category.getPreferenceCount(); j++) {
                 Preference pref = category.getPreference(j);
-                mSearchSettingList.add(pref.getTitle().toString()+";\nKey:"+pref.getKey());
+                mSearchSettingList.add(pref.getTitle().toString());
                 pref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
 
                     @Override
@@ -1360,9 +1408,6 @@ public class SettingsActivity extends PreferenceActivity {
 
                         if ( preference.getKey().equals(SettingsManager.KEY_RESTORE_DEFAULT) ) {
                             onRestoreDefaultSettingsClick();
-                        }
-                        if ( preference.getKey().equals(SettingsManager.KEY_SEARCH_SETTINGS) ) {
-                            onSearchSettingsClick();
                         }
                         if( preference.getKey().equals(SettingsManager.KEY_FD_SETTING)) {
                             View listView = (SettingsActivity.this).getLayoutInflater().inflate(
@@ -1465,8 +1510,6 @@ public class SettingsActivity extends PreferenceActivity {
                 PreferenceScreen parent = getPreferenceScreen();
                 parent.removePreference(developer);
             }
-            PreferenceGroup system = (PreferenceGroup) findPreference("system");
-            removePreference(mSettingsManager.KEY_SEARCH_SETTINGS,system);
         }
 
         CharSequence[] entries = mSettingsManager.getEntries(SettingsManager.KEY_SCENE_MODE);
@@ -3006,35 +3049,8 @@ public class SettingsActivity extends PreferenceActivity {
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
-
-    void onSearchSettingsClick() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        LayoutInflater inflater = getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.search_view, null);
-        builder.setView(dialogView);
-        AutoCompleteTextView autoCompTextView = dialogView.findViewById(R.id.autoCompTextView);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line,mSearchSettingList);
-        autoCompTextView.setAdapter(adapter);
-        autoCompTextView.setThreshold(1);
-        builder.setTitle("Search Setting")
-        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                String selectedText = autoCompTextView.getText().toString();
-                int index = selectedText.indexOf("Key:");
-                String key = selectedText.substring(index + 4);
-                scrollToPreference(key);
-            }
-        })
-        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-             public void onClick(DialogInterface dialog, int id) {
-             }
-        });
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-
-    private void scrollToPreference(String key) {
-                int position = findPreferencePosition(key);
+    private void scrollToPreference(String str) {
+                int position = findPreferencePosition(str);
                 if (position != -1) {
                     ListView listView = getListView();
                     listView.setSelection(position);
@@ -3043,14 +3059,15 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
 
-    private int findPreferencePosition(String key) {
+    private int findPreferencePosition(String str) {
         PreferenceGroup preferenceGroup = getPreferenceScreen();
         int position = 1;
         for (int i = 0; i < preferenceGroup.getPreferenceCount(); i++) {
             PreferenceCategory category = (PreferenceCategory) getPreferenceScreen().getPreference(i);
             for (int j = 0; j < category.getPreferenceCount(); j++) {
                 Preference pref = category.getPreference(j);
-                if (pref.getKey().equals(key)) {
+
+                if (pref.getTitle().equals(str)) {
                     return position;
                 }
                 position ++;

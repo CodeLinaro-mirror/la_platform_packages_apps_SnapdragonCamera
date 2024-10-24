@@ -354,13 +354,6 @@
             android:layout="@layout/preference"
             android:summary="Version"
             android:title="@string/perf_camera2_version_info" />
-
-        <Preference
-            android:defaultValue="false"
-            android:icon="@drawable/ic_search"
-            android:key="pref_camera2_search_settings"
-            android:layout="@layout/preference"
-            android:title="Search Settings" />
     </PreferenceCategory>
 
     <PreferenceCategory
