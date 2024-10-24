@@ -14830,13 +14830,9 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateRGBGraghView(){
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mGraphViewRGB != null) {
-                    mGraphViewRGB.PreviewChanged();
-                }
-            }
-        });
+        if(mGraphViewRGB != null) {
+            mGraphViewRGB.PreviewChanged();
+        }
     }
 
     private void updateGraghView(){
