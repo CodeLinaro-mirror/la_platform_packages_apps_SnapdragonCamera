@@ -5992,6 +5992,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             CaptureFailure result) {
                     Log.i(TAG, "captureStillPictureForCommon onCaptureFailed: " + id);
                     mTakingPicture[id] = false;
+                    mUI.enableShutter(true);
                 }
 
                 @Override
