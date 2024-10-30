@@ -2046,6 +2046,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+
     public void reInitUI() {
         initSceneModeHDR();
         initFilterModeButton();
@@ -3148,7 +3149,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 }
             });
         }
+        mGestures.setZoomEnabled(enabled);
         if(!enabled || !mModule.isLongExpTmCaptrure()) stopShutterAnim();
+
     }
     public void startShutterAnim(long totalProgress) {
         mCurrentProgress = 0;
