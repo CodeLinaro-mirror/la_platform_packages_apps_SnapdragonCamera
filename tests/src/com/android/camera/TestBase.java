@@ -1,6 +1,6 @@
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 package com.android.camera;
@@ -994,6 +994,7 @@ public class TestBase{
             }
         }else {
             boolean intenton = false;
+            boolean intentalwayson = false;
             boolean intentoff = false;
             boolean intentauto = false;
             executeShellCommand("input tap " + mFlashLoc[0] + " " + mFlashLoc[1]);
@@ -1056,6 +1057,21 @@ public class TestBase{
                 }
                 executeShellCommand("input tap " + mFlashLoc[0] + " " + mFlashLoc[1]);
                 snapByLocation();
+                checkFlash("alwayson");
+                boolean checkalwayson = testResult;
+                if(isOpenFromIntent){
+                    pressDone();
+                    intentalwayson = checkalwayson && testResult;
+                    openCameraByIntent(mImageIntent);
+                    checkPreview("0",mode);
+                    intentalwayson = intentalwayson && testResult;
+                }
+                if(isPerformenceTest){
+                    HashMap<String,Long> snapShotWithFlashAlwaysOn = getHashMapValue(mCaptureModule.getHashMapTimes());
+                    performenceValues.put("snapFlashAlwaysOn",snapShotWithFlashAlwaysOn);
+                }
+                executeShellCommand("input tap " + mFlashLoc[0] + " " + mFlashLoc[1]);
+                snapByLocation();
                 checkFlash("off");
                 boolean checkoff = testResult;
                 if(isOpenFromIntent){
@@ -1077,7 +1093,7 @@ public class TestBase{
                 if(isOpenFromIntent){
                     pressDone();
                     intentauto = checkauto && testResult;
-                    if(intentauto && intenton && intentoff){
+                    if(intentauto && intenton && intentoff && intentalwayson){
                         updateJson(5,testPass);
                     }else {
                         updateJson(5,testFail);
@@ -1087,7 +1103,7 @@ public class TestBase{
                 if(isPerformenceTest){
                     mCaptureModule.resetHashMapTimes();
                 }
-                if(checkauto && checkoff && checkon){
+                if(checkauto && checkoff && checkon && checkalwayson){
                     updateJson(5,testPass);
                 }
                 else {
@@ -3348,6 +3364,33 @@ public class TestBase{
                 if(FLASH_STATE_READY != flashStateInPre){
                     testFail = getFailStr("FLASH_STATE in preview is", flashStateInPre,FLASH_STATE_FIRED);
                     return;
+                }
+                break;
+            case "alwayson":
+                if (CaptureResult.FLASH_MODE_TORCH != flashInPreview) {
+                    testFail = getFailStr("FLASH_MODE in preview", flashInPreview, CaptureResult.FLASH_MODE_TORCH);
+                    return;
+                }
+                if (CaptureResult.CONTROL_AE_MODE_ON != aeInPreview) {
+                    testFail = getFailStr("CONTROL_AE_MODE in preview", aeInPreview, CaptureResult.CONTROL_AE_MODE_ON);
+                    return;
+                }
+                if(FLASH_STATE_FIRED != flashStateInPre){
+                    testFail = getFailStr("FLASH_STATE in preview is", flashStateInPre,FLASH_STATE_FIRED);
+                    return;
+                }
+                if (isSupportSnapShot(mode)) {
+                    if (CaptureResult.FLASH_MODE_TORCH != flashInResult) {
+                        testFail = getFailStr("FLASH_MODE in reslut", flashInResult, CaptureResult.FLASH_MODE_TORCH);
+                        return;
+                    }
+                    if (CaptureResult.CONTROL_AE_MODE_ON != aeInResult) {
+                        testFail = getFailStr("CONTROL_AE_MODE in reslut", aeInResult, CaptureResult.CONTROL_AE_MODE_ON);
+                    }
+                    if(FLASH_STATE_FIRED != flashStateInCap){
+                        testFail = getFailStr("FLASH_STATE in capture is", flashStateInCap,FLASH_STATE_FIRED);
+                        return;
+                    }
                 }
                 break;
         }

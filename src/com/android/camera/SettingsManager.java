@@ -3631,7 +3631,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         int maxlevel = getMaxFlashLevel();
         String flashmode = getValue(CaptureModule.CURRENT_MODE  == CaptureModule.CameraMode.VIDEO ?
                 SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
-        if(manual == null || flashmode == null || !flashmode.equals("on") || maxlevel <= 1){
+        if(manual == null || flashmode == null || (!flashmode.equals("on") && !flashmode.equals("alwayson")) || maxlevel <= 1){
             return false;
         }else if(manual.equals("1")){
             return true;

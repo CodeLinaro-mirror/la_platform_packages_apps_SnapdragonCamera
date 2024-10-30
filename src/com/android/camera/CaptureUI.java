@@ -5062,6 +5062,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
      * Call to begin rendering the preview and auxiliary views again.
      */
     public void resumePreviewRendering() {
+        if(mFilmstripLayout.getVisibility() == View.INVISIBLE){
+            mModule.updateFlashMode(false);
+        }
         mCameraRootView.setVisibility(View.VISIBLE);
     }
 

@@ -7943,32 +7943,51 @@ private boolean isDevOptionSetting(){
         isflashRequired = false;
     }
     public void updateFlashMode(boolean inThumbnail){
-        if(mCurrentSceneMode.mode != CameraMode.HFR && mCurrentSceneMode.mode != CameraMode.VIDEO){
+        if(mCurrentSceneMode.mode == CameraMode.CINEMATIC || mCurrentSceneMode.mode == CameraMode.PRO_MODE){
             return;
         }
-        String flashMode = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_FLASH_MODE);
-        if(flashMode != null && !flashMode.equals("on")){
+        CaptureRequest.Builder captureRequest = mPreviewRequestBuilder[CURRENT_ID];
+        if (!checkSessionAndBuilder(mCaptureSession[CURRENT_ID], captureRequest) || mCurrentSessionClosed
+                ||mPaused) {
             return;
         }
-        if(mVideoRecordRequestBuilder != null) {
-            try {
-                mVideoRecordRequestBuilder.set(CaptureRequest.FLASH_MODE, inThumbnail ?
-                        CaptureRequest.FLASH_MODE_OFF : CaptureRequest.FLASH_MODE_TORCH);
-                if (isHighSpeedRateCapture()) {
-                    List<CaptureRequest> slowMoRequests = mSuperSlomoCapture ?
-                            createSSMBatchRequest(mVideoRecordRequestBuilder) :
-                            getHighSpeedList((CameraConstrainedHighSpeedCaptureSession) mCurrentSession, mVideoRecordRequestBuilder);
-                    mCurrentSession.setRepeatingBurst(slowMoRequests, mCaptureCallback,
-                            mCameraHandler);
-                } else {
-                    mCurrentSession.setRepeatingRequest(mVideoRecordRequestBuilder.build(),
-                            mCaptureCallback, mCameraHandler);
+        boolean videoFlash = getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO ||
+                getCurrenCameraMode() == CaptureModule.CameraMode.HFR;
+        String flashMode = mSettingsManager.getValue(videoFlash ? SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
+        if(flashMode != null && ((videoFlash && !flashMode.equals("on")) || (!videoFlash && !flashMode.equals("alwayson")))){
+            return;
+        }
+        if(videoFlash) {
+            if (mVideoRecordRequestBuilder != null) {
+                try {
+                    mVideoRecordRequestBuilder.set(CaptureRequest.FLASH_MODE, inThumbnail ?
+                            CaptureRequest.FLASH_MODE_OFF : CaptureRequest.FLASH_MODE_TORCH);
+                    if (isHighSpeedRateCapture()) {
+                        List<CaptureRequest> slowMoRequests = mSuperSlomoCapture ?
+                                createSSMBatchRequest(mVideoRecordRequestBuilder) :
+                                getHighSpeedList((CameraConstrainedHighSpeedCaptureSession) mCurrentSession, mVideoRecordRequestBuilder);
+                        mCurrentSession.setRepeatingBurst(slowMoRequests, mCaptureCallback,
+                                mCameraHandler);
+                    } else {
+                        mCurrentSession.setRepeatingRequest(mVideoRecordRequestBuilder.build(),
+                                mCaptureCallback, mCameraHandler);
+                    }
+                } catch (CameraAccessException e) {
+                    Log.i(TAG, "updateFlashMode error inThumbnail= " + inThumbnail, e);
                 }
-            }catch (CameraAccessException e) {
-            Log.i(TAG, "updateFlashMode error inThumbnail= "+inThumbnail, e);
+            }
+        }else {
+            if (captureRequest != null) {
+                try {
+                    captureRequest.set(CaptureRequest.FLASH_MODE, inThumbnail ?
+                            CaptureRequest.FLASH_MODE_OFF : CaptureRequest.FLASH_MODE_TORCH);
+                    mCurrentSession.setRepeatingRequest(captureRequest.build(),
+                            mCaptureCallback, mCameraHandler);
+                } catch (CameraAccessException e) {
+                    Log.i(TAG, "updateFlashMode error inThumbnail= " + inThumbnail, e);
+                }
+            }
         }
-        }
-
     }
     private void applyMFNRAIDEMode(CaptureRequest.Builder builder){
         if (isAIDE2Enabled()) {
@@ -15813,8 +15832,14 @@ private boolean isDevOptionSetting(){
                 request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
                 request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
                 break;
+            case "alwayson":
+                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                request.set(CaptureRequest.FLASH_MODE, mUI.getFilmstripLayout().getVisibility() != View.VISIBLE ?
+                        CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
+                setFlashLevel(request);
+                break;
         }
-        if(!mCaptureTorchTrigger && !(mSettingsManager.isOpenManualFlash() && "on".equals(flashMode))) {
+        if(!mCaptureTorchTrigger && !(mSettingsManager.isOpenManualFlash() && "on".equals(flashMode)) && !"alwayson".equals(flashMode)) {
             request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
         applyLowLightBoost(request);

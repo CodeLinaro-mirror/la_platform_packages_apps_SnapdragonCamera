@@ -26,6 +26,11 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera.ui;
 
@@ -42,7 +47,7 @@ import org.codeaurora.snapcam.R;
 
 public class FlashToggleButton extends RotateImageView {
     private SettingsManager mSettingsManager;
-    private int[] cameraFlashIcon = {R.drawable.flash_off, R.drawable.flash_auto, R.drawable.flash};
+    private int[] cameraFlashIcon = {R.drawable.flash_off, R.drawable.flash_auto, R.drawable.flash, R.drawable.flash_on};
     private int[] videoFlashIcon = {R.drawable.flash_off, R.drawable.flash};
     private int mIndex;
     private boolean mIsVideoFlash;
