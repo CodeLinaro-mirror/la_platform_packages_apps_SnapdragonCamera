@@ -1876,52 +1876,13 @@ public class TestBase{
     private void testDepthUI()throws Exception {
         updateJson(5, null);
         getDepthUILoc();
-
         executeShellCommand("input tap " + mDepthBarLoc[0] + " " + mDepthBarLoc[1]);
         Thread.sleep(SMALL_WAIT_DURATION);
         executeShellCommand("input tap " + mDepthBarMaxLoc[0] + " " + mDepthBarMaxLoc[1]);
         checkPreview("0",CaptureModule.CameraMode.DEPTH);
-        Switch depthSwitch = mCaptureUI.getDepthSwitch();
-        int depthMode0 = 0;
-        try {
-            depthMode0 = mCurrentPreviewResult.get(VendorTagUtil.GET_DEPTH_MODE);
-            if (depthSwitch.isChecked() && depthMode0 != 2) {
-                testFail = getFailStr("DepthMode in Result", depthMode0, 2);
-                return;
-            } else if (!depthSwitch.isChecked() && depthMode0 != 0) {
-                testFail = getFailStr("DepthMode in Result", depthMode0, 0);
-                return;
-            }
-        }catch (IllegalArgumentException e){
-            Log.i(TAG,"e="+e);
-            testFail = getFailStr("org.codeaurora.qcamera3.sessionParameters.DepthMode", "cannot find", "find it");
-            return;
-        }
-
-        executeShellCommand("input tap " + mDepthSwitchLoc[0] + " " + mDepthSwitchLoc[1]);
-        checkPreview("0",CaptureModule.CameraMode.DEPTH);
-        try {
-            int depthMode1 = mCurrentPreviewResult.get(VendorTagUtil.GET_DEPTH_MODE);
-            if (depthMode1 == depthMode0) {
-                testFail = getFailStr("DepthMode in Result", depthMode1, "change");
-                return;
-            }
-            executeShellCommand("input tap " + mDepthSwitchRLoc[0] + " " + mDepthSwitchRLoc[1]);
-            checkPreview("0", CaptureModule.CameraMode.DEPTH);
-            int depthMode2 = mCurrentPreviewResult.get(VendorTagUtil.GET_DEPTH_MODE);
-            if (depthMode2 == depthMode1) {
-                testFail = getFailStr("DepthMode in Result", depthMode2, "change");
-                return;
-            }
-        }catch (IllegalArgumentException e){
-            Log.i(TAG,"e="+e);
-            testFail = getFailStr("org.codeaurora.qcamera3.sessionParameters.DepthMode", "cannot find", "find it");
-            return;
-        }
         executeShellCommand("input tap " + mDepthSettingLoc[0] + " " + mDepthSettingLoc[1]);
         Thread.sleep(SMALL_WAIT_DURATION);
         executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
-
         checkPreview("0",CaptureModule.CameraMode.DEPTH);
         if (testResult) updateJson(5, testPass);
         else {
@@ -2575,19 +2536,13 @@ public class TestBase{
     public void getDepthUILoc(){
         mDepthSettingLoc = mCaptureUI.getSettingMargin();
         mDepthBarLoc = mCaptureUI.getBarMargin();
-        mDepthSwitchLoc =  mCaptureUI.getSwitchMargin();
         mDepthSettingLoc[0] = displayMetrics.widthPixels -mDepthSettingLoc[0]-10;
-        mDepthBarLoc[0] = displayMetrics.widthPixels - mDepthBarLoc[0]-830;
         mDepthBarLoc[1] = displayMetrics.heightPixels - mDepthBarLoc[1] + 100;
-        mDepthBarMaxLoc[0] =  mDepthBarLoc[0] + 800;
+        mDepthBarLoc[1] = mModeLoc[1] - 50;
+        mDepthBarLoc[0] = mDepthBarLoc[0]+200;
+        mDepthBarMaxLoc[0] =  displayMetrics.widthPixels  - 200;
         mDepthBarMaxLoc[1] =  mDepthBarLoc[1];
-
-        mDepthSwitchLoc[0] = displayMetrics.widthPixels - mDepthSwitchLoc[0]-200;
-        mDepthSwitchRLoc[0] = mDepthSwitchLoc[0]+100;
-        mDepthSwitchRLoc[1] = mDepthSwitchLoc[1];
         mDepthLoc.put("depthSetting",mDepthSettingLoc);
-        mDepthLoc.put("depthSWSwitch",mDepthSwitchLoc);
-        mDepthLoc.put("depthHWSwitch",mDepthSwitchRLoc);
         mDepthLoc.put("depthMinBar",mDepthBarLoc);
         mDepthLoc.put("depthMaxBar",mDepthSwitchRLoc);
     }

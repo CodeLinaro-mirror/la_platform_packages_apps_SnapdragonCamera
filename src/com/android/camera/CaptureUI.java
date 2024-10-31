@@ -3868,8 +3868,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     private TextureView mDepthTextureView;
     private ViewGroup.LayoutParams mPreviewLayoutParams;
-    private Switch mDepthSwitch;
-
     private TextView mDepthFps;
 
     private SeekBar mDepthSeekBar;
@@ -3887,10 +3885,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public int[] getBarMargin(){
         return mSeekBarMargin;
     }
-    public Switch getDepthSwitch(){
-        return mDepthSwitch;
-    }
-
     public void showDepthView(TextureView.SurfaceTextureListener listener) {
         if (mDepthTextureView == null) {
             ViewStub viewStub = mRootView.findViewById(R.id.depth_view_stub);
@@ -3950,35 +3944,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mSettingMargin[0]= params_.rightMargin;
             mSettingMargin[1]= params_.topMargin;;
         }
-
-        if (mDepthSwitch == null) {
-            mDepthSwitch = new Switch(mActivity);
-            mDepthSwitch.setTextOn("HW");
-            mDepthSwitch.setTextOff("SW");
-            FrameLayout.LayoutParams params2 =
-                    new FrameLayout.LayoutParams(
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                            Gravity.TOP | Gravity.END);
-            params2.topMargin = 100;
-            params2.rightMargin = 200;
-            mDepthSwitch.setLayoutParams(params2);
-            mSwitchMargin[0] =  params2.rightMargin;
-            mSwitchMargin[1] =  params2.topMargin;
-            mDepthSwitch.setChecked(mSettingsManager.getDepthMode() == 2);
-            ((ViewGroup) mRootView).addView(mDepthSwitch);
-            mDepthSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    mSettingsManager.setDepthMode(isChecked ? 2 : 0);
-                    if (mDepthTextureView != null) {
-                        mDepthTextureView.setVisibility(View.GONE);
-                    }
-                    mModule.onDepthEngineChanged(isChecked ? 2 : 0);
-                }
-            });
-        }
-
         if (mDepthFps == null) {
             mDepthFps = new TextView(mActivity);
             FrameLayout.LayoutParams params2 =
@@ -4049,11 +4014,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mDepthSetting != null) {
             ((ViewGroup) mRootView).removeView(mDepthSetting);
             mDepthSetting = null;
-        }
-
-        if (mDepthSwitch != null) {
-            ((ViewGroup) mRootView).removeView(mDepthSwitch);
-            mDepthSwitch = null;
         }
 
         if (mDepthFps != null) {
