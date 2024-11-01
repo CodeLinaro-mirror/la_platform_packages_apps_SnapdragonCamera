@@ -28,7 +28,7 @@
  */
  /*
   * Changes from Qualcomm Innovation Center are provided under the following license:
-  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
   * SPDX-License-Identifier: BSD-3-Clause-Clear
   */
 
@@ -4850,9 +4850,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         void onSettingsChanged(List<SettingState> settings);
     }
 
-    static class Values {
-        String value;
-        String overriddenValue;
+    public static class Values {
+        public String value;
+        public String overriddenValue;
 
         Values(String value, String overriddenValue) {
             this.value = value;
@@ -4860,9 +4860,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
     }
 
-    static class SettingState {
-        String key;
-        Values values;
+    public static class SettingState {
+        public String key;
+        public Values values;
 
         SettingState(String key, Values values) {
             this.key = key;

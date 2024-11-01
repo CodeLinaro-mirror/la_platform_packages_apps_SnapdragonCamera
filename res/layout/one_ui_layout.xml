@@ -222,6 +222,16 @@
             android:visibility="gone" />
     </LinearLayout>
 
+    <ImageView
+        android:id="@+id/pro_setting_reset"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/restore_white"
+        android:layout_marginTop="70dp"
+        android:layout_marginLeft="20dp"
+        android:clickable="true"
+        android:visibility="gone" />
+
     <include layout="@layout/pro_mode_layout" />
     <include layout="@layout/ai_blur_layout" />
 

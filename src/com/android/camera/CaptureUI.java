@@ -3834,6 +3834,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mSurfaceViewMono != null) {
             mSurfaceViewMono.setVisibility(View.GONE);
         }
+        mCameraControls.resetSelectedMode();
     }
 
     public boolean collapseCameraControls() {
