@@ -396,7 +396,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private Set<String> mFilteredKeys;
     private int[] mExtendedHFRSize;//An array of pairs (fps, maxW, maxH)
     private int[] mSuperBufferSize;
-    private Map<String,VideoEisConfig> mVideoEisConfigs;
     private ArrayList<String> mPrepNameKeys;
     private Map<String, Set<String>> mQuadBayerIds = new HashMap<>();
     private boolean isPreferenceEnable = false;
@@ -957,7 +956,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         initializeValueMap();
         filterChromaflashPictureSizeOptions();
         filterHeifSizeOptions();
-        mVideoEisConfigs = getVideoEisConfigs(cameraId);
         filterHFROptions();
         filterVideoEncoderProfileOptions();
     }
@@ -4895,38 +4893,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return sp.getBoolean(SettingsManager.KEY_DEVELOPER_MENU, false);
     }
 
-    private HashMap<String,VideoEisConfig> getVideoEisConfigs(int cameraId) {
-        int[] configs = null;
-        try{
-            configs = mCharacteristics.get(cameraId).get(CaptureModule.eis_config_table);
-        }catch (IllegalArgumentException e){
-
-        }
-        HashMap<String,VideoEisConfig> ret = new HashMap<>();
-        if (configs == null || configs.length == 0 || configs.length%8 != 0)
-            return null;
-        for (int i=0; i < configs.length; i+=8){
-            VideoEisConfig videoEisConfig = new VideoEisConfig();
-            videoEisConfig.setVideoSize(new Size(configs[i],configs[i+1]));
-            videoEisConfig.setMaxPreviewFPS(configs[i+2]);
-            videoEisConfig.setVideoFPS(configs[i+3]);
-            videoEisConfig.setLiveshotSupported(configs[i+4] == 1);
-            videoEisConfig.setEISSupported(configs[i+5] == 1);
-            videoEisConfig.setMaxLiveShotSize(new Size(configs[i+6],configs[i+7]));
-            String key =VideoEisConfig.getKey(videoEisConfig.getVideoSize(),videoEisConfig.getVideoFPS());
-            ret.put(key,videoEisConfig);
-        }
-        return ret;
-    }
-
-    public VideoEisConfig getVideoEisConfig(Size size,int FPS){
-        String key = VideoEisConfig.getKey(size,FPS);
-        if (mVideoEisConfigs != null){
-            return mVideoEisConfigs.get(key);
-        }
-        return null;
-    }
-
     public Size getVideoSize(){
         Size videoSize;
         String videoSizeString = getValue(SettingsManager.KEY_VIDEO_QUALITY);
@@ -4938,25 +4904,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return videoSize;
     }
 
-    public int getVideoPreviewFPS(Size videoSize,int fps) {
-        int previewFPS = 60;
-        SettingsManager.VideoEisConfig config =
-                getVideoEisConfig(videoSize,fps);
-        if (config != null)
-            previewFPS = config.getMaxPreviewFPS();
-        Log.d(TAG,"videoSize="+videoSize.toString()+" fps="+fps+ " previewFPS="+previewFPS);
-        return previewFPS;
-    }
-
-    public Size getMaxLiveShotSize(Size videoSize,int fps){
-        SettingsManager.VideoEisConfig config = getVideoEisConfig(videoSize,fps);
-        if (config != null) {
-            Size liveShotSize = config.getMaxLiveShotSize();
-            Log.i(TAG,"videoSize="+videoSize.toString()+" fps="+fps+ " liveShotSize="+liveShotSize.toString());
-            return liveShotSize;
-        } else {
-            return null;
+    public int getVideoPreviewFPS() {
+        if (PersistUtil.getModelInfo().contains("6735") ||
+                PersistUtil.getModelInfo().contains("4450")) {
+            return 30;
         }
+        return 60;
     }
 
     public Size parsePictureSize(String value) {
@@ -4967,28 +4920,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         int width = Integer.parseInt(value.substring(0, indexX));
         int height = Integer.parseInt(value.substring(indexX + 1));
         return new Size(width, height);
-    }
-
-    public boolean isLiveshotSupported(Size videoSize, int fps){
-        if (PersistUtil.isPersistVideoLiveshot())
-            return true;
-        SettingsManager.VideoEisConfig config =
-                getVideoEisConfig(videoSize,fps);
-        if(config != null ){
-            return config.isLiveshotSupported();
-        }
-        return true;
-    }
-
-    public boolean isEISSupported(Size videoSize,int fps){
-        if (PersistUtil.isPersistVideoEis())
-            return true;
-        SettingsManager.VideoEisConfig config =
-                getVideoEisConfig(videoSize,fps);
-        if(config != null){
-            return config.isEISSupported();
-        }
-        return false;
     }
 
     public int getVideoFPS(){
@@ -5056,76 +4987,4 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return false;
     }
-    public static class VideoEisConfig{
-        private Size mVideoSize;
-        private int mVideoFPS;
-        private int mMaxPreviewFPS;
-        private boolean mIsLiveshotSupported;
-        private boolean mIsEISSupported;
-        private Size mMaxLiveShotSize;
-
-        public Size getVideoSize() {
-            return mVideoSize;
-        }
-
-        public void setVideoSize(Size mVideoSize) {
-            this.mVideoSize = mVideoSize;
-        }
-
-        public int getVideoFPS() {
-            return mVideoFPS;
-        }
-
-        public void setVideoFPS(int mVideoFPS) {
-            this.mVideoFPS = mVideoFPS;
-        }
-
-        public int getMaxPreviewFPS() {
-            return mMaxPreviewFPS;
-        }
-
-        public void setMaxPreviewFPS(int mMaxPreviewFPS) {
-            this.mMaxPreviewFPS = mMaxPreviewFPS;
-        }
-
-        public boolean isLiveshotSupported() {
-            return mIsLiveshotSupported;
-        }
-
-        public void setLiveshotSupported(boolean mIsLiveshotSupported) {
-            this.mIsLiveshotSupported = mIsLiveshotSupported;
-        }
-
-        public boolean isEISSupported() {
-            return mIsEISSupported;
-        }
-
-        public void setEISSupported(boolean mIsEISSupported) {
-            this.mIsEISSupported = mIsEISSupported;
-        }
-
-        public Size getMaxLiveShotSize() {
-            return mMaxLiveShotSize;
-        }
-
-        public void setMaxLiveShotSize(Size mMaxLiveShotSize) {
-            this.mMaxLiveShotSize = mMaxLiveShotSize;
-        }
-
-        public static String getKey(Size size,int FPS){
-            return size.toString()+"-"+String.valueOf(FPS);
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append(" VideoSize="+mVideoSize.toString());
-            builder.append(" VideoFPS="+mVideoFPS);
-            builder.append(" LiveshotSupported="+mIsLiveshotSupported);
-            builder.append(" EISSupported="+mIsEISSupported);
-            builder.append(" MaxLiveShotSize="+mMaxLiveShotSize.toString());
-            return builder.toString();
-        }
-    }
-
 }

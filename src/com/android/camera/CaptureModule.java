@@ -747,8 +747,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.isDepthFocus.isDepthFocus", byte.class);
     private static final CaptureRequest.Key<Byte> capture_burst_fps =
             new CaptureRequest.Key<>("org.quic.camera.BurstFPS.burstfps", byte.class);
-    public static final CameraCharacteristics.Key<int[]> eis_config_table = new CameraCharacteristics.Key<>(
-            "org.quic.camera2.VideoConfigurations.info.VideoConfigurationsTable",int[].class);
     public static final CameraCharacteristics.Key<Byte> is_camera_fd_supported = new CameraCharacteristics.Key<>(
             "org.quic.camera.FDRendering.isFDRenderingInCameraUISupported",byte.class);
     private static final CaptureRequest.Key<Byte> custom_noise_reduction =  new CaptureRequest.Key<>(
@@ -10482,13 +10480,11 @@ private boolean isDevOptionSetting(){
     private Size getMaxPictureSizeLiveshot(int cameraId, int videoWidth, int videoHeight) {
         Size[] sizes = mSettingsManager.getAllSupportedOutputSize(cameraId,
                 mSettingsManager.isMaxConfigureSize(cameraId, new Size(videoWidth, videoHeight)));
-        Size maxLiveShotSize = mSettingsManager.getMaxLiveShotSize(mVideoSize, mSettingsManager.getVideoFPS());
         float ratio = (float) videoWidth / videoHeight;
         Size optimalSize = null;
         for (Size size : sizes) {
             float pictureRatio = (float) size.getWidth() / size.getHeight();
             if (Math.abs(pictureRatio - ratio) > 0.01) continue;
-            if(maxLiveShotSize != null && (size.getWidth() * size.getHeight()) > (maxLiveShotSize.getWidth() * maxLiveShotSize.getHeight())) continue;
             if (optimalSize == null || size.getWidth() > optimalSize.getWidth()) {
                 optimalSize = size;
             }
@@ -10852,8 +10848,7 @@ private boolean isDevOptionSetting(){
                     mCurrentSession.setRepeatingBurst(slowMoRequests, mCaptureCallback,
                             mCameraHandler);
                 } else {
-                    int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
-                            mSettingsManager.getVideoFPS());
+                    int previewFPS = mSettingsManager.getVideoPreviewFPS();
                     if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                         if (PersistUtil.enableMediaRecorder()) {
                             mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
@@ -11304,8 +11299,7 @@ private boolean isDevOptionSetting(){
             }
 
 
-            int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
-                    mSettingsManager.getVideoFPS());
+            int previewFPS = mSettingsManager.getVideoPreviewFPS();
             if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                 limitPreviewFPS();
             } else {
@@ -11337,11 +11331,10 @@ private boolean isDevOptionSetting(){
                     mRecordingTotalTime = 0L;
                     mRecordingStartTime = SystemClock.uptimeMillis();
                     String encoder = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
-                    if (!isHighSpeedRateCapture() && mSettingsManager.isLiveshotSupported(mVideoSize,
-                            mSettingsManager.getVideoFPS()) && !("mvhevc".equals(encoder))) {
-                        mUI.enableShutter(true);
-                    } else {
+                    if (isHighSpeedRateCapture() || ("mvhevc".equals(encoder))) {
                         mUI.enableShutter(false);
+                    } else {
+                        mUI.enableShutter(true);
                     }
                     mUI.showRecordingUI(true, false);
                     updateRecordingTime();
@@ -12068,8 +12061,7 @@ private boolean isDevOptionSetting(){
         if (noNeedEndofStreamWhenPause || noNeedEndOfStreamInHFR) {
             if (PersistUtil.enableMediaRecorder() && mMediaRecorder != null) {
                 mMediaRecorder.pause();
-                int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
-                            mSettingsManager.getVideoFPS());
+                int previewFPS = mSettingsManager.getVideoPreviewFPS();
                 if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                     limitPreviewFPS();
                 }
@@ -13949,7 +13941,7 @@ private boolean isDevOptionSetting(){
         if (mCurrentSceneMode.mode == CameraMode.HFR ||
                 mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
-            if (!isHighSpeedRateCapture() && mSettingsManager.isLiveshotSupported(mVideoSize,mSettingsManager.getVideoFPS())){
+            if (!isHighSpeedRateCapture()){
                 if (mUI.isShutterEnabled() && mRecordingStarted) {
                     captureVideoSnapshot(id);
                 }
@@ -15028,8 +15020,7 @@ private boolean isDevOptionSetting(){
                     session.setRepeatingBurst(createSSMBatchRequest(captureRequest),
                             mCaptureCallback, mCameraHandler);
                 } else {
-                    int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
-                            mSettingsManager.getVideoFPS());
+                    int previewFPS = mSettingsManager.getVideoPreviewFPS();
                     if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                         if (mUI.getZoomFixedSupport()) {
                             applyZoomRatio(mVideoRecordRequestBuilder, mZoomValue, id);

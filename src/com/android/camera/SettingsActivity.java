@@ -2794,8 +2794,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
-        if (!mSettingsManager.isEISSupported(mSettingsManager.getVideoSize(),
-                mSettingsManager.getVideoFPS()) || !changeEIS) {
+        if (!changeEIS) {
             if (eisPref != null) {
                 eisPref.setValue("disable");
                 eisPref.setEnabled(false);
