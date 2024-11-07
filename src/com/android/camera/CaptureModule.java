@@ -19,7 +19,7 @@
  */
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -87,6 +87,7 @@ import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaMuxer;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.MicrophoneInfo;
 import android.net.Uri;
@@ -4237,6 +4238,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     OutputConfiguration configuration_jpeg = new OutputConfiguration(
                             mPhysicalJpegReader[i].getSurface());
                     configuration_jpeg.setPhysicalCameraId(id);
+
                     outputConfigurations.add(configuration_jpeg);
                     Log.d(TAG, "add jpeg output format=jpeg physicalId=" + id + " size="
                             + mPhysicalJpegReader[i].getWidth() + "x" + mPhysicalJpegReader[i].getHeight() + ",mPhysicalJpegReader[i].getSurface()=" + mPhysicalJpegReader[i].getSurface());
@@ -8998,11 +9000,8 @@ private boolean isDevOptionSetting(){
     public boolean updateZoomChanged(float requestedZoom) {
         Log.d(TAG,"updateZoomChanged,mPaused:" + mPaused + ",mResumed:" +mResumed+",requestedZoom="+requestedZoom);
         if (mIsRTBCameraId || isTakingPicture() || !mResumed) return false;
-        float diff = Math.abs(mZoomValue - requestedZoom);
-        if ((requestedZoom>=1.0 && diff> 0.01) || (requestedZoom < 1.0 && diff> 0.01)) {
-            mZoomValue = requestedZoom;
-            applyZoomAndUpdate();
-        }
+        mZoomValue = requestedZoom;
+        applyZoomAndUpdate();
         return true;
     }
 
@@ -9462,7 +9461,7 @@ private boolean isDevOptionSetting(){
         return false;
     }
 
-    private boolean isRTBModeInSelectMode() {
+    public boolean isRTBModeInSelectMode() {
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         if(selectMode != null && selectMode.equals("rtb")){
             return true;
@@ -16048,7 +16047,6 @@ private boolean isDevOptionSetting(){
             }
         }
     }
-
     public Surface getPreviewSurfaceForSession(int id) {
         if (isBackCamera()) {
             if (getCameraMode() == DUAL_MODE && id == MONO_ID) {
@@ -17361,6 +17359,7 @@ private boolean isDevOptionSetting(){
                     if (mZoomValue < zoomRatioRange[0]) {
                         mZoomValue = zoomRatioRange[0];
                     }
+                    mUI.updateZoombarValue(mZoomValue);
                     mUI.showZoomSeekBar();
                     Log.v(TAG, "updateZoomSeekBarVisible showZoomSeekBar mZoomValue :" + mZoomValue);
                     return;

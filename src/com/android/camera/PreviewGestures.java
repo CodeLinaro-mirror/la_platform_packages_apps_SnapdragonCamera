@@ -12,6 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ *  Changes from Qualcomm Innovation Center are provided under the following license:
+    Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+    SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 package com.android.camera;
@@ -95,7 +99,7 @@ public class PreviewGestures
 
             int deltaX = (int) (e1.getX() - e2.getX());
             int deltaY = (int) (e1.getY() - e2.getY());
-            if((Math.abs(deltaX) > 40 || Math.abs(deltaY) > 40) && Math.abs(e1.getY()) < CameraUtil.zoomBarHeigh) {
+            if((Math.abs(deltaX) > 40 || Math.abs(deltaY) > 40)) {
                 int orientation = 0;
                 if (mCaptureUI != null)
                     orientation = mCaptureUI.getOrientation();

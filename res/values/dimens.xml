@@ -12,6 +12,10 @@
      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
      See the License for the specific language governing permissions and
      limitations under the License.
+
+     Changes from Qualcomm Innovation Center are provided under the following license:
+     Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+     SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <resources>
     <dimen name="hint_y_offset">64dp</dimen>
@@ -99,6 +103,12 @@
     <dimen name="toggle_outer_size">60dp</dimen>
     <dimen name="face_circle_stroke">2dip</dimen>
     <dimen name="face_points_stroke">2dip</dimen>
+    <dimen name="big_zoom_line">1dip</dimen>
+    <dimen name="small_zoom_line">1dip</dimen>
+    <dimen name="big_zoom_len">16dip</dimen>
+    <dimen name="inner_zoom_len">10dip</dimen>
+    <dimen name="small_zoom_len">5dip</dimen>
+    <dimen name="zoom_text_dis">10dip</dimen>
     <dimen name="zoom_font_size">28dp</dimen>
     <dimen name="shutter_offset">11dp</dimen>
     <dimen name="size_thumbnail">200dip</dimen>

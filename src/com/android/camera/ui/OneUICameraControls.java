@@ -18,7 +18,7 @@
  */
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -58,7 +58,7 @@ import org.codeaurora.snapcam.R;
 
 public class OneUICameraControls extends RotatableLayout {
 
-    private static final String TAG = "CAM_Controls";
+    private static final String TAG = "SnapCam_Controls";
 
     private static final float TOP_PANEL_SPACE_NUM = 4f;
     private static final float BOTTOM_PANEL_SPACE_NUM = 5f;
@@ -163,6 +163,8 @@ public class OneUICameraControls extends RotatableLayout {
     private TextView mBlurChromaV;
     private TextView mChromaStrength;
     private SettingsManager mSettingsManager;
+    private  LinearLayout.LayoutParams mZoomTextParam,mZoomPartTextParam;
+    private int[]mZoomTextWidthHeight;
 
     public OneUICameraControls(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -571,10 +573,17 @@ public class OneUICameraControls extends RotatableLayout {
         int[]mModeLoc = new int[2];
         bottom.getLocationInWindow(mModeLoc);
         CameraUtil.setModeLayHeight(mModeLoc[1]);
-        SeekBar mZoomSeekBar = (SeekBar) findViewById(R.id.zoom_seekbar);
-        int zoomlocation[] = new int[2];
-        mZoomSeekBar.getLocationInWindow(zoomlocation);
-        CameraUtil.setZoomBarHeight(zoomlocation[1]);
+        setZoomTextLayout();
+    }
+    private void setZoomTextLayout(){
+        LinearLayout mZoomLinearLayout = (LinearLayout) findViewById(R.id.zoom_text_layout);
+
+        int mZoomTextWidth = mZoomLinearLayout.getWidth();
+        int mZoomTextHeight = mZoomLinearLayout.getHeight();
+        mZoomTextWidthHeight = new int[]{mZoomTextWidth,mZoomTextHeight};
+    }
+    public int[] getZoomTextLayoutWH() {
+        return mZoomTextWidthHeight;
     }
 
     public boolean isControlRegion(int x, int y) {
