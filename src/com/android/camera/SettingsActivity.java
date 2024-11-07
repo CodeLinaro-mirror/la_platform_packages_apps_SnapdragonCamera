@@ -47,8 +47,8 @@ Not a contribution.
  * limitations under the License.
  */
 /*
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 package com.android.camera;
@@ -59,6 +59,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.ColorSpace;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -80,10 +81,13 @@ import android.util.ArraySet;
 import android.util.Size;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
@@ -93,7 +97,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.text.InputType;
-
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.widget.SearchView;
+import android.text.TextWatcher;
+import android.text.Editable;
+import android.widget.ImageView;
 import org.codeaurora.snapcam.R;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.ui.RotateTextToast;
@@ -141,7 +151,7 @@ public class SettingsActivity extends PreferenceActivity {
     private boolean mIsSingleCameraMode = false;
     private boolean mShowAllDevOption = false;
     AlertDialog mManualHDRDialog = null;
-
+    private ArrayList<String> mSearchSettingList;
     private ArrayList<CameraCharacteristics> mCharacteristics;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
@@ -1284,6 +1294,47 @@ public class SettingsActivity extends PreferenceActivity {
             updateQuadBayerPreference();
         }
     }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.search_menu, menu);
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        View actionView = searchItem.getActionView();
+        ImageView searchIcon = (ImageView)actionView.findViewById(R.id.gosearch);
+        AutoCompleteTextView autoCompTextView = actionView.findViewById(R.id.autoCompleteTextView);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_dropdown_item_1line, mSearchSettingList);
+        autoCompTextView.setAdapter(adapter);
+        autoCompTextView.setThreshold(1);
+        setSearchView(autoCompTextView,searchIcon);
+        return true;
+
+    }
+
+    private void setSearchView(AutoCompleteTextView autoCompTextView,ImageView searchIcon){
+
+        searchIcon.setOnClickListener(view -> {
+            String selectedText = autoCompTextView.getText().toString();
+            if(selectedText != null) {
+                scrollToPreference(selectedText);
+                autoCompTextView.setText("");
+                searchIcon.setVisibility(View.INVISIBLE);
+            }
+        });
+        autoCompTextView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                searchIcon.setVisibility(View.VISIBLE);
+            }
+        });
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -1323,11 +1374,12 @@ public class SettingsActivity extends PreferenceActivity {
         mDeveloperMenuEnabled = mDeveloperMenuEnabled || mShowAllDevOption;
         filterPreferences();
         initializePreferences(false);
-
+        mSearchSettingList = new ArrayList<>();
         for (int i = 0; i < getPreferenceScreen().getPreferenceCount(); i++) {
             PreferenceCategory category = (PreferenceCategory) getPreferenceScreen().getPreference(i);
             for (int j = 0; j < category.getPreferenceCount(); j++) {
                 Preference pref = category.getPreference(j);
+                mSearchSettingList.add(pref.getTitle().toString());
                 pref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
 
                     @Override
@@ -1446,7 +1498,6 @@ public class SettingsActivity extends PreferenceActivity {
                 set.add(SettingsManager.KEY_MONO_ONLY);
                 set.add(SettingsManager.KEY_CLEARSIGHT);
             }
-
             PreferenceGroup developer = (PreferenceGroup) findPreference("developer");
             //Before restore settings,if current is not developer mode,the developer
             // preferenceGroup has been removed when enter camera by default .So duplicate remove
@@ -3002,6 +3053,33 @@ public class SettingsActivity extends PreferenceActivity {
                 .show();
     }
 
+
+    private void scrollToPreference(String key) {
+                int position = findPreferencePosition(key);
+                if (position != -1) {
+                    ListView listView = getListView();
+                    listView.setSelection(position);
+                    listView.setItemChecked(position, true);
+                }
+        }
+
+
+    private int findPreferencePosition(String str) {
+        PreferenceGroup preferenceGroup = getPreferenceScreen();
+        int position = 1;
+        for (int i = 0; i < preferenceGroup.getPreferenceCount(); i++) {
+            PreferenceCategory category = (PreferenceCategory) getPreferenceScreen().getPreference(i);
+            for (int j = 0; j < category.getPreferenceCount(); j++) {
+                Preference pref = category.getPreference(j);
+                if (pref.getTitle().equals(str)) {
+                    return position;
+                }
+                position ++;
+            }
+            position ++;
+        }
+        return -1;
+    }
     private void restoreSettings() {
         mSettingsManager.restoreSettings();
         filterPreferences();
