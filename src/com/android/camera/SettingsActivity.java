@@ -1433,6 +1433,25 @@ public class SettingsActivity extends PreferenceActivity {
                                 updateManualHDRSetting();
                             }
                         }
+                        if (preference.getKey().equals(SettingsManager.KEY_MANUAL_EXPOSURE)) {
+                            String value = ((ListPreference) preference).getValue();
+                            if (!value.equals("off")) {
+                                UpdateManualExposureSettings();
+                            }
+                        }
+                        if (preference.getKey().equals(SettingsManager.KEY_TONE_MAPPING)) {
+                            String value = ((ListPreference) preference).getValue();
+                            if (!value.equals("off")) {
+                                updateToneMappingSettings();
+                            }
+                        }
+                        if (preference.getKey().equals(SettingsManager.KEY_MANUAL_WB)) {
+                            String value = ((ListPreference) preference).getValue();
+                            if (!value.equals("off")) {
+                                updateManualWBSettings();
+                            }
+                        }
+
 
                         return false;
                     }
