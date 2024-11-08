@@ -1482,7 +1482,7 @@ public class CameraActivity extends Activity
 
     private  void registerAutoTestReceiver() {
         IntentFilter filter = new IntentFilter(AUTO_TEST_INTENT);
-        registerReceiver(mAutoTestReceiver, filter);
+        registerReceiver(mAutoTestReceiver, filter, Context.RECEIVER_EXPORTED);
     }
 
     @Override
