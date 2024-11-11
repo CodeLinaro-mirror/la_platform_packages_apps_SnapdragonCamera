@@ -34,6 +34,8 @@ public class ExtendedFace {
     private int[] mGenderConfidence = null;
     private int mFaceExpression = -1;
     private int[] mFaceExpressionConfidences = null;
+    private int mFaceSkinTone = -1;
+    private int[] mFaceSkinToneConfidences = null;
     private int mBlinkDetected = 0;
     private int mLeyeBlink = 0;
     private int mReyeBlink = 0;
@@ -143,6 +145,12 @@ public class ExtendedFace {
     public void setFaceExpression(int faceExpression) {
         this.mFaceExpression = faceExpression;
     }
+    public void setFaceSkinTone(int faceSkinTone) {
+        this.mFaceSkinTone = faceSkinTone;
+    }
+    public void setSkinToneConfidences(int[] confidences) {
+        this.mFaceSkinToneConfidences = confidences;
+    }
 
     public int getGender() {
         return this.mGender;
@@ -154,6 +162,9 @@ public class ExtendedFace {
 
     public int getFaceExpression() {
         return this.mFaceExpression;
+    }
+    public int getFaceSkinTone() {
+        return this.mFaceSkinTone;
     }
 
     public void setFaceExpressionConfidences(int[] confidences) {
@@ -181,6 +192,14 @@ public class ExtendedFace {
         Uncertain,
         Female,
         Male,
+        ;
+    }
+    public enum FDSkineToneIndex {
+        Uncertain,  ///< SkinTone is ambiguous
+        Brown,          ///< Brown Skin tone
+        Dark,           ///< Dark Skin tone
+        LightBrown,     ///< Light Brown Skin tone
+        White,          ///< White Skin tone
         ;
     }
 

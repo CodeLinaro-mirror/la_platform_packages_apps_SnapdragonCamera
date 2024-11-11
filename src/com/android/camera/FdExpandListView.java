@@ -95,6 +95,7 @@ public class FdExpandListView  {
 
         mExpandKey.add("FD Expression");
         mExpandKey.add("FD Gender");
+        mExpandKey.add("FD Skin Tone");
 
         for(int i=0;i<mExpandKey.size();i++){
             String str = mExpandKey.get(i);
@@ -152,6 +153,11 @@ public class FdExpandListView  {
                 break;
             case "FD Gender":
                 key = mSettingsManager.KEY_FD_GENDER;
+                break;
+            case "FD Skin Tone":
+                key = mSettingsManager.KEY_FD_SKIN_TONE;
+                break;
+
         }
         return key;
     }

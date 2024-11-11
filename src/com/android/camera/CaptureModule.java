@@ -296,6 +296,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mIsFacialMaskSupported = true;
     private boolean mIsUpperBodySupported = true;
     private boolean mIsPetDetectionSupported = true;
+    private boolean mIsSkinToneSupported = true;
 
     /** For temporary save warmstart gains and cct value*/
     private float mRGain = -1.0f;
@@ -480,6 +481,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static CaptureResult.Key<byte[]> petResults =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.pet_results",
                     byte[].class);
+    private static CaptureResult.Key<byte[]> skinToneResults =
+            new CaptureResult.Key<>("com.qualcomm.qti.fdResult.skinTone",
+                    byte[].class);
     public static CaptureRequest.Key<Byte> facialContourVersion =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.contour_version",
                     Byte.class);
@@ -500,6 +504,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Byte.class);
     public static final CaptureRequest.Key<Byte> petEnable  =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.pet_detection_mode",
+                    Byte.class);
+    public static final CaptureRequest.Key<Byte> skinToneEnable  =
+            new CaptureRequest.Key<>("com.qualcomm.qti.fdMode.skinTone",
                     Byte.class);
     public static final CaptureRequest.Key<Byte> FACE_EXPRESSION_ENABLE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.face_expression_enable",
@@ -1734,7 +1741,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     boolean contourEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FACIAL_CONTOUR);
                     if (bsgEnable || contourEnable || isFacePointOn()
                             || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_FACE_EXPRESSION)
-                            || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GENDER)) {
+                            || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GENDER)
+                            || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_SKIN_TONE)) {
                         updateFaceView(faces, getBsgcInfo(result, faces));
                     } else {
                         updateFaceView(faces, null);
@@ -9677,11 +9685,58 @@ private boolean isDevOptionSetting(){
                     Log.w(TAG,"FACE_EXPRESSION = " + e.fillInStackTrace());
                 }
             }
+            if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_SKIN_TONE)) {
+                try {
+                    byte[] skinToneArray = captureResult.get(skinToneResults);
+                    Log.d(FD_TAG, FD_LOG, "skinToneArray=" + Arrays.toString(skinToneArray));
+                    int skinToneCount = ExtendedFace.FDSkineToneIndex.values().length;
+                    int arrayIndex = 0;
+                    final int version = byteArray2Int(skinToneArray, arrayIndex);
+                    arrayIndex += 4;
+                    Log.d(FD_TAG, FD_LOG, "fd skinTone version " + version);
+                    final int faceNum = byteArray2Int(skinToneArray, arrayIndex);
+                    arrayIndex += 12;
+                    Log.d(FD_TAG, FD_LOG, "fd skinTone faceNum:" + faceNum);
+                    for (int i = 0; i < faceNum; i++) {
+                        final int face_id = byteArray2Int(skinToneArray, arrayIndex);
+                        arrayIndex += 4;
+                        Log.d(FD_TAG, FD_LOG, "fd skinTone face_id:" + face_id);
+                        final int faceSkinTone = byteArray2Int(skinToneArray, arrayIndex);
+                        arrayIndex += 4;
+                        Log.d(FD_TAG, FD_LOG, "fd skinTone:  " + faceSkinTone);
+                        int[] confidences = new int[skinToneCount];
+                        for (int j = 0; j < skinToneCount; j++) {
+                            confidences[j] = byteArray2Int(skinToneArray, arrayIndex);
+                            arrayIndex += 4;
+                            Log.d(FD_TAG, FD_LOG, "fd skinTone confidence " + j + " " + confidences[j]);
+                        }
+                        ExtendedFace tmp = null;
+/*                        int k_ = 0;
+                        for (int k = 0; k < faces.length; k++) {
+                            if (faces[k] != null && face_id == faces[k].getId()) {
+                                k_ = k;
+                                break;
+                            }
+                        }*/
+                        tmp = extendedFaces[i];
+                        if (tmp == null) {
+                            tmp = new ExtendedFace(i);
+                        }
+                        Log.d(FD_TAG, FD_LOG,"set skinetone="+faceSkinTone+",extendedFaces i="+i);
+                        tmp.setFaceSkinTone(faceSkinTone);
+                        extendedFaces[i] = tmp;
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG,"FACE_SKIN_TONE = " + e.fillInStackTrace());
+                }
+            }
         } catch (IllegalArgumentException|NullPointerException e){
             Log.w(TAG,"getBsgcInfo =" + e);
         }
         return extendedFaces;
     }
+
+
 
     private void updateFacialMask(CaptureResult result) {
         byte[] facialMasks = null;
@@ -9803,6 +9858,8 @@ private boolean isDevOptionSetting(){
             Log.e(TAG, " updateUpperBodyDetection occur exception");
         }
     }
+
+
 
     private void updatePetDetection(CaptureResult result) {
         byte[] petresults = null;
@@ -15779,12 +15836,16 @@ private boolean isDevOptionSetting(){
     }
     private void setFaceFeature(CaptureRequest.Builder request,String setkey,CaptureRequest.Key<Byte> requestkey){
         String keyvalue = mSettingsManager.getValue(setkey);
-        if(keyvalue == null || keyvalue.equals("disable")){
-            request.set(requestkey, (byte) 0);
-        }else if (keyvalue.equals("enable")) {
-            request.set(requestkey, (byte) 1);
-        } else if (keyvalue.equals("display")) {
-            request.set(requestkey, (byte) 2);
+        try {
+            if (keyvalue == null || keyvalue.equals("disable")) {
+                request.set(requestkey, (byte) 0);
+            } else if (keyvalue.equals("enable")) {
+                request.set(requestkey, (byte) 1);
+            } else if (keyvalue.equals("display")) {
+                request.set(requestkey, (byte) 2);
+            }
+        }catch (IllegalArgumentException e) {
+            Log.w(TAG, EXCEPTION_LOG,"hal no vendorTag : " + requestkey);
         }
     }
 
@@ -15852,6 +15913,7 @@ private boolean isDevOptionSetting(){
                 }
                 setFaceFeature(request,SettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY,CaptureModule.facialContourVisib);
                 setFaceFeature(request,SettingsManager.KEY_PET_DETECTION,CaptureModule.petEnable);
+                setFaceFeature(request,SettingsManager.KEY_FD_SKIN_TONE,CaptureModule.skinToneEnable);
                 if (facialContour != null) {
                     final byte facialContour_enable;
                     int contour = -1;

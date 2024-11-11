@@ -44,7 +44,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
 import com.android.camera.util.Log;
-
+import org.codeaurora.snapcam.R;
 import com.android.camera.ExtendedFace;
 import com.android.camera.SettingsManager;
 import com.android.camera.util.CameraUtil;
@@ -108,8 +108,10 @@ public class Camera2FaceView extends FaceView {
     private boolean mFaceExpressionEnable = false;
 
     private boolean mFaceExpressionConfidenceEnable = false;
+    private boolean mFaceSkineToneEnable = false;
 
     private Paint mTextPaint;
+    private Paint mSkinTonePaint;
 
     private Paint mFaceExpressionConfidencePaint;
 
@@ -135,7 +137,8 @@ public class Camera2FaceView extends FaceView {
         value = mSettingsManager.getValue(SettingsManager.KEY_FD_FACE_EXPRESSION);
         mFaceExpressionEnable = "display".equals(value);
         mFaceExpressionConfidenceEnable = mFaceExpressionEnable && PersistUtil.isFaceExpressionConfidenceOn();
-
+        value = mSettingsManager.getValue(SettingsManager.KEY_FD_SKIN_TONE);
+        mFaceSkineToneEnable = "display".equals(value);
         value = mSettingsManager.getValue(SettingsManager.KEY_FACE_MASK);
 
         mFacePointsEnable = "2".equals(SettingsManager.getInstance().getValue(
@@ -161,6 +164,14 @@ public class Camera2FaceView extends FaceView {
             mFaceExpressionConfidencePaint.setAntiAlias(true);
             mFaceExpressionConfidencePaint.setTextSize(16 * getResources().getDisplayMetrics().density);
             mFaceExpressionConfidencePaint.setStrokeWidth(2);
+        }
+
+        if (mFaceSkineToneEnable  && mSkinTonePaint ==null) {
+            mSkinTonePaint = new Paint();
+            mSkinTonePaint.setAntiAlias(true);
+            mSkinTonePaint.setTextSize(20 * getResources().getDisplayMetrics().density);
+            mSkinTonePaint.setStrokeWidth(2);
+            mSkinTonePaint.setColor(getResources().getColor(R.color.holo_blue_light));
         }
     }
 
@@ -201,6 +212,9 @@ public class Camera2FaceView extends FaceView {
         }
         mFaces = faces;
         mExFaces = extendedFaces;
+        if(mFaces != null) {
+            Log.v(TAG, FD_LOG, " mFaces.length=" + mFaces.length);
+        }
         if (mExFaces != null) {
             Log.v(TAG, FD_LOG,"Num of ex faces=" + mExFaces.length);
         }
@@ -473,11 +487,12 @@ public class Camera2FaceView extends FaceView {
                     mRect.offset(dx, dy);
                     canvas.drawRect(mRect, mPaint);
 
-                    if (mExFaces != null) {
+                    if (mExFaces != null  && i < mExFaces.length) {
                         Log.v(TAG, FD_LOG, "onDraw extendFaceSize " + extendFaceSize + ", mExFaces[" + i + "] " + mExFaces[i]);
                     }
-
+//
                     if (mExFaces != null && i < mExFaces.length && mExFaces[i] != null) {
+
                         ExtendedFace exFace = mExFaces[i];
                         Face face = mFaces[i];
 
@@ -689,6 +704,20 @@ public class Camera2FaceView extends FaceView {
                                     }
                                 }
 
+                            }
+                        }
+                        if (mFaceSkineToneEnable) {
+                            int skinTone = exFace.getFaceSkinTone();
+                            Log.v(TAG, FD_LOG, " onDraw skinTone="+skinTone+",i="+i+","+"mFaces length="+mFaces.length);
+                            if(i < mFaces.length) {
+                                Log.v(TAG, FD_LOG, " onDraw mFaces[i].getid=" + mFaces[i].getId());
+                            }
+                            if (skinTone != -1) {
+                                ExtendedFace.FDSkineToneIndex skineToneIndex =
+                                        ExtendedFace.FDSkineToneIndex.values()[skinTone];
+                                String expressionText = skineToneIndex.name();
+                                float textSize = mSkinTonePaint.getTextSize();
+                                canvas.drawText(expressionText, mRect.left - textSize, mRect.bottom , mSkinTonePaint);
                             }
                         }
 
