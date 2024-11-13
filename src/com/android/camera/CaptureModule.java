@@ -9521,17 +9521,18 @@ private boolean isDevOptionSetting(){
     private ExtendedFace[] getBsgcInfo(CaptureResult captureResult, Face[] faces) {
         final int size = faces.length;
         if (captureResult == null || size == 0) {
-            Log.d(FD_TAG,FD_LOG,"extendface size ="+size);
+            Log.d(FD_TAG, FD_LOG, "extendface size =" + size);
             return null;
         }
         ExtendedFace[] extendedFaces = new ExtendedFace[size];
-        boolean bsgEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_SMILE)||
-                mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GAZE)||
+        boolean bsgEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_SMILE) ||
+                mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GAZE) ||
                 mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_BLINK);
         boolean contourEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FACIAL_CONTOUR);
         boolean facePointEnable = isFacePointOn();
-        try {
-            if (bsgEnable) {
+
+        if (bsgEnable) {
+            try {
                 byte[] blinkDetectedArray = captureResult.get(blinkDetected);
                 Log.d(FD_TAG, FD_LOG, "blinkDetectedArray=" + Arrays.toString(blinkDetectedArray));
                 byte[] blinkDegreesArray = captureResult.get(blinkDegree);
@@ -9540,7 +9541,7 @@ private boolean isDevOptionSetting(){
                 Log.d(FD_TAG, FD_LOG, "gazeDirectionArray=" + Arrays.toString(gazeDirectionArray));
                 byte[] gazeAngleArray = captureResult.get(gazeAngle);
 
-                Log.d(FD_TAG,FD_LOG,"gazeAngleArray="+Arrays.toString(gazeAngleArray));
+                Log.d(FD_TAG, FD_LOG, "gazeAngleArray=" + Arrays.toString(gazeAngleArray));
                 for (int i = 0; i < size; i++) {
                     ExtendedFace tmp = new ExtendedFace(faces[i].getId());
                     try {
@@ -9560,43 +9561,47 @@ private boolean isDevOptionSetting(){
                     }
                     extendedFaces[i] = tmp;
                 }
+            } catch (IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG, "getBsgcInfo =" + e);
             }
-            if (contourEnable || facePointEnable) {
+        }
+        if (contourEnable || facePointEnable) {
+            try {
                 String contourMode = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
                 byte[] contour_all = null;
                 byte[] contourPoints = null;
                 int[] visibility = null;
-                int[]points = null;
-                int[]visib = null;
+                int[] points = null;
+                int[] visib = null;
                 if ("5".equals(contourMode) || "6".equals(contourMode) ||
                         "7".equals(contourMode) || "8".equals(contourMode)) {
                     contourPoints = captureResult.get(CaptureModule.contourPointsExtend);
                     contour_all = captureResult.get(CaptureModule.contourPointsExtend);
                     int faceContour = PersistUtil.getPersistFaceContourHeaderSize();
-                     int numPointsPerFace = byteArray2Int(contour_all,8);
-                     int numFaces = byteArray2Int(contour_all,12);
-                     int offSet = byteArray2Int(contour_all,16);
-                    Log.d(FD_TAG, FD_LOG,"FaceContour result header size is "+ faceContour+
-                            ",contour_all.length="+contour_all.length+",numPointsPerFace="+numPointsPerFace
-                    +",numFaces="+numFaces+",offset="+offSet);
+                    int numPointsPerFace = byteArray2Int(contour_all, 8);
+                    int numFaces = byteArray2Int(contour_all, 12);
+                    int offSet = byteArray2Int(contour_all, 16);
+                    Log.d(FD_TAG, FD_LOG, "FaceContour result header size is " + faceContour +
+                            ",contour_all.length=" + contour_all.length + ",numPointsPerFace=" + numPointsPerFace
+                            + ",numFaces=" + numFaces + ",offset=" + offSet);
 
-                    int arrayindex = faceContour*4;
-                    points = new int[numPointsPerFace*numFaces*2];
+                    int arrayindex = faceContour * 4;
+                    points = new int[numPointsPerFace * numFaces * 2];
 
-                    for (int i = 0; i < numPointsPerFace*numFaces*2; i++) {
-                        points[i] = byteArray2Int(contour_all,arrayindex);
+                    for (int i = 0; i < numPointsPerFace * numFaces * 2; i++) {
+                        points[i] = byteArray2Int(contour_all, arrayindex);
                         arrayindex += 4;
                     }
-                    Log.d(FD_TAG,FD_LOG,"000Version=V "+ contourMode +",points="+Arrays.toString(points)
-                            +",point.len="+points.length);
-                    if(mSettingsManager.isFdFeatureDisplay(mSettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY) && offSet > 0) {
-                        visib = new int[numPointsPerFace*numFaces];
+                    Log.d(FD_TAG, FD_LOG, "000Version=V " + contourMode + ",points=" + Arrays.toString(points)
+                            + ",point.len=" + points.length);
+                    if (mSettingsManager.isFdFeatureDisplay(mSettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY) && offSet > 0) {
+                        visib = new int[numPointsPerFace * numFaces];
                         for (int i = 0; i < numPointsPerFace * numFaces; i++) {
                             visib[i] = contour_all[arrayindex];
                             arrayindex += 1;
                         }
-                        Log.d(FD_TAG,FD_LOG,",visibility="+Arrays.toString(visib)
-                                +",point.len="+points.length+",visib.len="+visib.length);
+                        Log.d(FD_TAG, FD_LOG, ",visibility=" + Arrays.toString(visib)
+                                + ",point.len=" + points.length + ",visib.len=" + visib.length);
                     }
                 }
                 int[] landmarkPoints = new int[6 * faces.length];
@@ -9611,7 +9616,7 @@ private boolean isDevOptionSetting(){
                     }
                 } catch (Exception e) {
                 }
-                Log.d(FD_TAG,FD_LOG,"landmarkPoints="+Arrays.toString(landmarkPoints));
+                Log.d(FD_TAG, FD_LOG, "landmarkPoints=" + Arrays.toString(landmarkPoints));
                 ExtendedFace tmp;
                 if (extendedFaces[0] == null) {
                     tmp = new ExtendedFace(faces[0].getId());
@@ -9622,105 +9627,106 @@ private boolean isDevOptionSetting(){
                 tmp.setVisibility(visib);
                 tmp.setContour(points);
                 tmp.setLandMarks(landmarkPoints);
+            } catch (IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG, "getContour exception=" + e);
             }
+        }
 
-            if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GENDER)) {
-                try {
-                    byte[] genderArray = captureResult.get(GENDER);
-                    Log.d(FD_TAG, FD_LOG, "genderArray=" + Arrays.toString(genderArray));
-                    if (genderArray == null) {
-                        throw new RuntimeException("gender result is null");
-                    }
-                    int arrayIndex = 0;
-                    final int version = byteArray2Int(genderArray, arrayIndex);
-                    arrayIndex += 4;
-                    Log.d(FD_TAG, FD_LOG, "fd gender version " + version);
-                    final int faceNum = byteArray2Int(genderArray, arrayIndex);
-                    arrayIndex += 12;
-                    Log.d(FD_TAG, FD_LOG, "fd gender faceNum " + faceNum);
-                    for (int i = 0; i < faceNum; i++) {
-                        final int gender = byteArray2Int(genderArray, arrayIndex);
-                        arrayIndex += 4;
-                        Log.d(FD_TAG, FD_LOG, "fd gender index " + gender);
-                        final int face_id = byteArray2Int(genderArray, arrayIndex);
-                        arrayIndex += 4;
-                        Log.d(FD_TAG, FD_LOG,"fd gender face_id " + face_id);
-                        int genderCount = ExtendedFace.FDGenderIndex.values().length;
-                        int[] confidences = new int[genderCount];
-                        for (int j = 0; j < genderCount; j++) {
-                            confidences[j] = byteArray2Int(genderArray, arrayIndex);
-                            arrayIndex += 4;
-                            Log.d(FD_TAG, FD_LOG, "fd gender confidence " + j + " " + confidences[j]);
-                        }
-                        ExtendedFace tmp = null;
-                        int k_ = 0;
-                        for (int k = 0; k < faces.length; k++) {
-                            if (faces[k] != null && face_id == faces[k].getId()) {
-                                k_ = k;
-                                break;
-                            }
-                        }
-                        tmp = extendedFaces[k_];
-                        if (tmp == null) {
-                            tmp = new ExtendedFace(face_id);
-                        }
-                        tmp.setGender(gender);
-                        tmp.setGenderConfidence(confidences);
-                        extendedFaces[k_] = tmp;
-                    }
-                } catch (Exception e) {
-                    Log.w(TAG, "GENDER exception = " + e.fillInStackTrace());
+
+        if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GENDER)) {
+            try {
+                byte[] genderArray = captureResult.get(GENDER);
+                Log.d(FD_TAG, FD_LOG, "genderArray=" + Arrays.toString(genderArray));
+                if (genderArray == null) {
+                    throw new RuntimeException("gender result is null");
                 }
-
-            }
-
-            if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_FACE_EXPRESSION)) {
-                try {
-                    byte[] expressionArray = captureResult.get(FACE_EXPRESSION);
-                    Log.d(FD_TAG, FD_LOG, "expressionArray=" + Arrays.toString(expressionArray));
-                    int expressionCount = ExtendedFace.FDExpressionIndex.values().length;
-                    int arrayIndex = 0;
-                    final int version = byteArray2Int(expressionArray, arrayIndex);
+                int arrayIndex = 0;
+                final int version = byteArray2Int(genderArray, arrayIndex);
+                arrayIndex += 4;
+                Log.d(FD_TAG, FD_LOG, "fd gender version " + version);
+                final int faceNum = byteArray2Int(genderArray, arrayIndex);
+                arrayIndex += 12;
+                Log.d(FD_TAG, FD_LOG, "fd gender faceNum " + faceNum);
+                for (int i = 0; i < faceNum; i++) {
+                    final int gender = byteArray2Int(genderArray, arrayIndex);
                     arrayIndex += 4;
-                    Log.d(FD_TAG, FD_LOG, "fd expression version " + version);
-                    final int faceNum = byteArray2Int(expressionArray, arrayIndex);
-                    arrayIndex += 12;
-                    Log.d(FD_TAG, FD_LOG, "fd expression faceNum " + faceNum);
-                    for (int i = 0; i < faceNum; i++) {
-                        final int faceExpression = byteArray2Int(expressionArray, arrayIndex);
+                    Log.d(FD_TAG, FD_LOG, "fd gender index " + gender);
+                    final int face_id = byteArray2Int(genderArray, arrayIndex);
+                    arrayIndex += 4;
+                    Log.d(FD_TAG, FD_LOG, "fd gender face_id " + face_id);
+                    int genderCount = ExtendedFace.FDGenderIndex.values().length;
+                    int[] confidences = new int[genderCount];
+                    for (int j = 0; j < genderCount; j++) {
+                        confidences[j] = byteArray2Int(genderArray, arrayIndex);
                         arrayIndex += 4;
-                        Log.d(FD_TAG, FD_LOG, "fd expression index " + faceExpression);
-                        final int face_id = byteArray2Int(expressionArray, arrayIndex);
-                        arrayIndex += 4;
-                        Log.d(FD_TAG, FD_LOG, "fd expression face_id " + face_id);
-                        int[] confidences = new int[expressionCount];
-                        for (int j = 0; j < expressionCount; j++) {
-                            confidences[j] = byteArray2Int(expressionArray, arrayIndex);
-                            arrayIndex += 4;
-                            Log.d(FD_TAG, FD_LOG, "fd expression confidence " + j + " " + confidences[j]);
-                        }
-                        ExtendedFace tmp = null;
-                        int k_ = 0;
-                        for (int k = 0; k < faces.length; k++) {
-                            if (faces[k] != null && face_id == faces[k].getId()) {
-                                k_ = k;
-                                break;
-                            }
-                        }
-                        tmp = extendedFaces[k_];
-                        if (tmp == null) {
-                            tmp = new ExtendedFace(face_id);
-                        }
-                        tmp.setFaceExpression(faceExpression);
-                        tmp.setFaceExpressionConfidences(confidences);
-                        extendedFaces[k_] = tmp;
+                        Log.d(FD_TAG, FD_LOG, "fd gender confidence " + j + " " + confidences[j]);
                     }
-                } catch (Exception e) {
-                    Log.w(TAG,"FACE_EXPRESSION = " + e.fillInStackTrace());
+                    ExtendedFace tmp = null;
+                    int k_ = 0;
+                    for (int k = 0; k < faces.length; k++) {
+                        if (faces[k] != null && face_id == faces[k].getId()) {
+                            k_ = k;
+                            break;
+                        }
+                    }
+                    tmp = extendedFaces[k_];
+                    if (tmp == null) {
+                        tmp = new ExtendedFace(face_id);
+                    }
+                    tmp.setGender(gender);
+                    tmp.setGenderConfidence(confidences);
+                    extendedFaces[k_] = tmp;
                 }
+            } catch (Exception e) {
+                Log.w(TAG, "GENDER exception = " + e.fillInStackTrace());
             }
-        } catch (IllegalArgumentException|NullPointerException e){
-            Log.w(TAG,"getBsgcInfo =" + e);
+
+        }
+
+        if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_FACE_EXPRESSION)) {
+            try {
+                byte[] expressionArray = captureResult.get(FACE_EXPRESSION);
+                Log.d(FD_TAG, FD_LOG, "expressionArray=" + Arrays.toString(expressionArray));
+                int expressionCount = ExtendedFace.FDExpressionIndex.values().length;
+                int arrayIndex = 0;
+                final int version = byteArray2Int(expressionArray, arrayIndex);
+                arrayIndex += 4;
+                Log.d(FD_TAG, FD_LOG, "fd expression version " + version);
+                final int faceNum = byteArray2Int(expressionArray, arrayIndex);
+                arrayIndex += 12;
+                Log.d(FD_TAG, FD_LOG, "fd expression faceNum " + faceNum);
+                for (int i = 0; i < faceNum; i++) {
+                    final int faceExpression = byteArray2Int(expressionArray, arrayIndex);
+                    arrayIndex += 4;
+                    Log.d(FD_TAG, FD_LOG, "fd expression index " + faceExpression);
+                    final int face_id = byteArray2Int(expressionArray, arrayIndex);
+                    arrayIndex += 4;
+                    Log.d(FD_TAG, FD_LOG, "fd expression face_id " + face_id);
+                    int[] confidences = new int[expressionCount];
+                    for (int j = 0; j < expressionCount; j++) {
+                        confidences[j] = byteArray2Int(expressionArray, arrayIndex);
+                        arrayIndex += 4;
+                        Log.d(FD_TAG, FD_LOG, "fd expression confidence " + j + " " + confidences[j]);
+                    }
+                    ExtendedFace tmp = null;
+                    int k_ = 0;
+                    for (int k = 0; k < faces.length; k++) {
+                        if (faces[k] != null && face_id == faces[k].getId()) {
+                            k_ = k;
+                            break;
+                        }
+                    }
+                    tmp = extendedFaces[k_];
+                    if (tmp == null) {
+                        tmp = new ExtendedFace(face_id);
+                    }
+                    tmp.setFaceExpression(faceExpression);
+                    tmp.setFaceExpressionConfidences(confidences);
+                    extendedFaces[k_] = tmp;
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "FACE_EXPRESSION = " + e.fillInStackTrace());
+            }
         }
         return extendedFaces;
     }
@@ -9737,20 +9743,20 @@ private boolean isDevOptionSetting(){
         } catch (NullPointerException e) {
             Log.w(TAG, "updateFacialMask facialMasks get NULL");
         }
-        if (facialMasks != null) {
-            int size = facialMasks.length / 4;
-            facialMaskInts = new int[40];
-            Log.w(TAG, " onCaptureCompleted size :" + size);
-            int j = 0;
-            // why int i = 44
-            // struct FDMetaDataMaskResults
-            // {
-            //     UINT32         numMasks;(4 byte data)
-            //     INT32          faceID[FDMaxFaceCount];(40 byte data)
-            //     FDROIRegion    maskROI[FDMaxFaceCount];(160 byte data)
-            // }
 
+        if (facialMasks != null) {
             try {
+                int size = facialMasks.length / 4;
+                facialMaskInts = new int[40];
+                Log.w(TAG, " onCaptureCompleted size :" + size);
+                int j = 0;
+                // why int i = 44
+                // struct FDMetaDataMaskResults
+                // {
+                //     UINT32         numMasks;(4 byte data)
+                //     INT32          faceID[FDMaxFaceCount];(40 byte data)
+                //     FDROIRegion    maskROI[FDMaxFaceCount];(160 byte data)
+                // }
                 maskNums = byteArray2Int(facialMasks, 0);
                 for (int i = 44; i < facialMasks.length; i += 4) {
                     facialMaskInts[j] = byteArray2Int(facialMasks, i);
@@ -9765,7 +9771,7 @@ private boolean isDevOptionSetting(){
         Log.w(TAG, " onCaptureCompleted maskNums :" + maskNums);
         try {
             mUI.onFacialMaskDetection(facialMaskInts, maskNums);
-        } catch(Exception e) {
+        } catch (Exception e) {
             Log.e(TAG, " updateFacialMask occur exception");
         }
     }
