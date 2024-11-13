@@ -1215,6 +1215,8 @@ public class PostProcessor{
         exif.addOrientationTag(orientationInDegree);
         exif.addDateTimeStampTag(ExifInterface.TAG_DATE_TIME, System.currentTimeMillis(),
                 TimeZone.getDefault());
+        exif.addDateTimeStampTag(ExifInterface.TAG_DATE_TIME_ORIGINAL, System.currentTimeMillis(),
+                TimeZone.getDefault());
         if(result != null) {
             if(result.get(CaptureResult.FLASH_MODE) != null) {
                 exif.addFlashTag(result.get(CaptureResult.FLASH_MODE) != CaptureResult.FLASH_MODE_OFF);
@@ -1299,7 +1301,6 @@ public class PostProcessor{
                                     resultImage.height, resultImage.stride - resultImage.width,
                                     isVertical);
                         }
-                        //jiao
                         if(isYUVC2PAEnabled()){
                             String path = Storage.generateFilepath(title, "yuv");
                             Storage.writeFile(path, resultImage.outBuffer.array(), null, "yuv");
@@ -1351,7 +1352,7 @@ public class PostProcessor{
                         mActivity.getMediaSaveService().addImage(
                                     bytes, title, date, null, resultImage.outRoi.width(), resultImage.outRoi.height(),
                                     mOrientation, exif, mediaSavedListener, contentResolver, "jpeg");
-                            mController.updateThumbnailJpegData(bytes);
+                        mActivity.updateThumbnail(bytes);
                     }
                 }
             }
@@ -1367,7 +1368,7 @@ public class PostProcessor{
         width = options.outWidth;
         height = options.outHeight;
         Storage.writeFile(path, bytes, null, "jpeg");
-        Log.d(TAG,"jiao, reprocess jpeg image  path:" + path);
+        Log.d(TAG,"reprocess jpeg image  path:" + path);
         Location location = mController.getLocationManager().getCurrentLocation();
         double latitude = 0, longitude = 0, altitude = 0, accuracy = 0;
         long time = 0;
