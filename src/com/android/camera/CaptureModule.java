@@ -3392,7 +3392,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         return id;
     }
 
-    private int mDepthMode = -1;
+    private int mDepthMode = 0;
 
     private void applyDepthMode(CaptureRequest.Builder builder) {
         if (CameraMode.DEPTH != mCurrentSceneMode.mode) {

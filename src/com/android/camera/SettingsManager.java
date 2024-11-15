@@ -530,7 +530,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext,
                         getCurrentPrepNameKey()), Context.MODE_PRIVATE);
-        return pref.getInt(KEY_DEPTH_MODE, 2);
+        return pref.getInt(KEY_DEPTH_MODE, 0);
     }
 
    public boolean isTorchHDREnabled(boolean isflashRequired,CaptureResult mResult) {

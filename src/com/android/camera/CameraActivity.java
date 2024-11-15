@@ -2843,7 +2843,6 @@ public class CameraActivity extends Activity
        mCaptureUI.getSwitchMargin();
        mCaptureUI.showHDRScene();
        mCaptureUI.getTitleFromFilm(0);
-       mCaptureUI.getDepthSwitch();
        mCaptureUI.getFilterHight();
        mProMode.setIndex(0,false);
        mProMode.setSlider(0,false);
