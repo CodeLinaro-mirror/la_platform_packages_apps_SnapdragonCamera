@@ -11548,7 +11548,7 @@ private boolean isDevOptionSetting(){
     private void updateHFRSetting() {
         String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         Log.d(TAG,"framerate is ="+value);
-        if (value == null) return;
+        if (value == null || value.equals("") || value.equals("off")) return;
         if ( value.equals("24") || value.equals("30")) {
             mHighSpeedCapture = false;
             mHighSpeedCaptureRate = 0;

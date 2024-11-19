@@ -2050,8 +2050,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey()),
                     Context.MODE_PRIVATE);
             String fpsStr = pref.getString(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, "30");
-            String str = getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-            if (fpsStr != null && !fpsStr.equals("") && !fpsStr.equals("24") && !fpsStr.equals("30")) {
+            if (fpsStr != null && !fpsStr.equals("") && !fpsStr.equals("off") && !fpsStr.equals("24") && !fpsStr.equals("30")) {
                 int fpsRate = Integer.parseInt(fpsStr.substring(3));
                 if (fpsRate == 480) {
                     if (filterUnsupportedOptions(videoDuration, getSupportedVideoDurationFor480())) {
@@ -5056,7 +5055,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public int getVideoFPS(){
         String fpsStr = getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         int fpsRate = 30;
-        if(fpsStr == null){
+        if(fpsStr == null || fpsStr.equals("") || fpsStr.equals("off")){
             return 30;
         }
         if (!fpsStr.equals("24") && !fpsStr.equals("30")) {
