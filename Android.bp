@@ -78,8 +78,8 @@ android_app {
         "guava",
     ],
     libs: [
-        "framework-bluetooth",
-        "framework-mediaprovider",
+        "framework-bluetooth.stubs.module_lib",
+        "framework-mediaprovider.stubs.module_lib",
         "framework-location.stubs.module_lib"
     ],
     uses_libs: ["org.apache.http.legacy"],
