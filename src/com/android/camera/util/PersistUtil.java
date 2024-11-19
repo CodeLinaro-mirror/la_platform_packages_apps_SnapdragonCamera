@@ -185,8 +185,6 @@ public class PersistUtil {
     public static boolean isFaceExpressionConfidenceOn() {
         return FD_EXPRESSION_CONFIDENCE_ON;
     }
-
-    private static final boolean PERSIST_SHOW_VERTICAL_EV_BAR = getBoolean("persist.sys.camera.vertical.evbar",false);
     private static final boolean PERSIST_SHOW_MFNR_SWITCH = getBoolean("persist.sys.camera.mfnr.switch",false);
     public static boolean isTorchMode(){ return PERSIST_CAMERA_TORCH_MODE; }
     private static final boolean PERSIST_SET_TIMESTAMP = getBoolean("persist.sys.camera.set.timestamp",false);
@@ -485,9 +483,6 @@ public class PersistUtil {
     public static boolean isRawReprocessEnable() {
         return PERSIST_RAW_REPROCESS_ENABLE;
     }
-
-    public static boolean showVerticalEvBar(){return PERSIST_SHOW_VERTICAL_EV_BAR;}
-
     public static boolean isRawCbInfoSupported() {return PERSIST_RAW_CB_INFO_SUPPORTED; }
 
     public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }

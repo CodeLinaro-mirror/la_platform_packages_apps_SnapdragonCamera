@@ -375,6 +375,30 @@
             android:thumbOffset="0dp"
             android:id="@+id/ev_seekbar">
         </SeekBar>
+    <LinearLayout
+        android:id="@+id/ev_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|right"
+        android:layout_marginRight="2dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/ev_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="EV"
+                android:textColor="@color/mode_text_selector"
+                android:background="@drawable/circle_background"
+                android:layout_centerInParent="true"
+            android:gravity="center"
+            android:padding="10dp"
+            android:visibility="gone"
+            android:textSize="14dip" />
+        </RelativeLayout>
     <com.android.camera.ui.VerticalSeekBar
         android:id="@+id/ev_verticalbar"
         android:layout_width="50dp"
@@ -390,19 +414,9 @@
         android:visibility="gone"
         tools:ignore="MissingClass" >
     </com.android.camera.ui.VerticalSeekBar>
-    <TextView
-        android:id="@+id/ev_value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical|right"
-        android:layout_marginRight="35dp"
-        android:alpha="0.7"
-        android:clickable="true"
-        android:gravity="center"
-        android:text="0"
-        android:textColor="@android:color/white"
-        android:visibility="gone"
-        android:textSize="12sp" />
+
+    </LinearLayout>>
+
     <LinearLayout
         android:id="@+id/aistrength"
         android:layout_width="wrap_content"

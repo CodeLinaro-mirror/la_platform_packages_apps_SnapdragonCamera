@@ -234,7 +234,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private boolean mIsTorchOn;
     private int mTorchLen ;
     private int mTorchSection ;
-    private TextView mEvValue;
+    private TextView mEvText;
+    private LinearLayout mVerticlEvLayout;
 
     private FocusAssistImageView mFAImageView;
     private RotateTextView mFocusAssistTextView;
@@ -895,9 +896,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         setMakeupButtonIcon();
 
         initAICameraSeekBar();
-        if(PersistUtil.showVerticalEvBar()) {
-            initVerticalEvBar();
-        }
+        initVerticalEvBar();
+
         mFlashButton = (FlashToggleButton) mRootView.findViewById(R.id.flash_button);
         mModeSelectLayout = (RecyclerView) mRootView.findViewById(R.id.mode_select_layout);
         mModeSelectLayout.setLayoutManager(new LinearLayoutManager(mActivity,
@@ -1350,26 +1350,51 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mTorchBarLevel.setText(defalutStr);
         mSettingsManager.setKeyValue(SettingsManager.KEY_TORCH_VALUE, true, defalutStr);
     }
-    private void hideVerticalEv(){
-        if (mEvValue != null && mEvValue.getVisibility() == View.VISIBLE)
-            mEvValue.setVisibility(View.INVISIBLE);
-        if (mVerticalEvBar != null && mVerticalEvBar.getVisibility() == View.VISIBLE){
-            mVerticalEvBar.setVisibility(View.INVISIBLE);
-            resetEv();
-            mVerticalEvBar = null;
+    private void hideVerticalEv(boolean hideAll){
+        resetEv();
+        if(hideAll) {
+            if (mVerticlEvLayout != null && mVerticlEvLayout.getVisibility() == View.VISIBLE) {
+                mEvText.setText("EV");
+                mEvText.setSelected(false);
+                mVerticlEvLayout.setVisibility(View.INVISIBLE);
+            }
+        }else {
+           updateEvBarShow(false);
+        }
+    }
+    private void updateEvBarShow(boolean show){
+        if(show && mVerticalEvBar != null && mVerticalEvBar.getVisibility() != View.VISIBLE ){
+            mVerticalEvBar.setVisibility(View.VISIBLE);
+            showFocusCircle(false);
+        }else if(!show && mVerticalEvBar != null && mVerticalEvBar.getVisibility() == View.VISIBLE ){
+            mVerticalEvBar.setVisibility(View.GONE);
+            mEvText.setSelected(false);
+            mEvText.setText("EV");
         }
     }
     private void initVerticalEvBar() {
-        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE || mScreenHDRindex == 1) {
-            hideVerticalEv();
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE || mScreenHDRindex == 1
+        || (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH)) {
+            hideVerticalEv(true);
             return;
         }
         final int length = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE).length;
         int index = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
-        String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
-        if (mEvValue == null) mEvValue = (TextView) mRootView.findViewById(R.id.ev_value);
-        mEvValue.setText(value);
-        mEvValue.setVisibility(View.VISIBLE);
+        if(mVerticlEvLayout == null) mVerticlEvLayout = (LinearLayout) mRootView.findViewById(R.id.ev_layout);
+        mVerticlEvLayout.setVisibility(View.VISIBLE);
+        if (mEvText == null) {
+            mEvText = (TextView) mRootView.findViewById(R.id.ev_text);
+            mEvText.setOnClickListener(v ->{
+                if(mEvText.isSelected()){
+                    v.setSelected(false);
+                    updateEvBarShow(false);
+                }else {
+                    v.setSelected(true);
+                    updateEvBarShow(true);
+                }
+            });
+        }
+        mEvText.setVisibility(View.VISIBLE);
         final int section = 100 / length;
         if (mVerticalEvBar == null) {
             mVerticalEvBar = (VerticalSeekBar) mRootView.findViewById(R.id.ev_verticalbar);
@@ -1382,12 +1407,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     if (currentIndex != index) {
                         mSettingsManager.setValueIndex(SettingsManager.KEY_EXPOSURE, index);
                         String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
-                        mEvValue.setText(value);
+                        String ev_text ="EV:"+ value;
+                        mEvText.setText(ev_text);
                     }
                 }
             });
         }
-        mVerticalEvBar.setVisibility(View.VISIBLE);
         int progress = section * (index);
         if (progress > 100) progress = 100;
         mVerticalEvBar.setProgress(progress);
@@ -1401,9 +1426,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         String defaultEV = mActivity.getResources().getString(
                 R.string.pref_exposure_default);
         mSettingsManager.setValue(SettingsManager.KEY_EXPOSURE, defaultEV);
-        if(PersistUtil.showVerticalEvBar() && mVerticalEvBar != null) {
-            initVerticalEvBar();
-        }
     }
     public void updateFlashBar() {
         if(mManualFlashLayout == null){
@@ -2217,9 +2239,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         initFilterModeButton();
         initFlashButton();
         initZoomSeekBar();
-        if(PersistUtil.showVerticalEvBar()) {
-            initVerticalEvBar();
-        }
+        initVerticalEvBar();
         setMakeupButtonIcon();
         updateMenus();
         if(mModule.isTrackingFocusSettingOn()) {
@@ -4521,11 +4541,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void onSingleTapUp(View view, int x, int y) {
         hideFocusAssistText();
         showZoomBar(false);
+        hideVerticalEv(false);
         mModule.onSingleTapUp(view, x, y);
     }
 
     @Override
     public void onLongPress(View view, int x, int y) {
+        showZoomBar(false);
+        hideVerticalEv(false);
         mModule.onLongPress(view, x, y);
     }
 
@@ -4641,7 +4664,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                         showSceneInstructionalDialog(mOrientation);
                     }
                     if(value.equals("18")) {//hdr
-                        hideVerticalEv();
+                        hideVerticalEv(true);
                     }
                 }
             }else if(state.key.equals(SettingsManager.KEY_FLASH_MODE) ) {
