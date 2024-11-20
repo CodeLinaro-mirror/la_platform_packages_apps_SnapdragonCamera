@@ -136,7 +136,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final int SCENE_MODE_TRACKINGFOCUS_INT = SCENE_MODE_CUSTOM_START + 8;
     public static final int SCENE_MODE_PROMODE_INT = SCENE_MODE_CUSTOM_START + 9;
     public static final int SCENE_MODE_DEEPZOOM_INT = SCENE_MODE_CUSTOM_START + 10;
-	public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
+    public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
     public static final int JPEG_FORMAT = 0;
     public static final int HEIF_FORMAT = 1;
     public static final int JPEG_R_FORMAT = 3;
@@ -2866,13 +2866,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
             String str = null;
             MediaCodecList list = new MediaCodecList(MediaCodecList.ALL_CODECS);
             MediaCodecInfo[] codecInfos = list.getCodecInfos();
-            for (MediaCodecInfo info: codecInfos) {
-                if ( info.isEncoder() ) {
-                    int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
-                    if (type != -1){
-                        str = SettingTranslation.getVideoEncoder(type);
-                        if (isCurrentVideoResolutionSupportedByEncoder(info)) {
-                            supported.add(str);
+            if (codecInfos.length > 0) {
+                for (MediaCodecInfo info: codecInfos) {
+                    if ( info.isEncoder() ) {
+                        int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
+                        if (type != -1){
+                            str = SettingTranslation.getVideoEncoder(type);
+                            if (isCurrentVideoResolutionSupportedByEncoder(info)) {
+                                supported.add(str);
+                            }
                         }
                     }
                 }
@@ -2930,21 +2932,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (videoSizeStr != null) {
             Size videoSize = parseSize(videoSizeStr);
             MediaCodecList allCodecs = new MediaCodecList(MediaCodecList.ALL_CODECS);
-            for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
-                if (!info.isEncoder() || info.getName().contains("google")) continue;
-                for (String type : info.getSupportedTypes()) {
-                    if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
-                            || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
-                        CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
-                        videoCapabilities = codecCapabilities.getVideoCapabilities();
-                        findVideoEncoder = true;
-                        break;
+            MediaCodecInfo[] infos = allCodecs.getCodecInfos();
+            if (infos.length > 0) {
+                for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
+                    if (!info.isEncoder() || info.getName().contains("google")) continue;
+                    for (String type : info.getSupportedTypes()) {
+                        if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
+                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
+                            CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
+                            videoCapabilities = codecCapabilities.getVideoCapabilities();
+                            findVideoEncoder = true;
+                            break;
+                        }
                     }
+                    if (findVideoEncoder) break;
                 }
-                if (findVideoEncoder) break;
             }
 
             try {
@@ -3033,21 +3038,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
             Size videoSize = parseSize(videoSizeStr);
             boolean above1080p = videoSize.getHeight() * videoSize.getWidth() > 1920*1080;
             MediaCodecList allCodecs = new MediaCodecList(MediaCodecList.ALL_CODECS);
-            for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
-                if (!info.isEncoder() || info.getName().contains("google")) continue;
-                for (String type : info.getSupportedTypes()) {
-                    if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
-                            || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
-                        CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
-                        videoCapabilities = codecCapabilities.getVideoCapabilities();
-                        findVideoEncoder = true;
-                        break;
+            MediaCodecInfo[] infos = allCodecs.getCodecInfos();
+            if (infos.length > 0) {
+                for (MediaCodecInfo info : infos) {
+                    if (!info.isEncoder() || info.getName().contains("google")) continue;
+                    for (String type : info.getSupportedTypes()) {
+                        if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
+                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
+                            CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
+                            videoCapabilities = codecCapabilities.getVideoCapabilities();
+                            findVideoEncoder = true;
+                            break;
+                        }
                     }
+                    if (findVideoEncoder) break;
                 }
-                if (findVideoEncoder) break;
             }
 
             if (mode == CaptureModule.CameraMode.HFR && isSupportedSuperBuffer(id) &&
@@ -3144,7 +3152,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
             }
         }
-        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported);
+        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported+",supported.size="+supported.size());
         return supported;
     }
 
@@ -3710,7 +3718,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         VideoCapabilities heifCap = null;
         if (isHeifEnabled) {
             MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
-            for (MediaCodecInfo info :list.getCodecInfos()) {
+            for (MediaCodecInfo info : list.getCodecInfos()) {
                 if (info.isEncoder() && info.getName().contains("heic")){
                     heifCap = info.getCapabilitiesForType(
                             MediaFormat.MIMETYPE_IMAGE_ANDROID_HEIC).getVideoCapabilities();
@@ -4166,22 +4174,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
         String str = null;
         MediaCodecList list = new MediaCodecList(MediaCodecList.ALL_CODECS);
         MediaCodecInfo[] codecInfos = list.getCodecInfos();
-        for (MediaCodecInfo info: codecInfos) {
-            if (!info.isEncoder() || info.getName().contains("google")) continue;
-            Log.d(TAG,BIG_LOG,"name="+info.getName());
-            if (info.getSupportedTypes().length > 0 && info.getSupportedTypes()[0] != null){
-                for (String t : info.getSupportedTypes()){
-                    Log.d(TAG,BIG_LOG,"type="+t);
-                }
-                int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
-                if (type != -1){
-                    str = SettingTranslation.getVideoEncoder(type);
-                    if("mvhevc".equalsIgnoreCase(str) && CaptureModule.CameraMode.HFR == CaptureModule.CURRENT_MODE){
-                        continue;
+        if (codecInfos.length > 0) {
+            for (MediaCodecInfo info: codecInfos) {
+                if (!info.isEncoder() || info.getName().contains("google")) continue;
+                Log.d(TAG,BIG_LOG,"name="+info.getName());
+                if (info.getSupportedTypes().length > 0 && info.getSupportedTypes()[0] != null){
+                    for (String t : info.getSupportedTypes()){
+                        Log.d(TAG,BIG_LOG,"type="+t);
                     }
-                    Log.d(TAG,BIG_LOG,"type="+type+" str="+str);
-                    if (isCurrentVideoResolutionSupportedByEncoder(info)) {
-                        supported.add(str);
+                    int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
+                    if (type != -1){
+                        str = SettingTranslation.getVideoEncoder(type);
+                        if("mvhevc".equalsIgnoreCase(str) && CaptureModule.CameraMode.HFR == CaptureModule.CURRENT_MODE){
+                            continue;
+                        }
+                        Log.d(TAG,BIG_LOG,"type="+type+" str="+str);
+                        if (isCurrentVideoResolutionSupportedByEncoder(info)) {
+                            supported.add(str);
+                        }
                     }
                 }
             }

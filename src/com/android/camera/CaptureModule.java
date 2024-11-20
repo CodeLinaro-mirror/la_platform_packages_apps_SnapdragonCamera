@@ -10377,6 +10377,7 @@ private boolean isDevOptionSetting(){
     }
 
     public void setMute(boolean enable, boolean isValue) {
+        if (!PersistUtil.needAudioEncoder()) return;
         AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
         am.setMicrophoneMute(enable);
         if (isValue) {
