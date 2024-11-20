@@ -8917,6 +8917,10 @@ private boolean isDevOptionSetting(){
 
     @Override
     public void onDestroy() {
+        Log.i(TAG,"mPaused="+mPaused);
+        if(!mPaused){
+            return;
+        }
         if(mFrameProcessor != null){
             mFrameProcessor.onDestory();
         }

@@ -367,54 +367,6 @@ public class TestBase{
             }
             testSnapshot(mode);
         }
-        if (testItem("testSettingIcon")) {
-            if (isOpenFromIntent  && mCaptureModule.getPaused()) {
-                openCameraByIntent(mImageIntent);
-                Thread.sleep(OPEN_CAMERA_DURATION);
-            }
-            testSettingIcon(cameraId, mode);
-        }
-        if (testItem("testHdr") ) {
-            if (isOpenFromIntent && mCaptureModule.getPaused()) {
-                openCameraByIntent(mImageIntent);
-                Thread.sleep(OPEN_CAMERA_DURATION);
-            }
-            testHdr(mode);
-        }
-        if (testItem("testFlash")) {
-            if (isOpenFromIntent && mCaptureModule.getPaused()) {
-                openCameraByIntent(mImageIntent);
-                Thread.sleep(OPEN_CAMERA_DURATION);
-            }
-            testFlash(cameraId, mode, false);
-
-        }
-        if (testItem("testZoom")) {
-            if (isOpenFromIntent && mCaptureModule.getPaused()) {
-                openCameraByIntent(mImageIntent);
-                Thread.sleep(OPEN_CAMERA_DURATION);
-            }
-            testZoom(mode);
-        }
-        if (testItem("testToggleBackFront")) {
-            if (isOpenFromIntent && mCaptureModule.getPaused()) {
-                openCameraByIntent(mImageIntent);
-                Thread.sleep(OPEN_CAMERA_DURATION);
-            }
-            if (cameraId.equals("1")) {
-                testToggleBackFront(mode, false);
-            } else {
-                testToggleBackFront(mode, true);
-            }
-
-        }
-        if(testItem("testFilter")) {
-            if (isOpenFromIntent && mCaptureModule.getPaused()) {
-                openCameraByIntent(mImageIntent);
-                Thread.sleep(OPEN_CAMERA_DURATION);
-            }
-            testFilter(mode);
-        }
         if (isOpenFromIntent) {
             return;
         }
@@ -1938,8 +1890,10 @@ public class TestBase{
        CharSequence[] Entryvalues = null;
        String defalutValue ="";
        String subdefValue="";
-        executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
-        Thread.sleep(SMALL_WAIT_DURATION);
+       if(!mCaptureModule.getPaused()) {
+           executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
+           Thread.sleep(SMALL_WAIT_DURATION);
+       }
 
             Entryvalues = mSettingsManager.getEntryValues(strkey);
             defalutValue = mSettingsManager.getValue(strkey);
@@ -1948,8 +1902,6 @@ public class TestBase{
                 subdefValue = mSettingsManager.getValue(subkey);
                 Log.i(TAG, "subkey=" + subkey + ",subdefValue=" + subdefValue);
             }
-        executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
-        Thread.sleep(SMALL_WAIT_DURATION);
         if(SettingsManager.KEY_LONGSHOT.equals(strkey)){
             List<String> values = new ArrayList<String>(Arrays.asList("off", "on"));
             Entryvalues = values.toArray(new CharSequence[values.size()]);
@@ -1962,34 +1914,38 @@ public class TestBase{
         }
         for (int i = 0; i < Entryvalues.length; i++) {
             final String setvalue = Entryvalues[i].toString();
-            executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
-            Thread.sleep(SMALL_WAIT_DURATION);
+            if(!mCaptureModule.getPaused()) {
+                executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
+                Thread.sleep(SMALL_WAIT_DURATION);
+            }
             Log.i(TAG, "start to  setvalue=" + setvalue+",setkey="+strkey+
-                    ",mCaptureModule.getPaused()="+mCaptureModule.getPaused()+",i="+i+",Entryvalues="+Entryvalues);
+                    ",mCaptureModule.getPaused()="+mCaptureModule.getPaused()+",i="+i+",Entryvalues.len="+Entryvalues.length);
             if(!mCaptureModule.getPaused()) {
                 testFail = getFailStr("Open Setting failed,mPaused", mCaptureModule.getPaused(), true);
             }
             mActivity.runOnUiThread(()->{
-                mSettingsManager.setValue(strkey,setvalue);
+                Log.i(TAG,"goto mSettingsManager set value key="+strkey+",value="+setvalue);
                 if(strkey.equals(SettingsManager.KEY_MANUAL_HDR)){
                     if(setvalue.equals("manual")){
                         mCaptureModule.setAutoSetting(true);
                     }
-                }else if (strkey.equals(SettingsManager.KEY_SELECT_MODE) && setvalue.equals("single_rear_aibokeh")){
-                    String value = mSettingsManager.getValue(SettingsManager.KEY_AI_CAMERA);
-                    if(!value.equals("2")){
-                        mSettingsManager.setValue(SettingsManager.KEY_AI_CAMERA,"2");
-                    }
                 }
+                mSettingsManager.setValue(strkey,setvalue);
             });
             Thread.sleep(SMALL_WAIT_DURATION);
             if(subkey != null){
                 checkSettingValue(subkey,null,mode,devoption);
                // testKeyValue(subkey,subvalues,mode,devoption);
             }else {
-                executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
-                if(strkey.equals(SettingsManager.KEY_MANUAL_HDR) && setvalue.equals("manual")){
+                if(mCaptureModule.getPaused()) {
+                    Log.i(TAG, "click backkey=" + KeyEvent.KEYCODE_BACK);
                     executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
+                }
+                if(strkey.equals(SettingsManager.KEY_MANUAL_HDR) && setvalue.equals("manual")){
+                    if(mCaptureModule.getPaused()) {
+                        Log.i(TAG, " KEY_MANUAL_HDR click backkey=" + KeyEvent.KEYCODE_BACK);
+                        executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
+                    }
                 }
                 Thread.sleep(SMALL_WAIT_DURATION);
                 String endvalue = mActivity.mSettingsManager.getValue(strkey);
