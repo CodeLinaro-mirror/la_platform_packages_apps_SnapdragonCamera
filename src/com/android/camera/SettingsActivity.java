@@ -48,7 +48,7 @@ Not a contribution.
  */
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 package com.android.camera;
@@ -59,6 +59,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.ColorSpace;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -80,10 +81,13 @@ import android.util.ArraySet;
 import android.util.Size;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
@@ -141,7 +145,7 @@ public class SettingsActivity extends PreferenceActivity {
     private boolean mIsSingleCameraMode = false;
     private boolean mShowAllDevOption = false;
     AlertDialog mManualHDRDialog = null;
-
+    private ArrayList<String> mSearchSettingList;
     private ArrayList<CameraCharacteristics> mCharacteristics;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
@@ -270,6 +274,9 @@ public class SettingsActivity extends PreferenceActivity {
                         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                         updateVideoHfrFpsPreference();
                         updateVideoEncoderProfile();
+                        break;
+                    case SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL:
+                        updateVideoHfrFpsPreference();
                         break;
                     case SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE:
                         if (!value.equals("24") && !value.equals("30")) {
@@ -1323,11 +1330,12 @@ public class SettingsActivity extends PreferenceActivity {
         mDeveloperMenuEnabled = mDeveloperMenuEnabled || mShowAllDevOption;
         filterPreferences();
         initializePreferences(false);
-
+        mSearchSettingList = new ArrayList<>();
         for (int i = 0; i < getPreferenceScreen().getPreferenceCount(); i++) {
             PreferenceCategory category = (PreferenceCategory) getPreferenceScreen().getPreference(i);
             for (int j = 0; j < category.getPreferenceCount(); j++) {
                 Preference pref = category.getPreference(j);
+                mSearchSettingList.add(pref.getTitle().toString()+";\nKey:"+pref.getKey());
                 pref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
 
                     @Override
@@ -1352,6 +1360,9 @@ public class SettingsActivity extends PreferenceActivity {
 
                         if ( preference.getKey().equals(SettingsManager.KEY_RESTORE_DEFAULT) ) {
                             onRestoreDefaultSettingsClick();
+                        }
+                        if ( preference.getKey().equals(SettingsManager.KEY_SEARCH_SETTINGS) ) {
+                            onSearchSettingsClick();
                         }
                         if( preference.getKey().equals(SettingsManager.KEY_FD_SETTING)) {
                             View listView = (SettingsActivity.this).getLayoutInflater().inflate(
@@ -1446,7 +1457,6 @@ public class SettingsActivity extends PreferenceActivity {
                 set.add(SettingsManager.KEY_MONO_ONLY);
                 set.add(SettingsManager.KEY_CLEARSIGHT);
             }
-
             PreferenceGroup developer = (PreferenceGroup) findPreference("developer");
             //Before restore settings,if current is not developer mode,the developer
             // preferenceGroup has been removed when enter camera by default .So duplicate remove
@@ -1455,6 +1465,8 @@ public class SettingsActivity extends PreferenceActivity {
                 PreferenceScreen parent = getPreferenceScreen();
                 parent.removePreference(developer);
             }
+            PreferenceGroup system = (PreferenceGroup) findPreference("system");
+            removePreference(mSettingsManager.KEY_SEARCH_SETTINGS,system);
         }
 
         CharSequence[] entries = mSettingsManager.getEntries(SettingsManager.KEY_SCENE_MODE);
@@ -1595,9 +1607,6 @@ public class SettingsActivity extends PreferenceActivity {
                     removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
                     removePreference(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC, developer);
                     removePreference(SettingsManager.KEY_AUDIO_BLE, developer);
-                    if (!(DEV_LEVEL_ALL || mShowAllDevOption)) {
-                        removePreference(SettingsManager.KEY_SWITCH_CAMERA, developer);
-                    }
                     for (String removeKey : videoOnlyList) {
                         removePreference(removeKey, developer);
                     }
@@ -1621,9 +1630,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> videoAddList = new ArrayList<>();
                     videoAddList.add(SettingsManager.KEY_ZOOM);
-                    if (DEV_LEVEL_ALL || mShowAllDevOption) {
-                        videoAddList.add(SettingsManager.KEY_SWITCH_CAMERA);
-                    }
+                    videoAddList.add(SettingsManager.KEY_SWITCH_CAMERA);
                     videoAddList.addAll(videoOnlyList);
                     videoAddList.add(SettingsManager.KEY_ANTI_BANDING_LEVEL);
                     if (mode == VIDEO) {
@@ -1748,9 +1755,7 @@ public class SettingsActivity extends PreferenceActivity {
                 removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, photoPre);
                 removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, photoPre);
                 if (mDeveloperMenuEnabled) {
-                    if (DEV_LEVEL_ALL || mShowAllDevOption) {
-                        proModeOnlyList.add(SettingsManager.KEY_SWITCH_CAMERA);
-                    }
+                    proModeOnlyList.add(SettingsManager.KEY_SWITCH_CAMERA);
                     proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                     proModeOnlyList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
@@ -2516,7 +2521,7 @@ public class SettingsActivity extends PreferenceActivity {
             if(lapsepref != null){
                 String lapsvalue = lapsepref.getValue();
                 if(lapsvalue != null && !lapsvalue.equals("0")){
-                    pref.setValue("off");
+                    pref.setValue(mediaRate);
                     pref.setEnabled(false);
                     return;
                 }
@@ -3002,6 +3007,58 @@ public class SettingsActivity extends PreferenceActivity {
                 .show();
     }
 
+    void onSearchSettingsClick() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.search_view, null);
+        builder.setView(dialogView);
+        AutoCompleteTextView autoCompTextView = dialogView.findViewById(R.id.autoCompTextView);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line,mSearchSettingList);
+        autoCompTextView.setAdapter(adapter);
+        autoCompTextView.setThreshold(1);
+        builder.setTitle("Search Setting")
+        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                String selectedText = autoCompTextView.getText().toString();
+                int index = selectedText.indexOf("Key:");
+                String key = selectedText.substring(index + 4);
+                scrollToPreference(key);
+            }
+        })
+        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+             public void onClick(DialogInterface dialog, int id) {
+             }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void scrollToPreference(String key) {
+                int position = findPreferencePosition(key);
+                if (position != -1) {
+                    ListView listView = getListView();
+                    listView.setSelection(position);
+                    listView.setItemChecked(position, true);
+                }
+        }
+
+
+    private int findPreferencePosition(String key) {
+        PreferenceGroup preferenceGroup = getPreferenceScreen();
+        int position = 1;
+        for (int i = 0; i < preferenceGroup.getPreferenceCount(); i++) {
+            PreferenceCategory category = (PreferenceCategory) getPreferenceScreen().getPreference(i);
+            for (int j = 0; j < category.getPreferenceCount(); j++) {
+                Preference pref = category.getPreference(j);
+                if (pref.getKey().equals(key)) {
+                    return position;
+                }
+                position ++;
+            }
+            position ++;
+        }
+        return -1;
+    }
     private void restoreSettings() {
         mSettingsManager.restoreSettings();
         filterPreferences();

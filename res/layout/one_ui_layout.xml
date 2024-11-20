@@ -203,7 +203,7 @@
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
         android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="140dp"
+        android:layout_marginBottom="155dp"
         android:orientation="vertical"
         android:visibility="gone">
         <TextView
@@ -332,34 +332,42 @@
         android:textColor="@android:color/white"
         android:visibility="gone"
         android:textSize="12sp" />
-    <com.android.camera.ui.VerticalSeekBar
-        android:id="@+id/aicamera_seekbar"
-        android:layout_width="50dp"
-        android:layout_height="140dp"
-        android:maxHeight="3dip"
-        android:minHeight="1dip"
-        android:layout_gravity="center_vertical|left"
-        android:layout_marginLeft="2dp"
-        android:thumbOffset="0dp"
-        android:progressDrawable="@drawable/beautify_progressbar_style"
-        android:thumb="@drawable/evbar_thumb"
-        android:max = "100"
-        android:visibility="gone"
-        tools:ignore="MissingClass" >
-    </com.android.camera.ui.VerticalSeekBar>
-    <TextView
-        android:id="@+id/aistrength_value"
+    <LinearLayout
+        android:id="@+id/aistrength"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical|left"
-        android:layout_marginLeft="35dp"
-        android:alpha="0.7"
-        android:clickable="true"
-        android:gravity="center"
-        android:text="128"
-        android:textColor="@android:color/white"
-        android:visibility="gone"
-        android:textSize="12sp" />
+        android:layout_marginLeft="2dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/aistrength_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="4dp"
+            android:alpha="0.7"
+            android:text="AI 128"
+            android:textColor="@android:color/white"
+            android:visibility="gone"
+            android:layout_above="@+id/aicamera_seekbar"
+            android:textSize="14dip" />
+        <com.android.camera.ui.VerticalSeekBar
+            android:id="@+id/aicamera_seekbar"
+            android:layout_width="40dp"
+            android:layout_height="140dp"
+            android:maxHeight="3dip"
+            android:minHeight="1dip"
+            android:layout_gravity="center_vertical|left"
+            android:layout_marginLeft="2dp"
+            android:thumbOffset="0dp"
+            android:progressDrawable="@drawable/beautify_progressbar_style"
+            android:thumb="@drawable/evbar_thumb"
+            android:max = "100"
+            android:visibility="gone"
+            tools:ignore="MissingClass" >
+        </com.android.camera.ui.VerticalSeekBar>
+
+    </LinearLayout>
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -528,8 +536,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="100dp"
-        android:background="@color/camera_control_bg_transparent">
+        android:layout_marginBottom="110dp">
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/mode_select_layout"

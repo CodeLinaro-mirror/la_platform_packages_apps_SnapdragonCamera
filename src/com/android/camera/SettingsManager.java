@@ -28,7 +28,7 @@
  */
  /*
   * Changes from Qualcomm Innovation Center are provided under the following license:
-  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
   * SPDX-License-Identifier: BSD-3-Clause-Clear
   */
 
@@ -61,6 +61,7 @@ import android.media.MediaFormat;
 import android.media.EncoderProfiles;
 import android.media.MediaRecorder;
 import android.media.CamcorderProfile;
+import android.os.Trace;
 import android.preference.PreferenceManager;
 import android.util.ArraySet;
 
@@ -215,6 +216,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC = "pref_camera2_touch_track_focus_for_cinematic_key";
     public static final String KEY_DEVELOPER_MENU = "pref_camera2_developer_menu_key";
     public static final String KEY_RESTORE_DEFAULT = "pref_camera2_restore_default_key";
+    public static final String KEY_SEARCH_SETTINGS = "pref_camera2_search_settings";
     public static final String KEY_FOCUS_DISTANCE = "pref_camera2_focus_distance_key";
     public static final String KEY_EV_FOR_LONGEXPOSURE = "pref_camera2_ev_for_longexposure_key";
     public static final String KEY_PREVIEW_EV = "pref_camera2_preview_ev_key";
@@ -374,6 +376,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_C2PA = "pref_camera2_c2pa_key";
 
     private static final String TAG = "SnapCam_SettingsManager";
+    private static final boolean TRACE_DEBUG = PersistUtil.getTraceDebug();
 
     private static SettingsManager sInstance;
     private CaptureModule mCaptureModule;
@@ -565,8 +568,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public void reloadCharacteristics(int cameraId){
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
+            if (TRACE_DEBUG) Trace.beginSection("SnapCamera,reloadCharacteristics");
             CameraCharacteristics characteristics
                     = manager.getCameraCharacteristics(String.valueOf(cameraId));
+            if (TRACE_DEBUG) Trace.endSection();
             mCharacteristics.set(cameraId, characteristics);
         } catch (CameraAccessException e) {
             Log.e(TAG,e.toString());
@@ -705,10 +710,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public void init() {
         Log.i(TAG, "SettingsManager init current camera id : " + CaptureModule.CURRENT_ID);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,settingmanager init");
         final int cameraId = getInitialCameraId();
         reloadCharacteristics(cameraId);
         setLocalIdAndInitialize(cameraId);
         autoTestBroadcast(cameraId);
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     public void reinit(int cameraId) {
@@ -840,6 +847,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
 
     private void autoTestBroadcast(int cameraId) {
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,settingmanager init-- autoTestBroadcast");
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey()),
                 Context.MODE_PRIVATE);
@@ -850,6 +858,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             editor.putBoolean(AUTO_TEST_WRITE_CONTENT, false);
             editor.apply();
         }
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private void writeAutoTextHelpTxt() {
@@ -932,11 +941,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     private void setLocalIdAndInitialize(int cameraId) {
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,settingmanager init-- setLocalIdAndInitialize");
         String facing = mPreferences.getGlobal().getString(KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         mPreferences.setLocalId(mContext, facing, String.valueOf(CaptureModule.CURRENT_MODE));
         mCameraId = cameraId;
         CameraSettings.upgradeLocalPreferences(mPreferences.getLocal());
-
         PreferenceInflater inflater = new PreferenceInflater(mContext);
         mPreferenceGroup =
                 (PreferenceGroup) inflater.inflate(R.xml.capture_preferences);
@@ -950,7 +959,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch(IllegalArgumentException exception) {
             Log.w(TAG,EXCEPTION_LOG,exception.toString());
         }
-
         filterPreferences(cameraId);
         initDependencyTable();
         initializeValueMap();
@@ -959,6 +967,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         mVideoEisConfigs = getVideoEisConfigs(cameraId);
         filterHFROptions();
         filterVideoEncoderProfileOptions();
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     public boolean isFDRenderingAtPreview(){
@@ -4220,6 +4229,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
                 if (type != -1){
                     str = SettingTranslation.getVideoEncoder(type);
+                    if("mvhevc".equalsIgnoreCase(str) && CaptureModule.CameraMode.HFR == CaptureModule.CURRENT_MODE){
+                        continue;
+                    }
                     Log.d(TAG,BIG_LOG,"type="+type+" str="+str);
                     if (isCurrentVideoResolutionSupportedByEncoder(info)) {
                         supported.add(str);
@@ -4636,11 +4648,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
     public boolean isSupportedMixHdr(){
         String rawFormat = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
-        String inSensorZoom = getValue(SettingsManager.KEY_INSENSOR_ZOOM);
         String videoSizeStr = getValue(SettingsManager.KEY_VIDEO_QUALITY);
         int videoSize = CameraUtil.getSize(videoSizeStr);
         if(((rawFormat != null && rawFormat.equals("0")) || rawFormat == null) &&
-            ((inSensorZoom != null && inSensorZoom.equals("0")) || inSensorZoom == null) &&
                 (videoSize < 7680*4320) && !getQuadBayerSensorPrefEnabled()){
              return true;
         }
