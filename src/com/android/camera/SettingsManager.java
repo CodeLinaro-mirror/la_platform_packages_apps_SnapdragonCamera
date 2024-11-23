@@ -2937,7 +2937,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
                             || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                             || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))) {
+                            || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
+                            || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
                         CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
                         videoCapabilities = codecCapabilities.getVideoCapabilities();
                         findVideoEncoder = true;
@@ -3039,7 +3040,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
                             || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                             || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))) {
+                            || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
+                            || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
                         CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
                         videoCapabilities = codecCapabilities.getVideoCapabilities();
                         findVideoEncoder = true;
