@@ -384,6 +384,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CameraCharacteristics.Key<float[]> WB_RGB_GAINS_RANGE =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.manualWB.gains_range", float[].class);
 
+    public static final CaptureRequest.Key<Byte> spatialVideo =
+            new CaptureRequest.Key<>("com.qti.qualcomm.spatialVideo.SpatialVideoMode", byte.class);
+
     public static CaptureResult.Key<Integer> buckets =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.histogram.buckets", Integer.class);
     public static CameraCharacteristics.Key<Integer> maxCount =
@@ -7838,6 +7841,7 @@ private boolean isDevOptionSetting(){
                 applyBufferMode(builder);
             }else if(mCurrentSceneMode.mode == CameraMode.VIDEO){
                 applyFRC(builder);
+                applySpatialVideo(builder);
             }
         }
         if (mCurrentSceneMode.mode == CameraMode.DEFAULT
@@ -10912,7 +10916,7 @@ private boolean isDevOptionSetting(){
                     mVideoRecordRequestBuilder.addTarget(previewSurfaces.get(i));
                 }
                outConfigurations.addAll(getPhysicalPreviewOutput());
-            }else{
+            } else {
                mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
                OutputConfiguration videoPrevConfig = new OutputConfiguration(mVideoPreviewSurface);
                if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
@@ -10943,12 +10947,15 @@ private boolean isDevOptionSetting(){
                 mLiveShotOutput.enableSurfaceSharing();
                 outConfigurations.add(mLiveShotOutput);
             } else {
-                if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
-                    videoSnapshotConfig.addSensorPixelModeUsed(
-                            CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
-                    Log.v(TAG, " videoSnapShot OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+                String encoder  = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+                if (!("mvhevc").equals(encoder)) {
+                    if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
+                        videoSnapshotConfig.addSensorPixelModeUsed(
+                                CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
+                        Log.v(TAG, " videoSnapShot OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+                    }
+                    outConfigurations.add(videoSnapshotConfig);
                 }
-                outConfigurations.add(videoSnapshotConfig);
             }
             if (mVideoRecordingSurface != null) {
                 OutputConfiguration videoConfig = new OutputConfiguration(mVideoRecordingSurface);
@@ -11270,8 +11277,9 @@ private boolean isDevOptionSetting(){
                     mUI.resetPauseButton();
                     mRecordingTotalTime = 0L;
                     mRecordingStartTime = SystemClock.uptimeMillis();
+                    String encoder = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
                     if (!isHighSpeedRateCapture() && mSettingsManager.isLiveshotSupported(mVideoSize,
-                            mSettingsManager.getVideoFPS())) {
+                            mSettingsManager.getVideoFPS()) && !("mvhevc".equals(encoder))) {
                         mUI.enableShutter(true);
                     } else {
                         mUI.enableShutter(false);
@@ -15740,6 +15748,19 @@ private boolean isDevOptionSetting(){
             request.set(CaptureModule.facialContourVersion, facialContour_version);
         } catch (IllegalArgumentException e) {
             Log.w(TAG, EXCEPTION_LOG,"hal no vendorTag : " + facialContour_version);
+        }
+    }
+
+    private void applySpatialVideo(CaptureRequest.Builder request) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+        try {
+            if (value != null && value.equals("mvhevc")) {
+                request.set(spatialVideo, (byte) 1);
+            } else {
+                request.set(spatialVideo, (byte) 0);
+            }
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, EXCEPTION_LOG,"no vendorTag : " + spatialVideo);
         }
     }
 
