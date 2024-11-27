@@ -530,7 +530,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext,
                         getCurrentPrepNameKey()), Context.MODE_PRIVATE);
-        return pref.getInt(KEY_DEPTH_MODE, 2);
+        return pref.getInt(KEY_DEPTH_MODE, 0);
     }
 
    public boolean isTorchHDREnabled(boolean isflashRequired,CaptureResult mResult) {
@@ -4584,11 +4584,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
     public boolean isSupportedMixHdr(){
         String rawFormat = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
-        String inSensorZoom = getValue(SettingsManager.KEY_INSENSOR_ZOOM);
         String videoSizeStr = getValue(SettingsManager.KEY_VIDEO_QUALITY);
         int videoSize = CameraUtil.getSize(videoSizeStr);
         if(((rawFormat != null && rawFormat.equals("0")) || rawFormat == null) &&
-            ((inSensorZoom != null && inSensorZoom.equals("0")) || inSensorZoom == null) &&
                 (videoSize < 7680*4320) && !getQuadBayerSensorPrefEnabled()){
              return true;
         }

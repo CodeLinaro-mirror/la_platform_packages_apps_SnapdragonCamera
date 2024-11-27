@@ -571,7 +571,10 @@ public class OneUICameraControls extends RotatableLayout {
         int[]mModeLoc = new int[2];
         bottom.getLocationInWindow(mModeLoc);
         CameraUtil.setModeLayHeight(mModeLoc[1]);
-
+        SeekBar mZoomSeekBar = (SeekBar) findViewById(R.id.zoom_seekbar);
+        int zoomlocation[] = new int[2];
+        mZoomSeekBar.getLocationInWindow(zoomlocation);
+        CameraUtil.setZoomBarHeight(zoomlocation[1]);
     }
 
     public boolean isControlRegion(int x, int y) {
