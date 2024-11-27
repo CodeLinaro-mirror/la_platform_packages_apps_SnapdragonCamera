@@ -3556,6 +3556,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     private boolean isFastShutterModeSupported(int id) {
+        if(CaptureModule.CameraMode.VIDEO != CaptureModule.CURRENT_MODE && PersistUtil.getModelInfo().contains("7750")){
+            return false;
+        }
         boolean result = false;
         try {
             byte fastModeSupport = mCharacteristics.get(id).get(CaptureModule.fs_mode_support);
