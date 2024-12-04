@@ -9570,8 +9570,12 @@ private boolean isDevOptionSetting(){
                     if (mSettingsManager.isFdFeatureDisplay(mSettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY) && offSet > 0) {
                         visib = new int[numPointsPerFace * numFaces];
                         for (int i = 0; i < numPointsPerFace * numFaces; i++) {
-                            visib[i] = contour_all[arrayindex];
-                            arrayindex += 1;
+                            if(arrayindex < contour_all.length) {
+                                visib[i] = contour_all[arrayindex];
+                                arrayindex += 1;
+                            }else{
+                                break;
+                            }
                         }
                         Log.d(FD_TAG, FD_LOG, ",visibility=" + Arrays.toString(visib)
                                 + ",point.len=" + points.length + ",visib.len=" + visib.length);
