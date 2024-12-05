@@ -3851,7 +3851,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 if(mRawImageReader[id] != null && s == mRawImageReader[id].getSurface()){
                                     applyCroppedRaw(outputConfiguration, getMainCameraId());
                                 }
-                                if(s == mImageReader[id].getSurface() && mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT) {
+                                if(s == mImageReader[id].getSurface() && (mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT
+                                        || mSettingsManager.getSavePictureFormat() == mSettingsManager.HEIC_TENBIT_FORMAT)) {
                                     Log.v(TAG, "OutputConfiguration set captureProfile :" + 2);
                                     outputConfiguration.setDynamicRangeProfile(2);
                                 }
@@ -8820,6 +8821,7 @@ private boolean isDevOptionSetting(){
         } else if(needYUVStream()) {
             mChosenImageFormat = ImageFormat.YUV_420_888;
         } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {
+            Log.i(TAG, "set output format to HEIC");
             mChosenImageFormat = ImageFormat.HEIC;
         }else if(mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT){
             mChosenImageFormat = ImageFormat.JPEG_R;

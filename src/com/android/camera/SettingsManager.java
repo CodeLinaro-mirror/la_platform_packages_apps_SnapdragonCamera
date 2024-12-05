@@ -143,6 +143,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
     public static final int JPEG_FORMAT = 0;
     public static final int HEIF_FORMAT = 1;
+    public static final int HEIC_TENBIT_FORMAT= 2;
     public static final int JPEG_R_FORMAT = 3;
     public static final String LOGICAL_AND_PHYSICAL = "99";
     public static final String SCENE_MODE_DUAL_STRING = "100";
@@ -459,6 +460,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         COLOR_SPACE_MAP.put("2", ColorSpace.Named.DISPLAY_P3);
         KEY_IMAGE_FORMAT_INDEX.put("0", ImageFormat.JPEG);
         KEY_IMAGE_FORMAT_INDEX.put("1", ImageFormat.HEIC);
+        KEY_IMAGE_FORMAT_INDEX.put("2", ImageFormat.HEIC);
         KEY_IMAGE_FORMAT_INDEX.put("3", ImageFormat.JPEG_R);
     }
 
@@ -3950,7 +3952,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         List<String> res = new ArrayList<>();
 
         boolean isDeepportrait = getDeepportraitEnabled();
-        boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
+        boolean isHeifEnabled = isHeifHALEncoding();
         boolean isMfSHDREnabled = isMfSHDREnable();
 
         if (getQuadBayerSensorPrefEnabled()) {
@@ -4142,7 +4144,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         List<Size> videoSizes = videoSizesAll.stream().distinct().collect(Collectors.toList());
 
-        boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
+        boolean isHeifEnabled = isHeifHALEncoding();
         String eisValue = getValue(SettingsManager.KEY_EIS_VALUE);
         boolean isEISV3Enabled = "V3".equals(eisValue);
         VideoCapabilities heifCap = null;
@@ -4825,7 +4827,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isHeifHALEncoding() {
         //HAL encoding by default on Android Q
-        return getSavePictureFormat() == HEIF_FORMAT;
+        Log.i(TAG, "check heic encoding:" + getSavePictureFormat());
+        return getSavePictureFormat() == HEIF_FORMAT || getSavePictureFormat() == HEIC_TENBIT_FORMAT;
     }
     public boolean isRawReprocess(){
         String reprocessType = getValue(KEY_RAW_REPROCESS_TYPE);
@@ -4855,6 +4858,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB && isDynamicRangeTenBitSupported()) {
             ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
+            if (supportHeic == 1) {
+                ret.add(String.valueOf(SettingsManager.HEIC_TENBIT_FORMAT));
+            }
         }
         return ret;
     }
