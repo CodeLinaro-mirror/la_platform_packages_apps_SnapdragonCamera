@@ -9145,7 +9145,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private Size getMaxPictureSizeLiveshot(int cameraId, int videoWidth, int videoHeight) {
-        Size[] sizes = mSettingsManager.getAllSupportedOutputSize(cameraId);
+        Size[] sizes = mSettingsManager.getAllSupportedOutputSize(cameraId,
+                mSettingsManager.isMaxConfigureSize(cameraId, new Size(videoWidth, videoHeight)));
         Size maxLiveShotSize = mSettingsManager.getMaxLiveShotSize(mVideoSize, mSettingsManager.getVideoFPS());
         float ratio = (float) videoWidth / videoHeight;
         Size optimalSize = null;
@@ -9458,8 +9459,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 OutputConfiguration videoSnapshotConfig = new OutputConfiguration(
                         mVideoSnapshotImageReader.getSurface());
                 if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
-                    videoSnapshotConfig.addSensorPixelModeUsed(
-                            CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
                     videoSnapshotConfig.addSensorPixelModeUsed(
                             CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
                     Log.v(TAG, " videoSnapShot OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
@@ -10898,7 +10897,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         mCurrentVideoValues.put(MediaStore.Video.Media.DATE_TAKEN, dateTaken);
         mCurrentVideoValues.put(MediaStore.MediaColumns.DATE_MODIFIED, dateTaken / 1000);
         mCurrentVideoValues.put(MediaStore.Video.Media.MIME_TYPE, mime);
-//        mCurrentVideoValues.put(MediaStore.Video.Media.DATA, path);
         mCurrentVideoValues.put(MediaStore.Video.Media.RESOLUTION,
                 "" + mVideoSize.getWidth() + "x" + mVideoSize.getHeight());
         Location loc = mLocationManager.getCurrentLocation();
@@ -10934,7 +10932,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         currentVideoValues.put(MediaStore.Video.Media.DATE_TAKEN, dateTaken);
         currentVideoValues.put(MediaStore.MediaColumns.DATE_MODIFIED, dateTaken / 1000);
         currentVideoValues.put(MediaStore.Video.Media.MIME_TYPE, mime);
-        currentVideoValues.put(MediaStore.Video.Media.DATA, path);
         Location loc = mLocationManager.getCurrentLocation();
         if (loc != null) {
             currentVideoValues.put(MediaStore.Video.Media.LATITUDE, loc.getLatitude());
