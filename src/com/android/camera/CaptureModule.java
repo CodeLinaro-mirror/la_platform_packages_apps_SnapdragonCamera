@@ -345,6 +345,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final String FD_TAG = "SnapCam_FD";
     private static final String HFR_RATE = PersistUtil.getHFRRate();
 
+    private static long tapUpFrameNumber = 0;
+
     MeteringRectangle[][] mAFRegions = new MeteringRectangle[MAX_NUM_CAM][];
     MeteringRectangle[][] mAERegions = new MeteringRectangle[MAX_NUM_CAM][];
     MeteringRectangle[][] mT2TrackRegions = new MeteringRectangle[MAX_NUM_CAM][];
@@ -9362,19 +9364,44 @@ private boolean isDevOptionSetting(){
 
     private boolean mIsInFocusAssistMode = false;
     private boolean mWasInFocusAssistMode = false;
+    private float   mCropX = 0.0f;
+    private float   mCropY = 0.0f;
 
     public void onFocusAssistStartPointChange(float xs, float ys) {
+        mCropX = xs;
+        mCropY = ys;
         mCameraRender.setCropRegionStartPoint(xs, ys);
     }
 
+    public void onFocusAssistFocusPointChange(float x, float y) {
+        Log.d(TAG, "onFocusAssistFocusPointChange " + x + " " + y);
+        int previewW = mPreviewSize.getHeight();
+        int previewH = mPreviewSize.getWidth();
+        float xf = (x / previewW - mCropX) / 0.5f;
+        float yf = 1.0f - ((y / previewH - 1.0f + mCropY + 0.5f) / 0.5f);
+        mCameraRender.setFocusPoint(xf, yf);
+    }
+
+    public void onFocusAssistFocusPointChangeFA(float x, float y) {
+        Log.d(TAG, "onFocusAssistFocusPointChangeFA " + x + " " + y);
+        int previewW = mPreviewSize.getHeight();
+        int previewH = mPreviewSize.getWidth();
+        float xf = (x / previewW - mCropX) / 0.5f;
+        float yf = 1.0f - ((y / previewH - 1.0f + mCropY + 0.5f) / 0.5f);
+        mCameraRender.setFocusPointFA(xf, yf);
+    }
+
     public PointF onFocusAssistCenter(final int x, final int y) {
+        Log.d(TAG, "onFocusAssistCenter " + x + " " + y);
         int previewW = mPreviewSize.getHeight();
         int previewH = mPreviewSize.getWidth();
         float x_ = 1.0f * x / previewW;
         float y_ = 1.0f - 1.0f * y / previewH;
         float xs = Math.max(Math.min(x_, 0.75f) - 0.25f, 0f);
         float ys = Math.max(Math.min(y_, 0.75f) - 0.25f, 0f);
+        Log.d(TAG, "onFocusAssistCenter " + xs + " " + ys);
         onFocusAssistStartPointChange(xs, ys);
+        onFocusAssistFocusPointChange(x, y);
         return new PointF(xs, ys);
     }
 
@@ -9426,6 +9453,7 @@ private boolean isDevOptionSetting(){
         Log.d(TAG, "onFocusAssistReFocus " + x + " " + y);
         Point point = mUI.getPointInScreen((int)x, (int)y);
         onSingleTapUp(null, point.x, point.y);
+        onFocusAssistFocusPointChangeFA(x, y);
     }
 
     @Override
@@ -9438,7 +9466,8 @@ private boolean isDevOptionSetting(){
             return;
         }
         mUI.hideFocusAssistText();
-        Log.i(TAG, "onSingleTapUp " + x + " " + y);
+        tapUpFrameNumber = mVideoFrameNumber;
+        Log.i(TAG, "onSingleTapUp " + x + " " + y + " " + tapUpFrameNumber);
         if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE) {
             mLockAFAE = LOCK_AF_AE_STATE_NONE;
             applyIsAfLock(false);
@@ -16544,7 +16573,7 @@ private boolean isDevOptionSetting(){
 
         Log.d(TAG, BIG_LOG, "resultAFState " + resultAFState + " mWasInFocusAssistMode " + mWasInFocusAssistMode);
         if (resultAFState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED &&
-                !mWasInFocusAssistMode && isTouchFocusAssistSupported()) {
+                !mWasInFocusAssistMode && isTouchFocusAssistSupported() && mVideoFrameNumber > tapUpFrameNumber + 10) {
             checkTouchFocusAssistEnable(result);
         }
     }

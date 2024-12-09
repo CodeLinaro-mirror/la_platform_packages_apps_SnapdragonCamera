@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -129,7 +129,7 @@ public class FocusAssistLayout extends FrameLayout implements GestureDetector.On
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-//        Log.d(TAG, "onLayout " + left + " " + top + " " + right + " " + bottom);
+        Log.d(TAG, "onLayout " + left + " " + top + " " + right + " " + bottom);
         super.onLayout(changed, left, top, right, bottom);
         mWidth = right - left;
         mHeight = bottom - top;
@@ -217,7 +217,7 @@ public class FocusAssistLayout extends FrameLayout implements GestureDetector.On
         }
         Log.d(TAG, "onScroll " + distanceX + " " + distanceY);
         mCropRegionXs += distanceX / mPreviewTexWidth;
-        mCropRegionYs += distanceY / mPreviewTexHeight;
+        mCropRegionYs -= distanceY / mPreviewTexHeight;
         mCropRegionXs = Math.min(Math.max(mCropRegionXs, 0f), 0.5f);
         mCropRegionYs = Math.min(Math.max(mCropRegionYs, 0f), 0.5f);
         Log.d(TAG, "onStartPointChange " + mCropRegionXs + " " + mCropRegionYs);
