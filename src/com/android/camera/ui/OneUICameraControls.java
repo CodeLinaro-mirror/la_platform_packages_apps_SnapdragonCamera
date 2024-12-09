@@ -67,7 +67,7 @@ public class OneUICameraControls extends RotatableLayout {
     private static final float PANEL_INDEX_2 = 2f;
     private static final float PANEL_INDEX_3 = 3f;
     private static final float PANEL_INDEX_4 = 4f;
-    private View mShutter;
+    private View mShutter,mLongShutterStop;
     private ShutterButtonAnim mShutterAnim;
     private int mTotalProgress;
     public RectF mShutterAnimRect;
@@ -207,6 +207,7 @@ public class OneUICameraControls extends RotatableLayout {
     public void onFinishInflate() {
         super.onFinishInflate();
         mShutter = findViewById(R.id.shutter_button);
+        mLongShutterStop = findViewById(R.id.longshutter_stopbutton);
         mShutterAnim = findViewById(R.id.shutterbutton_anim);
         mVideoShutter = findViewById(R.id.video_button);
         mExitBestPhotpMode = findViewById(R.id.exit_best_mode);
@@ -633,13 +634,14 @@ public class OneUICameraControls extends RotatableLayout {
         } else {
             bW = mWidth / BOTTOM_PANEL_SPACE_NUM;
         }
-        v.setX(bW * idx + (bW - w) / 2);
+        float x_position = bW * idx + (bW - w) / 2;
+        v.setX(x_position);
         if (v == mShutter) {
             mShutterAnimRect = new RectF();
-            mShutterAnimRect.left = bW * idx + (bW - w) / 2 + 5;
-            mShutterAnimRect.top = mHeight - mBottom + (mBottom - h) / 2 + 5;
-            mShutterAnimRect.right = mShutterAnimRect.left + w - 7;
-            mShutterAnimRect.bottom = mShutterAnimRect.top + h - 7;
+            mShutterAnimRect.left = x_position - 4;
+            mShutterAnimRect.top = mHeight - mBottom + (mBottom - h) / 2 - 4;
+            mShutterAnimRect.right = mShutterAnimRect.left + w + 5;
+            mShutterAnimRect.bottom = mShutterAnimRect.top + h + 5;
         }
     }
 
@@ -703,6 +705,7 @@ public class OneUICameraControls extends RotatableLayout {
                 setLocation(mShutter, false, PANEL_INDEX_2);
                 setLocation(mPreview, false, 0.5f);
             }
+            setLocation(mLongShutterStop, false, PANEL_INDEX_2);
             setLocation(mExitBestPhotpMode, false, PANEL_INDEX_4);
         }
         setLocationCustomBottom(mMakeupSeekBarLayout, 0, 1);
@@ -1102,7 +1105,7 @@ class ShutterButtonAnim extends View {
             paint.setAntiAlias(true);
             paint.setStyle(Paint.Style.STROKE);
             paint.setPathEffect(new DashPathEffect(new float[]{5, 10}, 0));
-            paint.setStrokeWidth(8);
+            paint.setStrokeWidth(10);
             canvas.drawArc(mcontrol.mShutterAnimRect, -90, ((float) mProgress / mTotalProgress) * 360, false, paint); //
         } else {
             super.onDraw(canvas);

@@ -5299,8 +5299,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applySettingsForLockExposure(captureBuilder, id);
             }
             if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) && !isLongExpTmCaptrure()) {
+                Log.d(TAG," set CONTROL_ENABLE_ZSL true");
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, true);
             } else {
+                Log.d(TAG," set CONTROL_ENABLE_ZSL false");
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, false);
             }
             if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
@@ -7388,7 +7390,7 @@ private boolean isDevOptionSetting(){
                        double tmpValue = 1000000;
                        double time = mLongExpTime / tmpValue;
                        int expTime = new Double(time).intValue();
-                           mUI.startShutterAnim(expTime);
+                       mUI.startShutterAnim(expTime);
                    }
                }
            });
@@ -8150,6 +8152,16 @@ private boolean isDevOptionSetting(){
     @Override
     public void onPreviewFocusChanged(boolean previewFocused) {
         mUI.onPreviewFocusChanged(previewFocused);
+    }
+    public void LongShotAbortCapture() {
+        if (mCurrentSession != null && mIsLongExpTmCp) {
+            try {
+                mCurrentSession.abortCaptures();
+                mIsLongExpTmCp = false;
+            } catch (Exception e) {
+                Log.e(TAG, e);
+            }
+        }
     }
 
     @Override
@@ -9450,8 +9462,12 @@ private boolean isDevOptionSetting(){
         }
     }
     public boolean isLongExpTmCaptrure(){
-        Log.d(TAG,"mLongExpTime="+mLongExpTime+",maxExpTime="+maxExpTime);
         if(mCurrentSceneMode.mode == CameraMode.PRO_MODE && isTakingPicture() && mIsLongExpTmCp && mLongExpTime >maxExpTime) return true;
+        else return false;
+    }
+    public boolean isLongExptime(){
+        Log.d(TAG,"mLongExpTime="+mLongExpTime);
+        if(mCurrentSceneMode.mode == CameraMode.PRO_MODE  && mLongExpTime > maxExpTime) return true;
         else return false;
     }
     public boolean isTakingPicture() {

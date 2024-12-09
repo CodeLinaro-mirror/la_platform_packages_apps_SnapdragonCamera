@@ -76,6 +76,16 @@
         android:layout_width="@dimen/one_ui_bottom_large"
         android:layout_height="@dimen/one_ui_bottom_large" />
     <com.android.camera.ui.RotateImageView
+        android:id="@+id/longshutter_stopbutton"
+        android:layout_width="@dimen/one_ui_bottom_large"
+        android:layout_height="@dimen/one_ui_bottom_large"
+        android:clickable="true"
+        android:contentDescription="@string/accessibility_shutter_button"
+        android:focusable="true"
+        android:scaleType="fitCenter"
+        android:visibility="gone"
+        android:src="@drawable/video_stop" />
+    <com.android.camera.ui.RotateImageView
         android:id="@+id/video_button"
         android:layout_width="@dimen/one_ui_bottom_large"
         android:layout_height="@dimen/one_ui_bottom_large"

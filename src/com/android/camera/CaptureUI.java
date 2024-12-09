@@ -451,7 +451,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     };
 
     private ShutterButton mShutterButton;
-    private ImageView mVideoButton;
+    private ImageView mVideoButton,mLongShutterStopButton;
     private RenderOverlay mRenderOverlay;
     private FlashToggleButton mFlashButton;
     private CountDownView mCountDownView;
@@ -819,6 +819,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mRenderOverlay = (RenderOverlay) mRootView.findViewById(R.id.render_overlay);
         mShutterButton = (ShutterButton) mRootView.findViewById(R.id.shutter_button);
         mVideoButton = (ImageView) mRootView.findViewById(R.id.video_button);
+        mLongShutterStopButton = (ImageView) mRootView.findViewById(R.id.longshutter_stopbutton);
         mExitBestMode = (ImageView) mRootView.findViewById(R.id.exit_best_mode);
         mFilterModeSwitcher = mRootView.findViewById(R.id.filter_mode_switcher);
         mSceneModeSwitcher = mRootView.findViewById(R.id.scene_mode_switcher);
@@ -833,6 +834,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         for (int i = 0; i < CaptureModule.MAX_LOGICAL_PHYSICAL_CAMERA_COUNT; i++) {
             mPhysicalViews[i].setActivity(mActivity);
         }
+        mLongShutterStopButton.setOnClickListener(v ->{
+            showLongShutterButton(false);
+            mModule.LongShotAbortCapture();
+
+        });
         mSeekbarToggleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -2332,7 +2338,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mShutterButton.setOnClickListener(new View.OnClickListener()  {
             @Override
             public void onClick(View v) {
-                    doShutterAnimation();
+                    if(!mModule.isLongExptime()) {
+                        doShutterAnimation();
+                    }
             }
         });
         mVideoButton.setOnClickListener(new View.OnClickListener() {
@@ -3350,17 +3358,30 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mGestures.setZoomEnabled(enabled);
         mZoomSeekBar.setZoomEnable(enabled);
         if(!enabled || !mModule.isLongExpTmCaptrure()) stopShutterAnim();
-
+    }
+    private void showLongShutterButton(boolean show){
+        mActivity.runOnUiThread(()-> {
+            if (show) {
+                mLongShutterStopButton.setVisibility(View.VISIBLE);
+                mShutterButton.setVisibility(View.INVISIBLE);
+            } else {
+                mLongShutterStopButton.setVisibility(View.INVISIBLE);
+                mShutterButton.setVisibility(View.VISIBLE);
+            }
+        });
     }
     public void startShutterAnim(long totalProgress) {
         mCurrentProgress = 0;
         mTotalProgress = (int) totalProgress;
         mCameraControls.showAnim();
         new Thread(new ProgressRunable()).start();
+        showLongShutterButton(true);
     }
     public void stopShutterAnim() {
+        showLongShutterButton(false);
         mActivity.runOnUiThread(new Runnable() {
             public void run() {
+
                 mCameraControls.hidenAnim();
             }
         });
