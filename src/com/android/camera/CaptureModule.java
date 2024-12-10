@@ -8799,10 +8799,10 @@ private boolean isDevOptionSetting(){
             initializeSecondTime();
         }
         mActivity.runOnUiThread(() -> {
+            updateZoom();
             mUI.reInitUI();
             setProModeVisible();
             seBlurConfigSlideVisible();
-            updateZoom();
             updateZoomSeekBarVisible();
             updateAICameraSeekBar();
             updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
@@ -10555,6 +10555,17 @@ private boolean isDevOptionSetting(){
         }
         if (isDeepZoom()) {
             mZoomValue = mUI.getDeepZoomValue();
+        }
+        if (mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
+            float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
+                    getMainCameraId());
+            if (zoomRatioRange != null && zoomRatioRange[0] == zoomRatioRange[1]) {
+                mZoomValue = zoomRatioRange[0];
+            } else if (zoomRatioRange != null && zoomRatioRange[0] != zoomRatioRange[1]) {
+                if (mZoomValue < zoomRatioRange[0]) {
+                    mZoomValue = zoomRatioRange[0];
+                }
+            }
         }
     }
 
@@ -14170,7 +14181,7 @@ private boolean isDevOptionSetting(){
     }
 
     public float getZoomValue() {
-        return mCurrentZoom;
+        return mZoomValue;
     }
 
     public Rect cropRegionForZoom(int id, boolean isMaxPixelMode) {
@@ -17351,14 +17362,10 @@ private boolean isDevOptionSetting(){
                 float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                         getMainCameraId());
                 if (zoomRatioRange != null && zoomRatioRange[0] == zoomRatioRange[1]) {
-                    mZoomValue = zoomRatioRange[0];
                     Log.v(TAG, "updateZoomSeekBarVisible mZoomValue :" + mZoomValue);
                     mUI.hideZoomSeekBar();
                     return;
                 } else if (zoomRatioRange != null && zoomRatioRange[0] != zoomRatioRange[1]) {
-                    if (mZoomValue < zoomRatioRange[0]) {
-                        mZoomValue = zoomRatioRange[0];
-                    }
                     mUI.updateZoombarValue(mZoomValue);
                     mUI.showZoomSeekBar();
                     Log.v(TAG, "updateZoomSeekBarVisible showZoomSeekBar mZoomValue :" + mZoomValue);
