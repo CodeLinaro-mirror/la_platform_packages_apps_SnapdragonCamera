@@ -3701,13 +3701,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return mode;
     }
 
-    public void setDcgMode(String name){
+    public int getModeValue(String name){
         int mode = 0;
         if(name.equals("12BIT")){
             mode = 1;
         }else if(name.equals("14BIT")){
             mode = 2;
         }
+        return mode;
+    }
+    public void setDcgMode(String name){
+        int mode = getModeValue(name);
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext,
                         getCurrentPrepNameKey()), Context.MODE_PRIVATE);
