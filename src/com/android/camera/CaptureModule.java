@@ -14700,7 +14700,7 @@ private boolean isDevOptionSetting(){
         try {
             String inStantZoom = mSettingsManager.getValue(
                     SettingsManager.KEY_INSTANT_ZOOM);
-            Log.v(TAG, " applyInStantZoom inSensorZoom :" + inStantZoom);
+            Log.v(TAG, " applyInStantZoom inStantZoom :" + inStantZoom);
             if ("on".equals(inStantZoom)) {
                 request.set(CaptureRequest.CONTROL_SETTINGS_OVERRIDE,
                         CameraMetadata.CONTROL_SETTINGS_OVERRIDE_ZOOM);
