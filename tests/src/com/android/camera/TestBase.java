@@ -3198,7 +3198,7 @@ public class TestBase{
             }
         });
         try {
-            Thread.sleep(SMALL_WAIT_DURATION);
+            Thread.sleep(OPEN_CAMERA_DURATION);
             boolean done = verifyData(isVideoMode(mode));
             Log.i(TAG,"press done testResult="+testResult+",done="+done);
             testResult = testResult && done;
