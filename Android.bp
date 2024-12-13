@@ -78,8 +78,8 @@ android_app {
         "guava",
     ],
     libs: [
-        "framework-bluetooth",
-        "framework-mediaprovider",
+        "framework-bluetooth.stubs.module_lib",
+        "framework-mediaprovider.stubs.module_lib",
         "framework-location.stubs.module_lib"
     ],
     uses_libs: ["org.apache.http.legacy"],
@@ -98,9 +98,9 @@ android_app {
     aaptflags: [
         "--auto-add-overlay",
         "--version-name",
-        "2.08.190",
+        "2.08.191",
         "--version-code",
-        "208190000",
+        "208191000",
         "--extra-packages",
         "com.bumptech.glide",
     ],

@@ -2478,13 +2478,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
             synchronized (afinfo_data) {
-                mActivity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mUI.updateAFInfoVisibility(View.VISIBLE);
-                        mUI.updateAfInfoText(afinfo_data);
-                    }
-                });
+                mUI.updateAFInfoVisibility(View.VISIBLE);
+                mUI.updateAfInfoText(afinfo_data);
             }
             if (mAFRenderer == null) {
                 mAFRenderer = mUI.getAFRenderer();
@@ -10401,7 +10396,7 @@ private boolean isDevOptionSetting(){
         mVideoSnapshotSize = getMaxPictureSizeLiveshot(getMainCameraId(),mVideoSize.getWidth(),
                 mVideoSize.getHeight());
         if (getCurrenCameraMode() == CameraMode.CINEMATIC ||
-                (PersistUtil.getModelInfo().contains("7750") && (mSettingsManager.isMfSHDREnable() || mSettingsManager.getVideoHdrMode().equals("auto")))){
+                (PersistUtil.getModelInfo().contains("7750") && (mSettingsManager.isMfSHDREnable() || mSettingsManager.isLimitedHDR() || mSettingsManager.isSHDRLimited()))){
             mVideoSnapshotSize = mVideoSize;
         }
         String mlVideo = mSettingsManager.getValue(SettingsManager.KEY_ML_VIDEO);
