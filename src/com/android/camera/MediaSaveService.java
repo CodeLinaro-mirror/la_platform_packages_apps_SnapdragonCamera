@@ -626,11 +626,11 @@ public class MediaSaveService extends Service {
             values.put(Video.Media.DURATION, duration);
             Uri uri = null;
             try {
-                String finalName = values.getAsString(
-                        Video.Media.DATA);
+                String title = values.getAsString(
+                        Video.Media.TITLE);
                 Cursor c = resolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
                         new String[]{MediaStore.MediaColumns._ID},
-                        MediaStore.Video.Media.DATA + " like ? ", new String[]{finalName},
+                        MediaStore.Video.Media.TITLE + " like ? ", new String[]{title},
                         null);
                 if (c != null) {
                     if (c.moveToFirst()) {
@@ -654,8 +654,9 @@ public class MediaSaveService extends Service {
                     // Rename the video file to the final name. This avoids other
                     // apps reading incomplete data.  We need to do it after we are
                     // certain that the previous insert to MediaProvider is completed.
-                    if (new File(path).renameTo(new File(finalName))) {
-                        path = finalName;
+                    if (uri != null) {
+                        values.put(MediaStore.MediaColumns.IS_PENDING, 0);
+                        resolver.update(uri, values, null, null);
                     }
                     resolver.update(uri, values, null, null);
                 }
