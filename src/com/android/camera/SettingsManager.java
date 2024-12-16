@@ -4345,9 +4345,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         float[] range = getZoomRange();
         maxZoom = range[1];
         boolean addMin = true;
-        for (int zoomLevel = 0; zoomLevel <= maxZoom; zoomLevel++) {
+        for (int zoomLevel = -1; zoomLevel <= maxZoom; zoomLevel++) {
             int tmp = zoomLevel+1;
-            if(zoomLevel ==0){
+            if(zoomLevel <= 0){
                 supported.add(String.valueOf(zoomLevel));
             }
             if(range[0] > zoomLevel && range[0] < tmp && addMin){

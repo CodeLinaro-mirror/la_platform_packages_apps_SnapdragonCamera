@@ -938,6 +938,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int mLogicalId = -1;
     private int mSingleRearId = -1;
     private SceneModule mCurrentSceneMode;
+    private CameraMode mOldMode;
+    private int mOldCameraId;
     private int mNextModeIndex = 1;
     private int mCurrentModeIndex = 1;
     private int mLastT2tTrackState = -1;
@@ -964,7 +966,6 @@ public class CaptureModule implements CameraModule, PhotoController,
     private CaptureUI mUI;
     private CameraActivity mActivity;
     private float mZoomValue = 1f;
-    private float mCurrentZoom = 1f;
     private int mAIStrengthValue = 0;
     private FocusStateListener mFocusStateListener;
     private LocationManager mLocationManager;
@@ -8297,8 +8298,8 @@ private boolean isDevOptionSetting(){
         mUI.hidePhysicalSurfaces();
         mUI.hideDepthView();
         mPreviewOutputConfiguration = null;
-        mZoomValue = 1f;
-        mUI.updateZoomSeekBar(1.0f);
+        mOldMode = mCurrentSceneMode.mode;
+        mOldCameraId = CURRENT_ID;
         if (isExitCamera || mIsCloseCamera) {
             stopBackgroundThread();
             closeImageReader();
@@ -10577,10 +10578,14 @@ private boolean isDevOptionSetting(){
     private void updateZoom() {
         String zoomStr = mSettingsManager.getValue(SettingsManager.KEY_ZOOM);
         float zoom = Float.parseFloat(zoomStr);
+        Log.d(TAG,"mZoomValue="+mZoomValue+",mOldMode"+mOldMode
+        +",mCurrentSceneMode.mode="+mCurrentSceneMode.mode+",CURRENT_ID="+CURRENT_ID+
+                ",mOldCameraId = "+mOldCameraId+",zoomStr="+zoomStr);
         if ( zoom > 0 ) {
             mZoomValue = zoom;
             mUI.updateZoomSeekBar(mZoomValue);
-        }else{
+        }else if( zoom == 0 || (zoom < 0 && (mOldMode == null || !mOldMode.equals(mCurrentSceneMode.mode)
+        || (mOldCameraId != CURRENT_ID)))){
             mZoomValue = 1.0f;
         }
         if (isDeepZoom()) {
@@ -14269,7 +14274,7 @@ private boolean isDevOptionSetting(){
                 cropRegionForZoom(id, false);
             }
             Log.i(TAG,"applyzoomratio="+zoomValue);
-            mCurrentZoom = zoomValue;
+            mZoomValue = zoomValue;
             request.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomValue);
         } catch(IllegalArgumentException e) {
             Log.w(TAG, EXCEPTION_LOG," there is no vendorTag CONTROL_ZOOM_RATIO");

@@ -2845,8 +2845,9 @@ public class SettingsActivity extends PreferenceActivity {
             zoomLevelLists.add(String.valueOf(maxZoom));
         }
         List<String> zoomEntriesLists = new ArrayList<String>();
-        zoomEntriesLists.add("Default");
-        for (int i = 1; i< zoomLevelLists.size(); i++) {
+        zoomEntriesLists.add("Keep zoom when pause");
+        zoomEntriesLists.add("Reset zoom when pause");
+        for (int i = 2; i< zoomLevelLists.size(); i++) {
             zoomEntriesLists.add(zoomLevelLists.get(i) + "x");
         }
         if(zoomPref != null) {
