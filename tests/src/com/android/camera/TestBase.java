@@ -1117,7 +1117,7 @@ public class TestBase{
     public void testCamID(CaptureModule.CameraMode mode) throws Exception {
         executeShellCommand("setprop persist.sys.camera.devoption.debug 100");
         mActivityRule.finishActivity();
-        Thread.sleep(SMALL_WAIT_DURATION);
+        Thread.sleep(OPEN_CAMERA_DURATION);
         mActivityRule = new ActivityTestRule<>(CameraActivity.class);
         OpenCamera();
         Thread.sleep(OPEN_CAMERA_DURATION);
@@ -1619,7 +1619,7 @@ public class TestBase{
         resetPreview();
         resetVideo();
         mActivityRule.finishActivity();
-        Thread.sleep(SMALL_WAIT_DURATION);
+        Thread.sleep(OPEN_CAMERA_DURATION);
         mActivityRule = new ActivityTestRule<>(CameraActivity.class);
         OpenCamera();
         String str = getTestMode(mode);
@@ -1637,7 +1637,7 @@ public class TestBase{
         }
         executeShellCommand("setprop persist.sys.cameraapp.mediarecorder true");
         mActivityRule.finishActivity();
-        Thread.sleep(SMALL_WAIT_DURATION);
+        Thread.sleep(OPEN_CAMERA_DURATION);
         mActivityRule = new ActivityTestRule<>(CameraActivity.class);
         OpenCamera();
         executeShellCommand("input tap " + loc[0] + " " + loc[1]);
@@ -3245,7 +3245,7 @@ public class TestBase{
             }
         });
         try {
-            Thread.sleep(SMALL_WAIT_DURATION);
+            Thread.sleep(OPEN_CAMERA_DURATION);
             boolean done = verifyData(isVideoMode(mode));
             Log.i(TAG,"press done testResult="+testResult+",done="+done);
             testResult = testResult && done;
