@@ -3020,7 +3020,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 }
                 break;
             case PRO_MODE:
-                mFilterModeSwitcher.setVisibility(View.INVISIBLE);
+                mFilterModeSwitcher.setVisibility(View.VISIBLE);
                 mVideoButton.setVisibility(View.INVISIBLE);
                 mFrontBackSwitcher.setVisibility(View.INVISIBLE);
                 mMuteButton.setVisibility(View.INVISIBLE);
