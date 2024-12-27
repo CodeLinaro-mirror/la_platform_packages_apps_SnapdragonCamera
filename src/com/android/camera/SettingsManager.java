@@ -1814,6 +1814,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference forceAUX = mPreferenceGroup.findPreference(KEY_FORCE_AUX);
         ListPreference whiteBalance = mPreferenceGroup.findPreference(KEY_WHITE_BALANCE);
         ListPreference flashMode = mPreferenceGroup.findPreference(KEY_FLASH_MODE);
+        ListPreference flashManual = mPreferenceGroup.findPreference(KEY_CAMERA_MANUALFLASH);
         ListPreference colorEffect = mPreferenceGroup.findPreference(KEY_COLOR_EFFECT);
         ListPreference sceneMode = mPreferenceGroup.findPreference(KEY_SCENE_MODE);
         ListPreference sceneModeInstructional =
@@ -1899,6 +1900,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
             // Front Camera does not support video
             if (mCameraId == CaptureModule.FRONT_ID) {
                 removePreference(mPreferenceGroup, KEY_VIDEO_FLASH_MODE);
+            }
+        }
+        if(flashManual != null){
+            if (!isFlashAvailable(mCameraId)) {
+                removePreference(mPreferenceGroup, KEY_CAMERA_MANUALFLASH);
+                mFilteredKeys.add(flashManual.getKey());
+            }
+            // Front Camera does not support video
+            if (mCameraId == CaptureModule.FRONT_ID) {
+                removePreference(mPreferenceGroup, KEY_CAMERA_MANUALFLASH);
             }
         }
         if (aiCamera != null) {
@@ -4088,6 +4099,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } else {
             return false;
         }
+    }
+    public boolean isFlashAvailable() {
+      return isFlashAvailable(mCaptureModule.getMainCameraId());
     }
 
     public List<String> getSupportedColorEffects(int cameraId) {
