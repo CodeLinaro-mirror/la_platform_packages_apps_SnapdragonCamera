@@ -99,7 +99,7 @@ public class PreviewGestures
 
             int deltaX = (int) (e1.getX() - e2.getX());
             int deltaY = (int) (e1.getY() - e2.getY());
-            if((Math.abs(deltaX) > 40 || Math.abs(deltaY) > 40)) {
+            if((Math.abs(deltaX) > 40 || Math.abs(deltaY) > 40) && Math.abs(e1.getY()) < CameraUtil.zoomTextHeigh) {
                 int orientation = 0;
                 if (mCaptureUI != null)
                     orientation = mCaptureUI.getOrientation();

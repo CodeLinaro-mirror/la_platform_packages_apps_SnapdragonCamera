@@ -550,9 +550,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private LinearLayout mZoomLinearLayout;
     private RelativeLayout mManualFlashLayout;
     private TextView flashLevelTxt;
-    private int mZoomTextWidth,mZoomTextHeight;
-    LinearLayout.LayoutParams mZoomTextParams,mZoomTextPartParams;
-    private int[]mZoomTextWidthHeight;
     private LinearLayout mZoomEditLayout;
 
     private int mZoomIndex = 0;
@@ -1820,9 +1817,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mZoomValueText.setVisibility(View.INVISIBLE);
         mZoomEditLayout.setVisibility(View.INVISIBLE);
         mZoomSeekBar.setZoomRange(zoomRatioRange);
-        if(mCameraControls != null){
-            mZoomTextWidthHeight = mCameraControls.getZoomTextLayoutWH();
-        }
         updateZoomText(zoomRatioRange);
         setZoomTextSelect(mModule.getZoomValue());
         setZoomTextListener();

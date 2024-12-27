@@ -623,15 +623,10 @@ public class OneUICameraControls extends RotatableLayout {
     }
     private void setZoomTextLayout(){
         LinearLayout mZoomLinearLayout = (LinearLayout) findViewById(R.id.zoom_text_layout);
-
-        int mZoomTextWidth = mZoomLinearLayout.getWidth();
-        int mZoomTextHeight = mZoomLinearLayout.getHeight();
-        mZoomTextWidthHeight = new int[]{mZoomTextWidth,mZoomTextHeight};
+        int[]mZoomLoc = new int[2];
+        mZoomLinearLayout.getLocationInWindow(mZoomLoc);
+        CameraUtil.setZoomTextHeight(mZoomLoc[1]);
     }
-    public int[] getZoomTextLayoutWH() {
-        return mZoomTextWidthHeight;
-    }
-
     public boolean isControlRegion(int x, int y) {
         return y <= mTop || y >= (mHeight - mBottom);
     }
