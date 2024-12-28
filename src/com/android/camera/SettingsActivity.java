@@ -2676,7 +2676,7 @@ private void setSearchView(AutoCompleteTextView autoCompTextView,ImageView searc
         }
 
         String qllStr = mSettingsManager.getValue(SettingsManager.KEY_QLL);
-        if (qllStr.equals("1")) {
+        if (qllStr != null && qllStr.equals("1")) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;
