@@ -100,7 +100,7 @@ android_app {
         "--version-name",
         "2.08.192",
         "--version-code",
-        "208191000",
+        "208192000",
         "--extra-packages",
         "com.bumptech.glide",
     ],
