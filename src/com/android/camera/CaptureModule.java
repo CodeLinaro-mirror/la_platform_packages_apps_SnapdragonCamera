@@ -7852,6 +7852,7 @@ private boolean isDevOptionSetting(){
         }
         if (mCurrentSceneMode.mode == CameraMode.DEFAULT
                 || mCurrentSceneMode.mode == CameraMode.VIDEO
+                || mCurrentSceneMode.mode == CameraMode.HFR
                 || mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             if (!mSettingsManager.isMultiCameraEnabled()) {
                 applyVIULL(builder);
@@ -12020,6 +12021,8 @@ private boolean isDevOptionSetting(){
     }
 
     private void applyVideoStabilization(CaptureRequest.Builder builder, boolean isDisabled) {
+        String value = isDisabled ? "off" : "on";
+        Log.i(TAG, "applyEIS set CONTROL_VIDEO_STABILIZATION_MODE to " + value);
         if (isDisabled) {
             builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CaptureRequest
                     .CONTROL_VIDEO_STABILIZATION_MODE_OFF);
@@ -14404,6 +14407,7 @@ private boolean isDevOptionSetting(){
     private void applyEIS(CaptureRequest.Builder request) {
         String key = SettingsManager.KEY_PHOTO_EIS_VALUE;
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
+                mCurrentSceneMode.mode == CameraMode.HFR ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             key = SettingsManager.KEY_EIS_VALUE;
         }

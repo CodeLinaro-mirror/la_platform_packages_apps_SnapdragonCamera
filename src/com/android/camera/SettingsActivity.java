@@ -153,6 +153,7 @@ public class SettingsActivity extends PreferenceActivity {
     AlertDialog mManualHDRDialog = null;
     private ArrayList<String> mSearchSettingList;
     private ArrayList<CameraCharacteristics> mCharacteristics;
+    private static boolean mFirstInitHFREIS = true;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
@@ -2801,6 +2802,12 @@ public class SettingsActivity extends PreferenceActivity {
         } else {
             if (eisPref != null) {
                 eisPref.setEnabled(true);
+                CaptureModule.CameraMode mode = (CaptureModule.CameraMode)
+                        getIntent().getSerializableExtra(CAMERA_MODULE);
+                if (mode == CaptureModule.CameraMode.HFR && mFirstInitHFREIS) {
+                    eisPref.setValue("disable");
+                    mFirstInitHFREIS = false;
+                }
             }
         }
         if (mSettingsManager.isAIBokehMode()) {
