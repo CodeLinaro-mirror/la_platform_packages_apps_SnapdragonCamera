@@ -2050,8 +2050,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey()),
                     Context.MODE_PRIVATE);
             String fpsStr = pref.getString(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, "30");
-            String str = getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-            if (fpsStr != null && !fpsStr.equals("") && !fpsStr.equals("24") && !fpsStr.equals("30")) {
+            if (fpsStr != null && !fpsStr.equals("") && !fpsStr.equals("off") && !fpsStr.equals("24") && !fpsStr.equals("30")) {
                 int fpsRate = Integer.parseInt(fpsStr.substring(3));
                 if (fpsRate == 480) {
                     if (filterUnsupportedOptions(videoDuration, getSupportedVideoDurationFor480())) {
@@ -3557,6 +3556,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     private boolean isFastShutterModeSupported(int id) {
+        if(CaptureModule.CameraMode.VIDEO != CaptureModule.CURRENT_MODE && PersistUtil.getModelInfo().contains("7750")){
+            return false;
+        }
         boolean result = false;
         try {
             byte fastModeSupport = mCharacteristics.get(id).get(CaptureModule.fs_mode_support);
@@ -3699,13 +3701,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return mode;
     }
 
-    public void setDcgMode(String name){
+    public int getModeValue(String name){
         int mode = 0;
         if(name.equals("12BIT")){
             mode = 1;
         }else if(name.equals("14BIT")){
             mode = 2;
         }
+        return mode;
+    }
+    public void setDcgMode(String name){
+        int mode = getModeValue(name);
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext,
                         getCurrentPrepNameKey()), Context.MODE_PRIVATE);
@@ -5056,7 +5062,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public int getVideoFPS(){
         String fpsStr = getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         int fpsRate = 30;
-        if(fpsStr == null){
+        if(fpsStr == null || fpsStr.equals("") || fpsStr.equals("off")){
             return 30;
         }
         if (!fpsStr.equals("24") && !fpsStr.equals("30")) {

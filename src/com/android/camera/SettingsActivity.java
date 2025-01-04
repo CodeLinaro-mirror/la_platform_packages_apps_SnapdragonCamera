@@ -1137,7 +1137,6 @@ public class SettingsActivity extends PreferenceActivity {
         }
         @Override
         public View getView(final int position, View convertView, ViewGroup parent) {
-
             RadioListViewHolder viewHolder = null;
             if(convertView == null){
                 convertView = mInflater.inflate(R.layout.radio_button_list_item,parent,false);
@@ -1149,7 +1148,7 @@ public class SettingsActivity extends PreferenceActivity {
                 viewHolder = (RadioListViewHolder)convertView.getTag();
             }
             viewHolder.name.setText(listItems.get(position));
-            if(mSettingsManager.getDcgMode() == position){
+            if(mSettingsManager.getDcgMode() == mSettingsManager.getModeValue(listItems.get(position))){
                 viewHolder.select.setChecked(true);
             }
             else{
