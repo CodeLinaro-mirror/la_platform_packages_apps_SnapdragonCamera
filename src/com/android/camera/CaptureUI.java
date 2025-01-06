@@ -3355,8 +3355,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 }
             });
         }
-        mGestures.setZoomEnabled(enabled);
-        mZoomSeekBar.setZoomEnable(enabled);
+        if(mModule.getCurrenCameraMode() != CaptureModule.CameraMode.HFR) {
+            mGestures.setZoomEnabled(enabled);
+            mZoomSeekBar.setZoomEnable(enabled);
+        }
         if(!enabled || !mModule.isLongExpTmCaptrure()) stopShutterAnim();
     }
     private void showLongShutterButton(boolean show){
