@@ -16081,9 +16081,10 @@ private boolean isDevOptionSetting(){
         }
         if (id == getMainCameraId()) {
             String value = mSettingsManager.getValue(SettingsManager.KEY_SHUTTER_SOUND);
-            if (value != null && value.equals("on") && mSoundPlayer != null) {
+            if (value != null && value.equals("on") && mSoundPlayer != null && !PersistUtil.isPerfTestRunning()) {
                 mSoundPlayer.play(isStarted? SoundClips.START_VIDEO_RECORDING
                         : SoundClips.STOP_VIDEO_RECORDING);
+
             }
         }
     }
