@@ -7681,6 +7681,7 @@ private boolean isDevOptionSetting(){
 
     private void applySettingsForLockFocus(CaptureRequest.Builder builder, int id) {
         builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
+        applyFlash(builder, id);
         applyAFRegions(builder, id);
         applyAERegions(builder, id);
         applyCommonSettings(builder, id);
