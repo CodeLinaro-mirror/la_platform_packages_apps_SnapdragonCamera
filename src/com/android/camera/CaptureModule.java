@@ -1160,6 +1160,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private MediaRecorder[] mPhysicalMediaRecorders = new MediaRecorder[PHYSICAL_CAMERA_COUNT];
     private final Uri[] mPhysicalUris = new Uri[PHYSICAL_CAMERA_COUNT];
     private Range mHighSpeedFPSRange;
+    private Range mHighSpeedPreviewFPSRange;
     private boolean mHighSpeedCapture = false;
     private boolean mHighSpeedRecordingMode = false; //HFR-false HSR or SSM-true
     private int mHighSpeedCaptureRate;
@@ -1865,26 +1866,32 @@ public class CaptureModule implements CameraModule, PhotoController,
             Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
             Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
             Integer awbState = result.get(CaptureResult.CONTROL_AWB_STATE);
-            if(afState == CaptureRequest.CONTROL_AF_STATE_PASSIVE_SCAN && mAFConvergence == 0){
-                mAFConvergence = System.currentTimeMillis();
-            }else if((afState == CaptureRequest.CONTROL_AF_STATE_PASSIVE_FOCUSED || afState == CaptureRequest.CONTROL_AF_STATE_PASSIVE_UNFOCUSED) && mAFConvergence != 0){
-                mAFConvergence = System.currentTimeMillis() - mAFConvergence;
-                updatePerformanceDebugValue(10, Long.toString(mAFConvergence));
-                mAFConvergence = 0;
+            if(afState != null) {
+                if (afState == CaptureRequest.CONTROL_AF_STATE_PASSIVE_SCAN && mAFConvergence == 0) {
+                    mAFConvergence = System.currentTimeMillis();
+                } else if ((afState == CaptureRequest.CONTROL_AF_STATE_PASSIVE_FOCUSED || afState == CaptureRequest.CONTROL_AF_STATE_PASSIVE_UNFOCUSED) && mAFConvergence != 0) {
+                    mAFConvergence = System.currentTimeMillis() - mAFConvergence;
+                    updatePerformanceDebugValue(10, Long.toString(mAFConvergence));
+                    mAFConvergence = 0;
+                }
             }
-            if(aeState == CaptureRequest.CONTROL_AE_STATE_SEARCHING && mAECConvergence == 0){
-                mAECConvergence = System.currentTimeMillis();
-            }else if(aeState == CaptureRequest.CONTROL_AE_STATE_CONVERGED && mAECConvergence != 0){
-                mAECConvergence = System.currentTimeMillis() - mAECConvergence;
-                updatePerformanceDebugValue(11, Long.toString(mAECConvergence));
-                mAECConvergence = 0;
+            if(aeState != null) {
+                if (aeState == CaptureRequest.CONTROL_AE_STATE_SEARCHING && mAECConvergence == 0) {
+                    mAECConvergence = System.currentTimeMillis();
+                } else if (aeState == CaptureRequest.CONTROL_AE_STATE_CONVERGED && mAECConvergence != 0) {
+                    mAECConvergence = System.currentTimeMillis() - mAECConvergence;
+                    updatePerformanceDebugValue(11, Long.toString(mAECConvergence));
+                    mAECConvergence = 0;
+                }
             }
-            if(awbState == CaptureRequest.CONTROL_AWB_STATE_SEARCHING && mAWBConvergence == 0){
-                mAWBConvergence = System.currentTimeMillis();
-            }else if(awbState == CaptureRequest.CONTROL_AWB_STATE_CONVERGED && mAWBConvergence != 0){
-                mAWBConvergence = System.currentTimeMillis() - mAWBConvergence;
-                updatePerformanceDebugValue(12, Long.toString(mAWBConvergence));
-                mAWBConvergence = 0;
+            if(awbState != null) {
+                if (awbState == CaptureRequest.CONTROL_AWB_STATE_SEARCHING && mAWBConvergence == 0) {
+                    mAWBConvergence = System.currentTimeMillis();
+                } else if (awbState == CaptureRequest.CONTROL_AWB_STATE_CONVERGED && mAWBConvergence != 0) {
+                    mAWBConvergence = System.currentTimeMillis() - mAWBConvergence;
+                    updatePerformanceDebugValue(12, Long.toString(mAWBConvergence));
+                    mAWBConvergence = 0;
+                }
             }
             synchronized (mPerformanceGapData) {
                 if (mLastResultTime != 0) {
@@ -4371,9 +4378,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mIsPreviewingVideo = true;
             if (isHighSpeedRateCapture()) {
-                if((mSettingsManager.isBatchMode(getMainCameraId()) || mCurrentSceneMode.mode == CameraMode.HFR) && mVideoRecordingSurface != null){
-                    mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
-                }
                 createHighSpeedSession(cameraId);
             } else {
                 createRegularSession(cameraId);
@@ -7754,6 +7758,10 @@ private boolean isDevOptionSetting(){
                         mCurrentSceneMode.mode == CameraMode.CINEMATIC) &&
                         !isVariableFPSEnabled())) {
             Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(30, 30);
+
+            if(!mIsRecordingVideo && mHighSpeedCapture ){
+                fpsRange = mHighSpeedPreviewFPSRange;
+            }
             builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
         }
         applyAFRegions(builder, id);
@@ -11359,6 +11367,10 @@ private boolean isDevOptionSetting(){
                         cleanupEmptyFile();
                         setUpMediaRecorder(getMainCameraId());
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                    if(mHighSpeedCapture && !isVariableFPSEnabled()) {
+                        mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                                mHighSpeedFPSRange);
+                    }
                     if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
                         // SENSOR_PIXEL_MODE_DEFAULT
                         mVideoRecordRequestBuilder.set(CaptureRequest.SENSOR_PIXEL_MODE,
@@ -11629,7 +11641,6 @@ private boolean isDevOptionSetting(){
 
     private void updateHFRSetting() {
         String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-        Log.d(TAG,"framerate is ="+value);
         if (value == null) return;
         if (value.equals("off")) {
             mHighSpeedCapture = false;
@@ -11672,8 +11683,9 @@ private boolean isDevOptionSetting(){
         }
         setTag(mVideoRecordRequestBuilder, "" + cameraId + "-" + getCurrenCameraMode().name());
         if (mHighSpeedCapture && !isVariableFPSEnabled()) {
-            mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                    mHighSpeedFPSRange);
+                mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                        mHighSpeedPreviewFPSRange);
+
         }
         if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
             mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest
@@ -11726,14 +11738,16 @@ private boolean isDevOptionSetting(){
             mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
         }
         if (!isVariableFPSEnabled()) {
-            if (mHighSpeedCapture && !isVariableFPSEnabled()) {
-                mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                        mHighSpeedFPSRange);
-            } else {
-                mHighSpeedFPSRange = new Range(30, 30);
-                mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                        mHighSpeedFPSRange);
-            }
+            if (mHighSpeedCapture) {
+
+                    mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                            mHighSpeedPreviewFPSRange);
+                }else {
+                    Range fps = new Range(30, 30);
+                    mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                            fps);
+                }
+
         }
             applyVideoCommentSettings(mVideoPreviewRequestBuilder, cameraId);
     }
@@ -12214,15 +12228,21 @@ private boolean isDevOptionSetting(){
     }
 
     private void setEndOfStream(boolean isResume, boolean isStopRecord) {
-        if (isHighSpeedRateCapture()) return;
         CaptureRequest.Builder captureRequestBuilder = mVideoRecordRequestBuilder;
         try {
             if (isResume) {
                 try {
-                    captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
-                    Log.i(TAG, "Set endofstream TAG to 0");
-                    mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
-                            mCaptureCallback, mCameraHandler);
+                    if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
+                        CameraConstrainedHighSpeedCaptureSession session =
+                                (CameraConstrainedHighSpeedCaptureSession) mCurrentSession;
+                        List requestList = getHighSpeedList(session,mVideoRecordRequestBuilder);
+                        mCurrentSession.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
+                    }else {
+                        captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
+                        Log.i(TAG, "Set endofstream TAG to 0");
+                        mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
+                                mCaptureCallback, mCameraHandler);
+                    }
                 } catch(IllegalArgumentException e) {
                     Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
                 }
@@ -12230,17 +12250,25 @@ private boolean isDevOptionSetting(){
                 if ((mRecordingPausing || mStopRecPending) && (mCurrentSession != null) && mCameraDevice[getMainCameraId()] != null) {
                     mCurrentSession.stopRepeating();
                     try {
+
                         captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
                         Log.i(TAG, "Set endofstream TAG to 1");
                     } catch (IllegalArgumentException illegalArgumentException) {
                         Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
                     }
-                    if (isSSMEnabled()) {
-                        mCurrentSession.captureBurst(createSSMBatchRequest(captureRequestBuilder),
-                                mCaptureCallback, mCameraHandler);
-                    } else {
-                        mCurrentSession.capture(captureRequestBuilder.build(), mCaptureCallback,
-                                mCameraHandler);
+                    if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
+                        CameraConstrainedHighSpeedCaptureSession session =
+                                (CameraConstrainedHighSpeedCaptureSession) mCurrentSession;
+                        List requestList = getHighSpeedList(session,mVideoRecordRequestBuilder);
+                        mCurrentSession.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
+                    }else {
+                        if (isSSMEnabled()) {
+                            mCurrentSession.captureBurst(createSSMBatchRequest(captureRequestBuilder),
+                                    mCaptureCallback, mCameraHandler);
+                        } else {
+                            mCurrentSession.capture(captureRequestBuilder.build(), mCaptureCallback,
+                                    mCameraHandler);
+                        }
                     }
                     Log.i(TAG, "Set endofstream TAG is done from APP");
                     captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
@@ -12262,8 +12290,15 @@ private boolean isDevOptionSetting(){
                 captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
                 Log.d(TAG, "Set endofstream TAG to 0");
                 if( (mCurrentSession != null) && mCameraDevice[getMainCameraId()] != null) {
-                    mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
-                            mCaptureCallback, mCameraHandler);
+                    if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
+                        CameraConstrainedHighSpeedCaptureSession session =
+                                (CameraConstrainedHighSpeedCaptureSession) mCurrentSession;
+                        List requestList = getHighSpeedList(session,mVideoRecordRequestBuilder);
+                        mCurrentSession.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
+                    }else {
+                        mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
+                                mCaptureCallback, mCameraHandler);
+                    }
                 }
             }
         } catch (CameraAccessException | IllegalStateException | NullPointerException |
@@ -12454,8 +12489,10 @@ private boolean isDevOptionSetting(){
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
-        if(!mSettingsManager.isBatchMode(getMainCameraId()) && mCurrentSceneMode.mode != CameraMode.HFR) {
             mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        if(mHighSpeedCapture && !isVariableFPSEnabled()) {
+            mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                    mHighSpeedPreviewFPSRange);
         }
         if (!PersistUtil.enableMediaRecorder()) {
             mFrameProcessor.setVideoOutputSurface(null);
@@ -13852,6 +13889,7 @@ private boolean isDevOptionSetting(){
             mMediaRecorder.setCaptureRate(fps);
         }  else if (mHighSpeedCapture) {
             mHighSpeedFPSRange = new Range(mHighSpeedCaptureRate, mHighSpeedCaptureRate);
+            mHighSpeedPreviewFPSRange =  new Range(30, mHighSpeedCaptureRate);
             int fps = (int) mHighSpeedFPSRange.getUpper();
             int targetRate = mSuperSlomoCapture ? 30 : (mHighSpeedRecordingMode ? fps : 30);
             mMediaRecorder.setCaptureRate(mSuperSlomoCapture ? 30 : fps);

@@ -1751,7 +1751,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mode != VIDEO) {
                     removePreference(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
                     removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, videoPre);
-                    if(mode == HFR && !mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())){
+                    if(!mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())){
                         removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
                     }
                     Preference p1 = findPreference(SettingsManager.KEY_PICTURE_FORMAT);

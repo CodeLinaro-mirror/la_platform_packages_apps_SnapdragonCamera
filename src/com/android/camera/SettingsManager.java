@@ -1880,7 +1880,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference ml_video = mPreferenceGroup.findPreference(KEY_ML_VIDEO);
         ListPreference inStantZoom = mPreferenceGroup.findPreference(KEY_INSTANT_ZOOM);
         ListPreference aide = mPreferenceGroup.findPreference(KEY_AI_DENOISER);
+        ListPreference bufferMode = mPreferenceGroup.findPreference(KEY_HFR_BUFFER_MODE);
 
+        if(!isSupportedSuperBuffer(mCameraId) || CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.HFR){
+            removePreference(mPreferenceGroup, KEY_HFR_BUFFER_MODE);
+        }
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
             mFilteredKeys.add(forceAUX.getKey());
@@ -2770,8 +2774,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     mode == CaptureModule.CameraMode.CINEMATIC) {
                 ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
                 hfrPref.reloadInitialEntriesAndEntryValues();
-                mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
-                        getSupportedHighFrameRate(mode, videoQuality.getValue(), mCameraId));
+                if(videoQuality != null && videoQuality.getValue() != null) {
+                    mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
+                            getSupportedHighFrameRate(mode, videoQuality.getValue(), mCameraId));
+                }
                 if (!mIsHFRSupported) {
                     mFilteredKeys.add(hfrPref.getKey());
                 } else {
@@ -2896,7 +2902,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return supported;
     }
     public boolean isBatchMode(int cameraId){
-        if(!isSupportedSuperBuffer(cameraId)){
+        CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
+        if(!isSupportedSuperBuffer(cameraId) || mode != CaptureModule.CameraMode.HFR){
             return  false;
         }
         String buffermode = getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
@@ -3065,6 +3072,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public List<String> getKeyAllValues(String key){
         List<String> values = new ArrayList<String>();
         ListPreference listPreference = mPreferenceGroup.findPreference(key);
+        if(listPreference == null){
+            return null;
+        }
         Object[] entryValues = listPreference.getEntryValues();
         if(entryValues != null) {
             for (int i = 0; i < entryValues.length; i++) {
