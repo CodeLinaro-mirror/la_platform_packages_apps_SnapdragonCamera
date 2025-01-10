@@ -2422,6 +2422,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mModeSelectLayout.setVisibility(View.VISIBLE);
             }
             mModule.updateZoomSeekBarVisible();
+            if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE){
+                mCameraControls.setProModeVisibility(View.VISIBLE);
+            }
         }
         updateMenus();
     }
@@ -2613,6 +2616,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 adjustOrientation();
                 updateMenus();
                 mModeSelectLayout.setVisibility(View.GONE);
+                mCameraControls.setProModeVisibility(View.GONE);
                 hideZoomSeekBar();
             }
         });

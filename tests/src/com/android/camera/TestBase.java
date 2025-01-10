@@ -1937,8 +1937,7 @@ public class TestBase{
     private void testFilter(CaptureModule.CameraMode mode)throws Exception{
         updateJson(5,null);
         View mFliter = mActivity.findViewById(R.id.filter_mode_switcher);
-        if(mode == CaptureModule.CameraMode.PRO_MODE || !mSettingsManager.isFilterShow()
-                || mode == CaptureModule.CameraMode.DEPTH) {
+        if(!mSettingsManager.isFilterShow() || mode == CaptureModule.CameraMode.DEPTH) {
             if (mFliter.getVisibility() != View.VISIBLE) {
                 testResult = true;
                 mSupported = false;
@@ -1960,7 +1959,7 @@ public class TestBase{
 
             Thread.sleep(SMALL_WAIT_DURATION);
 
-            if(mode == CaptureModule.CameraMode.DEFAULT || mode == CaptureModule.CameraMode.RTB){
+            if(mode == CaptureModule.CameraMode.DEFAULT || mode == CaptureModule.CameraMode.RTB || mode == CaptureModule.CameraMode.PRO_MODE){
                 testSnapshot(mode);
             }else if (isVideoMode(mode)){
                 testVideo(mode);

@@ -1081,6 +1081,18 @@ public class OneUICameraControls extends RotatableLayout {
         mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() - 140);
     }
 
+    public void setProModeVisibility(int visibility){
+        if(visibility == GONE || visibility == INVISIBLE){
+            mProMode.setMode(ProMode.NO_MODE);
+        }
+        mProModeLayout.setVisibility(visibility);
+        for(TextView view: mProViews){
+            view.setVisibility(visibility);
+            if(visibility == GONE || visibility == INVISIBLE){
+                view.setTextColor(Color.WHITE);
+            }
+        }
+    }
     public void setModeEnable(int mode,boolean isEnable) {
         switch (mode) {
             case ProMode.EXPOSURE_MODE:
