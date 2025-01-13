@@ -4656,7 +4656,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         if (modes != null && modes.length > 0) {
-            ret.add("manual");
+            for (int i = 0; i < modes.length; i++) {
+                if (modes[i] == 1 && CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB) {
+                    continue;
+                } else if (modes[i] == 2 && (!isAIBokehMode() || CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB)) {
+                    continue;
+                } else {
+                    ret.add("manual");
+                }
+            }
         }
         if (ret.size() == 1) {
             ret = null;
