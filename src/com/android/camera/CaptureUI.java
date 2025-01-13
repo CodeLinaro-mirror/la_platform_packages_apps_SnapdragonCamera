@@ -2734,8 +2734,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mMuteButton.setVisibility(View.INVISIBLE);
             updateOfflineDumpTrigger(View.GONE);
         }
-        mVideoPhotoSize.setVisibility(recording ? View.INVISIBLE : View.VISIBLE);
-        mVideoFps.setVisibility(recording ? View.INVISIBLE : View.VISIBLE);
+        if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR) {
+            mVideoPhotoSize.setVisibility(recording ? View.INVISIBLE : View.VISIBLE);
+            mVideoFps.setVisibility(recording ? View.INVISIBLE : View.VISIBLE);
+        }
     }
     private boolean showMuteButton(){
         String audioSelected = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER);
