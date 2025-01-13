@@ -16806,7 +16806,9 @@ private boolean isDevOptionSetting(){
         double targetRatio = (double) pictureSize.getWidth() / pictureSize.getHeight();
         int index = 0;
         for (Size s : prevSizes) {
-            points[index++] = new Point(s.getWidth(), s.getHeight());
+            if(s.getWidth()*s.getHeight() < pictureSize.getWidth() * pictureSize.getHeight()) {
+                points[index++] = new Point(s.getWidth(), s.getHeight());
+            }
         }
 
         int optimalPickIndex = CameraUtil.getOptimalPreviewSize(mActivity, points, targetRatio);
