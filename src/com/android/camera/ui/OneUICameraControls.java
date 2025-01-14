@@ -18,7 +18,7 @@
  */
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -58,7 +58,7 @@ import org.codeaurora.snapcam.R;
 
 public class OneUICameraControls extends RotatableLayout {
 
-    private static final String TAG = "CAM_Controls";
+    private static final String TAG = "SnapCam_Controls";
 
     private static final float TOP_PANEL_SPACE_NUM = 4f;
     private static final float BOTTOM_PANEL_SPACE_NUM = 5f;
@@ -67,7 +67,7 @@ public class OneUICameraControls extends RotatableLayout {
     private static final float PANEL_INDEX_2 = 2f;
     private static final float PANEL_INDEX_3 = 3f;
     private static final float PANEL_INDEX_4 = 4f;
-    private View mShutter;
+    private View mShutter,mLongShutterStop;
     private ShutterButtonAnim mShutterAnim;
     private int mTotalProgress;
     public RectF mShutterAnimRect;
@@ -163,6 +163,8 @@ public class OneUICameraControls extends RotatableLayout {
     private TextView mBlurChromaV;
     private TextView mChromaStrength;
     private SettingsManager mSettingsManager;
+    private  LinearLayout.LayoutParams mZoomTextParam,mZoomPartTextParam;
+    private int[]mZoomTextWidthHeight;
 
     public OneUICameraControls(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -205,6 +207,7 @@ public class OneUICameraControls extends RotatableLayout {
     public void onFinishInflate() {
         super.onFinishInflate();
         mShutter = findViewById(R.id.shutter_button);
+        mLongShutterStop = findViewById(R.id.longshutter_stopbutton);
         mShutterAnim = findViewById(R.id.shutterbutton_anim);
         mVideoShutter = findViewById(R.id.video_button);
         mExitBestPhotpMode = findViewById(R.id.exit_best_mode);
@@ -571,10 +574,17 @@ public class OneUICameraControls extends RotatableLayout {
         int[]mModeLoc = new int[2];
         bottom.getLocationInWindow(mModeLoc);
         CameraUtil.setModeLayHeight(mModeLoc[1]);
-        SeekBar mZoomSeekBar = (SeekBar) findViewById(R.id.zoom_seekbar);
-        int zoomlocation[] = new int[2];
-        mZoomSeekBar.getLocationInWindow(zoomlocation);
-        CameraUtil.setZoomBarHeight(zoomlocation[1]);
+        setZoomTextLayout();
+    }
+    private void setZoomTextLayout(){
+        LinearLayout mZoomLinearLayout = (LinearLayout) findViewById(R.id.zoom_text_layout);
+
+        int mZoomTextWidth = mZoomLinearLayout.getWidth();
+        int mZoomTextHeight = mZoomLinearLayout.getHeight();
+        mZoomTextWidthHeight = new int[]{mZoomTextWidth,mZoomTextHeight};
+    }
+    public int[] getZoomTextLayoutWH() {
+        return mZoomTextWidthHeight;
     }
 
     public boolean isControlRegion(int x, int y) {
@@ -624,13 +634,14 @@ public class OneUICameraControls extends RotatableLayout {
         } else {
             bW = mWidth / BOTTOM_PANEL_SPACE_NUM;
         }
-        v.setX(bW * idx + (bW - w) / 2);
+        float x_position = bW * idx + (bW - w) / 2;
+        v.setX(x_position);
         if (v == mShutter) {
             mShutterAnimRect = new RectF();
-            mShutterAnimRect.left = bW * idx + (bW - w) / 2 + 5;
-            mShutterAnimRect.top = mHeight - mBottom + (mBottom - h) / 2 + 5;
-            mShutterAnimRect.right = mShutterAnimRect.left + w - 7;
-            mShutterAnimRect.bottom = mShutterAnimRect.top + h - 7;
+            mShutterAnimRect.left = x_position - 4;
+            mShutterAnimRect.top = mHeight - mBottom + (mBottom - h) / 2 - 4;
+            mShutterAnimRect.right = mShutterAnimRect.left + w + 5;
+            mShutterAnimRect.bottom = mShutterAnimRect.top + h + 5;
         }
     }
 
@@ -675,25 +686,26 @@ public class OneUICameraControls extends RotatableLayout {
             setLocation(mMute, true, PANEL_INDEX_1);
             setLocation(mFlashButton, true, PANEL_INDEX_2);
             setLocation(mSettingsButton, true, PANEL_INDEX_3);
-            setLocation(mPauseButton, false, 3.15f);
-            setLocation(mShutter, false, 0.85f);
+            setLocation(mPauseButton, false, 3.4f);
+            setLocation(mShutter, false, 0.5f);
             setLocation(mVideoShutter, false, PANEL_INDEX_2);
             setLocation(mExitBestPhotpMode, false, PANEL_INDEX_4);
         } else {
             setLocation(mFlashButton, true, PANEL_INDEX_2);
             setLocation(mSettingsButton, true, PANEL_INDEX_3);
-            setLocation(mFrontBackSwitcher, false, 3.15f);
+            setLocation(mFrontBackSwitcher, false, 3.4f);
             if (mIntentMode == CaptureModule.INTENT_MODE_CAPTURE) {
                 setLocation(mShutter, false, PANEL_INDEX_2);
-                setLocation(mCancelButton, false, 0.85f);
+                setLocation(mCancelButton, false, 0.5f);
             } else if (mIntentMode == CaptureModule.INTENT_MODE_VIDEO) {
                 setLocation(mVideoShutter, false, PANEL_INDEX_2);
-                setLocation(mCancelButton, false, 0.85f);
+                setLocation(mCancelButton, false, 0.5f);
             } else {
                 setLocation(mVideoShutter, false, PANEL_INDEX_2);
                 setLocation(mShutter, false, PANEL_INDEX_2);
-                setLocation(mPreview, false, 0.85f);
+                setLocation(mPreview, false, 0.5f);
             }
+            setLocation(mLongShutterStop, false, PANEL_INDEX_2);
             setLocation(mExitBestPhotpMode, false, PANEL_INDEX_4);
         }
         setLocationCustomBottom(mMakeupSeekBarLayout, 0, 1);
@@ -1093,7 +1105,7 @@ class ShutterButtonAnim extends View {
             paint.setAntiAlias(true);
             paint.setStyle(Paint.Style.STROKE);
             paint.setPathEffect(new DashPathEffect(new float[]{5, 10}, 0));
-            paint.setStrokeWidth(8);
+            paint.setStrokeWidth(10);
             canvas.drawArc(mcontrol.mShutterAnimRect, -90, ((float) mProgress / mTotalProgress) * 360, false, paint); //
         } else {
             super.onDraw(canvas);

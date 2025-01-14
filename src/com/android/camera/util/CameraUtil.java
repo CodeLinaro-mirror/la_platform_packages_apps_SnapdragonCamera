@@ -15,7 +15,7 @@
  */
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -475,6 +475,27 @@ public class CameraUtil {
                 .setCancelable(false)
                 .setTitle(R.string.camera_error_title)
                 .setMessage(msgId)
+                .setNeutralButton(R.string.dialog_ok, buttonListener)
+                .setIcon(out.resourceId)
+                .show();
+    }
+
+    public static void showErrorDialog(final Activity activity, StringBuilder msg) {
+        if (activity == null || activity.isFinishing())
+            return;
+        DialogInterface.OnClickListener buttonListener =
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                       // activity.finish();
+                    }
+                };
+        TypedValue out = new TypedValue();
+        activity.getTheme().resolveAttribute(android.R.attr.alertDialogIcon, out, true);
+        new AlertDialog.Builder(activity)
+                .setCancelable(false)
+                .setTitle(R.string.session_error_title)
+                .setMessage(msg)
                 .setNeutralButton(R.string.dialog_ok, buttonListener)
                 .setIcon(out.resourceId)
                 .show();
@@ -1833,9 +1854,7 @@ public class CameraUtil {
     public static void setModeLayHeight(int height){
         modeLayHeigh = height;
     }
-    public static void setZoomBarHeight(int height){
-        zoomBarHeigh = height;
-    }
+
     public static class IntegerLock {
         private int value;
 

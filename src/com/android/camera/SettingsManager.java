@@ -136,7 +136,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final int SCENE_MODE_TRACKINGFOCUS_INT = SCENE_MODE_CUSTOM_START + 8;
     public static final int SCENE_MODE_PROMODE_INT = SCENE_MODE_CUSTOM_START + 9;
     public static final int SCENE_MODE_DEEPZOOM_INT = SCENE_MODE_CUSTOM_START + 10;
-	public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
+    public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
     public static final int JPEG_FORMAT = 0;
     public static final int HEIF_FORMAT = 1;
     public static final int JPEG_R_FORMAT = 3;
@@ -302,6 +302,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_FD_GAZE = "pref_camera2_fd_gaze_key";
     public static final String KEY_FD_BLINK = "pref_camera2_fd_blink_key";
     public static final String KEY_FD_GENDER = "pref_camera2_fd_gender_key";
+    public static final String KEY_FD_SKIN_TONE = "pref_camera2_fd_skin_tone_key";
     public static final String KEY_FD_FACE_EXPRESSION = "pref_camera2_fd_face_expression_key";
     public static final String KEY_FACIAL_CONTOUR = "pref_camera2_facial_contour_key";
     public static final String KEY_FACIAL_CONTOUR_VISIBILITY = "pref_camera2_fd_contour_visibility_key";
@@ -395,7 +396,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private Set<String> mFilteredKeys;
     private int[] mExtendedHFRSize;//An array of pairs (fps, maxW, maxH)
     private int[] mSuperBufferSize;
-    private Map<String,VideoEisConfig> mVideoEisConfigs;
     private ArrayList<String> mPrepNameKeys;
     private Map<String, Set<String>> mQuadBayerIds = new HashMap<>();
     private boolean isPreferenceEnable = false;
@@ -956,7 +956,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         initializeValueMap();
         filterChromaflashPictureSizeOptions();
         filterHeifSizeOptions();
-        mVideoEisConfigs = getVideoEisConfigs(cameraId);
         filterHFROptions();
         filterVideoEncoderProfileOptions();
     }
@@ -1383,11 +1382,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Log.d(TAG, "isAvailableUseCase avilibleCase[i]=" + avilibleCase[i]);
                 if (useCaseId == avilibleCase[i]) isSupported = true;
             }
-        }catch(Exception e){
+        } catch (Exception e){
             Log.i(TAG," isAvailableUseCase exception="+e);
         }
         Log.d(TAG,"isAvailableUseCase isSupported="+isSupported);
-       return isSupported;
+        return isSupported;
     }
 
     public boolean isMultiResReprocessEnabled(){
@@ -2867,13 +2866,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
             String str = null;
             MediaCodecList list = new MediaCodecList(MediaCodecList.ALL_CODECS);
             MediaCodecInfo[] codecInfos = list.getCodecInfos();
-            for (MediaCodecInfo info: codecInfos) {
-                if ( info.isEncoder() ) {
-                    int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
-                    if (type != -1){
-                        str = SettingTranslation.getVideoEncoder(type);
-                        if (isCurrentVideoResolutionSupportedByEncoder(info)) {
-                            supported.add(str);
+            if (codecInfos.length > 0) {
+                for (MediaCodecInfo info: codecInfos) {
+                    if ( info.isEncoder() ) {
+                        int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
+                        if (type != -1){
+                            str = SettingTranslation.getVideoEncoder(type);
+                            if (isCurrentVideoResolutionSupportedByEncoder(info)) {
+                                supported.add(str);
+                            }
                         }
                     }
                 }
@@ -2931,20 +2932,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (videoSizeStr != null) {
             Size videoSize = parseSize(videoSizeStr);
             MediaCodecList allCodecs = new MediaCodecList(MediaCodecList.ALL_CODECS);
-            for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
-                if (!info.isEncoder() || info.getName().contains("google")) continue;
-                for (String type : info.getSupportedTypes()) {
-                    if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))) {
-                        CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
-                        videoCapabilities = codecCapabilities.getVideoCapabilities();
-                        findVideoEncoder = true;
-                        break;
+            MediaCodecInfo[] infos = allCodecs.getCodecInfos();
+            if (infos.length > 0) {
+                for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
+                    if (!info.isEncoder() || info.getName().contains("google")) continue;
+                    for (String type : info.getSupportedTypes()) {
+                        if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
+                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
+                            CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
+                            videoCapabilities = codecCapabilities.getVideoCapabilities();
+                            findVideoEncoder = true;
+                            break;
+                        }
                     }
+                    if (findVideoEncoder) break;
                 }
-                if (findVideoEncoder) break;
             }
 
             try {
@@ -3033,20 +3038,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
             Size videoSize = parseSize(videoSizeStr);
             boolean above1080p = videoSize.getHeight() * videoSize.getWidth() > 1920*1080;
             MediaCodecList allCodecs = new MediaCodecList(MediaCodecList.ALL_CODECS);
-            for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
-                if (!info.isEncoder() || info.getName().contains("google")) continue;
-                for (String type : info.getSupportedTypes()) {
-                    if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
-                            || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))) {
-                        CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
-                        videoCapabilities = codecCapabilities.getVideoCapabilities();
-                        findVideoEncoder = true;
-                        break;
+            MediaCodecInfo[] infos = allCodecs.getCodecInfos();
+            if (infos.length > 0) {
+                for (MediaCodecInfo info : infos) {
+                    if (!info.isEncoder() || info.getName().contains("google")) continue;
+                    for (String type : info.getSupportedTypes()) {
+                        if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
+                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
+                            CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
+                            videoCapabilities = codecCapabilities.getVideoCapabilities();
+                            findVideoEncoder = true;
+                            break;
+                        }
                     }
+                    if (findVideoEncoder) break;
                 }
-                if (findVideoEncoder) break;
             }
 
             if (mode == CaptureModule.CameraMode.HFR && isSupportedSuperBuffer(id) &&
@@ -3143,7 +3152,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
             }
         }
-        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported);
+        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported+",supported.size="+supported.size());
         return supported;
     }
 
@@ -3554,13 +3563,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return value;
     }
-    public boolean applyManualFlash(){
+    public boolean isOpenManualFlash(){
         if(CaptureModule.CameraMode.VIDEO != CaptureModule.CURRENT_MODE &&
                 CaptureModule.CameraMode.DEFAULT != CaptureModule.CURRENT_MODE){
             return false;
         }
         String manual = getValue(KEY_CAMERA_MANUALFLASH);
-        String level = getValue(KEY_CAMERA_MANUALFLASH_LEVEL);
         int maxlevel = getMaxFlashLevel();
         String flashmode = getValue(CaptureModule.CURRENT_MODE  == CaptureModule.CameraMode.VIDEO ?
                 SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
@@ -3710,7 +3718,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         VideoCapabilities heifCap = null;
         if (isHeifEnabled) {
             MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
-            for (MediaCodecInfo info :list.getCodecInfos()) {
+            for (MediaCodecInfo info : list.getCodecInfos()) {
                 if (info.isEncoder() && info.getName().contains("heic")){
                     heifCap = info.getCapabilitiesForType(
                             MediaFormat.MIMETYPE_IMAGE_ANDROID_HEIC).getVideoCapabilities();
@@ -4144,7 +4152,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 if (type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC)
-                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)) {
+                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)
+                        || type.equalsIgnoreCase("video/x-mvhevc")) {
                     capabilities = info.getCapabilitiesForType(type).getVideoCapabilities();
                     if (capabilities == null ||
                             !capabilities.getSupportedWidths().contains(videoSize.getWidth()) ||
@@ -4165,19 +4174,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
         String str = null;
         MediaCodecList list = new MediaCodecList(MediaCodecList.ALL_CODECS);
         MediaCodecInfo[] codecInfos = list.getCodecInfos();
-        for (MediaCodecInfo info: codecInfos) {
-            if (!info.isEncoder() || info.getName().contains("google")) continue;
-            Log.d(TAG,BIG_LOG,"name="+info.getName());
-            if (info.getSupportedTypes().length > 0 && info.getSupportedTypes()[0] != null){
-                for (String t : info.getSupportedTypes()){
-                    Log.d(TAG,BIG_LOG,"type="+t);
-                }
-                int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
-                if (type != -1){
-                    str = SettingTranslation.getVideoEncoder(type);
-                    Log.d(TAG,BIG_LOG,"type="+type+" str="+str);
-                    if (isCurrentVideoResolutionSupportedByEncoder(info)) {
-                        supported.add(str);
+        if (codecInfos.length > 0) {
+            for (MediaCodecInfo info: codecInfos) {
+                if (!info.isEncoder() || info.getName().contains("google")) continue;
+                Log.d(TAG,BIG_LOG,"name="+info.getName());
+                if (info.getSupportedTypes().length > 0 && info.getSupportedTypes()[0] != null){
+                    for (String t : info.getSupportedTypes()){
+                        Log.d(TAG,BIG_LOG,"type="+t);
+                    }
+                    int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
+                    if (type != -1){
+                        str = SettingTranslation.getVideoEncoder(type);
+                        if("mvhevc".equalsIgnoreCase(str) && CaptureModule.CameraMode.HFR == CaptureModule.CURRENT_MODE){
+                            continue;
+                        }
+                        Log.d(TAG,BIG_LOG,"type="+type+" str="+str);
+                        if (isCurrentVideoResolutionSupportedByEncoder(info)) {
+                            supported.add(str);
+                        }
                     }
                 }
             }
@@ -4566,12 +4580,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
          return false;
     }
     public List<String> getSupportedPictureFormat(int cameraId){
-        byte supportHeic = 1;
-        try{
-            supportHeic = mCharacteristics.get(cameraId).get(CaptureModule.heic_support_enable);
-        } catch (Exception e){
+        byte supportHeic = 0;
+        MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
+        for (MediaCodecInfo info :list.getCodecInfos()) {
+            if(supportHeic == 1) break;
+            if (info.isEncoder()){
+                for (String type : info.getSupportedTypes()) {
+                    if (type.equalsIgnoreCase(MediaFormat.MIMETYPE_IMAGE_ANDROID_HEIC)) {
+                        supportHeic = 1;
+                        break;
+                    }
+                }
+            }
         }
-
         ArrayList<String> ret = new ArrayList<String>();
         ret.add(String.valueOf(SettingsManager.JPEG_FORMAT));
         if (supportHeic == 1){
@@ -4891,38 +4912,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return sp.getBoolean(SettingsManager.KEY_DEVELOPER_MENU, false);
     }
 
-    private HashMap<String,VideoEisConfig> getVideoEisConfigs(int cameraId) {
-        int[] configs = null;
-        try{
-            configs = mCharacteristics.get(cameraId).get(CaptureModule.eis_config_table);
-        }catch (IllegalArgumentException e){
-
-        }
-        HashMap<String,VideoEisConfig> ret = new HashMap<>();
-        if (configs == null || configs.length == 0 || configs.length%8 != 0)
-            return null;
-        for (int i=0; i < configs.length; i+=8){
-            VideoEisConfig videoEisConfig = new VideoEisConfig();
-            videoEisConfig.setVideoSize(new Size(configs[i],configs[i+1]));
-            videoEisConfig.setMaxPreviewFPS(configs[i+2]);
-            videoEisConfig.setVideoFPS(configs[i+3]);
-            videoEisConfig.setLiveshotSupported(configs[i+4] == 1);
-            videoEisConfig.setEISSupported(configs[i+5] == 1);
-            videoEisConfig.setMaxLiveShotSize(new Size(configs[i+6],configs[i+7]));
-            String key =VideoEisConfig.getKey(videoEisConfig.getVideoSize(),videoEisConfig.getVideoFPS());
-            ret.put(key,videoEisConfig);
-        }
-        return ret;
-    }
-
-    public VideoEisConfig getVideoEisConfig(Size size,int FPS){
-        String key = VideoEisConfig.getKey(size,FPS);
-        if (mVideoEisConfigs != null){
-            return mVideoEisConfigs.get(key);
-        }
-        return null;
-    }
-
     public Size getVideoSize(){
         Size videoSize;
         String videoSizeString = getValue(SettingsManager.KEY_VIDEO_QUALITY);
@@ -4934,25 +4923,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return videoSize;
     }
 
-    public int getVideoPreviewFPS(Size videoSize,int fps) {
-        int previewFPS = 60;
-        SettingsManager.VideoEisConfig config =
-                getVideoEisConfig(videoSize,fps);
-        if (config != null)
-            previewFPS = config.getMaxPreviewFPS();
-        Log.d(TAG,"videoSize="+videoSize.toString()+" fps="+fps+ " previewFPS="+previewFPS);
-        return previewFPS;
-    }
-
-    public Size getMaxLiveShotSize(Size videoSize,int fps){
-        SettingsManager.VideoEisConfig config = getVideoEisConfig(videoSize,fps);
-        if (config != null) {
-            Size liveShotSize = config.getMaxLiveShotSize();
-            Log.i(TAG,"videoSize="+videoSize.toString()+" fps="+fps+ " liveShotSize="+liveShotSize.toString());
-            return liveShotSize;
-        } else {
-            return null;
+    public int getVideoPreviewFPS() {
+        if (PersistUtil.getModelInfo().contains("6735") ||
+                PersistUtil.getModelInfo().contains("4450")) {
+            return 30;
         }
+        return 60;
     }
 
     public Size parsePictureSize(String value) {
@@ -4963,28 +4939,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         int width = Integer.parseInt(value.substring(0, indexX));
         int height = Integer.parseInt(value.substring(indexX + 1));
         return new Size(width, height);
-    }
-
-    public boolean isLiveshotSupported(Size videoSize, int fps){
-        if (PersistUtil.isPersistVideoLiveshot())
-            return true;
-        SettingsManager.VideoEisConfig config =
-                getVideoEisConfig(videoSize,fps);
-        if(config != null ){
-            return config.isLiveshotSupported();
-        }
-        return true;
-    }
-
-    public boolean isEISSupported(Size videoSize,int fps){
-        if (PersistUtil.isPersistVideoEis())
-            return true;
-        SettingsManager.VideoEisConfig config =
-                getVideoEisConfig(videoSize,fps);
-        if(config != null){
-            return config.isEISSupported();
-        }
-        return false;
     }
 
     public int getVideoFPS(){
@@ -5052,76 +5006,4 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return false;
     }
-    public static class VideoEisConfig{
-        private Size mVideoSize;
-        private int mVideoFPS;
-        private int mMaxPreviewFPS;
-        private boolean mIsLiveshotSupported;
-        private boolean mIsEISSupported;
-        private Size mMaxLiveShotSize;
-
-        public Size getVideoSize() {
-            return mVideoSize;
-        }
-
-        public void setVideoSize(Size mVideoSize) {
-            this.mVideoSize = mVideoSize;
-        }
-
-        public int getVideoFPS() {
-            return mVideoFPS;
-        }
-
-        public void setVideoFPS(int mVideoFPS) {
-            this.mVideoFPS = mVideoFPS;
-        }
-
-        public int getMaxPreviewFPS() {
-            return mMaxPreviewFPS;
-        }
-
-        public void setMaxPreviewFPS(int mMaxPreviewFPS) {
-            this.mMaxPreviewFPS = mMaxPreviewFPS;
-        }
-
-        public boolean isLiveshotSupported() {
-            return mIsLiveshotSupported;
-        }
-
-        public void setLiveshotSupported(boolean mIsLiveshotSupported) {
-            this.mIsLiveshotSupported = mIsLiveshotSupported;
-        }
-
-        public boolean isEISSupported() {
-            return mIsEISSupported;
-        }
-
-        public void setEISSupported(boolean mIsEISSupported) {
-            this.mIsEISSupported = mIsEISSupported;
-        }
-
-        public Size getMaxLiveShotSize() {
-            return mMaxLiveShotSize;
-        }
-
-        public void setMaxLiveShotSize(Size mMaxLiveShotSize) {
-            this.mMaxLiveShotSize = mMaxLiveShotSize;
-        }
-
-        public static String getKey(Size size,int FPS){
-            return size.toString()+"-"+String.valueOf(FPS);
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append(" VideoSize="+mVideoSize.toString());
-            builder.append(" VideoFPS="+mVideoFPS);
-            builder.append(" LiveshotSupported="+mIsLiveshotSupported);
-            builder.append(" EISSupported="+mIsEISSupported);
-            builder.append(" MaxLiveShotSize="+mMaxLiveShotSize.toString());
-            return builder.toString();
-        }
-    }
-
 }

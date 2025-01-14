@@ -19,7 +19,7 @@
  */
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -87,6 +87,7 @@ import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaMuxer;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.MicrophoneInfo;
 import android.net.Uri;
@@ -296,6 +297,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mIsFacialMaskSupported = true;
     private boolean mIsUpperBodySupported = true;
     private boolean mIsPetDetectionSupported = true;
+    private boolean mIsSkinToneSupported = true;
 
     /** For temporary save warmstart gains and cct value*/
     private float mRGain = -1.0f;
@@ -384,6 +386,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static CameraCharacteristics.Key<float[]> WB_RGB_GAINS_RANGE =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.manualWB.gains_range", float[].class);
 
+    public static final CaptureRequest.Key<Byte> spatialVideo =
+            new CaptureRequest.Key<>("com.qti.qualcomm.spatialVideo.SpatialVideoMode", byte.class);
+
     public static CaptureResult.Key<Integer> buckets =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.histogram.buckets", Integer.class);
     public static CameraCharacteristics.Key<Integer> maxCount =
@@ -439,8 +444,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.quic.camera.AutoHDRSupport.isAutoHDRSupported", Byte.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_qll =
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.isQLLSupported", Integer.class);
-    public static CameraCharacteristics.Key<Integer> support_insensor_zoom =
-            new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.inSensorZoomCapability", Integer.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
     public static CameraCharacteristics.Key<int[]> support_dcg_bits_tags =
@@ -477,6 +480,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static CaptureResult.Key<byte[]> petResults =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.pet_results",
                     byte[].class);
+    private static CaptureResult.Key<byte[]> skinToneResults =
+            new CaptureResult.Key<>("com.qualcomm.qti.fdResult.skinTone",
+                    byte[].class);
     public static CaptureRequest.Key<Byte> facialContourVersion =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.contour_version",
                     Byte.class);
@@ -497,6 +503,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Byte.class);
     public static final CaptureRequest.Key<Byte> petEnable  =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.pet_detection_mode",
+                    Byte.class);
+    public static final CaptureRequest.Key<Byte> skinToneEnable  =
+            new CaptureRequest.Key<>("com.qualcomm.qti.fdMode.skinTone",
                     Byte.class);
     public static final CaptureRequest.Key<Byte> FACE_EXPRESSION_ENABLE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.facial_attr.face_expression_enable",
@@ -720,8 +729,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMCTFwithReferenceFrame", byte.class);
     public static final CaptureRequest.Key<Byte> enable_statsvisualizer =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableStatsVisualizer", byte.class);
-    public static final CaptureRequest.Key<Integer> insensor_zoom_feature =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableInsensorZoom", Integer.class);
     private static final CaptureRequest.Key<Byte> xcfa_optimization =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableXCFAOptimization", byte.class);
     private static final CaptureRequest.Key<Integer> horizon_level_control =
@@ -737,8 +744,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.isDepthFocus.isDepthFocus", byte.class);
     private static final CaptureRequest.Key<Byte> capture_burst_fps =
             new CaptureRequest.Key<>("org.quic.camera.BurstFPS.burstfps", byte.class);
-    public static final CameraCharacteristics.Key<int[]> eis_config_table = new CameraCharacteristics.Key<>(
-            "org.quic.camera2.VideoConfigurations.info.VideoConfigurationsTable",int[].class);
     public static final CameraCharacteristics.Key<Byte> is_camera_fd_supported = new CameraCharacteristics.Key<>(
             "org.quic.camera.FDRendering.isFDRenderingInCameraUISupported",byte.class);
     private static final CaptureRequest.Key<Byte> custom_noise_reduction =  new CaptureRequest.Key<>(
@@ -758,9 +763,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.SensorModeFS", byte.class);
     public static CameraCharacteristics.Key<Byte> fs_mode_support =
             new CameraCharacteristics.Key<>("org.quic.camera.SensorModeFS.isFastShutterModeSupported", Byte.class);
-
-    public static final CameraCharacteristics.Key<Byte> heic_support_enable =
-            new CameraCharacteristics.Key<>("org.quic.camera.HEICSupport.HEICEnabled",Byte.class);
 
     // Touch Track Focus
     public static final CaptureRequest.Key<Byte> t2t_enable = new CaptureRequest.Key<>(
@@ -1731,7 +1733,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     boolean contourEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FACIAL_CONTOUR);
                     if (bsgEnable || contourEnable || isFacePointOn()
                             || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_FACE_EXPRESSION)
-                            || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GENDER)) {
+                            || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GENDER)
+                            || mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_SKIN_TONE)) {
                         updateFaceView(faces, getBsgcInfo(result, faces));
                     } else {
                         updateFaceView(faces, null);
@@ -2059,7 +2062,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                     Log.v(TAG, BIG_LOG,"mT2TTrackState :" + mT2TTrackState +
                             ", trackerScore :" +trackerScore+", resultROI :" + resultROI);
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | BufferUnderflowException e) {
                 Log.d(TAG,EXCEPTION_LOG,e.toString());
             }
         }
@@ -2192,7 +2195,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                     int binCount = result.get(CaptureModule.buckets);
                     int statsType = result.get(CaptureModule.stats_type);
-                    Log.d(TAG, BIG_LOG,"binCount:" + binCount + ",statsType:" + statsType + ",data length:" + histogramStats.length);
+                    Log.d(TAG, "binCount:" + binCount + ",statsType:" + statsType + ",data length:" + histogramStats.length);
                     if (statsType == 6 && binCount == 256) {
                         updateRGBGraghViewVisibility(View.INVISIBLE);
                         updateGraghViewVisibility(View.VISIBLE);
@@ -2203,7 +2206,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         updateRGBGraghView();
                     }
                 }
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
 
@@ -2216,10 +2220,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 bgRStats = result.get(CaptureModule.bgRStats);
                 bgGStats = result.get(CaptureModule.bgGStats);
                 bgBStats = result.get(CaptureModule.bgBStats);
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | NullPointerException e) {
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
-            Log.i(TAG,"BG, bgRStats:" + bgRStats + ",bgGStats:" + bgGStats + ",bgBStats:" + bgBStats + ",mBGStatson:" + mBGStatson);
+            Log.d(TAG,"BG, bgRStats:" + bgRStats + ",bgGStats:" + bgGStats + ",bgBStats:" + bgBStats + ",mBGStatson:" + mBGStatson);
 
             if (bgRStats != null && bgGStats != null && bgBStats != null && mBGStatson) {
                 synchronized (bg_r_statsdata) {
@@ -2263,16 +2267,15 @@ public class CaptureModule implements CameraModule, PhotoController,
                 beRStats = result.get(CaptureModule.beRStats);
                 beGStats = result.get(CaptureModule.beGStats);
                 beBStats = result.get(CaptureModule.beBStats);
-
+                Log.d(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
                 norm_roi_x = result.get(CaptureModule.roiBeX);
                 norm_roi_y = result.get(CaptureModule.roiBeY);
                 norm_roi_dx = result.get(CaptureModule.roiBeWidth);
                 norm_roi_dy = result.get(CaptureModule.roiBeHeight);
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG, EXCEPTION_LOG,"there is no vendor roiBeX/roiBeY/roiBeWidth/roiBeHeight");
+            } catch (IllegalArgumentException | NullPointerException e ) {
+                Log.w(TAG, EXCEPTION_LOG," read vendor roiBeX/roiBeY/roiBeWidth/roiBeHeight exception="+e
+                +",CaptureModule.roiBeX ="+result.get(CaptureModule.roiBeX));
             }
-            Log.i(TAG,"BE, beRStats:" + beRStats + ",beGStats:" + beGStats + ",beBStats:" + beBStats + ",mBEStatson:" + mBEStatson);
-
 
             if (beRStats != null && beGStats != null && beBStats != null && mBEStatson) {
 
@@ -2327,8 +2330,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 rsRStats = result.get(CaptureModule.rsStats);
                 rsGStats = result.get(CaptureModule.rsStats);
                 rsBStats = result.get(CaptureModule.rsStats);
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG, EXCEPTION_LOG,"there is no vendor for rs");
+            } catch (IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG, EXCEPTION_LOG, e.toString());
             }
 
             if (rsRStats != null && rsGStats != null && beBStats != null && mRSStatson) {
@@ -2371,7 +2374,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     });
                 }
             } catch (IllegalArgumentException | NullPointerException e) {
-                Log.w(TAG,e.toString());
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         } else {
             mUI.updateAWBInfoVisibility(View.GONE);
@@ -2392,8 +2395,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 aecinfo_data[7] = Long.toString(mAecFramecontrolExosureTime[0]);
                 aecinfo_data[8] = Long.toString(mAecFramecontrolExosureTime[2]);
                 aecinfo_data[9] = Long.toString(mAecFramecontrolExosureTime[1]);
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG,e.toString());
+            } catch (IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
 
             try{
@@ -2442,7 +2445,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 afdinfo_data[14] = String.format("%.5f",result.get(avg_rolling_energy));
                 afdinfo_data[15] = String.format("%.5f",result.get(avg_static_energy));
             }catch (NullPointerException|IllegalArgumentException e){
-
+                Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
             synchronized (afdinfo_data) {
                 mActivity.runOnUiThread(new Runnable() {
@@ -3805,7 +3808,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     Log.i(TAG," set physical id " + physicalCameraId + "for image reader stream");
                                     outputConfiguration.setPhysicalCameraId(physicalCameraId);
                                 }
-                                if(mRawImageReader[id] != null && s == mRawImageReader[id].getSurface()){
+                                if((mRawImageReader[id] != null && s == mRawImageReader[id].getSurface()) || isInSensorZoomEnabled()){
                                     applyCroppedRaw(outputConfiguration, getMainCameraId());
                                 }
                                 if(s == mImageReader[id].getSurface() && mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT) {
@@ -4025,7 +4028,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             +reader.getWidth()+"x"+reader.getHeight());
                 }
             }
-        }else if(mSaveRaw){
+        } else if(mSaveRaw){
             int physicalId = mActiveCameraIds.get(0);
             Log.d(TAG," mActiveCameraIds="+physicalId);
                     for( int i = 0;i < mPhysicalRawId.length;i++){
@@ -4231,6 +4234,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     OutputConfiguration configuration_jpeg = new OutputConfiguration(
                             mPhysicalJpegReader[i].getSurface());
                     configuration_jpeg.setPhysicalCameraId(id);
+
                     outputConfigurations.add(configuration_jpeg);
                     Log.d(TAG, "add jpeg output format=jpeg physicalId=" + id + " size="
                             + mPhysicalJpegReader[i].getWidth() + "x" + mPhysicalJpegReader[i].getHeight() + ",mPhysicalJpegReader[i].getSurface()=" + mPhysicalJpegReader[i].getSurface());
@@ -4366,7 +4370,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             mIsPreviewingVideo = true;
             if (isHighSpeedRateCapture()) {
-                if(mSettingsManager.isBatchMode(getMainCameraId()) && mVideoRecordingSurface != null){
+                if((mSettingsManager.isBatchMode(getMainCameraId()) || mCurrentSceneMode.mode == CameraMode.HFR) && mVideoRecordingSurface != null){
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                 }
                 createHighSpeedSession(cameraId);
@@ -5291,8 +5295,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applySettingsForLockExposure(captureBuilder, id);
             }
             if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) && !isLongExpTmCaptrure()) {
+                Log.d(TAG," set CONTROL_ENABLE_ZSL true");
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, true);
             } else {
+                Log.d(TAG," set CONTROL_ENABLE_ZSL false");
                 captureBuilder.set(CaptureRequest.CONTROL_ENABLE_ZSL, false);
             }
             if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
@@ -7380,7 +7386,7 @@ private boolean isDevOptionSetting(){
                        double tmpValue = 1000000;
                        double time = mLongExpTime / tmpValue;
                        int expTime = new Double(time).intValue();
-                           mUI.startShutterAnim(expTime);
+                       mUI.startShutterAnim(expTime);
                    }
                }
            });
@@ -7695,6 +7701,9 @@ private boolean isDevOptionSetting(){
         } else {
             builder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+            if(mSettingsManager.isOpenManualFlash() && !isManualAEC){
+                builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+            }
         }
 
         // For long shot, torch mode is used
@@ -7809,7 +7818,6 @@ private boolean isDevOptionSetting(){
             applyExtendMaxZoom(builder);
             applyMctf(builder);
             applyQLL(builder);
-            applyInSensorZoom(builder);
             applyIntegratedMode(builder);
             applyEnableStatsVisualizer(builder);
             applyShadingCorrection(builder);
@@ -7838,6 +7846,7 @@ private boolean isDevOptionSetting(){
                 applyBufferMode(builder);
             }else if(mCurrentSceneMode.mode == CameraMode.VIDEO){
                 applyFRC(builder);
+                applySpatialVideo(builder);
             }
         }
         if (mCurrentSceneMode.mode == CameraMode.DEFAULT
@@ -7924,7 +7933,8 @@ private boolean isDevOptionSetting(){
 
     private void applyFlashMode(CaptureRequest.Builder builder) {
         String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
-        if(isCaptureBrustMode() || mCaptureTorchTrigger){
+        Log.i(TAG,"isflashRequired:" + isflashRequired  + ",mCaptureTorchTrigger:" + mCaptureTorchTrigger + ",isCaptureBrustMode():" + isCaptureBrustMode());
+        if(isCaptureBrustMode() || "off".equals(flashMode)){
             return;
         }
         if (isflashRequired){
@@ -8137,6 +8147,16 @@ private boolean isDevOptionSetting(){
     @Override
     public void onPreviewFocusChanged(boolean previewFocused) {
         mUI.onPreviewFocusChanged(previewFocused);
+    }
+    public void LongShotAbortCapture() {
+        if (mCurrentSession != null && mIsLongExpTmCp) {
+            try {
+                mCurrentSession.abortCaptures();
+                mIsLongExpTmCp = false;
+            } catch (Exception e) {
+                Log.e(TAG, e);
+            }
+        }
     }
 
     @Override
@@ -8786,10 +8806,10 @@ private boolean isDevOptionSetting(){
             initializeSecondTime();
         }
         mActivity.runOnUiThread(() -> {
+            updateZoom();
             mUI.reInitUI();
             setProModeVisible();
             seBlurConfigSlideVisible();
-            updateZoom();
             updateZoomSeekBarVisible();
             updateAICameraSeekBar();
             updateMFNRText();//this must before showRelatedIcons, color filter based on mfnr
@@ -8987,11 +9007,8 @@ private boolean isDevOptionSetting(){
     public boolean updateZoomChanged(float requestedZoom) {
         Log.d(TAG,"updateZoomChanged,mPaused:" + mPaused + ",mResumed:" +mResumed+",requestedZoom="+requestedZoom);
         if (mIsRTBCameraId || isTakingPicture() || !mResumed) return false;
-        float diff = Math.abs(mZoomValue - requestedZoom);
-        if ((requestedZoom>=1.0 && diff> 0.01) || (requestedZoom < 1.0 && diff> 0.01)) {
-            mZoomValue = requestedZoom;
-            applyZoomAndUpdate();
-        }
+        mZoomValue = requestedZoom;
+        applyZoomAndUpdate();
         return true;
     }
 
@@ -9440,8 +9457,12 @@ private boolean isDevOptionSetting(){
         }
     }
     public boolean isLongExpTmCaptrure(){
-        Log.d(TAG,"mLongExpTime="+mLongExpTime+",maxExpTime="+maxExpTime);
         if(mCurrentSceneMode.mode == CameraMode.PRO_MODE && isTakingPicture() && mIsLongExpTmCp && mLongExpTime >maxExpTime) return true;
+        else return false;
+    }
+    public boolean isLongExptime(){
+        Log.d(TAG,"mLongExpTime="+mLongExpTime);
+        if(mCurrentSceneMode.mode == CameraMode.PRO_MODE  && mLongExpTime > maxExpTime) return true;
         else return false;
     }
     public boolean isTakingPicture() {
@@ -9451,7 +9472,7 @@ private boolean isDevOptionSetting(){
         return false;
     }
 
-    private boolean isRTBModeInSelectMode() {
+    public boolean isRTBModeInSelectMode() {
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         if(selectMode != null && selectMode.equals("rtb")){
             return true;
@@ -9480,17 +9501,18 @@ private boolean isDevOptionSetting(){
     private ExtendedFace[] getBsgcInfo(CaptureResult captureResult, Face[] faces) {
         final int size = faces.length;
         if (captureResult == null || size == 0) {
-            Log.d(FD_TAG,FD_LOG,"extendface size ="+size);
+            Log.d(FD_TAG, FD_LOG, "extendface size =" + size);
             return null;
         }
         ExtendedFace[] extendedFaces = new ExtendedFace[size];
-        boolean bsgEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_SMILE)||
-                mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GAZE)||
+        boolean bsgEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_SMILE) ||
+                mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GAZE) ||
                 mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_BLINK);
         boolean contourEnable = mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FACIAL_CONTOUR);
         boolean facePointEnable = isFacePointOn();
-        try {
-            if (bsgEnable) {
+
+        if (bsgEnable) {
+            try {
                 byte[] blinkDetectedArray = captureResult.get(blinkDetected);
                 Log.d(FD_TAG, FD_LOG, "blinkDetectedArray=" + Arrays.toString(blinkDetectedArray));
                 byte[] blinkDegreesArray = captureResult.get(blinkDegree);
@@ -9499,7 +9521,7 @@ private boolean isDevOptionSetting(){
                 Log.d(FD_TAG, FD_LOG, "gazeDirectionArray=" + Arrays.toString(gazeDirectionArray));
                 byte[] gazeAngleArray = captureResult.get(gazeAngle);
 
-                Log.d(FD_TAG,FD_LOG,"gazeAngleArray="+Arrays.toString(gazeAngleArray));
+                Log.d(FD_TAG, FD_LOG, "gazeAngleArray=" + Arrays.toString(gazeAngleArray));
                 for (int i = 0; i < size; i++) {
                     ExtendedFace tmp = new ExtendedFace(faces[i].getId());
                     try {
@@ -9519,43 +9541,51 @@ private boolean isDevOptionSetting(){
                     }
                     extendedFaces[i] = tmp;
                 }
+            } catch (IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG, "getBsgcInfo =" + e);
             }
-            if (contourEnable || facePointEnable) {
+        }
+        if (contourEnable || facePointEnable) {
+            try {
                 String contourMode = mSettingsManager.getValue(SettingsManager.KEY_FACIAL_CONTOUR);
                 byte[] contour_all = null;
                 byte[] contourPoints = null;
                 int[] visibility = null;
-                int[]points = null;
-                int[]visib = null;
+                int[] points = null;
+                int[] visib = null;
                 if ("5".equals(contourMode) || "6".equals(contourMode) ||
                         "7".equals(contourMode) || "8".equals(contourMode)) {
                     contourPoints = captureResult.get(CaptureModule.contourPointsExtend);
                     contour_all = captureResult.get(CaptureModule.contourPointsExtend);
                     int faceContour = PersistUtil.getPersistFaceContourHeaderSize();
-                     int numPointsPerFace = byteArray2Int(contour_all,8);
-                     int numFaces = byteArray2Int(contour_all,12);
-                     int offSet = byteArray2Int(contour_all,16);
-                    Log.d(FD_TAG, FD_LOG,"FaceContour result header size is "+ faceContour+
-                            ",contour_all.length="+contour_all.length+",numPointsPerFace="+numPointsPerFace
-                    +",numFaces="+numFaces+",offset="+offSet);
+                    int numPointsPerFace = byteArray2Int(contour_all, 8);
+                    int numFaces = byteArray2Int(contour_all, 12);
+                    int offSet = byteArray2Int(contour_all, 16);
+                    Log.d(FD_TAG, FD_LOG, "FaceContour result header size is " + faceContour +
+                            ",contour_all.length=" + contour_all.length + ",numPointsPerFace=" + numPointsPerFace
+                            + ",numFaces=" + numFaces + ",offset=" + offSet);
 
-                    int arrayindex = faceContour*4;
-                    points = new int[numPointsPerFace*numFaces*2];
+                    int arrayindex = faceContour * 4;
+                    points = new int[numPointsPerFace * numFaces * 2];
 
-                    for (int i = 0; i < numPointsPerFace*numFaces*2; i++) {
-                        points[i] = byteArray2Int(contour_all,arrayindex);
+                    for (int i = 0; i < numPointsPerFace * numFaces * 2; i++) {
+                        points[i] = byteArray2Int(contour_all, arrayindex);
                         arrayindex += 4;
                     }
-                    Log.d(FD_TAG,FD_LOG,"000Version=V "+ contourMode +",points="+Arrays.toString(points)
-                            +",point.len="+points.length);
-                    if(mSettingsManager.isFdFeatureDisplay(mSettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY) && offSet > 0) {
-                        visib = new int[numPointsPerFace*numFaces];
+                    Log.d(FD_TAG, FD_LOG, "000Version=V " + contourMode + ",points=" + Arrays.toString(points)
+                            + ",point.len=" + points.length);
+                    if (mSettingsManager.isFdFeatureDisplay(mSettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY) && offSet > 0) {
+                        visib = new int[numPointsPerFace * numFaces];
                         for (int i = 0; i < numPointsPerFace * numFaces; i++) {
-                            visib[i] = contour_all[arrayindex];
-                            arrayindex += 1;
+                            if(arrayindex < contour_all.length) {
+                                visib[i] = contour_all[arrayindex];
+                                arrayindex += 1;
+                            }else{
+                                break;
+                            }
                         }
-                        Log.d(FD_TAG,FD_LOG,",visibility="+Arrays.toString(visib)
-                                +",point.len="+points.length+",visib.len="+visib.length);
+                        Log.d(FD_TAG, FD_LOG, ",visibility=" + Arrays.toString(visib)
+                                + ",point.len=" + points.length + ",visib.len=" + visib.length);
                     }
                 }
                 int[] landmarkPoints = new int[6 * faces.length];
@@ -9570,7 +9600,7 @@ private boolean isDevOptionSetting(){
                     }
                 } catch (Exception e) {
                 }
-                Log.d(FD_TAG,FD_LOG,"landmarkPoints="+Arrays.toString(landmarkPoints));
+                Log.d(FD_TAG, FD_LOG, "landmarkPoints=" + Arrays.toString(landmarkPoints));
                 ExtendedFace tmp;
                 if (extendedFaces[0] == null) {
                     tmp = new ExtendedFace(faces[0].getId());
@@ -9581,108 +9611,157 @@ private boolean isDevOptionSetting(){
                 tmp.setVisibility(visib);
                 tmp.setContour(points);
                 tmp.setLandMarks(landmarkPoints);
+            } catch (IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG, "getContour exception=" + e);
             }
-
-            if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GENDER)) {
-                try {
-                    byte[] genderArray = captureResult.get(GENDER);
-                    Log.d(FD_TAG, FD_LOG, "genderArray=" + Arrays.toString(genderArray));
-                    if (genderArray == null) {
-                        throw new RuntimeException("gender result is null");
-                    }
-                    int arrayIndex = 0;
-                    final int version = byteArray2Int(genderArray, arrayIndex);
-                    arrayIndex += 4;
-                    Log.d(FD_TAG, FD_LOG, "fd gender version " + version);
-                    final int faceNum = byteArray2Int(genderArray, arrayIndex);
-                    arrayIndex += 12;
-                    Log.d(FD_TAG, FD_LOG, "fd gender faceNum " + faceNum);
-                    for (int i = 0; i < faceNum; i++) {
-                        final int gender = byteArray2Int(genderArray, arrayIndex);
-                        arrayIndex += 4;
-                        Log.d(FD_TAG, FD_LOG, "fd gender index " + gender);
-                        final int face_id = byteArray2Int(genderArray, arrayIndex);
-                        arrayIndex += 4;
-                        Log.d(FD_TAG, FD_LOG,"fd gender face_id " + face_id);
-                        int genderCount = ExtendedFace.FDGenderIndex.values().length;
-                        int[] confidences = new int[genderCount];
-                        for (int j = 0; j < genderCount; j++) {
-                            confidences[j] = byteArray2Int(genderArray, arrayIndex);
-                            arrayIndex += 4;
-                            Log.d(FD_TAG, FD_LOG, "fd gender confidence " + j + " " + confidences[j]);
-                        }
-                        ExtendedFace tmp = null;
-                        int k_ = 0;
-                        for (int k = 0; k < faces.length; k++) {
-                            if (faces[k] != null && face_id == faces[k].getId()) {
-                                k_ = k;
-                                break;
-                            }
-                        }
-                        tmp = extendedFaces[k_];
-                        if (tmp == null) {
-                            tmp = new ExtendedFace(face_id);
-                        }
-                        tmp.setGender(gender);
-                        tmp.setGenderConfidence(confidences);
-                        extendedFaces[k_] = tmp;
-                    }
-                } catch (Exception e) {
-                    Log.w(TAG, "GENDER exception = " + e.fillInStackTrace());
-                }
-
-            }
-
-            if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_FACE_EXPRESSION)) {
-                try {
-                    byte[] expressionArray = captureResult.get(FACE_EXPRESSION);
-                    Log.d(FD_TAG, FD_LOG, "expressionArray=" + Arrays.toString(expressionArray));
-                    int expressionCount = ExtendedFace.FDExpressionIndex.values().length;
-                    int arrayIndex = 0;
-                    final int version = byteArray2Int(expressionArray, arrayIndex);
-                    arrayIndex += 4;
-                    Log.d(FD_TAG, FD_LOG, "fd expression version " + version);
-                    final int faceNum = byteArray2Int(expressionArray, arrayIndex);
-                    arrayIndex += 12;
-                    Log.d(FD_TAG, FD_LOG, "fd expression faceNum " + faceNum);
-                    for (int i = 0; i < faceNum; i++) {
-                        final int faceExpression = byteArray2Int(expressionArray, arrayIndex);
-                        arrayIndex += 4;
-                        Log.d(FD_TAG, FD_LOG, "fd expression index " + faceExpression);
-                        final int face_id = byteArray2Int(expressionArray, arrayIndex);
-                        arrayIndex += 4;
-                        Log.d(FD_TAG, FD_LOG, "fd expression face_id " + face_id);
-                        int[] confidences = new int[expressionCount];
-                        for (int j = 0; j < expressionCount; j++) {
-                            confidences[j] = byteArray2Int(expressionArray, arrayIndex);
-                            arrayIndex += 4;
-                            Log.d(FD_TAG, FD_LOG, "fd expression confidence " + j + " " + confidences[j]);
-                        }
-                        ExtendedFace tmp = null;
-                        int k_ = 0;
-                        for (int k = 0; k < faces.length; k++) {
-                            if (faces[k] != null && face_id == faces[k].getId()) {
-                                k_ = k;
-                                break;
-                            }
-                        }
-                        tmp = extendedFaces[k_];
-                        if (tmp == null) {
-                            tmp = new ExtendedFace(face_id);
-                        }
-                        tmp.setFaceExpression(faceExpression);
-                        tmp.setFaceExpressionConfidences(confidences);
-                        extendedFaces[k_] = tmp;
-                    }
-                } catch (Exception e) {
-                    Log.w(TAG,"FACE_EXPRESSION = " + e.fillInStackTrace());
-                }
-            }
-        } catch (IllegalArgumentException|NullPointerException e){
-            Log.w(TAG,"getBsgcInfo =" + e);
         }
+
+
+        if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_GENDER)) {
+            try {
+                byte[] genderArray = captureResult.get(GENDER);
+                Log.d(FD_TAG, FD_LOG, "genderArray=" + Arrays.toString(genderArray));
+                if (genderArray == null) {
+                    throw new RuntimeException("gender result is null");
+                }
+                int arrayIndex = 0;
+                final int version = byteArray2Int(genderArray, arrayIndex);
+                arrayIndex += 4;
+                Log.d(FD_TAG, FD_LOG, "fd gender version " + version);
+                final int faceNum = byteArray2Int(genderArray, arrayIndex);
+                arrayIndex += 12;
+                Log.d(FD_TAG, FD_LOG, "fd gender faceNum " + faceNum);
+                for (int i = 0; i < faceNum; i++) {
+                    final int gender = byteArray2Int(genderArray, arrayIndex);
+                    arrayIndex += 4;
+                    Log.d(FD_TAG, FD_LOG, "fd gender index " + gender);
+                    final int face_id = byteArray2Int(genderArray, arrayIndex);
+                    arrayIndex += 4;
+                    Log.d(FD_TAG, FD_LOG, "fd gender face_id " + face_id);
+                    int genderCount = ExtendedFace.FDGenderIndex.values().length;
+                    int[] confidences = new int[genderCount];
+                    for (int j = 0; j < genderCount; j++) {
+                        confidences[j] = byteArray2Int(genderArray, arrayIndex);
+                        arrayIndex += 4;
+                        Log.d(FD_TAG, FD_LOG, "fd gender confidence " + j + " " + confidences[j]);
+                    }
+                    ExtendedFace tmp = null;
+                    int k_ = 0;
+                    for (int k = 0; k < faces.length; k++) {
+                        if (faces[k] != null && face_id == faces[k].getId()) {
+                            k_ = k;
+                            break;
+                        }
+                    }
+                    tmp = extendedFaces[k_];
+                    if (tmp == null) {
+                        tmp = new ExtendedFace(face_id);
+                    }
+                    tmp.setGender(gender);
+                    tmp.setGenderConfidence(confidences);
+                    extendedFaces[k_] = tmp;
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "GENDER exception = " + e.fillInStackTrace());
+            }
+
+        }
+
+        if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_FACE_EXPRESSION)) {
+            try {
+                byte[] expressionArray = captureResult.get(FACE_EXPRESSION);
+                Log.d(FD_TAG, FD_LOG, "expressionArray=" + Arrays.toString(expressionArray));
+                int expressionCount = ExtendedFace.FDExpressionIndex.values().length;
+                int arrayIndex = 0;
+                final int version = byteArray2Int(expressionArray, arrayIndex);
+                arrayIndex += 4;
+                Log.d(FD_TAG, FD_LOG, "fd expression version " + version);
+                final int faceNum = byteArray2Int(expressionArray, arrayIndex);
+                arrayIndex += 12;
+                Log.d(FD_TAG, FD_LOG, "fd expression faceNum " + faceNum);
+                for (int i = 0; i < faceNum; i++) {
+                    final int faceExpression = byteArray2Int(expressionArray, arrayIndex);
+                    arrayIndex += 4;
+                    Log.d(FD_TAG, FD_LOG, "fd expression index " + faceExpression);
+                    final int face_id = byteArray2Int(expressionArray, arrayIndex);
+                    arrayIndex += 4;
+                    Log.d(FD_TAG, FD_LOG, "fd expression face_id " + face_id);
+                    int[] confidences = new int[expressionCount];
+                    for (int j = 0; j < expressionCount; j++) {
+                        confidences[j] = byteArray2Int(expressionArray, arrayIndex);
+                        arrayIndex += 4;
+                        Log.d(FD_TAG, FD_LOG, "fd expression confidence " + j + " " + confidences[j]);
+                    }
+                    ExtendedFace tmp = null;
+                    int k_ = 0;
+                    for (int k = 0; k < faces.length; k++) {
+                        if (faces[k] != null && face_id == faces[k].getId()) {
+                            k_ = k;
+                            break;
+                        }
+                    }
+                    tmp = extendedFaces[k_];
+                    if (tmp == null) {
+                        tmp = new ExtendedFace(face_id);
+                    }
+                    tmp.setFaceExpression(faceExpression);
+                    tmp.setFaceExpressionConfidences(confidences);
+                    extendedFaces[k_] = tmp;
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "FACE_EXPRESSION = " + e.fillInStackTrace());
+            }
+        }
+            if (mSettingsManager.isFdFeatureDisplay(SettingsManager.KEY_FD_SKIN_TONE)) {
+                try {
+                    byte[] skinToneArray = captureResult.get(skinToneResults);
+                    Log.d(FD_TAG, FD_LOG, "skinToneArray=" + Arrays.toString(skinToneArray));
+                    int skinToneCount = ExtendedFace.FDSkineToneIndex.values().length;
+                    int arrayIndex = 0;
+                    final int version = byteArray2Int(skinToneArray, arrayIndex);
+                    arrayIndex += 4;
+                    Log.d(FD_TAG, FD_LOG, "fd skinTone version " + version);
+                    final int faceNum = byteArray2Int(skinToneArray, arrayIndex);
+                    arrayIndex += 12;
+                    Log.d(FD_TAG, FD_LOG, "fd skinTone faceNum:" + faceNum);
+                    for (int i = 0; i < faceNum; i++) {
+                        final int face_id = byteArray2Int(skinToneArray, arrayIndex);
+                        arrayIndex += 4;
+                        Log.d(FD_TAG, FD_LOG, "fd skinTone face_id:" + face_id);
+                        final int faceSkinTone = byteArray2Int(skinToneArray, arrayIndex);
+                        arrayIndex += 4;
+                        Log.d(FD_TAG, FD_LOG, "fd skinTone:  " + faceSkinTone);
+                        int[] confidences = new int[skinToneCount];
+                        for (int j = 0; j < skinToneCount; j++) {
+                            confidences[j] = byteArray2Int(skinToneArray, arrayIndex);
+                            arrayIndex += 4;
+                            Log.d(FD_TAG, FD_LOG, "fd skinTone confidence " + j + " " + confidences[j]);
+                        }
+                        ExtendedFace tmp = null;
+/*                        int k_ = 0;
+                        for (int k = 0; k < faces.length; k++) {
+                            if (faces[k] != null && face_id == faces[k].getId()) {
+                                k_ = k;
+                                break;
+                            }
+                        }*/
+                        tmp = extendedFaces[i];
+                        if (tmp == null) {
+                            tmp = new ExtendedFace(i);
+                        }
+                        Log.d(FD_TAG, FD_LOG,"set skinetone="+faceSkinTone+",extendedFaces i="+i);
+                        tmp.setFaceSkinTone(faceSkinTone);
+                        extendedFaces[i] = tmp;
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG,"FACE_SKIN_TONE = " + e.fillInStackTrace());
+                }
+            }
+
         return extendedFaces;
     }
+
+
 
     private void updateFacialMask(CaptureResult result) {
         byte[] facialMasks = null;
@@ -9696,20 +9775,20 @@ private boolean isDevOptionSetting(){
         } catch (NullPointerException e) {
             Log.w(TAG, "updateFacialMask facialMasks get NULL");
         }
-        if (facialMasks != null) {
-            int size = facialMasks.length / 4;
-            facialMaskInts = new int[40];
-            Log.w(TAG, " onCaptureCompleted size :" + size);
-            int j = 0;
-            // why int i = 44
-            // struct FDMetaDataMaskResults
-            // {
-            //     UINT32         numMasks;(4 byte data)
-            //     INT32          faceID[FDMaxFaceCount];(40 byte data)
-            //     FDROIRegion    maskROI[FDMaxFaceCount];(160 byte data)
-            // }
 
+        if (facialMasks != null) {
             try {
+                int size = facialMasks.length / 4;
+                facialMaskInts = new int[40];
+                Log.w(TAG, " onCaptureCompleted size :" + size);
+                int j = 0;
+                // why int i = 44
+                // struct FDMetaDataMaskResults
+                // {
+                //     UINT32         numMasks;(4 byte data)
+                //     INT32          faceID[FDMaxFaceCount];(40 byte data)
+                //     FDROIRegion    maskROI[FDMaxFaceCount];(160 byte data)
+                // }
                 maskNums = byteArray2Int(facialMasks, 0);
                 for (int i = 44; i < facialMasks.length; i += 4) {
                     facialMaskInts[j] = byteArray2Int(facialMasks, i);
@@ -9724,7 +9803,7 @@ private boolean isDevOptionSetting(){
         Log.w(TAG, " onCaptureCompleted maskNums :" + maskNums);
         try {
             mUI.onFacialMaskDetection(facialMaskInts, maskNums);
-        } catch(Exception e) {
+        } catch (Exception e) {
             Log.e(TAG, " updateFacialMask occur exception");
         }
     }
@@ -9804,6 +9883,8 @@ private boolean isDevOptionSetting(){
             Log.e(TAG, " updateUpperBodyDetection occur exception");
         }
     }
+
+
 
     private void updatePetDetection(CaptureResult result) {
         byte[] petresults = null;
@@ -10306,6 +10387,7 @@ private boolean isDevOptionSetting(){
     }
 
     public void setMute(boolean enable, boolean isValue) {
+        if (!PersistUtil.needAudioEncoder()) return;
         AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
         am.setMicrophoneMute(enable);
         if (isValue) {
@@ -10419,13 +10501,11 @@ private boolean isDevOptionSetting(){
     private Size getMaxPictureSizeLiveshot(int cameraId, int videoWidth, int videoHeight) {
         Size[] sizes = mSettingsManager.getAllSupportedOutputSize(cameraId,
                 mSettingsManager.isMaxConfigureSize(cameraId, new Size(videoWidth, videoHeight)));
-        Size maxLiveShotSize = mSettingsManager.getMaxLiveShotSize(mVideoSize, mSettingsManager.getVideoFPS());
         float ratio = (float) videoWidth / videoHeight;
         Size optimalSize = null;
         for (Size size : sizes) {
             float pictureRatio = (float) size.getWidth() / size.getHeight();
             if (Math.abs(pictureRatio - ratio) > 0.01) continue;
-            if(maxLiveShotSize != null && (size.getWidth() * size.getHeight()) > (maxLiveShotSize.getWidth() * maxLiveShotSize.getHeight())) continue;
             if (optimalSize == null || size.getWidth() > optimalSize.getWidth()) {
                 optimalSize = size;
             }
@@ -10486,6 +10566,17 @@ private boolean isDevOptionSetting(){
         }
         if (isDeepZoom()) {
             mZoomValue = mUI.getDeepZoomValue();
+        }
+        if (mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
+            float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
+                    getMainCameraId());
+            if (zoomRatioRange != null && zoomRatioRange[0] == zoomRatioRange[1]) {
+                mZoomValue = zoomRatioRange[0];
+            } else if (zoomRatioRange != null && zoomRatioRange[0] != zoomRatioRange[1]) {
+                if (mZoomValue < zoomRatioRange[0]) {
+                    mZoomValue = zoomRatioRange[0];
+                }
+            }
         }
     }
 
@@ -10747,7 +10838,7 @@ private boolean isDevOptionSetting(){
                     mHasMapTimes.put("Total",System.currentTimeMillis() - mStartedTime);
                 }
             }
-            if(!PersistUtil.enableMediaRecorder() && !waitForAudioPrepare()){
+            if(!PersistUtil.enableMediaRecorder() && !mOnlyVideoEncoder && !waitForAudioPrepare()){
                 quitVideoToPhotoWithError("media codec prepare failed");
                 return;
             }
@@ -10789,8 +10880,7 @@ private boolean isDevOptionSetting(){
                     mCurrentSession.setRepeatingBurst(slowMoRequests, mCaptureCallback,
                             mCameraHandler);
                 } else {
-                    int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
-                            mSettingsManager.getVideoFPS());
+                    int previewFPS = mSettingsManager.getVideoPreviewFPS();
                     if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                         if (PersistUtil.enableMediaRecorder()) {
                             mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
@@ -10912,7 +11002,7 @@ private boolean isDevOptionSetting(){
                     mVideoRecordRequestBuilder.addTarget(previewSurfaces.get(i));
                 }
                outConfigurations.addAll(getPhysicalPreviewOutput());
-            }else{
+            } else {
                mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
                OutputConfiguration videoPrevConfig = new OutputConfiguration(mVideoPreviewSurface);
                if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
@@ -10943,12 +11033,18 @@ private boolean isDevOptionSetting(){
                 mLiveShotOutput.enableSurfaceSharing();
                 outConfigurations.add(mLiveShotOutput);
             } else {
-                if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
-                    videoSnapshotConfig.addSensorPixelModeUsed(
-                            CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
-                    Log.v(TAG, " videoSnapShot OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+                String encoder  = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+                if (!("mvhevc").equals(encoder)) {
+                    if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
+                        videoSnapshotConfig.addSensorPixelModeUsed(
+                                CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
+                        Log.v(TAG, " videoSnapShot OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
+                    }
+                    if (isInSensorZoomEnabled()){
+                        applyCroppedRaw(videoSnapshotConfig, cameraId);
+                    }
+                    outConfigurations.add(videoSnapshotConfig);
                 }
-                outConfigurations.add(videoSnapshotConfig);
             }
             if (mVideoRecordingSurface != null) {
                 OutputConfiguration videoConfig = new OutputConfiguration(mVideoRecordingSurface);
@@ -11059,11 +11155,25 @@ private boolean isDevOptionSetting(){
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
+        boolean session_supported = true;
         try{
-            boolean supported = camera.isSessionConfigurationSupported(sessionConfig);
-            Log.i(TAG, "  result :" + supported);
-        } catch (CameraAccessException | IllegalArgumentException | NullPointerException e) {
+            session_supported = camera.isSessionConfigurationSupported(sessionConfig);
+            Log.i(TAG, "  isSessionConfigurationSupported :" + session_supported);
+        } catch (CameraAccessException | IllegalArgumentException | NullPointerException | UnsupportedOperationException e) {
             Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error ="+ e);
+            StringBuilder errstr = new StringBuilder();
+            errstr.append("Catch exception: ");
+            if (e instanceof CameraAccessException) {
+                errstr.append("CameraAccessException");
+            } else if (e instanceof IllegalArgumentException) {
+                errstr.append("IllegalArgumentException");
+            } else if (e instanceof NullPointerException) {
+                errstr.append("NullPointerException");
+            } else if (e instanceof UnsupportedOperationException) {
+                errstr.append("UnsupportedOperationException,please change the settings");
+            }
+            session_supported = false;
+            CameraUtil.showErrorDialog(mActivity, errstr);
         }
         mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
         if(mActivity.getPerformenceTest() && (mIsCloseCamera || mFromOnOpened)) {
@@ -11072,11 +11182,15 @@ private boolean isDevOptionSetting(){
         }else if(mActivity.getPerformenceTest()){
             mHasMapTimes.put("swipeMode->createSession",System.currentTimeMillis() - mStartedTime);
         }
-        try{
-            mCreateSessionLatency = System.currentTimeMillis();
-            camera.createCaptureSession(sessionConfig);
-        } catch (CameraAccessException e) {
-            Log.e(TAG, " error:",e);
+        if(session_supported) {
+            try {
+                mCreateSessionLatency = System.currentTimeMillis();
+                camera.createCaptureSession(sessionConfig);
+            } catch (CameraAccessException e) {
+                Log.e(TAG, "createCaptureSession  error:"+ e);
+            }
+        }else{
+            setCameraModeSwitcherAllowed(true);
         }
     }
 
@@ -11238,8 +11352,7 @@ private boolean isDevOptionSetting(){
             }
 
 
-            int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
-                    mSettingsManager.getVideoFPS());
+            int previewFPS = mSettingsManager.getVideoPreviewFPS();
             if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                 limitPreviewFPS();
             } else {
@@ -11270,11 +11383,11 @@ private boolean isDevOptionSetting(){
                     mUI.resetPauseButton();
                     mRecordingTotalTime = 0L;
                     mRecordingStartTime = SystemClock.uptimeMillis();
-                    if (!isHighSpeedRateCapture() && mSettingsManager.isLiveshotSupported(mVideoSize,
-                            mSettingsManager.getVideoFPS())) {
-                        mUI.enableShutter(true);
-                    } else {
+                    String encoder = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+                    if (isHighSpeedRateCapture() || ("mvhevc".equals(encoder))) {
                         mUI.enableShutter(false);
+                    } else {
+                        mUI.enableShutter(true);
                     }
                     mUI.showRecordingUI(true, false);
                     updateRecordingTime();
@@ -11375,10 +11488,7 @@ private boolean isDevOptionSetting(){
             return false;
         }
         long startMediaRecord = System.currentTimeMillis();
-        if(mActivity.getPerformenceTest()){
-            Log.i(TAG,"Will start mMediaRecorder mMediaRecorder="+mMediaRecorder);
-            mHasMapTimes.put("buttonClick->startRecorder",startMediaRecord - mStartedTime);
-        }
+
         try {
             if (mMediaRecorder != null)
                 mMediaRecorder.start(); // Recording is now started
@@ -12001,8 +12111,7 @@ private boolean isDevOptionSetting(){
         if (noNeedEndofStreamWhenPause || noNeedEndOfStreamInHFR) {
             if (PersistUtil.enableMediaRecorder() && mMediaRecorder != null) {
                 mMediaRecorder.pause();
-                int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
-                            mSettingsManager.getVideoFPS());
+                int previewFPS = mSettingsManager.getVideoPreviewFPS();
                 if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                     limitPreviewFPS();
                 }
@@ -12317,7 +12426,7 @@ private boolean isDevOptionSetting(){
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
-        if(!mSettingsManager.isBatchMode(getMainCameraId())) {
+        if(!mSettingsManager.isBatchMode(getMainCameraId()) && mCurrentSceneMode.mode != CameraMode.HFR) {
             mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
         }
         if (!PersistUtil.enableMediaRecorder()) {
@@ -13553,6 +13662,7 @@ private boolean isDevOptionSetting(){
 
     private void setDefaultHDRParameters(AudioManager am) {
         // Set default values for HDR/3D Audio settings
+        long startsetDefaultHDRParam = System.currentTimeMillis();
         am.setParameters("hdr_record_on=false");
         am.setParameters("wnr_on=false");
         am.setParameters("ans_on=false");
@@ -13564,6 +13674,10 @@ private boolean isDevOptionSetting(){
         am.setParameters("facing=none");
         am.setParameters("hdr_audio_channel_count=0");
         am.setParameters("hdr_audio_sampling_rate=0");
+        if(mActivity.getPerformenceTest()) {
+            long time = System.currentTimeMillis() - startsetDefaultHDRParam;
+            mHasMapTimes.put("startSetDefaultHDRParam->endSetDefaultHDRParam", System.currentTimeMillis() - startsetDefaultHDRParam);
+        }
     }
 
     private final BroadcastReceiver mBTConnectReceiver = new BroadcastReceiver() {
@@ -13601,7 +13715,6 @@ private boolean isDevOptionSetting(){
         AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
         setDefaultHDRParameters(am);
         if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
-            Log.d(TAG, "Enable audioHDR");
             am.setParameters("hdr_record_on=true");
             am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
             am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
@@ -13639,14 +13752,21 @@ private boolean isDevOptionSetting(){
 
     private boolean setUpMediaRecorder(int cameraId) throws IOException {
         long startSetMedia = System.currentTimeMillis();
+
         if (mSettingsManager.isMultiCameraEnabled() && !mSettingsManager.isLogicalEnable()){
             mMediaRecorder = null;
             return true;
         }
-        Log.i(TAG, "start setUpMediaRecorder");
+
         Bundle myExtras = mActivity.getIntent().getExtras();
         if (mMediaRecorder == null) mMediaRecorder = new MediaRecorder();
+        long startResetMedia = System.currentTimeMillis();
+
         mMediaRecorder.reset();
+        if(mActivity.getPerformenceTest()) {
+            mHasMapTimes.put("buttonClick->startResetMedia",startResetMedia - mStartedTime);
+            mHasMapTimes.put("startResetMedia->endResetMedia", System.currentTimeMillis() - startResetMedia);
+        }
 
         int videoWidth = mProfile.videoFrameWidth;
         int videoHeight = mProfile.videoFrameHeight;
@@ -13661,7 +13781,11 @@ private boolean isDevOptionSetting(){
         String audioSelected = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_ENCODER);
         int audioEncoder = -1;
         if (PersistUtil.needAudioEncoder() && !audioSelected.equals("off")) {
+            long startconfigurateAudio = System.currentTimeMillis();
             configurateAudio(cameraId);
+            if(mActivity.getPerformenceTest()) {
+                mHasMapTimes.put("startConfigurateAudio->endConfigurateAudio", System.currentTimeMillis() - startconfigurateAudio);
+            }
         }
         if (isVideoEncoderProfileSupported()
                 && VendorTagUtil.isHDRVideoModeSupported(mCameraDevice[cameraId])) {
@@ -13671,7 +13795,6 @@ private boolean isDevOptionSetting(){
             mMediaRecorder.setVideoEncodingProfileLevel(videoEncoderProfile,
                     MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel1);
         }
-
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorder.setOutputFormat(mProfile.fileFormat);
         setVideoOutputFile(myExtras);
@@ -13735,8 +13858,8 @@ private boolean isDevOptionSetting(){
             }
         }
         mMediaRecorder.setInputSurface(mVideoRecordingSurface);
+        long startPrepareMedia = System.currentTimeMillis();
         boolean preparemedia = prepareMediaRecorder();
-        Log.i(TAG, "end setUpMediaRecorder preparemedia="+preparemedia);
         if(mActivity.getPerformenceTest()) {
             mHasMapTimes.put("startSetUpMedia->endSetUpMedia", System.currentTimeMillis() - startSetMedia);
         }
@@ -13745,7 +13868,11 @@ private boolean isDevOptionSetting(){
 
     private boolean prepareMediaRecorder() {
         try {
+            long startime = System.currentTimeMillis();
             mMediaRecorder.prepare();
+            if(mActivity.getPerformenceTest()) {
+                mHasMapTimes.put("startPrepareMedia->endPrepareMedia", System.currentTimeMillis()- startime);
+            }
             mMediaRecorder.setOnErrorListener(this);
             mMediaRecorder.setOnInfoListener(this);
             if (mSettingsManager.getValue(SettingsManager.KEY_AUDIO_BLE).equals("On")
@@ -13818,8 +13945,13 @@ private boolean isDevOptionSetting(){
                 || !PersistUtil.enableMediaRecorder()) {
             String fileName = generateVideoFilename(mProfile.fileFormat);
             Uri videoTable = Storage.getVideoBaseUri();
+            long startInsertVideo = System.currentTimeMillis();
             Uri videoUri = mContentResolver.insert(videoTable, mCurrentVideoValues);
+            if(mActivity.getPerformenceTest()) {
+                mHasMapTimes.put("startInsertVideoTable->endInsertVideoTable", System.currentTimeMillis() - startInsertVideo);
+            }
             Log.i(TAG, "New video filename: " + fileName + ",new video uri: " + videoUri);
+
             try {
                 mVideoFileDescriptor =
                         mContentResolver.openFileDescriptor(videoUri, "rw");
@@ -13882,7 +14014,7 @@ private boolean isDevOptionSetting(){
         if (mCurrentSceneMode.mode == CameraMode.HFR ||
                 mCurrentSceneMode.mode == CameraMode.VIDEO ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
-            if (!isHighSpeedRateCapture() && mSettingsManager.isLiveshotSupported(mVideoSize,mSettingsManager.getVideoFPS())){
+            if (!isHighSpeedRateCapture()){
                 if (mUI.isShutterEnabled() && mRecordingStarted) {
                     captureVideoSnapshot(id);
                 }
@@ -14063,7 +14195,7 @@ private boolean isDevOptionSetting(){
     }
 
     public float getZoomValue() {
-        return mCurrentZoom;
+        return mZoomValue;
     }
 
     public Rect cropRegionForZoom(int id, boolean isMaxPixelMode) {
@@ -14574,24 +14706,23 @@ private boolean isDevOptionSetting(){
         }
     }
 
-    private void applyInSensorZoom(CaptureRequest.Builder request) {
-        Log.v(TAG, " applyInSensorZoom supported :" + !mSettingsManager.isInSensorZoomSupported());
-        if (!mSettingsManager.isInSensorZoomSupported())
-            return;
+    private boolean isInSensorZoomEnabled() {
+        if (!mSettingsManager.isInSensorZoomSupported()) {
+            Log.v(TAG, "InSensorZoom is not supported.");
+            return false;
+        }
+        boolean isEnabled = false;
         try {
-            int value = 0;
             String inSensorZoom = mSettingsManager.getValue(
                     SettingsManager.KEY_INSENSOR_ZOOM);
-            Log.v(TAG, " applyInSensorZoom inSensorZoom :" + inSensorZoom);
-            if ("0".equals(inSensorZoom)){
-                request.set(CaptureModule.insensor_zoom_feature, value);
-            } else {
-                value = 1;
-                request.set(CaptureModule.insensor_zoom_feature, value);
+            Log.v(TAG, "InSensorZoom value is " + inSensorZoom);
+            if ("1".equals(inSensorZoom)){
+                isEnabled = true;
             }
         } catch (IllegalArgumentException e) {
-            Log.v(TAG, EXCEPTION_LOG," applyInSensorZoom didn`t exist vendorTag :" + insensor_zoom_feature);
+            Log.v(TAG, EXCEPTION_LOG," isInSensorZoomEnabled: " + e);
         }
+        return isEnabled;
     }
 
     private void applyInStantZoom(CaptureRequest.Builder request) {
@@ -14613,7 +14744,7 @@ private boolean isDevOptionSetting(){
 
     private void applyCroppedRaw(OutputConfiguration configuration, int cameraId) {
         try {
-            Log.d(TAG,"set cropped raw for raw steam:" + cameraId);
+            Log.i(TAG,"set CROPPED_RAW for camId " + cameraId);
             long useCaseId = CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_CROPPED_RAW;
             if(mSettingsManager.isAvailableUseCase(cameraId, useCaseId)){
                 configuration.setStreamUseCase(useCaseId);
@@ -14961,8 +15092,7 @@ private boolean isDevOptionSetting(){
                     session.setRepeatingBurst(createSSMBatchRequest(captureRequest),
                             mCaptureCallback, mCameraHandler);
                 } else {
-                    int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
-                            mSettingsManager.getVideoFPS());
+                    int previewFPS = mSettingsManager.getVideoPreviewFPS();
                     if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
                         if (mUI.getZoomFixedSupport()) {
                             applyZoomRatio(mVideoRecordRequestBuilder, mZoomValue, id);
@@ -15240,7 +15370,7 @@ private boolean isDevOptionSetting(){
 
     private void setIsoAndExposureTime(CaptureRequest.Builder request, int isoValue, long exposureTime) {
         request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
-        if(!mSettingsManager.applyManualFlash()) {
+        if(!mSettingsManager.isOpenManualFlash()) {
             request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
         request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime);
@@ -15263,7 +15393,7 @@ private boolean isDevOptionSetting(){
         String gainsPriority = mActivity.getString(
                 R.string.pref_camera_manual_exp_value_gains_priority);
         String manualExposureMode = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_EXPOSURE);
-        isManualAEC =false;
+        isManualAEC = false;
         if (manualExposureMode == null) return result;
         if (manualExposureMode.equals(isoPriority)) {
             int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
@@ -15684,10 +15814,13 @@ private boolean isDevOptionSetting(){
                 request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
                 break;
         }
+        if(!mCaptureTorchTrigger && !(mSettingsManager.isOpenManualFlash() && "on".equals(flashMode))) {
+            request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+        }
         applyLowLightBoost(request);
     }
     private void setFlashLevel(CaptureRequest.Builder request) {
-        if (!mSettingsManager.applyManualFlash()) {
+        if (!mSettingsManager.isOpenManualFlash()) {
             return;
         }
         String level = mSettingsManager.getValue(mSettingsManager.KEY_CAMERA_MANUALFLASH_LEVEL);
@@ -15743,6 +15876,19 @@ private boolean isDevOptionSetting(){
         }
     }
 
+    private void applySpatialVideo(CaptureRequest.Builder request) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+        try {
+            if (value != null && value.equals("mvhevc")) {
+                request.set(spatialVideo, (byte) 1);
+            } else {
+                request.set(spatialVideo, (byte) 0);
+            }
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, EXCEPTION_LOG,"no vendorTag : " + spatialVideo);
+        }
+    }
+
     private void applyStatsVisualizerOptionMask(CaptureRequest.Builder request) {
         String stats_visualizer = mSettingsManager.getValue(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
         int optionMask = 0;
@@ -15763,12 +15909,16 @@ private boolean isDevOptionSetting(){
     }
     private void setFaceFeature(CaptureRequest.Builder request,String setkey,CaptureRequest.Key<Byte> requestkey){
         String keyvalue = mSettingsManager.getValue(setkey);
-        if(keyvalue == null || keyvalue.equals("disable")){
-            request.set(requestkey, (byte) 0);
-        }else if (keyvalue.equals("enable")) {
-            request.set(requestkey, (byte) 1);
-        } else if (keyvalue.equals("display")) {
-            request.set(requestkey, (byte) 2);
+        try {
+            if (keyvalue == null || keyvalue.equals("disable")) {
+                request.set(requestkey, (byte) 0);
+            } else if (keyvalue.equals("enable")) {
+                request.set(requestkey, (byte) 1);
+            } else if (keyvalue.equals("display")) {
+                request.set(requestkey, (byte) 2);
+            }
+        }catch (IllegalArgumentException e) {
+            Log.w(TAG, EXCEPTION_LOG,"hal no vendorTag : " + requestkey);
         }
     }
 
@@ -15836,6 +15986,7 @@ private boolean isDevOptionSetting(){
                 }
                 setFaceFeature(request,SettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY,CaptureModule.facialContourVisib);
                 setFaceFeature(request,SettingsManager.KEY_PET_DETECTION,CaptureModule.petEnable);
+                setFaceFeature(request,SettingsManager.KEY_FD_SKIN_TONE,CaptureModule.skinToneEnable);
                 if (facialContour != null) {
                     final byte facialContour_enable;
                     int contour = -1;
@@ -15920,7 +16071,6 @@ private boolean isDevOptionSetting(){
             }
         }
     }
-
     public Surface getPreviewSurfaceForSession(int id) {
         if (isBackCamera()) {
             if (getCameraMode() == DUAL_MODE && id == MONO_ID) {
@@ -17225,14 +17375,11 @@ private boolean isDevOptionSetting(){
                 float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                         getMainCameraId());
                 if (zoomRatioRange != null && zoomRatioRange[0] == zoomRatioRange[1]) {
-                    mZoomValue = zoomRatioRange[0];
                     Log.v(TAG, "updateZoomSeekBarVisible mZoomValue :" + mZoomValue);
                     mUI.hideZoomSeekBar();
                     return;
                 } else if (zoomRatioRange != null && zoomRatioRange[0] != zoomRatioRange[1]) {
-                    if (mZoomValue < zoomRatioRange[0]) {
-                        mZoomValue = zoomRatioRange[0];
-                    }
+                    mUI.updateZoombarValue(mZoomValue);
                     mUI.showZoomSeekBar();
                     Log.v(TAG, "updateZoomSeekBarVisible showZoomSeekBar mZoomValue :" + mZoomValue);
                     return;

@@ -15,9 +15,15 @@
      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
      See the License for the specific language governing permissions and
      limitations under the License.
+
+     Changes from Qualcomm Innovation Center are provided under the following license:
+     Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+     SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
+
 <com.android.camera.ui.OneUICameraControls xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:camera="http://schemas.android.com/apk/res-auto"
     android:id="@+id/camera_controls"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -69,6 +75,16 @@
         android:id="@+id/shutterbutton_anim"
         android:layout_width="@dimen/one_ui_bottom_large"
         android:layout_height="@dimen/one_ui_bottom_large" />
+    <com.android.camera.ui.RotateImageView
+        android:id="@+id/longshutter_stopbutton"
+        android:layout_width="@dimen/one_ui_bottom_large"
+        android:layout_height="@dimen/one_ui_bottom_large"
+        android:clickable="true"
+        android:contentDescription="@string/accessibility_shutter_button"
+        android:focusable="true"
+        android:scaleType="fitCenter"
+        android:visibility="gone"
+        android:src="@drawable/video_stop" />
     <com.android.camera.ui.RotateImageView
         android:id="@+id/video_button"
         android:layout_width="@dimen/one_ui_bottom_large"
@@ -196,43 +212,62 @@
         android:progressDrawable="@drawable/beautify_progressbar_style"
         android:thumb="@drawable/ic_beautify_oval"
         android:id="@+id/deepportrait_seekbar"/>
-
     <LinearLayout
-        android:id="@+id/zoom_linearlayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
+        android:id="@+id/zoom_text_layout"
+        android:layout_width="150dip"
+        android:layout_height="40dip"
+        android:background="@drawable/oval_background"
         android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="140dp"
-        android:orientation="vertical"
-        android:visibility="gone">
+        android:layout_marginBottom="160dp"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        android:orientation="horizontal">
         <TextView
-            android:id="@+id/zoom_value_text"
-            android:layout_width="52dip"
-            android:layout_height="30dip"
-            android:textSize="14dip"
-            android:layout_gravity="center_horizontal"
-            android:layout_above="@+id/zoom_seekbar"
+            android:id="@+id/zoom_uw"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
             android:alpha="0.7"
-            android:gravity="center"
             android:clickable="true"
-            android:background="#D3D3D3"
-            android:textColor="@android:color/white">
+            android:text="0.67x"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="@color/mode_text_selector">
         </TextView>
-
-        <SeekBar
-            android:layout_width="320dp"
-            android:layout_height="30dp"
-            android:maxHeight="3dip"
-            android:minHeight="1dip"
-            android:visibility="gone"
-            android:paddingTop="10dp"
-            android:paddingBottom="10dp"
-            android:layout_gravity="center_horizontal"
-            android:progressDrawable="@drawable/beautify_progressbar_style"
-            android:thumb="@drawable/ic_beautify_oval"
-            android:id="@id/zoom_seekbar"/>
+        <TextView
+            android:id="@+id/zoom_w"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:alpha="0.7"
+            android:clickable="true"
+            android:text="1.00x"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="@color/mode_text_selector">
+        </TextView>
+        <TextView
+            android:id="@+id/zoom_tel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:alpha="0.7"
+            android:clickable="true"
+            android:text="2.50x"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="@color/mode_text_selector">
+        </TextView>
     </LinearLayout>
+        <com.android.camera.ui.ZoomBarView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|bottom"
+            android:layout_marginBottom="140dp"
+            android:visibility="gone"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:id="@+id/zoom_seekbar"/>
     <RelativeLayout
         android:id="@+id/manual_flash_layout"
         android:layout_width="wrap_content"
@@ -292,6 +327,52 @@
         </TextView>
     </RelativeLayout>
 
+
+    <TextView
+        android:id="@+id/zoom_value_text"
+        android:layout_width="52dip"
+        android:layout_height="30dip"
+        android:textSize="14dip"
+        android:layout_gravity="center_horizontal|bottom"
+        android:alpha="0.7"
+        android:gravity="center"
+        android:clickable="true"
+        android:layout_marginBottom="340dp"
+        android:textColor="@android:color/white">
+    </TextView>
+
+    <LinearLayout
+        android:id="@+id/zoom_edit_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="150dp"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        android:orientation="horizontal">
+        <EditText
+            android:id="@+id/zoom_edit_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Enter zoom"
+            android:inputType="numberDecimal" />
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/gozoom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="GO"
+                android:background="@drawable/circle_background"
+                android:layout_centerInParent="true"
+                android:gravity="center"
+                android:padding="10dp"
+                android:textSize="14dip" />
+        </RelativeLayout>
+
+    </LinearLayout>
+
         <SeekBar
             android:layout_width="140dp"
             android:layout_height="50dp"
@@ -304,6 +385,30 @@
             android:thumbOffset="0dp"
             android:id="@+id/ev_seekbar">
         </SeekBar>
+    <LinearLayout
+        android:id="@+id/ev_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|right"
+        android:layout_marginRight="2dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/ev_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="EV"
+                android:textColor="@color/mode_text_selector"
+                android:background="@drawable/circle_background"
+                android:layout_centerInParent="true"
+            android:gravity="center"
+            android:padding="10dp"
+            android:visibility="gone"
+            android:textSize="14dip" />
+        </RelativeLayout>
     <com.android.camera.ui.VerticalSeekBar
         android:id="@+id/ev_verticalbar"
         android:layout_width="50dp"
@@ -319,47 +424,45 @@
         android:visibility="gone"
         tools:ignore="MissingClass" >
     </com.android.camera.ui.VerticalSeekBar>
-    <TextView
-        android:id="@+id/ev_value"
+
+    </LinearLayout>>
+
+    <LinearLayout
+        android:id="@+id/aistrength"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical|right"
-        android:layout_marginRight="35dp"
-        android:alpha="0.7"
-        android:clickable="true"
-        android:gravity="center"
-        android:text="0"
-        android:textColor="@android:color/white"
-        android:visibility="gone"
-        android:textSize="12sp" />
-    <com.android.camera.ui.VerticalSeekBar
-        android:id="@+id/aicamera_seekbar"
-        android:layout_width="50dp"
-        android:layout_height="140dp"
-        android:maxHeight="3dip"
-        android:minHeight="1dip"
         android:layout_gravity="center_vertical|left"
         android:layout_marginLeft="2dp"
-        android:thumbOffset="0dp"
-        android:progressDrawable="@drawable/beautify_progressbar_style"
-        android:thumb="@drawable/evbar_thumb"
-        android:max = "100"
-        android:visibility="gone"
-        tools:ignore="MissingClass" >
-    </com.android.camera.ui.VerticalSeekBar>
-    <TextView
-        android:id="@+id/aistrength_value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical|left"
-        android:layout_marginLeft="35dp"
-        android:alpha="0.7"
-        android:clickable="true"
-        android:gravity="center"
-        android:text="128"
-        android:textColor="@android:color/white"
-        android:visibility="gone"
-        android:textSize="12sp" />
+        android:orientation="vertical"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/aistrength_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="4dp"
+            android:alpha="0.7"
+            android:text="AI 128"
+            android:textColor="@android:color/white"
+            android:visibility="gone"
+            android:layout_above="@+id/aicamera_seekbar"
+            android:textSize="14dip" />
+        <com.android.camera.ui.VerticalSeekBar
+            android:id="@+id/aicamera_seekbar"
+            android:layout_width="40dp"
+            android:layout_height="140dp"
+            android:maxHeight="3dip"
+            android:minHeight="1dip"
+            android:layout_gravity="center_vertical|left"
+            android:layout_marginLeft="2dp"
+            android:thumbOffset="0dp"
+            android:progressDrawable="@drawable/beautify_progressbar_style"
+            android:thumb="@drawable/evbar_thumb"
+            android:max = "100"
+            android:visibility="gone"
+            tools:ignore="MissingClass" >
+        </com.android.camera.ui.VerticalSeekBar>
+
+    </LinearLayout>
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -528,8 +631,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="100dp"
-        android:background="@color/camera_control_bg_transparent">
+        android:layout_marginBottom="110dp">
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/mode_select_layout"

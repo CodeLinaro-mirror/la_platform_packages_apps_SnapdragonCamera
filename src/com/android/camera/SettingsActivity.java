@@ -1433,6 +1433,25 @@ public class SettingsActivity extends PreferenceActivity {
                                 updateManualHDRSetting();
                             }
                         }
+                        if (preference.getKey().equals(SettingsManager.KEY_MANUAL_EXPOSURE)) {
+                            String value = ((ListPreference) preference).getValue();
+                            if (!value.equals("off")) {
+                                UpdateManualExposureSettings();
+                            }
+                        }
+                        if (preference.getKey().equals(SettingsManager.KEY_TONE_MAPPING)) {
+                            String value = ((ListPreference) preference).getValue();
+                            if (!value.equals("off")) {
+                                updateToneMappingSettings();
+                            }
+                        }
+                        if (preference.getKey().equals(SettingsManager.KEY_MANUAL_WB)) {
+                            String value = ((ListPreference) preference).getValue();
+                            if (!value.equals("off")) {
+                                updateManualWBSettings();
+                            }
+                        }
+
 
                         return false;
                     }
@@ -1545,7 +1564,6 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_EIS_VALUE);
                 add(SettingsManager.KEY_FOVC_VALUE);
                 add(SettingsManager.KEY_VARIABLE_FPS);
-                //add(SettingsManager.KEY_VIDEO_HDR_VALUE);
                 add(SettingsManager.KEY_VIDEO_FLIP);
                 add(SettingsManager.KEY_PHYSICAL_CAMCORDER);
                 add(SettingsManager.KEY_OFFLINE_DUMP_TRIGGER);
@@ -1647,9 +1665,6 @@ public class SettingsActivity extends PreferenceActivity {
                     removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
                     removePreference(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC, developer);
                     removePreference(SettingsManager.KEY_AUDIO_BLE, developer);
-                    if (!(DEV_LEVEL_ALL || mShowAllDevOption)) {
-                        removePreference(SettingsManager.KEY_SWITCH_CAMERA, developer);
-                    }
                     for (String removeKey : videoOnlyList) {
                         removePreference(removeKey, developer);
                     }
@@ -1673,9 +1688,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> videoAddList = new ArrayList<>();
                     videoAddList.add(SettingsManager.KEY_ZOOM);
-                    if (DEV_LEVEL_ALL || mShowAllDevOption) {
-                        videoAddList.add(SettingsManager.KEY_SWITCH_CAMERA);
-                    }
+                    videoAddList.add(SettingsManager.KEY_SWITCH_CAMERA);
                     videoAddList.addAll(videoOnlyList);
                     videoAddList.add(SettingsManager.KEY_ANTI_BANDING_LEVEL);
                     if (mode == VIDEO) {
@@ -1800,9 +1813,7 @@ public class SettingsActivity extends PreferenceActivity {
                 removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, photoPre);
                 removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, photoPre);
                 if (mDeveloperMenuEnabled) {
-                    if (DEV_LEVEL_ALL || mShowAllDevOption) {
-                        proModeOnlyList.add(SettingsManager.KEY_SWITCH_CAMERA);
-                    }
+                    proModeOnlyList.add(SettingsManager.KEY_SWITCH_CAMERA);
                     proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
                     proModeOnlyList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
@@ -2776,8 +2787,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
-        if (!mSettingsManager.isEISSupported(mSettingsManager.getVideoSize(),
-                mSettingsManager.getVideoFPS()) || !changeEIS) {
+        if (!changeEIS) {
             if (eisPref != null) {
                 eisPref.setValue("disable");
                 eisPref.setEnabled(false);

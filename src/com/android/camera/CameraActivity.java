@@ -1085,6 +1085,7 @@ public class CameraActivity extends Activity
                 }
             }
             (new UpdateThumbnailTask(null, true)).execute();
+            mThumbnailDrawable = null;
         }
     }
 
@@ -2341,7 +2342,7 @@ public class CameraActivity extends Activity
         setSwipingEnabled(true);
 
         // hide the up affordance for L devices, it's not very Materially
-        mActionBar.setDisplayShowHomeEnabled(false);
+        mActionBar.setDisplayShowHomeEnabled(true);
 
         if (mResetToPreviewOnResume) {
             // Go to the preview on resume.

@@ -138,10 +138,6 @@ public class PersistUtil {
             get("persist.sys.camera.display.umax", "");
     private static final String PERSIST_DISPLAY_LMAX =
             get("persist.sys.camera.display.lmax", "");
-    private static final boolean PERSIST_VIDEO_LIVESHOT =
-            getBoolean("persist.sys.camera.video.liveshot",false);
-    private static final boolean PERSIST_VIDEO_EIS =
-            getBoolean("persist.sys.camera.video.eis",false);
     private static final int PERSIST_BURST_PREVIEW_REQUEST_NUMS =
             getInt("persist.sys.camera.burst.preview.nums", 1);
     private static final boolean PERSIST_SSM_ENABLE =
@@ -189,8 +185,6 @@ public class PersistUtil {
     public static boolean isFaceExpressionConfidenceOn() {
         return FD_EXPRESSION_CONFIDENCE_ON;
     }
-
-    private static final boolean PERSIST_SHOW_VERTICAL_EV_BAR = getBoolean("persist.sys.camera.vertical.evbar",false);
     private static final boolean PERSIST_SHOW_MFNR_SWITCH = getBoolean("persist.sys.camera.mfnr.switch",false);
     public static boolean isTorchMode(){ return PERSIST_CAMERA_TORCH_MODE; }
     private static final boolean PERSIST_SET_TIMESTAMP = getBoolean("persist.sys.camera.set.timestamp",false);
@@ -454,14 +448,6 @@ public class PersistUtil {
         return getBoolean("persist.sys.cameraapp.needaudio", true);
     }
 
-    public static boolean isPersistVideoLiveshot(){
-        return PERSIST_VIDEO_LIVESHOT;
-    }
-
-    public static boolean isPersistVideoEis(){
-        return PERSIST_VIDEO_EIS;
-    }
-
     public static String getDisplayUMax() {
         return PERSIST_DISPLAY_UMAX;
     }
@@ -497,9 +483,6 @@ public class PersistUtil {
     public static boolean isRawReprocessEnable() {
         return PERSIST_RAW_REPROCESS_ENABLE;
     }
-
-    public static boolean showVerticalEvBar(){return PERSIST_SHOW_VERTICAL_EV_BAR;}
-
     public static boolean isRawCbInfoSupported() {return PERSIST_RAW_CB_INFO_SUPPORTED; }
 
     public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }
