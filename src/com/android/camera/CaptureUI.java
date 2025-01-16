@@ -141,6 +141,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -528,6 +529,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TextView mZoomValueText,mZoomWText,mZoomUWText,mZoomTelText,mZoomGo;
     private EditText mZoomEditText;
     private float mUWZoom,mWZoom,mTelZoom;
+    private String mWzoomText,mUWzoomText,mTELzoomText;
+    DecimalFormat zoomDf = new DecimalFormat("#.##");
     private float[]mZoomRange;
     private View mStatsAecInfo;
     private TextView mStatsAecText;
@@ -1595,43 +1598,44 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     private void setZoomTextSelect(float zoom){
-        String zoom_text = String.format("%.2f", zoom).replaceAll("\\.?0*$", "");
+       String zoom_text = zoomDf.format(zoom);
+       Log.d(TAG,"zoomtext="+zoom_text+",zoom="+zoom);
         if(zoom < mWZoom){
             mZoomUWText.setSelected(true);
             mZoomUWText.setText(zoom_text +"x");
             mZoomWText.setSelected(false);
-            mZoomWText.setText(String.valueOf(mWZoom)+"x");
+            mZoomWText.setText(mWzoomText+"x");
             mZoomTelText.setSelected(false);
-            mZoomTelText.setText(String.valueOf(mTelZoom)+"x");
+            mZoomTelText.setText(mTELzoomText+"x");
         }else if(zoom < mTelZoom || mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB
                 || (mModule.isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())){
             mZoomUWText.setSelected(false);
             mZoomWText.setSelected(true);
             mZoomWText.setText(zoom_text+"x");
             mZoomTelText.setSelected(false);
-            mZoomUWText.setText(String.valueOf(mUWZoom)+"x");
-            mZoomTelText.setText(String.valueOf(mTelZoom)+"x");
+            mZoomUWText.setText(mUWzoomText+"x");
+            mZoomTelText.setText(mTELzoomText+"x");
         }else {
             mZoomUWText.setSelected(false);
             mZoomWText.setSelected(false);
             mZoomTelText.setSelected(true);
             mZoomTelText.setText(zoom_text+"x");
-            mZoomUWText.setText(String.valueOf(mUWZoom)+"x");
-            mZoomWText.setText(String.valueOf(mWZoom)+"x");
+            mZoomUWText.setText(mUWzoomText+"x");
+            mZoomWText.setText(mWzoomText+"x");
         }
     }
     public void showZoomBar(boolean show){
+        float zoom = mModule.getZoomValue();
         if(show){
-            float zoom = mModule.getZoomValue();
-            String text = String.format("%.2f", zoom).replaceAll("\\.?0*$", "");
-            mZoomSeekBar.setZoomValue(Float.valueOf(text));
-            mZoomValueText.setText(text);
+            String zoom_text = zoomDf.format(zoom);
+            mZoomSeekBar.setZoomValue(Float.valueOf(zoom_text));
+            mZoomValueText.setText(zoom_text);
             mZoomSeekBar.setVisibility(View.VISIBLE);
             mZoomValueText.setVisibility(View.VISIBLE);
             mZoomLinearLayout.setVisibility(View.INVISIBLE);
             mZoomEditLayout.setVisibility(View.VISIBLE);
         }else{
-            setZoomTextSelect(mModule.getZoomValue());
+            setZoomTextSelect(zoom);
             mZoomSeekBar.setVisibility(View.INVISIBLE);
             mZoomValueText.setVisibility(View.INVISIBLE);
             mZoomLinearLayout.setVisibility(View.VISIBLE);
@@ -1658,8 +1662,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             v.setSelected(true);
             mZoomUWText.setSelected(false);
             mZoomTelText.setSelected(false);
-            mZoomTelText.setText(String.valueOf(mTelZoom)+"x");
-            mZoomUWText.setText(String.valueOf(mUWZoom)+"x");
+            mZoomTelText.setText(mTELzoomText+"x");
+            mZoomUWText.setText(mUWzoomText+"x");
             changeZoomValue(mModule.getZoomValue(),mZoomWText.getText().toString());
         });
 
@@ -1670,8 +1674,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             v.setSelected(true);
             mZoomWText.setSelected(false);
             mZoomTelText.setSelected(false);
-            mZoomTelText.setText(String.valueOf(mTelZoom)+"x");
-            mZoomWText.setText(String.valueOf(mWZoom)+"x");
+            mZoomTelText.setText(mTELzoomText+"x");
+            mZoomWText.setText(mWzoomText+"x");
             changeZoomValue(mModule.getZoomValue(),mZoomUWText.getText().toString());
         });
         mZoomTelText.setOnClickListener(v ->{
@@ -1680,8 +1684,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
             mZoomWText.setSelected(false);
             mZoomUWText.setSelected(false);
-            mZoomUWText.setText(String.valueOf(mUWZoom)+"x");
-            mZoomWText.setText(String.valueOf(mWZoom)+"x");
+            mZoomUWText.setText(mUWzoomText+"x");
+            mZoomWText.setText(mWzoomText+"x");
             v.setSelected(true);
             changeZoomValue(mModule.getZoomValue(),mZoomTelText.getText().toString());
         });
@@ -1745,13 +1749,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mZoomTelText.setVisibility(View.VISIBLE);
             if (zoomRatioRange[0] != mUWZoom) {
                 mUWZoom = zoomRatioRange[0];
-                mZoomUWText.setText(String.valueOf(zoomRatioRange[0])+"x");
             }
         } else if (zoomRatioRange[0] >= mWZoom && zoomRatioRange[0] < mTelZoom) {
             mZoomUWText.setVisibility(View.INVISIBLE);
             if (zoomRatioRange[0] != mWZoom) {
                 mWZoom = zoomRatioRange[0];
-                mZoomWText.setText(String.valueOf(zoomRatioRange[0])+"x");
             }
             if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB
                     || ((mModule.isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn()))){
@@ -1760,11 +1762,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         } else if (zoomRatioRange[0] >= mTelZoom) {
             if (zoomRatioRange[0] != mTelZoom) {
                 mTelZoom = zoomRatioRange[0];
-                mZoomTelText.setText(String.valueOf(zoomRatioRange[0])+"x");
             }
             mZoomUWText.setVisibility(View.INVISIBLE);
             mZoomWText.setVisibility(View.INVISIBLE);
         }
+        mWzoomText = zoomDf.format(mWZoom);
+        mUWzoomText = zoomDf.format(mUWZoom);
+        mTELzoomText = zoomDf.format(mTelZoom);
     }
     private void initZoomSeekBar() {
         mZoomLinearLayout = (LinearLayout) mRootView.findViewById(R.id.zoom_text_layout);
