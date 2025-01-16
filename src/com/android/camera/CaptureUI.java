@@ -1585,7 +1585,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     private void setZoomTextSelect(float zoom){
         String zoom_text = String.format("%.2f", zoom).replaceAll("\\.?0*$", "");
-
         if(zoom < mWZoom){
             mZoomUWText.setSelected(true);
             mZoomUWText.setText(zoom_text +"x");
@@ -1648,6 +1647,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             v.setSelected(true);
             mZoomUWText.setSelected(false);
             mZoomTelText.setSelected(false);
+            mZoomTelText.setText(String.valueOf(mTelZoom)+"x");
+            mZoomUWText.setText(String.valueOf(mUWZoom)+"x");
             changeZoomValue(mModule.getZoomValue(),mZoomWText.getText().toString());
         });
 
@@ -1658,6 +1659,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             v.setSelected(true);
             mZoomWText.setSelected(false);
             mZoomTelText.setSelected(false);
+            mZoomTelText.setText(String.valueOf(mTelZoom)+"x");
+            mZoomWText.setText(String.valueOf(mWZoom)+"x");
             changeZoomValue(mModule.getZoomValue(),mZoomUWText.getText().toString());
         });
         mZoomTelText.setOnClickListener(v ->{
@@ -1666,6 +1669,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
             mZoomWText.setSelected(false);
             mZoomUWText.setSelected(false);
+            mZoomUWText.setText(String.valueOf(mUWZoom)+"x");
+            mZoomWText.setText(String.valueOf(mWZoom)+"x");
             v.setSelected(true);
             changeZoomValue(mModule.getZoomValue(),mZoomTelText.getText().toString());
         });
