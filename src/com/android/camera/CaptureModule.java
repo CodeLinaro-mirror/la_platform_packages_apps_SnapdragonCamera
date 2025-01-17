@@ -5715,12 +5715,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
         };
-
     private void captureStillPictureForLongshot(CaptureRequest.Builder captureBuilder, int id) throws CameraAccessException{
         mBurstLimit = "1".equals(mSettingsManager.getValue(SettingsManager.KEY_BURST_LIMIT));
         if (!mBurstLimit) {
             List<CaptureRequest> burstList = new ArrayList<>();
             float previewProportion = 0f;
+            float fps = mSettingsManager.getFps(mPictureSize);
+            Log.i(TAG,"max fps:" + fps);
+            if (fps > 0) {
+                previewProportion = 30f / fps - 1f;
+            }
             Log.i(TAG, "burstShot, previewProportion:" + previewProportion);
             float captureProportion = 1.0f;
             int previewCount = 0;
