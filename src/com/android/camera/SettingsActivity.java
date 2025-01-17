@@ -3173,7 +3173,7 @@ public class SettingsActivity extends PreferenceActivity {
                         final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
                         alert.setMessage("Donnot support "+title+" " +
                                 "when Video FPS >=60 or enabled SaveRaw or inSensor zoom" +
-                                " or quadBayerSensor or videoSize >=8k in MCX mode");
+                                " or quadBayerSensor or videoSize >=8k");
                         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
                             }
