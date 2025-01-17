@@ -2852,6 +2852,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 mFilteredKeys.add(videoEncoder.getKey());
             }
         }
+        getSupportedDynamicRangeProfiles();
     }
 
     private void filterChromaflashPictureSizeOptions() {
@@ -3093,11 +3094,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
                     if (!info.isEncoder() || info.getName().contains("google")) continue;
                     for (String type : info.getSupportedTypes()) {
+                        Log.i(TAG, "dolby: supported type:" + type + " in codec: " + info.getName());
                         if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
-                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
+                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.DOLBY_VISION &&
+                                type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION))) {
                             CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
                             videoCapabilities = codecCapabilities.getVideoCapabilities();
                             findVideoEncoder = true;
@@ -3263,7 +3267,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
-                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
+                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.DOLBY_VISION
+                                && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION))) {
                             CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
                             videoCapabilities = codecCapabilities.getVideoCapabilities();
                             findVideoEncoder = true;
@@ -4412,6 +4418,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 supported.add("apv");
             }
         }
+        supported.add("dolby");
         return supported;
     }
 
@@ -4457,6 +4464,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         return supported;
+    }
+
+    private void getSupportedDynamicRangeProfiles () {
+        DynamicRangeProfiles profiles = mCharacteristics.get(mCameraId).get(
+                CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES);
+        if (profiles != null) {
+            for (Long profile : profiles.getSupportedProfiles()) {
+                Log.i(TAG, "supported dynamicRangeProfile is " + profile);
+            }
+        }
     }
 
     public List<String> getSupportedNoiseReductionModes(int cameraId) {

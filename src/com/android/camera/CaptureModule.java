@@ -60,6 +60,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.MultiResolutionImageReader;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.hardware.camera2.params.Face;
 import android.hardware.camera2.params.InputConfiguration;
 import android.hardware.camera2.params.MeteringRectangle;
@@ -4288,7 +4289,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             setUpPhysicalMediaRecorder();
             if (PersistUtil.enableMediaRecorder()) {
                 mVideoRecordingSurface = MediaCodec.createPersistentInputSurface();
-                if(!is8KInMulti && !setUpMediaRecorder(cameraId)){
+                if(!is8KInMulti && !setupMediaRecorder(cameraId)){
                     return;
                 }
             } else {
@@ -11187,6 +11188,10 @@ private boolean isDevOptionSetting(){
                         }
                     }
                 }
+                if (("dolby").equals(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER))) {
+                    Log.i(TAG, " setting DOLBY for video stream in non-HFR");
+                    videoConfig.setDynamicRangeProfile(DynamicRangeProfiles.DOLBY_VISION_10B_HDR_OEM);
+                }
                 outConfigurations.add(videoConfig);
             }
             OutputConfiguration videoPrevConfig = new OutputConfiguration(mVideoPreviewSurface);
@@ -11380,6 +11385,10 @@ private boolean isDevOptionSetting(){
                 }
             }
         }
+        if (("dolby").equals(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER))) {
+            Log.i(TAG, " setting DOLBY for video stream in HFR");
+            videoRecordConfig.setDynamicRangeProfile(DynamicRangeProfiles.DOLBY_VISION_10B_HDR_OEM);
+        }
         outConfigurations.add(videoPreviewConfig);
         outConfigurations.add(videoRecordConfig);
         setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
@@ -11467,7 +11476,7 @@ private boolean isDevOptionSetting(){
             if (physicalRecorderId != null && physicalRecorderId.size() > 0) {
                 cleanupEmptyFile();
                 if (!is8KInMulti) {
-                    setUpMediaRecorder(getMainCameraId());
+                    setupMediaRecorder(getMainCameraId());
                 }
                 setUpPhysicalMediaRecorder();
                 Set<String> physicalId = mSettingsManager.getPhysicalCameraId();
@@ -11504,7 +11513,7 @@ private boolean isDevOptionSetting(){
             )) {
                 if (PersistUtil.enableMediaRecorder()) {
                         cleanupEmptyFile();
-                        setUpMediaRecorder(getMainCameraId());
+                        setupMediaRecorder(getMainCameraId());
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                     if(mHighSpeedCapture && !isVariableFPSEnabled()) {
                         mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
@@ -13960,7 +13969,7 @@ private boolean isDevOptionSetting(){
         }
     }
 
-    private boolean setUpMediaRecorder(int cameraId) throws IOException {
+    private boolean setupMediaRecorder(int cameraId) throws IOException {
         long startSetMedia = System.currentTimeMillis();
 
         if (mSettingsManager.isMultiCameraEnabled() && !mSettingsManager.isLogicalEnable()){
@@ -14003,7 +14012,12 @@ private boolean isDevOptionSetting(){
             Log.d(TAG, "setVideoEncodingProfileLevel: " + videoEncoderProfile + " " + MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel1);
             mMediaRecorder.setVideoEncodingProfileLevel(videoEncoderProfile,
                     MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel1);
+        } else if (("dolby").equals(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER))) {
+            Log.i(TAG, "set dolby profile.");
+            mMediaRecorder.setVideoEncodingProfileLevel(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt,
+                    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelFhd30);
         }
+
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorder.setOutputFormat(mProfile.fileFormat);
         setVideoOutputFile(myExtras);
