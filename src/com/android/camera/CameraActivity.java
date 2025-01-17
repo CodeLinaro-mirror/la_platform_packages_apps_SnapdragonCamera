@@ -344,6 +344,7 @@ public class CameraActivity extends Activity
                 return;
             }
             mLastRawOrientation = orientation;
+            Log.d(TAG,"orientation="+orientation);
             mCurrentModule.onOrientationChanged(orientation);
         }
     }

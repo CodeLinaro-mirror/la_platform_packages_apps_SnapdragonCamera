@@ -10168,6 +10168,7 @@ private boolean isDevOptionSetting(){
         if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) return;
         int oldOrientation = mOrientation;
         mOrientation = CameraUtil.roundOrientation(orientation, mOrientation);
+        Log.d(TAG,"oldOrientation="+oldOrientation+",mOrientation="+mOrientation);
         if (oldOrientation != mOrientation) {
             mUI.onOrientationChanged();
             mUI.setOrientation(mOrientation, true);
