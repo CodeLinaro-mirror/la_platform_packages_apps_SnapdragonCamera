@@ -1521,6 +1521,7 @@ public class TestBase{
                     }
                     checkPreview("0", mode);
                     executeShellCommand("input tap "+ mEVTextLoc[0]  +" "+mEVTextLoc[1]);
+                    Thread.sleep(SMALL_WAIT_DURATION);
                 }
             }
         }
