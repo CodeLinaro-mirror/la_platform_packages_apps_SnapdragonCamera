@@ -3455,7 +3455,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mGestures.setZoomEnabled(enabled);
             mZoomSeekBar.setZoomEnable(enabled);
         }
-        if(!enabled || !mModule.isLongExpTmCaptrure()) stopShutterAnim();
+        if(!enabled || !mModule.isLongExpTmCaptrure()) {
+            stopShutterAnim();
+        }
     }
     private void showLongShutterButton(boolean show){
         mActivity.runOnUiThread(()-> {
@@ -3463,8 +3465,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mLongShutterStopButton.setVisibility(View.VISIBLE);
                 mShutterButton.setVisibility(View.INVISIBLE);
             } else {
-                mLongShutterStopButton.setVisibility(View.INVISIBLE);
-                mShutterButton.setVisibility(View.VISIBLE);
+                if(mLongShutterStopButton.getVisibility() == View.VISIBLE) {
+                    mLongShutterStopButton.setVisibility(View.INVISIBLE);
+                    mShutterButton.setVisibility(View.VISIBLE);
+                }
             }
         });
     }
@@ -3479,7 +3483,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         showLongShutterButton(false);
         mActivity.runOnUiThread(new Runnable() {
             public void run() {
-
                 mCameraControls.hidenAnim();
             }
         });
