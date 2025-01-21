@@ -1433,7 +1433,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     if (currentIndex != index) {
                         mSettingsManager.setValueIndex(SettingsManager.KEY_EXPOSURE, index);
                         mEvSettingValue = index;
-                        String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
+                        String value = (String) mSettingsManager.getEntries(SettingsManager.KEY_EXPOSURE)[index];
                         String ev_text = "EV:" + value;
                         mEvText.setText(ev_text);
                     }
@@ -1443,7 +1443,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         updateVerticalEv();
     }
     private void updateVerticalEv(){
-        String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
+        int index = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
+        String value = (String)mSettingsManager.getEntries(SettingsManager.KEY_EXPOSURE)[index];
         int length = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE).length;
         String ev_text ="EV";
         if(!"0".equals(value)){
@@ -1451,7 +1452,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         mEvText.setText(ev_text);
         if(mVerticalEvBar.getVisibility() == View.VISIBLE) {
-            int index = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
             int section = 100 / length;
             int progress = section * (index);
             if (progress > 100) progress = 100;
@@ -4819,9 +4819,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 }else{
                     if ( needShowInstructional() && isShowHelp() ) {
                         showSceneInstructionalDialog(mOrientation);
-                    }
-                    if(value.equals("18")) {//hdr
-                        hideVerticalEv(true);
                     }
                 }
             }else if(state.key.equals(SettingsManager.KEY_FLASH_MODE) ) {
