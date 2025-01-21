@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause-Clear
 */
 
@@ -145,7 +145,7 @@ public class StressTest extends TestBase {
         addObject(saveObj,"recordLoc",mRecordLoc);
         addObject(saveObj,"depthLoc",mDepthLoc);
         addObject(saveObj,"thumbLoc",mThumLoc);
-        saveJson(ICON_LOC_JSON,saveObj);
+        saveJson(ICON_LOC_JSON,saveObj,false);
     }
     private void addObject(JSONObject obj,String arrayStr, HashMap<String, int[]> mapkey)throws Exception{
         JSONObject mapObj = new JSONObject();

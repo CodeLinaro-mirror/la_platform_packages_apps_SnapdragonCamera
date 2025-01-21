@@ -18,8 +18,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -818,9 +818,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         initPreviewContentView();
 
         mGridLineView = (LinearLayout) mRootView.findViewById(R.id.grid_line);
-
         initPreviewContentViewForPhysicalCamera();
-
         mProgressBar = (ProgressBar) mRootView.findViewById(R.id.progress_bar);
         mRenderOverlay = (RenderOverlay) mRootView.findViewById(R.id.render_overlay);
         mShutterButton = (ShutterButton) mRootView.findViewById(R.id.shutter_button);
@@ -4818,7 +4816,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
     private boolean isShowHelp(){
         if(PersistUtil.isPerfTestRunning() || PersistUtil.isFuncTestRunning() ||
-                PersistUtil.isStressTestRunning()){
+                PersistUtil.isStressTestRunning() || PersistUtil.isKeyTestRunning()){
             return false;
         }
         return true;
