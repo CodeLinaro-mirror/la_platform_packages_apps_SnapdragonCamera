@@ -479,6 +479,7 @@
             android:textColor="@android:color/white"
             android:visibility="gone"
             android:layout_above="@+id/aicamera_seekbar"
+            android:clickable="true"
             android:textSize="14dip" />
         <com.android.camera.ui.VerticalSeekBar
             android:id="@+id/aicamera_seekbar"

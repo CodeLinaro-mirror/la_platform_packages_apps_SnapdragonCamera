@@ -1167,6 +1167,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
         mAIStrengthValue = (TextView) mRootView.findViewById(R.id.aistrength_value);
+        mAIStrengthValue.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String text = mAIStrengthValue.getText().toString();
+                int progress = Integer.valueOf(text.substring(3).trim()) > 0 ? 0 : 100;
+                mAICameraSeekBar.setProgress(progress);
+                float scale = (float) progress / 100;
+                mAICameraSeekBar.freshProgress(scale);
+            }
+        });
         mAistrength = (LinearLayout) mRootView.findViewById(R.id.aistrength);
     }
     public void hidenMFNRtext(){
