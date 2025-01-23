@@ -433,7 +433,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
         h265.add("HEVCProfileMain10");
         h265.add("HEVCProfileMain10HDR10");
         h265.add("HEVCProfileMain10HDR10Plus");
+        Set<String> mvhevc = new HashSet<>();
+        mvhevc.add("HEVCProfileMain10");
         VIDEO_ENCODER_PROFILE_TABLE.put("h265", h265);
+        VIDEO_ENCODER_PROFILE_TABLE.put("mvhevc", mvhevc);
         KEY_HDR_MODES_ORDER.put("SHDR", 1);
         KEY_HDR_MODES_ORDER.put("MFHDR", 2);
         KEY_HDR_MODES_ORDER.put("QHDR", 3);
@@ -2863,6 +2866,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference videoEncoderPref = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
         if ( videoEncoderProfilePref != null && videoEncoderPref != null ) {
             String videoEncoder = videoEncoderPref.getValue();
+            Log.i(TAG, "mvhevcHLG: encoder is " + videoEncoder);
             videoEncoderProfilePref.reloadInitialEntriesAndEntryValues();
             boolean isSupported = isDynamicRangeTenBitSupported();
             Log.d(TAG, " isDynamicRangeTenBitSupported, isSupported : " + isSupported);
@@ -2875,12 +2879,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     if (dynamicProfiles != null) {
                         Set<Long> profiles = dynamicProfiles.getSupportedProfiles();
                         for (Long p : profiles) {
-                            Log.d(TAG, " testProfiles:" + p);
+                            Log.d(TAG, " supported dynamic Profiles:" + p);
                         }
                         Set<String> profiles_string = new HashSet<>();
+                        Set<String> mvhevcprofiles_string = new HashSet<>();
                         if (profiles.contains(DynamicRangeProfiles.HLG10)) {
                             profiles_string.add("HEVCProfileMain10");
+                            mvhevcprofiles_string.add("HEVCProfileMain10");
                             Log.d(TAG, " Ten bit HLG10 Supported");
+                            VIDEO_ENCODER_PROFILE_TABLE.put("mvhevc", mvhevcprofiles_string);
                         }
                         if (profiles.contains(DynamicRangeProfiles.HDR10)) {
                             profiles_string.add("HEVCProfileMain10HDR10");
