@@ -2109,7 +2109,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void updateAfInfoText(String[] info) {
         if (info == null || info.length <7 || isInvalidString(info)) {
             mInvalidAFCount ++;
-            if(mInvalidAFCount < 2 && mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR) {
+            if(mInvalidAFCount < 2 ) {
                 return;
             }
         }
