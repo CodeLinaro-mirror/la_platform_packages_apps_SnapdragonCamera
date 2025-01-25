@@ -43,6 +43,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraCharacteristics.Key;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
@@ -379,6 +380,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private int[] mExtendedHFRSize;//An array of pairs (fps, maxW, maxH)
     private int[] mSuperBufferSize;
     private Map<String,VideoEisConfig> mVideoEisConfigs;
+    HashMap<Size, Long> mMinDurationMap = new HashMap<Size, Long>();
     private ArrayList<String> mPrepNameKeys;
     private Map<String, Set<String>> mQuadBayerIds = new HashMap<>();
     private boolean isPreferenceEnable = false;
@@ -930,6 +932,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         filterChromaflashPictureSizeOptions();
         filterHeifSizeOptions();
         mVideoEisConfigs = getVideoEisConfigs(cameraId);
+        mMinDurationMap = getMinDurationMap(cameraId);
         filterHFROptions();
         filterVideoEncoderProfileOptions();
         if (TRACE_DEBUG) Trace.endSection();
@@ -1066,7 +1069,56 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return ret;
     }
+    public Size[] getAvailableSizesForFormat(int cameraId, int format,  Key<StreamConfigurationMap> keyName) {
+        StreamConfigurationMap config = mCharacteristics.get(cameraId).get(keyName);
+        if (config == null) {
+            return new Size[0];
+        }
+        Size[] sizes = null;
+        Size[] fastSizeList = config.getOutputSizes(format);
+        Size[] slowSizeList = config.getHighResolutionOutputSizes(format);
+        if (fastSizeList != null && slowSizeList != null) {
+            sizes = new Size[slowSizeList.length + fastSizeList.length];
+            System.arraycopy(fastSizeList, 0, sizes, 0, fastSizeList.length);
+            System.arraycopy(slowSizeList, 0, sizes, fastSizeList.length, slowSizeList.length);
+        } else if (fastSizeList != null) {
+            sizes = fastSizeList;
+        } else if (slowSizeList != null) {
+            sizes = slowSizeList;
+        }
+        if (sizes == null) {
+            sizes = new Size[0];
+        }
+        return sizes;
+    }
 
+    public HashMap<Size, Long> getMinDurationMap(int cameraId) {
+        HashMap<Size, Long> minDurationMap = new HashMap<Size, Long>();
+        List<Key<StreamConfigurationMap>> key = new ArrayList<>();
+        key.add(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
+        key.add(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        for(Key<StreamConfigurationMap> keyName: key){
+            StreamConfigurationMap config = mCharacteristics.get(cameraId).get(keyName);
+            if (config == null) {
+                return minDurationMap;
+            }
+            for (android.util.Size size : getAvailableSizesForFormat(cameraId, ImageFormat.JPEG, keyName)) {
+                long minFrameDuration = config.getOutputMinFrameDuration(ImageFormat.JPEG, size);
+                if (minFrameDuration != 0) {
+                    minDurationMap.put(new Size(size.getWidth(), size.getHeight()), minFrameDuration);
+                }
+            }
+        }
+        return minDurationMap;
+    }
+    public float getFps(Size pictureSize){
+        float fps = 0f;
+        if(mMinDurationMap.size() > 0) {
+            Long duration = mMinDurationMap.get(pictureSize);
+            fps = (float)1000000000/duration;
+        }
+        return fps;
+    }
     public String getAICameraValue(){
         String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
                 getCurrentPrepNameKey());
