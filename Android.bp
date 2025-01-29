@@ -56,12 +56,17 @@ cc_library_shared {
     header_libs: [
         "jni_headers",
         "vendor_common_inc",
+        "libnativewindow_headers",
+    ],
+    static_libs: [
+        "libaidlcommonsupport",
     ],
     shared_libs: [
         "liblog",
         "libcutils",
         "libbinder_ndk",
         "libutils",
+        "libnativewindow",
     ],
     defaults: ["c2pa_config"],
 }

@@ -14120,11 +14120,12 @@ private boolean isDevOptionSetting(){
             return true;
         }
 
+        long freeMemory = Runtime.getRuntime().freeMemory();
         long totalMemory = Runtime.getRuntime().totalMemory();
         long maxMemory = Runtime.getRuntime().maxMemory();
         long remainMemory = maxMemory - totalMemory;
-
-        if (remainMemory <= LONGSHOT_CANCEL_THRESHOLD) {
+        Log.i(TAG,"maxMemory:" + maxMemory + ", totalMemory:" + totalMemory + ",freeMemory:" + freeMemory);
+        if (remainMemory <= LONGSHOT_CANCEL_THRESHOLD && freeMemory <= LONGSHOT_CANCEL_THRESHOLD) {
             Log.e(TAG, "cancel longshot: free=" + remainMemory
                     + " threshold=" + LONGSHOT_CANCEL_THRESHOLD);
             RotateTextToast.makeText(mActivity, R.string.msg_cancel_longshot_for_limited_memory,
@@ -16735,7 +16736,9 @@ private boolean isDevOptionSetting(){
         double targetRatio = (double) pictureSize.getWidth() / pictureSize.getHeight();
         int index = 0;
         for (Size s : prevSizes) {
-            points[index++] = new Point(s.getWidth(), s.getHeight());
+            if(s.getWidth()*s.getHeight() < pictureSize.getWidth() * pictureSize.getHeight()) {
+                points[index++] = new Point(s.getWidth(), s.getHeight());
+            }
         }
 
         int optimalPickIndex = CameraUtil.getOptimalPreviewSize(mActivity, points, targetRatio);

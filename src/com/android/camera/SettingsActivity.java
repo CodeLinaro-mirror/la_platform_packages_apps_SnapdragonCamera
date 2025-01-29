@@ -1684,6 +1684,9 @@ private void setSearchView(AutoCompleteTextView autoCompTextView,ImageView searc
                         updateMultiResolutionRealted();
                     }
                 }
+                if(!mSettingsManager.isFlashAvailable()){
+                    removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, videoPre);
+                }
                 break;
             case VIDEO:
             case HFR:
@@ -1760,6 +1763,9 @@ private void setSearchView(AutoCompleteTextView autoCompTextView,ImageView searc
                     }
                 }else {
                     removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
+                    if(!mSettingsManager.isFlashAvailable()){
+                        removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, videoPre);
+                    }
                 }
                 removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC, videoPre);
                 break;
