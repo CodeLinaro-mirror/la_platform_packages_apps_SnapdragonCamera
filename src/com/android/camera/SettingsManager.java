@@ -28,7 +28,7 @@
  */
  /*
   * Changes from Qualcomm Innovation Center are provided under the following license:
-  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
   * SPDX-License-Identifier: BSD-3-Clause-Clear
   */
 
@@ -111,6 +111,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.lang.StringBuilder;
+import java.util.stream.Collectors;
+
 import com.android.camera.util.PersistUtil;
 
 
@@ -1821,6 +1823,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference forceAUX = mPreferenceGroup.findPreference(KEY_FORCE_AUX);
         ListPreference whiteBalance = mPreferenceGroup.findPreference(KEY_WHITE_BALANCE);
         ListPreference flashMode = mPreferenceGroup.findPreference(KEY_FLASH_MODE);
+        ListPreference flashManual = mPreferenceGroup.findPreference(KEY_CAMERA_MANUALFLASH);
         ListPreference colorEffect = mPreferenceGroup.findPreference(KEY_COLOR_EFFECT);
         ListPreference sceneMode = mPreferenceGroup.findPreference(KEY_SCENE_MODE);
         ListPreference sceneModeInstructional =
@@ -1877,7 +1880,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference ml_video = mPreferenceGroup.findPreference(KEY_ML_VIDEO);
         ListPreference inStantZoom = mPreferenceGroup.findPreference(KEY_INSTANT_ZOOM);
         ListPreference aide = mPreferenceGroup.findPreference(KEY_AI_DENOISER);
+        ListPreference bufferMode = mPreferenceGroup.findPreference(KEY_HFR_BUFFER_MODE);
 
+        if(!isSupportedSuperBuffer(mCameraId) || CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.HFR){
+            removePreference(mPreferenceGroup, KEY_HFR_BUFFER_MODE);
+        }
         if (forceAUX != null && !mHasMultiCamera) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
             mFilteredKeys.add(forceAUX.getKey());
@@ -1906,6 +1913,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
             // Front Camera does not support video
             if (mCameraId == CaptureModule.FRONT_ID) {
                 removePreference(mPreferenceGroup, KEY_VIDEO_FLASH_MODE);
+            }
+        }
+        if(flashManual != null){
+            if (!isFlashAvailable(mCameraId)) {
+                removePreference(mPreferenceGroup, KEY_CAMERA_MANUALFLASH);
+                mFilteredKeys.add(flashManual.getKey());
+            }
+            // Front Camera does not support video
+            if (mCameraId == CaptureModule.FRONT_ID) {
+                removePreference(mPreferenceGroup, KEY_CAMERA_MANUALFLASH);
             }
         }
         if (aiCamera != null) {
@@ -2757,8 +2774,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     mode == CaptureModule.CameraMode.CINEMATIC) {
                 ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
                 hfrPref.reloadInitialEntriesAndEntryValues();
-                mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
-                        getSupportedHighFrameRate(mode, videoQuality.getValue(), mCameraId));
+                if(videoQuality != null && videoQuality.getValue() != null) {
+                    mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
+                            getSupportedHighFrameRate(mode, videoQuality.getValue(), mCameraId));
+                }
                 if (!mIsHFRSupported) {
                     mFilteredKeys.add(hfrPref.getKey());
                 } else {
@@ -2883,7 +2902,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return supported;
     }
     public boolean isBatchMode(int cameraId){
-        if(!isSupportedSuperBuffer(cameraId)){
+        CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
+        if(!isSupportedSuperBuffer(cameraId) || mode != CaptureModule.CameraMode.HFR){
             return  false;
         }
         String buffermode = getValue(SettingsManager.KEY_HFR_BUFFER_MODE);
@@ -3003,7 +3023,67 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return res;
     }
 
-    private List<String> getSupportedHighFrameRate(CaptureModule.CameraMode mode,
+    public String getDisplayValue(String key, int index){
+        ListPreference listPreference = mPreferenceGroup.findPreference(key);
+        CharSequence[] entries = listPreference.getEntries();
+        String displayString = entries[index].toString();
+        return displayString;
+    }
+
+    public String getDisplayValueForPhotoSize(){
+        ListPreference listPreference = mPreferenceGroup.findPreference(KEY_PICTURE_SIZE);
+        Size picturesize = parseSize(listPreference.getValue());
+        StringBuilder result = new StringBuilder();
+        Size[] sizes = {new Size(1,1), new Size(4,3), new Size(16,9)};
+        for (int i = 0; i < sizes.length; i++) {
+            if(picturesize.getWidth() * sizes[i].getHeight() == picturesize.getHeight() * sizes[i].getWidth()){
+                return result.append(sizes[i].getWidth()).append(" : ").append(sizes[i].getHeight()).toString();
+            }
+        }
+        return "others";
+    }
+
+    public int updatePhotoSize(int index){
+        ListPreference listPreference = mPreferenceGroup.findPreference(KEY_PICTURE_SIZE);
+        CharSequence[] entryValues = listPreference.getEntryValues();
+        Size[] sizes = {new Size(1,1), new Size(4,3), new Size(16,9)};
+        if(entryValues != null) {
+            for (int i = 0; i < entryValues.length; i++) {
+                Size picturesize = parseSize(entryValues[i].toString());
+                if(picturesize.getWidth() * sizes[index].getHeight() == picturesize.getHeight() * sizes[index].getWidth()){
+                    return i;
+                }
+            }
+        }
+        return 0;
+    }
+
+    public int getPhotoSizeIndex(){
+        ListPreference listPreference = mPreferenceGroup.findPreference(KEY_PICTURE_SIZE);
+        Size[] sizes = {new Size(1,1), new Size(4,3), new Size(16,9)};
+        Size picturesize = parseSize(listPreference.getValue());
+        for (int i = 0; i < sizes.length; i++) {
+            if(picturesize.getWidth() * sizes[i].getHeight() == picturesize.getHeight() * sizes[i].getWidth()){
+                return i;
+            }
+        }
+        return -1;
+    }
+    public List<String> getKeyAllValues(String key){
+        List<String> values = new ArrayList<String>();
+        ListPreference listPreference = mPreferenceGroup.findPreference(key);
+        if(listPreference == null){
+            return null;
+        }
+        Object[] entryValues = listPreference.getEntryValues();
+        if(entryValues != null) {
+            for (int i = 0; i < entryValues.length; i++) {
+                values.add(entryValues[i].toString());
+            }
+        }
+        return values;
+    }
+    public List<String> getSupportedHighFrameRate(CaptureModule.CameraMode mode,
                                                    String videoSizeStr, int id) {
         int cameraId = id;
         String selectMode = getValue(KEY_SELECT_MODE);
@@ -3572,7 +3652,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         int maxlevel = getMaxFlashLevel();
         String flashmode = getValue(CaptureModule.CURRENT_MODE  == CaptureModule.CameraMode.VIDEO ?
                 SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
-        if(manual == null || flashmode == null || !flashmode.equals("on") || maxlevel <= 1){
+        if(manual == null || flashmode == null || (!flashmode.equals("on") && !flashmode.equals("alwayson")) || maxlevel <= 1){
             return false;
         }else if(manual.equals("1")){
             return true;
@@ -3858,7 +3938,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public List<String> getSupportedVideoSize(int cameraId) {
         if (cameraId > mCharacteristics.size())return null;
         List<String> res = new ArrayList<>();
-        List<Size> videoSizes = new ArrayList<>();
+        List<Size> videoSizesAll = new ArrayList<>();
         Size videoSize = getVideoSize();
         int[] maxHdrSize = null;
         String cameravalue = getValue(KEY_SWITCH_CAMERA);
@@ -3882,16 +3962,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Size[] outRes = map.getOutputSizes(MediaRecorder.class);
         Size[] highRes = map.getHighResolutionOutputSizes(ImageFormat.PRIVATE);
         for (Size size : outRes) {
-            videoSizes.add(size);
+            videoSizesAll.add(size);
         }
         for (Size size : highRes) {
-            videoSizes.add(size);
+            videoSizesAll.add(size);
         }
         if (maxSizes != null) {
             for (Size size : maxSizes) {
-                videoSizes.add(size);
+                videoSizesAll.add(size);
             }
         }
+        List<Size> videoSizes = videoSizesAll.stream().distinct().collect(Collectors.toList());
+
         boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
         String eisValue = getValue(SettingsManager.KEY_EIS_VALUE);
         boolean isEISV3Enabled = "V3".equals(eisValue);
@@ -4096,6 +4178,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return false;
         }
     }
+    public boolean isFlashAvailable() {
+      return isFlashAvailable(mCaptureModule.getMainCameraId());
+    }
 
     public StreamConfigurationMap getStreamConfigurationMap(int cameraId){
         return mCharacteristics.get(cameraId)
@@ -4270,9 +4355,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         float[] range = getZoomRange();
         maxZoom = range[1];
         boolean addMin = true;
-        for (int zoomLevel = 0; zoomLevel <= maxZoom; zoomLevel++) {
+        for (int zoomLevel = -1; zoomLevel <= maxZoom; zoomLevel++) {
             int tmp = zoomLevel+1;
-            if(zoomLevel ==0){
+            if(zoomLevel <= 0){
                 supported.add(String.valueOf(zoomLevel));
             }
             if(range[0] > zoomLevel && range[0] < tmp && addMin){
@@ -4679,7 +4764,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         if (modes != null && modes.length > 0) {
-            ret.add("manual");
+            for (int i = 0; i < modes.length; i++) {
+                if (modes[i] == 1 && CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB) {
+                    continue;
+                } else if (modes[i] == 2 && (!isAIBokehMode() || CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB)) {
+                    continue;
+                } else {
+                    ret.add("manual");
+                }
+            }
         }
         if (ret.size() == 1) {
             ret = null;
@@ -4789,9 +4882,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         void onSettingsChanged(List<SettingState> settings);
     }
 
-    static class Values {
-        String value;
-        String overriddenValue;
+    public static class Values {
+        public String value;
+        public String overriddenValue;
 
         Values(String value, String overriddenValue) {
             this.value = value;
@@ -4799,9 +4892,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
     }
 
-    static class SettingState {
-        String key;
-        Values values;
+    public static class SettingState {
+        public String key;
+        public Values values;
 
         SettingState(String key, Values values) {
             this.key = key;

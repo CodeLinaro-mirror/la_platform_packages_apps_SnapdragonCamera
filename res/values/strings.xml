@@ -13,6 +13,11 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
+<!--
+    Changes from Qualcomm Innovation Center are provided under the following license:
+    Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+    SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
 
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- The name of the Android Camera application. [CHAR LIMIT=16] -->
@@ -380,11 +385,13 @@
     <string name="pref_camera_flashmode_entry_on">On</string>
     <!-- Settings screen, Flash mode 'always off'. [CHAR LIMIT=12] -->
     <string name="pref_camera_flashmode_entry_off">Off</string>
+    <string name="pref_camera_flashmode_entry_always_on">AlwaysOn</string>
 
     <!-- Menu, flash mode labels [CHAR LIMIT=50] -->
     <string name="pref_camera_flashmode_label_auto">FLASH AUTO</string>
     <string name="pref_camera_flashmode_label_on">FLASH ON</string>
     <string name="pref_camera_flashmode_label_off">FLASH OFF</string>
+    <string name="pref_camera_flashmode_label_always_on">FLASH ALWAYS ON</string>
 
     <!-- Default videocamera flash mode setting.-->
     <string name="pref_camera_video_flashmode_default" translatable="false">off</string>

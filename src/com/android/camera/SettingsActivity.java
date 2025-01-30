@@ -153,6 +153,7 @@ public class SettingsActivity extends PreferenceActivity {
     AlertDialog mManualHDRDialog = null;
     private ArrayList<String> mSearchSettingList;
     private ArrayList<CameraCharacteristics> mCharacteristics;
+    private static boolean mFirstInitHFREIS = true;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
@@ -1681,6 +1682,9 @@ public class SettingsActivity extends PreferenceActivity {
                         updateMultiResolutionRealted();
                     }
                 }
+                if(!mSettingsManager.isFlashAvailable()){
+                    removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, videoPre);
+                }
                 break;
             case VIDEO:
             case HFR:
@@ -1747,7 +1751,7 @@ public class SettingsActivity extends PreferenceActivity {
                 if (mode != VIDEO) {
                     removePreference(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL, videoPre);
                     removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, videoPre);
-                    if(mode == HFR && !mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())){
+                    if(!mSettingsManager.isSupportedSuperBuffer(mSettingsManager.getCurrentCameraId())){
                         removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
                     }
                     Preference p1 = findPreference(SettingsManager.KEY_PICTURE_FORMAT);
@@ -1757,6 +1761,9 @@ public class SettingsActivity extends PreferenceActivity {
                     }
                 }else {
                     removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
+                    if(!mSettingsManager.isFlashAvailable()){
+                        removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, videoPre);
+                    }
                 }
                 removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS_FOR_CINEMATIC, videoPre);
                 break;
@@ -2672,7 +2679,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         String qllStr = mSettingsManager.getValue(SettingsManager.KEY_QLL);
-        if (qllStr.equals("1")) {
+        if (qllStr != null && qllStr.equals("1")) {
             pref.setValue("0");
             pref.setEnabled(false);
             return;
@@ -2795,6 +2802,12 @@ public class SettingsActivity extends PreferenceActivity {
         } else {
             if (eisPref != null) {
                 eisPref.setEnabled(true);
+                CaptureModule.CameraMode mode = (CaptureModule.CameraMode)
+                        getIntent().getSerializableExtra(CAMERA_MODULE);
+                if (mode == CaptureModule.CameraMode.HFR && mFirstInitHFREIS) {
+                    eisPref.setValue("disable");
+                    mFirstInitHFREIS = false;
+                }
             }
         }
         if (mSettingsManager.isAIBokehMode()) {
@@ -2839,8 +2852,9 @@ public class SettingsActivity extends PreferenceActivity {
             zoomLevelLists.add(String.valueOf(maxZoom));
         }
         List<String> zoomEntriesLists = new ArrayList<String>();
-        zoomEntriesLists.add("Default");
-        for (int i = 1; i< zoomLevelLists.size(); i++) {
+        zoomEntriesLists.add("Keep zoom when pause");
+        zoomEntriesLists.add("Reset zoom when pause");
+        for (int i = 2; i< zoomLevelLists.size(); i++) {
             zoomEntriesLists.add(zoomLevelLists.get(i) + "x");
         }
         if(zoomPref != null) {

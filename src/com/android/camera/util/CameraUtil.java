@@ -193,7 +193,7 @@ public class CameraUtil {
     public static String mWidth,mHeight,mFrameRate,mTitle;
     public static int mFps;
     public static int modeLayHeigh;
-    public static int zoomBarHeigh;
+    public static int zoomTextHeigh;
 
     private static long mStartTime;
     private static String mStartStr;
@@ -1853,6 +1853,9 @@ public class CameraUtil {
     }
     public static void setModeLayHeight(int height){
         modeLayHeigh = height;
+    }
+    public static void setZoomTextHeight(int height){
+        zoomTextHeigh = height;
     }
 
     public static class IntegerLock {

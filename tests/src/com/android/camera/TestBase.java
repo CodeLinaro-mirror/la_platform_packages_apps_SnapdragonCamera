@@ -1,6 +1,6 @@
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 package com.android.camera;
@@ -112,6 +112,10 @@ public class TestBase{
     public static final int FLASH_STATE_FIRED = 3;
     public int[] mShutterLoc = new  int[2];
     public int[] mFlashLoc = new  int[2];
+
+    public int[] mVideoPhotoSizeLoc = new  int[2];
+
+    public int[] mVideoFpsLoc = new  int[2];
     public int[] mHdrLoc = new  int[2];
     public int[] mZoomBarLoc = new  int[2];
     public int[] mZoomValueLoc = new  int[2];
@@ -226,6 +230,8 @@ public class TestBase{
             return;
         }
         View mShutter = mActivity.findViewById(R.id.shutter_button);
+        View mVideoPhotoSize = mActivity.findViewById(R.id.video_photo_size);
+        View mVideoFps = mActivity.findViewById(R.id.video_fps);
         View mFlash = mActivity.findViewById(R.id.flash_button);
         View mHdr = mActivity.findViewById(R.id.scene_mode_hdr);
         View mZoomBar = mActivity.findViewById(R.id.zoom_seekbar);
@@ -263,6 +269,10 @@ public class TestBase{
         mThumbLoc = getViewLoction(mThumbnail);
         mIconLoc.put("Thumb",mThumbLoc);
         mRecordLoc.put("Flash",mFlashLoc);
+        mVideoPhotoSizeLoc = getViewLoction(mVideoPhotoSize);
+        mIconLoc.put("VideoPhotoSize",mVideoPhotoSizeLoc);
+        mVideoFpsLoc = getViewLoction(mVideoFps);
+        mIconLoc.put("VideoFps",mVideoFpsLoc);
         mRecordLoc.put("ZoomValue",mZoomValueLoc);
         mRecordLoc.put("ZoomBarMax", maxzoom);
         int[] backicon = new int[]{20,100};
@@ -532,6 +542,9 @@ public class TestBase{
         if (isOpenFromIntent) {
             return;
         }
+        if (testItem("testResolutionInPrev")) {
+            testResolutionInPrev(cameraId, mode);
+        }
         if (testItem("testLongShot")) {
             testLongShot(cameraId,mode);
         }
@@ -689,6 +702,12 @@ public class TestBase{
 
         if (isOpenFromIntent) {
             return;
+        }
+        if (testItem("testResolutionInPrev")) {
+            testResolutionInPrev(cameraId, mode);
+        }
+        if (testItem("testFpsInPrev")) {
+            testFpsInPrev(cameraId, mode);
         }
         if(testItem("testTAF") && !cameraId.equals("1") && mode != CaptureModule.CameraMode.CINEMATIC){
             testTAF(mode);
@@ -857,6 +876,107 @@ public class TestBase{
         }else
             return false;
     }
+    private void checkPictureSize(int width, int height){
+        String wInExif = mCurrentexif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH);
+        String hInExif = mCurrentexif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
+        if(Integer.valueOf(wInExif) * height != Integer.valueOf(hInExif) * width){
+            testResult = false;
+            testFail = getFailStr("picture resolution doesnt match ",width,wInExif);
+        }
+    }
+    public void testResolutionInPrev(String cameraid,CaptureModule.CameraMode mode) throws Exception {
+        updateJson(5,null);
+        Log.i(TAG,"start testResolutionInPrev, mode:" + mode + ",cameraId:" + cameraid + ",testResult:" + testResult);
+        if(mode == CaptureModule.CameraMode.CINEMATIC || mode == CaptureModule.CameraMode.RTB){
+            View resolution = mActivity.findViewById(R.id.video_photo_size);
+            if(resolution.getVisibility() != View.VISIBLE){
+                testResult = true;
+                mSupported = false;
+            }else{
+                testFail = getFailStr("resolution.getVisibility",resolution.getVisibility(),"INVISIBLE");
+            }
+            if(testResult){
+                updateJson(5,testPass);
+            }else{
+                updateJson(5,testFail);
+            }
+        }else {
+            if (mode == CaptureModule.CameraMode.PRO_MODE || mode == CaptureModule.CameraMode.DEFAULT) {
+                boolean check11 = true;
+                executeShellCommand("input tap " + mVideoPhotoSizeLoc[0] + " " + mVideoPhotoSizeLoc[1]);
+                Thread.sleep(SMALL_WAIT_DURATION);
+                snapByLocation();
+                checkPictureSize(16,9);
+                boolean check169 = testResult;
+                if(!cameraid.equals("1")) {
+                    executeShellCommand("input tap " + mVideoPhotoSizeLoc[0] + " " + mVideoPhotoSizeLoc[1]);
+                    Thread.sleep(SMALL_WAIT_DURATION);
+                    snapByLocation();
+                    checkPictureSize(1, 1);
+                    check11 = testResult;
+                }
+                executeShellCommand("input tap " + mVideoPhotoSizeLoc[0] + " " + mVideoPhotoSizeLoc[1]);
+                Thread.sleep(SMALL_WAIT_DURATION);
+                snapByLocation();
+                checkPictureSize(4,3);
+                boolean check43 = testResult;
+                if(check169 && check11 && check43){
+                    updateJson(5,testPass);
+                }else{
+                    updateJson(5,testFail);
+                }
+            } else if(mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO){
+                testReolutionFpsInPrev(SettingsManager.KEY_VIDEO_QUALITY, mode, mVideoPhotoSizeLoc);
+                if(testResult){
+                    updateJson(5,testPass);
+                }else{
+                    updateJson(5,testFail);
+                }
+            }
+        }
+    }
+
+    public void testFpsInPrev(String cameraid,CaptureModule.CameraMode mode) throws Exception {
+        updateJson(5, null);
+        if (mode != CaptureModule.CameraMode.VIDEO && mode != CaptureModule.CameraMode.HFR) {
+            View fps = mActivity.findViewById(R.id.video_fps);
+            if(fps.getVisibility() != View.VISIBLE){
+                testResult = true;
+                mSupported = false;
+            }else{
+                testFail = getFailStr("fps .getVisibility",fps.getVisibility(),"INVISIBLE");
+            }
+            if(testResult){
+                updateJson(5,testPass);
+            }else{
+                updateJson(5,testFail);
+            }
+        }else {
+            testReolutionFpsInPrev(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mode, mVideoFpsLoc);
+            if(testResult){
+                updateJson(5,testPass);
+            }else{
+                updateJson(5,testFail);
+            }
+        }
+    }
+    private void testReolutionFpsInPrev(String strkey, CaptureModule.CameraMode mode, int[] location) throws Exception {
+        CharSequence[] Entryvalues = mSettingsManager.getEntryValues(strkey);
+        if(Entryvalues == null || Entryvalues.length == 0){
+            Log.i(TAG,"Did not find this setting or did not get its value,key is:"+strkey);
+            mSupported = false;
+            testResult = true;
+        }
+        for (int i = 0; i < Entryvalues.length; i++) {
+            executeShellCommand("input tap " + location[0] + " " + location[1]);
+            Thread.sleep(SMALL_WAIT_DURATION);
+            testVideo(mode);
+            if(!testResult){
+                break;
+            }
+        }
+    }
+
     public void testFlash(String cameraid,CaptureModule.CameraMode mode,boolean isPerformenceTest) throws Exception {
         updateJson(5,null);
         if(cameraid.equals("1") || mode == CaptureModule.CameraMode.CINEMATIC || mode == CaptureModule.CameraMode.DEPTH){
@@ -874,6 +994,7 @@ public class TestBase{
             }
         }else {
             boolean intenton = false;
+            boolean intentalwayson = false;
             boolean intentoff = false;
             boolean intentauto = false;
             executeShellCommand("input tap " + mFlashLoc[0] + " " + mFlashLoc[1]);
@@ -936,6 +1057,21 @@ public class TestBase{
                 }
                 executeShellCommand("input tap " + mFlashLoc[0] + " " + mFlashLoc[1]);
                 snapByLocation();
+                checkFlash("alwayson");
+                boolean checkalwayson = testResult;
+                if(isOpenFromIntent){
+                    pressDone();
+                    intentalwayson = checkalwayson && testResult;
+                    openCameraByIntent(mImageIntent);
+                    checkPreview("0",mode);
+                    intentalwayson = intentalwayson && testResult;
+                }
+                if(isPerformenceTest){
+                    HashMap<String,Long> snapShotWithFlashAlwaysOn = getHashMapValue(mCaptureModule.getHashMapTimes());
+                    performenceValues.put("snapFlashAlwaysOn",snapShotWithFlashAlwaysOn);
+                }
+                executeShellCommand("input tap " + mFlashLoc[0] + " " + mFlashLoc[1]);
+                snapByLocation();
                 checkFlash("off");
                 boolean checkoff = testResult;
                 if(isOpenFromIntent){
@@ -957,7 +1093,7 @@ public class TestBase{
                 if(isOpenFromIntent){
                     pressDone();
                     intentauto = checkauto && testResult;
-                    if(intentauto && intenton && intentoff){
+                    if(intentauto && intenton && intentoff && intentalwayson){
                         updateJson(5,testPass);
                     }else {
                         updateJson(5,testFail);
@@ -967,7 +1103,7 @@ public class TestBase{
                 if(isPerformenceTest){
                     mCaptureModule.resetHashMapTimes();
                 }
-                if(checkauto && checkoff && checkon){
+                if(checkauto && checkoff && checkon && checkalwayson){
                     updateJson(5,testPass);
                 }
                 else {
@@ -1801,8 +1937,7 @@ public class TestBase{
     private void testFilter(CaptureModule.CameraMode mode)throws Exception{
         updateJson(5,null);
         View mFliter = mActivity.findViewById(R.id.filter_mode_switcher);
-        if(mode == CaptureModule.CameraMode.PRO_MODE || !mSettingsManager.isFilterShow()
-                || mode == CaptureModule.CameraMode.DEPTH) {
+        if(!mSettingsManager.isFilterShow() || mode == CaptureModule.CameraMode.DEPTH) {
             if (mFliter.getVisibility() != View.VISIBLE) {
                 testResult = true;
                 mSupported = false;
@@ -1824,7 +1959,7 @@ public class TestBase{
 
             Thread.sleep(SMALL_WAIT_DURATION);
 
-            if(mode == CaptureModule.CameraMode.DEFAULT || mode == CaptureModule.CameraMode.RTB){
+            if(mode == CaptureModule.CameraMode.DEFAULT || mode == CaptureModule.CameraMode.RTB || mode == CaptureModule.CameraMode.PRO_MODE){
                 testSnapshot(mode);
             }else if (isVideoMode(mode)){
                 testVideo(mode);
@@ -3228,6 +3363,33 @@ public class TestBase{
                 if(FLASH_STATE_READY != flashStateInPre){
                     testFail = getFailStr("FLASH_STATE in preview is", flashStateInPre,FLASH_STATE_FIRED);
                     return;
+                }
+                break;
+            case "alwayson":
+                if (CaptureResult.FLASH_MODE_TORCH != flashInPreview) {
+                    testFail = getFailStr("FLASH_MODE in preview", flashInPreview, CaptureResult.FLASH_MODE_TORCH);
+                    return;
+                }
+                if (CaptureResult.CONTROL_AE_MODE_ON != aeInPreview) {
+                    testFail = getFailStr("CONTROL_AE_MODE in preview", aeInPreview, CaptureResult.CONTROL_AE_MODE_ON);
+                    return;
+                }
+                if(FLASH_STATE_FIRED != flashStateInPre){
+                    testFail = getFailStr("FLASH_STATE in preview is", flashStateInPre,FLASH_STATE_FIRED);
+                    return;
+                }
+                if (isSupportSnapShot(mode)) {
+                    if (CaptureResult.FLASH_MODE_TORCH != flashInResult) {
+                        testFail = getFailStr("FLASH_MODE in reslut", flashInResult, CaptureResult.FLASH_MODE_TORCH);
+                        return;
+                    }
+                    if (CaptureResult.CONTROL_AE_MODE_ON != aeInResult) {
+                        testFail = getFailStr("CONTROL_AE_MODE in reslut", aeInResult, CaptureResult.CONTROL_AE_MODE_ON);
+                    }
+                    if(FLASH_STATE_FIRED != flashStateInCap){
+                        testFail = getFailStr("FLASH_STATE in capture is", flashStateInCap,FLASH_STATE_FIRED);
+                        return;
+                    }
                 }
                 break;
         }

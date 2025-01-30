@@ -46,6 +46,30 @@
         style="@style/OneUIMenuButton"
         android:src="@drawable/flash" />
 
+    <TextView
+        android:id="@+id/video_photo_size"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:textColor="@android:color/white"
+        android:clickable="true"
+        android:textSize="15sp"
+        android:gravity="center"
+        android:text="1080p"
+        android:visibility="visible" />
+
+    <TextView
+        android:id="@+id/video_fps"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:textColor="@android:color/white"
+        android:clickable="true"
+        android:textSize="15sp"
+        android:gravity="center"
+        android:text="120fps"
+        android:visibility="visible" />
+
     <com.android.camera.ui.RotateImageView
         android:id="@+id/mute_button"
         style="@style/OneUIMenuButton"
@@ -197,6 +221,16 @@
             android:src="@drawable/remaining_sheets"
             android:visibility="gone" />
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/pro_setting_reset"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/restore_white"
+        android:layout_marginTop="70dp"
+        android:layout_marginLeft="20dp"
+        android:clickable="true"
+        android:visibility="gone" />
 
     <include layout="@layout/pro_mode_layout" />
     <include layout="@layout/ai_blur_layout" />

@@ -19,7 +19,7 @@
 -->
 <!--
     Changes from Qualcomm Innovation Center are provided under the following license:
-    Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+    Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
     SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <resources>
@@ -1094,6 +1094,7 @@
     <string name="pref_camera2_whitebalance_default" translatable="false">1</string>
     <string name="pref_camera2_coloreffect_default" translatable="false">0</string>
     <string name="pref_camera2_flashmode_value_auto" translatable="false">auto</string>
+    <string name="pref_camera2_flashmode_value_always_on" translatable="false">alwayson</string>
 
     <string name="pref_camera2_makeup_title" translatable="true">Makeup</string>
 
@@ -1263,10 +1264,11 @@
     <string name="pref_camera_bokeh_blur_degree_default" translatable="false">50</string>
     <string name="pref_camera_bokeh_blur_degree_title" translatable="true">Bokeh Blur Value</string>
     <!-- Default Zoom setting. -->
-    <string name="pref_camera_zoom_default" translatable="false">0</string>
+    <string name="pref_camera_zoom_default" translatable="false">-1</string>
     <string name="pref_camera_zoom_title">Zoom</string>
     <!-- Settings menu, Zoom choices -->
-    <string name="pref_camera_zoom_entry_default">default</string>
+    <string name="pref_camera_zoom_entry_keep">Keep zoom when pause</string>
+    <string name="pref_camera_zoom_entry_reset">Reset zoom when pause</string>
     <string name="pref_camera_zoom_entry_1x">1x</string>
     <string name="pref_camera_zoom_entry_2x">2x</string>
     <string name="pref_camera_zoom_entry_3x">3x</string>

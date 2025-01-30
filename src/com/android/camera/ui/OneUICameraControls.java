@@ -23,6 +23,8 @@
  */
 
 package com.android.camera.ui;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.support.v7.widget.RecyclerView;
 import android.app.Activity;
 import android.content.Context;
@@ -37,6 +39,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Display;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -56,11 +59,14 @@ import android.graphics.DashPathEffect;
 
 import org.codeaurora.snapcam.R;
 
+import java.util.List;
+import java.util.Map;
+
 public class OneUICameraControls extends RotatableLayout {
 
     private static final String TAG = "SnapCam_Controls";
 
-    private static final float TOP_PANEL_SPACE_NUM = 4f;
+    private static final float TOP_PANEL_SPACE_NUM = 6f;
     private static final float BOTTOM_PANEL_SPACE_NUM = 5f;
     private static final float PANEL_INDEX_0 = 0f;
     private static final float PANEL_INDEX_1 = 1f;
@@ -68,6 +74,8 @@ public class OneUICameraControls extends RotatableLayout {
     private static final float PANEL_INDEX_3 = 3f;
     private static final float PANEL_INDEX_4 = 4f;
     private View mShutter,mLongShutterStop;
+    private static final float PANEL_INDEX_5 = 5f;
+
     private ShutterButtonAnim mShutterAnim;
     private int mTotalProgress;
     public RectF mShutterAnimRect;
@@ -76,6 +84,9 @@ public class OneUICameraControls extends RotatableLayout {
     private View mExitBestPhotpMode;
     private View mPauseButton;
     private FlashToggleButton mFlashButton;
+
+    private TextView mVideoPhotoSize;
+    private TextView mVideoFps;
     private View mMute;
     private View mFrontBackSwitcher;
     private View mTsMakeupSwitcher;
@@ -118,6 +129,8 @@ public class OneUICameraControls extends RotatableLayout {
 
     private int mIntentMode = CaptureModule.INTENT_MODE_NORMAL;
     private ProMode mProMode;
+    private ImageView mProReset;
+
     private TextView mExposureText;
     private TextView mManualText;
     private TextView mWhiteBalanceText;
@@ -165,9 +178,16 @@ public class OneUICameraControls extends RotatableLayout {
     private SettingsManager mSettingsManager;
     private  LinearLayout.LayoutParams mZoomTextParam,mZoomPartTextParam;
     private int[]mZoomTextWidthHeight;
+    private Context mContext;
+    String[] mProKeys = { SettingsManager.KEY_EXPOSURE,
+            SettingsManager.KEY_FOCUS_DISTANCE,
+            SettingsManager.KEY_MANUAL_EXPOSURE_VALUE,
+            SettingsManager.KEY_WHITE_BALANCE,
+            SettingsManager.KEY_ISO};
 
     public OneUICameraControls(Context context, AttributeSet attrs) {
         super(context, attrs);
+        mContext = context;
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         setWillNotDraw(false);
         mSettingsManager = SettingsManager.getInstance();
@@ -186,6 +206,7 @@ public class OneUICameraControls extends RotatableLayout {
         Point size = new Point();
         display.getSize(size);
         mWidth = size.x;
+        mSettingsManager.registerListener(mListener);
     }
 
     public OneUICameraControls(Context context) {
@@ -221,6 +242,8 @@ public class OneUICameraControls extends RotatableLayout {
         mMakeupSeekBarLayout = findViewById(R.id.makeup_seekbar_layout);
         ((SeekBar) mMakeupSeekBar).setMax(100);
         mFlashButton = (FlashToggleButton)findViewById(R.id.flash_button);
+        mVideoPhotoSize = (TextView) findViewById(R.id.video_photo_size);
+        mVideoFps = (TextView) findViewById(R.id.video_fps);
         mMute = findViewById(R.id.mute_button);
         mPreview = findViewById(R.id.preview_thumb);
         mSceneModeSwitcher = findViewById(R.id.scene_mode_switcher);
@@ -261,6 +284,28 @@ public class OneUICameraControls extends RotatableLayout {
                 mWhiteBalance, mWhiteBalanceText, mIso, mIsoText
         };
         mShutterAnim.setObject(this);
+        mProReset = (ImageView) findViewById(R.id.pro_setting_reset);
+        mProReset.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+                builder.setMessage("Reset parameters now？");
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        resetProModeSettings();
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        });
         mExposure.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -345,7 +390,7 @@ public class OneUICameraControls extends RotatableLayout {
 
         mViews = new View[]{
                 mSceneModeHDR, mFilterModeSwitcher, mFrontBackSwitcher,
-                mFlashButton, mShutter,
+                mFlashButton, mVideoPhotoSize, mVideoFps, mShutter,
                 mPreview, mPauseButton, mCancelButton, mSettingsButton
         };
         mBottomLargeSize = getResources().getDimensionPixelSize(
@@ -578,15 +623,10 @@ public class OneUICameraControls extends RotatableLayout {
     }
     private void setZoomTextLayout(){
         LinearLayout mZoomLinearLayout = (LinearLayout) findViewById(R.id.zoom_text_layout);
-
-        int mZoomTextWidth = mZoomLinearLayout.getWidth();
-        int mZoomTextHeight = mZoomLinearLayout.getHeight();
-        mZoomTextWidthHeight = new int[]{mZoomTextWidth,mZoomTextHeight};
+        int[]mZoomLoc = new int[2];
+        mZoomLinearLayout.getLocationInWindow(mZoomLoc);
+        CameraUtil.setZoomTextHeight(mZoomLoc[1]);
     }
-    public int[] getZoomTextLayoutWH() {
-        return mZoomTextWidthHeight;
-    }
-
     public boolean isControlRegion(int x, int y) {
         return y <= mTop || y >= (mHeight - mBottom);
     }
@@ -684,15 +724,17 @@ public class OneUICameraControls extends RotatableLayout {
         setLocation(mFilterModeSwitcher, true, PANEL_INDEX_1);
         if (mIsVideoMode) {
             setLocation(mMute, true, PANEL_INDEX_1);
-            setLocation(mFlashButton, true, PANEL_INDEX_2);
-            setLocation(mSettingsButton, true, PANEL_INDEX_3);
+            setLocation(mFlashButton, true, PANEL_INDEX_4);
+            setLocation(mSettingsButton, true, PANEL_INDEX_5);
             setLocation(mPauseButton, false, 3.4f);
             setLocation(mShutter, false, 0.5f);
             setLocation(mVideoShutter, false, PANEL_INDEX_2);
             setLocation(mExitBestPhotpMode, false, PANEL_INDEX_4);
         } else {
-            setLocation(mFlashButton, true, PANEL_INDEX_2);
-            setLocation(mSettingsButton, true, PANEL_INDEX_3);
+            setLocation(mVideoPhotoSize, true, PANEL_INDEX_2);
+            setLocation(mVideoFps, true, PANEL_INDEX_3);
+            setLocation(mFlashButton, true, PANEL_INDEX_4);
+            setLocation(mSettingsButton, true, PANEL_INDEX_5);
             setLocation(mFrontBackSwitcher, false, 3.4f);
             if (mIntentMode == CaptureModule.INTENT_MODE_CAPTURE) {
                 setLocation(mShutter, false, PANEL_INDEX_2);
@@ -929,6 +971,7 @@ public class OneUICameraControls extends RotatableLayout {
         if(promode) {
             mProMode.initialize(this);
             resetProModeIcons();
+            checkProValues();
         }
     }
 
@@ -944,7 +987,81 @@ public class OneUICameraControls extends RotatableLayout {
         mWhiteBalanceText.setSelected(false);
         mIsoText.setSelected(false);
     }
+    public void resetSelectedMode() {
+        mProMode.setMode(ProMode.NO_MODE);
+        resetProModeIcons();
+        for (TextView v : mProViews) {
+            v.setTextColor(Color.WHITE);
+        }
+    }
 
+    public void setRestoreButtonVisibility(boolean showbutton) {
+        mProReset.setVisibility(showbutton ? View.VISIBLE : View.INVISIBLE);
+    }
+    private SettingsManager.Listener mListener = new SettingsManager.Listener() {
+        @Override
+        public void onSettingsChanged(List<SettingsManager.SettingState> settings) {
+            for (SettingsManager.SettingState state : settings) {
+                String key = state.key;
+                for (String prokey : mProKeys) {
+                    if(prokey.equals(key)){
+                        checkProValues();
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+    };
+
+    private void checkProValues() {
+        boolean showIcon = false;
+        for (String key : mProKeys) {
+            if(key.equals(SettingsManager.KEY_FOCUS_DISTANCE)) {
+                float value = mSettingsManager.getFocusSliderValue(SettingsManager.KEY_FOCUS_DISTANCE);
+                if (value != 0.5f) {
+                    showIcon = true;
+                }
+            }else if(key.equals(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE)){
+                if (!mSettingsManager.getKeyValue(key).equals("disable") && !mSettingsManager.getKeyValue(key).equals("")  && !mSettingsManager.getKeyValue(key).equals(getDefaultValue(key))) {
+                    showIcon = true;
+                    break;
+                }
+            }else {
+                if (mSettingsManager.getValue(key) != null && !mSettingsManager.getValue(key).equals(getDefaultValue(key))) {
+                    showIcon = true;
+                    break;
+                }
+            }
+        }
+        setRestoreButtonVisibility(showIcon);
+    }
+    private String getDefaultValue(String key){
+        if(key.equals(SettingsManager.KEY_EXPOSURE)){
+            return mContext.getResources().getString(R.string.pref_exposure_default);
+        }else if(key.equals(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE)){
+            return "auto";
+        }else if(key.equals(SettingsManager.KEY_WHITE_BALANCE)){
+            return mContext.getResources().getString(R.string.pref_camera2_whitebalance_default);
+        }else if(key.equals(SettingsManager.KEY_ISO)){
+            return mContext.getResources().getString(R.string.pref_camera_iso_default);
+        }
+        return null;
+    }
+    private void resetProModeSettings() {
+        for (String key : mProKeys) {
+            if(key.equals(SettingsManager.KEY_FOCUS_DISTANCE)) {
+                mSettingsManager.setFocusSliderValue(SettingsManager.KEY_FOCUS_DISTANCE, true, 0.5f);
+            }else if(key.equals(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE)){
+                mSettingsManager.setKeyValue(key,true, getDefaultValue(key));
+            }else{
+                mSettingsManager.setValue(key, getDefaultValue(key));
+
+            }
+        }
+        mProMode.reinit();
+        mProMode.setMode(mProMode.getMode());
+    }
     private void setProModeParameters() {
         int width = (mWidth > mHeight) ? mHeight : mWidth;
         LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(width / 5, width / 10);
@@ -957,12 +1074,25 @@ public class OneUICameraControls extends RotatableLayout {
         if (!promode) {
             mProMode.setMode(ProMode.NO_MODE);
             mProModeLayout.setVisibility(INVISIBLE);
+            mProReset.setVisibility(INVISIBLE);
             return;
         }
         mProModeLayout.setVisibility(VISIBLE);
-        mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() - 90);
+        mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() - 140);
     }
 
+    public void setProModeVisibility(int visibility){
+        if(visibility == GONE || visibility == INVISIBLE){
+            mProMode.setMode(ProMode.NO_MODE);
+        }
+        mProModeLayout.setVisibility(visibility);
+        for(TextView view: mProViews){
+            view.setVisibility(visibility);
+            if(visibility == GONE || visibility == INVISIBLE){
+                view.setTextColor(Color.WHITE);
+            }
+        }
+    }
     public void setModeEnable(int mode,boolean isEnable) {
         switch (mode) {
             case ProMode.EXPOSURE_MODE:
