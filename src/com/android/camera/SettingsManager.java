@@ -1384,11 +1384,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 Log.d(TAG, "isAvailableUseCase avilibleCase[i]=" + avilibleCase[i]);
                 if (useCaseId == avilibleCase[i]) isSupported = true;
             }
-        } catch (Exception e){
+        }catch(Exception e){
             Log.i(TAG," isAvailableUseCase exception="+e);
         }
         Log.d(TAG,"isAvailableUseCase isSupported="+isSupported);
-        return isSupported;
+       return isSupported;
     }
 
     public boolean isMultiResReprocessEnabled(){

@@ -444,6 +444,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.quic.camera.AutoHDRSupport.isAutoHDRSupported", Byte.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_qll =
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.isQLLSupported", Integer.class);
+    public static CameraCharacteristics.Key<Integer> support_insensor_zoom =
+            new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.inSensorZoomCapability", Integer.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
     public static CameraCharacteristics.Key<int[]> support_dcg_bits_tags =
@@ -729,6 +731,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMCTFwithReferenceFrame", byte.class);
     public static final CaptureRequest.Key<Byte> enable_statsvisualizer =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableStatsVisualizer", byte.class);
+    public static final CaptureRequest.Key<Integer> insensor_zoom_feature =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableInsensorZoom", Integer.class);
     private static final CaptureRequest.Key<Byte> xcfa_optimization =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableXCFAOptimization", byte.class);
     private static final CaptureRequest.Key<Integer> horizon_level_control =
@@ -3816,7 +3820,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     Log.i(TAG," set physical id " + physicalCameraId + "for image reader stream");
                                     outputConfiguration.setPhysicalCameraId(physicalCameraId);
                                 }
-                                if((mRawImageReader[id] != null && s == mRawImageReader[id].getSurface()) || isInSensorZoomEnabled()){
+                                if(mRawImageReader[id] != null && s == mRawImageReader[id].getSurface()){
                                     applyCroppedRaw(outputConfiguration, getMainCameraId());
                                 }
                                 if(s == mImageReader[id].getSurface() && mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT) {
@@ -4036,7 +4040,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             +reader.getWidth()+"x"+reader.getHeight());
                 }
             }
-        } else if(mSaveRaw){
+        }else if(mSaveRaw){
             int physicalId = mActiveCameraIds.get(0);
             Log.d(TAG," mActiveCameraIds="+physicalId);
                     for( int i = 0;i < mPhysicalRawId.length;i++){
@@ -7828,6 +7832,7 @@ private boolean isDevOptionSetting(){
             applyExtendMaxZoom(builder);
             applyMctf(builder);
             applyQLL(builder);
+            applyInSensorZoom(builder);
             applyIntegratedMode(builder);
             applyEnableStatsVisualizer(builder);
             applyShadingCorrection(builder);
@@ -11073,9 +11078,6 @@ private boolean isDevOptionSetting(){
                         videoSnapshotConfig.addSensorPixelModeUsed(
                                 CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
                         Log.v(TAG, " videoSnapShot OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
-                    }
-                    if (isInSensorZoomEnabled()){
-                        applyCroppedRaw(videoSnapshotConfig, cameraId);
                     }
                     outConfigurations.add(videoSnapshotConfig);
                 }
@@ -14773,23 +14775,24 @@ private boolean isDevOptionSetting(){
         }
     }
 
-    private boolean isInSensorZoomEnabled() {
-        if (!mSettingsManager.isInSensorZoomSupported()) {
-            Log.v(TAG, "InSensorZoom is not supported.");
-            return false;
-        }
-        boolean isEnabled = false;
+    private void applyInSensorZoom(CaptureRequest.Builder request) {
+        Log.v(TAG, " applyInSensorZoom supported :" + !mSettingsManager.isInSensorZoomSupported());
+        if (!mSettingsManager.isInSensorZoomSupported())
+            return;
         try {
+            int value = 0;
             String inSensorZoom = mSettingsManager.getValue(
                     SettingsManager.KEY_INSENSOR_ZOOM);
-            Log.v(TAG, "InSensorZoom value is " + inSensorZoom);
-            if ("1".equals(inSensorZoom)){
-                isEnabled = true;
+            Log.v(TAG, " applyInSensorZoom inSensorZoom :" + inSensorZoom);
+            if ("0".equals(inSensorZoom)){
+                request.set(CaptureModule.insensor_zoom_feature, value);
+            } else {
+                value = 1;
+                request.set(CaptureModule.insensor_zoom_feature, value);
             }
         } catch (IllegalArgumentException e) {
-            Log.v(TAG, EXCEPTION_LOG," isInSensorZoomEnabled: " + e);
+            Log.v(TAG, EXCEPTION_LOG," applyInSensorZoom didn`t exist vendorTag :" + insensor_zoom_feature);
         }
-        return isEnabled;
     }
 
     private void applyInStantZoom(CaptureRequest.Builder request) {
@@ -14811,7 +14814,7 @@ private boolean isDevOptionSetting(){
 
     private void applyCroppedRaw(OutputConfiguration configuration, int cameraId) {
         try {
-            Log.i(TAG,"set CROPPED_RAW for camId " + cameraId);
+            Log.d(TAG,"set cropped raw for raw steam:" + cameraId);
             long useCaseId = CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_CROPPED_RAW;
             if(mSettingsManager.isAvailableUseCase(cameraId, useCaseId)){
                 configuration.setStreamUseCase(useCaseId);
