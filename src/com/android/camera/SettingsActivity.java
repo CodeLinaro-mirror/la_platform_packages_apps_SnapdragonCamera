@@ -2653,16 +2653,6 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateViullPreference() {
         ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_VIULL);
         if (pref == null) return;
-        ListPreference videoQualityPref = (ListPreference) findPreference(SettingsManager.KEY_VIDEO_QUALITY);
-        if (videoQualityPref != null) {
-            CharSequence videQuality = videoQualityPref.getEntry();
-            if (videQuality != null && !videQuality.toString().contains("1080p") && !videQuality.toString().contains("4k")) {
-                pref.setValue("0");
-                pref.setEnabled(false);
-                return;
-            }
-        }
-
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         String selectMode = mSettingsManager.getValue(mSettingsManager.KEY_SELECT_MODE);
         if (selectMode.equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
