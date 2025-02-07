@@ -4032,7 +4032,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                             continue;
                         }
                     }
-                    if(isMultiCameraEnabled() && videoSizes.get(i).getWidth()*videoSizes.get(i).getHeight() >= 4320*7680){
+                    if((isLimitedHDR() || isSHDRLimited() || isMultiCameraEnabled()) && videoSizes.get(i).getWidth()*videoSizes.get(i).getHeight() >= 4320*7680){
                         continue;
                     }
                     res.add(videoSizes.get(i).toString());

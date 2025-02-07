@@ -1242,6 +1242,7 @@ public class SettingsActivity extends PreferenceActivity {
                 updateHdrRefOp();
                 mSettingsManager.updatePictureAndVideoSize();
                 updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+                updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                 if(title.equals("SHDR")) {
                     updateDcgBitsTagPref();
                 }
