@@ -102,8 +102,8 @@ public class ZoomRenderer extends OverlayRenderer
         mCamera2 = true;
         mZoomSig = Math.round(zoomValue * 100) / 100;
         mZoomFraction = Math.round(zoomValue * 100) % 100;
-        mCircleSize = (int) (mMinCircle + (mMaxCircle - mMinCircle) * (zoomValue - mZoomMinValue) /
-                (mZoomMaxValue - mZoomMinValue));
+        mCircleSize = mMinCircle + (mMaxCircle - mMinCircle) * (zoomValue - mZoomMinValue) /
+                (mZoomMaxValue - mZoomMinValue);
     }
 
     public void setZoomValue(int value) {
