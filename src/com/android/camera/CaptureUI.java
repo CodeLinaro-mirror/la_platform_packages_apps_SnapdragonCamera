@@ -4917,6 +4917,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         public void onZoomValueChanged(float value) {
             if(mModule.updateZoomChanged(value)) {
                 mZoomValueText.setText(String.valueOf(value));
+                if (mZoomRenderer != null) {
+                    mZoomRenderer.setZoom(value);
+                }
             }
         }
     }
