@@ -8793,7 +8793,7 @@ private boolean isDevOptionSetting(){
     private void onResumeAfterSuper(boolean resumeFromRestartAll) {
         Log.i(TAG, "onResume " + (mCurrentSceneMode != null ? mCurrentSceneMode.mode : "null")
                 + (resumeFromRestartAll ? " isResumeFromRestartAll" : "")+",mIsCloseCamera="+mIsCloseCamera);
-        if(mCurrentSceneMode.mode == CameraMode.VIDEO){
+        if(mCurrentSceneMode.mode == CameraMode.VIDEO || mCurrentSceneMode.mode == CameraMode.HFR){
             enableVideoButton(false);//disable the video button before media recorder is ready
         }
         mUI.showControlUI();
