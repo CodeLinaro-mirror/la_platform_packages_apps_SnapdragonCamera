@@ -3483,7 +3483,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             } else {
                 if(mLongShutterStopButton.getVisibility() == View.VISIBLE) {
                     mLongShutterStopButton.setVisibility(View.INVISIBLE);
-                    mShutterButton.setVisibility(View.VISIBLE);
+                    if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_VIDEO) {
+                        mShutterButton.setVisibility(View.VISIBLE);
+                    }
                 }
             }
         });
