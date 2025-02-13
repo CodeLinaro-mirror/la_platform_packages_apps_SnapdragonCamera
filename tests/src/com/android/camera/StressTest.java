@@ -113,24 +113,30 @@ public class StressTest extends TestBase {
         switchModeTextToR(false);
     }
 
-    private void clickRightMode(String mode)throws Exception{
+    private boolean clickRightMode(String mode)throws Exception{
         int[] loc =  mModeIconR.get(mode);
         if(loc == null){
             loc = mModeIconL.get(mode);
         }else {
             switchModeTextToR(true);
         }
-        executeShellCommand("input tap " + loc[0] + " " + loc[1]);
-        Thread.sleep(SMALL_WAIT_DURATION);
-
+        if(loc != null) {
+            executeShellCommand("input tap " + loc[0] + " " + loc[1]);
+            Thread.sleep(SMALL_WAIT_DURATION);
+            return true;
+        }else {
+            return  false;
+        }
     }
     @Test
     public void readIconLoc()throws Exception{
         //getModeLoc();
         clickRightMode("Pro");
         getIconLoctionInPro();
-        clickRightMode("Depth");
-        getDepthUILoc();
+        boolean hasDepth = clickRightMode("Depth");
+        if(hasDepth){
+            getDepthUILoc();
+        }
         JSONObject saveObj = new JSONObject();
         addObject(saveObj,"iconLoc",mIconLoc);
         addObject(saveObj,"proLoc",mProLoc);

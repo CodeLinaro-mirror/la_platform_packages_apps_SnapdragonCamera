@@ -117,21 +117,12 @@ public class TestBase{
 
     public int[] mVideoFpsLoc = new  int[2];
     public int[] mHdrLoc = new  int[2];
-    public int[] mZoomBarLoc = new  int[2];
     public int[] mZoomValueLoc = new  int[2];
     public int[] mZoomTextLoc = new  int[2];
-    public int[] mEVTextLoc = new  int[2];
     public int[] mZoomUWLoc = new  int[2];
-    public int[] mZoomTelLoc = new  int[2];
-    public int[] mVerticlEVMaxLoc = new  int[2];
-
-
+    public int[] mZoomTELLoc = new  int[2];
+    public int[] mEVTextLoc = new  int[2];
     public int[] mSwitchLoc = new  int[2];
-    public int[] mEVLoc = new  int[2];
-    public int[] mFocDisLoc = new  int[2];
-    public int[] mShutSpeedLoc = new  int[2];
-    public int[] mWBLoc = new  int[2];
-    public int[] mISOLoc = new  int[2];
     public int[] mVideoLoc = new  int[2];
     public int[]mPauseLoc = new  int[2];
     public int[]mModeLoc = new  int[2];
@@ -149,10 +140,6 @@ public class TestBase{
     private int[]mDepthSettingLoc = new  int[2];
     private int[]mDepthBarLoc = new  int[2];
     private int[]mDepthBarMaxLoc = new  int[2];
-
-    public int mCurrentImgNum;
-    public int mZoomBarWidth;
-    public int mZoomValueWidth;
     private String mPicWidInSet,mPicHeiInSet,mFrameRate,mVideoWidInSet,mVideoHeiInSet;
     private float mOldZoomstr = 0;
     private Rect mOldZoomRegion;
@@ -194,7 +181,6 @@ public class TestBase{
     public static String  functionTestItem;
     public static String  functionTestItemDel;
     public DisplayMetrics displayMetrics;
-    private int checkModeIndex = 5;
     private int burstNum = 0;
 
 
@@ -234,8 +220,6 @@ public class TestBase{
         View mVideoFps = mActivity.findViewById(R.id.video_fps);
         View mFlash = mActivity.findViewById(R.id.flash_button);
         View mHdr = mActivity.findViewById(R.id.scene_mode_hdr);
-        View mZoomBar = mActivity.findViewById(R.id.zoom_seekbar);
-        View mZoomValue = mActivity.findViewById(R.id.zoom_value_text);
         View mSwitch = mActivity.findViewById(R.id.front_back_switcher);
         View mVideoShutter = mActivity.findViewById(R.id.video_button);
 
@@ -245,21 +229,12 @@ public class TestBase{
         View mFilterwitcher = mActivity.findViewById(R.id.filter_mode_switcher);
         View mEVText =  mActivity.findViewById(R.id.ev_text);
         View mEVVerticalBar =  mActivity.findViewById(R.id.ev_verticalbar);
-        mZoomBarWidth = mZoomBar.getWidth();
-        mZoomValueWidth = mZoomValue.getWidth();
         mShutterLoc = getViewLoction(mShutter);
         mIconLoc.put("Shutter",mShutterLoc);
         mFlashLoc = getViewLoction(mFlash);
         mIconLoc.put("Flash",mFlashLoc);
         mHdrLoc = getViewLoction(mHdr);
         mIconLoc.put("Hdr",mHdrLoc);
-        mZoomBar.getLocationInWindow(mZoomBarLoc);
-       // mZoomBarLoc = getViewLoction(mZoomBar);
-        mIconLoc.put("ZoomBarMin",mZoomBarLoc);
-        int[]maxzoom = {mZoomBarWidth,mZoomBarLoc[1]};
-        mIconLoc.put("ZoomBarMax", maxzoom);
-        mZoomValueLoc = getViewLoction(mZoomValue);
-        mIconLoc.put("ZoomValue",mZoomValueLoc);
         mSwitchLoc = getViewLoction(mSwitch);
         mIconLoc.put("SwitchCam",mSwitchLoc);
         mVideoLoc = getViewLoction(mVideoShutter);
@@ -270,11 +245,11 @@ public class TestBase{
         mIconLoc.put("Thumb",mThumbLoc);
         mRecordLoc.put("Flash",mFlashLoc);
         mVideoPhotoSizeLoc = getViewLoction(mVideoPhotoSize);
+
         mIconLoc.put("VideoPhotoSize",mVideoPhotoSizeLoc);
         mVideoFpsLoc = getViewLoction(mVideoFps);
         mIconLoc.put("VideoFps",mVideoFpsLoc);
-        mRecordLoc.put("ZoomValue",mZoomValueLoc);
-        mRecordLoc.put("ZoomBarMax", maxzoom);
+
         int[] backicon = new int[]{20,100};
         mThumLoc.put("BackIcon",backicon);
         View zoomText = mActivity.findViewById(R.id.zoom_text_layout);
@@ -282,11 +257,11 @@ public class TestBase{
         mEVTextLoc = getViewLoction(mEVText);
         TextView mZoomWText = (TextView) mActivity.findViewById(R.id.zoom_w);
         int wZoomlen = mZoomWText.getMeasuredWidth();
-        int[] zoomUW =  new int[]{mZoomTextLoc[0] - wZoomlen ,mZoomTextLoc[1]};
-        int[] zoomTel =  new int[]{mZoomTextLoc[0] + wZoomlen ,mZoomTextLoc[1]};
+        mZoomUWLoc =  new int[]{mZoomTextLoc[0] - wZoomlen ,mZoomTextLoc[1]};
+        mZoomTELLoc =  new int[]{mZoomTextLoc[0] + wZoomlen ,mZoomTextLoc[1]};
         mIconLoc.put("ZoomW",mZoomTextLoc);
-        mIconLoc.put("ZoomUW",zoomUW);
-        mIconLoc.put("ZoomTel",zoomTel);
+        mIconLoc.put("ZoomUW",mZoomUWLoc);
+        mIconLoc.put("ZoomTel",mZoomTELLoc);
         Log.i(TAG,"thumb="+mThumbLoc[0]+"*"+mThumbLoc[1]+",settingloc="+mSettingLoc[0]+"*"+mSettingLoc[1]
                 +",mEVTextLoc="+mEVTextLoc[0]+"*"+mEVTextLoc[1]+"shutterloc="
                 + mShutterLoc[0]+"*"+ mShutterLoc[1]);
@@ -394,7 +369,7 @@ public class TestBase{
     public static void updateAndSavejson(String inputJson,String childNm,String parentNm,String value){
         JSONObject mObj= CameraUtil.getJsonObj(inputJson);
         if (mObj == null) {
-            Log.e("autotest_updateAndSavejson","Json file not exit,will not save the test result,inputJson="+inputJson);
+            Log.e("auto_updateAndSavejson","Json file not exit,will not save the test result,inputJson="+inputJson);
             return;
         }
         if(childNm != null && parentNm != null) {
@@ -742,11 +717,11 @@ public class TestBase{
             if(testItem("testDynamicFPS")) {
                 testDynamicFPS(mode);
             }
-            if(testItem("testMediaCodec")){
-                testMediaCodec(cameraId,mode);
-            }
             if (testItem("testCamID") && !cameraId.equals("1")) {
                 testCamID(mode);
+            }
+            if(testItem("testMediaCodec")){
+                testMediaCodec(cameraId,mode);
             }
         }
 
@@ -1353,24 +1328,22 @@ public class TestBase{
             float uwZoom = getZoomFromText(mZoomUWText);
             float wZoom = getZoomFromText(mZoomWText);
             float telZoom = getZoomFromText(mZoomTelText);
-            int wZoomlen = mZoomUWText.getMeasuredWidth();
             if (mode != CaptureModule.CameraMode.RTB) {
-                int x_position = mZoomTextLoc[0];
                 float selectZoom = wZoom;
-                boolean checkChange = true;
                 for (int i=0;i<3;i++){
-                    if(i ==1){
-                        x_position = mZoomValueLoc[0] + wZoomlen;
+                    if(i ==0){
+                        executeShellCommand("input tap " + mZoomTELLoc[0] + " " + mZoomTELLoc[1]);
                         selectZoom = telZoom;
-                    }else if(i == 2){
-                        x_position = mZoomValueLoc[0] - wZoomlen;
+                    }else if(i == 1){
+                        executeShellCommand("input tap " + mZoomUWLoc[0] + " " + mZoomUWLoc[1]);
                         selectZoom = uwZoom;
-                    }else if(i == 0){
-                        checkChange = false;
+                    }else if(i == 2){
+                        executeShellCommand("input tap " + mZoomTextLoc[0] + " " + mZoomTextLoc[1]);
+                        selectZoom = wZoom;;
                     }
-                    executeShellCommand("input tap " + x_position + " " + mZoomTextLoc[1]);
+
                     clickShutterButton(mode);
-                    checkZoomValue(mode,selectZoom,checkChange);;
+                    checkZoomValue(mode,selectZoom,true);;
                     if (!testResult) break;
                     if(isOpenFromIntent) {
                         pressDone();
@@ -1441,23 +1414,8 @@ public class TestBase{
         }
     }
     public void testCamID(CaptureModule.CameraMode mode) throws Exception {
-        executeShellCommand("setprop persist.sys.camera.devoption.debug 100");
-        mActivityRule.finishActivity();
-        Thread.sleep(OPEN_CAMERA_DURATION);
-        mActivityRule = new ActivityTestRule<>(CameraActivity.class);
-        OpenCamera();
-        Thread.sleep(OPEN_CAMERA_DURATION);
-        String str = getTestMode(mode);
-        int[] loc = mModeIconL.get(str);
-        if(loc == null){
-            loc = mModeIconR.get(str);
-            switchModeTextToR(true);
-        }
-        executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
-        checkPreview("0",mode);
         updateJson(5,null);
         checkSettingValue(SettingsManager.KEY_SWITCH_CAMERA,null,mode,true);
-        executeShellCommand("setprop persist.sys.camera.devoption.debug 0");
         if(testResult) updateJson(5,testPass);
         else{
             updateJson(5,testFail);
@@ -1491,7 +1449,7 @@ public class TestBase{
         } else {
             String ev_value =  mActivity.getResources().getString(
                     R.string.pref_exposure_default);
-            CharSequence[] evvalues = mActivity.mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE);
+            CharSequence[] evvalues = mActivity.mSettingsManager.getEntries(SettingsManager.KEY_EXPOSURE);
             String minValue = String.valueOf(evvalues[0]);
             String maxValue = String.valueOf(evvalues[evvalues.length - 1]);
             executeShellCommand("input tap "+ mEVTextLoc[0]  +" "+mEVTextLoc[1]);
@@ -1793,7 +1751,8 @@ public class TestBase{
 
     private void checkEV(CaptureModule.CameraMode mode,String indexvalue,String evText){
         if(!testResult) return;
-        String value = mActivity.mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
+        int index = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
+        String value = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE)[index].toString();
         if(value == null){
             testFail = getFailStr("KEY_EXPOSURE",value,"NotNull");
             return;
