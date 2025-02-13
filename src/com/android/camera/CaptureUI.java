@@ -1688,6 +1688,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
            mZoomSeekBar.setEnabled(enable);
        if(mZoomValueText != null)
            mZoomValueText.setEnabled(enable);
+       mGestures.setZoomEnabled(enable);
     }
 
     public boolean getZoomFixedSupport() {
@@ -2054,9 +2055,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void onCameraOpened(int cameraId) {
         mGestures.setCaptureUI(this);
+        String encoder  = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
         if (mModule.isDeepZoom() ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC ||
-                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) {
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH ||
+                ("mvhevc").equals(encoder)) {
             mGestures.setZoomEnabled(false);
         } else {
             mGestures.setZoomEnabled(mSettingsManager.isZoomSupported(cameraId));
@@ -3168,7 +3171,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 }
             });
         }
-        mGestures.setZoomEnabled(enabled);
+        String video_encoder  = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+        if(!"mvhevc".equals(video_encoder)) {
+            mGestures.setZoomEnabled(enabled);
+        }
         if(!enabled || !mModule.isLongExpTmCaptrure()) stopShutterAnim();
 
     }
