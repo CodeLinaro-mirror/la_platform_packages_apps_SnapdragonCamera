@@ -4403,6 +4403,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     }
                 }
             }
+            if (!PersistUtil.enableMediaRecorder()) {
+                supported.add("apv");
+            }
         }
         return supported;
     }

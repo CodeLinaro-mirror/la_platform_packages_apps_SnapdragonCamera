@@ -13298,6 +13298,8 @@ private boolean isDevOptionSetting(){
             return MediaFormat.MIMETYPE_VIDEO_MPEG4;
         } else if (encoderSelected.equals("vp8")) {
             return MediaFormat.MIMETYPE_VIDEO_VP8;
+        } else if (encoderSelected.equals("apv")) {
+            return "video/apv";
         } else
             return MediaFormat.MIMETYPE_VIDEO_AVC;
     }
