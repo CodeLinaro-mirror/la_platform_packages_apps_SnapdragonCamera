@@ -823,6 +823,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final CaptureRequest.Key<Integer> snapshotHDR =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.SnapshotHDRMode", Integer.class);
 
+    private static final CaptureRequest.Key<Integer> enablePerReqSync =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enablePerReqSync", Integer.class);
+
     //vendor tag for AIDE2
     public static final CameraCharacteristics.Key<Byte> isAIDE2Supported =
             new CameraCharacteristics.Key<>("org.quic.camera.AIDE2Supported.isAIDE2Supported", byte.class);
@@ -7893,6 +7896,11 @@ private boolean isDevOptionSetting(){
         applyAICameraSnapshot(builder);
     }
 
+    private void applyPerReqSync(CaptureRequest.Builder builder) {
+        Log.d(TAG, "set PerReqSYnc enabled by default");
+        builder.set(enablePerReqSync, 1);
+    }
+
     private void applySessionParameters(CaptureRequest.Builder builder){
         if(CURRENT_MODE == CameraMode.RTB && MCXMODE){
             Log.i(TAG,"set bokeh mode for captureBuilder");
@@ -7926,6 +7934,11 @@ private boolean isDevOptionSetting(){
             applyXCFAOptimization(builder);
             applyeHardSwitchParam(builder);
             applyMLVideoParam(builder);
+            if (!isSingleCameraMode() && (mCurrentSceneMode.mode == CameraMode.RTB || mCurrentSceneMode.mode
+                    == CameraMode.VIDEO || mCurrentSceneMode.mode == CameraMode.DEFAULT)
+                    && PersistUtil.getPerReqSyncEnable()) {
+                 applyPerReqSync(builder);
+            }
         }
         Set<String> raw_ids = mSettingsManager.getPhysicalFeatureEnableId(SettingsManager.KEY_PHYSICAL_RAW_CALLBACK);
         if(raw_ids != null && raw_ids.size() > 0){
