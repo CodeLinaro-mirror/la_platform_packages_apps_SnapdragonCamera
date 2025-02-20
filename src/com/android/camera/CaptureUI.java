@@ -1587,17 +1587,17 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         else if(frame > ZOOM_SMOOTH_FRAME_MAX)
             frame = ZOOM_SMOOTH_FRAME_MAX;
         mModule.updateZoomSmooth(from,to,frame);
-        if(mModule.onZoomChanged(to)) {
-            // mZoomValueText.setText(entries[mZoomIndex]);
-            if (mZoomRenderer != null) {
-                mZoomRenderer.setZoom(to);
-            }
+        if (mZoomRenderer != null) {
+            mZoomRenderer.setZoom(to);
         }
     }
 
     private void setZoomTextSelect(float zoom){
        String zoom_text = zoomDf.format(zoom);
        Log.d(TAG,"zoomtext="+zoom_text+",zoom="+zoom);
+        if (mZoomRenderer != null) {
+            mZoomRenderer.setZoom(Float.valueOf(zoom_text));
+        }
         if(zoom < mWZoom){
             mZoomUWText.setSelected(true);
             mZoomUWText.setText(zoom_text +"x");
@@ -1734,7 +1734,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 return;
             }
             v.setSelected(true);
-            changeZoomValue(mModule.getZoomValue(),mZoomEditText.getText().toString());
+            String zoomstr = mZoomEditText.getText().toString();
+            changeZoomValue(mModule.getZoomValue(),zoomstr);
+            updateZoomSeekBar(Float.valueOf(zoomstr));
             mZoomEditText.setText("");
         });
     }
@@ -1850,6 +1852,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         setZoomTextListener();
         setZoomEdit(zoomRatioRange);
         updateZoombarValue(mModule.getZoomValue());
+
+
 
     }
     public void updateZoombarValue(float value){
@@ -1968,13 +1972,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
     public void updateZoomSeekBar(float zoomValue) {
-        String text = String.format("%.2f", zoomValue).replaceAll("\\.?0*$", "");
+        String zoomstr = zoomDf.format(zoomValue);
         if (mZoomValueText != null && mZoomValueText.getVisibility() == View.VISIBLE) {
-            mZoomValueText.setText(text);
+            mZoomValueText.setText(zoomstr);
             mIsZoomKeyChanged =true;
         }
         if (mZoomSeekBar != null && mZoomSeekBar.getVisibility() == View.VISIBLE) {
-            updateZoombarValue(Float.valueOf(text));
+            updateZoombarValue(Float.valueOf(zoomstr));
         }
     }
 
@@ -4943,9 +4947,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         public void onZoomValueChanged(float mZoomValue) {
             if(mModule.onZoomChanged(mZoomValue)) {
                 setZoomTextSelect(mZoomValue);
-                if (mZoomRenderer != null) {
-                    mZoomRenderer.setZoom(mZoomValue);
-                }
+
             }
         }
 

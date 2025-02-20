@@ -9090,6 +9090,7 @@ private boolean isDevOptionSetting(){
             }
             applyZoomAndUpdate(getMainCameraId(),true, to);
         }
+        applyZoomAndUpdate();
     }
 
     public void updateOfflineDumpTriggerStatus(int trigger) {
