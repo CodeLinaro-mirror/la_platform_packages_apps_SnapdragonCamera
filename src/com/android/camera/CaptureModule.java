@@ -17526,10 +17526,10 @@ private boolean isDevOptionSetting(){
             mUI.hideZoomSeekBar();
         } else if(multiCam != null && multiCam.equals("on")) {
             mUI.hideZoomSeekBar();
-        }else{
+        }else {
             mUI.showZoomSeekBar();
-            mUI.enableZoomSeekBar(true);
         }
+
     }
 
     private void updateAICameraSeekBar(){
