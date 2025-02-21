@@ -9429,6 +9429,7 @@ private boolean isDevOptionSetting(){
         }
 
         mUI.setFocusPosition(x, y);
+        mUI.showEvSeekbar(x,y);
         int x_ = newXY[0];
         int y_ = newXY[1];
         mUI.setFocusPointInPreview(x_, y_);
@@ -9468,6 +9469,7 @@ private boolean isDevOptionSetting(){
             mLockAFAE = LOCK_AF_AE_STATE_START;
             applyIsAfLock(true);
             mUI.setFocusPosition(x, y);
+            mUI.showEvSeekbar(x,y);
             x = newXY[0];
             y = newXY[1];
             mUI.onFocusStarted();
