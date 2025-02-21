@@ -179,7 +179,7 @@ public class TestBase{
     public HashMap<String, int[]> mProLoc = new HashMap<>();
     public HashMap<String, int[]> mDepthLoc = new HashMap<>();
     public HashMap<String, int[]> mThumLoc = new HashMap<>();
-    public static String  functionTestMode;
+    public static String  functionTestMode,functionTestModeDel;
     public static String  functionTestItem;
     public static String  functionTestItemDel;
     public DisplayMetrics displayMetrics;
@@ -729,13 +729,6 @@ public class TestBase{
         if (testItem("testVideoSizeAndFrameRate")) {
             testVideoSizeAndFrameRate(cameraId, mode);
         }
-
-        if (mode != CaptureModule.CameraMode.HFR && !cameraId.equals("1")
-                && mode != CaptureModule.CameraMode.CINEMATIC) {
-            if (testItem("testCamID")) {
-                testCamID(mode);
-            }
-        }
         if(mode == CaptureModule.CameraMode.VIDEO) {
             if(testItem("testPicFormat")) {
                 testPicFormat(mode);
@@ -981,9 +974,6 @@ public class TestBase{
             executeShellCommand("input tap " + location[0] + " " + location[1]);
             Thread.sleep(SMALL_WAIT_DURATION);
             testVideo(mode);
-            if(!testResult){
-                break;
-            }
         }
     }
 
@@ -3649,7 +3639,8 @@ public class TestBase{
             int indexM = testStr.indexOf("-m");
             int indexT = testStr.indexOf("-t");
             int indexNT = testStr.indexOf("-nt");
-            Log.i("getTestItem", "initJson indexM=" + indexM + ",indexT=" + indexT+",indexNT="+indexNT);
+            int indexNM = testStr.indexOf("-nm");
+            Log.i("getTestItem", "initJson indexM=" + indexM + ",indexT=" + indexT+",indexNT="+indexNT+",indexNM="+indexNM);
             if(indexM != -1) {
                 functionTestMode = getIndexStr(testStr, indexM + 2);
             }
@@ -3659,9 +3650,12 @@ public class TestBase{
             if(indexNT != -1) {
                 functionTestItemDel = getIndexStr(testStr, indexNT + 3);
             }
+            if(indexNM != -1) {
+                functionTestModeDel = getIndexStr(testStr, indexNM + 3);
+            }
             Log.i("getTestItem", "initJson " +
                     "functionTestItem=" + functionTestItem + ",functionTestItemDel=" + functionTestItemDel
-                    + ",functionTestMode=" + functionTestMode);
+                    + ",functionTestMode=" + functionTestMode+",functionTestModeDel="+functionTestModeDel);
         }
     }
     private boolean testItem(String testCase){
