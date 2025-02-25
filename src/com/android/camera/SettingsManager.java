@@ -3182,6 +3182,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 if(mode == CaptureModule.CameraMode.HFR && (int)r.getUpper() < 120){
                                     break;
                                 }
+                                if(mode == CaptureModule.CameraMode.HFR && (int)r.getUpper() >= 120
+                                 && PersistUtil.getModelInfo().contains("8735") &&
+                                        videoSize.getWidth() * videoSize.getHeight() >= 3840*2160) {
+                                    break;
+                                }
                                 if(mode == CaptureModule.CameraMode.VIDEO &&
                                         (int)r.getUpper() >= 120){
                                     break;
