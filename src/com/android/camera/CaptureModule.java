@@ -9031,7 +9031,10 @@ private boolean isDevOptionSetting(){
 
     public boolean updateZoomChanged(float requestedZoom) {
         Log.d(TAG,"updateZoomChanged,mPaused:" + mPaused + ",mResumed:" +mResumed+",requestedZoom="+requestedZoom);
-        if (mIsRTBCameraId || isTakingPicture() || !mResumed) return false;
+        if (mIsRTBCameraId || isTakingPicture() || !mResumed)
+        {
+            return false;
+        }
         float diff = Math.abs(mZoomValue - requestedZoom);
         if ((requestedZoom>=1.0 && diff> 0.01) || (requestedZoom < 1.0 && diff> 0.01)) {
             mZoomValue = requestedZoom;
@@ -17375,7 +17378,12 @@ private boolean isDevOptionSetting(){
             mUI.hideZoomSeekBar();
         }else{
             mUI.showZoomSeekBar();
-            mUI.enableZoomSeekBar(true);
+            String video_encoder  = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+            if("mvhevc".equals(video_encoder)){
+                mUI.enableZoomSeekBar(false);
+            }else {
+                mUI.enableZoomSeekBar(true);
+            }
         }
     }
 
