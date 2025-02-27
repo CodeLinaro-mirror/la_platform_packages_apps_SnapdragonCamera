@@ -2552,12 +2552,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mCameraHandler.sendMessage(msg);
             } else {
                 mCamerasOpened = true;
-                mActivity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mUI.onCameraOpened(getMainCameraId());
-                    }
-                });
                 createSessions();
             }
         }
@@ -10694,17 +10688,20 @@ private boolean isDevOptionSetting(){
         if (isDeepZoom()) {
             mZoomValue = mUI.getDeepZoomValue();
         }
+        float[] zoomRatioRange = mSettingsManager.getSupportedRatioZoomRange(getMainCameraId());
         if (mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
-            float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
+            zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                     getMainCameraId());
+        }
             if (zoomRatioRange != null && zoomRatioRange[0] == zoomRatioRange[1]) {
                 mZoomValue = zoomRatioRange[0];
             } else if (zoomRatioRange != null && zoomRatioRange[0] != zoomRatioRange[1]) {
                 if (mZoomValue < zoomRatioRange[0]) {
                     mZoomValue = zoomRatioRange[0];
+                }else if(mZoomValue > zoomRatioRange[1]){
+                    mZoomValue = zoomRatioRange[1];
                 }
             }
-        }
     }
 
     private List<CaptureRequest> createSSMBatchRequest(CaptureRequest.Builder requestBuilder) {
