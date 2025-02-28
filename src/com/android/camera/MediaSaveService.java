@@ -252,7 +252,7 @@ public class MediaSaveService extends Service {
                             OnMediaSavedListener l, ContentResolver resolver) {
         // We don't set a queue limit for video saving because the file
         // is already in the storage. Only updating the database.
-        new VideoUpdateTask(uri, values, l, resolver).execute();
+        new VideoUpdateTask(uri, values, l, resolver).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     public void setListener(Listener l) {
