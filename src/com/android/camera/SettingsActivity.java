@@ -344,6 +344,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                         updateColorSpacePreference();
+                        updateRawFormatPref();
                         break;
                     case SettingsManager.KEY_EIS_VALUE:
                         mSettingsManager.updatePictureAndVideoSize();
@@ -2881,8 +2882,24 @@ public class SettingsActivity extends PreferenceActivity {
                 rawFormatPref.setEnabled(false);;
             }
         } else {
-            if(rawFormatPref != null)
+            if(rawFormatPref != null) {
                 rawFormatPref.setEnabled(true);
+                CharSequence[] fullEntries = getResources().getStringArray(
+                        R.array.pref_camera2_raw_format_entries);
+                CharSequence[] fullEntryValues = getResources().getStringArray(
+                        R.array.pref_camera2_raw_format_entryvalues);
+                if(mSettingsManager.getSavePictureFormat() == SettingsManager.JPEG_R_FORMAT) {
+                    fullEntries = new CharSequence[]{"off", "Raw10", "Raw16(DNG)"};
+                    fullEntryValues = new CharSequence[]{"0", "10", "16"};
+                }
+                rawFormatPref.setEntries(fullEntries);
+                rawFormatPref.setEntryValues(fullEntryValues);
+                int idx = rawFormatPref.findIndexOfValue(rawFormatPref.getValue());;
+                if (idx < 0 ) {
+                    idx = 0;
+                }
+                rawFormatPref.setValueIndex(idx);
+            }
         }
 
     }
