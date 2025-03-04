@@ -436,8 +436,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public static CaptureResult.Key<Byte> isHdr =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.stats.is_hdr_scene", Byte.class);
-    public static CameraCharacteristics.Key<int[]> support_video_hdr_modes =
-            new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.available_video_hdr_modes.video_hdr_modes", int[].class);
     public static CameraCharacteristics.Key<int[]> support_video_mfhdr_modes =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedHDRmodes.HDRModes", int[].class);
     public static CameraCharacteristics.Key<Byte> support_auto_hdr_modes =
@@ -453,8 +451,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public static CameraCharacteristics.Key<Byte> logical_camera_type =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.logicalCameraType.logical_camera_type", Byte.class);
-    public static CaptureRequest.Key<Integer> support_video_hdr_values =
-            new CaptureRequest.Key<>("org.codeaurora.qcamera3.available_video_hdr_modes.video_hdr_values", Integer.class);
 
     public static CameraCharacteristics.Key<Byte> bsgcAvailable =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.stats.bsgc_available", Byte.class);
@@ -11249,6 +11245,17 @@ private boolean isDevOptionSetting(){
                     CameraMetadata.SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION);
             Log.v(TAG, " video record OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
         }
+        if (mSettingsManager.isDynamicRangeTenBitSupported()) {
+            String encoderProfile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
+            if (encoderProfile != null) {
+                String profile = SettingsManager.VIDEO_ENCODER_PROFILE_MAP.get(encoderProfile);
+                Log.v(TAG, "OutputConfiguration set video encoderProfile :" +
+                        encoderProfile + ", profile :" + profile);
+                if (!profile.equals("0")) {
+                    videoRecordConfig.setDynamicRangeProfile(Long.parseLong(profile));
+                }
+            }
+        }
         outConfigurations.add(videoPreviewConfig);
         outConfigurations.add(videoRecordConfig);
         setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
@@ -11707,7 +11714,6 @@ private boolean isDevOptionSetting(){
             applyVideoFlash(mVideoRecordRequestBuilder, cameraId);
             applyFaceDetection(mVideoRecordRequestBuilder);
             applyZoom(mVideoRecordRequestBuilder, cameraId);
-            applyVideoHDR(mVideoRecordRequestBuilder);
             applyTouchTrackFocus(mVideoRecordRequestBuilder);
             applyToneMapping(mVideoRecordRequestBuilder);
         }
@@ -11799,7 +11805,6 @@ private boolean isDevOptionSetting(){
             applyNoiseReduction(builder);
             applyVideoFlash(builder, cameraId);
             applyFaceDetection(builder);
-            applyVideoHDR(builder);
             applyTouchTrackFocus(builder);
             applyToneMapping(builder);
             applyHistogram(builder);
@@ -11814,17 +11819,6 @@ private boolean isDevOptionSetting(){
             applyIsoAndExposureTime(builder);
         }
         applyColorEffect(builder);
-    }
-
-    private void applyVideoHDR(CaptureRequest.Builder builder) {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HDR_VALUE);
-        if (value != null) {
-            try {
-                builder.set(CaptureModule.support_video_hdr_values, Integer.parseInt(value));
-            } catch (IllegalArgumentException e) {
-                Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " + support_video_hdr_values.toString());
-            }
-        }
     }
 
     private void applyCaptureMFNR(CaptureRequest.Builder builder) {
@@ -13222,8 +13216,7 @@ private boolean isDevOptionSetting(){
                     mProfile.videoFrameWidth);
         }
         isSupportedResolution(iVideoEncoder);
-        if (isVideoEncoderProfileSupported()
-                && VendorTagUtil.isHDRVideoModeSupported(mCameraDevice[cameraId])) {
+        if (isVideoEncoderProfileSupported()) {
             int videoEncoderProfile = SettingTranslation.getVideoEncoderProfile(
                     mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE));
             Log.d(TAG, "setVideoEncodingProfileLevel: " + videoEncoderProfile + " " +
@@ -13857,8 +13850,7 @@ private boolean isDevOptionSetting(){
                 mHasMapTimes.put("startConfigurateAudio->endConfigurateAudio", System.currentTimeMillis() - startconfigurateAudio);
             }
         }
-        if (isVideoEncoderProfileSupported()
-                && VendorTagUtil.isHDRVideoModeSupported(mCameraDevice[cameraId])) {
+        if (isVideoEncoderProfileSupported()) {
             int videoEncoderProfile = SettingTranslation.getVideoEncoderProfile(
                     mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE));
             Log.d(TAG, "setVideoEncodingProfileLevel: " + videoEncoderProfile + " " + MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel1);

@@ -3412,16 +3412,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return true;
     }
 
-    public int[] getVideoHDRSupported() {
-        int modes[] = null;
-        try {
-            modes = mCharacteristics.get(getCurrentCameraId())
-                    .get(CaptureModule.support_video_hdr_modes);
-        } catch (Exception e) {
-        }
-        return modes;
-    }
-
     public boolean isShadingCorrectionSupported() {
         boolean ret = false;
         try {
@@ -4664,21 +4654,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 String value = getValue(KEY_SELECT_MODE);
                 if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO && (
                         value != null && value.equals("rtb"))) {
-                    profile.remove("HEVCProfileMain10HDR10Plus");
-                }
-                int[] hdrModes = getVideoHDRSupported();
-                boolean hdr10Plus = false;
-                if (hdrModes != null) {
-                    for (int mode : hdrModes) {
-                        if (mode == 3) { // If mode == 3 will show HDR10+
-                            hdr10Plus = true;
-                            break;
-                        }
-                    }
-                } else {
-                    hdr10Plus = true;
-                }
-                if (!hdr10Plus) {
                     profile.remove("HEVCProfileMain10HDR10Plus");
                 }
             }
