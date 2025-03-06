@@ -1644,15 +1644,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private void setZoomTextListener(){
         mZoomWText.setOnLongClickListener(v ->{
             showZoomBar(true);
-            return false;
+            return true;
         });
         mZoomUWText.setOnLongClickListener(v ->{
             showZoomBar(true);
-            return false;
+            return true;
         });
         mZoomTelText.setOnLongClickListener(v ->{
             showZoomBar(true);
-            return false;
+            return true;
         });
         mZoomWText.setOnClickListener(v ->{
             if(mModule.isTakingPicture()){
