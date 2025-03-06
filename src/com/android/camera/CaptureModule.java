@@ -4581,6 +4581,17 @@ public class CaptureModule implements CameraModule, PhotoController,
     public void restoreCameraIds(){
         CURRENT_ID = mCurrentSceneMode.getCurrentId();
     }
+    public void resetZoom(){
+        if (mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
+            float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
+                    getMainCameraId());
+            if (zoomRatioRange != null && zoomRatioRange[0] == zoomRatioRange[1]) {
+                mZoomValue = zoomRatioRange[0];
+            }
+        }else{
+            mZoomValue = 1.0f;
+        }
+    }
 
     private void initCameraIds() {
         CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);

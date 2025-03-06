@@ -5011,6 +5011,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         mValuesMap.clear();
         if(mValuesMap != null) mValuesMap = null;
         mCaptureModule.restoreCameraIds();
+        mCaptureModule.resetZoom();
         init();
     }
 
