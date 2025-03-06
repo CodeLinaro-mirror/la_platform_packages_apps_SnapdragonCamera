@@ -3514,6 +3514,20 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mVideoButton != null) {
             mVideoButton.setEnabled(enabled);
         }
+        enableFpsOption(mVideoFps, enabled);
+        enableFpsOption(mVideoPhotoSize, enabled);
+    }
+
+    private void enableFpsOption(TextView v, boolean enabled){
+        if(v != null) {
+            v.setEnabled(enabled);
+            v.setClickable(enabled);
+            if (enabled) {
+                v.setTextColor(Color.WHITE);
+            } else {
+                v.setTextColor(Color.parseColor("#808080"));
+            }
+        }
     }
 
     private boolean handleBackKeyOnMenu() {
