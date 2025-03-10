@@ -1599,9 +1599,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public String getValue(String key) {
-        if (mValuesMap == null) return null;
+        ListPreference pref = mPreferenceGroup.findPreference(key);
+        if (mValuesMap == null || mValuesMap.size() == 0)  {
+            if(pref != null){
+                return  pref.getValue();
+            }else {
+                return null;
+            }
+
+        }
+
         Values values = mValuesMap.get(key);
-        if (values == null) return null;
+        if (values == null || (values.overriddenValue == null && values.value == null)) {
+            if(pref != null){
+                return  pref.getValue();
+            }else {
+                return null;
+            }
+        }
         if (values.overriddenValue == null) return values.value;
         else return values.overriddenValue;
     }
