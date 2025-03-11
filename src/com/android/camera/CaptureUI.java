@@ -556,6 +556,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private TextView flashLevelTxt;
     private LinearLayout mZoomEditLayout;
 
+    private TextView mVSRText;
+
     private int mZoomIndex = 0;
 
     private TextView mOfflineDumpTrigger;
@@ -1156,6 +1158,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         showFirstTimeHelp();
     }
 
+    public void updateVSRText(String text){
+        if(mVSRText != null) {
+            if (text.equals("")) {
+                mVSRText.setVisibility(View.GONE);
+            } else {
+                mVSRText.setVisibility(View.VISIBLE);
+                mVSRText.setText(text);
+            }
+        }
+    }
     private void initAICameraSeekBar(){
         mAICameraSeekBar = (VerticalSeekBar) mRootView.findViewById(R.id.aicamera_seekbar);
         mAICameraSeekBar.setProgress(100);
@@ -1180,6 +1192,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
         mAistrength = (LinearLayout) mRootView.findViewById(R.id.aistrength);
+        mVSRText = mRootView.findViewById(R.id.vsr_text);
     }
     public void hidenMFNRtext(){
         if(mMFNRText != null) mMFNRText.setVisibility(View.INVISIBLE);
@@ -1954,6 +1967,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mAICameraSeekBar.setVisibility(View.GONE);
             mAIStrengthValue.setVisibility(View.GONE);
             mAistrength.setVisibility(View.GONE);
+        }
+        if(mVSRText != null){
+            mVSRText.setVisibility(View.GONE);
         }
     }
 

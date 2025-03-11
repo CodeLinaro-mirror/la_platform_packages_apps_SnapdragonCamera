@@ -461,6 +461,19 @@
 
     </LinearLayout>>
 
+    <TextView
+        android:id="@+id/vsr_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="84dip"
+        android:layout_marginLeft="30dip"
+        android:alpha="0.7"
+        android:text="VSR"
+        android:textColor="@android:color/white"
+        android:visibility="gone"
+        android:clickable="false"
+        android:textSize="14dip" />
+
     <LinearLayout
         android:id="@+id/aistrength"
         android:layout_width="wrap_content"

@@ -839,6 +839,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableAICameraHSR", Integer.class);
     public static CameraCharacteristics.Key<int[]> supportedAICameraModes =
             new CameraCharacteristics.Key<>("org.quic.camera.capabilities.supportedAICameraModes", int[].class);
+    private static final CaptureResult.Key<Byte> VRSSkipSegment =
+            new CaptureResult.Key<>("org.quic.camera.AICamera.VRSSkipSegment", byte.class);
     private static final CaptureRequest.Key<Byte> EnableAISnapshot =
             new CaptureRequest.Key<>("org.quic.camera.AICamera.EnableAISnapshot", byte.class);
     private static final CaptureRequest.Key<Integer> AICameraStrength =
@@ -1800,6 +1802,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else {
                 mUI.updateStatsNNVisibility(View.GONE);
             }
+            if(!mSettingsManager.isAICameraDisable()){
+                updateVSRView(result);
+            }
             if(isAIDE2Enabled()){
                 try {
                     mAideAdrcGain = result.get(adrc_gain);
@@ -2158,6 +2163,23 @@ public class CaptureModule implements CameraModule, PhotoController,
         });
     }
 
+    private void updateVSRView(CaptureResult result){
+        try{
+            updateVSRText(new StringBuilder("VSR ").append(result.get(VRSSkipSegment)).toString());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            Log.w(TAG,EXCEPTION_LOG,e.toString());
+            updateVSRText("");
+        }
+    }
+
+    private void updateVSRText(String text){
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mUI.updateVSRText(text);
+            }
+        });
+    }
     private void updatePerformanceDebugView() {
         synchronized (mPerformanceDebugData) {
             mActivity.runOnUiThread(new Runnable() {
