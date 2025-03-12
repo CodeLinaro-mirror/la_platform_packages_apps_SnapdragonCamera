@@ -2581,12 +2581,14 @@ public class SettingsActivity extends PreferenceActivity {
         if (pref != null) {
             if (pref.getEntries() != null && pref.getEntries().length == 1) {
                 pref.setEnabled(false);
+                mSettingsManager.setPreferenceValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE_ENABLED,"false");
                 return;
             } else if (mode == CaptureModule.CameraMode.VIDEO) {
                 String hdrmode = mSettingsManager.getVideoHdrMode();
                 if (hdrmode.toLowerCase().contains("mfhdr")) {
                     pref.setValue("off");
                     pref.setEnabled(false);
+                    mSettingsManager.setPreferenceValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE_ENABLED,"false");
                     return;
                 }
             }
@@ -2597,11 +2599,13 @@ public class SettingsActivity extends PreferenceActivity {
                 if(lapsvalue != null && !lapsvalue.equals("0")){
                     pref.setValue("off");
                     pref.setEnabled(false);
+                    mSettingsManager.setPreferenceValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE_ENABLED,"false");
                     return;
                 }
             }
         }
         if (pref.isEnabled()) {
+            mSettingsManager.setPreferenceValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE_ENABLED,"true");
             updateMultiVideoFPSPreference();
         }
     }

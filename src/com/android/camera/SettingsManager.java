@@ -213,6 +213,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_UPPER_BODY_DETECTION = "pref_camera2_upper_body_detection_key";
     public static final String KEY_PET_DETECTION = "pref_camera2_pet_detection_key";
     public static final String KEY_VIDEO_HIGH_FRAME_RATE = "pref_camera2_hfr_key";
+    public static final String KEY_VIDEO_HIGH_FRAME_RATE_ENABLED = "pref_camera2_hfr_key_enabled";
     public static final String KEY_SELFIE_FLASH = "pref_selfie_flash_key";
     public static final String KEY_SHUTTER_SOUND = "pref_camera2_shutter_sound_key";
     public static final String KEY_TOUCH_TRACK_FOCUS = "pref_camera2_touch_track_focus_key";
@@ -1652,7 +1653,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return result;
     }
-    private boolean setPreferenceValue(String key, String value) {
+    public boolean setPreferenceValue(String key, String value) {
         boolean result = false;
         String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
                 getCurrentPrepNameKey());
