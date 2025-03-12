@@ -11411,8 +11411,8 @@ private boolean isDevOptionSetting(){
             }
             boolean sessionSupported = checkSessionSupported(sessionConfig);
             if(sessionSupported){
-            mCreateSessionLatency = System.currentTimeMillis();
-            mCameraDevice[cameraID].createCaptureSession(sessionConfig);
+                mCreateSessionLatency = System.currentTimeMillis();
+                mCameraDevice[cameraID].createCaptureSession(sessionConfig);
             }
         } catch (Exception exception) {
             Log.e(TAG,exception);
@@ -13404,6 +13404,10 @@ private boolean isDevOptionSetting(){
         mVideoFormat.setInteger(MediaFormat.KEY_PRIORITY, 0 /* realtime priority */);
         applyVideoFlip();
         applyVideoSettings();
+        if (PersistUtil.lookaheadEnabled()) {
+            Log.i(TAG + "_videoformat", "set lookahead enable.");
+            mVideoFormat.setInteger("vendor.qti-ext-enc-lookahead.enable", 1);
+        }
         mVideoEncoder = MediaCodec.createEncoderByType(encoder);
         if (PersistUtil.isProSightEnabled()) {
             try {
