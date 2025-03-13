@@ -34,6 +34,8 @@
 
 package com.android.camera;
 
+import static com.android.camera.CaptureModule.CameraMode.RTB;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.ColorSpace;
@@ -223,6 +225,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MANUAL_QHDR = "QHDR";
     public static final String KEY_MANUAL_HVX_MFHDR = "HVX_MFHDR";
     public static final String KEY_MANUAL_HVX_SHDR = "HVX_SHDR";
+    public static final String KEY_MANUAL_DCG = "DCG";
+    public static final String KEY_MANUAL_DCG1_4 = "DCG1_4";
+    public static final String KEY_MANUAL_DCG1_8 = "DCG1_8";
+    public static final String KEY_MANUAL_DCG1_16 = "DCG1_16";
+    public static final String KEY_MANUAL_DCGDirect = "DCGDirect";
+    public static final String KEY_MANUAL_DCGVS = "DCGVS";
     public static final HashMap<String, Integer> KEY_HDR_MODES_ORDER = new HashMap<String, Integer>();
 
     //tone mapping
@@ -392,6 +400,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         KEY_HDR_MODES_ORDER.put("QHDR", 3);
         KEY_HDR_MODES_ORDER.put("HVX_SHDR", 4);
         KEY_HDR_MODES_ORDER.put("HVX_MFHDR", 5);
+        KEY_HDR_MODES_ORDER.put("DCG", 4);
         VIDEO_ENCODER_PROFILE_MAP.put("off", "0");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10", "2");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10HDR10", "4");
@@ -3217,18 +3226,29 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
-    public int[] getSupportedDcgBitsTags() {
-        int modes[] = {0,1,2};
-        try {
-            modes = mCharacteristics.get(getCurrentCameraId())
-                    .get(CaptureModule.support_dcg_bits_tags);
-            for(int mode: modes){
-                Log.d(TAG,"getSupportedDcgBitsTags, mode:" +mode);
+    public boolean is8KVideoSize(){
+        String videoSizeString = getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        if (videoSizeString != null) {
+            Size videoSize = parseSize(videoSizeString);
+            if(videoSize.getWidth() == 7680 && videoSize.getHeight() == 4320){
+                return true;
             }
+        }
+        return false;
+    }
+
+    public int[] getsupportedDcgModes() {
+        if(is8KVideoSize()){
+            return null;
+        }
+        try {
+            int[] modes = mCharacteristics.get(getCurrentCameraId())
+                    .get(CaptureModule.support_dcg_modes);
+            return modes;
         } catch (Exception e) {
             Log.d(TAG,"getSupportedDcgBitsTags failed");
         }
-        return modes;
+        return null;
     }
 
     private boolean isAutoHDRSupported() {
@@ -3513,12 +3533,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return isMfHDR || isSHDR;
     }
 
-    public boolean isSHDREnable() {
+    public boolean isDCGEnable() {
         String hdrmode = getVideoHdrMode();
         if (hdrmode != null && !hdrmode.equals("off")) {
             String[] modeLists = hdrmode.split(" ");
             for (int i = 0; i < modeLists.length; i ++) {
-                if(modeLists[i].equals("SHDR")) {
+                if(modeLists[i].equals(KEY_MANUAL_DCG)) {
                     return true;
                 }
             }
@@ -3527,20 +3547,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public int getDcgMode(){
-        final SharedPreferences pref = mContext.getSharedPreferences(
-                ComboPreferences.getLocalSharedPreferencesName(mContext,
-                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
-        int mode = pref.getInt(KEY_DCG_BIT_TAG, 0);
-        return mode;
+        if(isDCGEnable()){
+            final SharedPreferences pref = mContext.getSharedPreferences(
+                    ComboPreferences.getLocalSharedPreferencesName(mContext,
+                            getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+            return pref.getInt(KEY_DCG_BIT_TAG, 0);
+        }
+        return 0;
     }
 
-    public void setDcgMode(String name){
-        int mode = 0;
-        if(name.equals("12BIT")){
-            mode = 1;
-        }else if(name.equals("14BIT")){
-            mode = 2;
-        }
+    public void setDcgMode(int mode){
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext,
                         getCurrentPrepNameKey()), Context.MODE_PRIVATE);
@@ -3548,6 +3564,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         editor.putInt(KEY_DCG_BIT_TAG, mode);
         editor.apply();
     }
+
     private List<String> getSupportedPictureSize(int cameraId) {
         if (cameraId > mCharacteristics.size())return null;
         StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
@@ -3793,6 +3810,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         }
                         if (maxHdrSize != null && (maxHdrSize[0] * maxHdrSize[1] < videoSizes.get(i).getWidth() * videoSizes.get(i).getHeight())
                                 && (hdrmode != null && !hdrmode.equals("off"))) {
+                            continue;
+                        }
+                        if((isLimitedHDR() || isSHDRLimited() || isMultiCameraEnabled() || getDcgMode() > 0) && videoSizes.get(i).getWidth()*videoSizes.get(i).getHeight() >= 4320*7680){
                             continue;
                         }
                     }
@@ -4822,6 +4842,20 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return false;
     }
+
+    public boolean isSHDRLimited(){
+        String value = getVideoHdrMode();
+        if (value == null)
+            return false;
+        else if (value.equals("auto"))
+            return true;
+        else{
+            if(value.toLowerCase().contains("shdr"))
+                return true;
+        }
+        return false;
+    }
+
     public static class VideoEisConfig{
         private Size mVideoSize;
         private int mVideoFPS;

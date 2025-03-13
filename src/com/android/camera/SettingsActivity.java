@@ -73,6 +73,7 @@ import android.preference.PreferenceGroup;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
 import android.preference.SwitchPreference;
+import android.view.KeyEvent;
 import android.view.Window;
 import android.view.WindowManager;
 import com.android.camera.util.Log;
@@ -1122,12 +1123,12 @@ public class SettingsActivity extends PreferenceActivity {
         Context context;
         List<String> listItems;
         LayoutInflater mInflater;
-
         public RadioListAdapter(Context context,List<String> mList){
             this.context = context;
             this.listItems = mList;
             mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
+
         @Override
         public int getCount() {
             return listItems.size();
@@ -1144,7 +1145,6 @@ public class SettingsActivity extends PreferenceActivity {
         }
         @Override
         public View getView(final int position, View convertView, ViewGroup parent) {
-
             RadioListViewHolder viewHolder = null;
             if(convertView == null){
                 convertView = mInflater.inflate(R.layout.radio_button_list_item,parent,false);
@@ -1156,7 +1156,8 @@ public class SettingsActivity extends PreferenceActivity {
                 viewHolder = (RadioListViewHolder)convertView.getTag();
             }
             viewHolder.name.setText(listItems.get(position));
-            if(mSettingsManager.getDcgMode() == position){
+            viewHolder.name.setEnabled(parent.isEnabled());
+            if(getPositionForMode(mSettingsManager.getDcgMode())  == position){
                 viewHolder.select.setChecked(true);
             }
             else{
@@ -1166,62 +1167,57 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
 
+    private int getPositionForMode(int mode){
+        int position = -1;
+        int[] dcgModes = mSettingsManager.getsupportedDcgModes();
+        if(dcgModes != null) {
+            for (int i = 0; i < dcgModes.length; i++) {
+                if (mode == dcgModes[i]) {
+                    position = i;
+                    break;
+                }
+            }
+        }
+        return position;
+    }
     public class RadioListViewHolder {
         TextView name;
         RadioButton select;
     }
 
-    private void updateDcgBitsTagPref(){
-        View view = View.inflate(getApplicationContext(), R.layout.manual_hdr_layout, null);
-        TextView dcgModeTitle = (TextView)view.findViewById(R.id.dcg_mode_text);
-        ListView dcgItems = (ListView)view.findViewById(R.id.dcg_list);
-        if(mManualHDRDialog != null && mManualHDRDialog.isShowing()){
-            dcgModeTitle = mManualHDRDialog.findViewById(R.id.dcg_mode_text);
-            dcgItems = mManualHDRDialog.findViewById(R.id.dcg_list);
+    private byte[] intToBytes(int value) {
+        return new byte[]{
+                (byte) (value >> 24),
+                (byte) (value >> 16),
+                (byte) (value >> 8),
+                (byte) value
+        };
+    }
+
+    public String parseDCGModes(int mode) {
+        StringBuilder value = new StringBuilder();
+        if (mode == 1) {
+            value.append("DCG 1_4");
+        }else if(mode == 2){
+            value.append("DCG 1_16");
+        }else if(mode == 3){
+            value.append("DCG direct ");
         }
-        if(mSettingsManager.isSHDREnable()) {
-            dcgModeTitle.setVisibility(View.VISIBLE);
-            dcgItems.setVisibility(View.VISIBLE);
-            List<String> dcgData = new ArrayList<String>();
-            dcgData.add("off");
-            int[] supportedModes = mSettingsManager.getSupportedDcgBitsTags();
-            if(supportedModes != null || supportedModes.length > 0){
-                for (int i = 0; i < supportedModes.length; i++) {
-                    if (supportedModes[i] == 1) {
-                        dcgData.add("12BIT");
-                    } else if (supportedModes[i] == 2) {
-                        dcgData.add("14BIT");
-                    }
-                }
-            }
-            RadioListAdapter arrayDapter = new RadioListAdapter(this, dcgData);
-            dcgItems.setAdapter(arrayDapter);
-            dcgItems.setOnItemClickListener(new OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    mSettingsManager.setDcgMode(dcgData.get(i));
-                    arrayDapter.notifyDataSetChanged();
-                }
-            });
-        }else{
-            dcgModeTitle.setVisibility(View.INVISIBLE);
-            dcgItems.setVisibility(View.INVISIBLE);
-            mSettingsManager.setDcgMode("off");
-        }
+        return value.toString();
     }
 
     private void updateManualHDRSetting() {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
+        int[] dcgModes = mSettingsManager.getsupportedDcgModes();
         StringBuilder defaultHDROrder = new StringBuilder();
-        CaptureModule.CameraMode mode =
-                (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
-        final SharedPreferences.Editor editor = mLocalSharedPref.edit();
+        CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
+
         for (int i = 0; i < modes.length; i++) {
-            if (modes[i] == 1) {
+            if (modes[i] == 1 && mode != RTB) {
                 listData.add(SettingsManager.KEY_MANUAL_SHDR);
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_SHDR).append("#");
-            } else if (modes[i] == 2 && !mSettingsManager.isAIBokehMode()) {
+            } else if (modes[i] == 2 && !mSettingsManager.isAIBokehMode() && mode != RTB) {
                 listData.add(SettingsManager.KEY_MANUAL_MFHDR);
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_MFHDR).append("#");
             } else if (modes[i] == 3) {
@@ -1229,29 +1225,33 @@ public class SettingsActivity extends PreferenceActivity {
                 defaultHDROrder.append(SettingsManager.KEY_MANUAL_QHDR);
             }
         }
-        String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-        int videoSize = CameraUtil.getSize(videoSizeStr);
-        if(mSettingsManager.isHvxMFHDRSupported()) {
-            if(mIsSingleCameraMode && mode == VIDEO && videoSize <= 1920*1080) {
-                listData.add(SettingsManager.KEY_MANUAL_HVX_MFHDR);
-                defaultHDROrder.append(SettingsManager.KEY_MANUAL_HVX_MFHDR);
-            }else {
-                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_MFHDR, false);
-                editor.commit();
-            }
+
+        if(dcgModes != null && dcgModes.length > 0) {
+            listData.add(SettingsManager.KEY_MANUAL_DCG);
+            defaultHDROrder.append(SettingsManager.KEY_MANUAL_DCG);
         }
-        if(mSettingsManager.isHvxShdrSupported()) {
-            if(mIsSingleCameraMode && mode == DEFAULT) {
-                listData.add(SettingsManager.KEY_MANUAL_HVX_SHDR);
-                defaultHDROrder.append(SettingsManager.KEY_MANUAL_HVX_SHDR);
-            }else{
-                editor.putBoolean(SettingsManager.KEY_MANUAL_HVX_SHDR, false);
-                editor.commit();
-            }
-        }
-        String orderLists = mLocalSharedPref.getString(SettingsManager.KEY_MIXED_HDR_ORDER, null);
-        Log.v(TAG, " updateManualHDRSetting orderLists:" + orderLists);
+        final SharedPreferences.Editor editor = mLocalSharedPref.edit();
+        editor.putString(SettingsManager.KEY_MIXED_HDR_ORDER, defaultHDROrder.toString());
+        editor.apply();
+
         View view = View.inflate(getApplicationContext(), R.layout.manual_hdr_layout, null);
+        ListView dcgItems = (ListView)view.findViewById(R.id.dcg_list);
+        List<String> dcgData = new ArrayList<String>();
+        if(dcgModes != null && dcgModes.length > 0) {
+            for (int i = 0; i < dcgModes.length; i++) {
+                dcgData.add(parseDCGModes(dcgModes[i]));
+            }
+        }
+        RadioListAdapter arrayDapter = new RadioListAdapter(this, dcgData);
+        dcgItems.setAdapter(arrayDapter);
+        dcgItems.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                mSettingsManager.setDcgMode(dcgModes[i]);
+                arrayDapter.notifyDataSetChanged();
+            }
+        });
+        setDCGListStatus(dcgItems, mSettingsManager.isDCGEnable());
         final DragonListView listView = (DragonListView)view.findViewById(R.id.dragon_list);
         listView.setContext(SettingsActivity.this);
         DragListViewAdapter adapter = new DragListViewAdapter(this, listData);
@@ -1259,14 +1259,20 @@ public class SettingsActivity extends PreferenceActivity {
         adapter.setChecked(new CheckBoxChanged() {
             @Override
             public void onCheckedChanged(int position, String title, boolean isChecked) {
-                Log.v(TAG, " save title :" + title + ", isChecked :" + isChecked + ", position :" + position);
                 editor.putBoolean(title, isChecked);
                 editor.commit();
                 updateHdrRefOp();
+                updatePictureFormatPreference();
                 mSettingsManager.updatePictureAndVideoSize();
                 updatePreference(SettingsManager.KEY_PICTURE_SIZE);
-                if(title.equals("SHDR")) {
-                    updateDcgBitsTagPref();
+                updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
+                if(title.equals(SettingsManager.KEY_MANUAL_DCG)) {
+                    setDCGListStatus(dcgItems, isChecked);
+                    if(!isChecked){
+                        mSettingsManager.setDcgMode(0);
+                    }
+                    dcgItems.setSelection(getPositionForMode(mSettingsManager.getDcgMode()));
+                    arrayDapter.notifyDataSetChanged();
                 }
             }
         });
@@ -1291,15 +1297,35 @@ public class SettingsActivity extends PreferenceActivity {
                     mixedHDROrder.append(item);
                     mixedHDROrder.append("#");
                 }
-                Log.v(TAG, " onDismiss mixedHDROrder:" + mixedHDROrder.toString());
                 editor.putString(SettingsManager.KEY_MIXED_HDR_ORDER, mixedHDROrder.toString());
                 editor.apply();
             }
         });
         mManualHDRDialog = alert.create();
+        alert.setOnKeyListener(new DialogInterface.OnKeyListener() {
+            @Override
+            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    mManualHDRDialog.dismiss();
+                    return true;
+                }
+                return false;
+            }
+        });
         mManualHDRDialog.show();
-        updateDcgBitsTagPref();
     }
+
+    private void setDCGListStatus(ListView dcgItems, boolean enable){
+        if(enable) {
+            dcgItems.setEnabled(true);
+            dcgItems.setClickable(true);
+
+        }else{
+            dcgItems.setClickable(false);
+            dcgItems.setEnabled(false);
+        }
+    }
+
 
     private void updateHdrRefOp(){
         CaptureModule.CameraMode mode =
@@ -1460,8 +1486,6 @@ public class SettingsActivity extends PreferenceActivity {
                             String value = ((ListPreference) preference).getValue();
                             if (value.equals("manual")) {
                                 updateManualHDRSetting();
-                            }else{
-                                mSettingsManager.setDcgMode("off");
                             }
                         }
 
