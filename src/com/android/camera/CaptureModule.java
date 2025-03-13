@@ -320,6 +320,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private float[] mAecFramecontrolSensitivity = new float[3];
     private int mAntiBandingMode = -1;
     private int mIsFickerDetected = -1;
+    private int mLensPos = -1;
     private float mAecFramecontrolLuxIndex = -1.0f;
     private boolean isflashRequired;
     public static final int MAX_LOGICAL_PHYSICAL_CAMERA_COUNT = 4;
@@ -647,6 +648,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.afData.isLCRSW", Byte.class);
     private static final CaptureResult.Key<Integer> lenspos =
             new CaptureResult.Key<>("org.quic.camera.afData.lenspos", Integer.class);
+    private static final CaptureRequest.Key<Integer> lenspos_request =
+            new CaptureRequest.Key<>("org.quic.camera.afData.lenspos", Integer.class);
     public static final CaptureResult.Key<byte[]> autofocusroi =
             new CaptureResult.Key<>("org.quic.camera.afData.autofocusroi", byte[].class);
     private static final CaptureResult.Key<int[]> rsStats =
@@ -1004,6 +1007,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mExistAECDarkGainTag = true;
     private boolean mExistAntiBandingModeTag = true;
     private boolean mExistIsFickerDetected = true;
+    private boolean mExistLensPos = true;
     private boolean mExposureCountTag = true;
     private boolean mAECCameraIdTag = true;
 
@@ -1750,6 +1754,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Log.i(TAG,"CONTROL_ZOOM_RATIO in CaptureResult is "+result.get(CaptureResult.CONTROL_ZOOM_RATIO)+"," +
                             "duringtime ="+durtime+",FrameNumber="+mVideoFrameNumber);
                 }
+                updateLensPos(result);
                 String physical_id = mSettingsManager.getSinglePhysicalCamera();
                 Face[] faces;
                 if (physical_id != null &&
@@ -8319,6 +8324,7 @@ private boolean isDevOptionSetting(){
             applyExposureMeteringModes(builder);
             applyHistogram(builder);
             applyAWBCCTAndAgain(builder);
+            applyLensPos(builder);
             applyBGStats(builder);
             applyBEStats(builder);
             applyWbColorTemperature(builder);
@@ -8549,7 +8555,7 @@ private boolean isDevOptionSetting(){
             }
             mIsCloseCamera = true;
         }
-        writeXMLForWarmAwb();
+        writeXMLForWarmStart();
         if (mLocationManager != null) mLocationManager.recordLocation(false);
         if (isClearSightOn()) {
             ClearSightImageProcessor.getInstance().close();
@@ -12252,6 +12258,7 @@ private boolean isDevOptionSetting(){
             applyBEStats(builder);
             applyPdnetToggle(builder);
             applyAWBCCTAndAgain(builder);
+            applyLensPos(builder);
             applyAIBlurConfigs(builder);
             applyExposure(builder);
             applyInStantZoom(builder);
@@ -16034,6 +16041,17 @@ private boolean isDevOptionSetting(){
         return result;
     }
 
+    private void applyLensPos(CaptureRequest.Builder request) {
+        final SharedPreferences pref = mActivity.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mActivity,
+                String.valueOf(CURRENT_ID)), Context.MODE_PRIVATE);
+        int lp = pref.getInt(SettingsManager.KEY_LENSPOS, -1);
+        Log.i(TAG, "applyLenspos get saved value is " + lp);
+        if (lp != -1) {
+            request.set(lenspos_request, lp);
+        }
+    }
+
     private boolean applyAWBCCTAndAgain(CaptureRequest.Builder request) {
         boolean result = false;
         final SharedPreferences pref = mActivity.getSharedPreferences(
@@ -16136,7 +16154,7 @@ private boolean isDevOptionSetting(){
         return result;
     }
 
-    private boolean updateAWBCCTAndgains(CaptureResult captureResult) {
+    private void updateAWBCCTAndgains(CaptureResult captureResult) {
         if (captureResult != null) {
             try {
                 if (mExistAWBVendorTag) {
@@ -16188,10 +16206,9 @@ private boolean isDevOptionSetting(){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
-        return mExistAWBVendorTag && mExistAECWarmTag && mExistAECDarkGainTag;
     }
 
-    private boolean updateAECGainAndExposure(CaptureResult captureResult) {
+    private void updateAECGainAndExposure(CaptureResult captureResult) {
         boolean result = false;
         if (captureResult != null) {
             try {
@@ -16207,10 +16224,9 @@ private boolean isDevOptionSetting(){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
-        return result;
     }
 
-    private boolean updateAntiBandingMode(CaptureResult captureResult) {
+    private void updateAntiBandingMode(CaptureResult captureResult) {
         if (captureResult != null) {
             try {
                 if (mExistAntiBandingModeTag) {
@@ -16221,10 +16237,9 @@ private boolean isDevOptionSetting(){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
-        return mExistAntiBandingModeTag;
     }
 
-    private boolean updateIsFickerDetected(CaptureResult captureResult) {
+    private void updateIsFickerDetected(CaptureResult captureResult) {
         if (captureResult != null) {
             try {
                 if (mExistIsFickerDetected) {
@@ -16235,10 +16250,23 @@ private boolean isDevOptionSetting(){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
-        return mExistIsFickerDetected;
     }
 
-    public void writeXMLForWarmAwb() {
+    private void updateLensPos(CaptureResult captureResult) {
+        if (captureResult != null) {
+            try {
+                if (mExistLensPos) {
+                    mLensPos = captureResult.get(lenspos);
+                    Log.d(TAG, "get lenspos is " + mLensPos);
+                }
+            } catch (IllegalArgumentException|NullPointerException e) {
+                mExistLensPos = false;
+                Log.w(TAG,EXCEPTION_LOG, "get lenspos failed: " + e.toString());
+            }
+        }
+    }
+
+    private void writeXMLForWarmStart() {
         final SharedPreferences pref = mActivity.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mActivity,
                         String.valueOf(CURRENT_ID)), Context.MODE_PRIVATE);
@@ -16284,6 +16312,10 @@ private boolean isDevOptionSetting(){
             if (mIsFickerDetected != -1) {
                 editor.putInt(SettingsManager.KEY_IS_FICKER_DETECTED, mIsFickerDetected);
             }
+        }
+        if (mExistLensPos) {
+            Log.d(TAG, "saving lenspos " + mLensPos);
+            editor.putInt(SettingsManager.KEY_LENSPOS, mLensPos);
         }
         editor.apply();
     }
