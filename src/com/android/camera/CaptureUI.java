@@ -1916,6 +1916,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
            mZoomSeekBar.setEnabled(enable);
        if(mZoomValueText != null)
            mZoomValueText.setEnabled(enable);
+        mGestures.setZoomEnabled(enable);
     }
 
     public boolean getZoomFixedSupport() {
@@ -1961,11 +1962,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.GONE);
         }
+        mGestures.setZoomEnabled(false);
     }
 
     public void showZoomSeekBar() {
         if (mZoomLinearLayout != null) {
             mZoomLinearLayout.setVisibility(View.VISIBLE);
+        }
+        String video_encoder  = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+        if("mvhevc".equals(video_encoder)) {
+            enableZoomSeekBar(false);
+        }else{
+            enableZoomSeekBar(true);
         }
         if(mFilterMenuStatus == FILTER_MENU_ON){
             hideZoomSeekBar();
@@ -2278,9 +2286,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mModule.isDeepZoom() ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEPTH) {
-            mGestures.setZoomEnabled(false);
+           // mGestures.setZoomEnabled(false);
         } else {
-            mGestures.setZoomEnabled(mSettingsManager.isZoomSupported(cameraId));
+          //  mGestures.setZoomEnabled(mSettingsManager.isZoomSupported(cameraId));
             initializeZoom(cameraId);
         }
     }
@@ -3469,7 +3477,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 }
             });
         }
-        if(mModule.getCurrenCameraMode() != CaptureModule.CameraMode.HFR) {
+        String video_encoder  = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+        if(mModule.getCurrenCameraMode() != CaptureModule.CameraMode.HFR && !"mvhevc".equals(video_encoder)) {
             mGestures.setZoomEnabled(enabled);
             mZoomSeekBar.setZoomEnable(enabled);
         }
