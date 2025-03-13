@@ -136,7 +136,6 @@ public class KeyValueTest extends TestBase {
             executeShellCommand("input tap " + modeLoc[0] + " " + modeLoc[1]);
             Thread.sleep(SMALL_WAIT_DURATION);
         }
-        Log.i(TAG,"zcl mCaptureModule.getMainCameraId()="+mCaptureModule.getMainCameraId()+",isFrontCamera="+isFrontCamera);
         if (isFrontCamera && mCaptureModule.getMainCameraId() != 1) {
             cameraId = "1";
             executeShellCommand("input tap " + mSwitchLoc[0] + " " + mSwitchLoc[1]);
@@ -160,7 +159,6 @@ public class KeyValueTest extends TestBase {
                 passStrBuffer.append(key_title + " checkKeyValue Pass: set key value is " + value +
                          ",get key value is " + keyvalue + ";");
             }
-            Log.i(TAG,"zcl key_title.toLowerCase()="+key_title.toLowerCase()+",value="+value);
             switch (key_title.toLowerCase()) {
                 case "mixed hdr":
                     if (value.equalsIgnoreCase("Manual HDR")) {
@@ -205,7 +203,6 @@ public class KeyValueTest extends TestBase {
                     break;
                 case "insensor zoom":
                     int zoomInResult = mCurrentCaptureResult.get(CaptureModule.insensor_zoom_result);
-                    Log.i(TAG,"zcl zoomInResult="+zoomInResult);
                     if (keyvalue.equals("enable")){
                      if (zoomInResult == 1) {
                         passStrBuffer.append("zoomInResult check Pass:zoomInResult is " + zoomInResult + ";");
