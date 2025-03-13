@@ -4374,7 +4374,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     if (type != -1){
                         str = SettingTranslation.getVideoEncoder(type);
                         if("mvhevc".equalsIgnoreCase(str) && (CaptureModule.CameraMode.HFR ==
-                                CaptureModule.CURRENT_MODE || mCameraId == CaptureModule.FRONT_ID)){
+                                CaptureModule.CURRENT_MODE || mCameraId == CaptureModule.FRONT_ID ||
+                                !PersistUtil.isMvhevcSupported())){
                             continue;
                         }
                         Log.d(TAG,BIG_LOG,"type="+type+" str="+str);

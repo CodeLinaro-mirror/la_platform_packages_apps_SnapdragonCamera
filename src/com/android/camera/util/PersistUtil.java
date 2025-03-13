@@ -444,6 +444,10 @@ public class PersistUtil {
         return getBoolean("persist.sys.cameraapp.multiresimagereader", false);
     }
 
+    public static boolean isMvhevcSupported() {
+        return getBoolean("persist.sys.cameraapp.mvhevc_enable", false);
+    }
+
     public static boolean needAudioEncoder() {
         return getBoolean("persist.sys.cameraapp.needaudio", true);
     }
