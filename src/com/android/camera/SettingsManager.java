@@ -62,6 +62,7 @@ import android.media.MediaFormat;
 import android.media.EncoderProfiles;
 import android.media.MediaRecorder;
 import android.media.CamcorderProfile;
+import android.os.Trace;
 import android.preference.PreferenceManager;
 import android.util.ArraySet;
 
@@ -378,6 +379,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_C2PA = "pref_camera2_c2pa_key";
 
     private static final String TAG = "SnapCam_SettingsManager";
+    private static final boolean TRACE_DEBUG = PersistUtil.getTraceDebug();
 
     private static SettingsManager sInstance;
     private CaptureModule mCaptureModule;
@@ -572,8 +574,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public void reloadCharacteristics(int cameraId){
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
+            if (TRACE_DEBUG) Trace.beginSection("SnapCamera,reloadCharacteristics");
             CameraCharacteristics characteristics
                     = manager.getCameraCharacteristics(String.valueOf(cameraId));
+            if (TRACE_DEBUG) Trace.endSection();
             mCharacteristics.set(cameraId, characteristics);
         } catch (CameraAccessException e) {
             Log.e(TAG,e.toString());
@@ -712,10 +716,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public void init() {
         Log.i(TAG, "SettingsManager init current camera id : " + CaptureModule.CURRENT_ID);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,settingmanager init");
         final int cameraId = getInitialCameraId();
         reloadCharacteristics(cameraId);
         setLocalIdAndInitialize(cameraId);
         autoTestBroadcast(cameraId);
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     public void reinit(int cameraId) {
@@ -847,6 +853,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
 
     private void autoTestBroadcast(int cameraId) {
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,settingmanager init-- autoTestBroadcast");
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey()),
                 Context.MODE_PRIVATE);
@@ -857,6 +864,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             editor.putBoolean(AUTO_TEST_WRITE_CONTENT, false);
             editor.apply();
         }
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private void writeAutoTextHelpTxt() {
@@ -939,11 +947,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     private void setLocalIdAndInitialize(int cameraId) {
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,settingmanager init-- setLocalIdAndInitialize");
         String facing = mPreferences.getGlobal().getString(KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         mPreferences.setLocalId(mContext, facing, String.valueOf(CaptureModule.CURRENT_MODE));
         mCameraId = cameraId;
         CameraSettings.upgradeLocalPreferences(mPreferences.getLocal());
-
         PreferenceInflater inflater = new PreferenceInflater(mContext);
         mPreferenceGroup =
                 (PreferenceGroup) inflater.inflate(R.xml.capture_preferences);
@@ -957,7 +965,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch(IllegalArgumentException exception) {
             Log.w(TAG,EXCEPTION_LOG,exception.toString());
         }
-
         filterPreferences(cameraId);
         initDependencyTable();
         initializeValueMap();
@@ -966,6 +973,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         mMinDurationMap = getMinDurationMap(cameraId);
         filterHFROptions();
         filterVideoEncoderProfileOptions();
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     public boolean isFDRenderingAtPreview(){
