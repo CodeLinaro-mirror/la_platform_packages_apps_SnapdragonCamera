@@ -4446,6 +4446,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (evY > zoombarlocation[1]) {
             evY = y - mPieRenderer.getSize();
         }
+        resetEv();
+        hideVerticalEv(false);
         mEvSeekBar.setX(evX);
         mEvSeekBar.setY(evY);
         mEvSeekBar.setVisibility(View.VISIBLE);
@@ -4720,9 +4722,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         hideFocusAssistText();
         showZoomBar(false);
         mModule.updateZoomSeekBarVisible();
-        resetEv();
-        hideVerticalEv(false);
-        showEvSeekbar(x,y);
         mModule.onSingleTapUp(view, x, y);
     }
 
@@ -4730,9 +4729,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void onLongPress(View view, int x, int y) {
         showZoomBar(false);
         mModule.updateZoomSeekBarVisible();
-        resetEv();
-        hideVerticalEv(false);
-        showEvSeekbar(x,y);
         mModule.onLongPress(view, x, y);
     }
 
