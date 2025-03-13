@@ -261,7 +261,7 @@ public class Camera2FaceView extends FaceView {
             mTorsoInts = torsoInts;
         }
         if (!mBlocked && (headInts != null) && (headInts.length > 0) &&
-                mCameraBound != null && mHeadNums > 0) {
+                mCameraBound != null) {
             postInvalidate();
         }
     }
@@ -289,7 +289,7 @@ public class Camera2FaceView extends FaceView {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (!mBlocked && ((mFaces != null && mFaces.length > 0) || mDrawPetROI) && mCameraBound != null) {
+        if (!mBlocked && mCameraBound != null) {
             int rw, rh;
             rw = mUncroppedWidth;
             rh = mUncroppedHeight;
@@ -772,12 +772,10 @@ public class Camera2FaceView extends FaceView {
         }
         if (datas != null && datas.length > 4) {
             for (int i = 0; i < datas.length; i += 4) {
-                if ((datas[i+2] - datas[i])  > 0 &&
-                        (datas[i+3] - datas[i+1]) > 0) {
                     Rect head = new Rect(datas[i], datas[i+1],
                             datas[i+2], datas[i+3]);
                     head.offset(0, 0);
-                    if (isFDRectOutOfBound(head)) continue;
+                   // if (isFDRectOutOfBound(head)) continue;
                     mRect.set(head);
                     if (mZoom != 1.0f && !(mZoomRationSupported && mPostZoomFov)) {
                         mRect.left = mRect.left - mCameraBound.left;
@@ -791,7 +789,7 @@ public class Camera2FaceView extends FaceView {
                     CameraUtil.dumpRect(mRect, "Transformed Head roi");
                     mRect.offset(dx, dy);
                     canvas.drawRect(mRect, mHeadTorsePaint);
-                }
+
             }
         }
     }

@@ -298,7 +298,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mIsFacialMaskSupported = true;
     private boolean mIsUpperBodySupported = true;
     private boolean mIsPetDetectionSupported = true;
-    private boolean mIsSkinToneSupported = true;
+    private int mIsValidNum = 0;
 
     /** For temporary save warmstart gains and cct value*/
     private float mRGain = -1.0f;
@@ -9923,10 +9923,18 @@ private boolean isDevOptionSetting(){
                 e.printStackTrace();
             }
         }
-
         Log.d(FD_TAG,FD_LOG, " updateUpperBodyDetection headNums :" + headNums);
         try {
-            mUI.onUpperBodyDetection(headNums, headInts, torsoValidInts, torsoInts);
+            int num =0;
+            if(headNums == 0){
+                num = (mIsValidNum == 0 )? 1:2;
+                mIsValidNum = num;
+            }else{
+                mIsValidNum = 0;
+            }
+            if(headNums !=0 || (headNums == 0 && mIsValidNum <2)) {
+                mUI.onUpperBodyDetection(headNums, headInts, torsoValidInts, torsoInts);
+            }
         } catch(Exception e) {
             Log.e(TAG, " updateUpperBodyDetection occur exception");
         }
