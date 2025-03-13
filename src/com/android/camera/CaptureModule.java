@@ -183,6 +183,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.SplittableRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeoutException;
@@ -198,8 +199,8 @@ import androidx.annotation.NonNull;
 import androidx.heifwriter.HeifWriter;
 import com.android.camera.ui.OneUICameraControls;
 import qti.video.QMediaCodecCapabilities;
-
-
+import android.hardware.camera2.CameraDevice.CameraDeviceSetup;
+import android.os.Build;
 import java.util.Collections;
 
 public class CaptureModule implements CameraModule, PhotoController,
@@ -11153,8 +11154,11 @@ private boolean isDevOptionSetting(){
             if (colorSpace != null && !colorSpace.equals("0")) {
                 sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
             }
-            mCreateSessionLatency = System.currentTimeMillis();
-            mCameraDevice[cameraId].createCaptureSession(sessionConfig);
+            boolean isSessionSupported = checkSessionSupported(sessionConfig);
+            if(isSessionSupported) {
+                mCreateSessionLatency = System.currentTimeMillis();
+                mCameraDevice[cameraId].createCaptureSession(sessionConfig);
+            }
         } catch (Exception e) {
             Log.e(TAG,e);
         }
@@ -11193,6 +11197,13 @@ private boolean isDevOptionSetting(){
                                                               CameraCaptureSession.StateCallback listener,
                                                               Handler handler,
                                                               CaptureRequest.Builder initialRequest) {
+        mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
+        if(mActivity.getPerformenceTest() && (mIsCloseCamera || mFromOnOpened)) {
+            mHasMapTimes.put("onOpened->createSession",mSettingInitLatency);
+            mFromOnOpened = false;
+        }else if(mActivity.getPerformenceTest()){
+            mHasMapTimes.put("swipeMode->createSession",System.currentTimeMillis() - mStartedTime);
+        }
         setTimeStamp(outConfigurations,TIMESTAMP_BASE_SENSOR);
         SessionConfiguration sessionConfig = new SessionConfiguration(opMode, outConfigurations,
                 new HandlerExecutor(handler), listener);
@@ -11204,34 +11215,10 @@ private boolean isDevOptionSetting(){
         if (inputConfig != null) {
             sessionConfig.setInputConfiguration(inputConfig);
         }
-        boolean session_supported = true;
-        try{
-            session_supported = camera.isSessionConfigurationSupported(sessionConfig);
-            Log.i(TAG, "  isSessionConfigurationSupported :" + session_supported);
-        } catch (CameraAccessException | IllegalArgumentException | NullPointerException | UnsupportedOperationException e) {
-            Log.w(TAG, " check isSessionConfigurationSupported sessionConfig error ="+ e);
-            StringBuilder errstr = new StringBuilder();
-            errstr.append("Catch exception: ");
-            if (e instanceof CameraAccessException) {
-                errstr.append("CameraAccessException");
-            } else if (e instanceof IllegalArgumentException) {
-                errstr.append("IllegalArgumentException");
-            } else if (e instanceof NullPointerException) {
-                errstr.append("NullPointerException");
-            } else if (e instanceof UnsupportedOperationException) {
-                errstr.append("UnsupportedOperationException,please change the settings");
-            }
-            session_supported = false;
-            CameraUtil.showErrorDialog(mActivity, errstr);
-        }
-        mSettingInitLatency = System.currentTimeMillis() - mSettingInitLatency;
-        if(mActivity.getPerformenceTest() && (mIsCloseCamera || mFromOnOpened)) {
-            mHasMapTimes.put("onOpened->createSession",mSettingInitLatency);
-            mFromOnOpened = false;
-        }else if(mActivity.getPerformenceTest()){
-            mHasMapTimes.put("swipeMode->createSession",System.currentTimeMillis() - mStartedTime);
-        }
-        if(session_supported) {
+
+      boolean sessionSupported = checkSessionSupported(sessionConfig);
+
+        if(sessionSupported) {
             try {
                 mCreateSessionLatency = System.currentTimeMillis();
                 camera.createCaptureSession(sessionConfig);
@@ -11242,6 +11229,48 @@ private boolean isDevOptionSetting(){
             setCameraModeSwitcherAllowed(true);
         }
     }
+
+    private boolean checkSessionSupported(SessionConfiguration sessionConfig) {
+        String cameraId = String.valueOf(getMainCameraId());
+        boolean session_supported = true;
+        CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
+        try {
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            boolean supportSessionConfigurationQuery = characteristics.get(
+                    CameraCharacteristics.INFO_SESSION_CONFIGURATION_QUERY_VERSION)
+                    > Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+            if (!supportSessionConfigurationQuery) {
+                Log.i(TAG, "Camera " + cameraId + " doesn't support session configuration query");
+                return true;
+            }
+        } catch (CameraAccessException e) {
+        }
+        String errorTitle = "isSessionConfigurationSupported False";
+        try {
+            CameraDeviceSetup cameraDeviceSetup = manager.getCameraDeviceSetup(cameraId);
+            session_supported = cameraDeviceSetup.isSessionConfigurationSupported(sessionConfig);
+            Log.i(TAG, " isSessionConfigurationSupported :" + session_supported + ",cameraid is " + cameraId);
+        } catch (CameraAccessException | IllegalArgumentException e) {
+            Log.w(TAG, " check isSessionConfigurationSupported exception =" + e);
+            StringBuilder errstr = new StringBuilder();
+            errstr.append("Catch exception: ");
+            if (e instanceof CameraAccessException) {
+                errstr.append("CameraAccessException,camera device is no longer connected or has encountered a fatal error");
+            } else if (e instanceof IllegalArgumentException) {
+                errstr.append("IllegalArgumentException, session configuration is invalid, including, if it " +
+                        "contains certain non-supported features queryable via CameraCharacteristics.");
+            }
+            Log.i(TAG, "isSessionConfigurationSupported exception:" + errstr);
+            CameraUtil.showErrorDialog(mActivity, errstr.toString(),errorTitle);
+            return false;
+        }
+        if (!session_supported) {
+            CameraUtil.showErrorDialog(mActivity, "isSessionConfigurationSupported return false;Please change the configure settings",errorTitle);
+        }
+
+        return session_supported;
+    }
+
 
     private void createHighSpeedSession(int cameraID) throws CameraAccessException {
         int optionMode = isSSMEnabled() ? STREAM_CONFIG_SSM : SESSION_HIGH_SPEED;
@@ -11293,8 +11322,11 @@ private boolean isDevOptionSetting(){
             if (colorSpace != null && !colorSpace.equals("0")) {
                 sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
             }
+            boolean sessionSupported = checkSessionSupported(sessionConfig);
+            if(sessionSupported){
             mCreateSessionLatency = System.currentTimeMillis();
             mCameraDevice[cameraID].createCaptureSession(sessionConfig);
+            }
         } catch (Exception exception) {
             Log.e(TAG,exception);
         }
@@ -14470,6 +14502,7 @@ private boolean isDevOptionSetting(){
                 previewStabilizationOn = "enable".equals(mSettingsManager.
                         getValue(SettingsManager.KEY_PREVIEW_STABILIZATION));
             }
+            Log.d(TAG,  "applyEIS previewStabilizationOn: " + previewStabilizationOn );
             if (!previewStabilizationOn) {
                 try {
                     applyVideoStabilization(request, value.equals("disable"));

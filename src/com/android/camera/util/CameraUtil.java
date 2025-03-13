@@ -480,7 +480,7 @@ public class CameraUtil {
                 .show();
     }
 
-    public static void showErrorDialog(final Activity activity, StringBuilder msg) {
+    public static void showErrorDialog(final Activity activity, String msg,String title) {
         if (activity == null || activity.isFinishing())
             return;
         DialogInterface.OnClickListener buttonListener =
@@ -494,7 +494,7 @@ public class CameraUtil {
         activity.getTheme().resolveAttribute(android.R.attr.alertDialogIcon, out, true);
         new AlertDialog.Builder(activity)
                 .setCancelable(false)
-                .setTitle(R.string.session_error_title)
+                .setTitle(title)
                 .setMessage(msg)
                 .setNeutralButton(R.string.dialog_ok, buttonListener)
                 .setIcon(out.resourceId)
