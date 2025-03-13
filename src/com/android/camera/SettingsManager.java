@@ -279,6 +279,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AFD_WARM_START_ = "pref_camera2_afd_warm_start_";
     public static final String KEY_ANT_BANDING_MODE = "pref_camera2_ant_banding_mode";
     public static final String KEY_IS_FICKER_DETECTED = "pref_camera2_is_ficker_detected";
+    public static final String KEY_LENSPOS = "pref_camera2_lenspos";
 
     public static final HashMap<String, Integer> KEY_ISO_INDEX = new HashMap<String, Integer>();
     public static final String KEY_FD_SMILE = "pref_camera2_fd_smile_key";
