@@ -1702,7 +1702,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             if("preview".equals(String.valueOf(result.getRequest().getTag())) || mPaused){
                 return;
             }
-
             int id = getIdFromTag(result.getRequest().getTag());
             mVideoFrameNumber = result.getFrameNumber();
             updatePerformanceUIInfo(result);
@@ -2110,7 +2109,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.w(TAG,EXCEPTION_LOG,e.toString());
         }
         synchronized (camerainfo_data) {
-            mActivity.runOnUiThread(new Runnable() {
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
                 @Override
                 public void run() {
                     mUI.updateAECIdInfoVisibility(View.VISIBLE);
