@@ -27,8 +27,8 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
  /*
-  * Changes from Qualcomm Innovation Center are provided under the following license:
-  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+  * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
   * SPDX-License-Identifier: BSD-3-Clause-Clear
   */
 
@@ -1613,6 +1613,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return pref.findIndexOfValue(value);
     }
 
+
     private boolean setFocusValue(String key, float value) {
         boolean result = false;
         String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
@@ -1689,6 +1690,55 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Values values = mValuesMap.get(key);
         return values.overriddenValue != null;
     }
+    public String getKeyFromTitle(String title){
+        String key = "";
+        ListPreference pref = mPreferenceGroup.findPreferenceWithTile(title);
+        if (pref != null) {
+            key = pref.getKey();
+        }
+        return key;
+    }
+
+    public String getEntry(String title){
+        String entry = "";
+        ListPreference pref = mPreferenceGroup.findPreferenceWithTile(title);
+        if (pref != null) {
+            entry = pref.getEntry();
+        }
+        return entry;
+    }
+    public boolean setTitleEntry(String title, String entry) {
+        ListPreference pref = mPreferenceGroup.findPreferenceWithTile(title);
+        Log.i(TAG,"11111 pref ="+pref+",title="+title+",entry="+entry);
+        if (pref != null) {
+            int index = pref.findIndexOfEntry(entry);
+            if (index < 0) {
+                Log.i(TAG,"cannot find this "+entry +" in "+ title);
+                return false;
+            } else {
+                String value = pref.findValueOfIndex(index);
+                if(value == null){
+                    Log.i(TAG,"cannot find value of index :"+index +" in pref values of "+title);
+                    return false;
+                }
+                pref.setValue(value);
+                updateMapAndNotify(pref);
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+    public boolean setPreferenceChecked(String title){
+        final SharedPreferences pref = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext,
+                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        final SharedPreferences.Editor editor = pref.edit();
+        editor.putBoolean(title, true);
+        editor.commit();
+       return true;
+    }
+
 
     public boolean setValue(String key, String value) {
         ListPreference pref = mPreferenceGroup.findPreference(key);
