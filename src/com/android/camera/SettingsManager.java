@@ -256,6 +256,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MANUAL_MFHDR = "MFHDR";
     public static final String KEY_MANUAL_SHDR = "SHDR";
     public static final String KEY_MANUAL_QHDR = "QHDR";
+    public static final String KEY_MANUAL_DCG = "DCG";
+    public static final String KEY_MANUAL_DCG1_4 = "DCG1_4";
+    public static final String KEY_MANUAL_DCG1_8 = "DCG1_8";
+    public static final String KEY_MANUAL_DCG1_16 = "DCG1_16";
+    public static final String KEY_MANUAL_DCGDirect = "DCGDirect";
+    public static final String KEY_MANUAL_DCGVS = "DCGVS";
     public static final HashMap<String, Integer> KEY_HDR_MODES_ORDER = new HashMap<String, Integer>();
 
     //tone mapping
@@ -443,6 +449,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         KEY_HDR_MODES_ORDER.put("SHDR", 1);
         KEY_HDR_MODES_ORDER.put("MFHDR", 2);
         KEY_HDR_MODES_ORDER.put("QHDR", 3);
+        KEY_HDR_MODES_ORDER.put("DCG", 4);
         VIDEO_ENCODER_PROFILE_MAP.put("off", "0");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10", "2");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10HDR10", "4");
@@ -3516,14 +3523,25 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
+
+    private byte[] intToBytes(int value) {
+        return new byte[]{
+                (byte) (value >> 24),
+                (byte) (value >> 16),
+                (byte) (value >> 8),
+                (byte) value
+        };
+    }
     public int[] getSupportedDcgBitsTags() {
         Set<Integer> supported = new HashSet<>();
         try {
             int[] modes = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_dcg_bits_tags);
             for(int mode: modes){
-                Log.d(TAG,"getSupportedDcgBitsTags, mode:" +mode + ",value:" + (mode >> 8));
-                supported.add(mode >> 8);
+                byte[] bytes = intToBytes(mode);
+                for(byte value: bytes){
+                    supported.add((int)value);
+                }
             }
         } catch (Exception e) {
             Log.d(TAG,"getSupportedDcgBitsTags failed");
@@ -3857,21 +3875,30 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return false;
     }
 
-    public int getDcgMode(){
-        final SharedPreferences pref = mContext.getSharedPreferences(
-                ComboPreferences.getLocalSharedPreferencesName(mContext,
-                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
-        int mode = pref.getInt(KEY_DCG_BIT_TAG, 0);
-        return mode;
+    public boolean isDCGEnable() {
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            String[] modeLists = hdrmode.split(" ");
+            for (int i = 0; i < modeLists.length; i ++) {
+                if(modeLists[i].equals(KEY_MANUAL_DCG)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
-    public void setDcgMode(String name){
-        int mode = 0;
-        if(name.equals("12BIT")){
-            mode = 1;
-        }else if(name.equals("14BIT")){
-            mode = 2;
+    public int getDcgMode(){
+        if(isDCGEnable()){
+            final SharedPreferences pref = mContext.getSharedPreferences(
+                    ComboPreferences.getLocalSharedPreferencesName(mContext,
+                            getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+            return pref.getInt(KEY_DCG_BIT_TAG, 0);
         }
+        return 0;
+    }
+
+    public void setDcgMode(int mode){
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext,
                         getCurrentPrepNameKey()), Context.MODE_PRIVATE);
