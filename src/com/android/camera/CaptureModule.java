@@ -14563,7 +14563,7 @@ private boolean isDevOptionSetting(){
     private void applyEIS(CaptureRequest.Builder request) {
         String key = SettingsManager.KEY_PHOTO_EIS_VALUE;
         if (mCurrentSceneMode.mode == CameraMode.VIDEO ||
-                mCurrentSceneMode.mode == CameraMode.HFR ||
+                (mCurrentSceneMode.mode == CameraMode.HFR && isDevOptionSetting()) ||
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             key = SettingsManager.KEY_EIS_VALUE;
         }
