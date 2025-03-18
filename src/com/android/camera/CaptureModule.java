@@ -11236,6 +11236,8 @@ private boolean isDevOptionSetting(){
                 if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession -- call createCaptureSession");
                 mCameraDevice[cameraId].createCaptureSession(sessionConfig);
                 if (TRACE_DEBUG) Trace.endSection();
+            }else{
+                setCameraModeSwitcherAllowed(true);
             }
         } catch (Exception e) {
             Log.e(TAG,e);
@@ -11349,7 +11351,7 @@ private boolean isDevOptionSetting(){
             return false;
         }
         if (!session_supported) {
-            CameraUtil.showErrorDialog(mActivity, "isSessionConfigurationSupported return false;Please change the configure settings",errorTitle);
+            CameraUtil.showErrorDialog(mActivity, "Unsupported stream/feature combination, please modify Settings.",errorTitle);
         }
 
         return session_supported;
@@ -11397,7 +11399,7 @@ private boolean isDevOptionSetting(){
                 mFromOnOpened = false;
             } else if(mSessionAfterRecord == 0){
                 mHasMapTimes.put("swipeMode->createSession", System.currentTimeMillis() - mStartedTime);
-            }else{
+            } else {
                 mHasMapTimes.put("endStop->createSession", System.currentTimeMillis() - mSessionAfterRecord);
             }
         }
@@ -11411,9 +11413,11 @@ private boolean isDevOptionSetting(){
                 sessionConfig.setColorSpace(SettingsManager.COLOR_SPACE_MAP.get(colorSpace));
             }
             boolean sessionSupported = checkSessionSupported(sessionConfig);
-            if(sessionSupported){
+            if (sessionSupported) {
                 mCreateSessionLatency = System.currentTimeMillis();
                 mCameraDevice[cameraID].createCaptureSession(sessionConfig);
+            } else {
+                setCameraModeSwitcherAllowed(true);
             }
         } catch (Exception exception) {
             Log.e(TAG,exception);
@@ -12757,8 +12761,8 @@ private boolean isDevOptionSetting(){
                 mCurrentSession.capture(mVideoRecordRequestBuilder.build(), mCaptureCallback,
                         mCameraHandler);
             }
-        } catch (CameraAccessException|IllegalArgumentException e) {
-            Log.e(TAG,e);
+        } catch (CameraAccessException | IllegalArgumentException | IllegalStateException  e) {
+            Log.e(TAG,e.toString());
         }
     }
 
