@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera;
 
 import android.content.Context;
 import android.util.AttributeSet;
+
+import com.android.camera.util.Log;
 
 import java.util.ArrayList;
 
@@ -77,5 +84,28 @@ public class PreferenceGroup extends CameraPreference {
             }
         }
         return null;
+    }
+
+    public ListPreference findPreferenceWithTile(String title) {
+        // Find a leaf preference with the given key. Currently, the base
+        // type of all "leaf" preference is "ListPreference". If we add some
+        // other types later, we need to change the code.
+        for (int i = 0; i < list.size(); i++) {
+            CameraPreference pref = list.get(i);
+            if (pref != null && pref instanceof ListPreference) {
+                ListPreference listPref = (ListPreference) pref;
+                String preference_title = listPref.getTitle();
+                if(preference_title != null && preference_title.equalsIgnoreCase(title)) return listPref;
+            } else if(pref != null && pref instanceof PreferenceGroup) {
+                ListPreference listPref =
+                        ((PreferenceGroup) pref).findPreference(title);
+                if (listPref != null) return listPref;
+            }
+        }
+        return null;
+    }
+
+    public boolean setSwitchPreferenceValue(boolean vlaue){
+       return true;
     }
 }

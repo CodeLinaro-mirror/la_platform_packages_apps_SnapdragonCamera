@@ -1755,7 +1755,7 @@ public class FilmStripView extends ViewGroup implements BottomControlsListener {
                     return;
                 }
                 updateInsertion(dataID);
-                mActivity.updateThumbnail(true);
+//                mActivity.updateThumbnail(true);
             }
 
             @Override

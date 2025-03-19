@@ -1016,6 +1016,9 @@ public class OneUICameraControls extends RotatableLayout {
 
     private void checkProValues() {
         boolean showIcon = false;
+        if (CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.PRO_MODE){
+            return;
+        }
         for (String key : mProKeys) {
             if(key.equals(SettingsManager.KEY_FOCUS_DISTANCE)) {
                 float value = mSettingsManager.getFocusSliderValue(SettingsManager.KEY_FOCUS_DISTANCE);

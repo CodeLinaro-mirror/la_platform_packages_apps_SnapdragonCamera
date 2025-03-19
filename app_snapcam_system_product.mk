@@ -1,3 +1,4 @@
 PRODUCT_PACKAGES += \
     SnapdragonCamera \
-    libjni_imageutil
+    libjni_imageutil \
+    SdCameraTests

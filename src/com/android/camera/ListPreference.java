@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera;
 
@@ -189,6 +194,21 @@ public class ListPreference extends CameraPreference {
         }
         return -1;
     }
+    public String findValueOfIndex(int index){
+        if (index >= mEntryValues.length){
+            return null;
+        }
+        return (String) mEntryValues[index];
+    }
+    public int findIndexOfEntry(String entry) {
+        for (int i = 0, n = mEntries.length; i < n; ++i) {
+            if (mEntries[i].toString().equalsIgnoreCase(entry.toString())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
 
     public int getCurrentIndex() {
         return findIndexOfValue(getValue());

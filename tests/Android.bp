@@ -1,0 +1,50 @@
+soong_config_module_type {
+    name: "qticamera_defaults",
+    module_type: "cc_defaults",
+    config_namespace: "qticamera",
+    bool_variables: [
+        "apk",
+    ],
+    properties: [
+        "enabled",
+    ],
+}
+
+qticamera_defaults {
+    name: "qticamera_test_defaults",
+    soong_config_variables: {
+         apk : {
+             enabled: false,
+             conditions_default: {
+                 enabled: true,
+             },
+         },
+     },
+}
+
+android_test {
+    name: "SdCameraTests",
+    instrumentation_for: "SnapdragonCamera",
+    static_libs: [
+        "junit",
+        "android-support-test",
+        "guava",
+    ],
+    libs: [
+        "android.test.runner.stubs.system",
+        "android.test.base.stubs.system",
+        "framework-mediaprovider.stubs.module_lib",
+    ],
+    uses_libs: ["org.apache.http.legacy"],
+    test_suites: ["device-tests"],
+    srcs: [
+        "src/**/*.java",
+    ],
+
+    resource_dirs: [
+        "res",
+    ],
+    sdk_version: "module_current",
+
+    defaults: ["qticamera_test_defaults"],
+}

@@ -102,7 +102,8 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInPhoto() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInPhoto")){
+        if((functionTestMode != null && !functionTestMode.contains("testInPhoto"))
+               ||(functionTestModeDel != null && functionTestModeDel.contains("testInPhoto"))){
             return;
         }
         Log.i(TAG, "testInPhotoModule");
@@ -111,7 +112,8 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInFrontPhoto() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInFrontPhoto")){
+        if((functionTestMode != null && !functionTestMode.contains("testInFrontPhoto"))
+                ||(functionTestModeDel != null && functionTestModeDel.contains("testInFrontPhoto"))){
             return;
         }
         Log.i(TAG, "testInPhotoModule");
@@ -120,18 +122,24 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInBokeh() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInBokeh")){
+        if((functionTestMode != null && !functionTestMode.contains("testInBokeh"))
+              ||(functionTestModeDel != null && functionTestModeDel.contains("testInBokeh"))){
             return;
         }
-        Log.i(TAG, "testInBokehModule");
-        swipFromLTR(1);
+        int[] loc = mModeIconL.get("Bokeh");
+        if(loc == null){
+            Log.e(TAG,"Cannot find Bokeh mode");
+            return;
+        }
+        Log.i(TAG, "testInBokeh loc="+loc[0]+"*"+loc[1]);
         // checkPreview("0",CaptureModule.CameraMode.RTB);
         runPhotoCase("0",CaptureModule.CameraMode.RTB);
     }
 
     @Test
     public void testInPro() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInPro")){
+        if((functionTestMode != null && !functionTestMode.contains("testInPro"))
+                ||(functionTestModeDel != null && functionTestModeDel.contains("testInPro"))){
             return;
         }
         Log.i(TAG, "testInProModule");
@@ -141,6 +149,10 @@ public class FunctionTest extends TestBase  {
             loc = mModeIconL.get("Pro");
         }else{
             switchModeTextToR(true);
+        }
+        if(loc == null){
+            Log.e(TAG,"Cannot find Pro mode");
+            return;
         }
         Log.i(TAG, "testInProModule loc="+loc[0]+"*"+loc[1]);
         executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
@@ -152,10 +164,15 @@ public class FunctionTest extends TestBase  {
 
     @Test
     public void testInVideoMode() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInVideoMode")){
+        if((functionTestMode != null && !functionTestMode.contains("testInVideoMode"))
+                ||(functionTestModeDel != null && functionTestModeDel.contains("testInVideoMode"))){
             return;
         }
         int[] loc = mModeIconL.get("Video");
+        if(loc == null){
+            Log.e(TAG,"Cannot find Video mode");
+            return;
+        }
         Log.i(TAG, "testInVideoModule mVideoModeLoc="+loc[0]+"*"+loc[1]);
         // swipFromRTL(3);
         executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
@@ -164,11 +181,15 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInFrontVideo() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInFrontVideo")){
+        if((functionTestMode != null && !functionTestMode.contains("testInFrontVideo"))
+                ||(functionTestModeDel != null && functionTestModeDel.contains("testInFrontVideo"))){
             return;
         }
-        Log.i(TAG, "testInFrontVideo");
         int[] loc = mModeIconL.get("Video");
+        if(loc == null){
+            Log.e(TAG,"Cannot find Video mode");
+            return;
+        }
         Log.i(TAG, "testInFrontVideo mVideoModeLoc="+loc[0]+"*"+loc[1]);
         // swipFromRTL(3);
         executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
@@ -178,43 +199,56 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInHFR() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInHFR")){
+        if((functionTestMode != null && !functionTestMode.contains("testInHFR"))
+                ||(functionTestModeDel != null && functionTestModeDel.contains("testInHFR"))){
             return;
         }
-        Log.i(TAG, "testInHFRModule");
-        swipFromRTL(1);
-        //checkPreview("2",CaptureModule.CameraMode.HFR);
+        int[] loc = mModeIconL.get("HFR");
+        if(loc == null){
+            Log.e(TAG,"Cannot find HFR mode");
+            return;
+        }
+        Log.i(TAG, "testInHFR loc="+loc[0]+"*"+loc[1]);
+        executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
         runVideoCase("2",CaptureModule.CameraMode.HFR);
     }
     @Test
     public void testInFrontHFR() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInFrontHFR")){
+        if((functionTestMode != null && !functionTestMode.contains("testInFrontHFR"))
+                ||(functionTestModeDel != null && functionTestModeDel.contains("testInFrontHFR"))){
             return;
         }
-        Log.i(TAG, "testInFrontHFR");
-        swipFromRTL(1);
+        int[] loc = mModeIconL.get("HFR");
+        if(loc == null){
+            Log.e(TAG,"Cannot find HFR mode");
+            return;
+        }
+        Log.i(TAG, "testInFrontHFR loc="+loc[0]+"*"+loc[1]);
+        executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
         checkPreview("2",CaptureModule.CameraMode.HFR);
         executeShellCommand("input tap "+ mSwitchLoc[0]  +" "+mSwitchLoc[1]);
         runVideoCase("1",CaptureModule.CameraMode.HFR);
     }
     @Test
     public void testInCinema() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInCinema")){
+        if((functionTestMode != null && !functionTestMode.contains("testInCinema"))
+                ||(functionTestModeDel != null && functionTestModeDel.contains("testInCinema"))){
             return;
         }
         int[] loc = mModeIconL.get("Cinematic");
         if(loc == null){
-            Log.i(TAG,"Cannot find this mode");
+            Log.e(TAG,"Cannot find Cinematic mode");
             return;
         }
-        Log.i(TAG, "testInCinema mVideoModeLoc="+loc[0]+"*"+loc[1]);
+        Log.i(TAG, "testInCinema loc="+loc[0]+"*"+loc[1]);
         executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
         //checkPreview("2",CaptureModule.CameraMode.HFR);
         runVideoCase("2",CaptureModule.CameraMode.CINEMATIC);
     }
     @Test
     public void testInDepth() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInDepth")){
+        if((functionTestMode != null && !functionTestMode.contains("testInDepth"))
+                ||(functionTestModeDel != null && functionTestModeDel.contains("testInDepth"))){
             return;
         }
         int[] loc = mModeIconR.get("Depth");
@@ -237,7 +271,8 @@ public class FunctionTest extends TestBase  {
     public void testInVideoIntent() throws Exception {
         //setActivityIntent(mIntent);
         //recordVideo();
-        if(functionTestMode != null && !functionTestMode.contains("testInVideoIntent")){
+        if((functionTestMode != null && !functionTestMode.contains("testInVideoIntent"))
+                ||(functionTestModeDel != null && functionTestModeDel.contains("testInVideoIntent"))){
             return;
         }
         Log.i(TAG," testInVideoIntent");
@@ -249,7 +284,8 @@ public class FunctionTest extends TestBase  {
     }
     @Test
     public void testInImageIntent() throws Exception {
-        if(functionTestMode != null && !functionTestMode.contains("testInImageIntent")){
+        if((functionTestMode != null && !functionTestMode.contains("testInImageIntent"))
+                ||(functionTestModeDel != null && functionTestModeDel.contains("testInImageIntent"))){
             return;
         }
         Log.i(TAG," testInImageIntent");

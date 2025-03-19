@@ -27,8 +27,8 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -112,7 +112,7 @@ public class ProMode extends View {
     private String mCurrentExposuretime;
     private TextView mAutoText;
     private int mIsoIndex = 0;
-
+    public Point[]mValuePonit;
     public int getCurveLeft() {
         return mCurveLeft;
     }
@@ -130,6 +130,7 @@ public class ProMode extends View {
     public int getMidY() {
         return mMidY;
     }
+
     public ProMode(Context context, AttributeSet attrs) {
         super(context, attrs);
         mContext = context;
@@ -322,6 +323,7 @@ public class ProMode extends View {
             int length = mSettingsManager.getEntryValues(key).length;
             int index = mSettingsManager.getValueIndex(key);
             updateSlider(length);
+            mValuePonit = mPoints;
             for (int i = 0; i < length; i++) {
                 View v;
                 if (mMode == WHITE_BALANCE_MODE) {

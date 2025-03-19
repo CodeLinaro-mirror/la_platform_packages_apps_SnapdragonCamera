@@ -72,8 +72,6 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.manualWB.gains", float[].class);
     private static CaptureRequest.Key<Integer> PARTIAL_MANUAL_WB_MODE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.manualWB.partial_mwb_mode", Integer.class);
-    private static CaptureRequest.Key<Byte> HDRVideoMode =
-            new CaptureRequest.Key<>("org.quic.camera2.streamconfigs.HDRVideoMode", Byte.class);
     private static CaptureRequest.Key<Float> TONE_MAPPING_DARK_BOOST =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.tmcusercontrol.dark_boost_offset", Float.class);
     private static CaptureRequest.Key<Float> TONE_MAPPING_FOURTH_TONE =
@@ -272,26 +270,6 @@ public class VendorTagUtil {
     public static void setToneMappingFourthToneValue(CaptureRequest.Builder builder, float value) {
         if (isSupported(builder, TONE_MAPPING_FOURTH_TONE)) {
             builder.set(TONE_MAPPING_FOURTH_TONE, value);
-        }
-    }
-
-    public static void setHDRVideoMode(CaptureRequest.Builder builder, byte mode) {
-        if ( isHDRVideoModeSupported(builder) ) {
-            builder.set(HDRVideoMode, mode);
-        }
-    }
-
-    public static boolean isHDRVideoModeSupported(CaptureRequest.Builder builder) {
-        return isSupported(builder, HDRVideoMode);
-    }
-
-    public static boolean isHDRVideoModeSupported(CameraDevice camera) {
-        try {
-            CaptureRequest.Builder builder = camera.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
-            return isHDRVideoModeSupported(builder);
-        }catch(CameraAccessException exception) {
-            Log.w(TAG,EXCEPTION_LOG, exception.toString());
-            return false;
         }
     }
 

@@ -29,8 +29,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -444,6 +444,10 @@ public class PersistUtil {
         return getBoolean("persist.sys.cameraapp.multiresimagereader", false);
     }
 
+    public static boolean isMvhevcSupported() {
+        return getBoolean("persist.sys.cameraapp.mvhevc_enable", false);
+    }
+
     public static boolean needAudioEncoder() {
         return getBoolean("persist.sys.cameraapp.needaudio", true);
     }
@@ -514,6 +518,8 @@ public class PersistUtil {
         return getBoolean("persist.sys.camera.func.test.run", false);}
     public static boolean isPerfTestRunning() {
         return getBoolean("persist.sys.camera.perf.test.run", false);}
+    public static boolean isKeyTestRunning() {
+        return getBoolean("persist.sys.camera.key.test.run", false);}
 
     public static final int getC2PAImageFormat() {
         return getInt("persist.sys.camera.c2pa.format",1);

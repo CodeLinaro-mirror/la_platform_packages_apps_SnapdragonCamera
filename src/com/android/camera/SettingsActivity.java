@@ -48,7 +48,7 @@ Not a contribution.
  */
 /*
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 package com.android.camera;
@@ -108,7 +108,7 @@ import org.codeaurora.snapcam.R;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.ui.RotateTextToast;
 import com.android.camera.util.PersistUtil;
-
+import android.view.KeyEvent;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1236,12 +1236,12 @@ public class SettingsActivity extends PreferenceActivity {
         adapter.setChecked(new CheckBoxChanged() {
             @Override
             public void onCheckedChanged(int position, String title, boolean isChecked) {
-                Log.v(TAG, " save title :" + title + ", isChecked :" + isChecked + ", position :" + position);
                 editor.putBoolean(title, isChecked);
                 editor.commit();
                 updateHdrRefOp();
                 mSettingsManager.updatePictureAndVideoSize();
                 updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+                updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                 if(title.equals("SHDR")) {
                     updateDcgBitsTagPref();
                 }
@@ -1268,12 +1268,21 @@ public class SettingsActivity extends PreferenceActivity {
                     mixedHDROrder.append(item);
                     mixedHDROrder.append("#");
                 }
-                Log.v(TAG, " onDismiss mixedHDROrder:" + mixedHDROrder.toString());
                 editor.putString(SettingsManager.KEY_MIXED_HDR_ORDER, mixedHDROrder.toString());
                 editor.apply();
             }
         });
         mManualHDRDialog = alert.create();
+        alert.setOnKeyListener(new DialogInterface.OnKeyListener() {
+            @Override
+            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    mManualHDRDialog.dismiss();
+                    return true;
+                }
+                return false;
+            }
+        });
         mManualHDRDialog.show();
         updateDcgBitsTagPref();
     }
@@ -1372,7 +1381,7 @@ public class SettingsActivity extends PreferenceActivity {
         mSharedPreferences = getPreferenceManager().getSharedPreferences();
         mSharedPreferences.registerOnSharedPreferenceChangeListener(mSharedPreferenceChangeListener);
         mDeveloperMenuEnabled = mSharedPreferences.getBoolean(SettingsManager.KEY_DEVELOPER_MENU, false);
-        mDeveloperMenuEnabled = mDeveloperMenuEnabled || mShowAllDevOption;
+        mDeveloperMenuEnabled = mDeveloperMenuEnabled || mShowAllDevOption || PersistUtil.isKeyTestRunning();
         filterPreferences();
         initializePreferences(false);
         mSearchSettingList = new ArrayList<>();
@@ -1402,7 +1411,6 @@ public class SettingsActivity extends PreferenceActivity {
                                 privateCounter = 0;
                             }
                         }
-
                         if ( preference.getKey().equals(SettingsManager.KEY_RESTORE_DEFAULT) ) {
                             onRestoreDefaultSettingsClick();
                         }
@@ -2652,16 +2660,6 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateViullPreference() {
         ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_VIULL);
         if (pref == null) return;
-        ListPreference videoQualityPref = (ListPreference) findPreference(SettingsManager.KEY_VIDEO_QUALITY);
-        if (videoQualityPref != null) {
-            CharSequence videQuality = videoQualityPref.getEntry();
-            if (videQuality != null && !videQuality.toString().contains("1080p") && !videQuality.toString().contains("4k")) {
-                pref.setValue("0");
-                pref.setEnabled(false);
-                return;
-            }
-        }
-
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         String selectMode = mSettingsManager.getValue(mSettingsManager.KEY_SELECT_MODE);
         if (selectMode.equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
@@ -3172,7 +3170,7 @@ public class SettingsActivity extends PreferenceActivity {
                         final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
                         alert.setMessage("Donnot support "+title+" " +
                                 "when Video FPS >=60 or enabled SaveRaw or inSensor zoom" +
-                                " or quadBayerSensor or videoSize >=8k in MCX mode");
+                                " or quadBayerSensor or videoSize >=8k");
                         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
                             }

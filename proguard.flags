@@ -20,6 +20,13 @@
   public long getJpegCallbackFinishTime();
   public long getCaptureStartTime();
 }
+#keep for autotest
+-keep class com.android.camera.SettingsManager {
+  public boolean setTitleEntry(...);
+  public boolean setPreferenceChecked(...);
+  public java.lang.String getKeyFromTitle(java.lang.String);
+  public java.lang.String getEntry(java.lang.String);
+}
 
 -keep class com.android.camera.VideoModule {
   public void onCancelBgTraining(...);

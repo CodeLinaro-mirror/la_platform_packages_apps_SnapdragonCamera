@@ -27,8 +27,8 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
  /*
-  * Changes from Qualcomm Innovation Center are provided under the following license:
-  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+  * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
   * SPDX-License-Identifier: BSD-3-Clause-Clear
   */
 
@@ -43,6 +43,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraCharacteristics.Key;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
@@ -61,6 +62,7 @@ import android.media.MediaFormat;
 import android.media.EncoderProfiles;
 import android.media.MediaRecorder;
 import android.media.CamcorderProfile;
+import android.os.Trace;
 import android.preference.PreferenceManager;
 import android.util.ArraySet;
 
@@ -377,6 +379,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_C2PA = "pref_camera2_c2pa_key";
 
     private static final String TAG = "SnapCam_SettingsManager";
+    private static final boolean TRACE_DEBUG = PersistUtil.getTraceDebug();
 
     private static SettingsManager sInstance;
     private CaptureModule mCaptureModule;
@@ -398,6 +401,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private Set<String> mFilteredKeys;
     private int[] mExtendedHFRSize;//An array of pairs (fps, maxW, maxH)
     private int[] mSuperBufferSize;
+    HashMap<Size, Long> mMinDurationMap = new HashMap<Size, Long>();
     private ArrayList<String> mPrepNameKeys;
     private Map<String, Set<String>> mQuadBayerIds = new HashMap<>();
     private boolean isPreferenceEnable = false;
@@ -431,7 +435,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
         h265.add("HEVCProfileMain10");
         h265.add("HEVCProfileMain10HDR10");
         h265.add("HEVCProfileMain10HDR10Plus");
+        Set<String> mvhevc = new HashSet<>();
+        mvhevc.add("HEVCProfileMain10");
         VIDEO_ENCODER_PROFILE_TABLE.put("h265", h265);
+        VIDEO_ENCODER_PROFILE_TABLE.put("mvhevc", mvhevc);
         KEY_HDR_MODES_ORDER.put("SHDR", 1);
         KEY_HDR_MODES_ORDER.put("MFHDR", 2);
         KEY_HDR_MODES_ORDER.put("QHDR", 3);
@@ -567,8 +574,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public void reloadCharacteristics(int cameraId){
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
+            if (TRACE_DEBUG) Trace.beginSection("SnapCamera,reloadCharacteristics");
             CameraCharacteristics characteristics
                     = manager.getCameraCharacteristics(String.valueOf(cameraId));
+            if (TRACE_DEBUG) Trace.endSection();
             mCharacteristics.set(cameraId, characteristics);
         } catch (CameraAccessException e) {
             Log.e(TAG,e.toString());
@@ -707,10 +716,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public void init() {
         Log.i(TAG, "SettingsManager init current camera id : " + CaptureModule.CURRENT_ID);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,settingmanager init");
         final int cameraId = getInitialCameraId();
         reloadCharacteristics(cameraId);
         setLocalIdAndInitialize(cameraId);
         autoTestBroadcast(cameraId);
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     public void reinit(int cameraId) {
@@ -842,6 +853,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
 
     private void autoTestBroadcast(int cameraId) {
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,settingmanager init-- autoTestBroadcast");
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext, getCurrentPrepNameKey()),
                 Context.MODE_PRIVATE);
@@ -852,6 +864,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             editor.putBoolean(AUTO_TEST_WRITE_CONTENT, false);
             editor.apply();
         }
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     private void writeAutoTextHelpTxt() {
@@ -934,11 +947,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     private void setLocalIdAndInitialize(int cameraId) {
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,settingmanager init-- setLocalIdAndInitialize");
         String facing = mPreferences.getGlobal().getString(KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
         mPreferences.setLocalId(mContext, facing, String.valueOf(CaptureModule.CURRENT_MODE));
         mCameraId = cameraId;
         CameraSettings.upgradeLocalPreferences(mPreferences.getLocal());
-
         PreferenceInflater inflater = new PreferenceInflater(mContext);
         mPreferenceGroup =
                 (PreferenceGroup) inflater.inflate(R.xml.capture_preferences);
@@ -952,14 +965,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch(IllegalArgumentException exception) {
             Log.w(TAG,EXCEPTION_LOG,exception.toString());
         }
-
         filterPreferences(cameraId);
         initDependencyTable();
         initializeValueMap();
         filterChromaflashPictureSizeOptions();
         filterHeifSizeOptions();
+        mMinDurationMap = getMinDurationMap(cameraId);
         filterHFROptions();
         filterVideoEncoderProfileOptions();
+        if (TRACE_DEBUG) Trace.endSection();
     }
 
     public boolean isFDRenderingAtPreview(){
@@ -1093,7 +1107,56 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return ret;
     }
+    public Size[] getAvailableSizesForFormat(int cameraId, int format,  Key<StreamConfigurationMap> keyName) {
+        StreamConfigurationMap config = mCharacteristics.get(cameraId).get(keyName);
+        if (config == null) {
+            return new Size[0];
+        }
+        Size[] sizes = null;
+        Size[] fastSizeList = config.getOutputSizes(format);
+        Size[] slowSizeList = config.getHighResolutionOutputSizes(format);
+        if (fastSizeList != null && slowSizeList != null) {
+            sizes = new Size[slowSizeList.length + fastSizeList.length];
+            System.arraycopy(fastSizeList, 0, sizes, 0, fastSizeList.length);
+            System.arraycopy(slowSizeList, 0, sizes, fastSizeList.length, slowSizeList.length);
+        } else if (fastSizeList != null) {
+            sizes = fastSizeList;
+        } else if (slowSizeList != null) {
+            sizes = slowSizeList;
+        }
+        if (sizes == null) {
+            sizes = new Size[0];
+        }
+        return sizes;
+    }
 
+    public HashMap<Size, Long> getMinDurationMap(int cameraId) {
+        HashMap<Size, Long> minDurationMap = new HashMap<Size, Long>();
+        List<Key<StreamConfigurationMap>> key = new ArrayList<>();
+        key.add(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
+        key.add(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        for(Key<StreamConfigurationMap> keyName: key){
+            StreamConfigurationMap config = mCharacteristics.get(cameraId).get(keyName);
+            if (config == null) {
+                return minDurationMap;
+            }
+            for (android.util.Size size : getAvailableSizesForFormat(cameraId, ImageFormat.JPEG, keyName)) {
+                long minFrameDuration = config.getOutputMinFrameDuration(ImageFormat.JPEG, size);
+                if (minFrameDuration != 0) {
+                    minDurationMap.put(new Size(size.getWidth(), size.getHeight()), minFrameDuration);
+                }
+            }
+        }
+        return minDurationMap;
+    }
+    public float getFps(Size pictureSize){
+        float fps = 0f;
+        if(mMinDurationMap.size() > 0) {
+            Long duration = mMinDurationMap.get(pictureSize);
+            fps = (float)1000000000/duration;
+        }
+        return fps;
+    }
     public String getAICameraValue(){
         String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
                 getCurrentPrepNameKey());
@@ -1544,9 +1607,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public String getValue(String key) {
-        if (mValuesMap == null) return null;
+        ListPreference pref = mPreferenceGroup.findPreference(key);
+        if (mValuesMap == null || mValuesMap.size() == 0)  {
+            if(pref != null){
+                return  pref.getValue();
+            }else {
+                return null;
+            }
+
+        }
+
         Values values = mValuesMap.get(key);
-        if (values == null) return null;
+        if (values == null || (values.overriddenValue == null && values.value == null)) {
+            if(pref != null){
+                return  pref.getValue();
+            }else {
+                return null;
+            }
+        }
         if (values.overriddenValue == null) return values.value;
         else return values.overriddenValue;
     }
@@ -1557,6 +1635,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if ((value == null) || (pref == null)) return -1;
         return pref.findIndexOfValue(value);
     }
+
 
     private boolean setFocusValue(String key, float value) {
         boolean result = false;
@@ -1634,6 +1713,55 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Values values = mValuesMap.get(key);
         return values.overriddenValue != null;
     }
+    public String getKeyFromTitle(String title){
+        String key = "";
+        ListPreference pref = mPreferenceGroup.findPreferenceWithTile(title);
+        if (pref != null) {
+            key = pref.getKey();
+        }
+        return key;
+    }
+
+    public String getEntry(String title){
+        String entry = "";
+        ListPreference pref = mPreferenceGroup.findPreferenceWithTile(title);
+        if (pref != null) {
+            entry = pref.getEntry();
+        }
+        return entry;
+    }
+    public boolean setTitleEntry(String title, String entry) {
+        ListPreference pref = mPreferenceGroup.findPreferenceWithTile(title);
+        Log.i(TAG,"11111 pref ="+pref+",title="+title+",entry="+entry);
+        if (pref != null) {
+            int index = pref.findIndexOfEntry(entry);
+            if (index < 0) {
+                Log.i(TAG,"cannot find this "+entry +" in "+ title);
+                return false;
+            } else {
+                String value = pref.findValueOfIndex(index);
+                if(value == null){
+                    Log.i(TAG,"cannot find value of index :"+index +" in pref values of "+title);
+                    return false;
+                }
+                pref.setValue(value);
+                updateMapAndNotify(pref);
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+    public boolean setPreferenceChecked(String title){
+        final SharedPreferences pref = mContext.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mContext,
+                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+        final SharedPreferences.Editor editor = pref.edit();
+        editor.putBoolean(title, true);
+        editor.commit();
+       return true;
+    }
+
 
     public boolean setValue(String key, String value) {
         ListPreference pref = mPreferenceGroup.findPreference(key);
@@ -2811,6 +2939,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference videoEncoderPref = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
         if ( videoEncoderProfilePref != null && videoEncoderPref != null ) {
             String videoEncoder = videoEncoderPref.getValue();
+            Log.i(TAG, "mvhevcHLG: encoder is " + videoEncoder);
             videoEncoderProfilePref.reloadInitialEntriesAndEntryValues();
             boolean isSupported = isDynamicRangeTenBitSupported();
             Log.d(TAG, " isDynamicRangeTenBitSupported, isSupported : " + isSupported);
@@ -2823,12 +2952,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     if (dynamicProfiles != null) {
                         Set<Long> profiles = dynamicProfiles.getSupportedProfiles();
                         for (Long p : profiles) {
-                            Log.d(TAG, " testProfiles:" + p);
+                            Log.d(TAG, " supported dynamic Profiles:" + p);
                         }
                         Set<String> profiles_string = new HashSet<>();
+                        Set<String> mvhevcprofiles_string = new HashSet<>();
                         if (profiles.contains(DynamicRangeProfiles.HLG10)) {
                             profiles_string.add("HEVCProfileMain10");
+                            mvhevcprofiles_string.add("HEVCProfileMain10");
                             Log.d(TAG, " Ten bit HLG10 Supported");
+                            VIDEO_ENCODER_PROFILE_TABLE.put("mvhevc", mvhevcprofiles_string);
                         }
                         if (profiles.contains(DynamicRangeProfiles.HDR10)) {
                             profiles_string.add("HEVCProfileMain10HDR10");
@@ -2891,6 +3023,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
                         if (type != -1){
                             str = SettingTranslation.getVideoEncoder(type);
+                            if("mvhevc".equalsIgnoreCase(str) && (CaptureModule.CameraMode.HFR
+                                    == CaptureModule.CURRENT_MODE || mCameraId == CaptureModule.FRONT_ID)) {
+                                continue;
+                            }
                             if (isCurrentVideoResolutionSupportedByEncoder(info)) {
                                 supported.add(str);
                             }
@@ -3351,16 +3487,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 return false;
         }
         return true;
-    }
-
-    public int[] getVideoHDRSupported() {
-        int modes[] = null;
-        try {
-            modes = mCharacteristics.get(getCurrentCameraId())
-                    .get(CaptureModule.support_video_hdr_modes);
-        } catch (Exception e) {
-        }
-        return modes;
     }
 
     public boolean isShadingCorrectionSupported() {
@@ -4032,7 +4158,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                             continue;
                         }
                     }
-                    if(isMultiCameraEnabled() && videoSizes.get(i).getWidth()*videoSizes.get(i).getHeight() >= 4320*7680){
+                    if((isLimitedHDR() || isSHDRLimited() || isMultiCameraEnabled()) && videoSizes.get(i).getWidth()*videoSizes.get(i).getHeight() >= 4320*7680){
                         continue;
                     }
                     res.add(videoSizes.get(i).toString());
@@ -4270,7 +4396,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     int type = SettingTranslation.getVideoEncoderType(info.getSupportedTypes()[0]);
                     if (type != -1){
                         str = SettingTranslation.getVideoEncoder(type);
-                        if("mvhevc".equalsIgnoreCase(str) && CaptureModule.CameraMode.HFR == CaptureModule.CURRENT_MODE){
+                        if("mvhevc".equalsIgnoreCase(str) && (CaptureModule.CameraMode.HFR ==
+                                CaptureModule.CURRENT_MODE || mCameraId == CaptureModule.FRONT_ID ||
+                                !PersistUtil.isMvhevcSupported())){
                             continue;
                         }
                         Log.d(TAG,BIG_LOG,"type="+type+" str="+str);
@@ -4279,6 +4407,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         }
                     }
                 }
+            }
+            if (!PersistUtil.enableMediaRecorder()) {
+                supported.add("apv");
             }
         }
         return supported;
@@ -4605,21 +4736,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 String value = getValue(KEY_SELECT_MODE);
                 if(CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO && (
                         value != null && value.equals("rtb"))) {
-                    profile.remove("HEVCProfileMain10HDR10Plus");
-                }
-                int[] hdrModes = getVideoHDRSupported();
-                boolean hdr10Plus = false;
-                if (hdrModes != null) {
-                    for (int mode : hdrModes) {
-                        if (mode == 3) { // If mode == 3 will show HDR10+
-                            hdr10Plus = true;
-                            break;
-                        }
-                    }
-                } else {
-                    hdr10Plus = true;
-                }
-                if (!hdr10Plus) {
                     profile.remove("HEVCProfileMain10HDR10Plus");
                 }
             }
@@ -4977,6 +5093,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         mValuesMap.clear();
         if(mValuesMap != null) mValuesMap = null;
         mCaptureModule.restoreCameraIds();
+        mCaptureModule.resetZoom();
         init();
     }
 

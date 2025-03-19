@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause-Clear
 */
 
@@ -113,24 +113,30 @@ public class StressTest extends TestBase {
         switchModeTextToR(false);
     }
 
-    private void clickRightMode(String mode)throws Exception{
+    private boolean clickRightMode(String mode)throws Exception{
         int[] loc =  mModeIconR.get(mode);
         if(loc == null){
             loc = mModeIconL.get(mode);
         }else {
             switchModeTextToR(true);
         }
-        executeShellCommand("input tap " + loc[0] + " " + loc[1]);
-        Thread.sleep(SMALL_WAIT_DURATION);
-
+        if(loc != null) {
+            executeShellCommand("input tap " + loc[0] + " " + loc[1]);
+            Thread.sleep(SMALL_WAIT_DURATION);
+            return true;
+        }else {
+            return  false;
+        }
     }
     @Test
     public void readIconLoc()throws Exception{
         //getModeLoc();
         clickRightMode("Pro");
         getIconLoctionInPro();
-        clickRightMode("Depth");
-        getDepthUILoc();
+        boolean hasDepth = clickRightMode("Depth");
+        if(hasDepth){
+            getDepthUILoc();
+        }
         JSONObject saveObj = new JSONObject();
         addObject(saveObj,"iconLoc",mIconLoc);
         addObject(saveObj,"proLoc",mProLoc);
@@ -139,7 +145,7 @@ public class StressTest extends TestBase {
         addObject(saveObj,"recordLoc",mRecordLoc);
         addObject(saveObj,"depthLoc",mDepthLoc);
         addObject(saveObj,"thumbLoc",mThumLoc);
-        saveJson(ICON_LOC_JSON,saveObj);
+        saveJson(ICON_LOC_JSON,saveObj,false);
     }
     private void addObject(JSONObject obj,String arrayStr, HashMap<String, int[]> mapkey)throws Exception{
         JSONObject mapObj = new JSONObject();

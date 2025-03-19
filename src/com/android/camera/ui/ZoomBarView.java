@@ -16,6 +16,8 @@ import android.view.View;
 import com.android.camera.util.Log;
 import org.codeaurora.snapcam.R;
 
+import java.text.DecimalFormat;
+
 public class ZoomBarView extends View {
 
     private float startAngle = 180f;
@@ -33,6 +35,7 @@ public class ZoomBarView extends View {
     private int uwDial = (int) ((1 - 0.67) * decimalPalce);
     private int wDial = (int) ((2.5 - 1) * decimalPalce);
     private float moveAnglePre = (float) sweepAngle / totalDial;
+    private float moveAngle;
     private float extendZoomPre_Min,extendZoomPre_Max;
     private float[] outZoomValue = new float[]{0.67f, 1f, 2f, 2.5f, 3f, 10f};
 
@@ -48,6 +51,8 @@ public class ZoomBarView extends View {
     private Context mContext;
     private Paint outerLinePaint, innerLinePaint, selectLinePaint, outerBgPaint, textPaint;
     private boolean zoomEnabled;
+    DecimalFormat zoomDf = new DecimalFormat("#.##");
+
 
     public void setZoomEnable(boolean enabled){
         zoomEnabled = enabled;
@@ -91,7 +96,7 @@ public class ZoomBarView extends View {
                 float zoom = outZoomValue[i] + zoomMoveValue;
                 for (int j = 1; j < count; j++) {
                     angle = start_angle + j * eangle;
-                    String str = String.format("%.2f", zoom).replaceAll("\\.?0*$", "");
+                    String str = zoomDf.format(zoom);
                     zoom = Float.valueOf(str);
                     if (zoom == value) {
                         Log.d(TAG, "zoom=" + zoom + ",angle=" + angle + ",j=" + j);
@@ -193,8 +198,11 @@ public class ZoomBarView extends View {
                         } else {
                             moveAnglePre = extendZoomPre_Max;
                         }
+                        moveAngle = extendZoomPre_Min;
+                    }else{
+                        moveAngle = moveAnglePre;
                     }
-                    startAngle = Math.min(startAngle + (Math.min(md, 100) * moveAnglePre), maxAngle);// (int)md 为取整数
+                    startAngle = Math.min(startAngle + (Math.min(md, 100) * moveAngle), maxAngle);
                     isTouchChange = true;
                     invalidate();
                 } else if (md < 0 && startAngle > minAngle) {
@@ -204,8 +212,12 @@ public class ZoomBarView extends View {
                         } else {
                             moveAnglePre = extendZoomPre_Max;
                         }
+                        moveAngle = extendZoomPre_Min;
+                    }else {
+                        moveAngle = moveAnglePre;
                     }
-                    startAngle = Math.max(startAngle + (Math.min(md, 100) * moveAnglePre), minAngle);
+
+                    startAngle = Math.max(startAngle + (Math.min(md, 100) * moveAngle), minAngle);
                     isTouchChange = true;
                     invalidate();
                 }
@@ -269,7 +281,7 @@ public class ZoomBarView extends View {
             float[] endP = getPointFromAngleAndRadius(angle, radius - outerLineHeight);
             canvas.drawLine(startP[0], startP[1], endP[0], endP[1], outerLinePaint);
             float[] textP = getPointFromAngleAndRadius(angle, radius - outerLineHeight - zoomTextLen);
-            String text = String.format("%.2f", outZoomValue[i]).replaceAll("\\.?0*$", "");
+            String text = String.valueOf(outZoomValue[i]);
             canvas.drawText(text, textP[0], textP[1], textPaint);
             float diff = Math.abs(angle - selectedLineAngle);
             if (diff < moveAnglePre) {
@@ -304,11 +316,12 @@ public class ZoomBarView extends View {
         startZoom = startZoom + zoomMoveValue;
         for (int i = 1; i < dialCount - 1; i++) {
             angle = each_angle * i + startAngle;
+            String text = zoomDf.format(startZoom);
+            startZoom = Float.valueOf(text);
             if (i % step == 0) {
                 startP = getPointFromAngleAndRadius(angle, radius);
                 endP = getPointFromAngleAndRadius(angle, radius - innerLineHeight);
                 float[] textP = getPointFromAngleAndRadius(angle, radius - innerLineHeight - zoomTextLen);
-                String text = String.format("%.2f", startZoom).replaceAll("\\.?0*$", "");
                 if (num < innerDial) {
                     canvas.drawLine(startP[0], startP[1], endP[0], endP[1], innerLinePaint);
                 }
@@ -317,8 +330,6 @@ public class ZoomBarView extends View {
                 }
                 num++;
             }
-            String text = String.format("%.2f", startZoom).replaceAll("\\.?0*$", "");
-            startZoom = Float.valueOf(text);
             float diff = Math.abs(angle - selectedLineAngle);
             if ((diff < each_angle && selecteDiff == -1) || (selecteDiff >= 0 && diff < selecteDiff)){
                 if (isTouchChange) {
