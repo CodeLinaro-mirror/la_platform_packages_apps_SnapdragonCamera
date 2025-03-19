@@ -246,6 +246,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AF_MODE = "pref_camera2_afmode_key";
     public static final String KEY_EXPOSURE_METERING_MODE = "pref_camera2_exposure_metering_key";
     public static final String KEY_MULTI_CAMERAS_MODE = "pref_camera2_multi_cameras_key";
+    public static final String KEY_EARLY_PCR_NUM = "pref_camera2_early_pcr_key";
     //manual 3A keys and parameter strings
     public static final String KEY_MANUAL_EXPOSURE = "pref_camera2_manual_exp_key";
     public static final String KEY_MANUAL_ISO_VALUE = "pref_camera2_manual_iso_key";

@@ -14684,7 +14684,14 @@ private boolean isDevOptionSetting(){
 
     private void applyEarlyPCR(CaptureRequest.Builder request) {
         try {
-            request.set(CaptureModule.earlyPCR, 1);
+            String value = mSettingsManager.getValue(SettingsManager.KEY_EARLY_PCR_NUM);
+            Log.v(TAG, " KEY_EARLY_PCR_NUM value :" + value);
+            if(value == null) {
+                request.set(CaptureModule.earlyPCR, 1);
+            }else{
+                int valueint = CameraUtil.strToInt(value,1);
+                request.set(CaptureModule.earlyPCR, valueint);
+            }
         } catch (IllegalArgumentException e) {
         }
     }

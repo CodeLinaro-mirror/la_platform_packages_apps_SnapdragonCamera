@@ -1385,6 +1385,9 @@
 
     <string name="pref_camera2_multi_camera_mode_default" translatable="false">0</string>
     <string name="pref_camera2_multi_camera_mode_title" translatable="true">Enable multi Camera mode</string>
+
+    <string name="pref_camera2_earlypcr_title" translatable="true">numPCRsBeforeStreamOn</string>
+    <string name="pref_camera2_earlypcr_default" translatable="true">"1"</string>
     <string name="pref_camera2_physical_camera_default" translatable="false"></string>
     <string name="pref_camera2_physical_camera_title" translatable="true">Enable physical camera</string>
     <string name="pref_camera2_physical_recording_title" translatable="true">Enable physical recording</string>
