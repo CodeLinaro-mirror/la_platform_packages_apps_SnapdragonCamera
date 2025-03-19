@@ -283,7 +283,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     // we can change it based on memory status or other requirements.
     private static final int LONGSHOT_CANCEL_THRESHOLD = 40 * 1024 * 1024;
 
-    private static final int NORMAL_SESSION_MAX_FPS = 60;
+    private static final int NORMAL_SESSION_MAX_FPS = 90;
     private static final int HIGH_SESSION_MAX_FPS = 120;
 
     private static final int SCREEN_DELAY = 2 * 60 * 1000;
@@ -6141,8 +6141,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 applyZoom(captureBuilder, id);
             }
             if (mHighSpeedCapture && !isVariableFPSEnabled()) {
-                captureBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                        mHighSpeedFPSRange);
+                captureBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mHighSpeedFPSRange);
             }
 
             applyAntiBandingLevel(captureBuilder);
@@ -7794,7 +7793,7 @@ private boolean isDevOptionSetting(){
                         !isVariableFPSEnabled())) {
             Range fpsRange = mHighSpeedCapture ? mHighSpeedFPSRange : new Range(30, 30);
 
-            if(!mIsRecordingVideo && mHighSpeedCapture ){
+            if(!mIsRecordingVideo && mHighSpeedCapture && mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS){
                 fpsRange = mHighSpeedPreviewFPSRange;
             }
             builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
@@ -11514,10 +11513,10 @@ private boolean isDevOptionSetting(){
                     mSettingsManager.isMultiCameraEnabled() && mSettingsManager.isLogicalEnable()
             )) {
                 if (PersistUtil.enableMediaRecorder()) {
-                        cleanupEmptyFile();
-                        setupMediaRecorder(getMainCameraId());
+                    cleanupEmptyFile();
+                    setupMediaRecorder(getMainCameraId());
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
-                    if(mHighSpeedCapture && !isVariableFPSEnabled()) {
+                    if(mHighSpeedCapture && !isVariableFPSEnabled() && mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS) {
                         mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                                 mHighSpeedFPSRange);
                     }
@@ -11835,8 +11834,12 @@ private boolean isDevOptionSetting(){
         }
         setTag(mVideoRecordRequestBuilder, "" + cameraId + "-" + getCurrenCameraMode().name());
         if (mHighSpeedCapture && !isVariableFPSEnabled()) {
+            if (mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS) {
                 mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                         mHighSpeedPreviewFPSRange);
+            } else {
+                mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mHighSpeedFPSRange);
+            }
 
         }
         if(mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
@@ -11890,17 +11893,20 @@ private boolean isDevOptionSetting(){
         }
         if (!isVariableFPSEnabled()) {
             if (mHighSpeedCapture) {
-
+                if (mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS) {
                     mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                             mHighSpeedPreviewFPSRange);
-                }else {
-                    Range fps = new Range(30, 30);
+                } else {
                     mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                            fps);
+                            mHighSpeedFPSRange);
                 }
+            } else {
+                Range fps = new Range(30, 30);
+                mVideoPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fps);
+            }
 
         }
-            applyVideoCommentSettings(mVideoPreviewRequestBuilder, cameraId);
+        applyVideoCommentSettings(mVideoPreviewRequestBuilder, cameraId);
     }
 
     private void applyVariableFPS(CaptureRequest.Builder builder) {
@@ -12636,7 +12642,7 @@ private boolean isDevOptionSetting(){
             }
         }
             mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
-        if(mHighSpeedCapture && !isVariableFPSEnabled()) {
+        if(mHighSpeedCapture && !isVariableFPSEnabled() && mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS) {
             mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                     mHighSpeedPreviewFPSRange);
         }
@@ -14173,7 +14179,7 @@ private boolean isDevOptionSetting(){
 
     private void generateVideoOutputFile() {
         if (mIsRecordingVideo
-                || (mHighSpeedCapture && mHighSpeedCaptureRate > 90)
+                || (mHighSpeedCapture && mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS)
                 || !PersistUtil.enableMediaRecorder()) {
             String fileName = generateVideoFilename(mProfile.fileFormat);
             Uri videoTable = Storage.getVideoBaseUri();
