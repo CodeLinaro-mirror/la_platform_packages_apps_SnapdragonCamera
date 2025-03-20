@@ -99,6 +99,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.os.Trace;
 import android.provider.MediaStore;
 import android.util.DisplayMetrics;
@@ -13983,8 +13984,10 @@ private boolean isDevOptionSetting(){
 
         if (TRACE_DEBUG) Trace.beginSection("SnapCamera,configurateAudio -- mMediaRecorder set source");
         if (!mCaptureTimeLapse && !hfr && !mSuperSlomoCapture && (-1 != audioEncoder)) {
-            // Set audio source as unprocessed if HDR
-            if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
+            String value = SystemProperties.get("vendor.audio.hdr.spf.record.enable", "false");
+            Log.i(TAG, "HDR Enabled on SPF: " + value);
+            // Set audio source as unprocessed if HDR enabled and SPF property not set
+            if(value.equals("false") && audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
                 mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.UNPROCESSED);
             } else {
                 mMediaRecorder.setAudioSource(PersistUtil.getAudioSource());
