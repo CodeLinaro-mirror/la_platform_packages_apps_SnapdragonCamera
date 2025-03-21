@@ -1871,7 +1871,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private void updateMapAndNotify(ListPreference pref) {
         String key = pref.getKey();
         List changed = checkDependencyAndUpdate(key);
-        if (changed == null) return;
+        if (changed == null && !key.equals(KEY_PHYSICAL_CAMCORDER)) {
+            return;
+        }
+        if (changed == null) {
+            changed = new ArrayList();
+            Values values = new Values(pref.getValue(), null);
+            changed.add(new SettingState(key, values));
+        }
         runTimeUpdateDependencyOptions(pref);
         notifyListeners(changed);
     }
