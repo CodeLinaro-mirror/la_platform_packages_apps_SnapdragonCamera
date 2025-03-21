@@ -1647,7 +1647,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mZoomLinearLayout.setVisibility(View.INVISIBLE);
             mZoomEditLayout.setVisibility(View.VISIBLE);
         }else{
-            setZoomTextSelect(zoom);
             mZoomSeekBar.setVisibility(View.INVISIBLE);
             mZoomValueText.setVisibility(View.INVISIBLE);
             mZoomLinearLayout.setVisibility(View.VISIBLE);
@@ -4927,6 +4926,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         public void onZoomValueChanged(float value) {
             if(mModule.updateZoomChanged(value)) {
                 mZoomValueText.setText(String.valueOf(value));
+                setZoomTextSelect(value);
                 if (mZoomRenderer != null) {
                     mZoomRenderer.setZoom(value);
                 }
