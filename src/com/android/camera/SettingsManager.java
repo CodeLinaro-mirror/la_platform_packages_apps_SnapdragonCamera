@@ -276,10 +276,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MANUAL_WB = "pref_camera2_manual_wb_key";
     public static final String KEY_MANUAL_WB_TEMPERATURE_VALUE =
             "pref_camera2_manual_temperature_key";
-    public static final String KEY_MANUAL_WB_R_GAIN = "pref_camera2_manual_wb_r_gain";
-    public static final String KEY_MANUAL_WB_G_GAIN = "pref_camera2_manual_wb_g_gain";
-    public static final String KEY_MANUAL_WB_B_GAIN = "pref_camera2_manual_wb_b_gain";
-
+    public static final String KEY_MANUAL_COLOR_TINT_VALUE =
+            "pref_camera2_manual_tint_key";
     public static final String KEY_QUAD_BAYER_SENSOR = "pref_camera2_quad_bayer_sensor_key";
     public static final String KEY_REMOSAIC_REPROCESSING = "pref_camera2_remosaic_reprocessing_key";
     public static final String KEY_EIS_VALUE = "pref_camera2_eis_key";
@@ -1024,6 +1022,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         return isCameraFDSupported;
+    }
+    public  boolean isCctModeSupported()  {
+        int[] availableColorCorrectionModes = mCharacteristics.get(mCameraId).get(
+                CameraCharacteristics.COLOR_CORRECTION_AVAILABLE_MODES);
+        if (availableColorCorrectionModes == null) {
+            return false;
+        }
+        for (int mode : availableColorCorrectionModes) {
+            if (mode == CameraMetadata.COLOR_CORRECTION_MODE_CCT) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean isT2TSupported() {
@@ -2648,13 +2659,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public int[] getWBColorTemperatureRangeValues(int cameraId) {
-        int[] wbRange = null;
+        int[] wbRange = new int[2];
+        Range<Integer> range = null;
         try {
-            wbRange =  mCharacteristics.get(cameraId).get(CaptureModule.WB_COLOR_TEMPERATURE_RANGE);
-            if (wbRange == null) {
+            range =  mCharacteristics.get(cameraId).get(CameraCharacteristics.COLOR_CORRECTION_COLOR_TEMPERATURE_RANGE);
+            if (range == null) {
                 Log.w(TAG, "Supported exposure range get null.");
                 return null;
             }
+            wbRange[0] = range.getLower();
+            wbRange[1] = range.getUpper();
         } catch(IllegalArgumentException e) {
             Log.w(TAG, EXCEPTION_LOG,"Supported exposure range modes occur IllegalArgumentException.");
         }

@@ -524,10 +524,10 @@ public class SettingsActivity extends PreferenceActivity {
 
         int[] isoRange = mSettingsManager.getIsoRangeValues(cameraId);
         String isoSet = pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE, "100");
-        ISOtext.setText("If input value is invalid,apk use the Current ISO " + isoSet +
-                ",default value is 100");
+        ISOtext.setText("If enter value is invalid,use current value " + isoSet +
+                ",default is 100");
         String expTimeSet = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, String.valueOf(exposureRange[0]));
-        ExpTimeText.setText("If input value is invalid,apk use the Current exposure time "+expTimeSet +
+        ExpTimeText.setText("If enter value is invalid,use current value "+expTimeSet +
                 ",default is "+exposureRange[0]);
         Log.d(TAG, "manual Exposure Mode selected = " + manualExposureMode +
                 ",isoSet="+isoSet+",currentExpTime="+expTimeSet);
@@ -570,8 +570,7 @@ public class SettingsActivity extends PreferenceActivity {
             alert.setMessage("Full manual mode - Enter both ISO and Exposure Time");
             final TextView ISORangeText = new TextView(this);
             final TextView ExpTimeRangeText = new TextView(this);
-            ISORangeText.setText("Enter ISO in the range of " + isoRange[0] + " to " + isoRange[1]+
-                    ",");
+            ISORangeText.setText("Enter ISO in the range of " + isoRange[0] + " to " + isoRange[1]);
             if (exposureRange == null) {
                 ExpTimeRangeText.setText("Get Exposure time range is NULL ");
             } else {
@@ -612,20 +611,21 @@ public class SettingsActivity extends PreferenceActivity {
             try {
                 newValue = Long.valueOf(exptime);
             } catch (NumberFormatException e) {
-                Log.w(TAG, "Input value : " + exptime + "is incorrect value entered ");
+                Log.w(TAG, "Input value " + exptime + " is incorrect value entered ");
                 newValue = value;
                 RotateTextToast.makeText(SettingsActivity.this,
-                        "Input exptime is " + exptime + ",it is invalid,apk will use current value: " + newValue,
+                        "Input exptime " + exptime + " is invalid,use current value: " + newValue,
                         Toast.LENGTH_SHORT).show();
             }
+        }else{
+            newValue = Long.valueOf(valueStr);
         }
         if (newValue <= exposureRange[1] && newValue >= exposureRange[0]) {
             return String.valueOf(newValue);
         } else {
             Log.i(TAG,"makeText newValue="+newValue);
             RotateTextToast.makeText(SettingsActivity.this,
-                    "Input newValue is " + newValue + ",it is out of range:[" + exposureRange[0] + "," + exposureRange[1]
-                            + "],apk will use current value: " + valueStr,
+                    "Input newValue " + newValue + " is out of range,use current value: " + valueStr,
                     Toast.LENGTH_SHORT).show();
             return valueStr;
         }
@@ -641,16 +641,17 @@ public class SettingsActivity extends PreferenceActivity {
                 Log.w(TAG, "Input iso : "+iso + "is incorrect value entered ");
                 newISO = isoValue;
                 RotateTextToast.makeText(SettingsActivity.this,
-                        "Input iso is "+iso +",it is invalid,apk will use current value:"+newISO,
+                        "Input iso "+iso +" is invalid,use current value:"+newISO,
                         Toast.LENGTH_SHORT).show();
             }
+        }else{
+            newISO = Integer.parseInt(currentISO);
         }
         if (newISO <= isoRange[1] && newISO >= isoRange[0]) {
            return String.valueOf(newISO);
         }else{
-            Log.i(TAG,"makeText newISO="+newISO);
             RotateTextToast.makeText(SettingsActivity.this,
-                    "Input iso is  is out of range,apk will use current value:"+currentISO,
+                    "Input iso "+iso +" is out of range,use current value:"+currentISO,
                     Toast.LENGTH_SHORT).show();
             return currentISO;
         }
@@ -707,128 +708,6 @@ public class SettingsActivity extends PreferenceActivity {
         alert.show();
     }
 
-    private void showManualWBGainDialog(final LinearLayout linear,
-                                        final AlertDialog.Builder alert) {
-        SharedPreferences.Editor editor = mLocalSharedPref.edit();
-        final TextView rGainTtext = new TextView(SettingsActivity.this);
-        final TextView rGainValue = new TextView(SettingsActivity.this);
-        final EditText rGainInput = new EditText(SettingsActivity.this);
-        final TextView gGainTtext = new TextView(SettingsActivity.this);
-        final TextView gGainValue = new TextView(SettingsActivity.this);
-        final EditText gGainInput = new EditText(SettingsActivity.this);
-        final TextView bGainTtext = new TextView(SettingsActivity.this);
-        final TextView bGainValue = new TextView(SettingsActivity.this);
-        final EditText bGainInput = new EditText(SettingsActivity.this);
-        int floatType = InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_CLASS_NUMBER;
-        rGainInput.setInputType(floatType);
-        gGainInput.setInputType(floatType);
-        bGainInput.setInputType(floatType);
-
-        float rGain = mLocalSharedPref.getFloat(SettingsManager.KEY_MANUAL_WB_R_GAIN, -1.0f);
-        float gGain = mLocalSharedPref.getFloat(SettingsManager.KEY_MANUAL_WB_G_GAIN, -1.0f);
-        float bGain = mLocalSharedPref.getFloat(SettingsManager.KEY_MANUAL_WB_B_GAIN, -1.0f);
-
-        if (rGain == -1.0) {
-            rGainValue.setText(" Current rGain is " );
-        } else {
-            rGainValue.setText(" Current rGain is " + rGain);
-        }
-        if (rGain == -1.0) {
-            gGainValue.setText(" Current gGain is " );
-        } else {
-            gGainValue.setText(" Current gGain is " + gGain);
-        }
-        if (rGain == -1.0) {
-            bGainValue.setText(" Current bGain is ");
-        } else {
-            bGainValue.setText(" Current bGain is " + bGain);
-        }
-        int cameraId = mSettingsManager.getCurrentCameraId();
-        final float[] gainsRange = mSettingsManager.getWBGainsRangeValues(cameraId);
-        //refresh camera parameters to get latest CCT value
-        if (gainsRange == null) {
-            alert.setMessage("Enter gains value in the range get is NULL ");
-        } else {
-            alert.setMessage("Enter gains value in the range of " + gainsRange[0]+ " to " + gainsRange[1]);
-        }
-        linear.addView(rGainTtext);
-        linear.addView(rGainInput);
-        linear.addView(rGainValue);
-        linear.addView(gGainTtext);
-        linear.addView(gGainInput);
-        linear.addView(gGainValue);
-        linear.addView(bGainTtext);
-        linear.addView(bGainInput);
-        linear.addView(bGainValue);
-        alert.setView(linear);
-        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface Dialog, int id) {
-                float rGain = -1.0f;
-                float gGain = -1.0f;
-                float bGain = -1.0f;
-                String rgainStr = rGainInput.getText().toString();
-                String ggainStr = gGainInput.getText().toString();
-                String bgainStr = bGainInput.getText().toString();
-                if (rgainStr.length() > 0) {
-                    try {
-                        rGain = Float.parseFloat(rgainStr);
-                    } catch(NumberFormatException e) {
-                        Log.w(TAG, "rGainInput type incorrect value ");
-                    }
-                }
-                if (ggainStr.length() > 0) {
-                    try {
-                        gGain = Float.parseFloat(ggainStr);
-                    } catch (NumberFormatException e) {
-                        Log.w(TAG, "gGainInput type incorrect value ");
-                    }
-                }
-                if (bgainStr.length() > 0) {
-                    try {
-                        bGain = Float.parseFloat(bgainStr);
-                    } catch(NumberFormatException e) {
-                        Log.w(TAG, "bGainInput type incorrect value ");
-                    }
-                }
-                if (gainsRange == null) {
-                    RotateTextToast.makeText(SettingsActivity.this, "Gains Range is NULL, " +
-                            "Invalid gains", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (rGain <= gainsRange[1] && rGain >= gainsRange[0]) {
-                    Log.v(TAG, "Setting rGain value : " + rGain);
-                    editor.putFloat(SettingsManager.KEY_MANUAL_WB_R_GAIN, rGain);
-                } else {
-                    RotateTextToast.makeText(SettingsActivity.this, "Invalid rGain value:",
-                            Toast.LENGTH_SHORT).show();
-                }
-                if (gGain <= gainsRange[1] && gGain >= gainsRange[0]) {
-                    Log.v(TAG, "Setting gGain value : " + gGain);
-                    editor.putFloat(SettingsManager.KEY_MANUAL_WB_G_GAIN, gGain);
-                } else {
-                    RotateTextToast.makeText(SettingsActivity.this, "Invalid gGain value:",
-                            Toast.LENGTH_SHORT).show();
-                }
-                if (bGain <= gainsRange[1] && bGain >= gainsRange[0]) {
-                    Log.v(TAG, "Setting bGain value : " + bGain);
-                    editor.putFloat(SettingsManager.KEY_MANUAL_WB_B_GAIN, bGain);
-                } else {
-                    RotateTextToast.makeText(SettingsActivity.this, "Invalid bGain value:",
-                            Toast.LENGTH_SHORT).show();
-                }
-                editor.apply();
-            }
-        });
-        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog,int id) {
-                editor.putString(SettingsManager.KEY_MANUAL_WB, "off");
-                editor.apply();
-                dialog.cancel();
-            }
-        });
-        alert.show();
-    }
-
     private void updateManualWBSettings() {
         int cameraId = mSettingsManager.getCurrentCameraId();
         SharedPreferences.Editor editor = mLocalSharedPref.edit();
@@ -842,57 +721,95 @@ public class SettingsActivity extends PreferenceActivity {
             }
         });
 
-        String cctMode = this.getString(
+        String colorTempe = this.getString(
                 R.string.pref_camera_manual_wb_value_color_temperature);
-        String rgbGainMode = this.getString(
-                R.string.pref_camera_manual_wb_value_rbgb_gains);
+        String cctMode = this.getString(
+                R.string.pref_camera_manual_wb_cct);
+        String tintMode = this.getString(
+                R.string.pref_camera_manual_wb_value_color_tint);
         String currentWBTemp = mLocalSharedPref.getString(
-                SettingsManager.KEY_MANUAL_WB_TEMPERATURE_VALUE, "-1");
+                SettingsManager.KEY_MANUAL_WB_TEMPERATURE_VALUE, "5000");
+        String currentTint = mLocalSharedPref.getString(
+                SettingsManager.KEY_MANUAL_COLOR_TINT_VALUE, "0");
         final String manualWBMode = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_WB);
-        Log.v(TAG, "manualWBMode selected = " + manualWBMode);
+        Log.v(TAG, "manualWBMode selected = " + manualWBMode+",currentWBTemp="+currentWBTemp+
+                ",currentTint="+currentTint);
         final int[] wbRange = mSettingsManager.getWBColorTemperatureRangeValues(cameraId);
         if (manualWBMode.equals(cctMode)) {
             final TextView CCTtext = new TextView(SettingsActivity.this);
+            final TextView enterTemperature = new TextView(SettingsActivity.this);
+            final TextView enterTint = new TextView(SettingsActivity.this);
             final EditText CCTinput = new EditText(SettingsActivity.this);
+            alert.setMessage("CCT Mode-Enter both colorTemperature and Tint value");
             CCTinput.setInputType(InputType.TYPE_CLASS_NUMBER);
-
-            //refresh camera parameters to get latest CCT value
-            if (currentWBTemp.equals("-1")) {
-                CCTtext.setText(" Current CCT is ");
-            } else {
-                CCTtext.setText(" Current CCT is " + currentWBTemp);
-            }
+            CCTtext.setText("If enter value is invalid,use current value " + currentWBTemp+",default is 5000");
             if (wbRange == null) {
-                alert.setMessage("Enter CCT value is get NULL ");
+                enterTemperature.setText(" Enter colorTemperature,range is  null");
             } else {
-                alert.setMessage("Enter CCT value in the range of " + wbRange[0]+ " to " + wbRange[1]);
+                enterTemperature.setText(" Enter colorTemperature in the range of  " +wbRange[0]+" to "+wbRange[1]);
             }
+            final TextView Tinttext = new TextView(SettingsActivity.this);
+            final EditText Tintinput = new EditText(SettingsActivity.this);
+            Tintinput.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
+            enterTint.setText("Enter Tint in the range of -50 to 50 " );
+            Tinttext.setText("If enter value is invalid,use current value " + currentTint+",default is 0");
+            linear.addView(enterTemperature);
             linear.addView(CCTinput);
             linear.addView(CCTtext);
+            linear.addView(enterTint);
+            linear.addView(Tintinput);
+            linear.addView(Tinttext);
             alert.setView(linear);
             alert.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface Dialog,int id) {
-                    int newCCT = -1;
+                    int newCCT = Integer.parseInt(currentWBTemp);
                     String cct = CCTinput.getText().toString();
                     if (cct.length() > 0) {
                         try {
                             newCCT = Integer.parseInt(cct);
                         } catch (NumberFormatException e) {
                             Log.w(TAG, "CCTinput type incorrect value ");
+                            RotateTextToast.makeText(SettingsActivity.this, "Invalid CCT,use current value:"+currentWBTemp,
+                                    Toast.LENGTH_SHORT).show();
                         }
+                    }else{
+                        cct = currentWBTemp;
                     }
-                    if (wbRange == null) {
-                        RotateTextToast.makeText(SettingsActivity.this, "CCT Range is NULL, " +
-                                        "Invalid CCT", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    if (newCCT <= wbRange[1] && newCCT >= wbRange[0]) {
-                        Log.v(TAG, "Setting CCT value : " + newCCT);
+                    if (wbRange == null || (newCCT <= wbRange[1] && newCCT >= wbRange[0])) {
+                        Log.v(TAG, "Setting CCT value : " + cct);
                         //0 corresponds to manual CCT mode
                         editor.putString(SettingsManager.KEY_MANUAL_WB_TEMPERATURE_VALUE, cct);
                         editor.apply();
                     } else {
-                        RotateTextToast.makeText(SettingsActivity.this, "Invalid CCT",
+                        editor.putString(SettingsManager.KEY_MANUAL_WB_TEMPERATURE_VALUE, currentWBTemp);
+                        editor.apply();
+                        RotateTextToast.makeText(SettingsActivity.this, "CCT out of range,use current value:"+currentWBTemp,
+                                Toast.LENGTH_SHORT).show();
+                    }
+
+                    int newValue = Integer.parseInt(currentTint);
+                    String tint = Tintinput.getText().toString();
+                    if (tint.length() > 0) {
+                        try {
+                            newValue = Integer.parseInt(tint);
+                        } catch (NumberFormatException e) {
+                            Log.w(TAG, "Tintinput type incorrect value ");
+                            tint = currentTint;
+                            RotateTextToast.makeText(SettingsActivity.this, "Invalid tint,use current value:"+currentTint,
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }else{
+                        tint = currentTint;
+                    }
+                    if (newValue <= 50 && newValue >= -50) {
+                        Log.v(TAG, "Setting tint value : " + tint);
+                        //0 corresponds to manual CCT mode
+                        editor.putString(SettingsManager.KEY_MANUAL_COLOR_TINT_VALUE, tint);
+                        editor.apply();
+                    } else {
+                        editor.putString(SettingsManager.KEY_MANUAL_COLOR_TINT_VALUE, currentTint);
+                        editor.apply();
+                        RotateTextToast.makeText(SettingsActivity.this, "Tint out of range,use current value:"+currentTint,
                                 Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -905,10 +822,51 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             });
             alert.show();
-        } else if (manualWBMode.equals(rgbGainMode)) {
-            showManualWBGainDialog(linear, alert);
-        } else {
-            // user select off, nothing to do.
+        } else if(manualWBMode.equals(tintMode)){
+            final TextView Tinttext = new TextView(SettingsActivity.this);
+            final EditText Tintinput = new EditText(SettingsActivity.this);
+            Tintinput.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
+            //refresh camera parameters to get latest CCT value
+            Tinttext.setText(" Current Tint is " + currentTint+",default value is 0");
+            alert.setMessage("Enter CCT value in the range of -50 to 50 ");
+            linear.addView(Tintinput);
+            linear.addView(Tinttext);
+            alert.setView(linear);
+            alert.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface Dialog,int id) {
+                    int newValue = -1;
+                    String tint = Tintinput.getText().toString();
+                    if (tint.length() > 0) {
+                        try {
+                            newValue = Integer.parseInt(tint);
+                        } catch (NumberFormatException e) {
+                            Log.w(TAG, "Tintinput type incorrect value ");
+                            newValue = Integer.parseInt(currentTint);
+                            RotateTextToast.makeText(SettingsActivity.this, "Invalid tint,use curren value:"+currentTint,
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    if (newValue <= 50 && newValue >= -50) {
+                        Log.v(TAG, "Setting tint value : " + tint);
+                        //0 corresponds to manual CCT mode
+                        editor.putString(SettingsManager.KEY_MANUAL_COLOR_TINT_VALUE, tint);
+                        editor.apply();
+                    } else {
+                        editor.putString(SettingsManager.KEY_MANUAL_COLOR_TINT_VALUE, currentTint);
+                        editor.apply();
+                        RotateTextToast.makeText(SettingsActivity.this, "Tint out of range,use current value:"+currentTint,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog,int id) {
+                    editor.putString(SettingsManager.KEY_MANUAL_WB, "off");
+                    editor.apply();
+                    dialog.cancel();
+                }
+            });
+            alert.show();
         }
     }
 
@@ -1480,6 +1438,7 @@ public class SettingsActivity extends PreferenceActivity {
                             String value = ((ListPreference) preference).getValue();
                             if (!value.equals("off")) {
                                 updateManualWBSettings();
+
                             }
                         }
 
@@ -1662,6 +1621,9 @@ public class SettingsActivity extends PreferenceActivity {
         if (!isStatsNN) {
             removePreference(SettingsManager.KEY_STATSNN_CONTROL, photoPre);
         }
+        if(!mSettingsManager.isCctModeSupported()){
+            removePreference(SettingsManager.KEY_MANUAL_WB, photoPre);
+        }
         Preference p = findPreference(SettingsManager.KEY_FD_SETTING);
         if(p != null) {
             fdExpandListView = new FdExpandListView(SettingsActivity.this);
@@ -1689,6 +1651,7 @@ public class SettingsActivity extends PreferenceActivity {
         if (mode != DEPTH) {
             removePreference(SettingsManager.KEY_ITOF_TUNING_SET, developer);
         }
+
         switch (mode) {
             case DEFAULT:
                 removePreferenceGroup("video", parentPre);
@@ -2405,6 +2368,7 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setValue("-1");
         }
     }
+
     private void updateQLLPreference() {
         ListPreference mixHDRPref = (ListPreference)findPreference(SettingsManager.KEY_MANUAL_HDR);
         ListPreference qllPref = (ListPreference)findPreference(SettingsManager.KEY_QLL);

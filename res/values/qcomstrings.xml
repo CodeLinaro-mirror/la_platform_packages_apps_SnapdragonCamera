@@ -241,12 +241,16 @@
 
      <!-- Manual white balance entry values -->
      <string name="pref_camera_manual_wb_title">Manual White balance</string>
+    <string name="pref_camera_manual_wb_cct">CCT Mode</string>
      <string name="pref_camera_manual_wb_entry_color_temperature">Color temperature</string>
+    <string name="pref_camera_manual_wb_entry_color_tint">Color tint</string>
      <string name="pref_camera_manual_wb_entry_rbgb_gains">RBGB gains</string>
      <string name="pref_camera_manual_wb_entry_off">Off</string>
 
      <string name="pref_camera_manual_wb_default">off</string>
      <string name="pref_camera_manual_wb_value_color_temperature">color-temperature</string>
+     <string name="pref_camera_manual_wb_value_color_tint">color-tint</string>
+
      <string name="pref_camera_manual_wb_value_rbgb_gains">rbgb-gains</string>
      <string name="pref_camera_manual_wb_value_off">off</string>
 
