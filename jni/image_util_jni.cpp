@@ -634,10 +634,10 @@ exit:
 JNIEXPORT jbyteArray Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignMedia(JNIEnv* env, jobject thiz, jint imageType, jint height, jint width, jint stride, jint compression, jint maxThumbnailSize, jint thumbnailCompression, jstring jinputFile,
                                                                                               jdouble latitude, jdouble longitude, jdouble altitude, jdouble accuracy, jlong time)
 {
-    uint8_t *coutput;
     jbyteArray output;
-    int32_t ret = -1;
 #ifdef ENABLE_C2PA_LIB
+    int32_t ret = -1;
+    uint8_t *coutput;
     const char *inputFile = env->GetStringUTFChars(jinputFile, 0);
     SignResponse result = SignResponse::SIGN_RESPONSE_FAILED;
     ScopedAStatus status = ScopedAStatus::ok();
