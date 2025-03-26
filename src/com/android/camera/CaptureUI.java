@@ -1608,7 +1608,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private void setZoomTextSelect(float zoom){
        String zoom_text = zoomDf.format(zoom);
        float zoomFomat = Float.valueOf(zoom_text);
-       Log.d(TAG,"zoomtext="+zoom_text+",zoomFomat="+zoomFomat);
+       Log.d(TAG,"zoomtext="+zoom_text+",zoomFomat="+zoomFomat+",mWZoom="+mWZoom+",mTelZoom="+mTelZoom);
         if (mZoomRenderer != null) {
             mZoomRenderer.setZoom(Float.valueOf(zoom_text));
         }
@@ -1636,10 +1636,31 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mZoomWText.setText(mWzoomText+"x");
         }
     }
+    private String getZoomText(){
+        String zoom_text = null;
+        if(mZoomWText.isSelected()){
+            zoom_text = mZoomWText.getText().toString();
+        }else if(mZoomUWText.isSelected()){
+            zoom_text = mZoomUWText.getText().toString();
+        }else if(mZoomTelText.isSelected()){
+            zoom_text = mZoomTelText.getText().toString();
+        }
+        if(zoom_text != null) {
+            int index = zoom_text.indexOf("x");
+            if (index > 0) {
+                return zoom_text.substring(0, index);
+            }
+        }
+        return null;
+    }
     public void showZoomBar(boolean show){
-        float zoom = mModule.getZoomValue();
         if(show){
+            float zoom = mModule.getZoomValue();
             String zoom_text = zoomDf.format(zoom);
+            String zoomText = getZoomText();
+            if(zoomText != null && !zoomText.equals(zoom)){
+                zoom_text = zoomText;
+            }
             mZoomSeekBar.setZoomValue(Float.valueOf(zoom_text));
             mZoomValueText.setText(zoom_text);
             mZoomSeekBar.setVisibility(View.VISIBLE);

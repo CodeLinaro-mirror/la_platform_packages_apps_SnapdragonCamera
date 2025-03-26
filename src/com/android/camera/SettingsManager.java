@@ -1743,7 +1743,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
     public boolean setTitleEntry(String title, String entry) {
         ListPreference pref = mPreferenceGroup.findPreferenceWithTile(title);
-        Log.i(TAG,"11111 pref ="+pref+",title="+title+",entry="+entry);
+        Log.i(TAG," pref ="+pref+",title="+title+",entry="+entry);
         if (pref != null) {
             int index = pref.findIndexOfEntry(entry);
             if (index < 0) {
@@ -1760,6 +1760,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 return true;
             }
         } else {
+            IconListPreference icon_pref = (IconListPreference) mPreferenceGroup.findPreferenceWithTile(title);
+            Log.i(TAG," icon_pref ="+icon_pref+",title="+title+",entry="+entry);
             return false;
         }
     }

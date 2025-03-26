@@ -3518,7 +3518,7 @@ public class TestBase{
     public void getKeyValue() {
         isovalue = mActivity.mSettingsManager.getEntryValues(SettingsManager.KEY_ISO);
         wbvalue = mActivity.mSettingsManager.getEntryValues(SettingsManager.KEY_WHITE_BALANCE);
-        evvalue = mActivity.mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE);
+        evvalue = mActivity.mSettingsManager.getEntries(SettingsManager.KEY_EXPOSURE);
     }
     public void pressDone(){
         CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
