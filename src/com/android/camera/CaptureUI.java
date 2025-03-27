@@ -1594,18 +1594,19 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     private void setZoomTextSelect(float zoom){
        String zoom_text = zoomDf.format(zoom);
-       Log.d(TAG,"zoomtext="+zoom_text+",zoom="+zoom);
+       float zoomFomat = Float.valueOf(zoom_text);
+       Log.d(TAG,"zoomtext="+zoom_text+",zoomFomat="+zoomFomat);
         if (mZoomRenderer != null) {
             mZoomRenderer.setZoom(Float.valueOf(zoom_text));
         }
-        if(zoom < mWZoom){
+        if(zoomFomat < mWZoom){
             mZoomUWText.setSelected(true);
             mZoomUWText.setText(zoom_text +"x");
             mZoomWText.setSelected(false);
             mZoomWText.setText(mWzoomText+"x");
             mZoomTelText.setSelected(false);
             mZoomTelText.setText(mTELzoomText+"x");
-        }else if(zoom < mTelZoom || mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB
+        }else if(zoomFomat < mTelZoom || mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB
                 || (mModule.isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())){
             mZoomUWText.setSelected(false);
             mZoomWText.setSelected(true);
