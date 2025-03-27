@@ -2166,7 +2166,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void updateVSRView(CaptureResult result){
         try{
-            updateVSRText(new StringBuilder("VSR ").append(result.get(VRSSkipSegment)).toString());
+            if(result.get(VRSSkipSegment) != -1) {
+                updateVSRText(new StringBuilder("VSR ").append(result.get(VRSSkipSegment)).toString());
+            }
         } catch (IllegalArgumentException | NullPointerException e) {
             Log.w(TAG,EXCEPTION_LOG,e.toString());
             updateVSRText("");
