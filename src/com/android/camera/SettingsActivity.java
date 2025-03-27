@@ -380,6 +380,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updateLongShotPreference();
                         updatePictureFormatPreference();
                         updateVideoMFHDRPreference();
+                        updateInSensorZoom();
                         updateSwitchIDInModePreference(false);
                         if (mSettingsManager.isMultiCameraEnabled()) {
                             recreate();
@@ -2214,6 +2215,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateLowLightBoostPreference();
         updateHfrBufferMode();
         updateFRCPreference();
+        updateInSensorZoom();
     }
     public void updateHfrBufferMode() {
         ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_HFR_BUFFER_MODE);
@@ -2906,7 +2908,7 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateInSensorZoom(){
         ListPreference inSenorZoomPref = (ListPreference)findPreference(SettingsManager.KEY_INSENSOR_ZOOM);
         if(inSenorZoomPref == null) return;
-        if(inSenorZoomPref != null && mSettingsManager.isLimitedHDR()){
+        if((inSenorZoomPref != null && mSettingsManager.isLimitedHDR()) || mSettingsManager.getQuadBayerSensorPrefEnabled()){
             inSenorZoomPref.setValue("0");
             inSenorZoomPref.setEnabled(false);
             return;
