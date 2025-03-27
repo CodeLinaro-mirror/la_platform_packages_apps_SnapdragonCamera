@@ -14994,13 +14994,6 @@ private boolean isDevOptionSetting(){
     }
 
     private void applyVIULL(CaptureRequest.Builder request) {
-        String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
-        String videoQuality = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-        if ("1280x720".equals(videoQuality)) {
-            Log.w(TAG, " applyVIULL mode : 0, video profile " + profile + ", videoQuality " + videoQuality);
-            VendorTagUtil.setVIULLMode(request, 0);
-            return;
-        }
         String value = mSettingsManager.getValue(SettingsManager.KEY_VIULL);
         if (value != null ) {
             int mode = -1;
