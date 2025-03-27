@@ -240,7 +240,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private LinearLayout mVerticlEvLayout;
 
     private FocusAssistImageView mFAImageView;
-    private RotateTextView mFocusAssistTextView;
+    private RotateImageView mFocusAssistTextView;
     private ViewStub mFAViewStub;
     private FocusAssistLayout mFALayout;
     private TextureView mFATextureView;
@@ -3970,9 +3970,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showFocusAssistText() {
-//        Log.d(TAG, "showFocusAssistText");
+        Log.d(TAG, "showFocusAssistText");
         if (mFocusAssistTextView == null) {
-            mFocusAssistTextView = mRootView.findViewById(R.id.focus_assist_tv);
+            mFocusAssistTextView = mRootView.findViewById(R.id.focus_assist_iiv);
         }
         mFocusAssistTextView.setOnClickListener(v -> {
             Log.d(TAG, "Focus Assist TextView clicked");
@@ -3980,7 +3980,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mModule.onFocusAssistModeStart(mFocusPointInPreview.x, mFocusPointInPreview.y);
         });
         int circleSize = mPieRenderer.getSize() / 2;
-        mFocusAssistTextView.setReferCircle(mFocusPoint.x, mFocusPoint.y, circleSize);
+        if (mOrientation == 270) {
+            mFocusAssistTextView.setX(mFocusPoint.x + 0.75f * circleSize);
+            mFocusAssistTextView.setY(mFocusPoint.y - 0.85f * circleSize);
+        } else if (mOrientation == 0) {
+            mFocusAssistTextView.setX(mFocusPoint.x - 0.85f * circleSize);
+            mFocusAssistTextView.setY(mFocusPoint.y - 2.5f * circleSize);
+        } else if (mOrientation == 90) {
+            mFocusAssistTextView.setX(mFocusPoint.x - 2.5f * circleSize);
+            mFocusAssistTextView.setY(mFocusPoint.y - 0.75f * circleSize);
+        }
         mFocusAssistTextView.setVisibility(View.VISIBLE);
         if (mFAImageView == null) {
             mFAImageView = mRootView.findViewById(R.id.focus_assist_iv);
@@ -4011,10 +4020,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFAImageView.setVisibility(View.VISIBLE);
 
         Rect displayRegion = new Rect(surfaceViewLocation[0], surfaceViewLocation[1], mPreviewHeight, mPreviewWidth);
-        mFocusAssistTextView.setDisplayRegion(displayRegion);
-        if (mEvSeekBar != null) {
-            mFocusAssistTextView.setExtraOffset(0f, mEvSeekBar.getHeight());
-        }
         mFocusAssistTextView.setOrientation(mOrientation, false);
     }
 

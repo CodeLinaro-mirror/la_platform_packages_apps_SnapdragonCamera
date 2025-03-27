@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -82,6 +83,20 @@ public class CameraRender implements TextureView.SurfaceTextureListener {
         Log.d(TAG, "setCropRegionStartPoint " + xs + " " + ys +", mHandler is not null " + (mHandler != null));
         if (mHandler != null) {
             mHandler.setCropRegionStartPoint(xs, ys);
+        }
+    }
+
+    public void setFocusPoint(float x, float y) {
+        Log.d(TAG, "setFocusPoint " + x + " " + y +", mHandler is not null " + (mHandler != null));
+        if (mHandler != null) {
+            mHandler.setFocusPoint(x, y);
+        }
+    }
+
+    public void setFocusPointFA(float x, float y) {
+        Log.d(TAG, "setFocusPointFA " + x + " " + y +", mHandler is not null " + (mHandler != null));
+        if (mHandler != null) {
+            mHandler.setFocusPointFA(x, y);
         }
     }
 
@@ -202,6 +217,8 @@ public class CameraRender implements TextureView.SurfaceTextureListener {
 
         private Basic2d mDisplayRegionRect;
 
+        private Basic2d mTouchRegionRect;
+
         private FlatShadedProgram mDisplayRegionProgram;
 
         private float[] mDisplayRegionMatrix = new float[16];
@@ -300,6 +317,20 @@ public class CameraRender implements TextureView.SurfaceTextureListener {
             });
         }
 
+        public void setFocusPoint(float x, float y) {
+            if (DEBUG_DISPLAY_REGION) {
+                mTouchRegionRect.setScale(0.166f, 0.125f);
+                mTouchRegionRect.setPosition(x, y);
+            }
+        }
+
+        public void setFocusPointFA(float x, float y) {
+            if (DEBUG_DISPLAY_REGION) {
+                mTouchRegionRect.setScale(0.083f, 0.0625f);
+                mTouchRegionRect.setPosition(x, y);
+            }
+        }
+
         @Override
         public void handleMessage(@NonNull Message msg) {
             CameraRender outer = mOuter.get();
@@ -352,6 +383,8 @@ public class CameraRender implements TextureView.SurfaceTextureListener {
                 mDisplayRegionRect = new Basic2d(new BasicDrawable(BasicDrawable.SHAPE.BASIC_RECTANGLE));
                 mDisplayRegionRect.setColor(1.0f, 0.1f, 0.1f);
                 mDisplayRegionProgram = new FlatShadedProgram();
+                mTouchRegionRect = new Basic2d(new BasicDrawable(BasicDrawable.SHAPE.BASIC_RECTANGLE));
+                mTouchRegionRect.setColor(1.0f, 1.0f, 0.1f);
             }
         }
 
@@ -480,6 +513,9 @@ public class CameraRender implements TextureView.SurfaceTextureListener {
 
             mRectFrame.drawFrame(mOffscreenTexId, GLUtil.IDENTITY_MATRIX);
 
+            if (DEBUG_DISPLAY_REGION) {
+                mTouchRegionRect.draw(mDisplayRegionProgram, mDisplayRegionMatrix);
+            }
 
             int thumbnailHeight = diff / 2;
             int thumbnailWidth = (int)(1.0f * mTexW / mTexH * diff / 2.0f);
