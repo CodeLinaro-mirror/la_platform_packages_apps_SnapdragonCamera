@@ -1793,18 +1793,23 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                     mModule.getMainCameraId());
         }
+        if(mSettingsManager.isSHDRLimited() && zoomRatioRange[0] < 0.9 &&
+                (PersistUtil.getModelInfo().contains("8750") ||
+                        PersistUtil.getModelInfo().contains("8850"))){
+            zoomRatioRange[0] = 0.9f;
+        }
         String[] zoom_values = mActivity.getResources().getStringArray(
                 R.array.pref_camera2_zomm_switch_wide_entryvalues);
         if (zoomRatioRange != null && zoomRatioRange[0] >= 1){
             zoom_values = mActivity.getResources().getStringArray(
                     R.array.pref_camera2_zomm_switch_entryvalues);
-
         }
         mUWZoom = Float.valueOf(zoom_values[0]);
         mWZoom = Float.valueOf(zoom_values[1]);
         mTelZoom = Float.valueOf(zoom_values[2]);
         Log.i(TAG,"zoomRatioRange="+zoomRatioRange[0]+","+zoomRatioRange[1]
                 +",mUWZoom="+mUWZoom+",wzoom="+mWZoom+",telzoom="+mTelZoom);
+
         if (mModule.isExtendedMaxZoomEnable()) {
             float maxZoom = mSettingsManager.getSupportedExtendedMaxZoom(
                     mModule.getMainCameraId());
