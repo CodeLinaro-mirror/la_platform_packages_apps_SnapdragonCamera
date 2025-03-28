@@ -2852,7 +2852,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if(afState!= null && aeState != null && CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState && aeState == CaptureResult.CONTROL_AE_STATE_LOCKED && mLockAFAE == LOCK_AF_AE_STATE_START){
                         mState[id] = STATE_AF_AE_LOCKED;
                     }
-                } catch (CameraAccessException e) {
+                } catch (CameraAccessException | IllegalStateException e) {
                     Log.e(TAG,e);
                 }
                 break;
@@ -5079,7 +5079,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                         .build(), mCaptureCallback, mCameraHandler);
             }
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | IllegalStateException  e) {
             Log.e(TAG,e);
         }
         try {
@@ -5162,7 +5162,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             .build(), mCaptureCallback, mCameraHandler);
                 }
             }
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | IllegalStateException e) {
             Log.e(TAG,e);
         }
 
@@ -8042,7 +8042,7 @@ private boolean isDevOptionSetting(){
                         mCurrentSession.setRepeatingRequest(mVideoRecordRequestBuilder.build(),
                                 mCaptureCallback, mCameraHandler);
                     }
-                } catch (CameraAccessException e) {
+                } catch (CameraAccessException | IllegalStateException e) {
                     Log.i(TAG, "updateFlashMode error inThumbnail= " + inThumbnail, e);
                 }
             }
@@ -8053,7 +8053,7 @@ private boolean isDevOptionSetting(){
                             CaptureRequest.FLASH_MODE_OFF : CaptureRequest.FLASH_MODE_TORCH);
                     mCurrentSession.setRepeatingRequest(captureRequest.build(),
                             mCaptureCallback, mCameraHandler);
-                } catch (CameraAccessException e) {
+                } catch (CameraAccessException | IllegalStateException e) {
                     Log.i(TAG, "updateFlashMode error inThumbnail= " + inThumbnail, e);
                 }
             }
@@ -9439,7 +9439,7 @@ private boolean isDevOptionSetting(){
             try {
                 mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                         .build(), mCaptureCallback, mCameraHandler);
-            } catch (CameraAccessException e) {
+            } catch (CameraAccessException | IllegalStateException e) {
                 Log.e(TAG, "onFocusAssistModeStart ", e.fillInStackTrace());
             }
         }
@@ -9461,7 +9461,7 @@ private boolean isDevOptionSetting(){
             try {
                 mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                         .build(), mCaptureCallback, mCameraHandler);
-            } catch (CameraAccessException e) {
+            } catch (CameraAccessException | IllegalStateException e) {
                 Log.e(TAG, "onFocusAssistModeStart ", e.fillInStackTrace());
             }
         }
@@ -12179,7 +12179,7 @@ private boolean isDevOptionSetting(){
                 mCurrentSession.setRepeatingRequest(captureRequest, mCaptureCallback,
                         mCameraHandler);
             }
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | IllegalStateException e) {
             Log.e(TAG,e);
         }
     }
@@ -12413,7 +12413,7 @@ private boolean isDevOptionSetting(){
                         mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
                                 mCaptureCallback, mCameraHandler);
                     }
-                } catch(IllegalArgumentException e) {
+                } catch(IllegalArgumentException | IllegalStateException e) {
                     Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
                 }
             } else {
@@ -12693,7 +12693,7 @@ private boolean isDevOptionSetting(){
                         mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
                                 mCaptureCallback, mCameraHandler);
                     }
-                } catch (CameraAccessException e) {
+                } catch (CameraAccessException | IllegalStateException e) {
                     Log.w(TAG, "stopRecordingVideo: " + e);
                 }
             }
@@ -14582,7 +14582,7 @@ private boolean isDevOptionSetting(){
                         CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_DISABLED);
             }
             mCaptureSession[getMainCameraId()].setRepeatingRequest(captureRequest.build(), mCaptureCallback, mCameraHandler);
-        } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException e) {
+        } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException | IllegalStateException e) {
             Log.e(TAG, "Camera Exception in applyBokehMode, apply failed e="+e);
         }
     }
@@ -15475,7 +15475,7 @@ private boolean isDevOptionSetting(){
         try {
             applyAICameraStrength(mPreviewRequestBuilder[getMainCameraId()]);
             mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
-        } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException e) {
+        } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException | IllegalStateException e) {
             Log.e(TAG, "Camera Access Exception in applyAICameraStrengthAndUpdate, apply failed e="+e);
         }
     }
@@ -16042,7 +16042,7 @@ private boolean isDevOptionSetting(){
         try {
             mCaptureSession[id].setRepeatingRequest(request
                     .build(), mCaptureCallback, mCameraHandler);
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | IllegalStateException e) {
             Log.e(TAG, "Camera Access Exception in applyFlashForUIChange, apply failed");
         }
     }
@@ -16773,7 +16773,7 @@ private boolean isDevOptionSetting(){
                     applyAIBlurConfig(key,mVideoPreviewRequestBuilder);
                     try {
                         mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
-                    } catch (CameraAccessException e) {
+                    } catch (CameraAccessException | IllegalStateException e) {
                         Log.e(TAG, "Camera Access Exception in applyAIBlurConfig, apply failed");
                     }
                     return;
