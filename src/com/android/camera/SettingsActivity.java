@@ -1159,11 +1159,13 @@ public class SettingsActivity extends PreferenceActivity {
 
     private int getPositionForMode(int mode){
         int position = -1;
-        int[] dcgModes = mSettingsManager.getSupportedDcgBitsTags();
-        for(int i=0; i <dcgModes.length; i++){
-            if(mode == dcgModes[i]){
-                position = i;
-                break;
+        int[] dcgModes = mSettingsManager.getsupportedDcgModes();
+        if(dcgModes != null) {
+            for (int i = 0; i < dcgModes.length; i++) {
+                if (mode == dcgModes[i]) {
+                    position = i;
+                    break;
+                }
             }
         }
         return position;
@@ -1173,10 +1175,44 @@ public class SettingsActivity extends PreferenceActivity {
         RadioButton select;
     }
 
+    private byte[] intToBytes(int value) {
+        return new byte[]{
+                (byte) (value >> 24),
+                (byte) (value >> 16),
+                (byte) (value >> 8),
+                (byte) value
+        };
+    }
+
+    public String parseDCGModes(int mode) {
+        byte[] bytes = intToBytes(mode);
+        StringBuilder value = new StringBuilder();
+        for(int i=bytes.length-1; i>0; i--){
+            if(i ==3){
+                if (bytes[i] == 1) {
+                    value.append(SettingsManager.KEY_MANUAL_DCG1_4);
+                } else if (bytes[i] == 2) {
+                    value.append(SettingsManager.KEY_MANUAL_DCG1_8);
+                } else if (bytes[i] == 3) {
+                    value.append(SettingsManager.KEY_MANUAL_DCG1_16);
+                } else if (bytes[i] == 4) {
+                    value.append(SettingsManager.KEY_MANUAL_DCGDirect);
+                } else if (bytes[i] == 5) {
+                    value.append(SettingsManager.KEY_MANUAL_DCGVS);
+                }
+            }else if(i ==1|| i ==2){
+                if(bytes[i] != 0) {
+                    value.append("/");
+                    value.append(bytes[i]);
+                }
+            }
+        }
+        return value.toString();
+    }
     private void updateManualHDRSetting() {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
-        int[] dcgModes = mSettingsManager.getSupportedDcgBitsTags();
+        int[] dcgModes = mSettingsManager.getsupportedDcgModes();
         StringBuilder defaultHDROrder = new StringBuilder();
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
 
@@ -1212,17 +1248,7 @@ public class SettingsActivity extends PreferenceActivity {
         List<String> dcgData = new ArrayList<String>();
         if(dcgModes != null && dcgModes.length > 0) {
             for (int i = 0; i < dcgModes.length; i++) {
-                if (dcgModes[i] == 1) {
-                    dcgData.add(SettingsManager.KEY_MANUAL_DCG1_4);
-                } else if (dcgModes[i] == 2) {
-                    dcgData.add(SettingsManager.KEY_MANUAL_DCG1_8);
-                } else if (dcgModes[i] == 3) {
-                    dcgData.add(SettingsManager.KEY_MANUAL_DCG1_16);
-                } else if (dcgModes[i] == 4) {
-                    dcgData.add(SettingsManager.KEY_MANUAL_DCGDirect);
-                } else if (dcgModes[i] == 5) {
-                    dcgData.add(SettingsManager.KEY_MANUAL_DCGVS);
-                }
+                dcgData.add(parseDCGModes(dcgModes[i]));
             }
         }
         RadioListAdapter arrayDapter = new RadioListAdapter(this, dcgData);

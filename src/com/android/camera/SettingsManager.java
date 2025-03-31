@@ -3536,31 +3536,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
-
-    private byte[] intToBytes(int value) {
-        return new byte[]{
-                (byte) (value >> 24),
-                (byte) (value >> 16),
-                (byte) (value >> 8),
-                (byte) value
-        };
-    }
-    public int[] getSupportedDcgBitsTags() {
-        Set<Integer> supported = new HashSet<>();
+    public int[] getsupportedDcgModes() {
         try {
             int[] modes = mCharacteristics.get(getCurrentCameraId())
-                    .get(CaptureModule.support_dcg_bits_tags);
-            for(int mode: modes){
-                byte[] bytes = intToBytes(mode);
-                for(byte value: bytes){
-                    supported.add((int)value);
-                }
-            }
+                    .get(CaptureModule.support_dcg_modes);
+            return modes;
         } catch (Exception e) {
             Log.d(TAG,"getSupportedDcgBitsTags failed");
-        }
-        if(supported.size() > 0){
-            return  supported.stream().mapToInt(Integer::intValue).toArray();
         }
         return null;
     }
