@@ -2098,14 +2098,19 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Integer statsNNRoiWeight = result.get(stats_nn_result_roiweight);
                 Log.d(TAG,BIG_LOG,"statsNNWidth:" + statsNNWidth + ",statsNNHeight:" + statsNNHeight + ",statsNNMapdata:" + statsNNMapdata +
                         ",statsNNNumroi:" + statsNNNumroi + ",statsNNRoiData:" + statsNNRoiData +",statsNNRoiWeight:" + statsNNRoiWeight);
-                if (statsNNWidth == null || statsNNHeight == null || statsNNMapdata == null ||
-                    statsNNNumroi == null|| statsNNRoiData == null|| statsNNRoiWeight == null)
+                if (statsNNWidth == null || statsNNHeight == null || statsNNMapdata == null)
                     return;
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mUI.updateStatsNNVisibility(View.VISIBLE);
-                        mUI.updateStatsNNResultText(statsNNWidth, statsNNHeight, statsNNMapdata, statsNNNumroi, statsNNRoiData, statsNNRoiWeight);
+                        if(statsNNNumroi == 1 && statsNNRoiData != null && statsNNRoiWeight != null) {
+                            mUI.updateStatsNNVisibility(View.VISIBLE);
+                            mStateNNFocusRenderer.setVisible(true);
+                            mUI.updateStatsNNResultText(statsNNWidth, statsNNHeight, statsNNMapdata, statsNNNumroi, statsNNRoiData, statsNNRoiWeight);
+                        }else{
+                            mUI.updateStatsNNVisibility(View.INVISIBLE);
+                            mStateNNFocusRenderer.setVisible(false);
+                        }
                     }
                 });
                 if (mStateNNFocusRenderer == null) {
