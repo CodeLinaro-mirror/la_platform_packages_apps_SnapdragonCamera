@@ -4101,13 +4101,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public List<String> getSupportedAntiBandingLevelAvailableModes(int cameraId) {
-        int[] antiBandingLevelAvailableModes = mCharacteristics.get(cameraId).get(
-                CameraCharacteristics.CONTROL_AE_AVAILABLE_ANTIBANDING_MODES);
-        List<String> modes = new ArrayList<>();
-        for (int i : antiBandingLevelAvailableModes) {
-            modes.add(""+i);
+        try {
+            int[] antiBandingLevelAvailableModes = mCharacteristics.get(cameraId).get(
+                    CameraCharacteristics.CONTROL_AE_AVAILABLE_ANTIBANDING_MODES);
+            List<String> modes = new ArrayList<>();
+            for (int i : antiBandingLevelAvailableModes) {
+                modes.add(""+i);
+            }
+            return  modes;
+        } catch (IndexOutOfBoundsException e) {
+            Log.w(TAG, "can't get supported AntiBandingLevelAvailableModes");
+            return null;
         }
-        return  modes;
     }
 
     public List<String> getSupportedHdrAvailableModes(int cameraId) {
