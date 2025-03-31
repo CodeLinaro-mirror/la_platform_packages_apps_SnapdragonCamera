@@ -2708,6 +2708,13 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setEnabled(false);
             return;
         }
+        String videoFps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
+        if (mode == CaptureModule.CameraMode.VIDEO && videoFps != null && !videoFps.equals("off") && !vsr.equals("1")) {
+            pref.setValue("0");
+            pref.setEnabled(false);
+            return;
+        }
         pref.setEnabled(true);
     }
     private  void updateLowLightBoostPreference(){
