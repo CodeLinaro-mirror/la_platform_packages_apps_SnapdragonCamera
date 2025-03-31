@@ -444,10 +444,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         h265.add("HEVCProfileMain10");
         h265.add("HEVCProfileMain10HDR10");
         h265.add("HEVCProfileMain10HDR10Plus");
-        Set<String> mvhevc = new HashSet<>();
-        mvhevc.add("HEVCProfileMain10");
         VIDEO_ENCODER_PROFILE_TABLE.put("h265", h265);
-        VIDEO_ENCODER_PROFILE_TABLE.put("mvhevc", mvhevc);
         KEY_HDR_MODES_ORDER.put("SHDR", 1);
         KEY_HDR_MODES_ORDER.put("MFHDR", 2);
         KEY_HDR_MODES_ORDER.put("QHDR", 3);
@@ -2975,23 +2972,27 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         for (Long p : profiles) {
                             Log.d(TAG, " supported dynamic Profiles:" + p);
                         }
-                        Set<String> profiles_string = new HashSet<>();
-                        Set<String> mvhevcprofiles_string = new HashSet<>();
+                        Set<String> h265_profiles_string = new HashSet<>();
+                        Set<String> mvhevc_profiles_string = new HashSet<>();
+                        Set<String> apv_profiles_string = new HashSet<>();
                         if (profiles.contains(DynamicRangeProfiles.HLG10)) {
-                            profiles_string.add("HEVCProfileMain10");
-                            mvhevcprofiles_string.add("HEVCProfileMain10");
+                            h265_profiles_string.add("HEVCProfileMain10");
+                            mvhevc_profiles_string.add("HEVCProfileMain10");
                             Log.d(TAG, " Ten bit HLG10 Supported");
-                            VIDEO_ENCODER_PROFILE_TABLE.put("mvhevc", mvhevcprofiles_string);
                         }
                         if (profiles.contains(DynamicRangeProfiles.HDR10)) {
-                            profiles_string.add("HEVCProfileMain10HDR10");
+                            h265_profiles_string.add("HEVCProfileMain10HDR10");
+                            apv_profiles_string.add("HEVCProfileMain10HDR10");
                             Log.d(TAG, " Ten bit HDR10 Supported");
                         }
                         if (profiles.contains(DynamicRangeProfiles.HDR10_PLUS)) {
-                            profiles_string.add("HEVCProfileMain10HDR10Plus");
+                            h265_profiles_string.add("HEVCProfileMain10HDR10Plus");
+                            apv_profiles_string.add("HEVCProfileMain10HDR10Plus");
                             Log.d(TAG, " Ten bit HDR10_PLUS Supported");
                         }
-                        VIDEO_ENCODER_PROFILE_TABLE.put("h265", profiles_string);
+                        VIDEO_ENCODER_PROFILE_TABLE.put("h265", h265_profiles_string);
+                        VIDEO_ENCODER_PROFILE_TABLE.put("mvhevc", mvhevc_profiles_string);
+                        VIDEO_ENCODER_PROFILE_TABLE.put("apv", apv_profiles_string);
                     }
                 } catch (Exception e) {
                     Log.w(TAG, "isDynamicRangeTenBitSupported", e.fillInStackTrace());
