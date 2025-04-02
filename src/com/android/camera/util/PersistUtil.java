@@ -213,6 +213,10 @@ public class PersistUtil {
         return QUAD_BAYER_PHYSICAL_ID;
     }
 
+    public static boolean lookaheadEnabled() {
+        return getBoolean("persist.sys.camera.video_lookahead", false);
+    }
+
     public static Point getCameraPreviewSize() {
         Point result = null;
         if (PERSIST_CAMERA_PREVIEW_SIZE != null) {
