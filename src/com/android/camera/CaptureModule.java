@@ -88,7 +88,6 @@ import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaMuxer;
-import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.MicrophoneInfo;
 import android.net.Uri;
@@ -185,7 +184,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.SplittableRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeoutException;
@@ -1804,7 +1802,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mUI.updateStatsNNVisibility(View.GONE);
             }
             if(!mSettingsManager.isAICameraDisable()){
-                updateVSRView(result);
+                updateVRSView(result);
             }
             if(isAIDE2Enabled()){
                 try {
@@ -2164,22 +2162,22 @@ public class CaptureModule implements CameraModule, PhotoController,
         });
     }
 
-    private void updateVSRView(CaptureResult result){
+    private void updateVRSView(CaptureResult result){
         try{
             if(result.get(VRSSkipSegment) != -1) {
-                updateVSRText(new StringBuilder("VSR ").append(result.get(VRSSkipSegment)).toString());
+                updateVRSText(new StringBuilder("AIVRS ").append(result.get(VRSSkipSegment)).toString());
             }
         } catch (IllegalArgumentException | NullPointerException e) {
             Log.w(TAG,EXCEPTION_LOG,e.toString());
-            updateVSRText("");
+            updateVRSText("");
         }
     }
 
-    private void updateVSRText(String text){
+    private void updateVRSText(String text){
         mActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mUI.updateVSRText(text);
+                mUI.updateVRSText(text);
             }
         });
     }
