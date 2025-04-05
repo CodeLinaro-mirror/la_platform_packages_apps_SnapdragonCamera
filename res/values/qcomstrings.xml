@@ -71,6 +71,7 @@
     <string name="pref_camera_videoencoder_entry_3">H265</string>
     <string name="pref_camera_videoencoder_entry_4">MVHEVC</string>
     <string name="pref_camera_videoencoder_entry_5">APV</string>
+    <string name="pref_camera_videoencoder_entry_6">DOLBY</string>
 
     <string name="pref_camera2_audio_ble_title">Audio Stereo BLE</string>
     <string name="pref_camera2_audio_ble_default">Off</string>
@@ -1384,6 +1385,9 @@
 
     <string name="pref_camera2_multi_camera_mode_default" translatable="false">0</string>
     <string name="pref_camera2_multi_camera_mode_title" translatable="true">Enable multi Camera mode</string>
+
+    <string name="pref_camera2_earlypcr_title" translatable="true">numPCRsBeforeStreamOn</string>
+    <string name="pref_camera2_earlypcr_default" translatable="true">"1"</string>
     <string name="pref_camera2_physical_camera_default" translatable="false"></string>
     <string name="pref_camera2_physical_camera_title" translatable="true">Enable physical camera</string>
     <string name="pref_camera2_physical_recording_title" translatable="true">Enable physical recording</string>

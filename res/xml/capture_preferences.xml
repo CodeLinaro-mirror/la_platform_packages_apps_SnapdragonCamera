@@ -611,6 +611,8 @@
         camera:entries="@array/pref_camera2_afmode_entries"
         camera:entryValues="@array/pref_camera2_afmode_entryvalues"/>
 
+
+
     <ListPreference
         camera:key="pref_camera2_exposure_metering_key"
         camera:defaultValue="@string/pref_camera2_exposure_metering_default"
@@ -1129,4 +1131,11 @@
         camera:key="pref_camera2_hdr10p_stats_key"
         camera:title="@string/pref_camera2_hdr10p_stats_title"
         />
+    <ListPreference
+        camera:key="pref_camera2_early_pcr_key"
+        camera:defaultValue="@string/pref_camera2_earlypcr_default"
+        camera:title="@string/pref_camera2_earlypcr_title"
+        camera:entries="@array/pref_camera2_earlypcr_entries"
+        camera:entryValues="@array/pref_camera2_earlypcr_entryvalues"
+       />
 </PreferenceGroup>

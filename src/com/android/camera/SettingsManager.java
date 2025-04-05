@@ -213,6 +213,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_UPPER_BODY_DETECTION = "pref_camera2_upper_body_detection_key";
     public static final String KEY_PET_DETECTION = "pref_camera2_pet_detection_key";
     public static final String KEY_VIDEO_HIGH_FRAME_RATE = "pref_camera2_hfr_key";
+    public static final String KEY_VIDEO_HIGH_FRAME_RATE_ENABLED = "pref_camera2_hfr_key_enabled";
     public static final String KEY_SELFIE_FLASH = "pref_selfie_flash_key";
     public static final String KEY_SHUTTER_SOUND = "pref_camera2_shutter_sound_key";
     public static final String KEY_TOUCH_TRACK_FOCUS = "pref_camera2_touch_track_focus_key";
@@ -245,6 +246,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AF_MODE = "pref_camera2_afmode_key";
     public static final String KEY_EXPOSURE_METERING_MODE = "pref_camera2_exposure_metering_key";
     public static final String KEY_MULTI_CAMERAS_MODE = "pref_camera2_multi_cameras_key";
+    public static final String KEY_EARLY_PCR_NUM = "pref_camera2_early_pcr_key";
     //manual 3A keys and parameter strings
     public static final String KEY_MANUAL_EXPOSURE = "pref_camera2_manual_exp_key";
     public static final String KEY_MANUAL_ISO_VALUE = "pref_camera2_manual_iso_key";
@@ -255,6 +257,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MANUAL_MFHDR = "MFHDR";
     public static final String KEY_MANUAL_SHDR = "SHDR";
     public static final String KEY_MANUAL_QHDR = "QHDR";
+    public static final String KEY_MANUAL_DCG = "DCG";
+    public static final String KEY_MANUAL_DCG1_4 = "DCG1_4";
+    public static final String KEY_MANUAL_DCG1_8 = "DCG1_8";
+    public static final String KEY_MANUAL_DCG1_16 = "DCG1_16";
+    public static final String KEY_MANUAL_DCGDirect = "DCGDirect";
+    public static final String KEY_MANUAL_DCGVS = "DCGVS";
     public static final HashMap<String, Integer> KEY_HDR_MODES_ORDER = new HashMap<String, Integer>();
 
     //tone mapping
@@ -442,6 +450,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         KEY_HDR_MODES_ORDER.put("SHDR", 1);
         KEY_HDR_MODES_ORDER.put("MFHDR", 2);
         KEY_HDR_MODES_ORDER.put("QHDR", 3);
+        KEY_HDR_MODES_ORDER.put("DCG", 4);
         VIDEO_ENCODER_PROFILE_MAP.put("off", "0");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10", "2");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10HDR10", "4");
@@ -1652,7 +1661,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return result;
     }
-    private boolean setPreferenceValue(String key, String value) {
+    public boolean setPreferenceValue(String key, String value) {
         boolean result = false;
         String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
                 getCurrentPrepNameKey());
@@ -1863,7 +1872,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private void updateMapAndNotify(ListPreference pref) {
         String key = pref.getKey();
         List changed = checkDependencyAndUpdate(key);
-        if (changed == null) return;
+        if (changed == null && !key.equals(KEY_PHYSICAL_CAMCORDER)) {
+            return;
+        }
+        if (changed == null) {
+            changed = new ArrayList();
+            Values values = new Values(pref.getValue(), null);
+            changed.add(new SettingState(key, values));
+        }
         runTimeUpdateDependencyOptions(pref);
         notifyListeners(changed);
     }
@@ -2852,6 +2868,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 mFilteredKeys.add(videoEncoder.getKey());
             }
         }
+        getSupportedDynamicRangeProfiles();
     }
 
     private void filterChromaflashPictureSizeOptions() {
@@ -3093,11 +3110,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
                     if (!info.isEncoder() || info.getName().contains("google")) continue;
                     for (String type : info.getSupportedTypes()) {
+                        Log.i(TAG, "dolby: supported type:" + type + " in codec: " + info.getName());
                         if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
-                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
+                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.DOLBY_VISION &&
+                                type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION))) {
                             CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
                             videoCapabilities = codecCapabilities.getVideoCapabilities();
                             findVideoEncoder = true;
@@ -3263,7 +3283,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
-                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))) {
+                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.DOLBY_VISION
+                                && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION))) {
                             CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
                             videoCapabilities = codecCapabilities.getVideoCapabilities();
                             findVideoEncoder = true;
@@ -3509,14 +3531,25 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
+
+    private byte[] intToBytes(int value) {
+        return new byte[]{
+                (byte) (value >> 24),
+                (byte) (value >> 16),
+                (byte) (value >> 8),
+                (byte) value
+        };
+    }
     public int[] getSupportedDcgBitsTags() {
         Set<Integer> supported = new HashSet<>();
         try {
             int[] modes = mCharacteristics.get(getCurrentCameraId())
                     .get(CaptureModule.support_dcg_bits_tags);
             for(int mode: modes){
-                Log.d(TAG,"getSupportedDcgBitsTags, mode:" +mode + ",value:" + (mode >> 8));
-                supported.add(mode >> 8);
+                byte[] bytes = intToBytes(mode);
+                for(byte value: bytes){
+                    supported.add((int)value);
+                }
             }
         } catch (Exception e) {
             Log.d(TAG,"getSupportedDcgBitsTags failed");
@@ -3850,21 +3883,30 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return false;
     }
 
-    public int getDcgMode(){
-        final SharedPreferences pref = mContext.getSharedPreferences(
-                ComboPreferences.getLocalSharedPreferencesName(mContext,
-                        getCurrentPrepNameKey()), Context.MODE_PRIVATE);
-        int mode = pref.getInt(KEY_DCG_BIT_TAG, 0);
-        return mode;
+    public boolean isDCGEnable() {
+        String hdrmode = getVideoHdrMode();
+        if (hdrmode != null && !hdrmode.equals("off")) {
+            String[] modeLists = hdrmode.split(" ");
+            for (int i = 0; i < modeLists.length; i ++) {
+                if(modeLists[i].equals(KEY_MANUAL_DCG)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
-    public void setDcgMode(String name){
-        int mode = 0;
-        if(name.equals("12BIT")){
-            mode = 1;
-        }else if(name.equals("14BIT")){
-            mode = 2;
+    public int getDcgMode(){
+        if(isDCGEnable()){
+            final SharedPreferences pref = mContext.getSharedPreferences(
+                    ComboPreferences.getLocalSharedPreferencesName(mContext,
+                            getCurrentPrepNameKey()), Context.MODE_PRIVATE);
+            return pref.getInt(KEY_DCG_BIT_TAG, 0);
         }
+        return 0;
+    }
+
+    public void setDcgMode(int mode){
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext,
                         getCurrentPrepNameKey()), Context.MODE_PRIVATE);
@@ -4412,6 +4454,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 supported.add("apv");
             }
         }
+        supported.add("dolby");
         return supported;
     }
 
@@ -4457,6 +4500,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         return supported;
+    }
+
+    private void getSupportedDynamicRangeProfiles () {
+        DynamicRangeProfiles profiles = mCharacteristics.get(mCameraId).get(
+                CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES);
+        if (profiles != null) {
+            for (Long profile : profiles.getSupportedProfiles()) {
+                Log.i(TAG, "supported dynamicRangeProfile is " + profile);
+            }
+        }
     }
 
     public List<String> getSupportedNoiseReductionModes(int cameraId) {
@@ -4528,7 +4581,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
             result[0] = range.getLower();
             result[1] = range.getUpper();
-            if(isSHDRLimited() && result[0] <0.9 && PersistUtil.getModelInfo().contains("8750")){
+            if(isSHDRLimited() && result[0] <0.9 && (PersistUtil.getModelInfo().contains("8750")
+                    || PersistUtil.getModelInfo().contains("8850"))){
                 result[0] = 0.9f;
             }
             Log.v(TAG, "RatioZoom min :"+ result[0] + ", zoom max :" + result[1]);

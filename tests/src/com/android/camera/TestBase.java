@@ -6,6 +6,8 @@ package com.android.camera;
 
 import com.android.camera.util.CameraUtil;
 import android.app.UiAutomation;
+
+import java.text.DecimalFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.ArrayList;
@@ -184,7 +186,7 @@ public class TestBase{
     public static String  functionTestItemDel;
     public DisplayMetrics displayMetrics;
     private int burstNum = 0;
-
+    DecimalFormat decimalFormat = new DecimalFormat("#.##");
 
 
     public static void init(){
@@ -1777,23 +1779,22 @@ public class TestBase{
     private void checkEV(CaptureModule.CameraMode mode,String indexvalue,String evText){
         if(!testResult) return;
         int index = mSettingsManager.getValueIndex(SettingsManager.KEY_EXPOSURE);
-        String value = mSettingsManager.getEntryValues(SettingsManager.KEY_EXPOSURE)[index].toString();
-        if(value == null){
+        String entryValue = mSettingsManager.getEntries(SettingsManager.KEY_EXPOSURE)[index].toString();
+        String value = mSettingsManager.getValue(SettingsManager.KEY_EXPOSURE);
+        if(entryValue == null){
             testFail = getFailStr("KEY_EXPOSURE",value,"NotNull");
             return;
         }
-        if(evText != null && !value.equals(evText)){
-            testFail = getFailStr("KEY_EXPOSURE is "+value +",evText is "+ evText,"Not equal","Equal");
+        if(evText != null && !entryValue.equals(evText)){
+            testFail = getFailStr("KEY_EXPOSURE is "+entryValue +",evText is "+ evText,"Not equal","Equal");
             return;
         }
-        // assertNotNull(value);
+        if(!indexvalue.equals(entryValue)){
+            testFail = getFailStr("KEY_EXPOSURE",entryValue,indexvalue);
+            return;
+        }
         int aeInSet = Integer.parseInt(value);
-
         int aeInPreview = mActivity.getCaptureModule().getPreviewCaptureResult().get(CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION);
-        if(!indexvalue.equals(value)){
-            testFail = getFailStr("KEY_EXPOSURE",value,indexvalue);
-            return;
-        }
         if(mode != CaptureModule.CameraMode.HFR && !isOpenFromIntent) {
             int aeInResult = mActivity.getCaptureModule().getCaptureResult().get(CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION);
             if (aeInSet != aeInResult) {
@@ -3453,17 +3454,19 @@ public class TestBase{
     public void checkZoomValue(CaptureModule.CameraMode mode,float zoomText,boolean change)throws Exception{//HardSwitch with cameraid changed need hal support
         float zoomInPre = mCurrentPreviewResult.get(CaptureResult.CONTROL_ZOOM_RATIO );
         float zoomStr = mActivity.getCaptureModule().getZoomValue();
-        if(change && zoomStr == mOldZoomstr){
+        String str = decimalFormat.format(zoomStr);
+        Float zoomStrFormat = Float.valueOf(str);
+        if(change && zoomStrFormat == mOldZoomstr){
             testFail = getFailStr("zoom should be changed,oldzoom is "+mOldZoomstr+
                     ",new zoom is the same ",zoomStr,"different");
             return;
         }
-        if(zoomText != zoomStr){
+        if(zoomText != zoomStrFormat){
             testFail = getFailStr("zoomText is  "+zoomText+
                     ",zoomvalue is  ",zoomStr,"same");
             return;
         }
-        mOldZoomstr = zoomStr;
+        mOldZoomstr = zoomStrFormat;
         // assertNotEquals(zoomStr,mOldZoomstr);
         if(mode != CaptureModule.CameraMode.HFR && !isOpenFromIntent){
             float zoomInCap = mCurrentCaptureResult.get(CaptureResult.CONTROL_ZOOM_RATIO);

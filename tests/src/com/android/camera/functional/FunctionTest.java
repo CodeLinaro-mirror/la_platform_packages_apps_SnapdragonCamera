@@ -132,6 +132,7 @@ public class FunctionTest extends TestBase  {
             return;
         }
         Log.i(TAG, "testInBokeh loc="+loc[0]+"*"+loc[1]);
+        executeShellCommand("input tap "+ loc[0]  +" "+loc[1]);
         // checkPreview("0",CaptureModule.CameraMode.RTB);
         runPhotoCase("0",CaptureModule.CameraMode.RTB);
     }

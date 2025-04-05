@@ -314,7 +314,7 @@ public class ZoomBarView extends View {
         Log.d(TAG, " sweepAngle= " + sweepAngle + ",startAngle=" + startAngle + ",dialCount=" + dialCount
                 + ",radius=" + radius + ",startZoom=" + startZoom + ",endzoom=" + endZoom + ",step=" + step + ",each_angle=" + each_angle);
         startZoom = startZoom + zoomMoveValue;
-        for (int i = 1; i < dialCount - 1; i++) {
+        for (int i = 1; i < dialCount; i++) {
             angle = each_angle * i + startAngle;
             String text = zoomDf.format(startZoom);
             startZoom = Float.valueOf(text);
@@ -322,7 +322,7 @@ public class ZoomBarView extends View {
                 startP = getPointFromAngleAndRadius(angle, radius);
                 endP = getPointFromAngleAndRadius(angle, radius - innerLineHeight);
                 float[] textP = getPointFromAngleAndRadius(angle, radius - innerLineHeight - zoomTextLen);
-                if (num < innerDial) {
+                if (num < innerDial ||(num == innerDial && dialCount <= 10)) {
                     canvas.drawLine(startP[0], startP[1], endP[0], endP[1], innerLinePaint);
                 }
                 if (num == innerDial / 2) {

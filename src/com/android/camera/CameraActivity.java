@@ -1005,7 +1005,7 @@ public class CameraActivity extends Activity
     public void updateThumbnail(final byte[] jpegData) {
         if (mUpdateThumbnailTask != null) mUpdateThumbnailTask.cancel(true);
         mUpdateThumbnailTask = new UpdateThumbnailTask(jpegData, true);
-        mUpdateThumbnailTask.execute();
+        mUpdateThumbnailTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     public void updateThumbnail(final Bitmap bitmap) {
@@ -1085,7 +1085,7 @@ public class CameraActivity extends Activity
                     return;
                 }
             }
-            (new UpdateThumbnailTask(null, true)).execute();
+            (new UpdateThumbnailTask(null, true)).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             mThumbnailDrawable = null;
         }
     }

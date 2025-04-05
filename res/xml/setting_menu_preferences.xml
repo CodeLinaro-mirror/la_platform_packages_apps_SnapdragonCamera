@@ -501,6 +501,7 @@
             android:layout="@layout/preference"
             android:summary="%s"
             android:title="@string/pref_camera2_color_space_title" />
+
         <ListPreference
             android:key="pref_camera2_multi_cameras_key"
             android:defaultValue="@string/pref_camera2_multi_cameras_default"
@@ -970,6 +971,14 @@
             android:title="@string/pref_camera2_raw_cb_info_title"
             android:entries="@array/pref_camera2_raw_cb_info_entries"
             android:entryValues="@array/pref_camera2_raw_cb_info_entryvalues"
+            android:layout="@layout/preference"
+            android:summary="%s"/>
+        <ListPreference
+            android:key="pref_camera2_early_pcr_key"
+            android:defaultValue="@string/pref_camera2_earlypcr_default"
+            android:title="@string/pref_camera2_earlypcr_title"
+            android:entries="@array/pref_camera2_earlypcr_entries"
+            android:entryValues="@array/pref_camera2_earlypcr_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
         <ListPreference
