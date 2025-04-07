@@ -1342,11 +1342,9 @@ public class SettingsActivity extends PreferenceActivity {
             updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
             updateVideoVariableFpsPreference();
             updateVideoHfrFpsPreference();
-            updateInSensorZoom();
             updateViullPreference();
         }else if (mode == CaptureModule.CameraMode.DEFAULT){
             updateRawFormatPref();
-            updateInSensorZoom();
             updateViullPreference();
             updateQuadBayerPreference();
         }
@@ -2964,7 +2962,7 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateInSensorZoom(){
         ListPreference inSenorZoomPref = (ListPreference)findPreference(SettingsManager.KEY_INSENSOR_ZOOM);
         if(inSenorZoomPref == null) return;
-        if((inSenorZoomPref != null && mSettingsManager.isLimitedHDR()) || mSettingsManager.getQuadBayerSensorPrefEnabled()){
+        if(inSenorZoomPref != null  && mSettingsManager.getQuadBayerSensorPrefEnabled()){
             inSenorZoomPref.setValue("0");
             inSenorZoomPref.setEnabled(false);
             return;
@@ -3245,7 +3243,7 @@ public class SettingsActivity extends PreferenceActivity {
                         isChecked=false;
                         final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
                         alert.setMessage("Donnot support "+title+" " +
-                                "when Video FPS >=60 or enabled SaveRaw or inSensor zoom" +
+                                "when Video FPS >=60 or enabled SaveRaw " +
                                 " or quadBayerSensor or videoSize >=8k");
                         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
