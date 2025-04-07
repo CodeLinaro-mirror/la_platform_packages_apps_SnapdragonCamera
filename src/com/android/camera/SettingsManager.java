@@ -1042,7 +1042,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch (IllegalArgumentException | NullPointerException e) {
             Log.w(TAG, EXCEPTION_LOG,"isStatsNNSupported is_statsnn_supported no vendor tag");
         }
-        Log.i(TAG, "isStatsNNSupported supportted :" + supportted);
+        Log.d(TAG, "isStatsNNSupported supportted :" + supportted);
         return supportted;
     }
 
@@ -2957,7 +2957,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference videoEncoderPref = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
         if ( videoEncoderProfilePref != null && videoEncoderPref != null ) {
             String videoEncoder = videoEncoderPref.getValue();
-            Log.i(TAG, "mvhevcHLG: encoder is " + videoEncoder);
+            Log.d(TAG, "mvhevcHLG: encoder is " + videoEncoder);
             videoEncoderProfilePref.reloadInitialEntriesAndEntryValues();
             boolean isSupported = isDynamicRangeTenBitSupported();
             Log.d(TAG, " isDynamicRangeTenBitSupported, isSupported : " + isSupported);
@@ -3115,7 +3115,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
                     if (!info.isEncoder() || info.getName().contains("google")) continue;
                     for (String type : info.getSupportedTypes()) {
-                        Log.i(TAG, "dolby: supported type:" + type + " in codec: " + info.getName());
+                        Log.d(TAG, "dolby: supported type:" + type + " in codec: " + info.getName());
                         if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
@@ -3452,7 +3452,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         boolean isSupported = false;
         try {
             isSupported = (mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.isAIDE2Supported)) == 1;
-            Log.i(TAG,"isAIDE2Supported: " + isSupported);
+            Log.d(TAG,"isAIDE2Supported: " + isSupported);
         } catch (IllegalArgumentException e) {
             Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
                     CaptureModule.isAIDE2Supported.toString());
@@ -4494,7 +4494,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES);
         if (profiles != null) {
             for (Long profile : profiles.getSupportedProfiles()) {
-                Log.i(TAG, "supported dynamicRangeProfile is " + profile);
+                Log.d(TAG, "supported dynamicRangeProfile is " + profile);
             }
         }
     }
@@ -4812,7 +4812,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isHeifHALEncoding() {
         //HAL encoding by default on Android Q
-        Log.i(TAG, "check heic encoding:" + getSavePictureFormat());
+        Log.d(TAG, "check heic encoding:" + getSavePictureFormat());
         return getSavePictureFormat() == HEIF_FORMAT || getSavePictureFormat() == HEIC_TENBIT_FORMAT;
     }
     public boolean isRawReprocess(){

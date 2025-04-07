@@ -8826,7 +8826,7 @@ private boolean isDevOptionSetting(){
         } else if(needYUVStream()) {
             mChosenImageFormat = ImageFormat.YUV_420_888;
         } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {
-            Log.i(TAG, "set output format to HEIC");
+            Log.d(TAG, "set output format to HEIC");
             mChosenImageFormat = ImageFormat.HEIC;
         }else if(mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT){
             mChosenImageFormat = ImageFormat.JPEG_R;

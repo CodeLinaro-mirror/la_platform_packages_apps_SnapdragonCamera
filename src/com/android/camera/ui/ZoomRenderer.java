@@ -52,6 +52,7 @@ public class ZoomRenderer extends OverlayRenderer
     private boolean mCamera2 = false;
     private float mZoomMinValue;
     private float mZoomMaxValue;
+    private float mCurrentZoom;
 
     public interface OnZoomChangedListener {
         void onZoomStart();
@@ -104,6 +105,7 @@ public class ZoomRenderer extends OverlayRenderer
         mZoomFraction = Math.round(zoomValue * 100) % 100;
         mCircleSize = mMinCircle + (mMaxCircle - mMinCircle) * (zoomValue - mZoomMinValue) /
                 (mZoomMaxValue - mZoomMinValue);
+        mCurrentZoom = zoomValue;
     }
 
     public void setZoomValue(int value) {
@@ -123,6 +125,9 @@ public class ZoomRenderer extends OverlayRenderer
         mCenterY = (b - t) / 2;
         mMaxCircle = Math.min(getWidth(), getHeight());
         mMaxCircle = (mMaxCircle - mMinCircle) / 2;
+        if(getWidth() != 0 && getHeight() != 0){
+            setZoom(mCurrentZoom);
+        }
     }
 
     public boolean isScaling() {
