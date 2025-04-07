@@ -3154,6 +3154,7 @@ public class SettingsActivity extends PreferenceActivity {
     private void restoreSettings() {
         mSettingsManager.restoreSettings();
         filterPreferences();
+        mFirstInitHFREIS = true;
         initializePreferences(true);
     }
 
