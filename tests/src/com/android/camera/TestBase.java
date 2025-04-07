@@ -2050,6 +2050,13 @@ public class TestBase{
         if(testResult) {
             testRecording(mode, false);
         }
+        int[] hfr_loc = mModeIconL.get("HFR");
+        executeShellCommand("input tap " + hfr_loc[0] + " " + hfr_loc[1]);
+        if(cameraid.equals("1")) {
+            checkPreview(cameraid, CameraMode.HFR);
+        }else{
+            checkPreview("2", CameraMode.HFR);
+        }
         executeShellCommand("setprop persist.sys.cameraapp.mediarecorder true");
         mActivityRule.finishActivity();
         Thread.sleep(OPEN_CAMERA_DURATION);

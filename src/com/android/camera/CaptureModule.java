@@ -13423,6 +13423,7 @@ private boolean isDevOptionSetting(){
             mVideoFormat.setFloat(MediaFormat.KEY_CAPTURE_RATE, fps);
         }  else if (mHighSpeedCapture) {
             mHighSpeedFPSRange = new Range(mHighSpeedCaptureRate, mHighSpeedCaptureRate);
+            mHighSpeedPreviewFPSRange =  new Range(30, mHighSpeedCaptureRate);
             int fps = (int) mHighSpeedFPSRange.getUpper();
             int targetRate = mHighSpeedRecordingMode ? fps : 30;
             mVideoFormat.setInteger(MediaFormat.KEY_CAPTURE_RATE, fps);
