@@ -3289,6 +3289,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
                                 || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))
+                                || type.equalsIgnoreCase("video/apv")
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.DOLBY_VISION
                                 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION))) {
                             CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
