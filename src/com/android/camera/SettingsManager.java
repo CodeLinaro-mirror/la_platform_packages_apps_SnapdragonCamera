@@ -1273,7 +1273,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
         String value = changedPref.getValue();
         String prevValue = getValue(changedPrefKey);
-        if (value.equals(prevValue)) return null;
+        if ( value != null && value.equals(prevValue)) return null;
 
         List<SettingState> changed = new ArrayList();
         Values values = new Values(value, null);
@@ -1622,7 +1622,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }else {
                 return null;
             }
-
         }
 
         Values values = mValuesMap.get(key);
