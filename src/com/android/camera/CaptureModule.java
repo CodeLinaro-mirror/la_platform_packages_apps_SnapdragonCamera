@@ -4495,7 +4495,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void setAFModeToPreview(int id, int afMode) {
-        if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id])) {
+        if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id]) || !mCameraModeSwitcherAllowed) {
+            Log.i(TAG,"return , mCaptureSession[id]="+mCaptureSession[id]+",mPreviewRequestBuilder[id]"+
+                    mPreviewRequestBuilder[id]+",mCameraModeSwitcherAllowed="+mCameraModeSwitcherAllowed);
             return;
         }
         mPreviewRequestBuilder[id].set(CaptureRequest.CONTROL_AF_MODE, afMode);
