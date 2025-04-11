@@ -864,6 +864,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static final CaptureResult.Key<Byte> focusAssistEnable =
             new CaptureResult.Key<>("org.quic.camera.touchFocusAssist.touchFocusAssist", byte.class);
 
+    public static final int CONTROL_AE_PRIORITY_MODE_SENSOR_EXPOSURE_TIME_PRIORITY = 2;
+    public static final int CONTROL_AE_PRIORITY_MODE_SENSOR_SENSITIVITY_PRIORITY = 1;
+    public static final int CONTROL_AE_PRIORITY_MODE_OFF = 0;
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_VENDOR_START = 0x10000;
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV = 0x10001;
     private static final int TIMESTAMP_BASE_SENSOR = OutputConfiguration.TIMESTAMP_BASE_SENSOR;
@@ -15580,78 +15583,51 @@ private boolean isDevOptionSetting(){
                 }
         }
         Log.d(TAG,"applyIsoAndExposureTime-iso="+isovalue+",exposuretime="+exposuretime+",isLongExpTmCaptrure()="+isLongExpTmCaptrure()
-        +",previewExpTime="+previewExpTime+",mLongExpTime="+mLongExpTime);
-        if (!promode || (isovalue.equals("auto") && exposuretime.equals("auto"))) {
-            VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
-            VendorTagUtil.setIsoExpPriority(request, 0L);
-            if (request.get(CaptureRequest.SENSOR_EXPOSURE_TIME) == null) {
-                request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, mIsoExposureTime);
-            }
-            if (request.get(CaptureRequest.SENSOR_SENSITIVITY) == null) {
-                request.set(CaptureRequest.SENSOR_SENSITIVITY, mIsoSensitivity);
-            }
-        } else if (promode && exposuretime.equals("auto") && !isovalue.equals("auto")) {
-            long longValue = SettingsManager.KEY_ISO_INDEX.get(isovalue);
-            int intValue = CameraUtil.strToInt(isovalue,500);
-            setIsoValue(request, intValue, longValue, false);
+        +",previewExpTime="+previewExpTime+",mLongExpTime="+mLongExpTime+",promode="+promode);
+        if (promode && exposuretime.equals("auto") && !isovalue.equals("auto")) {
+            setIsoValue(request, isovalue);
         } else if (promode && !exposuretime.equals("auto") && isovalue.equals("auto")) {
-            VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
-            VendorTagUtil.setIsoExpPriority(request, previewExpTime);
-            request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
+           setExposureTime(request,String.valueOf(previewExpTime));
             if(!mSettingsManager.isFlashSupported(getMainCameraId())){
                 request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             }
         } else if (promode && !exposuretime.equals("auto") && !isovalue.equals("auto")) {
-            int isoValue = Integer.parseInt(isovalue);
-            setIsoAndExposureTime(request, isoValue, previewExpTime);
+            setIsoAndExposureTime(request, isovalue, String.valueOf(previewExpTime));
+        }else {
+            request.set(CaptureRequest.CONTROL_AE_PRIORITY_MODE, CONTROL_AE_PRIORITY_MODE_OFF);
         }
     }
 
     private boolean setExposureTime(CaptureRequest.Builder request, String exposuretime) {
-        long newExpTime = -1;
-        try {
-            newExpTime = Long.parseLong(exposuretime);
-            VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
-            VendorTagUtil.setIsoExpPriority(request, newExpTime);
-            request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
-            if(!mSettingsManager.isFlashSupported(getMainCameraId())) {
-                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-            }
-        } catch (NumberFormatException e) {
-            Log.w(TAG, " Input expTime " + exposuretime + " is invalid");
-            return false;
+        long[] expTimeRange = mSettingsManager.getExposureRangeValues(getMainCameraId());
+        long value = CameraUtil.strToLong(exposuretime,expTimeRange[0]);
+        request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, value);
+        request.set(CaptureRequest.CONTROL_AE_PRIORITY_MODE, CONTROL_AE_PRIORITY_MODE_SENSOR_EXPOSURE_TIME_PRIORITY);
+        if (!mSettingsManager.isFlashSupported(getMainCameraId())) {
+            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         }
         return true;
     }
 
-    private void setIsoValue(CaptureRequest.Builder request, int isoValue, long longValue, boolean isManual) {
-        VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
-        VendorTagUtil.setIsoExpPriority(request, longValue);
-        VendorTagUtil.setUseIsoValues(request, isoValue);
-        if (request.get(CaptureRequest.SENSOR_EXPOSURE_TIME) != null) {
-            mIsoExposureTime = request.get(CaptureRequest.SENSOR_EXPOSURE_TIME);
-        }
-        if (request.get(CaptureRequest.SENSOR_SENSITIVITY) != null) {
-            mIsoSensitivity = request.get(CaptureRequest.SENSOR_SENSITIVITY);
-        }
-        request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, null);
-        request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
+    private void setIsoValue(CaptureRequest.Builder request, String isoValue) {
+        int value = CameraUtil.strToInt(isoValue,100);
+        request.set(CaptureRequest.SENSOR_SENSITIVITY, value);
+        request.set(CaptureRequest.CONTROL_AE_PRIORITY_MODE, CONTROL_AE_PRIORITY_MODE_SENSOR_SENSITIVITY_PRIORITY);
         if(!mSettingsManager.isFlashSupported(getMainCameraId())) {
             request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         }
-
     }
 
-    private void setIsoAndExposureTime(CaptureRequest.Builder request, int isoValue, long exposureTime) {
+    private void setIsoAndExposureTime(CaptureRequest.Builder request, String isoValue, String exposureTime) {
+        int iso = CameraUtil.strToInt(isoValue,100);
+        long[] expTimeRange = mSettingsManager.getExposureRangeValues(getMainCameraId());
+        long exptime = CameraUtil.strToLong(exposureTime,expTimeRange[0]);
         request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
         if(!mSettingsManager.isOpenManualFlash()) {
             request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
-        request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime);
-        request.set(CaptureRequest.SENSOR_SENSITIVITY, isoValue);
-
-        VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
-        VendorTagUtil.setIsoExpPriority(request, 0L);
+        request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exptime);
+        request.set(CaptureRequest.SENSOR_SENSITIVITY, iso);
     }
     private boolean applyManualIsoExposure(CaptureRequest.Builder request) {
         boolean result = false;
@@ -15670,41 +15646,17 @@ private boolean isDevOptionSetting(){
         isManualAEC = false;
         if (manualExposureMode == null) return result;
         if (manualExposureMode.equals(isoPriority)) {
-            int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
-                    "-1"));
-            if(isoValue != -1) {
-                long longValue = SettingsManager.KEY_ISO_INDEX.get(
-                        SettingsManager.MAUNAL_ABSOLUTE_ISO_VALUE);
-                setIsoValue(request, isoValue, longValue, true);
-                result = true;
-            }
+            String isoValue =pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,"100");
+            setIsoValue(request, isoValue);
+            result = true;
         } else if (manualExposureMode.equals(expTimePriority)) {
             String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "auto");
             result = setExposureTime(request, expTime);
         } else if (manualExposureMode.equals(userSetting)) {
-            int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
-                    "-1"));
-            long newExpTime = 0l;
+            String isoValue =pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,"100");
             String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "auto");
-            try {
-                newExpTime = Long.parseLong(expTime);
-            } catch (NumberFormatException e) {
-                Log.w(TAG, "Input expTime " + expTime + " is invalid");
-            }
-            Log.v(TAG,  "manual ISO value : " + isoValue + ", Exposure value :" + newExpTime);
-            if(isoValue == -1 && newExpTime > 0){
-                setExposureTime(request,expTime);
-            }else if(newExpTime <=0 && isoValue >-1){
-                long longValue = SettingsManager.KEY_ISO_INDEX.get(
-                        SettingsManager.MAUNAL_ABSOLUTE_ISO_VALUE);
-                setIsoValue(request, isoValue, longValue, true);
-            }else if(newExpTime > 0 && isoValue >-1){
-                setIsoAndExposureTime(request, isoValue, newExpTime);
-                isManualAEC = true;
-            }else{
-                result = false;
-                return  result;
-            }
+            setIsoAndExposureTime(request, isoValue, expTime);
+            isManualAEC = true;
             result = true;
         } else if (manualExposureMode.equals(gainsPriority)) {
             float gains = pref.getFloat(SettingsManager.KEY_MANUAL_GAINS_VALUE, 0f);
@@ -15732,6 +15684,8 @@ private boolean isDevOptionSetting(){
             request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, null);
             request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
             result = true;
+        }else if ("off".equals(manualExposureMode)){
+            request.set(CaptureRequest.CONTROL_AE_PRIORITY_MODE, CONTROL_AE_PRIORITY_MODE_OFF);
         }
         return result;
     }

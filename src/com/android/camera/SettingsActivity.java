@@ -519,18 +519,18 @@ public class SettingsActivity extends PreferenceActivity {
         String gainsPriority = this.getString(
                 R.string.pref_camera_manual_exp_value_gains_priority);
         String manualExposureMode = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_EXPOSURE);
-        String currentISO = pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE, "-1");
+
         long[] exposureRange = mSettingsManager.getExposureRangeValues(cameraId);
 
         int[] isoRange = mSettingsManager.getIsoRangeValues(cameraId);
-        if (!currentISO.equals("-1")) {
-            ISOtext.setText("Current ISO is " + currentISO);
-        }
-        String currentExpTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "-1");
-        if (!currentExpTime.equals("-1")) {
-            ExpTimeText.setText("Current exposure time is " + currentExpTime);
-        }
-        Log.v(TAG, "manual Exposure Mode selected = " + manualExposureMode);
+        String isoSet = pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE, "100");
+        ISOtext.setText("If input value is invalid,apk use the Current ISO " + isoSet +
+                ",default value is 100");
+        String expTimeSet = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, String.valueOf(exposureRange[0]));
+        ExpTimeText.setText("If input value is invalid,apk use the Current exposure time "+expTimeSet +
+                ",default is "+exposureRange[0]);
+        Log.d(TAG, "manual Exposure Mode selected = " + manualExposureMode +
+                ",isoSet="+isoSet+",currentExpTime="+expTimeSet);
         if (manualExposureMode.equals(isoPriority)) {
             alert.setMessage("Enter ISO in the range of " + isoRange[0] + " to " + isoRange[1]);
             linear.addView(ISOinput);
@@ -540,30 +540,10 @@ public class SettingsActivity extends PreferenceActivity {
                 public void onClick(DialogInterface Dialog,int id) {
                     int newISO = -1;
                     String iso = ISOinput.getText().toString();
-                    Log.v(TAG, "string iso length " + iso.length() + ", iso :" + iso);
-                    if (iso.length() > 0) {
-                        try {
-                            newISO = Integer.parseInt(iso);
-                        } catch(NumberFormatException e) {
-                            Log.w(TAG, "ISOinput type incorrect value entered ");
-                        }
-                    }
-                    if (newISO <= isoRange[1] && newISO >= isoRange[0]) {
-                        editor.putString(SettingsManager.KEY_MANUAL_ISO_VALUE, iso);
+                    String value = getISOValue(iso,isoRange,pref);
+                        editor.putString(SettingsManager.KEY_MANUAL_ISO_VALUE, value);
                         editor.apply();
-                    } else {
-                        editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
-                        editor.apply();
-                        RotateTextToast.makeText(SettingsActivity.this, "Invalid ISO",
-                                Toast.LENGTH_SHORT).show();
                     }
-                }
-            });
-            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface Dialog,int id) {
-                    editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
-                    editor.apply();
-                }
             });
             alert.show();
         } else if (manualExposureMode.equals(expTimePriority)) {
@@ -578,32 +558,11 @@ public class SettingsActivity extends PreferenceActivity {
             alert.setView(linear);
             alert.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface Dialog,int id) {
-                    double newExpTime = -1;
                     String expTime = ExpTimeInput.getText().toString();
-                    if (expTime.length() > 0) {
-                        try {
-                            newExpTime = Double.parseDouble(expTime);
-                        } catch (NumberFormatException e) {
-                            Log.w(TAG, "Input expTime " + expTime + " is invalid");
-                            newExpTime = Double.parseDouble(expTime) + 1f;
-                        }
-                    }
-                    if (exposureRange != null &&
-                            newExpTime <= exposureRange[1] && newExpTime >= exposureRange[0]) {
-                        editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, expTime);
+                    String value = getExpTimeValue(expTime,exposureRange,pref);
+                        editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, value);
                         editor.apply();
-                    } else {
-                        editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
-                        editor.apply();
-                        RotateTextToast.makeText(SettingsActivity.this, "Invalid exposure time",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
-            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface Dialog,int id) {
-                    editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
-                    editor.apply();
+
                 }
             });
             alert.show();
@@ -611,7 +570,8 @@ public class SettingsActivity extends PreferenceActivity {
             alert.setMessage("Full manual mode - Enter both ISO and Exposure Time");
             final TextView ISORangeText = new TextView(this);
             final TextView ExpTimeRangeText = new TextView(this);
-            ISORangeText.setText("Enter ISO in the range of " + isoRange[0] + " to " + isoRange[1]);
+            ISORangeText.setText("Enter ISO in the range of " + isoRange[0] + " to " + isoRange[1]+
+                    ",");
             if (exposureRange == null) {
                 ExpTimeRangeText.setText("Get Exposure time range is NULL ");
             } else {
@@ -630,52 +590,69 @@ public class SettingsActivity extends PreferenceActivity {
                     int newISO = -1;
                     String iso = ISOinput.getText().toString();
                     Log.v(TAG, "string iso length " + iso.length() + ", iso :" + iso);
-                    if (iso.length() > 0) {
-                        try {
-                            newISO = Integer.parseInt(iso);
-                        } catch(NumberFormatException e) {
-                            Log.w(TAG, "ISOinput type incorrect value entered ");
-                        }
-                    }
-                    if (newISO <= isoRange[1] && newISO >= isoRange[0]) {
-                        editor.putString(SettingsManager.KEY_MANUAL_ISO_VALUE, iso);
+                    String isoValue = getISOValue(iso,isoRange,pref);
+                        editor.putString(SettingsManager.KEY_MANUAL_ISO_VALUE, isoValue);
                         editor.apply();
-                    } else {
-                        RotateTextToast.makeText(SettingsActivity.this, "Invalid ISO",
-                                Toast.LENGTH_SHORT).show();
-                    }
-
-                    double newExpTime = -1;
                     String expTime = ExpTimeInput.getText().toString();
-                    if (expTime.length() > 0) {
-                        try {
-                            newExpTime = Double.parseDouble(expTime);
-                        } catch (NumberFormatException e) {
-                            Log.w(TAG, "Input expTime " + expTime + " is invalid");
-                            newExpTime = Double.parseDouble(expTime) + 1f;
-                        }
-                    }
-                    if (exposureRange != null &&
-                            newExpTime <= exposureRange[1] && newExpTime >= exposureRange[0]) {
-                        editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, expTime);
+                    String expTimeValue = getExpTimeValue(expTime,exposureRange,pref);
+                        editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, expTimeValue);
                         editor.apply();
-                    } else {
-                        editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
-                        editor.apply();
-                        RotateTextToast.makeText(SettingsActivity.this, "Invalid exposure time",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
-            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface Dialog,int id) {
-                    editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE, "off");
-                    editor.apply();
                 }
             });
             alert.show();
         } else if (manualExposureMode.equals(gainsPriority)){
             handleManualGainsPriority(linear, ISOtext, ExpTimeInput, pref);
+        }
+    }
+    private String getExpTimeValue(String exptime,long[] exposureRange ,SharedPreferences pref) {
+        long newValue = exposureRange[0];
+        String valueStr = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, String.valueOf(newValue));
+        long value = Long.valueOf(valueStr);
+        if (exptime.length() > 0) {
+            try {
+                newValue = Long.valueOf(exptime);
+            } catch (NumberFormatException e) {
+                Log.w(TAG, "Input value : " + exptime + "is incorrect value entered ");
+                newValue = value;
+                RotateTextToast.makeText(SettingsActivity.this,
+                        "Input exptime is " + exptime + ",it is invalid,apk will use current value: " + newValue,
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
+        if (newValue <= exposureRange[1] && newValue >= exposureRange[0]) {
+            return String.valueOf(newValue);
+        } else {
+            Log.i(TAG,"makeText newValue="+newValue);
+            RotateTextToast.makeText(SettingsActivity.this,
+                    "Input newValue is " + newValue + ",it is out of range:[" + exposureRange[0] + "," + exposureRange[1]
+                            + "],apk will use current value: " + valueStr,
+                    Toast.LENGTH_SHORT).show();
+            return valueStr;
+        }
+    }
+    private String getISOValue(String iso,int[] isoRange,SharedPreferences pref){
+        int newISO = 100;
+        String currentISO = pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE, "100");
+        int isoValue = Integer.parseInt(currentISO);
+        if (iso.length() > 0) {
+            try {
+                newISO = Integer.parseInt(iso);
+            } catch(NumberFormatException e) {
+                Log.w(TAG, "Input iso : "+iso + "is incorrect value entered ");
+                newISO = isoValue;
+                RotateTextToast.makeText(SettingsActivity.this,
+                        "Input iso is "+iso +",it is invalid,apk will use current value:"+newISO,
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
+        if (newISO <= isoRange[1] && newISO >= isoRange[0]) {
+           return String.valueOf(newISO);
+        }else{
+            Log.i(TAG,"makeText newISO="+newISO);
+            RotateTextToast.makeText(SettingsActivity.this,
+                    "Input iso is  is out of range,apk will use current value:"+currentISO,
+                    Toast.LENGTH_SHORT).show();
+            return currentISO;
         }
     }
 
