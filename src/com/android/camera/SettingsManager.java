@@ -3085,19 +3085,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
         return isSupported && (mode == CaptureModule.CameraMode.HFR);
     }
-    public int getFRCRatio(){
-        int value = 0;
-        try {
-            if (mCharacteristics.size() > 0) {
-                byte[] bytes = mCharacteristics.get(mCameraId).get(CaptureModule.nspFRCRatio);
-                value = mCaptureModule.byteArray2Int(bytes,0);
-               return value;
-            }
-        } catch(IllegalArgumentException exception) {
-            Log.w(TAG,EXCEPTION_LOG,exception.toString());
-        }
-        return 0;
-    }
 
     private List<String> getSupportedHFRForAutoTest(String videoSizeStr) {
         ArrayList<String> supported = new ArrayList<String>();

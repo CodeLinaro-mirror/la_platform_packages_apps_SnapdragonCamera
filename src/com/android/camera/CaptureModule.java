@@ -537,8 +537,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public static final CaptureRequest.Key<Integer> enableFRC =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableFRC", Integer.class);
-    public static final CameraCharacteristics.Key<byte[]> nspFRCRatio =
-            new CameraCharacteristics.Key<>("org.quic.camera.nspfrcinfo.SupportedFrcRatio", byte[].class);
 
     public static final CameraCharacteristics.Key<int[]> superBufferTable =
             new CameraCharacteristics.Key<>("org.quic.camera2.customhfrfps.info.CustomHFRConfigurations", int[].class);
@@ -7924,7 +7922,6 @@ private boolean isDevOptionSetting(){
             if(mCurrentSceneMode.mode == CameraMode.HFR){
                 applyBufferMode(builder);
             }else if(mCurrentSceneMode.mode == CameraMode.VIDEO){
-                applyFRC(builder);
                 applySpatialVideo(builder);
             }
         }
@@ -12581,32 +12578,8 @@ private boolean isDevOptionSetting(){
          if (TRACE_DEBUG) Trace.endSection();
     }
 
-    private void stopRecordingVideo(int cameraId) {
-        Log.i(TAG, "stopRecordingVideo " + cameraId);
-        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,stopRecordingVideo");
-        mStopRecordingTime = System.currentTimeMillis();
-        if (isSSMEnabled()) {
-            updateProgressBar(false);
-            if (!mSSMCaptureCompleteFlag) {
-                warningToast("Super Slow Motion is not finished");
-            }
-        }
-        if (mVideoEncoder != null) {
-            mVideoEncoder.signalEndOfInputStream();
-        }
-        mUI.setSoundEffectsForRecording(true);
-        checkAndPlayRecordSound(cameraId, false);
-        mStopRecPending = true;
-        mRecordingPausing = false;
-        mIsRecordingVideo = false;
-        mRecordingStoped = false;
-
-        if (PersistUtil.enableMediaRecorder()) {
-            mIsPreviewingVideo = true;
-        } else {
-            mIsPreviewingVideo = false;
-        }
-        mRecordingStarted = false;
+    private boolean stopMediaReleated(){
+        Log.i(TAG,"stopMediaReleated");
         boolean shouldAddToMediaStoreNow = false;
         long stopMediaRecorder = System.currentTimeMillis();
         if(mActivity.getPerformenceTest()){
@@ -12667,6 +12640,41 @@ private boolean isDevOptionSetting(){
             mHasMapTimes.put("stopRecorder->endStop", stopMediaRecorder);
         }
         mRecordingStoped = true;
+        if (TRACE_DEBUG) Trace.endSection();
+        return shouldAddToMediaStoreNow;
+    }
+    private void stopRecordingVideo(int cameraId) {
+        Log.i(TAG, "stopRecordingVideo " + cameraId);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,stopRecordingVideo");
+        mStopRecordingTime = System.currentTimeMillis();
+        if (isSSMEnabled()) {
+            updateProgressBar(false);
+            if (!mSSMCaptureCompleteFlag) {
+                warningToast("Super Slow Motion is not finished");
+            }
+        }
+        if (mVideoEncoder != null) {
+            mVideoEncoder.signalEndOfInputStream();
+        }
+        mUI.setSoundEffectsForRecording(true);
+        checkAndPlayRecordSound(cameraId, false);
+        mStopRecPending = true;
+        mRecordingPausing = false;
+        mIsRecordingVideo = false;
+        mRecordingStoped = false;
+
+        if (PersistUtil.enableMediaRecorder()) {
+            mIsPreviewingVideo = true;
+        } else {
+            mIsPreviewingVideo = false;
+        }
+        mRecordingStarted = false;
+        boolean shouldAddToMediaStoreNow = false;
+        String value = mSettingsManager.getValue(SettingsManager.KEY_FRC_MODE);
+        if(value != null && Integer.valueOf(value) == 0){
+            shouldAddToMediaStoreNow = stopMediaReleated();
+        }
+
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
         if (PersistUtil.needEndOfStream() && !profile.equals("HEVCProfileMain10HDR10Plus")) {
             setEndOfStream(false, true);
@@ -12700,6 +12708,7 @@ private boolean isDevOptionSetting(){
                                 mCameraHandler);
 
                     } else {
+                        Log.i(TAG,"setRepeatingRequest");
                         mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
                                 mCaptureCallback, mCameraHandler);
                     }
@@ -12707,6 +12716,10 @@ private boolean isDevOptionSetting(){
                     Log.w(TAG, "stopRecordingVideo: " + e);
                 }
             }
+        }
+
+        if(value != null && Integer.valueOf(value) != 0){
+            shouldAddToMediaStoreNow = stopMediaReleated();
         }
 
         if (!mPaused) {
@@ -12727,7 +12740,6 @@ private boolean isDevOptionSetting(){
             saveVideo();
         }
         keepScreenOnAwhile();
-        if (TRACE_DEBUG) Trace.endSection();
         if (TRACE_DEBUG) Trace.beginSection("SnapCamera,media recorder release");
         // release media recorder
         if (PersistUtil.enableMediaRecorder()) {
@@ -14613,19 +14625,6 @@ private boolean isDevOptionSetting(){
             Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
         }
     }
-    private void applyFRC(CaptureRequest.Builder request){
-        try {
-            String value = mSettingsManager.getValue(SettingsManager.KEY_FRC_MODE);
-            int setvalue = 0;
-            if(value != null){
-                setvalue = Integer.valueOf(value);
-            }
-            request.set(CaptureModule.enableFRC,setvalue );
-        }catch (IllegalArgumentException e){
-            Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
-        }
-    }
-
     private void applySharpnessControlModes(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SHARPNESS_CONTROL_MODE);
         if (value != null) {

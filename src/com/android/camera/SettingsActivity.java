@@ -2234,7 +2234,6 @@ public class SettingsActivity extends PreferenceActivity {
         updateViullPreference();
         updateLowLightBoostPreference();
         updateHfrBufferMode();
-        updateFRCPreference();
         updateInSensorZoom();
     }
     public void updateHfrBufferMode() {
@@ -2249,18 +2248,7 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setValue("0");
         }
     }
-    public void updateFRCPreference(){
-        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_FRC_MODE);
-        if(pref == null){
-            return;
-        }
-        if (mSettingsManager.getFRCRatio() >0 ){
-            pref.setEnabled(true);
-        }else{
-            pref.setEnabled(false);
-            pref.setValue("0");
-        }
-    }
+
     private void updateAudioEncoderPreference() {
         ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_AUDIO_ENCODER);
         String hdr_mode = mSettingsManager.getValue(SettingsManager.KEY_AUDIO_RECORDING_MODE);
