@@ -13451,7 +13451,7 @@ private boolean isDevOptionSetting(){
         applyVideoSettings();
         if (PersistUtil.lookaheadEnabled()) {
             Log.i(TAG + "_videoformat", "set lookahead enable.");
-            mVideoFormat.setInteger("vendor.qti-ext-enc-lookahead.enable", 1);
+            mVideoFormat.setInteger("vendor.qti-ext-encoding-mode.value", 4);
         }
         mVideoEncoder = MediaCodec.createEncoderByType(encoder);
         if (PersistUtil.isProSightEnabled()) {
