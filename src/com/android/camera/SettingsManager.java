@@ -143,6 +143,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
     public static final int JPEG_FORMAT = 0;
     public static final int HEIF_FORMAT = 1;
+    public static final int HEIC_TENBIT_FORMAT= 2;
     public static final int JPEG_R_FORMAT = 3;
     public static final String LOGICAL_AND_PHYSICAL = "99";
     public static final String SCENE_MODE_DUAL_STRING = "100";
@@ -443,10 +444,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         h265.add("HEVCProfileMain10");
         h265.add("HEVCProfileMain10HDR10");
         h265.add("HEVCProfileMain10HDR10Plus");
-        Set<String> mvhevc = new HashSet<>();
-        mvhevc.add("HEVCProfileMain10");
         VIDEO_ENCODER_PROFILE_TABLE.put("h265", h265);
-        VIDEO_ENCODER_PROFILE_TABLE.put("mvhevc", mvhevc);
         KEY_HDR_MODES_ORDER.put("SHDR", 1);
         KEY_HDR_MODES_ORDER.put("MFHDR", 2);
         KEY_HDR_MODES_ORDER.put("QHDR", 3);
@@ -459,6 +457,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         COLOR_SPACE_MAP.put("2", ColorSpace.Named.DISPLAY_P3);
         KEY_IMAGE_FORMAT_INDEX.put("0", ImageFormat.JPEG);
         KEY_IMAGE_FORMAT_INDEX.put("1", ImageFormat.HEIC);
+        KEY_IMAGE_FORMAT_INDEX.put("2", ImageFormat.HEIC);
         KEY_IMAGE_FORMAT_INDEX.put("3", ImageFormat.JPEG_R);
     }
 
@@ -1043,7 +1042,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         } catch (IllegalArgumentException | NullPointerException e) {
             Log.w(TAG, EXCEPTION_LOG,"isStatsNNSupported is_statsnn_supported no vendor tag");
         }
-        Log.i(TAG, "isStatsNNSupported supportted :" + supportted);
+        Log.d(TAG, "isStatsNNSupported supportted :" + supportted);
         return supportted;
     }
 
@@ -1741,7 +1740,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
     public boolean setTitleEntry(String title, String entry) {
         ListPreference pref = mPreferenceGroup.findPreferenceWithTile(title);
-        Log.i(TAG,"11111 pref ="+pref+",title="+title+",entry="+entry);
+        Log.i(TAG," pref ="+pref+",title="+title+",entry="+entry);
         if (pref != null) {
             int index = pref.findIndexOfEntry(entry);
             if (index < 0) {
@@ -1758,6 +1757,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 return true;
             }
         } else {
+            IconListPreference icon_pref = (IconListPreference) mPreferenceGroup.findPreferenceWithTile(title);
+            Log.i(TAG," icon_pref ="+icon_pref+",title="+title+",entry="+entry);
             return false;
         }
     }
@@ -2956,7 +2957,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference videoEncoderPref = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
         if ( videoEncoderProfilePref != null && videoEncoderPref != null ) {
             String videoEncoder = videoEncoderPref.getValue();
-            Log.i(TAG, "mvhevcHLG: encoder is " + videoEncoder);
+            Log.d(TAG, "mvhevcHLG: encoder is " + videoEncoder);
             videoEncoderProfilePref.reloadInitialEntriesAndEntryValues();
             boolean isSupported = isDynamicRangeTenBitSupported();
             Log.d(TAG, " isDynamicRangeTenBitSupported, isSupported : " + isSupported);
@@ -2971,23 +2972,27 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         for (Long p : profiles) {
                             Log.d(TAG, " supported dynamic Profiles:" + p);
                         }
-                        Set<String> profiles_string = new HashSet<>();
-                        Set<String> mvhevcprofiles_string = new HashSet<>();
+                        Set<String> h265_profiles_string = new HashSet<>();
+                        Set<String> mvhevc_profiles_string = new HashSet<>();
+                        Set<String> apv_profiles_string = new HashSet<>();
                         if (profiles.contains(DynamicRangeProfiles.HLG10)) {
-                            profiles_string.add("HEVCProfileMain10");
-                            mvhevcprofiles_string.add("HEVCProfileMain10");
+                            h265_profiles_string.add("HEVCProfileMain10");
+                            mvhevc_profiles_string.add("HEVCProfileMain10");
                             Log.d(TAG, " Ten bit HLG10 Supported");
-                            VIDEO_ENCODER_PROFILE_TABLE.put("mvhevc", mvhevcprofiles_string);
                         }
                         if (profiles.contains(DynamicRangeProfiles.HDR10)) {
-                            profiles_string.add("HEVCProfileMain10HDR10");
+                            h265_profiles_string.add("HEVCProfileMain10HDR10");
+                            apv_profiles_string.add("HEVCProfileMain10HDR10");
                             Log.d(TAG, " Ten bit HDR10 Supported");
                         }
                         if (profiles.contains(DynamicRangeProfiles.HDR10_PLUS)) {
-                            profiles_string.add("HEVCProfileMain10HDR10Plus");
+                            h265_profiles_string.add("HEVCProfileMain10HDR10Plus");
+                            apv_profiles_string.add("HEVCProfileMain10HDR10Plus");
                             Log.d(TAG, " Ten bit HDR10_PLUS Supported");
                         }
-                        VIDEO_ENCODER_PROFILE_TABLE.put("h265", profiles_string);
+                        VIDEO_ENCODER_PROFILE_TABLE.put("h265", h265_profiles_string);
+                        VIDEO_ENCODER_PROFILE_TABLE.put("mvhevc", mvhevc_profiles_string);
+                        VIDEO_ENCODER_PROFILE_TABLE.put("apv", apv_profiles_string);
                     }
                 } catch (Exception e) {
                     Log.w(TAG, "isDynamicRangeTenBitSupported", e.fillInStackTrace());
@@ -3110,7 +3115,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 for (MediaCodecInfo info : allCodecs.getCodecInfos()) {
                     if (!info.isEncoder() || info.getName().contains("google")) continue;
                     for (String type : info.getSupportedTypes()) {
-                        Log.i(TAG, "dolby: supported type:" + type + " in codec: " + info.getName());
+                        Log.d(TAG, "dolby: supported type:" + type + " in codec: " + info.getName());
                         if ((videoEncoderNum == MediaRecorder.VideoEncoder.MPEG_4_SP && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_MPEG4))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
@@ -3284,6 +3289,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
                                 || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))
+                                || type.equalsIgnoreCase("video/apv")
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.DOLBY_VISION
                                 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION))) {
                             CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
@@ -3447,7 +3453,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         boolean isSupported = false;
         try {
             isSupported = (mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.isAIDE2Supported)) == 1;
-            Log.i(TAG,"isAIDE2Supported: " + isSupported);
+            Log.d(TAG,"isAIDE2Supported: " + isSupported);
         } catch (IllegalArgumentException e) {
             Log.w(TAG, EXCEPTION_LOG,"cannot find vendor tag: " +
                     CaptureModule.isAIDE2Supported.toString());
@@ -3531,31 +3537,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
-
-    private byte[] intToBytes(int value) {
-        return new byte[]{
-                (byte) (value >> 24),
-                (byte) (value >> 16),
-                (byte) (value >> 8),
-                (byte) value
-        };
-    }
-    public int[] getSupportedDcgBitsTags() {
-        Set<Integer> supported = new HashSet<>();
+    public int[] getsupportedDcgModes() {
         try {
             int[] modes = mCharacteristics.get(getCurrentCameraId())
-                    .get(CaptureModule.support_dcg_bits_tags);
-            for(int mode: modes){
-                byte[] bytes = intToBytes(mode);
-                for(byte value: bytes){
-                    supported.add((int)value);
-                }
-            }
+                    .get(CaptureModule.support_dcg_modes);
+            return modes;
         } catch (Exception e) {
             Log.d(TAG,"getSupportedDcgBitsTags failed");
-        }
-        if(supported.size() > 0){
-            return  supported.stream().mapToInt(Integer::intValue).toArray();
         }
         return null;
     }
@@ -3950,7 +3938,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         List<String> res = new ArrayList<>();
 
         boolean isDeepportrait = getDeepportraitEnabled();
-        boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
+        boolean isHeifEnabled = isHeifHALEncoding();
         boolean isMfSHDREnabled = isMfSHDREnable();
 
         if (getQuadBayerSensorPrefEnabled()) {
@@ -4142,7 +4130,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         List<Size> videoSizes = videoSizesAll.stream().distinct().collect(Collectors.toList());
 
-        boolean isHeifEnabled = getSavePictureFormat() == HEIF_FORMAT;
+        boolean isHeifEnabled = isHeifHALEncoding();
         String eisValue = getValue(SettingsManager.KEY_EIS_VALUE);
         boolean isEISV3Enabled = "V3".equals(eisValue);
         VideoCapabilities heifCap = null;
@@ -4507,7 +4495,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES);
         if (profiles != null) {
             for (Long profile : profiles.getSupportedProfiles()) {
-                Log.i(TAG, "supported dynamicRangeProfile is " + profile);
+                Log.d(TAG, "supported dynamicRangeProfile is " + profile);
             }
         }
     }
@@ -4825,7 +4813,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isHeifHALEncoding() {
         //HAL encoding by default on Android Q
-        return getSavePictureFormat() == HEIF_FORMAT;
+        Log.d(TAG, "check heic encoding:" + getSavePictureFormat());
+        return getSavePictureFormat() == HEIF_FORMAT || getSavePictureFormat() == HEIC_TENBIT_FORMAT;
     }
     public boolean isRawReprocess(){
         String reprocessType = getValue(KEY_RAW_REPROCESS_TYPE);
@@ -4855,6 +4844,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB && isDynamicRangeTenBitSupported()) {
             ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
+            if (supportHeic == 1) {
+                ret.add(String.valueOf(SettingsManager.HEIC_TENBIT_FORMAT));
+            }
         }
         return ret;
     }

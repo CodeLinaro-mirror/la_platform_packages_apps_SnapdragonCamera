@@ -1159,11 +1159,13 @@ public class SettingsActivity extends PreferenceActivity {
 
     private int getPositionForMode(int mode){
         int position = -1;
-        int[] dcgModes = mSettingsManager.getSupportedDcgBitsTags();
-        for(int i=0; i <dcgModes.length; i++){
-            if(mode == dcgModes[i]){
-                position = i;
-                break;
+        int[] dcgModes = mSettingsManager.getsupportedDcgModes();
+        if(dcgModes != null) {
+            for (int i = 0; i < dcgModes.length; i++) {
+                if (mode == dcgModes[i]) {
+                    position = i;
+                    break;
+                }
             }
         }
         return position;
@@ -1173,10 +1175,44 @@ public class SettingsActivity extends PreferenceActivity {
         RadioButton select;
     }
 
+    private byte[] intToBytes(int value) {
+        return new byte[]{
+                (byte) (value >> 24),
+                (byte) (value >> 16),
+                (byte) (value >> 8),
+                (byte) value
+        };
+    }
+
+    public String parseDCGModes(int mode) {
+        byte[] bytes = intToBytes(mode);
+        StringBuilder value = new StringBuilder();
+        for(int i=bytes.length-1; i>0; i--){
+            if(i ==3){
+                if (bytes[i] == 1) {
+                    value.append(SettingsManager.KEY_MANUAL_DCG1_4);
+                } else if (bytes[i] == 2) {
+                    value.append(SettingsManager.KEY_MANUAL_DCG1_8);
+                } else if (bytes[i] == 3) {
+                    value.append(SettingsManager.KEY_MANUAL_DCG1_16);
+                } else if (bytes[i] == 4) {
+                    value.append(SettingsManager.KEY_MANUAL_DCGDirect);
+                } else if (bytes[i] == 5) {
+                    value.append(SettingsManager.KEY_MANUAL_DCGVS);
+                }
+            }else if(i ==1|| i ==2){
+                if(bytes[i] != 0) {
+                    value.append("/");
+                    value.append(bytes[i]);
+                }
+            }
+        }
+        return value.toString();
+    }
     private void updateManualHDRSetting() {
         List<String> listData = new ArrayList<String>();
         int[] modes = mSettingsManager.isManualHDRSupported();
-        int[] dcgModes = mSettingsManager.getSupportedDcgBitsTags();
+        int[] dcgModes = mSettingsManager.getsupportedDcgModes();
         StringBuilder defaultHDROrder = new StringBuilder();
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
 
@@ -1212,17 +1248,7 @@ public class SettingsActivity extends PreferenceActivity {
         List<String> dcgData = new ArrayList<String>();
         if(dcgModes != null && dcgModes.length > 0) {
             for (int i = 0; i < dcgModes.length; i++) {
-                if (dcgModes[i] == 1) {
-                    dcgData.add(SettingsManager.KEY_MANUAL_DCG1_4);
-                } else if (dcgModes[i] == 2) {
-                    dcgData.add(SettingsManager.KEY_MANUAL_DCG1_8);
-                } else if (dcgModes[i] == 3) {
-                    dcgData.add(SettingsManager.KEY_MANUAL_DCG1_16);
-                } else if (dcgModes[i] == 4) {
-                    dcgData.add(SettingsManager.KEY_MANUAL_DCGDirect);
-                } else if (dcgModes[i] == 5) {
-                    dcgData.add(SettingsManager.KEY_MANUAL_DCGVS);
-                }
+                dcgData.add(parseDCGModes(dcgModes[i]));
             }
         }
         RadioListAdapter arrayDapter = new RadioListAdapter(this, dcgData);
@@ -1316,11 +1342,9 @@ public class SettingsActivity extends PreferenceActivity {
             updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
             updateVideoVariableFpsPreference();
             updateVideoHfrFpsPreference();
-            updateInSensorZoom();
             updateViullPreference();
         }else if (mode == CaptureModule.CameraMode.DEFAULT){
             updateRawFormatPref();
-            updateInSensorZoom();
             updateViullPreference();
             updateQuadBayerPreference();
         }
@@ -2708,6 +2732,13 @@ public class SettingsActivity extends PreferenceActivity {
             pref.setEnabled(false);
             return;
         }
+        String videoFps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
+        if (mode == CaptureModule.CameraMode.VIDEO && videoFps != null && !videoFps.equals("off") && !vsr.equals("1")) {
+            pref.setValue("0");
+            pref.setEnabled(false);
+            return;
+        }
         pref.setEnabled(true);
     }
     private  void updateLowLightBoostPreference(){
@@ -2931,7 +2962,7 @@ public class SettingsActivity extends PreferenceActivity {
     private void updateInSensorZoom(){
         ListPreference inSenorZoomPref = (ListPreference)findPreference(SettingsManager.KEY_INSENSOR_ZOOM);
         if(inSenorZoomPref == null) return;
-        if((inSenorZoomPref != null && mSettingsManager.isLimitedHDR()) || mSettingsManager.getQuadBayerSensorPrefEnabled()){
+        if(inSenorZoomPref != null  && mSettingsManager.getQuadBayerSensorPrefEnabled()){
             inSenorZoomPref.setValue("0");
             inSenorZoomPref.setEnabled(false);
             return;
@@ -3147,6 +3178,7 @@ public class SettingsActivity extends PreferenceActivity {
     private void restoreSettings() {
         mSettingsManager.restoreSettings();
         filterPreferences();
+        mFirstInitHFREIS = true;
         initializePreferences(true);
     }
 
@@ -3211,7 +3243,7 @@ public class SettingsActivity extends PreferenceActivity {
                         isChecked=false;
                         final AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
                         alert.setMessage("Donnot support "+title+" " +
-                                "when Video FPS >=60 or enabled SaveRaw or inSensor zoom" +
+                                "when Video FPS >=60 or enabled SaveRaw " +
                                 " or quadBayerSensor or videoSize >=8k");
                         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {

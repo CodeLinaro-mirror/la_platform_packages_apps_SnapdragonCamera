@@ -88,7 +88,6 @@ import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaMuxer;
-import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.MicrophoneInfo;
 import android.net.Uri;
@@ -185,7 +184,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.SplittableRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeoutException;
@@ -451,7 +449,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.quic.camera.swcapabilities.inSensorZoomCapability", Integer.class);
     public static CameraCharacteristics.Key<Integer> support_swcapability_vsr =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.platformCapabilities.EnableVSR", Integer.class);
-    public static CameraCharacteristics.Key<int[]> support_dcg_bits_tags =
+    public static CameraCharacteristics.Key<int[]> support_dcg_modes =
             new CameraCharacteristics.Key<>("org.codeaurora.qcamera3.supportedHDRmodes.HDRDCGModes", int[].class);
 
     public static CameraCharacteristics.Key<Byte> logical_camera_type =
@@ -1804,7 +1802,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mUI.updateStatsNNVisibility(View.GONE);
             }
             if(!mSettingsManager.isAICameraDisable()){
-                updateVSRView(result);
+                updateVRSView(result);
             }
             if(isAIDE2Enabled()){
                 try {
@@ -2100,14 +2098,19 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Integer statsNNRoiWeight = result.get(stats_nn_result_roiweight);
                 Log.d(TAG,BIG_LOG,"statsNNWidth:" + statsNNWidth + ",statsNNHeight:" + statsNNHeight + ",statsNNMapdata:" + statsNNMapdata +
                         ",statsNNNumroi:" + statsNNNumroi + ",statsNNRoiData:" + statsNNRoiData +",statsNNRoiWeight:" + statsNNRoiWeight);
-                if (statsNNWidth == null || statsNNHeight == null || statsNNMapdata == null ||
-                    statsNNNumroi == null|| statsNNRoiData == null|| statsNNRoiWeight == null)
+                if (statsNNWidth == null || statsNNHeight == null || statsNNMapdata == null)
                     return;
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mUI.updateStatsNNVisibility(View.VISIBLE);
-                        mUI.updateStatsNNResultText(statsNNWidth, statsNNHeight, statsNNMapdata, statsNNNumroi, statsNNRoiData, statsNNRoiWeight);
+                        if(statsNNNumroi == 1 && statsNNRoiData != null && statsNNRoiWeight != null) {
+                            mUI.updateStatsNNVisibility(View.VISIBLE);
+                            mStateNNFocusRenderer.setVisible(true);
+                            mUI.updateStatsNNResultText(statsNNWidth, statsNNHeight, statsNNMapdata, statsNNNumroi, statsNNRoiData, statsNNRoiWeight);
+                        }else{
+                            mUI.updateStatsNNVisibility(View.INVISIBLE);
+                            mStateNNFocusRenderer.setVisible(false);
+                        }
                     }
                 });
                 if (mStateNNFocusRenderer == null) {
@@ -2164,20 +2167,22 @@ public class CaptureModule implements CameraModule, PhotoController,
         });
     }
 
-    private void updateVSRView(CaptureResult result){
+    private void updateVRSView(CaptureResult result){
         try{
-            updateVSRText(new StringBuilder("VSR ").append(result.get(VRSSkipSegment)).toString());
+            if(result.get(VRSSkipSegment) != -1) {
+                updateVRSText(new StringBuilder("AIVRS ").append(result.get(VRSSkipSegment)).toString());
+            }
         } catch (IllegalArgumentException | NullPointerException e) {
             Log.w(TAG,EXCEPTION_LOG,e.toString());
-            updateVSRText("");
+            updateVRSText("");
         }
     }
 
-    private void updateVSRText(String text){
+    private void updateVRSText(String text){
         mActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mUI.updateVSRText(text);
+                mUI.updateVRSText(text);
             }
         });
     }
@@ -2852,7 +2857,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if(afState!= null && aeState != null && CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState && aeState == CaptureResult.CONTROL_AE_STATE_LOCKED && mLockAFAE == LOCK_AF_AE_STATE_START){
                         mState[id] = STATE_AF_AE_LOCKED;
                     }
-                } catch (CameraAccessException e) {
+                } catch (CameraAccessException | IllegalStateException e) {
                     Log.e(TAG,e);
                 }
                 break;
@@ -3851,7 +3856,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 if(mRawImageReader[id] != null && s == mRawImageReader[id].getSurface()){
                                     applyCroppedRaw(outputConfiguration, getMainCameraId());
                                 }
-                                if(s == mImageReader[id].getSurface() && mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT) {
+                                if(s == mImageReader[id].getSurface() && (mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT
+                                        || mSettingsManager.getSavePictureFormat() == mSettingsManager.HEIC_TENBIT_FORMAT)) {
                                     Log.v(TAG, "OutputConfiguration set captureProfile :" + 2);
                                     outputConfiguration.setDynamicRangeProfile(2);
                                 }
@@ -5078,7 +5084,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                         .build(), mCaptureCallback, mCameraHandler);
             }
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | IllegalStateException  e) {
             Log.e(TAG,e);
         }
         try {
@@ -5161,7 +5167,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             .build(), mCaptureCallback, mCameraHandler);
                 }
             }
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | IllegalStateException e) {
             Log.e(TAG,e);
         }
 
@@ -8041,7 +8047,7 @@ private boolean isDevOptionSetting(){
                         mCurrentSession.setRepeatingRequest(mVideoRecordRequestBuilder.build(),
                                 mCaptureCallback, mCameraHandler);
                     }
-                } catch (CameraAccessException e) {
+                } catch (CameraAccessException | IllegalStateException e) {
                     Log.i(TAG, "updateFlashMode error inThumbnail= " + inThumbnail, e);
                 }
             }
@@ -8052,7 +8058,7 @@ private boolean isDevOptionSetting(){
                             CaptureRequest.FLASH_MODE_OFF : CaptureRequest.FLASH_MODE_TORCH);
                     mCurrentSession.setRepeatingRequest(captureRequest.build(),
                             mCaptureCallback, mCameraHandler);
-                } catch (CameraAccessException e) {
+                } catch (CameraAccessException | IllegalStateException e) {
                     Log.i(TAG, "updateFlashMode error inThumbnail= " + inThumbnail, e);
                 }
             }
@@ -8820,6 +8826,7 @@ private boolean isDevOptionSetting(){
         } else if(needYUVStream()) {
             mChosenImageFormat = ImageFormat.YUV_420_888;
         } else if(mSettingsManager.isHeifHALEncoding() || mRawReprocessType == 3) {
+            Log.d(TAG, "set output format to HEIC");
             mChosenImageFormat = ImageFormat.HEIC;
         }else if(mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT){
             mChosenImageFormat = ImageFormat.JPEG_R;
@@ -9437,7 +9444,7 @@ private boolean isDevOptionSetting(){
             try {
                 mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                         .build(), mCaptureCallback, mCameraHandler);
-            } catch (CameraAccessException e) {
+            } catch (CameraAccessException | IllegalStateException e) {
                 Log.e(TAG, "onFocusAssistModeStart ", e.fillInStackTrace());
             }
         }
@@ -9459,7 +9466,7 @@ private boolean isDevOptionSetting(){
             try {
                 mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                         .build(), mCaptureCallback, mCameraHandler);
-            } catch (CameraAccessException e) {
+            } catch (CameraAccessException | IllegalStateException e) {
                 Log.e(TAG, "onFocusAssistModeStart ", e.fillInStackTrace());
             }
         }
@@ -12177,7 +12184,7 @@ private boolean isDevOptionSetting(){
                 mCurrentSession.setRepeatingRequest(captureRequest, mCaptureCallback,
                         mCameraHandler);
             }
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | IllegalStateException e) {
             Log.e(TAG,e);
         }
     }
@@ -12411,7 +12418,7 @@ private boolean isDevOptionSetting(){
                         mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
                                 mCaptureCallback, mCameraHandler);
                     }
-                } catch(IllegalArgumentException e) {
+                } catch(IllegalArgumentException | IllegalStateException e) {
                     Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
                 }
             } else {
@@ -12691,7 +12698,7 @@ private boolean isDevOptionSetting(){
                         mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
                                 mCaptureCallback, mCameraHandler);
                     }
-                } catch (CameraAccessException e) {
+                } catch (CameraAccessException | IllegalStateException e) {
                     Log.w(TAG, "stopRecordingVideo: " + e);
                 }
             }
@@ -13416,6 +13423,7 @@ private boolean isDevOptionSetting(){
             mVideoFormat.setFloat(MediaFormat.KEY_CAPTURE_RATE, fps);
         }  else if (mHighSpeedCapture) {
             mHighSpeedFPSRange = new Range(mHighSpeedCaptureRate, mHighSpeedCaptureRate);
+            mHighSpeedPreviewFPSRange =  new Range(30, mHighSpeedCaptureRate);
             int fps = (int) mHighSpeedFPSRange.getUpper();
             int targetRate = mHighSpeedRecordingMode ? fps : 30;
             mVideoFormat.setInteger(MediaFormat.KEY_CAPTURE_RATE, fps);
@@ -14580,7 +14588,7 @@ private boolean isDevOptionSetting(){
                         CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_DISABLED);
             }
             mCaptureSession[getMainCameraId()].setRepeatingRequest(captureRequest.build(), mCaptureCallback, mCameraHandler);
-        } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException e) {
+        } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException | IllegalStateException e) {
             Log.e(TAG, "Camera Exception in applyBokehMode, apply failed e="+e);
         }
     }
@@ -15473,7 +15481,7 @@ private boolean isDevOptionSetting(){
         try {
             applyAICameraStrength(mPreviewRequestBuilder[getMainCameraId()]);
             mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
-        } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException e) {
+        } catch (CameraAccessException| IllegalArgumentException | UnsupportedOperationException | IllegalStateException e) {
             Log.e(TAG, "Camera Access Exception in applyAICameraStrengthAndUpdate, apply failed e="+e);
         }
     }
@@ -16040,7 +16048,7 @@ private boolean isDevOptionSetting(){
         try {
             mCaptureSession[id].setRepeatingRequest(request
                     .build(), mCaptureCallback, mCameraHandler);
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | IllegalStateException e) {
             Log.e(TAG, "Camera Access Exception in applyFlashForUIChange, apply failed");
         }
     }
@@ -16771,7 +16779,7 @@ private boolean isDevOptionSetting(){
                     applyAIBlurConfig(key,mVideoPreviewRequestBuilder);
                     try {
                         mCaptureSession[getMainCameraId()].setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(), mCaptureCallback, mCameraHandler);
-                    } catch (CameraAccessException e) {
+                    } catch (CameraAccessException | IllegalStateException e) {
                         Log.e(TAG, "Camera Access Exception in applyAIBlurConfig, apply failed");
                     }
                     return;
