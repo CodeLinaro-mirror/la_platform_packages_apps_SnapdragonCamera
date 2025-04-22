@@ -2365,13 +2365,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 awbinfo_data[2] = Float.toString(mBGain);
                 awbinfo_data[3] = Float.toString(mCctAWB);
                 synchronized (awbinfo_data) {
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mUI.updateAWBInfoVisibility(View.VISIBLE);
-                            mUI.updateAwbInfoText(awbinfo_data);
-                        }
-                    });
+                    mUI.updateAWBInfoVisibility(View.VISIBLE);
+                    mUI.updateAwbInfoText(awbinfo_data);
                 }
             } catch (IllegalArgumentException | NullPointerException e) {
                 Log.w(TAG,e.toString());
@@ -2408,15 +2403,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }catch (NullPointerException|IllegalArgumentException e){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
-
             synchronized (aecinfo_data) {
-                mActivity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mUI.updateAECInfoVisibility(View.VISIBLE);
-                        mUI.updateAecInfoText(aecinfo_data);
-                    }
-                });
+                mUI.updateAECInfoVisibility(View.VISIBLE);
+                mUI.updateAecInfoText(aecinfo_data);
             }
         } else {
             mUI.updateAECInfoVisibility(View.GONE);
@@ -2448,13 +2437,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             }
             synchronized (afdinfo_data) {
-                mActivity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mUI.updateAFDInfoVisibility(View.VISIBLE);
-                        mUI.updateAfdInfoText(afdinfo_data);
-                    }
-                });
+                mUI.updateAFDInfoVisibility(View.VISIBLE);
+                mUI.updateAfdInfoText(afdinfo_data);
             }
         } else {
             mUI.updateAFDInfoVisibility(View.GONE);
@@ -14779,13 +14763,13 @@ private boolean isDevOptionSetting(){
 
     }
     private void updateRGBGraghViewVisibility(final int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mGraphViewRGB != null) {
+        if (mGraphViewRGB != null && visibility != mGraphViewRGB.getVisibility()) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
                     mGraphViewRGB.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
 
     private void applyEnableCinematic(CaptureRequest.Builder request) {
@@ -14799,19 +14783,17 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateGraghViewVisibility(final int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mGraphViewR != null) {
+        if ((mGraphViewR != null && visibility != mGraphViewR.getVisibility()) ||
+                (mGraphViewGB != null && visibility != mGraphViewGB.getVisibility()) ||
+                (mGraphViewB != null && visibility != mGraphViewB.getVisibility())) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
                     mGraphViewR.setVisibility(visibility);
-                }
-                if(mGraphViewGB != null) {
                     mGraphViewGB.setVisibility(visibility);
-                }
-                if(mGraphViewB != null) {
                     mGraphViewB.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
 
     private void updateMFNRText() {
@@ -14856,19 +14838,15 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateGraghView(){
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mGraphViewR != null) {
-                    mGraphViewR.PreviewChanged();
-                }
-                if(mGraphViewGB != null) {
-                    mGraphViewGB.PreviewChanged();
-                }
-                if(mGraphViewB != null) {
-                    mGraphViewB.PreviewChanged();
-                }
-            }
-        });
+        if(mGraphViewR != null) {
+            mGraphViewR.PreviewChanged();
+        }
+        if(mGraphViewGB != null) {
+            mGraphViewGB.PreviewChanged();
+        }
+        if(mGraphViewB != null) {
+            mGraphViewB.PreviewChanged();
+        }
     }
 
     // BG stats
@@ -14884,13 +14862,10 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateBGStatsView(){
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(bgstats_view != null) {
-                    bgstats_view.PreviewChanged();
-                }
-            }
-        });
+        if(bgstats_view != null) {
+            bgstats_view.PreviewChanged();
+        }
+
     }
 
     //BE stats
@@ -14906,35 +14881,28 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateBEStatsView(){
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(bestats_view != null) {
-                    bestats_view.PreviewChanged();
-                }
-            }
-        });
+        if(bestats_view != null) {
+            bestats_view.PreviewChanged();
+        }
     }
 
     //RS stats
     private void updateRSStatsVisibility(final int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(rsstats_view != null) {
+        if(rsstats_view != null && (visibility != rsstats_view.getVisibility()
+        || visibility != mRsStatsLabel.getVisibility())) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
                     rsstats_view.setVisibility(visibility);
                     mRsStatsLabel.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
 
     private void updateRSStatsView(){
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(rsstats_view != null) {
-                    rsstats_view.PreviewChanged();
-                }
-            }
-        });
+        if(rsstats_view != null) {
+            rsstats_view.PreviewChanged();
+        }
     }
 
     private boolean applyPreferenceToPreview(int cameraId, String key, String value) {
@@ -17766,7 +17734,7 @@ class Camera2RGBGraphView extends View {
         }
     }
     public void PreviewChanged() {
-        invalidate();
+        postInvalidate();
     }
 
     public void setCaptureModuleObject(CaptureModule captureModule) {
@@ -17861,7 +17829,7 @@ class Camera2GraphView extends View {
         }
     }
     public void PreviewChanged() {
-        invalidate();
+        postInvalidate();
     }
 
     public void setCaptureModuleObject(CaptureModule captureModule) {
@@ -17920,7 +17888,7 @@ class Camera2BGBitMap extends View {
     }
 
     public void PreviewChanged() {
-        invalidate();
+        postInvalidate();
     }
 
     public void setCaptureModuleObject(CaptureModule captureModule) {
@@ -17984,7 +17952,7 @@ class Camera2BEBitMap extends View {
         }
     }
     public void PreviewChanged() {
-        invalidate();
+        postInvalidate();
     }
 
     public void setCaptureModuleObject(CaptureModule captureModule) {
@@ -18048,7 +18016,7 @@ class Camera2RSBitMap extends View {
         }
     }
     public void PreviewChanged() {
-        invalidate();
+        postInvalidate();
     }
 
     public void setCaptureModuleObject(CaptureModule captureModule) {
