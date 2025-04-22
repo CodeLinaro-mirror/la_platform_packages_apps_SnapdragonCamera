@@ -409,6 +409,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private int[] mExtendedHFRSize;//An array of pairs (fps, maxW, maxH)
     private int[] mSuperBufferSize;
     HashMap<Size, Long> mMinDurationMap = new HashMap<Size, Long>();
+    HashMap<Size, Long> mStallDurationMap = new HashMap<Size, Long>();
+
     private ArrayList<String> mPrepNameKeys;
     private Map<String, Set<String>> mQuadBayerIds = new HashMap<>();
     private boolean isPreferenceEnable = false;
@@ -977,6 +979,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         filterChromaflashPictureSizeOptions();
         filterHeifSizeOptions();
         mMinDurationMap = getMinDurationMap(cameraId);
+        mStallDurationMap = getStallDurationMap(cameraId);
         filterHFROptions();
         filterVideoEncoderProfileOptions();
         if (TRACE_DEBUG) Trace.endSection();
@@ -1156,23 +1159,51 @@ public class SettingsManager implements ListMenu.SettingsListener {
         key.add(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         for(Key<StreamConfigurationMap> keyName: key){
             StreamConfigurationMap config = mCharacteristics.get(cameraId).get(keyName);
-            if (config == null) {
-                return minDurationMap;
-            }
-            for (android.util.Size size : getAvailableSizesForFormat(cameraId, ImageFormat.JPEG, keyName)) {
-                long minFrameDuration = config.getOutputMinFrameDuration(ImageFormat.JPEG, size);
-                if (minFrameDuration != 0) {
-                    minDurationMap.put(new Size(size.getWidth(), size.getHeight()), minFrameDuration);
+            if (config != null) {
+                for (android.util.Size size : getAvailableSizesForFormat(cameraId, ImageFormat.JPEG, keyName)) {
+                    long minFrameDuration = config.getOutputMinFrameDuration(ImageFormat.JPEG, size);
+                    if (minFrameDuration != 0) {
+                        minDurationMap.put(new Size(size.getWidth(), size.getHeight()), minFrameDuration);
+                    }
                 }
             }
         }
         return minDurationMap;
     }
+
+    public HashMap<Size, Long> getStallDurationMap(int cameraId) {
+        HashMap<Size, Long> stallDurationMap = new HashMap<Size, Long>();
+        List<Key<StreamConfigurationMap>> key = new ArrayList<>();
+        key.add(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
+        key.add(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        for(Key<StreamConfigurationMap> keyName: key){
+            StreamConfigurationMap config = mCharacteristics.get(cameraId).get(keyName);
+            Log.d(TAG," keyName:" + keyName + ",config:" + config);
+            if (config != null) {
+                for (android.util.Size size : getAvailableSizesForFormat(cameraId, ImageFormat.HEIC, keyName)) {
+                    long stallDuration = config.getOutputStallDuration(ImageFormat.HEIC, size);
+                    Log.d(TAG," size:" + size + ",stallDuration:" + stallDuration);
+                    if (stallDuration != 0) {
+                        stallDurationMap.put(new Size(size.getWidth(), size.getHeight()), stallDuration);
+                    }
+                }
+            }
+        }
+        return stallDurationMap;
+    }
+
     public float getFps(Size pictureSize){
         float fps = 0f;
-        if(mMinDurationMap.size() > 0) {
-            Long duration = mMinDurationMap.get(pictureSize);
-            fps = (float)1000000000/duration;
+        if(getSavePictureFormat() == HEIF_FORMAT || getSavePictureFormat() == HEIC_TENBIT_FORMAT) {
+            if (mStallDurationMap.size() > 0) {
+                Long duration = mStallDurationMap.get(pictureSize);
+                fps = (float) 1000000000 / duration;
+            }
+        }else{
+            if (mMinDurationMap.size() > 0) {
+                Long duration = mMinDurationMap.get(pictureSize);
+                fps = (float) 1000000000 / duration;
+            }
         }
         return fps;
     }

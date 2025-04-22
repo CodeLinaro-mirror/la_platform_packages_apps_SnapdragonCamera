@@ -287,7 +287,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private static final int SCREEN_DELAY = 2 * 60 * 1000;
 
-    private static final int mShotNum = PersistUtil.getLongshotShotLimit();
+    private static int mShotNum = PersistUtil.getLongshotShotLimit();
     private boolean mLongshoting = false;
     private AtomicInteger mNumFramesArrived = new AtomicInteger(0);
     private AtomicInteger mNumImageArrived = new AtomicInteger(0);
@@ -5775,7 +5775,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             List<CaptureRequest> burstList = new ArrayList<>();
             float previewProportion = 0f;
             float fps = mSettingsManager.getFps(mPictureSize);
-            Log.i(TAG,"max fps:" + fps);
+            if(mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT || mSettingsManager.getSavePictureFormat() == SettingsManager.HEIC_TENBIT_FORMAT) {
+                mShotNum = (int)fps *2;
+            }
+            Log.i(TAG,"max fps:" + fps + ",mShotNum:" + mShotNum);
             if (fps > 0) {
                 previewProportion = 30f / fps - 1f;
             }
@@ -5798,6 +5801,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             Log.d(TAG, "burstShot, previewCount " + previewCount + ", captureCount " + captureCount);
             mCaptureSession[id].setRepeatingBurst(burstList, mLongshotCallBack, mCaptureCallbackHandler);
+            if(mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT || mSettingsManager.getSavePictureFormat() == SettingsManager.HEIC_TENBIT_FORMAT) {
+                mHandler.postDelayed(() -> {
+                    stopBurstShot();
+                }, 2000);
+            }
         } else {
             captureBuilder.setTag("capture-limit");
             mCaptureSession[id].capture(captureBuilder.build(),mLongshotCallBack,mCaptureCallbackHandler);
@@ -10413,7 +10421,7 @@ private boolean isDevOptionSetting(){
     }
 
     private void stopBurstShot() {
-        Log.d(TAG, "stopBurstShot");
+        Log.i(TAG, "stopBurstShot");
         try {
             int id = getMainCameraId();
             enableShutterAndVideoOnUiThread(id);
