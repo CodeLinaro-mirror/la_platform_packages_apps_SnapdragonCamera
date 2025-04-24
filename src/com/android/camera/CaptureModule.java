@@ -10170,6 +10170,10 @@ private boolean isDevOptionSetting(){
                 mStickyFaces = faces;
                 mStickyExFaces = extendedFaces;
             }
+            if(extendedFaces != null){
+                Log.d(FD_TAG,FD_LOG,"extendedFaces len="+extendedFaces.length+" faces.len="
+                        +faces.length);
+            }
 
             mUI.onFaceDetection(faces, extendedFaces);
         }
