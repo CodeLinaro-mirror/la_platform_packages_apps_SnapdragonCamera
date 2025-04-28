@@ -4425,6 +4425,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)
+                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION)
                         || type.equalsIgnoreCase("video/x-mvhevc")) {
                     capabilities = info.getCapabilitiesForType(type).getVideoCapabilities();
                     if (capabilities == null ||
@@ -4473,7 +4474,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 supported.add("apv");
             }
         }
-        supported.add("dolby");
         return supported;
     }
 
