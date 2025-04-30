@@ -2088,27 +2088,37 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
-    private void updateStatsNNView(CaptureResult result){
+    private void updateStatsNNView(CaptureResult result) {
         if (result != null) {
             try {
-                Byte statsNNWidth = result.get(stats_nn_result_width);
-                Byte statsNNHeight = result.get(stats_nn_result_height);
-                Byte statsNNMapdata = result.get(stats_nn_result_mapdata);
-                Byte statsNNNumroi = result.get(stats_nn_result_numroi);
+                Byte statsNNWidthObj = result.get(stats_nn_result_width);
+                Byte statsNNHeightObj = result.get(stats_nn_result_height);
+                Byte statsNNMapdataObj = result.get(stats_nn_result_mapdata);
+                Byte statsNNNumroiObj = result.get(stats_nn_result_numroi);
                 int[] statsNNRoiData = result.get(stats_nn_result_roidata);
-                Integer statsNNRoiWeight = result.get(stats_nn_result_roiweight);
-                Log.d(TAG,BIG_LOG,"statsNNWidth:" + statsNNWidth + ",statsNNHeight:" + statsNNHeight + ",statsNNMapdata:" + statsNNMapdata +
-                        ",statsNNNumroi:" + statsNNNumroi + ",statsNNRoiData:" + statsNNRoiData +",statsNNRoiWeight:" + statsNNRoiWeight);
-                if (statsNNWidth == null || statsNNHeight == null || statsNNMapdata == null)
-                    return;
+                Integer statsNNRoiWeightObj = result.get(stats_nn_result_roiweight);
+
+                byte statsNNWidth = (statsNNWidthObj != null) ? statsNNWidthObj : 0;
+                byte statsNNHeight = (statsNNHeightObj != null) ? statsNNHeightObj : 0;
+                byte statsNNMapdata = (statsNNMapdataObj != null) ? statsNNMapdataObj : 0;
+                byte statsNNNumroi = (statsNNNumroiObj != null) ? statsNNNumroiObj : 0;
+
+                int statsNNRoiWeight = (statsNNRoiWeightObj != null) ? statsNNRoiWeightObj : 0;
+                Log.d(TAG, BIG_LOG, "statsNNWidth:" + statsNNWidth + ",statsNNHeight:" + statsNNHeight + ",statsNNMapdata:" + statsNNMapdata +
+                        ",statsNNNumroi:" + statsNNNumroi + ",statsNNRoiData:" + statsNNRoiData + ",statsNNRoiWeight:" + statsNNRoiWeight);
+
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if(statsNNNumroi == 1 && statsNNRoiData != null && statsNNRoiWeight != null) {
+                        if (statsNNWidthObj == null || statsNNHeightObj == null || statsNNMapdataObj == null ||
+                        statsNNNumroiObj == null  || statsNNRoiData == null || statsNNRoiWeightObj == null || statsNNRoiData.length < 4) {
+                            return;
+                        }
+                        if (statsNNNumroi == 1) {
                             mUI.updateStatsNNVisibility(View.VISIBLE);
                             mStateNNFocusRenderer.setVisible(true);
                             mUI.updateStatsNNResultText(statsNNWidth, statsNNHeight, statsNNMapdata, statsNNNumroi, statsNNRoiData, statsNNRoiWeight);
-                        }else{
+                        } else {
                             mUI.updateStatsNNVisibility(View.INVISIBLE);
                             mStateNNFocusRenderer.setVisible(false);
                         }
@@ -2122,8 +2132,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     updateStatsNNTracking();
                     mStateNNFocusRenderer.updateTrackerRect(statsNNRoiData);
                 }
-            } catch (IllegalArgumentException|NullPointerException e) {
-                Log.w(TAG,EXCEPTION_LOG,e.toString());
+            } catch (IllegalArgumentException | NullPointerException e) {
+                Log.w(TAG, EXCEPTION_LOG, e.toString());
             }
         }
     }
