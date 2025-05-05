@@ -1050,9 +1050,6 @@ public class TestBase{
                     checkPreview("0",mode);
                     intenton = intenton && testResult;
                 }
-/*                if(!testResult) {
-                    return;
-                }*/
                 if(isPerformenceTest){
                     HashMap<String,Long> snapShotWithFlashOn = getHashMapValue(mCaptureModule.getHashMapTimes());
                     performenceValues.put("snapFlashOn",snapShotWithFlashOn);
@@ -1083,7 +1080,6 @@ public class TestBase{
                     checkPreview("0",mode);
                     intentoff = intentoff && testResult;
                 }
-                /*   if(!testResult)return;*/
                 if(isPerformenceTest){
                     HashMap<String,Long> snapShotWithFlashOff = getHashMapValue(mCaptureModule.getHashMapTimes());
                     performenceValues.put("snapFlashOff",snapShotWithFlashOff);
@@ -1186,57 +1182,10 @@ public class TestBase{
     public void testVideoSizeAndFrameRate(String cameraid,CaptureModule.CameraMode mode)throws Exception {
         updateJson(5,null);
         checkSettingValue(SettingsManager.KEY_VIDEO_QUALITY,SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE,mode,false);
-      /*  int length = mActivity.mSettingsManager.getEntryValues(SettingsManager.KEY_VIDEO_QUALITY).length;
-        int defvalue = mActivity.mSettingsManager.getValueIndex(SettingsManager.KEY_VIDEO_QUALITY);
-        Map<Integer, CharSequence[]> frameRateList = new HashMap<Integer, CharSequence[]>();
-        executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
-        Thread.sleep(SMALL_WAIT_DURATION);
-        mActivity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < length; i++) {
-                    mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_QUALITY, i);
-                    int length2 = mActivity.mSettingsManager.getEntryValues(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).length;
-                    CharSequence[]framerate = mActivity.mSettingsManager.getEntryValues(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-                    String videosize = mActivity.mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
-                    frameRateList.put(i,framerate);
-                }
-
-            }
-        });
-        Thread.sleep(SMALL_WAIT_DURATION);
-        executeShellCommand("input keyevent " + KeyEvent.KEYCODE_BACK);
-        Thread.sleep(OPEN_CAMERA_DURATION);
-        checkPreview(cameraid,mode);
-        checkfps = true;
-        boolean checkresult = true;
-        for(int j = 0;j<length;j++){
-            mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_QUALITY, j);
-            int framelen = frameRateList.get(j).length;
-            for(int k = 0;k <framelen;k++){
-                mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, k);
-                testSettingIcon(cameraid, mode);
-                if(testResult) {
-                    testRecording(mode,false);
-                    if(!testResult){
-                        checkresult = false;
-                        break;
-                    }
-                }else{
-                    checkresult = false;
-                    break;
-                }
-
-            }
-        }
-        mActivity.mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_QUALITY, defvalue);
-        testSettingIcon(cameraid, mode);
-        checkfps = false;*/
         if(testResult) updateJson(5,testPass);
         else{
             updateJson(5,testFail);
         }
-        //if(testResult) updateJson(5,testPass);
     }
 
 
@@ -1371,7 +1320,6 @@ public class TestBase{
 
                     clickShutterButton(mode);
                     checkZoomValue(mode,selectZoom,true);;
-                    if (!testResult) break;
                     if(isOpenFromIntent) {
                         pressDone();
                         if (isVideoMode(mode)) {
@@ -1421,7 +1369,6 @@ public class TestBase{
                         break;
                     }
                 }
-                if (!testResult) break;
                 if (isOpenFromIntent) {
                     pressDone();
                     if (isVideoMode(mode)) {
@@ -1525,7 +1472,6 @@ public class TestBase{
             mProMode.setIndex(i,true);
             snapByLocation();
             checkEV(mode,String.valueOf(evvalue[i]),null);
-            if(!testResult)break;
         }
         mProMode.setIndex(defidx,true);
         if(testResult)updateJson(5,testPass);
@@ -1547,7 +1493,6 @@ public class TestBase{
             }else {
                 checkWB(false,value);
             }
-            if(!testResult) break;
         }
         mProMode.setIndex(defidx,true);
         if(testResult)updateJson(5,testPass);
@@ -1571,9 +1516,6 @@ public class TestBase{
             }else{
                 checkISO(false,value);
             }
-            if(!testResult) {
-                break;
-            }
         }
         mProMode.setIndex(defidx,true);
         if(testResult) updateJson(5,testPass);
@@ -1591,7 +1533,6 @@ public class TestBase{
             mProMode.setSlider(setvalue,true);
             snapByLocation();
             checkFocusDistance(setvalue);
-            if(!testResult) break;
         }
         if(testResult)updateJson(5,testPass);
         else {
@@ -1608,7 +1549,6 @@ public class TestBase{
             mProMode.setSlider(setvalue,true);
             snapByLocation();
             checkShutterSpeed(setvalue);
-            if(!testResult) break;
         }
         if(testResult) updateJson(5,testPass);
         else{
@@ -1698,7 +1638,6 @@ public class TestBase{
         pressFocusDistext();
         mProMode.setSlider(1,true);
         snapByLocation();
-        if(!testResult) return;
         checkEV(CaptureModule.CameraMode.PRO_MODE,"0",null);
         checkWB(false,String.valueOf(wbvalue[wbvalue.length - 1]));
         checkISO(false,String.valueOf(isovalue[isovalue.length -1]));
@@ -1872,9 +1811,6 @@ public class TestBase{
         if(snapShotInVideo(mode)) {
             snapByLocation(mode);
         }
-/*        if(!testResult){
-            return;
-        }*/
         executeShellCommand("input tap "+ mVideoLoc[0] +" "+mVideoLoc[1]);
         long endtime = System.currentTimeMillis();
         Thread.sleep(SAVE_VIDEO_DURATION);

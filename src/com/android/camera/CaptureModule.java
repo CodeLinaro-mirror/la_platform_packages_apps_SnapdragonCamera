@@ -537,8 +537,6 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public static final CaptureRequest.Key<Integer> enableFRC =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableFRC", Integer.class);
-    public static final CameraCharacteristics.Key<byte[]> nspFRCRatio =
-            new CameraCharacteristics.Key<>("org.quic.camera.nspfrcinfo.SupportedFrcRatio", byte[].class);
 
     public static final CameraCharacteristics.Key<int[]> superBufferTable =
             new CameraCharacteristics.Key<>("org.quic.camera2.customhfrfps.info.CustomHFRConfigurations", int[].class);
@@ -864,6 +862,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static final CaptureResult.Key<Byte> focusAssistEnable =
             new CaptureResult.Key<>("org.quic.camera.touchFocusAssist.touchFocusAssist", byte.class);
 
+    public static final int CONTROL_AE_PRIORITY_MODE_SENSOR_EXPOSURE_TIME_PRIORITY = 2;
+    public static final int CONTROL_AE_PRIORITY_MODE_SENSOR_SENSITIVITY_PRIORITY = 1;
+    public static final int CONTROL_AE_PRIORITY_MODE_OFF = 0;
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_VENDOR_START = 0x10000;
     private static final long SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV = 0x10001;
     private static final int TIMESTAMP_BASE_SENSOR = OutputConfiguration.TIMESTAMP_BASE_SENSOR;
@@ -4492,7 +4493,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public void setAFModeToPreview(int id, int afMode) {
-        if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id])) {
+        if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id]) || !mCameraModeSwitcherAllowed) {
+            Log.i(TAG,"return , mCaptureSession[id]="+mCaptureSession[id]+",mPreviewRequestBuilder[id]"+
+                    mPreviewRequestBuilder[id]+",mCameraModeSwitcherAllowed="+mCameraModeSwitcherAllowed);
             return;
         }
         mPreviewRequestBuilder[id].set(CaptureRequest.CONTROL_AF_MODE, afMode);
@@ -7919,7 +7922,6 @@ private boolean isDevOptionSetting(){
             if(mCurrentSceneMode.mode == CameraMode.HFR){
                 applyBufferMode(builder);
             }else if(mCurrentSceneMode.mode == CameraMode.VIDEO){
-                applyFRC(builder);
                 applySpatialVideo(builder);
             }
         }
@@ -12576,32 +12578,8 @@ private boolean isDevOptionSetting(){
          if (TRACE_DEBUG) Trace.endSection();
     }
 
-    private void stopRecordingVideo(int cameraId) {
-        Log.i(TAG, "stopRecordingVideo " + cameraId);
-        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,stopRecordingVideo");
-        mStopRecordingTime = System.currentTimeMillis();
-        if (isSSMEnabled()) {
-            updateProgressBar(false);
-            if (!mSSMCaptureCompleteFlag) {
-                warningToast("Super Slow Motion is not finished");
-            }
-        }
-        if (mVideoEncoder != null) {
-            mVideoEncoder.signalEndOfInputStream();
-        }
-        mUI.setSoundEffectsForRecording(true);
-        checkAndPlayRecordSound(cameraId, false);
-        mStopRecPending = true;
-        mRecordingPausing = false;
-        mIsRecordingVideo = false;
-        mRecordingStoped = false;
-
-        if (PersistUtil.enableMediaRecorder()) {
-            mIsPreviewingVideo = true;
-        } else {
-            mIsPreviewingVideo = false;
-        }
-        mRecordingStarted = false;
+    private boolean stopMediaReleated(){
+        Log.i(TAG,"stopMediaReleated");
         boolean shouldAddToMediaStoreNow = false;
         long stopMediaRecorder = System.currentTimeMillis();
         if(mActivity.getPerformenceTest()){
@@ -12662,6 +12640,41 @@ private boolean isDevOptionSetting(){
             mHasMapTimes.put("stopRecorder->endStop", stopMediaRecorder);
         }
         mRecordingStoped = true;
+        if (TRACE_DEBUG) Trace.endSection();
+        return shouldAddToMediaStoreNow;
+    }
+    private void stopRecordingVideo(int cameraId) {
+        Log.i(TAG, "stopRecordingVideo " + cameraId);
+        if (TRACE_DEBUG) Trace.beginSection("SnapCamera,stopRecordingVideo");
+        mStopRecordingTime = System.currentTimeMillis();
+        if (isSSMEnabled()) {
+            updateProgressBar(false);
+            if (!mSSMCaptureCompleteFlag) {
+                warningToast("Super Slow Motion is not finished");
+            }
+        }
+        if (mVideoEncoder != null) {
+            mVideoEncoder.signalEndOfInputStream();
+        }
+        mUI.setSoundEffectsForRecording(true);
+        checkAndPlayRecordSound(cameraId, false);
+        mStopRecPending = true;
+        mRecordingPausing = false;
+        mIsRecordingVideo = false;
+        mRecordingStoped = false;
+
+        if (PersistUtil.enableMediaRecorder()) {
+            mIsPreviewingVideo = true;
+        } else {
+            mIsPreviewingVideo = false;
+        }
+        mRecordingStarted = false;
+        boolean shouldAddToMediaStoreNow = false;
+        String value = mSettingsManager.getValue(SettingsManager.KEY_FRC_MODE);
+        if(value != null && Integer.valueOf(value) == 0){
+            shouldAddToMediaStoreNow = stopMediaReleated();
+        }
+
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
         if (PersistUtil.needEndOfStream() && !profile.equals("HEVCProfileMain10HDR10Plus")) {
             setEndOfStream(false, true);
@@ -12695,6 +12708,7 @@ private boolean isDevOptionSetting(){
                                 mCameraHandler);
 
                     } else {
+                        Log.i(TAG,"setRepeatingRequest");
                         mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
                                 mCaptureCallback, mCameraHandler);
                     }
@@ -12702,6 +12716,10 @@ private boolean isDevOptionSetting(){
                     Log.w(TAG, "stopRecordingVideo: " + e);
                 }
             }
+        }
+
+        if(value != null && Integer.valueOf(value) != 0){
+            shouldAddToMediaStoreNow = stopMediaReleated();
         }
 
         if (!mPaused) {
@@ -12722,7 +12740,6 @@ private boolean isDevOptionSetting(){
             saveVideo();
         }
         keepScreenOnAwhile();
-        if (TRACE_DEBUG) Trace.endSection();
         if (TRACE_DEBUG) Trace.beginSection("SnapCamera,media recorder release");
         // release media recorder
         if (PersistUtil.enableMediaRecorder()) {
@@ -13448,7 +13465,7 @@ private boolean isDevOptionSetting(){
         applyVideoSettings();
         if (PersistUtil.lookaheadEnabled()) {
             Log.i(TAG + "_videoformat", "set lookahead enable.");
-            mVideoFormat.setInteger("vendor.qti-ext-enc-lookahead.enable", 1);
+            mVideoFormat.setInteger("vendor.qti-ext-encoding-mode.value", 4);
         }
         mVideoEncoder = MediaCodec.createEncoderByType(encoder);
         if (PersistUtil.isProSightEnabled()) {
@@ -14608,19 +14625,6 @@ private boolean isDevOptionSetting(){
             Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
         }
     }
-    private void applyFRC(CaptureRequest.Builder request){
-        try {
-            String value = mSettingsManager.getValue(SettingsManager.KEY_FRC_MODE);
-            int setvalue = 0;
-            if(value != null){
-                setvalue = Integer.valueOf(value);
-            }
-            request.set(CaptureModule.enableFRC,setvalue );
-        }catch (IllegalArgumentException e){
-            Log.w(TAG,EXCEPTION_LOG,"exception e="+e);
-        }
-    }
-
     private void applySharpnessControlModes(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SHARPNESS_CONTROL_MODE);
         if (value != null) {
@@ -15580,78 +15584,51 @@ private boolean isDevOptionSetting(){
                 }
         }
         Log.d(TAG,"applyIsoAndExposureTime-iso="+isovalue+",exposuretime="+exposuretime+",isLongExpTmCaptrure()="+isLongExpTmCaptrure()
-        +",previewExpTime="+previewExpTime+",mLongExpTime="+mLongExpTime);
-        if (!promode || (isovalue.equals("auto") && exposuretime.equals("auto"))) {
-            VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
-            VendorTagUtil.setIsoExpPriority(request, 0L);
-            if (request.get(CaptureRequest.SENSOR_EXPOSURE_TIME) == null) {
-                request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, mIsoExposureTime);
-            }
-            if (request.get(CaptureRequest.SENSOR_SENSITIVITY) == null) {
-                request.set(CaptureRequest.SENSOR_SENSITIVITY, mIsoSensitivity);
-            }
-        } else if (promode && exposuretime.equals("auto") && !isovalue.equals("auto")) {
-            long longValue = SettingsManager.KEY_ISO_INDEX.get(isovalue);
-            int intValue = CameraUtil.strToInt(isovalue,500);
-            setIsoValue(request, intValue, longValue, false);
+        +",previewExpTime="+previewExpTime+",mLongExpTime="+mLongExpTime+",promode="+promode);
+        if (promode && exposuretime.equals("auto") && !isovalue.equals("auto")) {
+            setIsoValue(request, isovalue);
         } else if (promode && !exposuretime.equals("auto") && isovalue.equals("auto")) {
-            VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
-            VendorTagUtil.setIsoExpPriority(request, previewExpTime);
-            request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
+           setExposureTime(request,String.valueOf(previewExpTime));
             if(!mSettingsManager.isFlashSupported(getMainCameraId())){
                 request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             }
         } else if (promode && !exposuretime.equals("auto") && !isovalue.equals("auto")) {
-            int isoValue = Integer.parseInt(isovalue);
-            setIsoAndExposureTime(request, isoValue, previewExpTime);
+            setIsoAndExposureTime(request, isovalue, String.valueOf(previewExpTime));
+        }else {
+            request.set(CaptureRequest.CONTROL_AE_PRIORITY_MODE, CONTROL_AE_PRIORITY_MODE_OFF);
         }
     }
 
     private boolean setExposureTime(CaptureRequest.Builder request, String exposuretime) {
-        long newExpTime = -1;
-        try {
-            newExpTime = Long.parseLong(exposuretime);
-            VendorTagUtil.setIsoExpPrioritySelectPriority(request, 1);
-            VendorTagUtil.setIsoExpPriority(request, newExpTime);
-            request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
-            if(!mSettingsManager.isFlashSupported(getMainCameraId())) {
-                request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-            }
-        } catch (NumberFormatException e) {
-            Log.w(TAG, " Input expTime " + exposuretime + " is invalid");
-            return false;
+        long[] expTimeRange = mSettingsManager.getExposureRangeValues(getMainCameraId());
+        long value = CameraUtil.strToLong(exposuretime,expTimeRange[0]);
+        request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, value);
+        request.set(CaptureRequest.CONTROL_AE_PRIORITY_MODE, CONTROL_AE_PRIORITY_MODE_SENSOR_EXPOSURE_TIME_PRIORITY);
+        if (!mSettingsManager.isFlashSupported(getMainCameraId())) {
+            request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         }
         return true;
     }
 
-    private void setIsoValue(CaptureRequest.Builder request, int isoValue, long longValue, boolean isManual) {
-        VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
-        VendorTagUtil.setIsoExpPriority(request, longValue);
-        VendorTagUtil.setUseIsoValues(request, isoValue);
-        if (request.get(CaptureRequest.SENSOR_EXPOSURE_TIME) != null) {
-            mIsoExposureTime = request.get(CaptureRequest.SENSOR_EXPOSURE_TIME);
-        }
-        if (request.get(CaptureRequest.SENSOR_SENSITIVITY) != null) {
-            mIsoSensitivity = request.get(CaptureRequest.SENSOR_SENSITIVITY);
-        }
-        request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, null);
-        request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
+    private void setIsoValue(CaptureRequest.Builder request, String isoValue) {
+        int value = CameraUtil.strToInt(isoValue,100);
+        request.set(CaptureRequest.SENSOR_SENSITIVITY, value);
+        request.set(CaptureRequest.CONTROL_AE_PRIORITY_MODE, CONTROL_AE_PRIORITY_MODE_SENSOR_SENSITIVITY_PRIORITY);
         if(!mSettingsManager.isFlashSupported(getMainCameraId())) {
             request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         }
-
     }
 
-    private void setIsoAndExposureTime(CaptureRequest.Builder request, int isoValue, long exposureTime) {
+    private void setIsoAndExposureTime(CaptureRequest.Builder request, String isoValue, String exposureTime) {
+        int iso = CameraUtil.strToInt(isoValue,100);
+        long[] expTimeRange = mSettingsManager.getExposureRangeValues(getMainCameraId());
+        long exptime = CameraUtil.strToLong(exposureTime,expTimeRange[0]);
         request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
         if(!mSettingsManager.isOpenManualFlash()) {
             request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
-        request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime);
-        request.set(CaptureRequest.SENSOR_SENSITIVITY, isoValue);
-
-        VendorTagUtil.setIsoExpPrioritySelectPriority(request, 0);
-        VendorTagUtil.setIsoExpPriority(request, 0L);
+        request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exptime);
+        request.set(CaptureRequest.SENSOR_SENSITIVITY, iso);
     }
     private boolean applyManualIsoExposure(CaptureRequest.Builder request) {
         boolean result = false;
@@ -15670,41 +15647,17 @@ private boolean isDevOptionSetting(){
         isManualAEC = false;
         if (manualExposureMode == null) return result;
         if (manualExposureMode.equals(isoPriority)) {
-            int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
-                    "-1"));
-            if(isoValue != -1) {
-                long longValue = SettingsManager.KEY_ISO_INDEX.get(
-                        SettingsManager.MAUNAL_ABSOLUTE_ISO_VALUE);
-                setIsoValue(request, isoValue, longValue, true);
-                result = true;
-            }
+            String isoValue =pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,"100");
+            setIsoValue(request, isoValue);
+            result = true;
         } else if (manualExposureMode.equals(expTimePriority)) {
             String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "auto");
             result = setExposureTime(request, expTime);
         } else if (manualExposureMode.equals(userSetting)) {
-            int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
-                    "-1"));
-            long newExpTime = 0l;
+            String isoValue =pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,"100");
             String expTime = pref.getString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, "auto");
-            try {
-                newExpTime = Long.parseLong(expTime);
-            } catch (NumberFormatException e) {
-                Log.w(TAG, "Input expTime " + expTime + " is invalid");
-            }
-            Log.v(TAG,  "manual ISO value : " + isoValue + ", Exposure value :" + newExpTime);
-            if(isoValue == -1 && newExpTime > 0){
-                setExposureTime(request,expTime);
-            }else if(newExpTime <=0 && isoValue >-1){
-                long longValue = SettingsManager.KEY_ISO_INDEX.get(
-                        SettingsManager.MAUNAL_ABSOLUTE_ISO_VALUE);
-                setIsoValue(request, isoValue, longValue, true);
-            }else if(newExpTime > 0 && isoValue >-1){
-                setIsoAndExposureTime(request, isoValue, newExpTime);
-                isManualAEC = true;
-            }else{
-                result = false;
-                return  result;
-            }
+            setIsoAndExposureTime(request, isoValue, expTime);
+            isManualAEC = true;
             result = true;
         } else if (manualExposureMode.equals(gainsPriority)) {
             float gains = pref.getFloat(SettingsManager.KEY_MANUAL_GAINS_VALUE, 0f);
@@ -15732,6 +15685,8 @@ private boolean isDevOptionSetting(){
             request.set(CaptureRequest.SENSOR_EXPOSURE_TIME, null);
             request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
             result = true;
+        }else if ("off".equals(manualExposureMode)){
+            request.set(CaptureRequest.CONTROL_AE_PRIORITY_MODE, CONTROL_AE_PRIORITY_MODE_OFF);
         }
         return result;
     }
