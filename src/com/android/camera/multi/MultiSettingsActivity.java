@@ -705,7 +705,9 @@ public class MultiSettingsActivity extends PreferenceActivity {
         try {
             String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
             int index = versionName.indexOf(' ');
-            versionName = versionName.substring(0, index);
+            if(index >= 0) {
+                versionName = versionName.substring(0, index);
+            }
             findPreference(KEY_VERSION_INFO).setSummary(versionName);
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
