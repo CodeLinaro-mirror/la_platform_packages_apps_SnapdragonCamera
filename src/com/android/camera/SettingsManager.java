@@ -125,6 +125,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final int SCENE_MODE_AUTO_INT = 0;
     public static final int SCENE_MODE_NIGHT_INT = 5;
     public static final int SCENE_MODE_HDR_INT = 18;
+    public static final String KEY_VIULL_ORIGINAL_VALUE = "pref_viull_original_value";
     private static final int EXCEPTION_LOG = PersistUtil.CAMERA2_DEBUG_EXCEPTION;
     private static final int BIG_LOG = PersistUtil.CAMERA2_DEBUG_BIGLOG;
     // Custom-Scenemodes start from 100
