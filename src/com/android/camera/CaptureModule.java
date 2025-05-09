@@ -11633,6 +11633,9 @@ private boolean isDevOptionSetting(){
         checkAndPlayRecordSound(cameraId, true);
 
         try {
+            if (mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
+                mUI.clearFocus();
+            }
             mUI.hideUIwhileRecording();
             Set<String> physicalRecorderId = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_CAMCORDER);
@@ -11727,6 +11730,9 @@ private boolean isDevOptionSetting(){
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
+                    if (mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
+                        mUI.clearFocus();
+                    }
                     mUI.resetPauseButton();
                     mRecordingTotalTime = 0L;
                     mRecordingStartTime = SystemClock.uptimeMillis();
