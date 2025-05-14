@@ -208,7 +208,9 @@ public class OneUICameraControls extends RotatableLayout {
         mWidth = size.x;
         mSettingsManager.registerListener(mListener);
     }
-
+    public void unRegisterListener(){
+        mSettingsManager.unregisterListener(mListener);
+    }
     public OneUICameraControls(Context context) {
         this(context, null);
     }

@@ -9159,6 +9159,7 @@ private boolean isDevOptionSetting(){
         }
         mSettingsManager.unregisterListener(this);
         mSettingsManager.unregisterListener(mUI);
+        mUI.getmCameraControls().unRegisterListener();
         mActivity.unregisterReceiver(mBTConnectReceiver);
         mSettingsManager.destroyCaptureModule();
         if (mCameraRender != null) {
