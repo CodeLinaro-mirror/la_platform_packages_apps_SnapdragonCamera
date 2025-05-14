@@ -5216,6 +5216,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public int getVideoPreviewFPS() {
+        if(PersistUtil.getPreviewFps() != 0){
+            return PersistUtil.getPreviewFps();
+        }
         if (PersistUtil.getModelInfo().contains("6735") ||
                 PersistUtil.getModelInfo().contains("4450")) {
             return 30;
