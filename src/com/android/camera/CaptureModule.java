@@ -9231,8 +9231,14 @@ private boolean isDevOptionSetting(){
             case KeyEvent.KEYCODE_VOLUME_UP:
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 if (mFirstTimeInitialized
-                        && !CameraUtil.volumeKeyShutterDisable(mActivity)) {
-                    onShutterButtonClick();
+                        && !CameraUtil.volumeKeyShutterDisable(mActivity) && event.getRepeatCount() == 0) {
+                    if(getCurrenCameraMode() != CameraMode.VIDEO &&
+                            getCurrenCameraMode() != CameraMode.HFR &&
+                            getCurrenCameraMode() != CameraMode.CINEMATIC){
+                        onShutterButtonClick();
+                    } else {
+                        onVideoButtonClick();
+                    }
                     return true;
                 }
                 return false;
