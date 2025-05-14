@@ -8172,17 +8172,48 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void limitPreviewFPS() {
         try {
             List<CaptureRequest> burstList = new ArrayList<>();
+            int fps = mSettingsManager.getVideoPreviewFPS(mVideoSize,
+                    mSettingsManager.getVideoFPS());
+            Log.d(TAG,"limit preview fps:" + PersistUtil.getPreviewFps() + ",fps" + fps + ",mHighSpeedCaptureRate:" + mHighSpeedCaptureRate);
             if(mIsRecordingVideo) {
-                burstList.add(mVideoRecordRequestBuilder.build());
-                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
-                burstList.add(mVideoRecordRequestBuilder.build());
+                if((fps == 30 && mHighSpeedCaptureRate == 60) || (fps == 15 && mHighSpeedCaptureRate == 0)) {
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                }else if(fps == 15 && mHighSpeedCaptureRate == 60){
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                }else if(fps == 45){
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                }
                 mCurrentSession.setRepeatingBurst(burstList, mCaptureCallback, mCameraHandler);
                 mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
             }else{
                 mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].addTarget(mVideoRecordingSurface);
-                burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
-                mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoPreviewSurface);
-                burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                if((fps == 30 && mHighSpeedCaptureRate == 60) || (fps == 15 && mHighSpeedCaptureRate == 0)) {
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoPreviewSurface);
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                }else if(fps == 15 && mHighSpeedCaptureRate == 60){
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoPreviewSurface);
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                }else if(fps == 45){
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoPreviewSurface);
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                }
                 mCurrentSession.setRepeatingBurst(burstList, mCaptureCallback, mCameraHandler);
                 mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoRecordingSurface);
                 mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].addTarget(mVideoPreviewSurface);
@@ -8232,7 +8263,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
 
-                    if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                         if (PersistUtil.enableMediaRecorder())  {
                             mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                         }
@@ -8475,7 +8506,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                     mSettingsManager.getVideoFPS());
-            if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+            if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                 limitPreviewFPS();
             } else {
                 if (isHighSpeedRateCapture()) {
@@ -9159,7 +9190,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mMediaRecorder.pause();
                 int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
-                if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                     limitPreviewFPS();
                 }
             } else {
@@ -11569,7 +11600,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                         mSettingsManager.getVideoFPS());
-                    if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                         if (mUI.getZoomFixedSupport()) {
                            applyZoomRatio(mVideoRecordRequestBuilder, mZoomValue, id);
                         } else {

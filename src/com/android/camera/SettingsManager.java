@@ -3530,6 +3530,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public int getVideoPreviewFPS(Size videoSize,int fps) {
+        if(PersistUtil.getPreviewFps() != 0){
+            return PersistUtil.getPreviewFps();
+        }
         int previewFPS = 60;
         SettingsManager.VideoEisConfig config =
                 getVideoEisConfig(videoSize,fps);
