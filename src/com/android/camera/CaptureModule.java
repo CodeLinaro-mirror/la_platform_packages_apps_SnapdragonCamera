@@ -4519,8 +4519,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                 List requestList =getHighSpeedList(session,mVideoRecordRequestBuilder);
                 session.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
             } else {
-                mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
+                if (!PersistUtil.enableMediaRecorder() && mIsRecordingVideo) {
+                    //Add video buffer for media codec recording to avoid only preview buffer
+                    //will cause hang in EIS. 
+                    mPreviewRequestBuilder[id].addTarget(mVideoRecordingSurface);
+                    mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                         .build(), mCaptureCallback, mCameraHandler);
+                    mPreviewRequestBuilder[id].removeTarget(mVideoRecordingSurface);
+                } else {
+                    mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
+                        .build(), mCaptureCallback, mCameraHandler);
+                }
             }
         } catch (CameraAccessException | IllegalStateException e) {
             Log.w(TAG,e);
@@ -5238,9 +5247,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             setTag(builder, "" + id + "-" + getCurrenCameraMode().name());
             if ((mCurrentSceneMode.mode == CameraMode.VIDEO ||
                     mCurrentSceneMode.mode == CameraMode.HFR ||
-                    mCurrentSceneMode.mode == CameraMode.CINEMATIC) && !mIsRecordingVideo) {
+                    mCurrentSceneMode.mode == CameraMode.CINEMATIC)) {
                 Surface surface = getPreviewSurfaceForSession(id);
                 builder.addTarget(surface);
+                if (mIsRecordingVideo) {
+                     builder.addTarget(mVideoRecordingSurface);
+                }
             } else {
                 addPreviewSurface(builder, null, id);
             }
