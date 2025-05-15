@@ -1,7 +1,13 @@
 ifneq ($(strip $(SOONG_CONFIG_qticamera_apk)),true)
     LOCAL_PATH := $(call my-dir)
-    include $(CLEAR_VARS)
     LOCAL_MODULE_TAGS := optional
+    include $(CLEAR_VARS)
+    include $(LOCAL_PATH)/version.mk
+    LOCAL_AAPT_FLAGS := \
+             --auto-add-overlay \
+             --version-name "$(version_name_package)" \
+             --version-code $(version_code_package) \
+
     LOCAL_JAVA_LIBRARIES := android.test.runner android.test.base
     LOCAL_STATIC_JAVA_LIBRARIES := \
         junit android-support-test \

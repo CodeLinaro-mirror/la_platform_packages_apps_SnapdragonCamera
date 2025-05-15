@@ -3147,7 +3147,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mFilterLayout.setLayoutParams(params);
             ((ViewGroup) mRootView).addView(mFilterLayout);
             mFilterLayout.setY(display.getHeight() - 2 * size);
-            if(mActivity.getAutoTest()) {
+            if(PersistUtil.isAutoTestRun()) {
                 mFilterHight = display.getHeight() - 2 * size;
             }
         }
@@ -3192,7 +3192,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             TextView label = (TextView) filterBox.findViewById(R.id.label);
 
             imageView.setImageResource(thumbnails[i]);
-            if(mActivity.getAutoTest() && i ==0 ){
+            if(PersistUtil.isAutoTestRun() && i ==0 ){
                 mFilterWidth = imageView.getMeasuredWidth();
             }
 
@@ -4838,8 +4838,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mModule.onButtonContinue();
     }
     private boolean isShowHelp(){
-        if(PersistUtil.isPerfTestRunning() || PersistUtil.isFuncTestRunning() ||
-                PersistUtil.isStressTestRunning() || PersistUtil.isKeyTestRunning()){
+        if(PersistUtil.isAutoTestRun()){
             return false;
         }
         return true;

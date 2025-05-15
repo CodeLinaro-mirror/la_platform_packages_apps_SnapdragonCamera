@@ -6429,20 +6429,20 @@ public class CaptureModule implements CameraModule, PhotoController,
             int setsucess = setInfoForDng(mRawMeta);
             Log.d(TAG, "saveRawImg- mRawMeta=" + mRawMeta + ",setsucess=" + setsucess);
             if (setsucess == 0) {
-                if(mActivity.getAutoTest()) {
+                if(PersistUtil.isFuncTestRunning()) {
                     mImgType.add("dng");
                 }
                 mActivity.getMediaSaveService().addDng(image, imglen, title, date, null, imageWidth, imageHeight, orientation, null,
                         mOnMediaSavedListener, mContentResolver, "dng");
             } else {
-                if(mActivity.getAutoTest()) {
+                if(PersistUtil.isFuncTestRunning()) {
                     mImgType.add("raw");
                 }
                 mActivity.getMediaSaveService().addRawImage(bytes, title, "raw");
                 image.close();
             }
         } else {
-            if(mActivity.getAutoTest()) {
+            if(PersistUtil.isFuncTestRunning()) {
                 mImgType.add("raw");
             }
             mActivity.getMediaSaveService().addRawImage(bytes, title, "raw");
@@ -6608,7 +6608,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             ",mNumImageArrived.get()="+mNumImageArrived.get()+
                                             ",imageWidth="+imageWidth+",imageHeight="+imageHeight+",imageFormat="+imageFormat
                                             +",mImagExif="+exif+",mImgType="+mImgType);
-                                    if(mActivity.getAutoTest() && mImagExif != null && mLongImgTitle!= null) {
+                                    if(PersistUtil.isFuncTestRunning() && mImagExif != null && mLongImgTitle!= null) {
                                         mImagExif.add(exif);
                                         mLongImgTitle.add(title);
                                     }
@@ -6640,7 +6640,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         byte[] yuv = getYUV10BitFromImage(image);
                                         Log.d(TAG,"YUV10bit received from camera format =" +
                                                 image.getFormat() + ", title :" + title + ".yuv");
-                                        if(mActivity.getAutoTest()) {
+                                        if(PersistUtil.isFuncTestRunning()) {
                                             mImgType.add("yuv");
                                         }
                                         mActivity.getMediaSaveService().addRawImage(yuv,
@@ -6663,7 +6663,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             if (image.getFormat() == ImageFormat.HEIC) {
                                                 pictureFormat = "heic";
                                             }
-                                            if(mActivity.getAutoTest()) {
+                                            if(PersistUtil.isFuncTestRunning()) {
                                                 mImgType.add(pictureFormat);
                                             }
 
@@ -7094,7 +7094,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 NamedEntity name = mNamedImages.getNextNameEntity();
                 String title = (name == null) ? null : name.title;
                 title = title + "_phy_" + id;
-                if(mActivity.getAutoTest() && mImagExif != null && mLongImgTitle!= null){
+                if(PersistUtil.isFuncTestRunning() && mImagExif != null && mLongImgTitle!= null){
                     ExifInterface exif = null;
                     try {
                         exif = new ExifInterface(new ByteArrayInputStream(raw));
@@ -7200,7 +7200,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     orientation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
                 }
-                if(mActivity.getAutoTest() && mImagExif != null && mLongImgTitle!= null){
+                if(PersistUtil.isFuncTestRunning() && mImagExif != null && mLongImgTitle!= null){
                     mImagExif.add(exif);
                     mLongImgTitle.add(title);
                     mImgType.add("jpeg");
@@ -7402,7 +7402,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         }
 
                         String saveFormat = image.getFormat() == ImageFormat.HEIC? "heic" : "jpeg";
-                        if(mActivity.getAutoTest() && mImagExif != null && mLongImgTitle!= null) {;
+                        if(PersistUtil.isFuncTestRunning() && mImagExif != null && mLongImgTitle!= null) {;
                             mLongImgTitle.add(title);
                             mImgType.add(saveFormat);
                             mImagExif.add(exif);

@@ -534,7 +534,9 @@ public class PersistUtil {
         return getBoolean("persist.sys.camera.perf.test.run", false);}
     public static boolean isKeyTestRunning() {
         return getBoolean("persist.sys.camera.key.test.run", false);}
-
+    public static boolean isAutoTestRun(){
+        return  isFuncTestRunning() || isStressTestRunning() || isPerfTestRunning() || isKeyTestRunning() ;
+    }
     public static final int getC2PAImageFormat() {
         return getInt("persist.sys.camera.c2pa.format",1);
     }
