@@ -634,8 +634,8 @@ exit:
 JNIEXPORT jbyteArray Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignMedia(JNIEnv* env, jobject thiz, jint imageType, jint height, jint width, jint stride, jint compression, jint maxThumbnailSize, jint thumbnailCompression, jstring jinputFile,
                                                                                               jdouble latitude, jdouble longitude, jdouble altitude, jdouble accuracy, jlong time)
 {
-    jbyteArray output;
 #ifdef ENABLE_C2PA_LIB
+    jbyteArray output;
     int32_t ret = -1;
     uint8_t *coutput;
     const char *inputFile = env->GetStringUTFChars(jinputFile, 0);
@@ -704,9 +704,10 @@ JNIEXPORT jbyteArray Java_com_android_camera_imageprocessor_PostProcessor_native
     LOGD_PRINT("Successfully wrote signed media to file");
     env->ReleaseStringUTFChars(jinputFile, inputFile);
     LOGD_PRINT("sign result: %d", ret );
+    return output;
 #endif
 exit:
-    return output;
+    return NULL;
 }
 
 JNIEXPORT void JNICALL Java_com_android_camera_imageprocessor_PostProcessor_nativeC2paSignVideo(

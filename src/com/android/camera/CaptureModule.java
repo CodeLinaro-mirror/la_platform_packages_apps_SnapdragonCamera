@@ -11499,9 +11499,6 @@ private boolean isDevOptionSetting(){
         checkAndPlayRecordSound(cameraId, true);
 
         try {
-            if (mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
-                mUI.clearFocus();
-            }
             mUI.hideUIwhileRecording();
             Set<String> physicalRecorderId = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_CAMCORDER);
@@ -11596,9 +11593,6 @@ private boolean isDevOptionSetting(){
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (mLockAFAE != LOCK_AF_AE_STATE_LOCK_DONE) {
-                        mUI.clearFocus();
-                    }
                     mUI.resetPauseButton();
                     mRecordingTotalTime = 0L;
                     mRecordingStartTime = SystemClock.uptimeMillis();
@@ -14899,27 +14893,13 @@ private boolean isDevOptionSetting(){
                         mSettingsManager.getCurrentPrepNameKey()), Context.MODE_PRIVATE);
         String manualWBMode = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_WB);
         String cctMode = mActivity.getString(
-                R.string.pref_camera_manual_wb_value_color_temperature);
-        String gainMode = mActivity.getString(
-                R.string.pref_camera_manual_wb_value_rbgb_gains);
+                R.string.pref_camera_manual_wb_cct);
         if (manualWBMode.equals(cctMode)) {
-            int colorTempValue = Integer.parseInt(pref.getString(
-                    SettingsManager.KEY_MANUAL_WB_TEMPERATURE_VALUE, "-1"));
-            if (colorTempValue != -1) {
-                request.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
-                VendorTagUtil.setWbColorTemperatureValue(request, colorTempValue);
-            }
-        } else if (manualWBMode.equals(gainMode)) {
-            float rGain = pref.getFloat(SettingsManager.KEY_MANUAL_WB_R_GAIN, -1.0f);
-            float gGain = pref.getFloat(SettingsManager.KEY_MANUAL_WB_G_GAIN, -1.0f);
-            float bGain = pref.getFloat(SettingsManager.KEY_MANUAL_WB_B_GAIN, -1.0f);
-            if (rGain != -1.0 && gGain != -1.0 && bGain != -1.0f) {
-                request.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
-                float[] gains = {rGain, gGain, bGain};
-                VendorTagUtil.setMWBGainsValue(request, gains);
-            }
-        } else {
-            VendorTagUtil.setMWBDisableMode(request);
+            int colorTempValue = CameraUtil.strToInt(pref.getString(
+                    SettingsManager.KEY_MANUAL_WB_TEMPERATURE_VALUE, "5000"),5000);
+            int colorTintValue = CameraUtil.strToInt(pref.getString(
+                    SettingsManager.KEY_MANUAL_COLOR_TINT_VALUE, "0"),0);
+            VendorTagUtil.setWbCCT(request,colorTempValue, colorTintValue);
         }
     }
 
@@ -15953,10 +15933,13 @@ private boolean isDevOptionSetting(){
     }
 
     private void applyWhiteBalance(CaptureRequest.Builder request) {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_WHITE_BALANCE);
-        if (value == null) return;
-        int mode = Integer.parseInt(value);
-        request.set(CaptureRequest.CONTROL_AWB_MODE, mode);
+        String manualWBMode = mSettingsManager.getValue(SettingsManager.KEY_MANUAL_WB);
+        if(manualWBMode == null ||  manualWBMode.equals("off")) {
+            String value = mSettingsManager.getValue(SettingsManager.KEY_WHITE_BALANCE);
+            if (value == null) return;
+            int mode = Integer.parseInt(value);
+            request.set(CaptureRequest.CONTROL_AWB_MODE, mode);
+        }
     }
 
     private void applySnapshotFlash(CaptureRequest.Builder request, String value) {

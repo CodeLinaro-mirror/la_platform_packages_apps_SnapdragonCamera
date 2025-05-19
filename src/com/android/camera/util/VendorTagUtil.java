@@ -72,6 +72,7 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.manualWB.gains", float[].class);
     private static CaptureRequest.Key<Integer> PARTIAL_MANUAL_WB_MODE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.manualWB.partial_mwb_mode", Integer.class);
+
     private static CaptureRequest.Key<Float> TONE_MAPPING_DARK_BOOST =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.tmcusercontrol.dark_boost_offset", Float.class);
     private static CaptureRequest.Key<Float> TONE_MAPPING_FOURTH_TONE =
@@ -220,41 +221,17 @@ public class VendorTagUtil {
         return isSupported(builder, USE_ISO_VALUE);
     }
 
-    private static boolean isPartialWBModeSupported(CaptureRequest.Builder builder) {
-        return isSupported(builder, PARTIAL_MANUAL_WB_MODE);
-    }
-
-    private static boolean isWBTemperatureSupported(CaptureRequest.Builder builder) {
-        return isSupported(builder, WB_COLOR_TEMPERATURE);
-    }
-
-    private static boolean isMWBGainsSupported(CaptureRequest.Builder builder) {
-        return isSupported(builder, MANUAL_WB_GAINS);
-    }
-
-    public static void setWbColorTemperatureValue(CaptureRequest.Builder builder, Integer value) {
-        if (isPartialWBModeSupported(builder)) {
-            builder.set(PARTIAL_MANUAL_WB_MODE, MANUAL_WB_CCT_MODE);
-            if (isWBTemperatureSupported(builder)) {
-                builder.set(WB_COLOR_TEMPERATURE, value);
-            }
+    public static void setWbCCT(CaptureRequest.Builder builder,Integer temperature, Integer tint) {
+        try {
+            builder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
+            builder.set(CaptureRequest.COLOR_CORRECTION_MODE, CaptureRequest.COLOR_CORRECTION_MODE_CCT);
+            builder.set(CaptureRequest.COLOR_CORRECTION_COLOR_TEMPERATURE, temperature);
+            builder.set(CaptureRequest.COLOR_CORRECTION_COLOR_TINT, tint);
+        }catch(Exception e){
+            Log.i(TAG,"set failed e="+e);
         }
     }
 
-    public static void setMWBGainsValue(CaptureRequest.Builder builder, float[] gains) {
-        if (isPartialWBModeSupported(builder)) {
-            builder.set(PARTIAL_MANUAL_WB_MODE, MANUAL_WB_GAINS_MODE);
-            if (isMWBGainsSupported(builder)) {
-                builder.set(MANUAL_WB_GAINS, gains);
-            }
-        }
-    }
-
-    public static void setMWBDisableMode(CaptureRequest.Builder builder) {
-        if (isPartialWBModeSupported(builder)) {
-            builder.set(PARTIAL_MANUAL_WB_MODE, MANUAL_WB_DISABLE_MODE);
-        }
-    }
 
     public static void setToneMappingDisableMode(CaptureRequest.Builder builder) {
         float defaultValue = -1.0f;
