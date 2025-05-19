@@ -2960,7 +2960,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public void filterHFROptions() {
         ListPreference hfrPref = mPreferenceGroup.findPreference(KEY_VIDEO_HIGH_FRAME_RATE);
         if (hfrPref != null) {
-            CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
+            CaptureModule.CameraMode mode = CaptureModule.CURRENT_MODE;
             if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO ||
                     mode == CaptureModule.CameraMode.CINEMATIC) {
                 ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
