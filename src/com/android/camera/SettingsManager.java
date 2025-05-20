@@ -4193,6 +4193,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         //Video size should be 1080P and 720P in CINEMATIC mode
                         continue;
                     }
+                    if(PersistUtil.lookaheadEnabled() && !PersistUtil.enableMediaRecorder() &&
+                            videoSizes.get(i).getWidth() * videoSizes.get(i).getHeight() > 4096*2176){
+                        continue;
+                    }
                     if (mode != CaptureModule.CameraMode.HFR && isEISV3Enabled && Math.min(videoSizes.get(i)
                             .getWidth(),videoSizes.get(i).getHeight()) < 720) {
                         //video size should't be larger than 720p when EIS V3 is enabled
@@ -4471,7 +4475,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     }
                 }
             }
-            if (!PersistUtil.enableMediaRecorder()) {
+            if (!PersistUtil.enableMediaRecorder() && !PersistUtil.lookaheadEnabled()) {
                 supported.add("apv");
             }
         }

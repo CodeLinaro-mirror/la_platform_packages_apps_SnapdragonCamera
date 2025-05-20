@@ -4859,6 +4859,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (DEPTH_CAM_ID != null) {
                     removeList[CameraMode.DEPTH.ordinal()] = false;
                 }
+
                 if (physical_ids != null && physical_ids.size() == 0 &&
                         facing != CameraCharacteristics.LENS_FACING_FRONT){
                     if (mSingleRearId == -1) {
@@ -4905,7 +4906,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mSceneCameraIds.get(CameraMode.DEPTH.ordinal()).rearCameraId = defaultId;
                     }
                     //default HFR is support, will remove after setting manager init
-                    removeList[CameraMode.HFR.ordinal()] = false;
+                    if(PersistUtil.lookaheadEnabled() && !PersistUtil.enableMediaRecorder()) {
+                    }else{
+                        removeList[CameraMode.HFR.ordinal()] = false;
+                    }
                     mSceneCameraIds.get(CameraMode.HFR.ordinal()).rearCameraId = mSingleRearId;
                     if (mCurrentSceneMode == null) {
                         int index = mIntentMode == INTENT_MODE_VIDEO ?
