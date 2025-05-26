@@ -1,5 +1,10 @@
 /*
  * Copyright (c) 2016-2017 The Linux Foundation. All rights reserved.
+ *
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
  * Not a Contribution.
  *
  * Copyright (C) 2013 The Android Open Source Project
@@ -35,10 +40,13 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import android.support.v7.widget.RecyclerView;
+
 import com.android.camera.CaptureModule;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;
 import com.android.camera.SettingsManager;
 import com.android.camera.Storage;
+import com.android.camera.SystemFeatures;
 
 import org.codeaurora.snapcam.R;
 
@@ -71,6 +79,7 @@ public class OneUICameraControls extends RotatableLayout {
     private View mCancelButton;
     private ViewGroup mProModeLayout;
     private View mSettingsButton;
+    private RecyclerView mModeSelectLayout;
 
     private ArrowTextView mRefocusToast;
 
@@ -108,6 +117,10 @@ public class OneUICameraControls extends RotatableLayout {
     private RotateLayout mManualRotateLayout;
     private RotateLayout mWhiteBalanceRotateLayout;
     private RotateLayout mIsoRotateLayout;
+    private View mCloseProModeButton;
+
+    // Round watch UI change
+    private boolean mIsDisplayRound = false;
 
     public OneUICameraControls(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -129,6 +142,8 @@ public class OneUICameraControls extends RotatableLayout {
         Point size = new Point();
         display.getSize(size);
         mWidth = size.x;
+
+        mIsDisplayRound = SystemFeatures.getInstance().isWatchScreenRound();
     }
 
     public OneUICameraControls(Context context) {
@@ -162,6 +177,7 @@ public class OneUICameraControls extends RotatableLayout {
         mMute = findViewById(R.id.mute_button);
         mPreview = findViewById(R.id.preview_thumb);
         mSceneModeSwitcher = findViewById(R.id.scene_mode_switcher);
+        mModeSelectLayout = findViewById(R.id.mode_select_layout);
         mFilterModeSwitcher = findViewById(R.id.filter_mode_switcher);
         mRemainingPhotos = (LinearLayout) findViewById(R.id.remaining_photos);
         mRemainingPhotosText = (TextView) findViewById(R.id.remaining_photos_text);
@@ -174,6 +190,17 @@ public class OneUICameraControls extends RotatableLayout {
         mIsoText = (TextView) findViewById(R.id.iso_value);
         mProMode = (ProMode) findViewById(R.id.promode_slider);
         mProMode.initialize(this);
+        if ( mIsDisplayRound ) {
+            mCloseProModeButton = findViewById(R.id.close_promode_ui_button);
+            mCloseProModeButton.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                     resetProModeIcons();
+                     mProMode.setMode(ProMode.NO_MODE);
+                     updateVisbilityPosOnProModeChange(ProMode.NO_MODE);
+                }
+            });
+        }
 
         mExposureRotateLayout = (RotateLayout) findViewById(R.id.exposure_rotate_layout);
         mManualRotateLayout = (RotateLayout) findViewById(R.id.manual_rotate_layout);
@@ -187,9 +214,11 @@ public class OneUICameraControls extends RotatableLayout {
                 int mode = mProMode.getMode();
                 if (mode == ProMode.EXPOSURE_MODE) {
                     mProMode.setMode(ProMode.NO_MODE);
+                    updateVisbilityPosOnProModeChange(ProMode.NO_MODE);
                 } else {
                     mExposureText.setSelected(true);
                     mProMode.setMode(ProMode.EXPOSURE_MODE);
+                    updateVisbilityPosOnProModeChange(ProMode.EXPOSURE_MODE);
                 }
             }
         });
@@ -200,9 +229,11 @@ public class OneUICameraControls extends RotatableLayout {
                 int mode = mProMode.getMode();
                 if (mode == ProMode.MANUAL_MODE) {
                     mProMode.setMode(ProMode.NO_MODE);
+                    updateVisbilityPosOnProModeChange(ProMode.NO_MODE);
                 } else {
                     mManualText.setSelected(true);
                     mProMode.setMode(ProMode.MANUAL_MODE);
+                    updateVisbilityPosOnProModeChange(ProMode.MANUAL_MODE);
                 }
             }
         });
@@ -213,9 +244,11 @@ public class OneUICameraControls extends RotatableLayout {
                 int mode = mProMode.getMode();
                 if (mode == ProMode.WHITE_BALANCE_MODE) {
                     mProMode.setMode(ProMode.NO_MODE);
+                    updateVisbilityPosOnProModeChange(ProMode.NO_MODE);
                 } else {
                     mWhiteBalanceText.setSelected(true);
                     mProMode.setMode(ProMode.WHITE_BALANCE_MODE);
+                    updateVisbilityPosOnProModeChange(ProMode.WHITE_BALANCE_MODE);
                 }
             }
         });
@@ -226,13 +259,14 @@ public class OneUICameraControls extends RotatableLayout {
                 int mode = mProMode.getMode();
                 if (mode == ProMode.ISO_MODE) {
                     mProMode.setMode(ProMode.NO_MODE);
+                    updateVisbilityPosOnProModeChange(ProMode.NO_MODE);
                 } else {
                     mIsoText.setSelected(true);
                     mProMode.setMode(ProMode.ISO_MODE);
+                    updateVisbilityPosOnProModeChange(ProMode.ISO_MODE);
                 }
             }
         });
-
         mViews = new View[]{
                 mSceneModeSwitcher, mFilterModeSwitcher, mFrontBackSwitcher,
                 mFlashButton, mShutter,
@@ -247,6 +281,19 @@ public class OneUICameraControls extends RotatableLayout {
             mTsMakeupSwitcher.setVisibility(View.GONE);
         }
         setProModeParameters();
+    }
+
+    private void updateVisbilityPosOnProModeChange(int mode) {
+         if ( !mIsDisplayRound ) return;
+         if (mode == ProMode.NO_MODE) {
+             mModeSelectLayout.setVisibility(View.VISIBLE);
+             mSettingsButton.setVisibility(View.VISIBLE);
+             mCloseProModeButton.setVisibility(View.GONE);
+         } else {
+             mModeSelectLayout.setVisibility(View.GONE);
+             mSettingsButton.setVisibility(View.INVISIBLE);
+             mCloseProModeButton.setVisibility(View.VISIBLE);
+         }
     }
 
     @Override
@@ -272,7 +319,6 @@ public class OneUICameraControls extends RotatableLayout {
         setLocation(r - l, b - t);
         layoutRemaingPhotos();
         initializeProMode(mProModeOn);
-
     }
 
     public boolean isControlRegion(int x, int y) {
@@ -339,32 +385,69 @@ public class OneUICameraControls extends RotatableLayout {
 
     private void setLocation(int w, int h) {
         int rotation = getUnifiedRotation();
-        setLocation(mSceneModeSwitcher, true, PANEL_INDEX_0);
         setLocation(mFilterModeSwitcher, true, PANEL_INDEX_1);
+        if ( mIsDisplayRound ) {
+            setLocationCustomBottom(mSceneModeSwitcher, 1.0f, 4.0f);
+        } else {
+            setLocation(mSceneModeSwitcher, true, PANEL_INDEX_0);
+        }
         if (mIsVideoMode) {
-            setLocation(mMute, true, PANEL_INDEX_1);
             setLocation(mFlashButton, true, PANEL_INDEX_2);
-            setLocation(mSettingsButton, true, PANEL_INDEX_3);
-            setLocation(mPauseButton, false, 3.15f);
-            setLocation(mShutter, false , 0.85f);
-            setLocation(mVideoShutter, false, PANEL_INDEX_2);
             setLocation(mExitBestPhotpMode ,false, PANEL_INDEX_4);
+            if ( mIsDisplayRound ) {
+                // For round watch, move this towards top-center
+                setLocation(mMute, true, PANEL_INDEX_2);
+                // replacing scenemode by setting as in video
+                // scene_mode_switcher icon not seen
+                setLocation(mSettingsButton, true, PANEL_INDEX_2);
+                // put capture photo and pause/resume above shutter
+                setLocationCustomBottom(mPauseButton, 2.6f, 1.0f);
+                setLocationCustomBottom(mShutter, 1.4f, 1.0f);
+                setLocation(mVideoShutter, false, PANEL_INDEX_2);
+            }
+            else {
+               setLocation(mMute, true, PANEL_INDEX_1);
+               setLocation(mSettingsButton, true, PANEL_INDEX_3);
+               setLocation(mPauseButton, false, 3.15f);
+               setLocation(mShutter, false , 0.85f);
+               setLocation(mVideoShutter, false, PANEL_INDEX_2);
+            }
         } else {
             setLocation(mFlashButton, true, PANEL_INDEX_2);
-            setLocation(mSettingsButton,true, PANEL_INDEX_3);
-            setLocation(mFrontBackSwitcher, false, 3.15f);
+            if ( mIsDisplayRound ) {
+                setLocation(mSettingsButton, true, PANEL_INDEX_2);
+                setLocation(mFrontBackSwitcher, false, PANEL_INDEX_3);
+                // this will show if in pro mode and front-back switcher
+                // is hidden that time, so can use same UI slot for this
+                setLocation(mCloseProModeButton, false, PANEL_INDEX_3);
+            } else {
+                setLocation(mSettingsButton,true, PANEL_INDEX_3);
+                setLocation(mFrontBackSwitcher, false, 3.15f);
+            }
             if (mIntentMode == CaptureModule.INTENT_MODE_CAPTURE) {
                 setLocation(mShutter, false, PANEL_INDEX_2);
+                //TODO: When is below button visible ?
                 setLocation(mCancelButton, false, 0.85f);
             } else if (mIntentMode == CaptureModule.INTENT_MODE_VIDEO) {
                 setLocation(mVideoShutter, false, PANEL_INDEX_2);
+                //TODO: When is below button visible ?
                 setLocation(mCancelButton, false, 0.85f);
             } else {
                 setLocation(mVideoShutter, false, PANEL_INDEX_2);
                 setLocation(mShutter, false, PANEL_INDEX_2);
-                setLocation(mPreview, false, PANEL_INDEX_0);
+                // Get thumbnail immediate left of shutter
+                if ( mIsDisplayRound ) {
+                    setLocation(mPreview, false, PANEL_INDEX_1);
+                } else {
+                    setLocation(mPreview, false, PANEL_INDEX_0);
+                }
             }
-            setLocation(mExitBestPhotpMode ,false, PANEL_INDEX_4);
+            // Exit HDR added in 2nd row left side for round display
+            if ( mIsDisplayRound ) {
+                setLocationCustomBottom(mExitBestPhotpMode, 0.5f, 3.4f);
+            } else {
+                setLocation(mExitBestPhotpMode ,false, PANEL_INDEX_4);
+            }
         }
         setLocationCustomBottom(mMakeupSeekBarLayout, 0, 1);
 
@@ -596,6 +679,9 @@ public class OneUICameraControls extends RotatableLayout {
         mManualText.setSelected(false);
         mWhiteBalanceText.setSelected(false);
         mIsoText.setSelected(false);
+        if ( mIsDisplayRound ) {
+            mModeSelectLayout.setVisibility(VISIBLE);
+        }
     }
 
     private void setProModeParameters() {
@@ -614,7 +700,15 @@ public class OneUICameraControls extends RotatableLayout {
             return;
         }
         mProModeLayout.setVisibility(VISIBLE);
-        mProModeLayout.setY(mHeight - mBottom - mProModeLayout.getHeight() - 48);
+        // Shift pro mode layout downward as curves for
+        // parameters is above it in circular display
+        if ( mIsDisplayRound ) {
+            mProModeLayout.setY(mHeight - mBottom -
+                                mProModeLayout.getHeight() - 24);
+        } else {
+            mProModeLayout.setY(mHeight - mBottom -
+                                mProModeLayout.getHeight() - 48);
+        }
     }
 
     public void updateProModeText(int mode, String value) {
