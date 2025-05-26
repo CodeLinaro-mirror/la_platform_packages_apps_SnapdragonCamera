@@ -4906,8 +4906,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         mSceneCameraIds.get(CameraMode.DEPTH.ordinal()).rearCameraId = defaultId;
                     }
                     //default HFR is support, will remove after setting manager init
-                    if(PersistUtil.lookaheadEnabled() && !PersistUtil.enableMediaRecorder()) {
-                    }else{
+                    if(!PersistUtil.lookaheadEnabled() || PersistUtil.enableMediaRecorder()) {
                         removeList[CameraMode.HFR.ordinal()] = false;
                     }
                     mSceneCameraIds.get(CameraMode.HFR.ordinal()).rearCameraId = mSingleRearId;
