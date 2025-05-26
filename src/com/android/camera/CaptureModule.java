@@ -11374,7 +11374,7 @@ private boolean isDevOptionSetting(){
                         }
                     }
                 }
-                if (("dolby").equals(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER))) {
+                if ((("dolby").equals(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER))) && mIntentMode == INTENT_MODE_NORMAL) {
                     Log.i(TAG, " setting DOLBY for video stream in non-HFR");
                     videoConfig.setDynamicRangeProfile(DynamicRangeProfiles.DOLBY_VISION_10B_HDR_OEM);
                 }
@@ -14212,6 +14212,9 @@ private boolean isDevOptionSetting(){
 
         int videoEncoder = SettingTranslation
                 .getVideoEncoder(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER));
+        if(("dolby").equals(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER)) && mIntentMode == INTENT_MODE_VIDEO){
+            videoEncoder = MediaRecorder.VideoEncoder.H264;
+        }
         Log.d(TAG,"videoEncoder="+ videoEncoder+
                 " settings="+mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER));
         mProfile.videoCodec = videoEncoder;
@@ -14231,7 +14234,7 @@ private boolean isDevOptionSetting(){
             Log.d(TAG, "setVideoEncodingProfileLevel: " + videoEncoderProfile + " " + MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel1);
             mMediaRecorder.setVideoEncodingProfileLevel(videoEncoderProfile,
                     MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel1);
-        } else if (("dolby").equals(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER))) {
+        } else if (("dolby").equals(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER)) && mIntentMode == INTENT_MODE_NORMAL) {
             Log.i(TAG, "set dolby profile.");
             mMediaRecorder.setVideoEncodingProfileLevel(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt,
                     MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelFhd30);
