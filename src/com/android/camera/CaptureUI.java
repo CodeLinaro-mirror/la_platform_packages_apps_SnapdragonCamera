@@ -1600,7 +1600,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
-    private void setZoomTextSelect(float zoom){
+    public void setZoomTextSelect(float zoom){
        String zoom_text = zoomDf.format(zoom);
        float zoomFomat = Float.valueOf(zoom_text);
        Log.d(TAG,"zoomtext="+zoom_text+",zoomFomat="+zoomFomat+",mWZoom="+mWZoom+",mTelZoom="+mTelZoom);

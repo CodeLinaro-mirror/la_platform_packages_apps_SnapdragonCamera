@@ -10380,11 +10380,12 @@ private boolean isDevOptionSetting(){
 
     @Override
     public void setPreferenceForTest(String key, String value) {
+        mSettingsManager.setValue(key, value);
         if (SettingsManager.KEY_ZOOM.equals(key)){
+            mUI.setZoomTextSelect(Float.parseFloat(value));
             onZoomChanged(Float.parseFloat(value));
             return;
         }
-        mSettingsManager.setValue(key, value);
         if(mCurrentSceneMode.mode == CameraMode.PRO_MODE) {
             if (key.equals(SettingsManager.KEY_FOCUS_DISTANCE)) {
                 mSettingsManager.setProModeSliderValueForAutTest(key, value);
