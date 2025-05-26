@@ -2672,6 +2672,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if(!mModule.getCameraModeSwitcherAllowed()){
+                        return;
+                    }
                     mVideoQualityIndex = (mVideoQualityIndex + 1) % mVideoSizes.size();
                     mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_QUALITY, mVideoQualityIndex);
                     mVideoPhotoSize.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_QUALITY, mVideoQualityIndex));
@@ -2699,6 +2702,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoFps.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if(!mModule.getCameraModeSwitcherAllowed()){
+                        return;
+                    }
                     mVideoFpsIndex = (mVideoFpsIndex + 1) % mVideoFpss.size();
                     mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex);
                     mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
@@ -2717,6 +2723,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if(!mModule.getCameraModeSwitcherAllowed()){
+                        return;
+                    }
                     mPhotoQualityIndex = (mPhotoQualityIndex + 1) % 3;
                     mSettingsManager.setValueIndex(SettingsManager.KEY_PICTURE_SIZE, mSettingsManager.updatePhotoSize(mPhotoQualityIndex));
                     mVideoPhotoSize.setText(mSettingsManager.getDisplayValueForPhotoSize());
@@ -5056,7 +5065,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mModule.setStartedTime(System.currentTimeMillis());
         }
         if (mIsVideoUI || !mModule.getCameraModeSwitcherAllowed() ||
-                mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
+                mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL
+        || !mModule.getCameraModeSwitcherAllowed()) {
             return;
         }
         int index = mModule.getCurrentModeIndex() + move;
