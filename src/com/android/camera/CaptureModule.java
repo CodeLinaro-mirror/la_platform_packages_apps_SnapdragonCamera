@@ -14272,6 +14272,9 @@ private boolean isDevOptionSetting(){
             mMediaRecorder.setCaptureRate(mSuperSlomoCapture ? 30 : fps);
             mMediaRecorder.setVideoFrameRate(targetRate);
             int scaledBitrate = mSettingsManager.getHighSpeedVideoEncoderBitRate(mProfile, targetRate, fps);
+            if (PersistUtil.getBitRate() != -1){
+                scaledBitrate = PersistUtil.getBitRate();
+            }
             Log.i(TAG, "Capture rate: "+fps+", Target rate: "+targetRate+", Scaled video bitrate : " + scaledBitrate);
             mMediaRecorder.setVideoEncodingBitRate(scaledBitrate);
         }
