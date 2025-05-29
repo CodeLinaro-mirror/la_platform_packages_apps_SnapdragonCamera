@@ -1996,7 +1996,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
-    public void hideZoomSeekBar() {
+    public void hideZoomSeekBar(boolean hideGesture) {
         if (mZoomLinearLayout != null) {
             mZoomLinearLayout.setVisibility(View.GONE);
         }
@@ -2006,7 +2006,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.GONE);
         }
-        mGestures.setZoomEnabled(false);
+        if(hideGesture) {
+            mGestures.setZoomEnabled(false);
+        }else{
+            mGestures.setZoomEnabled(true);
+        }
     }
 
     public void showZoomSeekBar() {
@@ -2020,7 +2024,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             enableZoomSeekBar(true);
         }
         if(mFilterMenuStatus == FILTER_MENU_ON){
-            hideZoomSeekBar();
+            hideZoomSeekBar(true);
         }
     }
     public void updateZoomSeekBar(float zoomValue) {
@@ -2645,7 +2649,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 updateMenus();
                 mModeSelectLayout.setVisibility(View.GONE);
                 mCameraControls.setProModeVisibility(View.GONE);
-                hideZoomSeekBar();
+                hideZoomSeekBar(true);
             }
         });
     }
@@ -2955,7 +2959,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mSettingsIcon.setVisibility(View.INVISIBLE);
         mShutterButton.setVisibility(View.INVISIBLE);
         mThumbnail.setVisibility(View.INVISIBLE);
-        hideZoomSeekBar();
+        hideZoomSeekBar(true);
     }
     private void hideUIInDepth(){
         mFrontBackSwitcher.setVisibility(View.INVISIBLE);
@@ -2965,7 +2969,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mSettingsIcon.setVisibility(View.INVISIBLE);
         mShutterButton.setVisibility(View.INVISIBLE);
         mThumbnail.setVisibility(View.INVISIBLE);
-        hideZoomSeekBar();
+        hideZoomSeekBar(true);
     }
 
     public void hideUIwhileRecording() {

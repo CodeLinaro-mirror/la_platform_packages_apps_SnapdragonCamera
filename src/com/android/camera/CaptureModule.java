@@ -17758,20 +17758,19 @@ private boolean isDevOptionSetting(){
             if (mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
                 float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                         getMainCameraId());
-                if (zoomRatioRange != null && zoomRatioRange[0] == zoomRatioRange[1]) {
+                if (zoomRatioRange == null || (zoomRatioRange[0] == zoomRatioRange[1])) {
                     Log.v(TAG, "updateZoomSeekBarVisible mZoomValue :" + mZoomValue);
-                    mUI.hideZoomSeekBar();
-                    return;
+                    mUI.hideZoomSeekBar(true);
                 } else if (zoomRatioRange != null && zoomRatioRange[0] != zoomRatioRange[1]) {
                     mUI.updateZoombarValue(mZoomValue);
                     mUI.showZoomSeekBar();
                     Log.v(TAG, "updateZoomSeekBarVisible showZoomSeekBar mZoomValue :" + mZoomValue);
-                    return;
                 }
+            }else{
+                mUI.hideZoomSeekBar(false);
             }
-            mUI.hideZoomSeekBar();
         } else if(multiCam != null && multiCam.equals("on")) {
-            mUI.hideZoomSeekBar();
+            mUI.hideZoomSeekBar(true);
         }else {
             mUI.showZoomSeekBar();
         }
