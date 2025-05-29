@@ -153,6 +153,7 @@ public class SettingsActivity extends PreferenceActivity {
     AlertDialog mManualHDRDialog = null;
     private ArrayList<String> mSearchSettingList;
     private ArrayList<CameraCharacteristics> mCharacteristics;
+    private boolean mFirstInitViull = true;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
@@ -2636,39 +2637,49 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
 
+    private void disableVIULLOption(ListPreference pref){
+        if(!mFirstInitViull) mSettingsManager.setPreferenceValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE, pref.getValue());
+        pref.setValue("0");
+        pref.setEnabled(false);
+        mFirstInitViull = false;
+    }
+
     private void updateViullPreference() {
         ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_VIULL);
         if (pref == null) return;
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         String selectMode = mSettingsManager.getValue(mSettingsManager.KEY_SELECT_MODE);
         if (selectMode.equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
-            pref.setValue("0");
-            pref.setEnabled(false);
+            disableVIULLOption(pref);
             return;
         }
 
         String profile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
         String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
         if (profile != null && previewProfile != null && !(SettingsManager.VIDEO_ENCODER_PROFILE_MAP.get(profile).equals(previewProfile))) {
-            pref.setValue("0");
-            pref.setEnabled(false);
+            disableVIULLOption(pref);
             return;
         }
 
         String qllStr = mSettingsManager.getValue(SettingsManager.KEY_QLL);
         if (qllStr != null && qllStr.equals("1")) {
-            pref.setValue("0");
-            pref.setEnabled(false);
+            disableVIULLOption(pref);
             return;
         }
         String videoFps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
         if (mode == CaptureModule.CameraMode.VIDEO && videoFps != null && !videoFps.equals("off") && !vsr.equals("1")) {
-            pref.setValue("0");
-            pref.setEnabled(false);
+            disableVIULLOption(pref);
             return;
         }
+        Log.i(TAG,"set viull original value:" + mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE));
+        if(!mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE).equals("") &&
+                !mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE).equals("disable") &&
+                !mFirstInitViull) {
+            pref.setValue(mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE));
+        }
         pref.setEnabled(true);
+        mFirstInitViull = false;
     }
     private  void updateLowLightBoostPreference(){
         ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_LOWLIGHT_BOOST);

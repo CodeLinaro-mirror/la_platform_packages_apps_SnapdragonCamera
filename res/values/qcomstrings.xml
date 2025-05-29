@@ -1340,6 +1340,8 @@
 
     <string name="pref_camera2_videoencoderprofile_title" translatable="true">EncoderProfile</string>
     <string name="pref_camera2_videoencoderprofile_default">off</string>
+    <string name="pref_camera2_videopreviewprofile_default">0</string>
+
 
     <string name="pref_camera2_snapshot_hdrmode_title" translatable="true">Snapshot HDRMode</string>
     <string name="pref_camera2_snapshot_hdrmode_default"  translatable="false">default</string>
