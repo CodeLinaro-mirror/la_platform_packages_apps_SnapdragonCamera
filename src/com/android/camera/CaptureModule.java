@@ -8022,6 +8022,65 @@ private boolean isDevOptionSetting(){
         applyDepthMode(builder);
         applyITofTuningSet(builder);
         applyDcgModes(builder);
+        setSessionParamFromFile(builder);
+    }
+
+    private void setSessionParamFromFile(CaptureRequest.Builder builder) {
+        JSONObject mObj = CameraUtil.getJsonObj("system/etc/CameraVendorTags.json");
+        //JSONObject mObj = CameraUtil.getJsonObj("system/etc/test.json");
+        if (mObj == null) {
+            Log.e(TAG, "read json system/etc/CameraVendorTags.json is null");
+            return;
+        }
+        try {
+            boolean isArray = mObj.getBoolean("IsArray");
+            boolean isSessionParameters = mObj.getBoolean("IsSessionParameters");
+            String name = mObj.getString("Name");
+            String type = mObj.getString("Type");
+            JSONArray valueArray = mObj.getJSONArray("Value");
+            Log.i(TAG, "name=" + name + ",type=" + type + ",isSessionParameters=" +
+                    isSessionParameters+",valueArray=" + valueArray + ",valueArray.length()=" + valueArray.length());
+            if("Byte".equals(type)) {
+                List<Byte> byteList = new ArrayList<>();
+                for (int i = 0; i < valueArray.length(); i++) {
+                    String valueString = valueArray.getString(i);
+                    String[] byteStrings = valueString.split(",");
+                    for (String value : byteStrings) {
+                        Byte bytevalue = (byte) (Integer.parseInt(value));
+                        byteList.add(bytevalue);
+                    }
+                }
+                byte[] byteArray = new byte[byteList.size()];
+                for (int i = 0; i < byteList.size(); i++) {
+                    byteArray[i] = byteList.get(i);
+                }
+                CaptureRequest.Key<byte[]> key = new CaptureRequest.Key<byte[]>(name, byte[].class);
+                Log.i(TAG, "set byteArray=" + Arrays.toString(byteArray) + ",length=" + byteArray.length
+                        + ",key=" + key);
+                builder.set(key,byteArray);
+            }else{
+                List<Integer> intList = new ArrayList<>();
+                for (int i = 0; i < valueArray.length(); i++) {
+                    String valueString = valueArray.getString(i);
+                    String[] byteStrings = valueString.split(",");
+                    for (String value : byteStrings) {
+                        int intvalue = Integer.parseInt(value);
+                        intList.add(intvalue);
+                    }
+                }
+                int[] intArray = new int[intList.size()];
+                for (int i = 0; i < intList.size(); i++) {
+                    intArray[i] = intList.get(i);
+                }
+                CaptureRequest.Key<int[]> key = new CaptureRequest.Key<int[]>(name, int[].class);
+                Log.i(TAG, "set intArray=" + Arrays.toString(intArray) + ",length=" + intArray.length
+                        + ",key=" + key);
+                builder.set(key,intArray);
+            }
+            Log.i(TAG," set sucess");
+        } catch (Exception e) {
+            Log.i(TAG, "exception =" + e);
+        }
     }
 
     private void applyDcgModes(CaptureRequest.Builder builder){

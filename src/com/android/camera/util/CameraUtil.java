@@ -1782,7 +1782,7 @@ public class CameraUtil {
             json = new String(buffer, "UTF-8");
             return new JSONObject(json);
         } catch (IOException | JSONException ex) {
-            Log.e(TAG,ex.toString());
+            Log.e(TAG,"e="+ex);
             return null;
         }
     }
