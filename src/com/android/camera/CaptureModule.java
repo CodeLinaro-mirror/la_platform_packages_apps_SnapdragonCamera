@@ -2768,6 +2768,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 lockExposure(id);
                             } else {
                                 runPrecaptureSequence(id);
+                                if(mCaptureTorchTrigger){
+                                    //after AE_PRECAPTURE_TRIGGER 1, AEMode:1 and flashMode:2 and continue the value till captureIntent:2
+                                    mPreviewRequestBuilder[id].set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                                    mPreviewRequestBuilder[id].set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+                                    try {
+                                        mCaptureSession[id].setRepeatingRequest(
+                                                mPreviewRequestBuilder[id].build(), mCaptureCallback,
+                                                mCameraHandler);
+                                    } catch (CameraAccessException | IllegalStateException e) {
+                                        Log.e(TAG,e);
+                                    }
+                                }
                             }
                         }
                     }
@@ -2795,11 +2807,26 @@ public class CaptureModule implements CameraModule, PhotoController,
                         aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
                         aeState == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED ||
                         aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                    if ((mPrecaptureRequestHashCode[id] ==  result.getRequest().hashCode()) || (mPrecaptureRequestHashCode[id] == 0)) {
-                        if (mLongshotActive && isFlashOn(id)) {
+                    if (mCaptureTorchTrigger) {
+                        if (aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                            //after snapshot request, app should set AEMode=2/3(based on user selection in APP), flash 0 again
                             checkAfAeStatesAndCapture(id);
-                        } else {
-                            lockExposure(id);
+                            applyFlash(mPreviewRequestBuilder[id], getMainCameraId());
+                            try {
+                                mCaptureSession[id].setRepeatingRequest(
+                                        mPreviewRequestBuilder[id].build(), mCaptureCallback,
+                                        mCameraHandler);
+                            } catch (CameraAccessException | IllegalStateException e) {
+                                Log.e(TAG, e);
+                            }
+                        }
+                    } else {
+                        if ((mPrecaptureRequestHashCode[id] == result.getRequest().hashCode()) || (mPrecaptureRequestHashCode[id] == 0)) {
+                            if ((mLongshotActive && isFlashOn(id))) {
+                                checkAfAeStatesAndCapture(id);
+                            } else {
+                                lockExposure(id);
+                            }
                         }
                     }
                 } else if (aeState == CaptureResult.CONTROL_AE_STATE_INACTIVE ||
@@ -5417,6 +5444,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyCaptureBurstFps(captureBuilder);
             applyAICameraSnapshot(captureBuilder);
             applyFlashMode(captureBuilder);
+
             String valueFS2 = mSettingsManager.getValue(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
             int fs2Value = 0;
             if (valueFS2 != null) {
@@ -7784,7 +7812,9 @@ private boolean isDevOptionSetting(){
 
     private void applySettingsForLockFocus(CaptureRequest.Builder builder, int id) {
         builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
-        applyFlash(builder, id);
+        if(!mCaptureTorchTrigger) {
+            applyFlash(builder, id);
+        }
         applyAFRegions(builder, id);
         applyAERegions(builder, id);
         applyCommonSettings(builder, id);
@@ -7793,7 +7823,9 @@ private boolean isDevOptionSetting(){
     private void applySettingsForCapture(CaptureRequest.Builder builder, int id) {
         builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
         applyJpegQuality(builder);
-        applyFlash(builder, id);
+        if(!mCaptureTorchTrigger) {
+            applyFlash(builder, id);
+        }
         applyCommonSettings(builder, id);
         applySensorModeFS2(builder);
     }
@@ -7813,7 +7845,12 @@ private boolean isDevOptionSetting(){
 
         // For long shot, torch mode is used
         if (!mLongshotActive) {
-            applyFlash(builder, id);
+            if(mCaptureTorchTrigger) {
+                //for AE_PRECAPTURE_TRIGGER 1 request, AEMode:1 and flashMode:2
+                applyFlashMode(builder);
+            }else{
+                applyFlash(builder, id);
+            }
         }
 
         applyCommonSettings(builder, id);
@@ -8053,11 +8090,14 @@ private boolean isDevOptionSetting(){
 
     private void applyFlashMode(CaptureRequest.Builder builder) {
         String flashMode = mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE);
-        Log.i(TAG,"isflashRequired:" + isflashRequired  + ",mCaptureTorchTrigger:" + mCaptureTorchTrigger + ",isCaptureBrustMode():" + isCaptureBrustMode());
+        Log.i(TAG,"isflashRequired:" + isflashRequired  + ",mCaptureTorchTrigger:" + mCaptureTorchTrigger + ",isCaptureBrustMode():" + isCaptureBrustMode() + ",mCaptureTorchTrigger:" + mCaptureTorchTrigger);
         if(isCaptureBrustMode() || "off".equals(flashMode)){
             return;
         }
-        if (isflashRequired){
+        if(mCaptureTorchTrigger){
+            builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+        } else if (isflashRequired){
             builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
         }
         isflashRequired = false;
@@ -16048,8 +16088,7 @@ private boolean isDevOptionSetting(){
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
                 } else if(mCaptureTorchTrigger) {
-                    request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-                    request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+                    request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
                 }else{
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
                     setFlashLevel(request);
@@ -16062,8 +16101,7 @@ private boolean isDevOptionSetting(){
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
                     request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
                 } else if(mCaptureTorchTrigger){
-                    request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-                    request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+                    request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
                 }else{
                     request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
                 }
@@ -16079,7 +16117,7 @@ private boolean isDevOptionSetting(){
                 setFlashLevel(request);
                 break;
         }
-        if(!mCaptureTorchTrigger && !(mSettingsManager.isOpenManualFlash() && "on".equals(flashMode)) && !"alwayson".equals(flashMode)) {
+        if(!(mSettingsManager.isOpenManualFlash() && "on".equals(flashMode)) && !"alwayson".equals(flashMode)) {
             request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
         }
         applyLowLightBoost(request);
