@@ -12026,6 +12026,18 @@ private boolean isDevOptionSetting(){
         return mHighSpeedCaptureRate;
     }
 
+    private int calculateBitRate(int width, int height) {
+        String value = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        int fps = 30;
+        if (value != null && (!value.equals("off"))) {
+            fps = mHighSpeedCaptureRate;
+        }
+
+        double bitrate = Math.round(((double)884 * width * height * fps)/((double) 3840 * 2160 * 30));
+        Log.i(TAG, "calculate bitrate for apv is " + bitrate);
+        return ((int)bitrate > 2000) ? 2000 *1000 *1000 : (int)bitrate *1000 *1000;
+    }
+
     private void updateProgressBar(boolean show) {
         mActivity.runOnUiThread(new Runnable() {
             @Override
@@ -13181,6 +13193,9 @@ private boolean isDevOptionSetting(){
         if (PersistUtil.enableMediaRecorder() && mMediaRecorder != null) {
             mMediaRecorder.setVideoEncodingBitRate(bitRate);
         } else {
+            if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")) {
+                bitRate = calculateBitRate(width, height);
+            }
             mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
         }
     }
@@ -13626,8 +13641,10 @@ private boolean isDevOptionSetting(){
             mVideoFormat.setInteger(MediaFormat.KEY_OPERATING_RATE, fps);
             Log.i(TAG, "Capture rate: "+fps+", Target rate: "+targetRate);
             int scaledBitrate = mSettingsManager.getHighSpeedVideoEncoderBitRate(mProfile, targetRate, fps);
-            if(PersistUtil.getBitRate() != -1){
+            if (PersistUtil.getBitRate() != -1) {
                 scaledBitrate = PersistUtil.getBitRate();
+            } else if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")) {
+                scaledBitrate = calculateBitRate(mProfile.videoFrameWidth, mProfile.videoFrameHeight);
             }
             Log.i(TAG, "Scaled video bitrate : " + scaledBitrate);
             mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, scaledBitrate);
