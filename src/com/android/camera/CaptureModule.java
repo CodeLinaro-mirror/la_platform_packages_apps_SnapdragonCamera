@@ -11924,6 +11924,8 @@ private boolean isDevOptionSetting(){
                 startAudioEncoder();
             }
             startVideoEncoder();
+            Log.i(TAG, "StartRecordingVideo done. Time=" +
+                    (System.currentTimeMillis() - mStartRecordingTime) + "ms");
             setVideoState(VideoState.VIDEO_START);
         }
         mRecordingStarted = true;
