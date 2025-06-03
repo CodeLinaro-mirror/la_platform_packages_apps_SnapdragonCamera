@@ -2621,7 +2621,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.i(TAG," mOpenCameraTimes="+mOpenCameraTimes);
                 mOpenCameraTimes --;
                 Message msg = mCameraHandler.obtainMessage(OPEN_CAMERA, getMainCameraId(), 0);
-                mCameraHandler.sendMessageDelayed(msg,200);
+                mCameraHandler.sendMessageDelayed(msg,300);
                 return;
             }
             if (null != mActivity) {
@@ -2653,13 +2653,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Dialog dialog = alert.show();
                 mHandler.postDelayed(() -> {
                     dialog.dismiss();
-
+                    System.exit(0);
                 }, 5000L);
-                mActivity.finish();
-
+            } else {
+                System.exit(0);
             }
-            //workaround for removing task bug
-            System.exit(0);
         }
 
         @Override
