@@ -8933,7 +8933,9 @@ private boolean isDevOptionSetting(){
             mCameraRender.destroy();
         }
         if(mPostProcessor.isJniAPISupported()) {
-            mPostProcessor.nativePerfLockRelease(1);
+            if (!PersistUtil.getModelInfo().contains("7750")){
+                mPostProcessor.nativePerfLockRelease(1);
+            }
             mPostProcessor.nativeC2paTearDown();
         }
     }
@@ -16630,8 +16632,10 @@ private boolean isDevOptionSetting(){
         int duration = 3000;
         int[] list = {0x40400000, 0x1, 0x40C00000, 0x1, 0x40804000, 0X687, 0x40800000, 0X687,
                 0x40804100, 0X660, 0x40800100, 0X660, 0x40800200, 0X8C6, 0x40804200, 0X8C6};
-        if(mPostProcessor.isJniAPISupported())
+        if(mPostProcessor.isJniAPISupported() && !PersistUtil.getModelInfo().contains("7750")) {
+            Log.d(TAG,"acquire perf lock");
             mPostProcessor.nativePerfLockAcq(1, duration, list, list.length);
+        }
         mLockNums.set(0);
         mResumed = false;
         int nextCameraId = getNextScreneModeId(mNextModeIndex);
