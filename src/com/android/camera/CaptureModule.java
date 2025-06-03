@@ -8178,7 +8178,7 @@ private boolean isDevOptionSetting(){
         boolean videoFlash = getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO ||
                 getCurrenCameraMode() == CaptureModule.CameraMode.HFR;
         String flashMode = mSettingsManager.getValue(videoFlash ? SettingsManager.KEY_VIDEO_FLASH_MODE : SettingsManager.KEY_FLASH_MODE);
-        if(flashMode != null && ((videoFlash && !flashMode.equals("on")) || (!videoFlash && !flashMode.equals("alwayson")))){
+        if((flashMode != null && ((videoFlash && !flashMode.equals("on")) || (!videoFlash && !flashMode.equals("alwayson")))) || flashMode == null){
             return;
         }
         if(videoFlash) {
