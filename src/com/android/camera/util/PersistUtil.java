@@ -456,6 +456,10 @@ public class PersistUtil {
         return getBoolean("persist.sys.cameraapp.needaudio", true);
     }
 
+    public static boolean getPerReqSyncEnable() {
+        return getBoolean("persist.sys.cameraapp.enablePerReqSync", true);
+    }
+
     public static String getDisplayUMax() {
         return PERSIST_DISPLAY_UMAX;
     }

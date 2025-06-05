@@ -781,7 +781,7 @@
             android:summary="%s"/>
 
         <ListPreference
-            android:defaultValue="@string/pref_camera_frc_disable"
+            android:defaultValue="@string/pref_camera_frc_disable_default"
             android:entries="@array/pref_camera2_frc_entries"
             android:entryValues="@array/pref_camera2_frc_entryvalues"
             android:key="pref_camera2_frc_key"
@@ -1023,7 +1023,7 @@
             android:layout="@layout/preference"
             android:summary="%s"/>
         <ListPreference
-            android:defaultValue="@string/pref_camera2_videoencoderprofile_default"
+            android:defaultValue="@string/pref_camera2_videopreviewprofile_default"
             android:entries="@array/pref_camera2_preview_profile_entry"
             android:entryValues="@array/pref_camera2_preview_profile_entryvalues"
             android:key="pref_camera2_preview_profile_key"

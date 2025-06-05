@@ -194,9 +194,10 @@ public class Camera2FaceView extends FaceView {
     public void setFaces(Face[] faces, ExtendedFace[] extendedFaces) {
         Log.v(TAG, BIG_LOG,"Num of faces=" + faces.length);
         if (mPause) return;
-        if (mFaces != null) {
-            if ((faces.length > 0 && mFaces.length == 0)
-                    || (faces.length == 0 && mFaces.length > 0)) {
+        Face[] tmpFace = mFaces;
+        if (tmpFace != null) {
+            if ((faces.length > 0 && tmpFace.length == 0)
+                    || (faces.length == 0 && tmpFace.length > 0)) {
                 mPendingFaces = faces;
                 mPendingExFaces = extendedFaces;
                 if (!mStateSwitchPending) {
@@ -212,12 +213,6 @@ public class Camera2FaceView extends FaceView {
         }
         mFaces = faces;
         mExFaces = extendedFaces;
-        if(mFaces != null) {
-            Log.v(TAG, FD_LOG, " mFaces.length=" + mFaces.length);
-        }
-        if (mExFaces != null) {
-            Log.v(TAG, FD_LOG,"Num of ex faces=" + mExFaces.length);
-        }
         if (!mBlocked && (mFaces != null) && (mFaces.length > 0) && mCameraBound != null) {
             postInvalidate();
         }
