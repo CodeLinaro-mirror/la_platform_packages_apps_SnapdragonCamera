@@ -1336,6 +1336,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
         public void run() {
             mActivity.runOnUiThread(new Runnable() {
+
                 public void run() {
                     if (uri != null)
                         mActivity.notifyNewMedia(uri);
@@ -1376,6 +1377,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (uri != null) {
                         mActivity.notifyNewMedia(uri);
                     }
+                    mActivity.updateStorageSpaceAndHint();
                 }
             };
 
@@ -1383,7 +1385,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             new MediaSaveService.OnMediaSavedListener() {
                 @Override
                 public void onMediaSaved(Uri uri) {
-                    Log.d(TAG, "onMediaSaved uri :" + uri + ", mLongshotActive :" + mLongshotActive);
+                    Log.i(TAG, "onMediaSaved uri :" + uri + ", mLongshotActive :" + mLongshotActive);
                     if (mLongshotActive) {
                         if (mediaSaveNotifyThread == null) {
                             mediaSaveNotifyThread = new MediaSaveNotifyThread(uri);
@@ -2651,8 +2653,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Dialog dialog = alert.show();
                 mHandler.postDelayed(() -> {
                     dialog.dismiss();
+
                 }, 5000L);
                 mActivity.finish();
+
             }
             //workaround for removing task bug
             System.exit(0);
@@ -12932,7 +12936,8 @@ private boolean isDevOptionSetting(){
                 if(mActivity.getPerformenceTest()) {
                     mSessionAfterRecord = System.currentTimeMillis();
                 }
-                createSessions();
+                    createSessions();
+
             }
         }
         mHandler.post(new Runnable() {
@@ -13107,7 +13112,7 @@ private boolean isDevOptionSetting(){
                         MediaMetadataRetriever.METADATA_KEY_DURATION));
                 retriever.release();
             } catch (Exception e) {
-                Log.e(TAG, "cannot access the file: " + e);
+                Log.e(TAG, "retriever file exception "+e);
             }
             mCurrentVideoValues.put(MediaStore.Video.Media.DURATION, duration);
             if (ApiHelper.isAndroidROrHigher()) {
@@ -13645,6 +13650,7 @@ private boolean isDevOptionSetting(){
 
         }
         mVideoEncoder.configure(mVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+
     }
 
     private void applyVideoFlip() {
@@ -13668,11 +13674,11 @@ private boolean isDevOptionSetting(){
         long frameGap = 0;
         int frameNumber = 0;
         int endCounter = 0;
-        boolean stopRec = true;
+        boolean stopRec = false;
         MediaFormat originalFormat = null;
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-        while (notDone) {
-            if (!mIsRecordingVideo && !mIsPreviewingVideo) {
+        while (notDone && !stopRec) {
+            if (!mIsRecordingVideo && !mIsPreviewingVideo ) {
 
                 if (endCounter < 5){
                     endCounter++;
@@ -13795,21 +13801,38 @@ private boolean isDevOptionSetting(){
                                 + ",maxduration is " + mMaxDurationForCodec + ",nowduration is "
                                 + (bufferInfo.presentationTimeUs - startPtsUs));
                     if ((mMaxDurationForCodec != 0) && (bufferInfo.presentationTimeUs - startPtsUs
-                            >= mMaxDurationForCodec*1000) && stopRec) {
-                        stopRec = false;
+                            >= mMaxDurationForCodec*1000) && !stopRec) {
+                        stopRec = true;
                         // stop video
                         mActivity.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                stopRecordingVideo(getMainCameraId());
+                               if(mIsRecordingVideo) {
+                                   stopRecordingVideo(getMainCameraId());
+                               }
                             }
                         });
                     }
                     encodedData.position(bufferInfo.offset);
                     encodedData.limit(bufferInfo.offset + bufferInfo.size);
-                    mMuxer.writeSampleData(mTrackVideoIndex, encodedData, bufferInfo);
-                    Log.v(TAG + "_video", MEDIACODEC_VIDEO_LOG,"sent " + bufferInfo.size +
+                    try {
+                        mMuxer.writeSampleData(mTrackVideoIndex, encodedData, bufferInfo);
+                        Log.v(TAG + "_video", MEDIACODEC_VIDEO_LOG, "sent " + bufferInfo.size +
                                 " bytes to muxer, timestamp is " + bufferInfo.presentationTimeUs);
+                    }catch (Exception e){
+                        Log.i(TAG," exception ="+e.getMessage()+", bufferInfo.size="+ bufferInfo.size+",stopRec="+stopRec
+                                +",mIsRecordingVideo="+mIsRecordingVideo);
+                        if(!stopRec && mIsRecordingVideo) {
+                            stopRec = true;
+                            mActivity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    stopRecordingVideo(getMainCameraId());
+                                    }
+
+                            });
+                        }
+                    }
                 }
                 mVideoEncoder.releaseOutputBuffer(encoderStatus, false);
 
@@ -13827,6 +13850,8 @@ private boolean isDevOptionSetting(){
         //mAudioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 4096);
         mAudioEncoder = MediaCodec.createEncoderByType(encoder);
         mAudioEncoder.configure(mAudioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+
+
     }
 
     private void configureAACAudioEncoder(String encoder) throws IOException {
@@ -13907,9 +13932,11 @@ private boolean isDevOptionSetting(){
         boolean notDone = true;
         long prevPtsUs = 0;
         long frameGap = 0;
+        boolean stopRec = false;
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-        while(notDone){
+        while(notDone && !stopRec){
             int encoderStatus = mAudioEncoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
+
             if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                 MediaFormat newFormat = mAudioEncoder.getOutputFormat();
@@ -13956,9 +13983,27 @@ private boolean isDevOptionSetting(){
                         // adjust the ByteBuffer values to match BufferInfo (not needed?)
                         encodedData.position(bufferInfo.offset);
                         encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                        try{
+
                         mMuxer.writeSampleData(mTrackAudioIndex, encodedData, bufferInfo);
                         Log.d(TAG + "_audio",MEDIACODEC_AUDIO_LOG, "sent " + bufferInfo.size +
                                     " bytes to muxer, ts=" + bufferInfo.presentationTimeUs);
+                        }catch (Exception e){
+                            Log.i(TAG,"e="+e.getMessage()+",bufferInfo.size="+bufferInfo.size+
+                                    " bytes to muxer, ts=" + bufferInfo.presentationTimeUs
+                                    +",stopRec="+stopRec);
+
+                            if(!stopRec && mIsRecordingVideo) {
+                                stopRec = true;
+                                mActivity.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        stopRecordingVideo(getMainCameraId());
+                                    }
+                                });
+                            }
+                        }
+
                     }
                 }
                 mAudioEncoder.releaseOutputBuffer(encoderStatus, false);
