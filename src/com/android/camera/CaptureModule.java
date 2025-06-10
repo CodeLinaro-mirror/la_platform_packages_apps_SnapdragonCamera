@@ -3818,24 +3818,28 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 String physical_id = mSettingsManager.getSinglePhysicalCamera();
                                 OutputConfiguration out = new OutputConfiguration(s);
                                 if (physical_id != null) {
-                                    mUI.buildPhysicalSurfaces();
                                     boolean enableLogical =
                                             SettingsManager.LOGICAL_AND_PHYSICAL.equals(physical_id);
-                                    if (!enableLogical)
+                                    if (enableLogical){
+                                        mUI.buildPhysicalSurfaces();
+                                    } else {
                                         out.setPhysicalCameraId(physical_id);
+                                    }
                                     outputConfigurations.add(out);
                                     List<Surface> physicalSurfaces = mUI.getPhysicalSurfaces();
                                     Set<String> allPhysicalIds =
                                             mSettingsManager.getAllPhysicalCameraId();
-                                    int i = 1;
-                                    for (String physical : allPhysicalIds) {
-                                        if (!physical_id.equals(physical)) {
-                                            OutputConfiguration o = new OutputConfiguration(
-                                                    physicalSurfaces.get(i));
-                                            o.setPhysicalCameraId(physical);
-                                            outputConfigurations.add(o);
-                                            mPreviewRequestBuilder[id].addTarget(physicalSurfaces.get(i));
-                                            i++;
+                                    if (enableLogical){
+                                        int i = 1;
+                                        for (String physical : allPhysicalIds) {
+                                            if (!physical_id.equals(physical)) {
+                                                OutputConfiguration o = new OutputConfiguration(
+                                                        physicalSurfaces.get(i));
+                                                o.setPhysicalCameraId(physical);
+                                                outputConfigurations.add(o);
+                                                mPreviewRequestBuilder[id].addTarget(physicalSurfaces.get(i));
+                                                i++;
+                                            }
                                         }
                                     }
                                 } else {
