@@ -4370,9 +4370,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                     public void run() {
                         Bundle myExtras = mActivity.getIntent().getExtras();
                         mOutputFileInit = false;
-                        setVideoOutputFile(myExtras);
-                        setOrientationHint(cameraId);
-                        mOutputFileInit = true;
+                        try {
+                            setVideoOutputFile(myExtras);
+                            setOrientationHint(cameraId);
+                            mOutputFileInit = true;
+                        }catch (Exception e){
+                            Log.w(TAG,"setVideoOutputFile error e="+e);
+                        }
                     }
                 }).start();
                 if (!mCaptureTimeLapse && (!mHighSpeedCapture || mHighSpeedRecordingMode)
