@@ -1358,7 +1358,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             new MediaSaveService.OnMediaSavedListener() {
                 @Override
                 public void onMediaSaved(Uri uri) {
-                    Log.d(TAG, "mOnVideoSavedListener onMediaSaved uri :" + uri);
+                    Log.i(TAG, "mOnVideoSavedListener onMediaSaved uri :" + uri);
                     if(mSettingsManager.getValue(SettingsManager.KEY_C2PA) != null &&
                             mSettingsManager.getValue(SettingsManager.KEY_C2PA).equals("on")){
                         Location location = getLocationManager().getCurrentLocation();
@@ -1397,6 +1397,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mActivity.notifyNewMedia(uri);
                         }
                     }
+                    mActivity.updateStorageSpaceAndHint();
                 }
             };
 
