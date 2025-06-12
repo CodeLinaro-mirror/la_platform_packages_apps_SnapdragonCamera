@@ -711,17 +711,17 @@ public class CameraActivity extends Activity
 
         if (!ApiHelper.HAS_SET_BEAM_PUSH_URIS) {
             // Disable beaming
-//            adapter.setNdefPushMessage(null, CameraActivity.this);
+            adapter.setNdefPushMessage(null, CameraActivity.this);
             return;
         }
 
-/*       adapter.setBeamPushUris(null, CameraActivity.this);
-         adapter.setBeamPushUrisCallback(new CreateBeamUrisCallback() {
+        adapter.setBeamPushUris(null, CameraActivity.this);
+        adapter.setBeamPushUrisCallback(new CreateBeamUrisCallback() {
             @Override
             public Uri[] createBeamUris(NfcEvent event) {
                 return mNfcPushUris;
             }
-        }, CameraActivity.this);*/
+        }, CameraActivity.this);
     }
 
     private void setNfcBeamPushUri(Uri uri) {
