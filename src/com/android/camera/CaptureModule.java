@@ -10602,9 +10602,26 @@ private boolean isDevOptionSetting(){
     private void limitPreviewFPS() {
         try {
             List<CaptureRequest> burstList = new ArrayList<>();
-            burstList.add(mVideoRecordRequestBuilder.build());
-            mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
-            burstList.add(mVideoRecordRequestBuilder.build());
+            int fps = mSettingsManager.getVideoPreviewFPS(mVideoSize,
+                    mSettingsManager.getVideoFPS());
+            Log.d(TAG,"limit preview fps:" + PersistUtil.getPreviewFps() + ",fps" + fps + ",mHighSpeedCaptureRate:" + mHighSpeedCaptureRate);
+            if((fps == 30 && mHighSpeedCaptureRate == 60) || (fps == 15 && mHighSpeedCaptureRate == 0)) {
+                burstList.add(mVideoRecordRequestBuilder.build());
+                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                burstList.add(mVideoRecordRequestBuilder.build());
+            }else if(fps == 15 && mHighSpeedCaptureRate == 60){
+                burstList.add(mVideoRecordRequestBuilder.build());
+                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+            }else if(fps == 45){
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                burstList.add(mVideoRecordRequestBuilder.build());
+            }
             mCurrentSession.setRepeatingBurst(burstList, mCaptureCallback, mCameraHandler);
             mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
         } catch (CameraAccessException e) {
@@ -10845,7 +10862,7 @@ private boolean isDevOptionSetting(){
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
-                    if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                         if (PersistUtil.enableMediaRecorder()) {
                             mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                         }
@@ -11310,7 +11327,7 @@ private boolean isDevOptionSetting(){
 
             int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                     mSettingsManager.getVideoFPS());
-            if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+            if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                 limitPreviewFPS();
             } else {
                 if (isHighSpeedRateCapture()) {
@@ -12070,7 +12087,7 @@ private boolean isDevOptionSetting(){
                 mMediaRecorder.pause();
                 int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
-                if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                     limitPreviewFPS();
                 }
             } else {
@@ -15053,7 +15070,7 @@ private boolean isDevOptionSetting(){
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
-                    if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                         if (mUI.getZoomFixedSupport()) {
                             applyZoomRatio(mVideoRecordRequestBuilder, mZoomValue, id);
                         } else {
