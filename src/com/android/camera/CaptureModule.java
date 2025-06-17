@@ -12823,6 +12823,10 @@ private boolean isDevOptionSetting(){
                 }
             }
             shouldAddToMediaStoreNow = true;
+            if(System.currentTimeMillis() - mStartRecordingTime < 1500){
+                shouldAddToMediaStoreNow = false;
+                warningToast("Recording time is too short, don't save file");
+            }
         }
         if (mActivity.getPerformenceTest()) {
             stopMediaRecorder = System.currentTimeMillis() - stopMediaRecorder;
