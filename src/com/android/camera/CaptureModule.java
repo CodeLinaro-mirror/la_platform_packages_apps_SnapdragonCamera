@@ -4580,7 +4580,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     //will cause hang in EIS. 
                     mPreviewRequestBuilder[id].addTarget(mVideoRecordingSurface);
                     mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
-                        .build(), mCaptureCallback, mCameraHandler);
+                            .build(), mCaptureCallback, mCameraHandler);
                     mPreviewRequestBuilder[id].removeTarget(mVideoRecordingSurface);
                 } else {
                     mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
@@ -6260,7 +6260,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             // send snapshot stream together with preview and video stream for snapshot request
             // stream is the surface for the app
             List<Surface> surfaces = new ArrayList<>();
-            if(!is8KInMulti) {
+            if(!is8KInMulti && (PersistUtil.enableMediaRecorder() || !mRecordingPausing)) {
                 addPreviewSurface(captureBuilder, surfaces, id);
             }
             if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getPhysicalFeatureEnableId(
@@ -12511,6 +12511,7 @@ private boolean isDevOptionSetting(){
                 mAudioEncoder.setParameters(params);
             }
             mVideoEncoder.setParameters(params);
+            mPreviewRequestBuilder[getMainCameraId()] = mVideoPreviewRequestBuilder;
         }
         mRecordingPausing = true;
         mRecordingPauseTime = SystemClock.uptimeMillis();
@@ -12553,6 +12554,7 @@ private boolean isDevOptionSetting(){
                 mAudioEncoder.setParameters(params);
             }
             mVideoEncoder.setParameters(params);
+            mPreviewRequestBuilder[getMainCameraId()] = mVideoRecordRequestBuilder;
         }
         mRecordingPausing = false;
         mRecordingStartTime = SystemClock.uptimeMillis();
@@ -13761,7 +13763,6 @@ private boolean isDevOptionSetting(){
                 }
                 if (mOnlyVideoEncoder || (mNumTracksAdded == TOTAL_NUM_TRACKS))  {
                     enableVideoButton(true);
-                    mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
                 }
             } else if (encoderStatus < 0) {
                    Log.w(TAG + "_video", MEDIACODEC_VIDEO_LOG,"unexpected result from OutputBuffer: "+ encoderStatus);
