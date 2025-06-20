@@ -2906,7 +2906,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     private void filterVideoEncoderOptions() {
         ListPreference videoEncoder = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
-
         if (videoEncoder != null) {
             videoEncoder.reloadInitialEntriesAndEntryValues();
             if (filterUnsupportedOptions(videoEncoder,
@@ -4479,6 +4478,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 supported.add("apv");
             }
         }
+        Log.d(TAG,"supported:"+supported.toString());
         return supported;
     }
 
@@ -4680,7 +4680,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
         // Set the value to the first entry if it is invalid.
         String value = pref.getValue();
         if (pref.findIndexOfValue(value) == -1) {
-            pref.setValueIndex(0);
+            String defaultValue = pref.findSupportedDefaultValue();
+            CharSequence[] cvalue = pref.getEntryValues();
+            if (defaultValue != null && Arrays.asList(cvalue).contains(defaultValue)) {
+               pref.setValue(defaultValue);
+            }else {
+                pref.setValueIndex(0);
+            }
         }
     }
 
