@@ -438,7 +438,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
-            Log.v(TAG, "surfaceDestroyed");
+            Log.i(TAG, "surfaceDestroyed");
             mSurfaceHolder = null;
             if (mDeepZoomModeRect != null) {
                 mDeepZoomModeRect.setVisibility(View.GONE);
@@ -2672,7 +2672,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if(!mModule.getCameraModeSwitcherAllowed()){
+                    if(!mModule.getCameraModeSwitcherAllowed() || !mModule.getPreviewLoad()){
                         return;
                     }
                     mVideoQualityIndex = (mVideoQualityIndex + 1) % mVideoSizes.size();
@@ -2693,7 +2693,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                         mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex);
                         mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
                     }
-                    mModule.restartAll();
+                    mModule.restartSession(true);
                 }
             });
             enableView(mVideoFps, SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
@@ -2702,13 +2702,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoFps.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if(!mModule.getCameraModeSwitcherAllowed()){
+                    if(!mModule.getCameraModeSwitcherAllowed() || !mModule.getPreviewLoad()){
                         return;
                     }
                     mVideoFpsIndex = (mVideoFpsIndex + 1) % mVideoFpss.size();
                     mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex);
                     mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
-                    mModule.restartAll();
+                    mModule.restartSession(true);
                 }
             });
             if(mSettingsManager.getPerfValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE_ENABLED).equals("false")){
@@ -2723,13 +2723,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if(!mModule.getCameraModeSwitcherAllowed()){
+                    if(!mModule.getCameraModeSwitcherAllowed() || !mModule.getPreviewLoad()){
                         return;
                     }
                     mPhotoQualityIndex = (mPhotoQualityIndex + 1) % 3;
                     mSettingsManager.setValueIndex(SettingsManager.KEY_PICTURE_SIZE, mSettingsManager.updatePhotoSize(mPhotoQualityIndex));
                     mVideoPhotoSize.setText(mSettingsManager.getDisplayValueForPhotoSize());
-                    mModule.restartAll();
+                    mModule.restartSession(true);
                 }
             });
         }
@@ -3826,14 +3826,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showPreviewCover() {
+        Log.i(TAG, "showPreviewCover");
         mPreviewCover.setVisibility(View.VISIBLE);
     }
 
 
 
     public void hidePreviewCover() {
-        Log.i(TAG, "hidePreviewCover");
         // Hide the preview cover if need.
+        Log.i(TAG, "hidePreviewCover");
         if (mPreviewCover.getVisibility() != View.GONE) {
             mPreviewCover.setVisibility(View.GONE);
         }
@@ -4894,7 +4895,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void hideSurfaceView() {
-        Log.d(TAG, "hideSurfaceView");
+        Log.i(TAG, "hideSurfaceView");
         if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
             mSurfaceView.setVisibility(View.GONE);
         } else {
@@ -4903,7 +4904,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showSurfaceView() {
-        Log.d(TAG, "surfceView-setFixedSize = " + mPreviewWidth + "x" + mPreviewHeight);
+        Log.i(TAG, "surfceView-setFixedSize = " + mPreviewWidth + "x" + mPreviewHeight);
         if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
             mSurfaceView.getHolder().setFixedSize(mPreviewWidth, mPreviewHeight);
             mSurfaceView.setAspectRatio(mPreviewHeight, mPreviewWidth);

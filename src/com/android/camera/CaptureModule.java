@@ -1635,7 +1635,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
-
+    public boolean getPreviewLoad() {
+        return mFirstPreviewLoaded;
+    }
 
     /**
      * A {@link CameraCaptureSession.CaptureCallback} that handles events related to JPEG capture.
@@ -1651,10 +1653,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (id == getMainCameraId()) {
                 mPreviewCaptureResult = result;
             }
+
             if (!mFirstPreviewLoaded) {
                 String tag_ = String.valueOf(result.getRequest().getTag());
                 int mainCameraId = getMainCameraId();
-                String curTag = mainCameraId + "-" + getCurrenCameraMode().name();
+                String curTag = mainCameraId + "-" + getCurrenCameraMode().name()+
+                        "-"+mPreviewSize.getWidth()+","+mPreviewSize.getHeight();;
                 boolean shouldHideCover = curTag.equals(tag_);
                 Log.i(TAG, "shouldHideCover " + shouldHideCover +
                         ", request tag " + tag_ + ", curTag " + curTag);
@@ -1721,7 +1725,6 @@ public class CaptureModule implements CameraModule, PhotoController,
             if("preview".equals(String.valueOf(result.getRequest().getTag())) || mPaused){
                 return;
             }
-
             int id = getIdFromTag(result.getRequest().getTag());
             mVideoFrameNumber = result.getFrameNumber();
             updatePerformanceUIInfo(result);
@@ -3466,7 +3469,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setTag(@NonNull CaptureRequest.Builder builder, @NonNull Object tag) {
+        tag = tag +"-"+mPreviewSize.getWidth()+","+mPreviewSize.getHeight();
         Log.d(TAG, "setTag " + tag);
+
         builder.setTag(tag);
     }
 
@@ -3539,12 +3544,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                                 return;
                             }
                             mCreateSessionLatency = System.currentTimeMillis() - mCreateSessionLatency;
-                            Log.i(TAG, "capturesession - onConfigured "+ id);
+                            Log.i(TAG, "capturesession - onConfigured "+ id+",cameraCaptureSession="+cameraCaptureSession);
                             if(mActivity.getPerformenceTest()) {
                                 mHasMapTimes.put("createSession->onConfigured",mCreateSessionLatency);
                             }
                             mCurrentSessionClosed = false;
-
                             if(mPreviewOutputConfiguration != null) {
                                 Surface previewSur = getPreviewSurfaceForSession(id);
                                 waitForPreviewSurfaceReady();
@@ -4479,7 +4483,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         } catch (CameraAccessException | IOException | IllegalArgumentException |
                 NullPointerException | IllegalStateException e) {
-            Log.e(TAG,e.toString());
+            e.printStackTrace();
+            Log.e(TAG,"exception e="+e);
             if (mIsCloseCamera && mCameraDevice[cameraId] == null) {
                 Log.w(TAG, "activity may be onPause, no need to pop up error msg.");
             } else {
@@ -8517,7 +8522,6 @@ private boolean isDevOptionSetting(){
         if (mInitHeifWriter != null) {
             mInitHeifWriter.close();
         }
-
         mActivity.runOnUiThread(() -> {
             mUI.showPreviewCover();
             mUI.hideEvSeekbar();
@@ -11655,7 +11659,12 @@ private boolean isDevOptionSetting(){
     public boolean isAFLocked(){
         return mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE;
     }
-
+    private void updateRecordState(boolean isPreview){
+        mStartRecPending = !isPreview;
+        mIsRecordingVideo = !isPreview;
+        mIsPreviewingVideo = isPreview;
+        mRecordingStoped = isPreview;
+    }
     private boolean triggerVideoRecording(final int cameraId) {
         if (null == mCameraDevice[cameraId] || mCurrentSession == null || mCurrentSessionClosed) {
             return false;
@@ -11667,19 +11676,13 @@ private boolean isDevOptionSetting(){
         mActivity.updateStorageSpaceAndHint();
         if (mActivity.getStorageSpaceBytes() <= Storage.LOW_STORAGE_THRESHOLD_BYTES) {
             Log.w(TAG, "Storage issue, ignore the start request");
-            mStartRecPending = false;
-            mIsRecordingVideo = false;
-            mIsPreviewingVideo = true;
-            mRecordingStoped = true;
+            updateRecordState(true);
             Toast.makeText(mActivity, "Storage space is not enough", Toast.LENGTH_SHORT).show();
             return false;
         }
-        mStartRecPending = true;
-        mIsRecordingVideo = true;
+        updateRecordState(false);
         mRecordingPausing = false;
-        mIsPreviewingVideo = false;
         mSSMCaptureCompleteFlag = false;
-        mRecordingStoped = false;
         checkAndPlayRecordSound(cameraId, true);
 
         try {
@@ -11700,10 +11703,7 @@ private boolean isDevOptionSetting(){
                 if (!is8KInMulti) {
                     if ((physicalRecorderId != null && physicalId == null) ||
                             (physicalRecorderId != null && physicalId != null && !physicalId.containsAll(physicalRecorderId))) {
-                        mStartRecPending = false;
-                        mIsRecordingVideo = false;
-                        mIsPreviewingVideo = true;
-                        mRecordingStoped = true;
+                        updateRecordState(true);
                         warningToast("Please enable physical cameras of outputs first");
                         return false;
                     }
@@ -11712,10 +11712,7 @@ private boolean isDevOptionSetting(){
                     }
                 } else {
                     if (physicalId != null) {
-                        mStartRecPending = false;
-                        mIsRecordingVideo = false;
-                        mIsPreviewingVideo = true;
-                        mRecordingStoped = true;
+                        updateRecordState(true);
                         warningToast("8K video only support one logical preview with 1080");
                         return false;
                     }
@@ -11746,10 +11743,7 @@ private boolean isDevOptionSetting(){
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                 }
             } else {
-                mStartRecPending = false;
-                mIsRecordingVideo = false;
-                mIsPreviewingVideo = true;
-                mRecordingStoped = true;
+                updateRecordState(true);
                 warningToast("Please enable physical cameras of outputs first");
                 return false;
             }
@@ -11774,7 +11768,9 @@ private boolean isDevOptionSetting(){
             mCameraHandler.removeMessages(CANCEL_TOUCH_FOCUS, mCameraId[cameraId]);
             if (!mFrameProcessor.isFrameListnerEnabled() && !startVideoRecording() ||
                     !mIsRecordingVideo) {
+                Log.e(TAG,"startRecordingFailed mIsRecordingVideo ="+mIsRecordingVideo);
                 startRecordingFailed();
+                updateRecordState(true);
                 return false;
             }
             mHandler.post(new Runnable() {
@@ -11922,10 +11918,11 @@ private boolean isDevOptionSetting(){
 
     public boolean startVideoRecording() {
         if (mUnsupportedResolution == true ) {
-            Log.v(TAG, "Unsupported Resolution according to target");
+            Log.i(TAG, "Unsupported Resolution according to target");
             mStartRecPending = false;
             mIsRecordingVideo = false;
             mRecordingStoped = true;
+            warningToast("startRecordingFailed,because UnsupportedResolution");
             return false;
         }
         int[] list = {0x40800000, 0X3AC};
@@ -11934,7 +11931,7 @@ private boolean isDevOptionSetting(){
         requestAudioFocus();
         if (PersistUtil.enableMediaRecorder()) {
             if (!startMediaRecorder()) {
-                startRecordingFailed();
+                warningToast("startRecordingFailed,because startMediaRecorder failed");
                 return false;
             }
         } else {
@@ -14520,6 +14517,8 @@ private boolean isDevOptionSetting(){
             mStartedTime = System.currentTimeMillis();
             Log.i(TAG," onVideoButtonClick mIsRecordingVideo="+mIsRecordingVideo);
         }
+        Log.d(TAG,"mIsRecordingVideo="+mIsRecordingVideo+",mRecordingStoped="+mRecordingStoped
+                +",mRecordingStarted="+mRecordingStarted);
         if (!mIsRecordingVideo && mRecordingStoped) {
             if (!triggerVideoRecording(getMainCameraId())) {
                 // Show ui when start recording failed.
@@ -17168,21 +17167,15 @@ private boolean isDevOptionSetting(){
         }
         closeProcessors();
         closeSessions();
-        if(isSurfaceChanged) {
-            //run in UI thread
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mUI.hideSurfaceView();
-                    mUI.showSurfaceView();
-                }
-            });
-        }
-        if(!mIsCloseCamera) {
-            updatePreviewSurfaceReadyState(false);
-        }
         initializeValues();
         updatePreviewSize();
+        if(isSurfaceChanged) {
+            if (!mIsCloseCamera) {
+                updatePreviewSurfaceReadyState(false);
+            }
+            mUI.hideSurfaceView();
+            mUI.showSurfaceView();
+        }
         openProcessors();
         createSessions();
         mActivity.runOnUiThread(() -> {
