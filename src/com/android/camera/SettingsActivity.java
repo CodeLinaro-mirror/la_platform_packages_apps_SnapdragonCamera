@@ -275,6 +275,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updateVideoMFHDRPreference();
                         updateVideoFlipPreference();
                         updateViullPreference();
+                        updateVSRPreference();
                         break;
                     case SettingsManager.KEY_VIDEO_ENCODER:
                         mSettingsManager.updatePictureAndVideoSize();
@@ -1926,7 +1927,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
         if ( mode == VIDEO  && mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID){
             if(aiCamera != null) {
-                if(mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb")) {
+                if(mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") || is8KVideo()) {
                     aiCamera.setValue("0");
                     aiCamera.setEnabled(false);
                 }else if(mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("single_rear_aibokeh")){
@@ -2199,6 +2200,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateLowLightBoostPreference();
         updateHfrBufferMode();
         updateInSensorZoom();
+        updateVSRPreference();
     }
     public void updateHfrBufferMode() {
         ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_HFR_BUFFER_MODE);
@@ -2651,6 +2653,24 @@ public class SettingsActivity extends PreferenceActivity {
         mFirstInitViull = false;
     }
 
+    private boolean is8KVideo(){
+        String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        int videoSize = CameraUtil.getSize(videoSizeStr);
+        if(videoSize == 7680*4320){
+            return true;
+        }
+        return false;
+    }
+    private void updateVSRPreference(){
+        ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_VSR);
+        if (pref == null) return;
+        if(is8KVideo()){
+            pref.setValue("0");
+            pref.setEnabled(false);
+            return;
+        }
+        pref.setEnabled(true);
+    }
     private void updateViullPreference() {
         ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_VIULL);
         if (pref == null) return;
@@ -2676,6 +2696,11 @@ public class SettingsActivity extends PreferenceActivity {
         String videoFps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
         if (mode == CaptureModule.CameraMode.VIDEO && videoFps != null && !videoFps.equals("off") && !vsr.equals("1")) {
+            disableVIULLOption(pref);
+            return;
+        }
+
+        if(mode == CaptureModule.CameraMode.VIDEO && is8KVideo()){
             disableVIULLOption(pref);
             return;
         }

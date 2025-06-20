@@ -10720,6 +10720,16 @@ private boolean isDevOptionSetting(){
         return mIsMute;
     }
 
+    private void updateDepenencyOptionValue(){
+        String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        int videoSize = CameraUtil.getSize(videoSizeStr);
+        if(videoSize == 7680*4320){
+            mSettingsManager.setValue(SettingsManager.KEY_AI_CAMERA, "0");
+            mSettingsManager.setValue(SettingsManager.KEY_VIULL, "0");
+            mSettingsManager.setValue(SettingsManager.KEY_VSR, "0");
+        }
+    }
+
     private void updateVideoSize() {
         Intent intent = mActivity.getIntent();
         if (intent.hasExtra(MediaStore.EXTRA_VIDEO_QUALITY)) {
@@ -16894,6 +16904,7 @@ private boolean isDevOptionSetting(){
                     continue;
                 case SettingsManager.KEY_VIDEO_QUALITY:
                     updateVideoSize();
+                    updateDepenencyOptionValue();
                     continue;
                 case SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL:
                     updateTimeLapseSetting();
