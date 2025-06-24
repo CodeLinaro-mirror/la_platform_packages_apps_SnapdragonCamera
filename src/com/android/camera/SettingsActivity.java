@@ -1561,8 +1561,6 @@ public class SettingsActivity extends PreferenceActivity {
                 for (String key: SettingsManager.KEY_PHYSICAL_VIDEO_SIZE)
                     add(key);
                 add(SettingsManager.KEY_AUDIO_RECORDING_MODE);
-                add(SettingsManager.KEY_HDR_WNR_MODE);
-                add(SettingsManager.KEY_HDR_ANS_MODE);
                 add(SettingsManager.KEY_FRC_MODE);
                 add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                 add(SettingsManager.KEY_ML_VIDEO);

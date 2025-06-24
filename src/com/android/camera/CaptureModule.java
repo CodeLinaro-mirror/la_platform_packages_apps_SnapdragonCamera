@@ -14240,14 +14240,6 @@ private boolean isDevOptionSetting(){
         int audioRecordingMode = SettingTranslation
                 .getAudioRecordingMode(mSettingsManager.getValue(SettingsManager.KEY_AUDIO_RECORDING_MODE));
 
-        // Get HDR WNR mode. (0 off, 1 on)
-        int hdrWnr = SettingTranslation
-                .getHdrWnrMode(mSettingsManager.getValue(SettingsManager.KEY_HDR_WNR_MODE));
-
-        // Get HDR ANS mode. (0 off, 1 on)
-        int hdrAns = SettingTranslation
-                .getHdrAnsMode(mSettingsManager.getValue(SettingsManager.KEY_HDR_ANS_MODE));
-
         boolean hfr = mHighSpeedCapture && !mHighSpeedRecordingMode;
 
         AudioManager am = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
@@ -14255,9 +14247,22 @@ private boolean isDevOptionSetting(){
         setDefaultHDRParameters(am);
         if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
             am.setParameters("hdr_record_on=true");
-            am.setParameters((hdrWnr == 0) ? "wnr_on=false" : "wnr_on=true");
-            am.setParameters((hdrAns == 0) ? "ans_on=false" : "ans_on=true");
+            am.setParameters("ans_on=true");
+            am.setParameters("wnr_on=false");
             am.setParameters("hdr_audio_channel_count=4");
+            am.setParameters("hdr_audio_sampling_rate=48000");
+            Log.d(TAG, "cameraId is " + mSettingsManager.isFacingFront(camId) +
+                    ", mOrientation is " + mOrientation);
+            am.setParameters(mSettingsManager.isFacingFront(camId) ? "facing=front" : "facing=back");
+            am.setParameters((mOrientation == 90 || mOrientation == 180)
+                    ? "inverted=true" : "inverted=false");
+            am.setParameters((mOrientation == 90 || mOrientation == 270)
+                    ? "orientation=landscape" : "orientation=portrait");
+        } else if(audioRecordingMode == SettingTranslation.AudioRecordingModeHDRWNR) {
+            am.setParameters("hdr_record_on=true");
+            am.setParameters("ans_on=true");
+            am.setParameters("wnr_on=true");
+            am.setParameters("hdr_audio_channel_count=2");
             am.setParameters("hdr_audio_sampling_rate=48000");
             Log.d(TAG, "cameraId is " + mSettingsManager.isFacingFront(camId) +
                     ", mOrientation is " + mOrientation);
@@ -14272,13 +14277,18 @@ private boolean isDevOptionSetting(){
 
         if (TRACE_DEBUG) Trace.beginSection("SnapCamera,configurateAudio -- mMediaRecorder set source");
         if (!mCaptureTimeLapse && !hfr && !mSuperSlomoCapture && (-1 != audioEncoder)) {
-            String value = SystemProperties.get("vendor.audio.hdr.spf.record.enable", "false");
-            Log.i(TAG, "HDR Enabled on SPF: " + value);
-            // Set audio source as unprocessed if HDR enabled and SPF property not set
-            if(value.equals("false") && audioRecordingMode == SettingTranslation.AudioRecordingModeHDR) {
+            if(audioRecordingMode == SettingTranslation.AudioRecordingModeRAW) {
                 mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.UNPROCESSED);
-            } else {
+            } else if(audioRecordingMode == SettingTranslation.AudioRecordingModeDefault) {
                 mMediaRecorder.setAudioSource(PersistUtil.getAudioSource());
+            } else {
+                String spfHdr = SystemProperties.get("vendor.audio.hdr.spf.record.enable", "false");
+                Log.i(TAG, "HDR Enabled on SPF: " + spfHdr);
+                if(spfHdr.equals("true")) {
+                    mMediaRecorder.setAudioSource(PersistUtil.getAudioSource());
+                } else {
+                    mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.UNPROCESSED);
+                }
             }
             mProfile.audioCodec = audioEncoder;
             if (mProfile.audioCodec == MediaRecorder.AudioEncoder.AMR_NB) {
