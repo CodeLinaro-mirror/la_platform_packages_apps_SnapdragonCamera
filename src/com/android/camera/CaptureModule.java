@@ -285,7 +285,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private static final int SCREEN_DELAY = 2 * 60 * 1000;
 
-    private static final int mShotNum = PersistUtil.getLongshotShotLimit();
+    private static int mShotNum = PersistUtil.getLongshotShotLimit();
     private boolean mLongshoting = false;
     private AtomicInteger mNumFramesArrived = new AtomicInteger(0);
     private AtomicInteger mNumImageArrived = new AtomicInteger(0);
@@ -2365,13 +2365,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 awbinfo_data[2] = Float.toString(mBGain);
                 awbinfo_data[3] = Float.toString(mCctAWB);
                 synchronized (awbinfo_data) {
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mUI.updateAWBInfoVisibility(View.VISIBLE);
-                            mUI.updateAwbInfoText(awbinfo_data);
-                        }
-                    });
+                    mUI.updateAWBInfoVisibility(View.VISIBLE);
+                    mUI.updateAwbInfoText(awbinfo_data);
                 }
             } catch (IllegalArgumentException | NullPointerException e) {
                 Log.w(TAG,e.toString());
@@ -2408,15 +2403,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }catch (NullPointerException|IllegalArgumentException e){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
-
             synchronized (aecinfo_data) {
-                mActivity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mUI.updateAECInfoVisibility(View.VISIBLE);
-                        mUI.updateAecInfoText(aecinfo_data);
-                    }
-                });
+                mUI.updateAECInfoVisibility(View.VISIBLE);
+                mUI.updateAecInfoText(aecinfo_data);
             }
         } else {
             mUI.updateAECInfoVisibility(View.GONE);
@@ -2448,13 +2437,8 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             }
             synchronized (afdinfo_data) {
-                mActivity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mUI.updateAFDInfoVisibility(View.VISIBLE);
-                        mUI.updateAfdInfoText(afdinfo_data);
-                    }
-                });
+                mUI.updateAFDInfoVisibility(View.VISIBLE);
+                mUI.updateAfdInfoText(afdinfo_data);
             }
         } else {
             mUI.updateAFDInfoVisibility(View.GONE);
@@ -5719,7 +5703,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             List<CaptureRequest> burstList = new ArrayList<>();
             float previewProportion = 0f;
             float fps = mSettingsManager.getFps(mPictureSize);
-            Log.i(TAG,"max fps:" + fps);
+            if(mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT) {
+                mShotNum = (int)fps *2;
+            }
+            Log.i(TAG,"max fps:" + fps + ",mShotNum:" + mShotNum);
             if (fps > 0) {
                 previewProportion = 30f / fps - 1f;
             }
@@ -5742,6 +5729,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             Log.d(TAG, "burstShot, previewCount " + previewCount + ", captureCount " + captureCount);
             mCaptureSession[id].setRepeatingBurst(burstList, mLongshotCallBack, mCaptureCallbackHandler);
+            if(mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT) {
+                mHandler.postDelayed(() -> {
+                    stopBurstShot();
+                }, 2000);
+            }
         } else {
             captureBuilder.setTag("capture-limit");
             mCaptureSession[id].capture(captureBuilder.build(),mLongshotCallBack,mCaptureCallbackHandler);
@@ -8941,7 +8933,9 @@ private boolean isDevOptionSetting(){
             mCameraRender.destroy();
         }
         if(mPostProcessor.isJniAPISupported()) {
-            mPostProcessor.nativePerfLockRelease(1);
+            if (!PersistUtil.getModelInfo().contains("7750")){
+                mPostProcessor.nativePerfLockRelease(1);
+            }
             mPostProcessor.nativeC2paTearDown();
         }
     }
@@ -10242,7 +10236,7 @@ private boolean isDevOptionSetting(){
     }
 
     private void stopBurstShot() {
-        Log.d(TAG, "stopBurstShot");
+        Log.i(TAG, "stopBurstShot");
         try {
             int id = getMainCameraId();
             enableShutterAndVideoOnUiThread(id);
@@ -10608,9 +10602,26 @@ private boolean isDevOptionSetting(){
     private void limitPreviewFPS() {
         try {
             List<CaptureRequest> burstList = new ArrayList<>();
-            burstList.add(mVideoRecordRequestBuilder.build());
-            mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
-            burstList.add(mVideoRecordRequestBuilder.build());
+            int fps = mSettingsManager.getVideoPreviewFPS(mVideoSize,
+                    mSettingsManager.getVideoFPS());
+            Log.d(TAG,"limit preview fps:" + PersistUtil.getPreviewFps() + ",fps" + fps + ",mHighSpeedCaptureRate:" + mHighSpeedCaptureRate);
+            if((fps == 30 && mHighSpeedCaptureRate == 60) || (fps == 15 && mHighSpeedCaptureRate == 0)) {
+                burstList.add(mVideoRecordRequestBuilder.build());
+                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                burstList.add(mVideoRecordRequestBuilder.build());
+            }else if(fps == 15 && mHighSpeedCaptureRate == 60){
+                burstList.add(mVideoRecordRequestBuilder.build());
+                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+            }else if(fps == 45){
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                burstList.add(mVideoRecordRequestBuilder.build());
+            }
             mCurrentSession.setRepeatingBurst(burstList, mCaptureCallback, mCameraHandler);
             mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
         } catch (CameraAccessException e) {
@@ -10851,7 +10862,7 @@ private boolean isDevOptionSetting(){
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
-                    if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                         if (PersistUtil.enableMediaRecorder()) {
                             mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                         }
@@ -11316,7 +11327,7 @@ private boolean isDevOptionSetting(){
 
             int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                     mSettingsManager.getVideoFPS());
-            if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+            if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                 limitPreviewFPS();
             } else {
                 if (isHighSpeedRateCapture()) {
@@ -12076,7 +12087,7 @@ private boolean isDevOptionSetting(){
                 mMediaRecorder.pause();
                 int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
-                if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                     limitPreviewFPS();
                 }
             } else {
@@ -14779,13 +14790,13 @@ private boolean isDevOptionSetting(){
 
     }
     private void updateRGBGraghViewVisibility(final int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mGraphViewRGB != null) {
+        if (mGraphViewRGB != null && visibility != mGraphViewRGB.getVisibility()) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
                     mGraphViewRGB.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
 
     private void applyEnableCinematic(CaptureRequest.Builder request) {
@@ -14799,19 +14810,17 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateGraghViewVisibility(final int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mGraphViewR != null) {
+        if ((mGraphViewR != null && visibility != mGraphViewR.getVisibility()) ||
+                (mGraphViewGB != null && visibility != mGraphViewGB.getVisibility()) ||
+                (mGraphViewB != null && visibility != mGraphViewB.getVisibility())) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
                     mGraphViewR.setVisibility(visibility);
-                }
-                if(mGraphViewGB != null) {
                     mGraphViewGB.setVisibility(visibility);
-                }
-                if(mGraphViewB != null) {
                     mGraphViewB.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
 
     private void updateMFNRText() {
@@ -14856,19 +14865,15 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateGraghView(){
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mGraphViewR != null) {
-                    mGraphViewR.PreviewChanged();
-                }
-                if(mGraphViewGB != null) {
-                    mGraphViewGB.PreviewChanged();
-                }
-                if(mGraphViewB != null) {
-                    mGraphViewB.PreviewChanged();
-                }
-            }
-        });
+        if(mGraphViewR != null) {
+            mGraphViewR.PreviewChanged();
+        }
+        if(mGraphViewGB != null) {
+            mGraphViewGB.PreviewChanged();
+        }
+        if(mGraphViewB != null) {
+            mGraphViewB.PreviewChanged();
+        }
     }
 
     // BG stats
@@ -14884,13 +14889,10 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateBGStatsView(){
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(bgstats_view != null) {
-                    bgstats_view.PreviewChanged();
-                }
-            }
-        });
+        if(bgstats_view != null) {
+            bgstats_view.PreviewChanged();
+        }
+
     }
 
     //BE stats
@@ -14906,35 +14908,28 @@ private boolean isDevOptionSetting(){
     }
 
     private void updateBEStatsView(){
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(bestats_view != null) {
-                    bestats_view.PreviewChanged();
-                }
-            }
-        });
+        if(bestats_view != null) {
+            bestats_view.PreviewChanged();
+        }
     }
 
     //RS stats
     private void updateRSStatsVisibility(final int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(rsstats_view != null) {
+        if(rsstats_view != null && (visibility != rsstats_view.getVisibility()
+        || visibility != mRsStatsLabel.getVisibility())) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
                     rsstats_view.setVisibility(visibility);
                     mRsStatsLabel.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
 
     private void updateRSStatsView(){
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(rsstats_view != null) {
-                    rsstats_view.PreviewChanged();
-                }
-            }
-        });
+        if(rsstats_view != null) {
+            rsstats_view.PreviewChanged();
+        }
     }
 
     private boolean applyPreferenceToPreview(int cameraId, String key, String value) {
@@ -15075,7 +15070,7 @@ private boolean isDevOptionSetting(){
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
-                    if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                         if (mUI.getZoomFixedSupport()) {
                             applyZoomRatio(mVideoRecordRequestBuilder, mZoomValue, id);
                         } else {
@@ -16654,8 +16649,10 @@ private boolean isDevOptionSetting(){
         int duration = 3000;
         int[] list = {0x40400000, 0x1, 0x40C00000, 0x1, 0x40804000, 0X687, 0x40800000, 0X687,
                 0x40804100, 0X660, 0x40800100, 0X660, 0x40800200, 0X8C6, 0x40804200, 0X8C6};
-        if(mPostProcessor.isJniAPISupported())
+        if(mPostProcessor.isJniAPISupported() && !PersistUtil.getModelInfo().contains("7750")) {
+            Log.d(TAG,"acquire perf lock");
             mPostProcessor.nativePerfLockAcq(1, duration, list, list.length);
+        }
         mLockNums.set(0);
         mResumed = false;
         int nextCameraId = getNextScreneModeId(mNextModeIndex);
@@ -17766,7 +17763,7 @@ class Camera2RGBGraphView extends View {
         }
     }
     public void PreviewChanged() {
-        invalidate();
+        postInvalidate();
     }
 
     public void setCaptureModuleObject(CaptureModule captureModule) {
@@ -17861,7 +17858,7 @@ class Camera2GraphView extends View {
         }
     }
     public void PreviewChanged() {
-        invalidate();
+        postInvalidate();
     }
 
     public void setCaptureModuleObject(CaptureModule captureModule) {
@@ -17920,7 +17917,7 @@ class Camera2BGBitMap extends View {
     }
 
     public void PreviewChanged() {
-        invalidate();
+        postInvalidate();
     }
 
     public void setCaptureModuleObject(CaptureModule captureModule) {
@@ -17984,7 +17981,7 @@ class Camera2BEBitMap extends View {
         }
     }
     public void PreviewChanged() {
-        invalidate();
+        postInvalidate();
     }
 
     public void setCaptureModuleObject(CaptureModule captureModule) {
@@ -18048,7 +18045,7 @@ class Camera2RSBitMap extends View {
         }
     }
     public void PreviewChanged() {
-        invalidate();
+        postInvalidate();
     }
 
     public void setCaptureModuleObject(CaptureModule captureModule) {

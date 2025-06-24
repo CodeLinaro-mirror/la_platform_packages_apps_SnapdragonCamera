@@ -1796,11 +1796,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void updateAwbInfoText(String[] info) {
         if (info == null || info.length <4)
             return;
+
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(AWB_INFO_TITLE[0]+info[0]).append("\r\n")
                 .append(AWB_INFO_TITLE[2]+info[2]).append("\r\n")
                 .append(AWB_INFO_TITLE[3]+info[3]);
-        mStatsAwbText.setText(stringBuilder.toString());
+        final String result = stringBuilder.toString();
+        mActivity.runOnUiThread(() -> {
+            long setTime = System.nanoTime();
+            mStatsAwbText.setText(result);
+                });
     }
 
     public void updateAecInfoText(String[] info) {
@@ -1819,7 +1824,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 .append(STATS_EXTENSION_TITLE[2]+" "+info[12]).append("\r\n")
                 .append(STATS_EXTENSION_TITLE[3]+" "+info[13]).append("\r\n")
                 .append(STATS_EXTENSION_TITLE[4]+" "+info[14]);
-        mStatsAecText.setText(stringBuilder.toString());
+        final String result = stringBuilder.toString();
+        mActivity.runOnUiThread(() -> {
+            mStatsAecText.setText(result);
+        });
+
+
     }
     public void updateLowLightText(CaptureResult result) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_LOWLIGHT_BOOST);
@@ -1888,7 +1898,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 .append(AFD_INFO_TITLE[5]+info[8]+" "+info[9]+" "+info[10]+" "+info[11]).append("\r\n")
                 .append(AFD_INFO_TITLE[6]+info[12]+" "+info[13]).append("\r\n")
                 .append(AFD_INFO_TITLE[7]+info[14]+" "+info[15]);
-        mStatsAfdText.setText(stringBuilder.toString());
+        final String result = stringBuilder.toString();
+        mActivity.runOnUiThread(() -> {
+            mStatsAfdText.setText(result);
+        });
+
     }
 
     private boolean isInvalidString(String[] info) {
@@ -1909,7 +1923,6 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 return;
             }
         }
-
         mInvalidAFCount = 0;
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(AF_INFO_TITLE[0]+info[0]).append("\r\n")
@@ -1919,7 +1932,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 .append(AF_INFO_TITLE[4]+info[4]).append("\r\n")
                 .append(AF_INFO_TITLE[5]+info[5]).append("\r\n")
                 .append(AF_INFO_TITLE[6]+info[6]);
-        mStatsAfText.setText(stringBuilder.toString());
+
+        final String result = stringBuilder.toString();
+        mActivity.runOnUiThread(() -> {
+            mStatsAfText.setText(result);
+        });
     }
 
     public void updateAecIdsInfoText(String[] info) {
@@ -1932,62 +1949,63 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void updateAWBInfoVisibility(int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mStatsAwbInfo != null) {
+        if (mStatsAwbInfo != null && mStatsAwbInfo.getVisibility() != visibility) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
                     mStatsAwbInfo.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
 
     public void updateAFDInfoVisibility(int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mStatsAfdInfo != null) {
+        if (mStatsAfdInfo != null && mStatsAfdInfo.getVisibility() != visibility) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
                     mStatsAfdInfo.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
 
     public void updateAFInfoVisibility(int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mStatsAfInfo != null) {
+        if(mStatsAfInfo != null && mStatsAfInfo.getVisibility() != visibility) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
                     mStatsAfInfo.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
 
     public void updateAECIdInfoVisibility(int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mStatsAecIdsInfo != null) {
+        if(mStatsAecIdsInfo != null  && mStatsAecIdsInfo.getVisibility() != visibility) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
+
                     mStatsAecIdsInfo.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
 
     public void updateStatsNNVisibility(int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mStatsNNResult != null) {
+        if(mStatsNNResult != null  && mStatsNNResult.getVisibility() != visibility) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
                     mStatsNNResult.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
     public void updateAECInfoVisibility(int visibility) {
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mStatsAecInfo != null) {
+        if(mStatsAecInfo != null && mStatsAecInfo.getVisibility() != visibility) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
                     mStatsAecInfo.setVisibility(visibility);
                 }
-            }
-        });
+            });
+        }
     }
     private int getCurrentIntentMode() {
         return mModule.getCurrentIntentMode();

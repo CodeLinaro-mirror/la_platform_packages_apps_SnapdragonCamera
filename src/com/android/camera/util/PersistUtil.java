@@ -74,6 +74,9 @@ public class PersistUtil {
             getBoolean("persist.sys.camera.zzhdr.enable", false);
     private static final int PERSIST_PREVIEW_SIZE =
             getInt("persist.sys.camera.preview.size", 0);
+
+    private static final int PERSIST_PREVIEW_FPS =
+            getInt("persist.sys.camera.preview.fps", 0);
     // camera1 prop end
     private static final boolean PERSIST_CAMERA_TORCH_MODE = getBoolean("persist.sys.camera.torch.mode", false);
     private static final String PERSIST_HFR_LIMIT =
@@ -410,6 +413,9 @@ public class PersistUtil {
         return PERSIST_PREVIEW_SIZE;
     }
 
+    public static int getPreviewFps(){
+        return PERSIST_PREVIEW_FPS;
+    }
     public static long getTimestampLimit(){
         return PERSIST_TIMESTAMP_LIMIT;
     }
