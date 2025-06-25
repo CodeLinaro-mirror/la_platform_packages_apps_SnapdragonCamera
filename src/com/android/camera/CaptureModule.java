@@ -5849,6 +5849,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             float fps = mSettingsManager.getFps(mPictureSize);
             if(mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT || mSettingsManager.getSavePictureFormat() == SettingsManager.HEIC_TENBIT_FORMAT) {
                 mShotNum = (int)fps *2;
+            }else{
+                mShotNum = PersistUtil.getLongshotShotLimit();
             }
             Log.i(TAG,"max fps:" + fps + ",mShotNum:" + mShotNum);
             if (fps > 0) {
