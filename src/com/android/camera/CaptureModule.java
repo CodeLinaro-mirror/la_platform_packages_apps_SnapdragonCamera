@@ -11685,7 +11685,11 @@ private boolean isDevOptionSetting(){
         mRecordingPausingTime = 0;
         Log.i(TAG, "triggerVideoRecording " + cameraId);
 
-        mActivity.updateStorageSpaceAndHint();
+        mCameraHandler.post(new Runnable() {
+            @Override    public void run() {
+                mActivity.updateStorageSpaceAndHint();
+            }
+        });
         if (mActivity.getStorageSpaceBytes() <= Storage.LOW_STORAGE_THRESHOLD_BYTES) {
             Log.w(TAG, "Storage issue, ignore the start request");
             updateRecordState(true);
