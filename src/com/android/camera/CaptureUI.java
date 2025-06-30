@@ -2767,10 +2767,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         String value = mSettingsManager.getValue(SettingsManager.KEY_GRIDLINE);
         if (value != null && value.equals("on")){
             mGridLineView.setVisibility(View.VISIBLE);
-            int height = getScreenWidth() * mPreviewWidth / mPreviewHeight;
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(getScreenWidth(), height);
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(mSurfaceView.getWidth(),
+                    mSurfaceView.getHeight());
             mGridLineView.setLayoutParams(params);
+            mGridLineView.setX(mSurfaceView.getLeft());
             mGridLineView.setY(mSurfaceView.getTop());
+            Log.d(TAG, "updateGridLine from left: " + mSurfaceView.getLeft() + " and top: "
+                    + mSurfaceView.getTop());
         }
     }
 
