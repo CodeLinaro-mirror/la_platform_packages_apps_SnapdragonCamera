@@ -1658,7 +1658,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 String tag_ = String.valueOf(result.getRequest().getTag());
                 int mainCameraId = getMainCameraId();
                 String curTag = mainCameraId + "-" + getCurrenCameraMode().name()+
-                        "-"+mPreviewSize.getWidth()+","+mPreviewSize.getHeight();;
+                        "-"+mPreviewSize.getWidth()+","+mPreviewSize.getHeight();
                 boolean shouldHideCover = curTag.equals(tag_);
                 Log.i(TAG, "shouldHideCover " + shouldHideCover +
                         ", request tag " + tag_ + ", curTag " + curTag);
@@ -1932,7 +1932,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             if((mActivity.getPerformenceTest()) && mFirstRequestLatency != 0) {
                 String tag_ = String.valueOf(result.getRequest().getTag());
                 int mainCameraId = getMainCameraId();
-                String curTag = mainCameraId + "-" + getCurrenCameraMode().name();
+                String curTag = mainCameraId + "-" + getCurrenCameraMode().name() +
+                        "-"+mPreviewSize.getWidth()+","+mPreviewSize.getHeight();
                 if(curTag.equals(tag_)) {
                     mFirstRequestLatency = System.currentTimeMillis() - mFirstRequestLatency;
                     mHasMapTimes.put("FirstRequest->onCaptureCompleted", mFirstRequestLatency);
