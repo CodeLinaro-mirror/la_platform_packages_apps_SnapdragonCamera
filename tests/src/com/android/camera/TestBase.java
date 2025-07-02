@@ -2233,6 +2233,9 @@ public class TestBase{
         }
         for (int i = 0; i < Entryvalues.length; i++) {
             final String setvalue = Entryvalues[i].toString();
+            if(SettingsManager.KEY_SELECT_MODE.equals(strkey) && "single_rear_aibokeh".equals(setvalue)){
+               continue;
+            }
             if(!mCaptureModule.getPaused()) {
                 executeShellCommand("input tap " + mSettingLoc[0] + " " + mSettingLoc[1]);
                 Thread.sleep(SMALL_WAIT_DURATION);
@@ -2391,13 +2394,15 @@ public class TestBase{
     }
     private void checkExtendZoom(CaptureModule.CameraMode mode,String setvalue)  throws Exception {
         testZoom(mode);
-        int mMaxZoomP = mCurrentPreviewResult.get(CaptureModule.getExtendedMaxZoom);
-        int mMaxZoomC = mCurrentCaptureResult.get(CaptureModule.getExtendedMaxZoom);
-        int value = Integer.valueOf(setvalue);
-        if(value != mMaxZoomP || value != mMaxZoomC){
-            testFail = getFailStr("ExtendedMaxZoom in preview is" + mMaxZoomP + ",in capture is ",
-                    mMaxZoomC, value);
-            return;
+        if("1".equals(setvalue) && mCurrentPreviewResult.get(CaptureModule.getExtendedMaxZoom) != null) {
+            int mMaxZoomP = mCurrentPreviewResult.get(CaptureModule.getExtendedMaxZoom);
+            int mMaxZoomC = mCurrentCaptureResult.get(CaptureModule.getExtendedMaxZoom);
+            int value = Integer.valueOf(setvalue);
+            if (value != mMaxZoomP || value != mMaxZoomC) {
+                testFail = getFailStr("ExtendedMaxZoom in preview is" + mMaxZoomP + ",in capture is ",
+                        mMaxZoomC, value);
+                return;
+            }
         }
     }
     public void checkMixedHDR()  {

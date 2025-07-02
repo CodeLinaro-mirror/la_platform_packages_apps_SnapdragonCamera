@@ -49,6 +49,7 @@ public class KeyValueTest extends TestBase {
     private boolean isResetSetting;
     private static final String KEY_JSON = "/data/data/org.codeaurora.snapcam/files/keyTest.json";
     private static boolean resetSetting = false;
+    private static boolean skipShutter = false;
     StringBuffer passStrBuffer;
     StringBuffer failStrBuffer;
     StringBuffer setStrBuffer;
@@ -57,7 +58,6 @@ public class KeyValueTest extends TestBase {
     private static boolean isFrontCamera;
     private String cameraId = "0";
     private CaptureModule.CameraMode mode;
-
     @BeforeClass
     public static void initJson() throws Exception {
         Log.i("autotest_initJson", "initJson beforeTest");
@@ -71,7 +71,7 @@ public class KeyValueTest extends TestBase {
         if (str_key != null && str_key.length > 0) {
             for (int i = 0; i < str_key.length; i++) {
                 if (str_key[i] != null) {
-                    Log.i("autotest_initJson", "initJson str_key[i]=" + str_key[i].toString() + ",i=" + i);
+                    Log.i("autotest_initJson", "initJson str_key[i]=" + str_key[i].trim().toString() + ",i=" + i);
                     if (str_key[i].trim().equalsIgnoreCase("reset")) {
                         Log.i("autotest_initJson", " reset is true");
                         resetSetting = true;
@@ -79,6 +79,10 @@ public class KeyValueTest extends TestBase {
                     } else if (str_key[i].trim().equalsIgnoreCase("front")) {
                         isFrontCamera = true;
                         jsonObject.put("isFront", true);
+                    }else if (str_key[i].trim().equalsIgnoreCase("skipshutter")) {
+                        skipShutter = true;
+                        jsonObject.put("skipShutter", true);
+                        Log.i("autotest_initJson", " skipShutter is true");
                     } else {
                         String[] str_value = str_key[i].split(",");
                         if (str_value.length > 1) {
@@ -158,6 +162,9 @@ public class KeyValueTest extends TestBase {
             } else {
                 passStrBuffer.append(key_title + " checkKeyValue Pass: set key value is " + value +
                          ",get key value is " + keyvalue + ";");
+            }
+            if(skipShutter){
+                return;
             }
             switch (key_title.toLowerCase()) {
                 case "mixed hdr":
@@ -304,15 +311,17 @@ public class KeyValueTest extends TestBase {
             passStrBuffer.append("backToPreview after setting Pass:CameraActivity is not paused;");
         }
         testResult = true;
-        clickShutterButton(mode);
-        if (testResult) {
-            passStrBuffer.append("SnapShot or Recording Pass: Checking pass;");
-        } else {
-            String failstr = getTestFail(testFail);
-            if (failstr == null) {
-                failstr = "Checking fail";
+        if(!skipShutter) {
+            clickShutterButton(mode);
+            if (testResult) {
+                passStrBuffer.append("SnapShot or Recording Pass: Checking pass;");
+            } else {
+                String failstr = getTestFail(testFail);
+                if (failstr == null) {
+                    failstr = "Checking fail";
+                }
+                failStrBuffer.append("SnapShot or Recording Fail :" + failstr + ";");
             }
-            failStrBuffer.append("SnapShot or Recording Fail :" + failstr + ";");
         }
         checkKeyValue();
         Log.i(TAG, "fail is " + failStrBuffer + ",pass is " + passStrBuffer);

@@ -3063,9 +3063,7 @@ public class CameraActivity extends Activity
     public CaptureModule getCaptureModule(){
         return mCaptureModule;
     }
-    public boolean getAutoTest(){
-         return  PersistUtil.isFuncTestRunning();
-    }
+
 
     public boolean getDevOption(){
         return  mOpenDevOption;

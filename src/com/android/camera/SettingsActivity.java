@@ -2304,13 +2304,20 @@ public class SettingsActivity extends PreferenceActivity {
                 key.remove("SAT");
                 value.remove("sat");
             }
-            if (mode == CaptureModule.CameraMode.VIDEO && mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID) {
+            //AIBokeh is not supported on KNP
+/*            if (mode == CaptureModule.CameraMode.VIDEO && mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID) {
                 key.add("Single Rear AIbokeh");
                 value.add("single_rear_aibokeh");
             }
             if((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID || !CaptureModule.MCXMODE) && mode == CaptureModule.CameraMode.VIDEO){
                 key = new ArrayList<String>(Arrays.asList("Default", "RTB"));
                 value = new ArrayList<String>(Arrays.asList( "default", "rtb"));
+            }
+
+ */
+            if((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID || !CaptureModule.MCXMODE) && mode == CaptureModule.CameraMode.VIDEO){
+                key = new ArrayList<String>(Arrays.asList("Default"));
+                value = new ArrayList<String>(Arrays.asList( "default"));
             }
             CharSequence[]entries = key.toArray(new CharSequence[key.size()]);
             CharSequence[] values = value.toArray(new CharSequence[value.size()]);

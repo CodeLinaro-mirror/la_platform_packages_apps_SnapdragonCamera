@@ -601,18 +601,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     private void previewUIReady() {
-        if (mSettingsManager.getPhysicalCameraId() == null &&
-                mSettingsManager.getSinglePhysicalCamera() == null) {
-            mModule.onPreviewUIReady();
-        } else {
+        String physical_id = mSettingsManager.getSinglePhysicalCamera();
+        if(mSettingsManager.getPhysicalCameraId() != null ||
+                (physical_id != null && SettingsManager.LOGICAL_AND_PHYSICAL.equals(physical_id))){
             checkSurfaceReady();
+        } else {
+            mModule.onPreviewUIReady();
         }
-
     }
 
     private void checkSurfaceReady(){
         String physical_id = mSettingsManager.getSinglePhysicalCamera();
-        if (physical_id != null) {
+        if (physical_id != null && SettingsManager.LOGICAL_AND_PHYSICAL.equals(physical_id)) {
             mPreviewCount = mSettingsManager.getAllPhysicalCameraId().size()+1;
         } else {
             mPreviewCount = mSettingsManager.getPhysicalCameraId().size()+1;
@@ -1600,7 +1600,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
-    private void setZoomTextSelect(float zoom){
+    public void setZoomTextSelect(float zoom){
        String zoom_text = zoomDf.format(zoom);
        float zoomFomat = Float.valueOf(zoom_text);
        Log.d(TAG,"zoomtext="+zoom_text+",zoomFomat="+zoomFomat+",mWZoom="+mWZoom+",mTelZoom="+mTelZoom);
@@ -2672,6 +2672,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if(!mModule.getCameraModeSwitcherAllowed()){
+                        return;
+                    }
                     mVideoQualityIndex = (mVideoQualityIndex + 1) % mVideoSizes.size();
                     mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_QUALITY, mVideoQualityIndex);
                     mVideoPhotoSize.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_QUALITY, mVideoQualityIndex));
@@ -2699,6 +2702,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoFps.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if(!mModule.getCameraModeSwitcherAllowed()){
+                        return;
+                    }
                     mVideoFpsIndex = (mVideoFpsIndex + 1) % mVideoFpss.size();
                     mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex);
                     mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
@@ -2717,6 +2723,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if(!mModule.getCameraModeSwitcherAllowed()){
+                        return;
+                    }
                     mPhotoQualityIndex = (mPhotoQualityIndex + 1) % 3;
                     mSettingsManager.setValueIndex(SettingsManager.KEY_PICTURE_SIZE, mSettingsManager.updatePhotoSize(mPhotoQualityIndex));
                     mVideoPhotoSize.setText(mSettingsManager.getDisplayValueForPhotoSize());
@@ -3138,7 +3147,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mFilterLayout.setLayoutParams(params);
             ((ViewGroup) mRootView).addView(mFilterLayout);
             mFilterLayout.setY(display.getHeight() - 2 * size);
-            if(mActivity.getAutoTest()) {
+            if(PersistUtil.isAutoTestRun()) {
                 mFilterHight = display.getHeight() - 2 * size;
             }
         }
@@ -3183,7 +3192,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             TextView label = (TextView) filterBox.findViewById(R.id.label);
 
             imageView.setImageResource(thumbnails[i]);
-            if(mActivity.getAutoTest() && i ==0 ){
+            if(PersistUtil.isAutoTestRun() && i ==0 ){
                 mFilterWidth = imageView.getMeasuredWidth();
             }
 
@@ -3649,10 +3658,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void initPhysicalSurfaces(Size logicalPreviewSize,Size[] physicalPreviewSizes){
         String physical_id = mSettingsManager.getSinglePhysicalCamera();
-        if (mSettingsManager.getPhysicalCameraId() == null && physical_id == null)
+        if (mSettingsManager.getPhysicalCameraId() == null &&
+                ((physical_id != null && !SettingsManager.LOGICAL_AND_PHYSICAL.equals(physical_id)) || physical_id == null))
             return;
         Set<String> physicalIds;
-        if (physical_id != null) {
+        if (physical_id != null && SettingsManager.LOGICAL_AND_PHYSICAL.equals(physical_id)) {
             physicalIds = mSettingsManager.getAllPhysicalCameraId();
             mPreviewCount = mSettingsManager.getAllPhysicalCameraId().size()+1;
         } else {
@@ -4829,8 +4839,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mModule.onButtonContinue();
     }
     private boolean isShowHelp(){
-        if(PersistUtil.isPerfTestRunning() || PersistUtil.isFuncTestRunning() ||
-                PersistUtil.isStressTestRunning() || PersistUtil.isKeyTestRunning()){
+        if(PersistUtil.isAutoTestRun()){
             return false;
         }
         return true;
@@ -5056,7 +5065,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mModule.setStartedTime(System.currentTimeMillis());
         }
         if (mIsVideoUI || !mModule.getCameraModeSwitcherAllowed() ||
-                mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
+                mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL
+        || !mModule.getCameraModeSwitcherAllowed()) {
             return;
         }
         int index = mModule.getCurrentModeIndex() + move;

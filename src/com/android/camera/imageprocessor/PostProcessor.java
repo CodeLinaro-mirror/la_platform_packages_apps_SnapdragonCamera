@@ -487,7 +487,7 @@ public class PostProcessor{
         if (mZSLQueue == null)
             return false;
         mController.setJpegImageData(null);
-        if(mActivity.getAutoTest()) {
+        if(PersistUtil.isFuncTestRunning()) {
             mController.setLongImageTitle(new ArrayList<>());
             mController.setImagExif(new ArrayList<>());
             mController.setCaptureResult(null);
@@ -1463,7 +1463,7 @@ public class PostProcessor{
                         mActivity.getMediaSaveService().addRawImage(imgeBytes, title, "yuv");
                         image.close();
                     }
-                    if(mActivity.getAutoTest()) {
+                    if(PersistUtil.isFuncTestRunning()) {
                         mController.mLongImgTitle.add(title);
                         mController.mImgType.add("jpeg");
                         try {

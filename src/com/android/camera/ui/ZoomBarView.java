@@ -15,7 +15,6 @@ import android.view.VelocityTracker;
 import android.view.View;
 import com.android.camera.util.Log;
 import org.codeaurora.snapcam.R;
-
 import java.text.DecimalFormat;
 
 public class ZoomBarView extends View {
@@ -50,7 +49,7 @@ public class ZoomBarView extends View {
     private float mCenterX, mCenterY;
     private Context mContext;
     private Paint outerLinePaint, innerLinePaint, selectLinePaint, outerBgPaint, textPaint;
-    private boolean zoomEnabled;
+    private boolean zoomEnabled,mTouched;
     DecimalFormat zoomDf = new DecimalFormat("#.##");
 
 
@@ -175,9 +174,6 @@ public class ZoomBarView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if(!zoomEnabled){
-            return true;
-        }
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 dx = event.getX();
@@ -186,8 +182,13 @@ public class ZoomBarView extends View {
                     Log.d(TAG, " touch positon should below the zoom bar,return");
                     return false;
                 }
+                mTouched = true;
                 break;
+
             case MotionEvent.ACTION_MOVE:
+                if(!mTouched || !zoomEnabled){
+                    break;
+                }
                 mx = event.getX();
                 my = event.getY();
                 float md = mx - dx;
@@ -216,7 +217,6 @@ public class ZoomBarView extends View {
                     }else {
                         moveAngle = moveAnglePre;
                     }
-
                     startAngle = Math.max(startAngle + (Math.min(md, 100) * moveAngle), minAngle);
                     isTouchChange = true;
                     invalidate();
@@ -227,6 +227,7 @@ public class ZoomBarView extends View {
             case MotionEvent.ACTION_UP:
                 mx = event.getX();
                 my = event.getY();
+                mTouched = false;
                 break;
         }
         return true;
