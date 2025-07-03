@@ -322,6 +322,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
                         updateVideoMFHDRPreference();
                         updateViullPreference();
+                        updateVIULLDefaultValue();
                         break;
                     case SettingsManager.KEY_VIDEO_ENCODER_PROFILE:
                         if (mode == CaptureModule.CameraMode.VIDEO) {
@@ -2713,6 +2714,18 @@ public class SettingsActivity extends PreferenceActivity {
         pref.setEnabled(true);
         mFirstInitViull = false;
     }
+
+    public void updateVIULLDefaultValue(){
+        ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_VIULL);
+        if (pref == null || !pref.isEnabled()) return;
+        if(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("hsr60")||
+                mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("hfr60")) {
+            pref.setValue("0");
+        }else if(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("off")){
+            pref.setValue("1");
+        }
+    }
+
     private  void updateLowLightBoostPreference(){
         ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_LOWLIGHT_BOOST);
         if (pref == null) return;

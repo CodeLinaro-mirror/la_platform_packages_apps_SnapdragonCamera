@@ -16924,6 +16924,14 @@ private boolean isDevOptionSetting(){
                     updateVideoSize();
                     updateDepenencyOptionValue();
                     continue;
+                case SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE:
+                    if(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("hsr60")||
+                            mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("hfr60")) {
+                        mSettingsManager.setValue(SettingsManager.KEY_VIULL, "0");
+                    }else if(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("off")){
+                        mSettingsManager.setValue(SettingsManager.KEY_VIULL, "1");
+                    }
+                    continue;
                 case SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL:
                     updateTimeLapseSetting();
                     continue;
