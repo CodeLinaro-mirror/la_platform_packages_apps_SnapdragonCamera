@@ -565,7 +565,7 @@
     <ListPreference
         camera:key="pref_camera2_fd_skin_tone_key"
         camera:defaultValue="@string/pref_camera2_fd_gender_default"
-        camera:title="@string/pref_camera2_fd_gender_title"
+        camera:title="@string/pref_camera2_fd_skin_tone_title"
         camera:entries="@array/pref_camera2_bsgc_entries"
         camera:entryValues="@array/pref_camera2_bsgc_entryvalues" />
 
