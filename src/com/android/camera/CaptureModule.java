@@ -3481,12 +3481,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         if ((mSettingsManager.isZSLInHALEnabled() || isActionImageCapture()) &&
                 !isFlashOn(getMainCameraId()) && (mPreviewCaptureResult != null &&
                 mPreviewCaptureResult.get(CaptureResult.CONTROL_AE_STATE) !=
-                     CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED &&
+                        CameraMetadata.CONTROL_AE_STATE_FLASH_REQUIRED &&
                 mPreviewCaptureResult.getRequest().get(CaptureRequest.CONTROL_AE_LOCK) != Boolean.TRUE || mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE)) {
             takeZSLPictureInHAL();
         } else {
             int cameraId = getMainCameraId();
-            if(mPostProcessor.isZSLEnabled() & is3AdebugInfoOn() & !mDelayDone) {
+            if (mPostProcessor.isZSLEnabled() & is3AdebugInfoOn() & !mDelayDone) {
                 mDelayFrame = 0;
                 mPostProcessor.delaySnapshot();
                 return;
@@ -3510,6 +3510,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     }
+
 
     private boolean isActionImageCapture() {
         return mIntentMode == INTENT_MODE_CAPTURE;
@@ -6572,6 +6573,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (!resumeFromRestartAll)
             CURRENT_ID = getMainCameraId();
         reinit();
+        mUI.updateFlashValue();
         enableShutter(false);
         Log.d(TAG, "onResume " + (mCurrentSceneMode != null ? mCurrentSceneMode.mode : "null")
                 + (resumeFromRestartAll ? " isResumeFromRestartAll" : ""));
@@ -10498,7 +10500,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         return false;
     }
 
-    private boolean isFlashOff(int id) {
+    public boolean isFlashOff(int id) {
         if (!mSettingsManager.isFlashSupported(id)) return true;
         return mSettingsManager.getValue(SettingsManager.KEY_FLASH_MODE).equals("off");
     }

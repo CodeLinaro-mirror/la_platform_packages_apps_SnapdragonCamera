@@ -1398,6 +1398,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR);
         enableView(mFlashButton, SettingsManager.KEY_FLASH_MODE);
+        if (mSettingsManager.isZSLInAppEnabled()) {
+            mFlashButton.setEnabled(false);
+        }
     }
 
     public void hideFlashButton() {
@@ -1970,6 +1973,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mGestures.setZoomOnly(false);
         updateMenus();
     }
+public void updateFlashValue(){
+    if (mFlashButton != null) {
+        if (mSettingsManager.isZSLInAppEnabled()) {
+            if(!mModule.isFlashOff(mModule.getMainCameraId())){
+                mSettingsManager.setValue(SettingsManager.KEY_FLASH_MODE,"off");
+            }
+            mFlashButton.setEnabled(false);
+        } else {
+            mFlashButton.setEnabled(true);
+        }
+    }
+}
 
     public void hideCameraControls(boolean hide) {
         final boolean status = !hide;
