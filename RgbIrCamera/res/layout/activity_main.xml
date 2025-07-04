@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--=============================================================================
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+SPDX-License-Identifier: BSD-3-Clause-Clear
+=============================================================================-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.qcom.rgbircamera.NormalSurfaceView
+        android:id="@+id/preview_RGB"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:keepScreenOn="true" />
+
+    <SeekBar
+        android:id="@+id/exposuretime_seekbar_RGB"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="50"
+        android:layout_margin="8dp" />
+
+    <SeekBar
+        android:id="@+id/iso_seekbar_RGB"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="50"
+        android:layout_margin="8dp" />
+
+    <com.qcom.rgbircamera.NormalSurfaceView
+        android:id="@+id/preview_IR"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:keepScreenOn="true" />
+
+    <SeekBar
+        android:id="@+id/exposuretime_seekbar_IR"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="50"
+        android:layout_margin="8dp" />
+
+    <SeekBar
+        android:id="@+id/iso_seekbar_IR"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="50"
+        android:layout_margin="8dp" />
+
+    <ToggleButton
+        android:id="@+id/save_jpeg_toggle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textOn="Save : On"
+        android:textOff="Save : Off"
+        android:checked="false"
+        android:layout_margin="8dp"
+        android:visibility="gone" />
+</LinearLayout>
