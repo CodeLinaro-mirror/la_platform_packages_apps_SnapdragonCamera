@@ -3991,16 +3991,28 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mModule.onFocusAssistModeStart(mFocusPointInPreview.x, mFocusPointInPreview.y);
         });
         int circleSize = mPieRenderer.getSize() / 2;
+        float[] textXY = {mFocusPoint.x, mFocusPoint.x};
         if (mOrientation == 270) {
-            mFocusAssistTextView.setX(mFocusPoint.x + 0.75f * circleSize);
-            mFocusAssistTextView.setY(mFocusPoint.y - 0.85f * circleSize);
+            textXY[0]= mFocusPoint.x + circleSize;
+            textXY[1] = mFocusPoint.y - 0.85f * circleSize;
+            if( CameraUtil.metrics.widthPixels - textXY[0] < 100){
+                textXY[0] = mFocusPoint.x - 2.5f * circleSize;
+            }
         } else if (mOrientation == 0) {
-            mFocusAssistTextView.setX(mFocusPoint.x - 0.85f * circleSize);
-            mFocusAssistTextView.setY(mFocusPoint.y - 2.5f * circleSize);
+            textXY[0] = mFocusPoint.x - 0.85f * circleSize;
+            textXY[1] = mFocusPoint.y - 2.5f * circleSize;
         } else if (mOrientation == 90) {
-            mFocusAssistTextView.setX(mFocusPoint.x - 2.5f * circleSize);
-            mFocusAssistTextView.setY(mFocusPoint.y - 0.75f * circleSize);
+            textXY[0] = mFocusPoint.x - 2.5f * circleSize;
+            textXY[1] = mFocusPoint.y - 0.85f * circleSize;
+            if( textXY[0] < -100){
+                textXY[0] = mFocusPoint.x +  circleSize;
+            }
+        }else if(mOrientation == 180){
+            textXY[0] = mFocusPoint.x - 0.85f * circleSize;
+            textXY[1] = mFocusPoint.y + 1.5f * circleSize;
         }
+        mFocusAssistTextView.setX(textXY[0]);
+        mFocusAssistTextView.setY(textXY[1]);
         mFocusAssistTextView.setVisibility(View.VISIBLE);
         if (mFAImageView == null) {
             mFAImageView = mRootView.findViewById(R.id.focus_assist_iv);
