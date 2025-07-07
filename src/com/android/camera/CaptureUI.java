@@ -1460,7 +1460,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if(mVerticalEvBar.getVisibility() == View.VISIBLE) {
             int section = 100 / length;
             int progress = section * (index);
-            if (progress > 100) progress = 100;
+            if (progress > 100 || index == length - 1) progress = 100;
             mVerticalEvBar.setProgress(progress);
             float scale = (float) progress / 100;
             mVerticalEvBar.freshProgress(scale);
