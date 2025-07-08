@@ -1202,6 +1202,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mFlushLatency;
     private long mCloseCameraLatency;
 
+    private long mZoomResultLatency;
+    private long mZoomSetLatency;
     private long mSnapshotLatency;
     private long mShutterLag;
     private long mBurstStartTime = 0;
@@ -1737,6 +1739,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateAECGainAndExposure(result);
                 updateAntiBandingMode(result);
                 updateIsFickerDetected(result);
+                if(PersistUtil.showQSATZoom()){
+                    long durtime = 0;
+                    if (mZoomResultLatency <=0){
+                        mZoomResultLatency = System.currentTimeMillis();
+                    }else{
+                        durtime = System.currentTimeMillis()- mZoomResultLatency;
+                        mZoomResultLatency = System.currentTimeMillis();
+                    }
+                    Log.i(TAG,"CONTROL_ZOOM_RATIO in CaptureResult is "+result.get(CaptureResult.CONTROL_ZOOM_RATIO)+"," +
+                            "duringtime ="+durtime+",FrameNumber="+mVideoFrameNumber);
+                }
                 String physical_id = mSettingsManager.getSinglePhysicalCamera();
                 Face[] faces;
                 if (physical_id != null &&
@@ -15617,7 +15630,8 @@ private boolean isDevOptionSetting(){
                 ||mPaused) {
             return;
         }
-        Log.d(TAG,"applyZoomAndUpdate, mRecordingPausing:" + mRecordingPausing+",mState[id]="+mState[id]);
+        Log.d(TAG,"applyZoomAndUpdate, mRecordingPausing:" + mRecordingPausing+",mState[id]="+mState[id]
+                +",instant="+instant+",mzoomvalue="+mZoomValue);
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         boolean isUseVideoPreview = true;
         if (mCurrentSceneMode.mode == CameraMode.HFR ) {
@@ -15661,9 +15675,8 @@ private boolean isDevOptionSetting(){
             } else {
                 CameraCaptureSession session = mCaptureSession[id];
                 if (instant){
-                    session.stopRepeating();
+                   session.stopRepeating();
                 }
-
                 synchronized (mPerformanceDebugData) {
                     mZoomTimeMap.put(System.currentTimeMillis(), mZoomValue);
                 }
@@ -15702,6 +15715,17 @@ private boolean isDevOptionSetting(){
                         captureRequest.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                                 CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL);
                         mSetAePrecaptureTriggerIdel ++;
+                    }
+                    if(PersistUtil.showQSATZoom()) {
+                        long durtime = 0;
+                        if (mZoomSetLatency <= 0) {
+                            mZoomSetLatency = System.currentTimeMillis();
+                        }else{
+                            durtime = System.currentTimeMillis() - mZoomSetLatency;
+                            mZoomSetLatency = System.currentTimeMillis();
+                        }
+                        Log.i(TAG,"setRequest-applyZoomRatio ="+captureRequest.get(CaptureRequest.CONTROL_ZOOM_RATIO)+",durtime="+durtime+
+                              ",instant="+instant);
                     }
                     if (instant) {
                         session.capture(captureRequest

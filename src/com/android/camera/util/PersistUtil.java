@@ -194,7 +194,9 @@ public class PersistUtil {
     public static boolean isSetTimeStamp(){
         return PERSIST_SET_TIMESTAMP;
     }
-
+    public static boolean showQSATZoom(){
+        return getBoolean("persist.sys.camera.qsat.zoom",false);
+    }
     public static String getHFRRate() {
         return PERSIST_HFR_LIMIT;
     }

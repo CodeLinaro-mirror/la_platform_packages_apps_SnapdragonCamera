@@ -24,6 +24,9 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.ScaleGestureDetector;
 
+import com.android.camera.util.PersistUtil;
+
+
 import org.codeaurora.snapcam.R;
 
 public class ZoomRenderer extends OverlayRenderer
@@ -53,7 +56,8 @@ public class ZoomRenderer extends OverlayRenderer
     private float mZoomMinValue;
     private float mZoomMaxValue;
     private float mCurrentZoom;
-
+    private long moveInterval = 24;
+    private long moveTime = 0;
     public interface OnZoomChangedListener {
         void onZoomStart();
         void onZoomEnd();
@@ -138,13 +142,15 @@ public class ZoomRenderer extends OverlayRenderer
     public void onDraw(Canvas canvas) {
         canvas.rotate(mOrientation, mCenterX, mCenterY);
         mPaint.setStrokeWidth(mInnerStroke);
-        canvas.drawCircle(mCenterX, mCenterY, mMinCircle, mPaint);
-        canvas.drawCircle(mCenterX, mCenterY, mMaxCircle, mPaint);
-        canvas.drawLine(mCenterX - mMinCircle, mCenterY,
-                mCenterX - mMaxCircle - 4, mCenterY, mPaint);
-        mPaint.setStrokeWidth(mOuterStroke);
-        canvas.drawCircle((float) mCenterX, (float) mCenterY,
-                mCircleSize, mPaint);
+        if(!PersistUtil.showQSATZoom()) {
+            canvas.drawCircle(mCenterX, mCenterY, mMinCircle, mPaint);
+            canvas.drawCircle(mCenterX, mCenterY, mMaxCircle, mPaint);
+            canvas.drawLine(mCenterX - mMinCircle, mCenterY,
+                    mCenterX - mMaxCircle - 4, mCenterY, mPaint);
+            mPaint.setStrokeWidth(mOuterStroke);
+            canvas.drawCircle((float) mCenterX, (float) mCenterY,
+                    mCircleSize, mPaint);
+        }
         String txt = "";
         if (mZoomFraction < 10) {
             txt = mZoomSig+"."+ "0" + mZoomFraction+"x";
@@ -162,8 +168,11 @@ public class ZoomRenderer extends OverlayRenderer
         float circle = mCircleSize * sf;
         circle = Math.max(mMinCircle, circle);
         circle = Math.min(mMaxCircle, circle);
-        if (mListener != null && circle != mCircleSize) {
+        long durtime = System.currentTimeMillis() - moveTime;
+        if (mListener != null && circle != mCircleSize &&
+                ((moveTime > 0 && durtime > moveInterval) || moveTime == 0)) {
             mCircleSize = circle;
+            moveTime = System.currentTimeMillis();
             if (mCamera2) {
                 float zoom = mZoomMinValue + (mZoomMaxValue - mZoomMinValue) * (mCircleSize -
                         mMinCircle) / (mMaxCircle - mMinCircle);
@@ -182,6 +191,7 @@ public class ZoomRenderer extends OverlayRenderer
     public boolean onScaleBegin(ScaleGestureDetector detector) {
         setVisible(true);
         if (mListener != null) {
+            moveTime = 0;
             mListener.onZoomStart();
         }
         update();
@@ -192,6 +202,7 @@ public class ZoomRenderer extends OverlayRenderer
     public void onScaleEnd(ScaleGestureDetector detector) {
         setVisible(false);
         if (mListener != null) {
+            moveTime = 0;
             mListener.onZoomEnd();
         }
     }
