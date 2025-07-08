@@ -13662,7 +13662,7 @@ private boolean isDevOptionSetting(){
             mVideoFormat.setFloat(MediaFormat.KEY_CAPTURE_RATE, fps);
         }  else if (mHighSpeedCapture) {
             mHighSpeedFPSRange = new Range(mHighSpeedCaptureRate, mHighSpeedCaptureRate);
-            mHighSpeedPreviewFPSRange =  new Range(30, mHighSpeedCaptureRate);
+            mHighSpeedPreviewFPSRange =  mSettingsManager.getPreviewRange(mHighSpeedCaptureRate);
             int fps = (int) mHighSpeedFPSRange.getUpper();
             int targetRate = mHighSpeedRecordingMode ? fps : 30;
             mVideoFormat.setInteger(MediaFormat.KEY_CAPTURE_RATE, fps);
@@ -14385,7 +14385,9 @@ private boolean isDevOptionSetting(){
             mMediaRecorder.setCaptureRate(fps);
         }  else if (mHighSpeedCapture) {
             mHighSpeedFPSRange = new Range(mHighSpeedCaptureRate, mHighSpeedCaptureRate);
-            mHighSpeedPreviewFPSRange =  new Range(30, mHighSpeedCaptureRate);
+            mHighSpeedPreviewFPSRange =  mSettingsManager.getPreviewRange(mHighSpeedCaptureRate);
+            Log.d(TAG,"mHighSpeedCaptureRate="+mHighSpeedCaptureRate+",mHighSpeedPreviewFPSRange="
+                    +mHighSpeedPreviewFPSRange.getLower()+","+mHighSpeedPreviewFPSRange.getUpper());
             int fps = (int) mHighSpeedFPSRange.getUpper();
             int targetRate = mSuperSlomoCapture ? 30 : (mHighSpeedRecordingMode ? fps : 30);
             mMediaRecorder.setCaptureRate(mSuperSlomoCapture ? 30 : fps);
