@@ -15298,7 +15298,8 @@ private boolean isDevOptionSetting(){
         try {
             Log.d(TAG,"set cropped raw for raw steam:" + cameraId);
             long useCaseId = CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_CROPPED_RAW;
-            if(mSettingsManager.isAvailableUseCase(cameraId, useCaseId)){
+            boolean isQcfa = mPictureSize.getWidth() >= 8000 || mPictureSize.getHeight() >= 6000;
+            if(mSettingsManager.isAvailableUseCase(cameraId, useCaseId) && !isQcfa){
                 configuration.setStreamUseCase(useCaseId);
             }
         } catch (IllegalArgumentException | NoSuchFieldError e) {
