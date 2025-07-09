@@ -28,13 +28,17 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import android.hardware.camera2.params.OutputConfiguration;
+import android.hardware.camera2.params.SessionConfiguration;
 
 public class CameraController {
     private static final String TAG = "RgbIrCamera_CameraController";
@@ -46,7 +50,12 @@ public class CameraController {
     private static final CaptureRequest.Key<Integer> SENSITIVITY_IR =
             new CaptureRequest.Key<>("org.quic.camera.SensorIRExposureControl.SensorIRSensitivity", int.class);
     private static final CaptureRequest.Key<Byte> RGB_NIR =
-            new CaptureRequest.Key<>("org.codeaurora.qcmera3.RGBNIR", byte.class);
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.RGBNIR", byte.class);
+
+    //streams mode define.
+    private static final byte RGBNIR = 1;
+    private static final byte RGB = 2;
+    private static final byte IR = 3;
 
     private final Activity mActivity;
     private final Handler mHandler;
@@ -302,37 +311,45 @@ public class CameraController {
      */
     private void createCaptureSession() {
         try {
-            mCameraDevice.createCaptureSession(
-                Arrays.asList(mSurfaceIR, mImageReaderIR.getSurface(), mSurfaceRGB, mImageReaderRGB.getSurface()),
-                new CameraCaptureSession.StateCallback() {
-                    @Override
-                    public void onConfigured(@NonNull CameraCaptureSession session) {
-                        mCaptureSession = session;
-                        try {
-                            CaptureRequest.Builder builder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-                            builder.addTarget(mSurfaceIR);
-                            builder.addTarget(mImageReaderIR.getSurface());
-                            builder.addTarget(mSurfaceRGB);
-                            builder.addTarget(mImageReaderRGB.getSurface());
-                            builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-                            //byte rgnNir = 1;
-                            //builder.set(RGB_NIR, rgbNir);
+            List<Surface> surfaceTargets = Arrays.asList(
+                    mSurfaceIR, mImageReaderIR.getSurface(), mSurfaceRGB, mImageReaderRGB.getSurface());
+            List<OutputConfiguration> outConfiguration =
+                    new ArrayList<>(surfaceTargets.size());
+            for (Surface surface : surfaceTargets) {
+                outConfiguration.add(new OutputConfiguration(surface));
+            }
+            CaptureRequest.Builder builder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            builder.addTarget(mSurfaceIR);
+            builder.addTarget(mImageReaderIR.getSurface());
+            builder.addTarget(mSurfaceRGB);
+            builder.addTarget(mImageReaderRGB.getSurface());
+            builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            builder.set(RGB_NIR, RGBNIR);
 
-                            //surfaceRGBLastTime = System.currentTimeMillis();
-                            //surfaceIRLastTime = System.currentTimeMillis();
-
-                            session.setRepeatingRequest(builder.build(),
-                                    null, mHandler);
-                        } catch (CameraAccessException ex) {
-                            Log.e(TAG, "onConfigured: CameraAccessException", ex);
+            SessionConfiguration sessionCfg = new SessionConfiguration(
+                    SessionConfiguration.SESSION_REGULAR,
+                    outConfiguration,
+                    Executors.newSingleThreadExecutor(),
+                    new CameraCaptureSession.StateCallback() {
+                        @Override
+                        public void onConfigured(@NonNull CameraCaptureSession session) {
+                            mCaptureSession = session;
+                            try {
+                                session.setRepeatingRequest(builder.build(),
+                                        null, mHandler);
+                            } catch (CameraAccessException ex) {
+                                Log.e(TAG, "onConfigured: CameraAccessException", ex);
+                            }
                         }
-                    }
 
-                    @Override
-                    public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                        Log.e(TAG, "onConfiguredFailed: capture session failed");
-                    }
-             }, mHandler);
+                        @Override
+                        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                            Log.e(TAG, "onConfiguredFailed: capture session failed");
+                        }
+             });
+
+            sessionCfg.setSessionParameters(builder.build());
+            mCameraDevice.createCaptureSession(sessionCfg);
         } catch (CameraAccessException ex) {
             Log.e(TAG, "createCaptureSession: CameraAccessException", ex);
         }
