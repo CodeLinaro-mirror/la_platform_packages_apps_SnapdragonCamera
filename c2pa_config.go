@@ -27,6 +27,7 @@ func c2pa_configDefaults(ctx android.LoadHookContext) {
 
     switch target_variant {
         case "sun":
+        case "canoe":
             p.Cflags = append(p.Cflags, "-DENABLE_C2PA_LIB")
             p.Shared_libs = append(p.Shared_libs, "vendor.qti.hardware.c2pa-V1-ndk")
             ctx.AppendProperties(p)
