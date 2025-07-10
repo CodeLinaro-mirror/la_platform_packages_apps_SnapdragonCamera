@@ -17727,7 +17727,8 @@ private boolean isDevOptionSetting(){
     }
 
     private void deleteInvalidUri() {
-        for (Uri uri : mUrisInvalid) {
+        List<Uri> copy = new ArrayList<>(mUrisInvalid);
+        for (Uri uri : copy) {
             if (uri != null) {
                 try {
                     Log.d(TAG, "deleteInvalidUri " + uri);

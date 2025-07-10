@@ -521,9 +521,9 @@ public class Camera2FaceView extends FaceView {
                                 if ((mDisplayRotation == 0) ||
                                         (mDisplayRotation == 180)) {
                                     circlpoint[0] = face.getLeftEyePosition().x;
-                                    circlpoint[1] = face.getLeftEyePosition().y - delta_y / 2;
+                                    circlpoint[1] = face.getLeftEyePosition().y;
                                 }else{
-                                    circlpoint[0] = face.getLeftEyePosition().x - delta_x / 2;
+                                    circlpoint[0] = face.getLeftEyePosition().x ;
                                     circlpoint[1] = face.getLeftEyePosition().y;
                                 }
                                 bsgcTranslateMatrix.mapPoints(circlpoint);
@@ -555,9 +555,9 @@ public class Camera2FaceView extends FaceView {
                                 if ((mDisplayRotation == 0) ||
                                         (mDisplayRotation == 180)) {
                                     circlpoint[0] = face.getRightEyePosition().x;
-                                    circlpoint[1] = face.getRightEyePosition().y - delta_y / 2;
+                                    circlpoint[1] = face.getRightEyePosition().y;
                                 }else{
-                                    circlpoint[0] = face.getRightEyePosition().x - delta_x / 2;
+                                    circlpoint[0] = face.getRightEyePosition().x ;
                                     circlpoint[1] = face.getRightEyePosition().y;
                                 }
                                 bsgcTranslateMatrix.mapPoints(circlpoint);
