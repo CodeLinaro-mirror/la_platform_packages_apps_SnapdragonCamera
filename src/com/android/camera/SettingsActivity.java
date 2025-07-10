@@ -2696,7 +2696,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
         String videoFps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
-        if (mode == CaptureModule.CameraMode.VIDEO && videoFps != null && !videoFps.equals("off") && !vsr.equals("1")) {
+        if (mode == CaptureModule.CameraMode.VIDEO && videoFps != null && !videoFps.equals("off") && !("1").equals(vsr)) {
             disableVIULLOption(pref);
             return;
         }
