@@ -1717,7 +1717,6 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA);
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
-                        videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
                         videoAddList.add(SettingsManager.KEY_VIULL);
                         videoAddList.add(SettingsManager.KEY_LOWLIGHT_BOOST);
@@ -1730,6 +1729,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         videoAddList.remove(SettingsManager.KEY_ML_VIDEO);
                     }
+                    videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                     videoAddList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     videoAddList.add(SettingsManager.KEY_TONE_MAPPING);
                     videoAddList.add(SettingsManager.KEY_SELECT_MODE);
