@@ -139,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
                     new String[]{android.Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
         } else {
             Log.d(TAG, "Permission granted");
+            trySetupCamera();
         }
     }
 

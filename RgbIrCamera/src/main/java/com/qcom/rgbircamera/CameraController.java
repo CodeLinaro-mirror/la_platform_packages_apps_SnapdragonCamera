@@ -318,13 +318,8 @@ public class CameraController {
             for (Surface surface : surfaceTargets) {
                 outConfiguration.add(new OutputConfiguration(surface));
             }
-            CaptureRequest.Builder builder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            builder.addTarget(mSurfaceIR);
-            builder.addTarget(mImageReaderIR.getSurface());
-            builder.addTarget(mSurfaceRGB);
-            builder.addTarget(mImageReaderRGB.getSurface());
+            CaptureRequest.Builder builder = getFourTargetsRequestBuilder();
             builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            builder.set(RGB_NIR, RGBNIR);
 
             SessionConfiguration sessionCfg = new SessionConfiguration(
                     SessionConfiguration.SESSION_REGULAR,
@@ -379,11 +374,7 @@ public class CameraController {
             return;
         }
         try {
-            CaptureRequest.Builder builder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            builder.addTarget(mSurfaceIR);
-            builder.addTarget(mImageReaderIR.getSurface());
-            builder.addTarget(mSurfaceRGB);
-            builder.addTarget(mImageReaderRGB.getSurface());
+            CaptureRequest.Builder builder = getFourTargetsRequestBuilder();
             builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_OFF);
             builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
             builder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, mCurrentExposureTimeRGB);
@@ -510,6 +501,29 @@ public class CameraController {
             }
         }
         return nv21;
+    }
+
+    /**
+     * createCaptureRequest and add four targets.
+     */
+    private CaptureRequest.Builder getFourTargetsRequestBuilder() throws CameraAccessException {
+        CaptureRequest.Builder fourTargetsBuilder
+                = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+        fourTargetsBuilder.addTarget(mSurfaceIR);
+        fourTargetsBuilder.addTarget(mImageReaderIR.getSurface());
+        fourTargetsBuilder.addTarget(mSurfaceRGB);
+        fourTargetsBuilder.addTarget(mImageReaderRGB.getSurface());
+        if (fourTargetsBuilder != null) {
+            applySessionParameters(fourTargetsBuilder);
+        }
+        return fourTargetsBuilder;
+    }
+
+    /**
+     * set RGBNIR sessionParameter.
+     */
+    private void applySessionParameters(CaptureRequest.Builder builder) {
+        builder.set(RGB_NIR, RGBNIR);
     }
 
     public long getMinExposureTime() {
