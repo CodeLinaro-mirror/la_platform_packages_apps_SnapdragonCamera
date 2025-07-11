@@ -1217,6 +1217,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     long mLastResultTime = 0;
     long mLastFPSCountTime = 0;
     long mCurrentFrameCount = 0;
+    int mHeicLiveSnapshotLimit = 0;
+    int mLiveSnapshotCount = 0;
     public static List<Long> mPerformanceGapData = new ArrayList<>();
 
     /*
@@ -4477,6 +4479,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
             }
             mIsPreviewingVideo = true;
+            float fps = mSettingsManager.getFps(mVideoSnapshotSize);
+            if(mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT || mSettingsManager.getSavePictureFormat() == SettingsManager.HEIC_TENBIT_FORMAT) {
+                mHeicLiveSnapshotLimit = (int)fps *2;
+                Log.d(TAG,"mHeicLiveSnapshotLimit:" + mHeicLiveSnapshotLimit);
+            }
             if (isHighSpeedRateCapture()) {
                 createHighSpeedSession(cameraId);
             } else {
@@ -6240,6 +6247,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 warningToast("Camera is not ready yet to take a video snapshot.");
                 return;
             }
+            if((mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT || mSettingsManager.getSavePictureFormat() == SettingsManager.HEIC_TENBIT_FORMAT) && mLiveSnapshotCount >= mHeicLiveSnapshotLimit){
+                warningToast("Live snapshot counts reach to max, cant save image");
+                return;
+            }
             CaptureRequest.Builder captureBuilder = getRequestBuilder(
                     CameraDevice.TEMPLATE_VIDEO_SNAPSHOT,id,mSettingsManager.getPhysicalCameraId());
 
@@ -6322,6 +6333,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
             mSnapshotLatency = System.currentTimeMillis();
+            mLiveSnapshotCount ++ ;
             mCurrentSession.capture(captureBuilder.build(),
                     new CameraCaptureSession.CaptureCallback() {
 
@@ -12875,6 +12887,7 @@ private boolean isDevOptionSetting(){
         Log.i(TAG, "stopRecordingVideo " + cameraId);
         if (TRACE_DEBUG) Trace.beginSection("SnapCamera,stopRecordingVideo");
         mStopRecordingTime = System.currentTimeMillis();
+        mLiveSnapshotCount = 0;
         if (isSSMEnabled()) {
             updateProgressBar(false);
             if (!mSSMCaptureCompleteFlag) {
