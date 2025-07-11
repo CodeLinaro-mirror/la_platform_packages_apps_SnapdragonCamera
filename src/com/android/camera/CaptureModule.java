@@ -6281,7 +6281,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             // send snapshot stream together with preview and video stream for snapshot request
             // stream is the surface for the app
             List<Surface> surfaces = new ArrayList<>();
-            if(!is8KInMulti && (PersistUtil.enableMediaRecorder() || !mRecordingPausing)) {
+            if(!is8KInMulti && (PersistUtil.enableMediaRecorder())) {
                 addPreviewSurface(captureBuilder, surfaces, id);
             }
             if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getPhysicalFeatureEnableId(
@@ -6337,6 +6337,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     captureBuilder.addTarget(mFrameProcessor.getInputSurfaces().get(0));
                 } else {
                     captureBuilder.addTarget(surface);
+                }
+                if(mIsRecordingVideo){
+                    captureBuilder.addTarget(mVideoRecordingSurface);
                 }
             }
             mSnapshotLatency = System.currentTimeMillis();
