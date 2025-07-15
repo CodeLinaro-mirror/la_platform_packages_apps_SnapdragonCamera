@@ -237,47 +237,47 @@
         <com.android.camera.Camera2GraphView
             android:id="@+id/graph_view_r"
             android:visibility="gone"
-            android:layout_width="100dip"
-            android:layout_height="100dip"
-            android:layout_marginTop="520dip"
-            android:layout_marginLeft="10dip" />
+            android:layout_width="@dimen/hist_stats_graphs_size"
+            android:layout_height="@dimen/hist_stats_graphs_size"
+            android:layout_marginTop="@dimen/hist_stats_graphs_top_margin"
+            android:layout_marginStart="@dimen/size_32dp" />
         <com.android.camera.Camera2GraphView
             android:id="@+id/graph_view_gb"
             android:visibility="gone"
-            android:layout_width="100dip"
-            android:layout_height="100dip"
-            android:layout_marginTop="520dip"
-            android:layout_marginLeft="120dip" />
+            android:layout_width="@dimen/hist_stats_graphs_size"
+            android:layout_height="@dimen/hist_stats_graphs_size"
+            android:layout_marginTop="@dimen/hist_stats_graphs_top_margin"
+            android:layout_marginStart="142dip" />
         <com.android.camera.Camera2GraphView
             android:id="@+id/graph_view_b"
             android:visibility="gone"
-            android:layout_width="100dip"
-            android:layout_height="100dip"
-            android:layout_marginTop="520dip"
-            android:layout_marginLeft="230dip" />
+            android:layout_width="@dimen/hist_stats_graphs_size"
+            android:layout_height="@dimen/hist_stats_graphs_size"
+            android:layout_marginTop="@dimen/hist_stats_graphs_top_margin"
+            android:layout_marginStart="252dip" />
         <TextView
             android:id="@+id/bg_stats_graph_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="68dip"
-            android:layout_marginLeft="16dip"
-            android:textSize="15sp"
+            android:layout_marginTop="@dimen/margin_68dp"
+            android:layout_marginStart="@dimen/bg_stats_lbl_margin_left"
+            android:textSize="@dimen/textsize_15sp"
             android:visibility="gone"
             android:text="@string/stats_visualizer_bg_label"/>
         <com.android.camera.Camera2BGBitMap
             android:id="@+id/bg_stats_graph"
             android:visibility="gone"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="88dip"
-            android:layout_marginLeft="16dip" />
+            android:layout_width="@dimen/bebg_stats_graph_width"
+            android:layout_height="@dimen/bebg_stats_graph_height"
+            android:layout_marginTop="@dimen/bebg_stats_graph_margin_top"
+            android:layout_marginStart="@dimen/bg_stats_margin_left" />
         <TextView
             android:id="@+id/be_stats_graph_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="68dip"
-            android:layout_marginLeft="260dip"
-            android:textSize="15sp"
+            android:layout_marginTop="@dimen/margin_68dp"
+            android:layout_marginStart="@dimen/be_stats_margin_left"
+            android:textSize="@dimen/textsize_15sp"
             android:visibility="gone"
             android:text="@string/stats_visualizer_be_label"/>
         <TextView
@@ -286,27 +286,27 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="68dip"
             android:layout_marginLeft="260dip"
-            android:textSize="15sp"
+            android:textSize="@dimen/textsize_15sp"
             android:visibility="gone"
             android:text="@string/lock_af_ae_label"/>
         <com.android.camera.Camera2BEBitMap
             android:id="@+id/be_stats_graph"
             android:visibility="gone"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="88dip"
-            android:layout_marginLeft="200dip" />
+            android:layout_width="@dimen/bebg_stats_graph_width"
+            android:layout_height="@dimen/bebg_stats_graph_height"
+            android:layout_marginTop="@dimen/bebg_stats_graph_margin_top"
+            android:layout_marginStart="@dimen/be_stats_margin_left" />
         <LinearLayout
             android:id="@+id/stats_awb_info"
-            android:layout_marginTop="68dip"
-            android:layout_marginLeft="150dip"
+            android:layout_marginTop="@dimen/margin_68dp"
+            android:layout_marginStart="@dimen/awb_margin_left"
             android:orientation="vertical"
             android:visibility="gone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
             <TextView
                 android:id="@+id/stats_awb_text"
-                android:textSize="15sp"
+                android:textSize="@dimen/textsize_15sp"
                 android:padding="10dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
@@ -316,8 +316,8 @@
             android:id="@+id/stats_aec_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="16dip"
-            android:layout_marginTop="272dip"
+            android:layout_marginStart="@dimen/margin_68dp"
+            android:layout_marginTop="@dimen/aec_margin_top"
             android:orientation="vertical"
             android:visibility="gone">
 
@@ -325,30 +325,14 @@
                 android:id="@+id/stats_aec_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="15sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/stats_aec_info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="16dip"
-            android:layout_marginTop="272dip"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/stats_aec_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="15sp" />
+                android:textSize="@dimen/textsize_15sp" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/stats_nn_result_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="16dip"
+            android:layout_marginStart="@dimen/margin_68dp"
             android:layout_marginTop="272dip"
             android:orientation="vertical"
             android:visibility="gone">
@@ -357,7 +341,7 @@
                 android:id="@+id/stats_nn_result_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="15sp" />
+                android:textSize="@dimen/textsize_15sp" />
         </LinearLayout>
         <com.android.camera.DrawAutoHDR2
             android:id="@+id/autohdr_view"

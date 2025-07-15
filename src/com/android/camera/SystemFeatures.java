@@ -20,6 +20,7 @@ public class SystemFeatures {
     private static SystemFeatures _instance;
 
     private boolean mIsScreenRound = false;
+    private boolean mIsFeatureWatch = false;
     private SystemFeatures() {
     }
 
@@ -31,9 +32,17 @@ public class SystemFeatures {
     }
 
     public void init(Context context) {
+        if ( ((UiModeManager) context.getSystemService(Context.UI_MODE_SERVICE)).
+                getCurrentModeType() == Configuration.UI_MODE_TYPE_WATCH) {
+                mIsFeatureWatch = true;
+        }
         //TODO: What if a phone is made with circular display in future ?
         mIsScreenRound = context.getResources().getConfiguration().
                                                 isScreenRound();
+    }
+
+    public boolean isFeatureWatchEnabled() {
+            return mIsFeatureWatch;
     }
 
     public boolean isWatchScreenRound() {
