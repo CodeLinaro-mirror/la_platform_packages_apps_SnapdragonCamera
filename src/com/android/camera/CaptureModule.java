@@ -4597,17 +4597,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 List requestList =getHighSpeedList(session,mVideoRecordRequestBuilder);
                 session.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
             } else {
-                if (!PersistUtil.enableMediaRecorder() && mIsRecordingVideo) {
-                    //Add video buffer for media codec recording to avoid only preview buffer
-                    //will cause hang in EIS. 
-                    mPreviewRequestBuilder[id].addTarget(mVideoRecordingSurface);
-                    mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
-                            .build(), mCaptureCallback, mCameraHandler);
-                    mPreviewRequestBuilder[id].removeTarget(mVideoRecordingSurface);
-                } else {
+
                     mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                         .build(), mCaptureCallback, mCameraHandler);
-                }
+
             }
         } catch (CameraAccessException | IllegalStateException e) {
             Log.w(TAG,e);
@@ -7835,6 +7828,7 @@ private boolean isDevOptionSetting(){
             return;
         }
         Log.i(TAG, "lockExposure: " + id);
+
         try {
             applySettingsForLockExposure(mPreviewRequestBuilder[id], id);
             mState[id] = STATE_WAITING_AE_LOCK;
@@ -7850,8 +7844,10 @@ private boolean isDevOptionSetting(){
                 mCaptureSession[id].setRepeatingBurst(slowMoRequests, mCaptureCallback,
                         mCameraHandler);
             } else {
-                mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id].build(),
-                        mCaptureCallback, mCameraHandler);
+
+                    mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id].build(),
+                            mCaptureCallback, mCameraHandler);
+
             }
         } catch (CameraAccessException | IllegalStateException e) {
            Log.e(TAG,e);
@@ -11800,6 +11796,9 @@ private boolean isDevOptionSetting(){
                 } else {
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                 }
+                if(!PersistUtil.enableMediaRecorder() && CameraMode.VIDEO == getCurrenCameraMode()) {
+                    mPreviewRequestBuilder[cameraId].addTarget(mVideoRecordingSurface);
+                }
             } else {
                 updateRecordState(true);
                 warningToast("Please enable physical cameras of outputs first");
@@ -12575,7 +12574,6 @@ private boolean isDevOptionSetting(){
                 mAudioEncoder.setParameters(params);
             }
             mVideoEncoder.setParameters(params);
-            mPreviewRequestBuilder[getMainCameraId()] = mVideoPreviewRequestBuilder;
         }
         mRecordingPausing = true;
         mRecordingPauseTime = SystemClock.uptimeMillis();
@@ -12618,7 +12616,6 @@ private boolean isDevOptionSetting(){
                 mAudioEncoder.setParameters(params);
             }
             mVideoEncoder.setParameters(params);
-            mPreviewRequestBuilder[getMainCameraId()] = mVideoRecordRequestBuilder;
         }
         mRecordingPausing = false;
         mRecordingStartTime = SystemClock.uptimeMillis();
@@ -12950,7 +12947,10 @@ private boolean isDevOptionSetting(){
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
-            mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        if(!PersistUtil.enableMediaRecorder() && CameraMode.VIDEO == getCurrenCameraMode()) {
+            mPreviewRequestBuilder[cameraId].removeTarget(mVideoRecordingSurface);
+        }
         if(mHighSpeedCapture && !isVariableFPSEnabled() && mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS) {
             mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                     mHighSpeedPreviewFPSRange);
