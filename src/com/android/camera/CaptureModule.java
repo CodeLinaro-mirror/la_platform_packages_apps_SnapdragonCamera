@@ -3340,6 +3340,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void createSessionForVideo(final int cameraId) {
         try {
+            Log.i(TAG,"createSessionForVideo ");
             mVideoRecordRequestBuilder = null;
             setVideoState(VideoState.VIDEO_INIT);
             setupRecordingCommonSettings(cameraId);
@@ -3472,6 +3473,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.w(TAG, "activity may be onPause, no need to pop up error msg.");
             } else {
                 quitVideoToPhotoWithError(e.getMessage());
+                Log.i(TAG,"e.getMessage()="+e.getMessage());
             }
         }
         mCurrentSessionClosed = false;
@@ -9397,9 +9399,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         } else if (profile.equals("HEVCProfileMain10HDR10Plus")) {
             mode = 3;
         }
-        Log.d(TAG, "setHDRVideoMode: " + mode);
-        builder.set(hdr_video_mode, mode);
-        VendorTagUtil.setHDRVideoMode(builder, (byte)mode);
+        try {
+            Log.d(TAG, "setHDRVideoMode: " + mode);
+            builder.set(hdr_video_mode, mode);
+            VendorTagUtil.setHDRVideoMode(builder, (byte) mode);
+        }catch(IllegalArgumentException e){
+            Log.d(TAG,"applyVideoEncoderProfile e="+e);
+        }
     }
 
     private boolean isVideoEncoderProfileSupported() {
@@ -9913,7 +9919,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         mCurrentVideoValues.put(MediaStore.Video.Media.DATE_TAKEN, dateTaken);
         mCurrentVideoValues.put(MediaStore.MediaColumns.DATE_MODIFIED, dateTaken / 1000);
         mCurrentVideoValues.put(MediaStore.Video.Media.MIME_TYPE, mime);
-        mCurrentVideoValues.put(MediaStore.Video.Media.DATA, path);
         mCurrentVideoValues.put(MediaStore.Video.Media.RESOLUTION,
                 "" + mVideoSize.getWidth() + "x" + mVideoSize.getHeight());
         Location loc = mLocationManager.getCurrentLocation();
@@ -9949,7 +9954,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         currentVideoValues.put(MediaStore.Video.Media.DATE_TAKEN, dateTaken);
         currentVideoValues.put(MediaStore.MediaColumns.DATE_MODIFIED, dateTaken / 1000);
         currentVideoValues.put(MediaStore.Video.Media.MIME_TYPE, mime);
-        currentVideoValues.put(MediaStore.Video.Media.DATA, path);
         Location loc = mLocationManager.getCurrentLocation();
         if (loc != null) {
             currentVideoValues.put(MediaStore.Video.Media.LATITUDE, loc.getLatitude());
