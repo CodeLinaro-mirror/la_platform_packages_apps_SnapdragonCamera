@@ -31,7 +31,8 @@ public class PermissionsActivity extends Activity {
     private boolean mShouldRequestMicrophonePermission;
     private boolean mShouldRequestLocationPermission;
     private boolean mShouldRequestFineLocationPermission;
-    private boolean mShouldRequestStoragePermission;
+    private boolean mShouldRequestExternalPermission;
+    private boolean mShouldRequestMediaPermission;
     private int mNumPermissionsToRequest;
     private boolean mFlagHasCameraPermission;
     private boolean mFlagHasMicrophonePermission;
@@ -79,7 +80,16 @@ public class PermissionsActivity extends Activity {
             mNumPermissionsToRequest++;
             mShouldRequestFineLocationPermission = true;
         }
-
+        if (checkSelfPermission(Manifest.permission.MANAGE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            mNumPermissionsToRequest++;
+            mShouldRequestExternalPermission = true;
+        }
+        if (checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES)
+                != PackageManager.PERMISSION_GRANTED) {
+            mNumPermissionsToRequest++;
+            mShouldRequestMediaPermission = true;
+        }
         if (mNumPermissionsToRequest != 0) {
             buildPermissionsRequest();
         } else {
@@ -111,13 +121,20 @@ public class PermissionsActivity extends Activity {
             permissionsToRequest[permissionsRequestIndex] =
                     Manifest.permission.ACCESS_FINE_LOCATION;
         }
+        if (mShouldRequestExternalPermission) {
+            permissionsToRequest[permissionsRequestIndex] =
+                    Manifest.permission.MANAGE_EXTERNAL_STORAGE;
+        }
+        if (mShouldRequestMediaPermission) {
+            permissionsToRequest[permissionsRequestIndex] =
+                    Manifest.permission.READ_MEDIA_IMAGES;
+        }
         requestPermissions(permissionsToRequest, PERMISSION_REQUEST_CODE);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
-
         if (mShouldRequestCameraPermission) {
             if ((grantResults.length >= mIndexPermissionRequestCamera + 1) &&
                 (grantResults[mIndexPermissionRequestCamera] ==
@@ -146,7 +163,6 @@ public class PermissionsActivity extends Activity {
                 // Do nothing
             }
         }
-
         if (mFlagHasCameraPermission && mFlagHasMicrophonePermission) {
             handlePermissionsSuccess();
         } else if (mCriticalPermissionDenied) {
