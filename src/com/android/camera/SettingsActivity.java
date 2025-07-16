@@ -153,7 +153,7 @@ public class SettingsActivity extends PreferenceActivity {
     AlertDialog mManualHDRDialog = null;
     private ArrayList<String> mSearchSettingList;
     private ArrayList<CameraCharacteristics> mCharacteristics;
-    private boolean mFirstInitViull = true;
+    private boolean mViullEnabled = true;
     private boolean mClickChanged = false;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
@@ -2669,10 +2669,10 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void disableVIULLOption(ListPreference pref){
-        if(!mFirstInitViull) mSettingsManager.setPreferenceValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE, pref.getValue());
+        mSettingsManager.setPreferenceValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE, pref.getValue());
         pref.setValue("0");
         pref.setEnabled(false);
-        mFirstInitViull = false;
+        mViullEnabled = false;
     }
 
     private boolean is8KVideo(){
@@ -2729,11 +2729,11 @@ public class SettingsActivity extends PreferenceActivity {
         Log.i(TAG,"set viull original value:" + mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE));
         if(!mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE).equals("") &&
                 !mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE).equals("disable") &&
-                !mFirstInitViull) {
+                !mViullEnabled) {
             pref.setValue(mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE));
         }
         pref.setEnabled(true);
-        mFirstInitViull = false;
+        mViullEnabled = true;
     }
 
     public void updateVIULLDefaultValue(){
