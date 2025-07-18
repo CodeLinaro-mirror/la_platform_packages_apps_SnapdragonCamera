@@ -460,9 +460,10 @@ public class Camera2FaceView extends FaceView {
                 drawFaceMark(bsgcTranslateMatrix,mMatrix,pointTranslateMatrix,mPetMarkInts,canvas);
             }
             if(faceExists()) {
-                for (int i = 0; i < mFaces.length; i++) {
-                    if (mFaces[i].getScore() < 50) continue;
-                    Rect faceBound = mFaces[i].getBounds();
+                Face[] currentFaces = mFaces;
+                for (int i = 0; i < currentFaces.length; i++) {
+                    if (currentFaces[i].getScore() < 50) continue;
+                    Rect faceBound = currentFaces[i].getBounds();
                     // This is for special sensor caused, camx can`t fixed, so app fixed.
                     //faceBound.offset(-mOriginalCameraBound.left, -mOriginalCameraBound.top);
                     faceBound.offset(0, 0);
@@ -489,7 +490,7 @@ public class Camera2FaceView extends FaceView {
                     if (mExFaces != null && i < mExFaces.length && mExFaces[i] != null) {
 
                         ExtendedFace exFace = mExFaces[i];
-                        Face face = mFaces[i];
+                        Face face = currentFaces[i];
 
                         float[] point = new float[4];
                         int delta_x = faceBound.width() / 12;

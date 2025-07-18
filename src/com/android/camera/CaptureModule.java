@@ -1311,7 +1311,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int[] mClickPosition = new int[2];
     private boolean isManualAEC = false;
     private boolean mCaptureTorchTrigger = false;
-
+    private boolean mUpdateFocusState = false;
     private class SelfieThread extends Thread {
         public void run() {
             try {
@@ -10369,8 +10369,13 @@ private boolean isDevOptionSetting(){
                 Log.d(FD_TAG,FD_LOG,"extendedFaces len="+extendedFaces.length+" faces.len="
                         +faces.length);
             }
-
             mUI.onFaceDetection(faces, extendedFaces);
+            if(faces.length >0 && mUpdateFocusState){
+                mFocusStateListener.onFocusStatusUpdate(mFocusStateListener.getmAFState());
+                mUpdateFocusState = false;
+            }else if(faces.length == 0){
+                mUpdateFocusState = true;
+            }
         }
     }
 

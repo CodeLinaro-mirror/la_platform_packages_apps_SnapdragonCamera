@@ -95,7 +95,7 @@ public class TestBase{
     public static final int SNAPSHOT_NORMAL_DURATION = 6000;
     public static final int SNAPSHOT_NORMAL_FLAH_OFF = 4000;
     public static final int SNAPSHOT_NORMAL_NUM = 1;
-    public static final int OPEN_CAMERA_DURATION = 3000;
+    public static final int OPEN_CAMERA_DURATION = 5000;
     public static final int SMALL_WAIT_DURATION = 1000;
     public static final int SET_WAIT_DURATION = 100;
     public static final int SAVE_VIDEO_DURATION = 3000;

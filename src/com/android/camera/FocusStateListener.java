@@ -37,12 +37,15 @@ import com.android.camera.util.PersistUtil;
 public class FocusStateListener {
     private static final String TAG = "SnapCam_FocusStateListe";
     private CaptureUI mUI;
-
+    private int mAFState;
     public FocusStateListener(CaptureUI ui) {
         mUI = ui;
     }
-
+    public int getmAFState(){
+        return mAFState;
+    }
     public void onFocusStatusUpdate(int focusState) {
+        mAFState = focusState;
         switch (focusState) {
             case CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN:
                 Log.d(TAG, "CONTROL_AF_STATE_ACTIVE_SCAN onFocusStarted");

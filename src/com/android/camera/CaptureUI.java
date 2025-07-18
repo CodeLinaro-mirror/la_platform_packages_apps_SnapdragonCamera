@@ -586,6 +586,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     int mVideoQualityIndex;
     int mPhotoQualityIndex;
     int mVideoFpsIndex;
+    private int mFaces;
     private void showThumbnail() {
         if ((mIsVideoUI || mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL)
                 && mThumbnail != null && mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_STILL_IMAGE_CAMERA) {
@@ -3966,7 +3967,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             foucusList.add(mAFViewRender);
         }
         FocusIndicator focusIndicator;
-        if (mFaceView != null && mFaceView.faceExists() && !mIsTouchAF) {
+        if (mFaceView != null && mFaces > 0 && !mIsTouchAF) {
             if (mPieRenderer != null) {
                 mPieRenderer.clear();
             }
@@ -4619,6 +4620,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void onFaceDetection(android.hardware.camera2.params.Face[] faces,
                                 ExtendedFace[] extendedFaces) {
         mFaceView.setFaces(faces,extendedFaces);
+        mFaces = faces.length;
+
     }
 
     public void onFacialMaskDetection(int[] facialMasks, int maskNums) {
