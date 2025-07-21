@@ -8933,7 +8933,9 @@ private boolean isDevOptionSetting(){
             mCameraRender.destroy();
         }
         if(mPostProcessor.isJniAPISupported()) {
-            mPostProcessor.nativePerfLockRelease(1);
+            if (!PersistUtil.getModelInfo().contains("7750")){
+                mPostProcessor.nativePerfLockRelease(1);
+            }
             mPostProcessor.nativeC2paTearDown();
         }
     }
@@ -10600,9 +10602,26 @@ private boolean isDevOptionSetting(){
     private void limitPreviewFPS() {
         try {
             List<CaptureRequest> burstList = new ArrayList<>();
-            burstList.add(mVideoRecordRequestBuilder.build());
-            mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
-            burstList.add(mVideoRecordRequestBuilder.build());
+            int fps = mSettingsManager.getVideoPreviewFPS(mVideoSize,
+                    mSettingsManager.getVideoFPS());
+            Log.d(TAG,"limit preview fps:" + PersistUtil.getPreviewFps() + ",fps" + fps + ",mHighSpeedCaptureRate:" + mHighSpeedCaptureRate);
+            if((fps == 30 && mHighSpeedCaptureRate == 60) || (fps == 15 && mHighSpeedCaptureRate == 0)) {
+                burstList.add(mVideoRecordRequestBuilder.build());
+                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                burstList.add(mVideoRecordRequestBuilder.build());
+            }else if(fps == 15 && mHighSpeedCaptureRate == 60){
+                burstList.add(mVideoRecordRequestBuilder.build());
+                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+            }else if(fps == 45){
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+                burstList.add(mVideoRecordRequestBuilder.build());
+                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                burstList.add(mVideoRecordRequestBuilder.build());
+            }
             mCurrentSession.setRepeatingBurst(burstList, mCaptureCallback, mCameraHandler);
             mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
         } catch (CameraAccessException e) {
@@ -10843,7 +10862,7 @@ private boolean isDevOptionSetting(){
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
-                    if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                         if (PersistUtil.enableMediaRecorder()) {
                             mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                         }
@@ -11308,7 +11327,7 @@ private boolean isDevOptionSetting(){
 
             int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                     mSettingsManager.getVideoFPS());
-            if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+            if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                 limitPreviewFPS();
             } else {
                 if (isHighSpeedRateCapture()) {
@@ -12068,7 +12087,7 @@ private boolean isDevOptionSetting(){
                 mMediaRecorder.pause();
                 int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
-                if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                     limitPreviewFPS();
                 }
             } else {
@@ -15051,7 +15070,7 @@ private boolean isDevOptionSetting(){
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
-                    if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                         if (mUI.getZoomFixedSupport()) {
                             applyZoomRatio(mVideoRecordRequestBuilder, mZoomValue, id);
                         } else {
@@ -16630,8 +16649,10 @@ private boolean isDevOptionSetting(){
         int duration = 3000;
         int[] list = {0x40400000, 0x1, 0x40C00000, 0x1, 0x40804000, 0X687, 0x40800000, 0X687,
                 0x40804100, 0X660, 0x40800100, 0X660, 0x40800200, 0X8C6, 0x40804200, 0X8C6};
-        if(mPostProcessor.isJniAPISupported())
+        if(mPostProcessor.isJniAPISupported() && !PersistUtil.getModelInfo().contains("7750")) {
+            Log.d(TAG,"acquire perf lock");
             mPostProcessor.nativePerfLockAcq(1, duration, list, list.length);
+        }
         mLockNums.set(0);
         mResumed = false;
         int nextCameraId = getNextScreneModeId(mNextModeIndex);
