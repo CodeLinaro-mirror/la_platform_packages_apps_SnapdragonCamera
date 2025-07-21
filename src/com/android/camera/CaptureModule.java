@@ -10920,7 +10920,7 @@ private boolean isDevOptionSetting(){
 
     private void applyZoomAndUpdate() {
         long current = System.currentTimeMillis();
-        if(current - mZoomTime > 24 && mZoomHandler != null){
+        if(current - mZoomTime > PersistUtil.ZOOM_INTERVAL && mZoomHandler != null){
             mZoomHandler.sendEmptyMessage(ZoomHandler.MSG_UPDATE_ZOOM_INSTANT);
             mZoomTime = current;
         }
@@ -14880,7 +14880,6 @@ private boolean isDevOptionSetting(){
                 cropRegionForZoom(id, false);
             }
             Log.i(TAG,"applyzoomratio="+zoomValue);
-            mZoomValue = zoomValue;
             request.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomValue);
         } catch(IllegalArgumentException e) {
             Log.w(TAG, EXCEPTION_LOG," there is no vendorTag CONTROL_ZOOM_RATIO");

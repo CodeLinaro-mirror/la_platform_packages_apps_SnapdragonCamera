@@ -14,6 +14,8 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import com.android.camera.util.Log;
+import com.android.camera.util.PersistUtil;
+
 import org.codeaurora.snapcam.R;
 import java.text.DecimalFormat;
 
@@ -51,7 +53,7 @@ public class ZoomBarView extends View {
     private Paint outerLinePaint, innerLinePaint, selectLinePaint, outerBgPaint, textPaint;
     private boolean zoomEnabled,mTouched;
     DecimalFormat zoomDf = new DecimalFormat("#.##");
-
+    private long moveTime;
 
     public void setZoomEnable(boolean enabled){
         zoomEnabled = enabled;
@@ -183,12 +185,16 @@ public class ZoomBarView extends View {
                     return false;
                 }
                 mTouched = true;
+                moveTime = 0;
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                if(!mTouched || !zoomEnabled){
+                long durtime = System.currentTimeMillis() - moveTime;
+                if(!mTouched || !zoomEnabled ||
+                        (moveTime > 0 && durtime < PersistUtil.ZOOM_INTERVAL)){
                     break;
                 }
+                moveTime = System.currentTimeMillis();
                 mx = event.getX();
                 my = event.getY();
                 float md = mx - dx;
@@ -228,6 +234,7 @@ public class ZoomBarView extends View {
                 mx = event.getX();
                 my = event.getY();
                 mTouched = false;
+                moveTime = 0;
                 break;
         }
         return true;
@@ -287,11 +294,12 @@ public class ZoomBarView extends View {
             canvas.drawText(text, textP[0], textP[1], textPaint);
             float diff = Math.abs(angle - selectedLineAngle);
             if (diff < moveAnglePre) {
-                Log.d(TAG, "current zoom is " + text +
-                        ",startP[0]=" + startP[0] + ",endP[0]=" + endP[0] +
-                        ",outZoomValue[i]=" + outZoomValue[i] + ",mCurrentZoom=" + mCurrentZoom
-                +",moveAnglePre="+moveAnglePre+",angle="+angle);
+
                 if (isTouchChange) {
+                    Log.d(TAG, "current zoom is " + text +
+                            ",startP[0]=" + startP[0] + ",endP[0]=" + endP[0] +
+                            ",outZoomValue[i]=" + outZoomValue[i] + ",mCurrentZoom=" + mCurrentZoom
+                            +",moveAnglePre="+moveAnglePre+",angle="+angle);
                     mListener.onZoomValueChanged(outZoomValue[i]);
                     mCurrentZoom = outZoomValue[i];
                     selecteDiff = diff;
@@ -335,9 +343,10 @@ public class ZoomBarView extends View {
             float diff = Math.abs(angle - selectedLineAngle);
             if ((diff < each_angle && selecteDiff == -1) || (selecteDiff >= 0 && diff < selecteDiff)){
                 if (isTouchChange) {
+                    Log.d(TAG,"mCurrentZoom="+mCurrentZoom+",angle="+angle+",each_angle="
+                            +each_angle+",selecteDiff="+selecteDiff+",startZoom="+startZoom);
                     mListener.onZoomValueChanged(startZoom);
                     mCurrentZoom = startZoom;
-                    Log.d(TAG,"mCurrentZoom="+mCurrentZoom+",angle="+angle+",each_angle="+each_angle+",selecteDiff="+selecteDiff);
                 }
                 selecteDiff = diff;
             }

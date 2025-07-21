@@ -58,7 +58,7 @@ public class PersistUtil {
     public static final int CAMERA2_DEV_OPTION_ALL = 100;
 
     private static final int CAMERA_SENSOR_VERTICAL_ALIGNED = 1;
-
+    public static final long ZOOM_INTERVAL = 24;
     // camera1 prop start
     private static final boolean PERSIST_CAMERA_SAVE_IN_SD_ENABLED =
             getBoolean("persist.sys.env.camera.saveinsd", false);
