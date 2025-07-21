@@ -263,6 +263,7 @@ public class ZoomBarView extends View {
             drawDial(startAngle, sweepAngle, outerRadius, canvas);
             canvas.drawLine(mCenterX, centliney, mCenterX, centliney + outerLineHeight, selectLinePaint);
             mIsDrawDial = false;
+            isTouchChange = false;
         }
     }
 

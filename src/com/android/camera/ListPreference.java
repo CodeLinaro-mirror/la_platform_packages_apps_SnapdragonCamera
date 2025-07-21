@@ -140,7 +140,7 @@ public class ListPreference extends CameraPreference {
     }
 
     // Find the first value in mDefaultValues which is supported.
-    private String findSupportedDefaultValue() {
+    public String findSupportedDefaultValue() {
         for (int i = 0; i < mDefaultValues.length; i++) {
             for (int j = 0; j < mEntryValues.length; j++) {
                 // Note that mDefaultValues[i] may be null (if unspecified
@@ -184,13 +184,6 @@ public class ListPreference extends CameraPreference {
     public int findIndexOfValue(String value) {
         for (int i = 0, n = mEntryValues.length; i < n; ++i) {
             if (CameraUtil.equals(mEntryValues[i], value)) return i;
-        }
-
-        String defaultValue = findSupportedDefaultValue();
-        if (defaultValue != null) {
-            for (int i = 0, n = mEntryValues.length; i < n; ++i) {
-                if (CameraUtil.equals(mEntryValues[i], defaultValue)) return i;
-            }
         }
         return -1;
     }
