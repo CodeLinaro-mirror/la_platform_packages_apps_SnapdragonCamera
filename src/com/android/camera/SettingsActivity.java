@@ -25,6 +25,10 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 /*
@@ -81,6 +85,7 @@ import com.android.camera.util.CameraUtil;
 import com.android.camera.CaptureModule.CameraMode;
 import com.android.camera.ui.RotateTextToast;
 import com.android.camera.util.PersistUtil;
+import com.android.camera.SystemFeatures;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -987,7 +992,11 @@ public class SettingsActivity extends PreferenceActivity {
         window.setFlags(flag, flag);
         ActionBar actionBar = getActionBar();
         if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
+            if ( SystemFeatures.getInstance().isWatchScreenRound() ) {
+                actionBar.setDisplayHomeAsUpEnabled(false);
+            } else {
+                actionBar.setDisplayHomeAsUpEnabled(true);
+            }
             actionBar.setTitle(getResources().getString(R.string.settings_title));
         }
         final boolean isSecureCamera = getIntent().getBooleanExtra(

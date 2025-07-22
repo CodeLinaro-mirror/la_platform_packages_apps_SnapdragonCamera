@@ -15,6 +15,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 package com.android.camera;
@@ -1576,7 +1580,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         });
 
         mSceneModeInstructionalDialog =
-                new AlertDialog.Builder(mActivity, AlertDialog.THEME_HOLO_LIGHT)
+                new AlertDialog.Builder(mActivity,
+                        AlertDialog.THEME_DEVICE_DEFAULT_LIGHT)
                         .setView(view).create();
         try {
             mSceneModeInstructionalDialog.show();

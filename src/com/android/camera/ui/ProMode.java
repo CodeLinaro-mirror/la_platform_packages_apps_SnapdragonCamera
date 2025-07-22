@@ -25,6 +25,10 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 package com.android.camera.ui;
@@ -45,9 +49,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.android.camera.SettingsManager;
+import com.android.camera.SystemFeatures;
 
 import org.codeaurora.snapcam.R;
 
+import java.lang.String;
 import java.util.ArrayList;
 
 public class ProMode extends View {
@@ -61,11 +67,15 @@ public class ProMode extends View {
     private static final int BLUE = 0xff4693fb;
     private static final int SELECTED_DOT_SIZE = 20;
     private static final int DOT_SIZE = 10;
+    private static final String ISO_PREFIX = "ISO";
+    private static final int ISO_PREFIX_LEN = 3;
     private static final int[] wbIcons = {R.drawable.auto, R.drawable.incandecent,
             R.drawable.fluorescent, R.drawable.sunlight, R.drawable.cloudy};
     private static final int[] wbIconsBlue = {R.drawable.auto_blue, R.drawable.incandecent_blue,
             R.drawable.fluorescent_blue, R.drawable.sunlight_blue, R.drawable.cloudy_blue};
     private static final int WB_ICON_SIZE = 80;
+    private static final int WB_ICON_SIZE_ROUND = 32;
+    private static final int WB_ICON_YOFFSET_ROUND = 48;
     private PathMeasure mCurveMeasure;
     private int mCurveLeft;
     private int mCurveRight;
@@ -89,12 +99,14 @@ public class ProMode extends View {
     private Path mCurvePath = new Path();
     private int mCurveHeight;
     private int mOrientation;
+    private boolean mIsDisplayRound;
 
     public ProMode(Context context, AttributeSet attrs) {
         super(context, attrs);
         mContext = context;
         mPaint.setStrokeWidth(7f);
         mSettingsManager = SettingsManager.getInstance();
+        mIsDisplayRound = SystemFeatures.getInstance().isWatchScreenRound();
     }
 
     private void init() {
@@ -156,13 +168,21 @@ public class ProMode extends View {
         super.onLayout(changed, left, top, right, bottom);
         mWidth = right - left;
         mHeight = bottom - top;
+        updateCurve();
+    }
 
-        mCurveLeft = mWidth / 10;
+    private void updateCurve() {
+        mCurveLeft = mIsDisplayRound ? mWidth / 12 : mWidth / 10;
         mCurveRight = mWidth - mCurveLeft;
-        mCurveHeight = mWidth / 7;
-        mCurveY = (int) (mHeight * 0.67);
 
         float cx = (mCurveLeft + mCurveRight) / 2;
+        // for round display, making height as half of curve width
+        mCurveHeight = mIsDisplayRound ? (int) (cx - mCurveLeft) :
+                                                       mWidth / 7;
+        // For cricular display Curve is above the pro mode layout
+        mCurveY = (int) ( mIsDisplayRound ? (mHeight * 0.37) :
+                                            (mHeight * 0.67) );
+
         mCurvePath.reset();
         mCurvePath.moveTo(mCurveLeft, mCurveY);
         mCurvePath.quadTo(cx, mCurveY - mCurveHeight, mCurveRight, mCurveY);
@@ -217,11 +237,21 @@ public class ProMode extends View {
                 v.setText(s);
                 v.setTextColor(Color.WHITE);
                 v.measure(0, 0);
-                ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(v.getMeasuredWidth(),
-                        v.getMeasuredHeight());
+                ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(
+                        v.getMeasuredWidth(), v.getMeasuredHeight());
                 v.setLayoutParams(lp);
-                v.setX(mCurveLeft + i * stride - v.getMeasuredWidth() / 2);
-                v.setY(mCurveY - 2 * v.getMeasuredHeight());
+                if (mIsDisplayRound) {
+                    v.setY(mCurveY - v.getMeasuredHeight()/2);
+                    if (i == 0) {
+                        v.setX(mCurveLeft + SELECTED_DOT_SIZE);
+                    } else {
+                       v.setX(mCurveLeft + i * stride - v.getMeasuredWidth()
+                              - SELECTED_DOT_SIZE);
+                    }
+                } else  {
+                    v.setX(mCurveLeft + i * stride - v.getMeasuredWidth() / 2);
+                    v.setY(mCurveY - 2 * v.getMeasuredHeight());
+                }
                 mParent.addView(v);
                 mAddedViews.add(v);
             }
@@ -236,18 +266,39 @@ public class ProMode extends View {
                 if (mMode == WHITE_BALANCE_MODE) {
                     v = new ImageView(mContext);
                     ((ImageView) v).setImageResource(wbIcons[i]);
+                    // Only Adjust size for circular display,
+                    int size = mIsDisplayRound ? WB_ICON_SIZE_ROUND : WB_ICON_SIZE;
+                    int yOffset = mIsDisplayRound ? WB_ICON_YOFFSET_ROUND : 2 * WB_ICON_SIZE;
                     ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(
-                            WB_ICON_SIZE, WB_ICON_SIZE);
+                            size, size);
                     v.setLayoutParams(lp);
-                    v.setX(mPoints[i].x - WB_ICON_SIZE / 2);
-                    v.setY(mPoints[i].y - 2 * WB_ICON_SIZE);
-                } else {
+                    if (mIsDisplayRound) {
+                        // reduce left shit for 1st WB icon and increase for last
+                        int xOffset = (i == 0) ? size / 3 : ( (i == length -1) ?
+                                                                2*size/3 : size/2) ;
+                        v.setX(mPoints[i].x - xOffset);
+                    } else {
+                        v.setX(mPoints[i].x - size / 2);
+                    }
+                    v.setY(mPoints[i].y - yOffset);
+                } else { // ISO & EV
                     v = new TextView(mContext);
-                    ((TextView) v).setText(cc[i]);
+                    if ( (mMode == ISO_MODE) && mIsDisplayRound ) {
+                        // Remove ISO from each ISO value
+                        String str = cc[i].toString();
+                        if ( str.startsWith(ISO_PREFIX) ) {
+                            ((TextView) v).setText(str.subSequence(ISO_PREFIX_LEN,
+                                                   str.length()));
+                        } else {
+                            ((TextView) v).setText(cc[i]);
+                        }
+                    } else {
+                        ((TextView) v).setText(cc[i]);
+                    }
                     ((TextView) v).setTextColor(Color.WHITE);
                     v.measure(0, 0);
-                    ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(v.getMeasuredWidth(),
-                            v.getMeasuredHeight());
+                    ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(
+                            v.getMeasuredWidth(), v.getMeasuredHeight());
                     v.setLayoutParams(lp);
                     v.setX(mPoints[i].x - v.getMeasuredWidth() / 2);
                     v.setY(mPoints[i].y - 2 * v.getMeasuredHeight());

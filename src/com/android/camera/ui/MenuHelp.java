@@ -25,6 +25,10 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Changes from Qualcomm Technologies, Inc. are provided under the following license:
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+SPDX-License-Identifier: BSD-3-Clause-Clear
 */
 package com.android.camera.ui;
 
@@ -57,6 +61,7 @@ import com.android.camera.ui.ModuleSwitcher;
 import com.android.camera.ui.RotateImageView;
 import com.android.camera.ShutterButton;
 import com.android.camera.Storage;
+import com.android.camera.SystemFeatures;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.TsMakeupManager;
 
@@ -88,10 +93,13 @@ public class MenuHelp extends RotatableLayout {
     private Typeface mTypeface;
     private boolean forCamera2 = false;
 
+    private boolean mIsDisplayRound = false;
+
     public MenuHelp(Context context, AttributeSet attrs) {
         super(context, attrs);
         mContext = context;
         mTypeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL);
+        mIsDisplayRound = SystemFeatures.getInstance().isWatchScreenRound();
     }
 
     public MenuHelp(Context context) {
@@ -122,7 +130,14 @@ public class MenuHelp extends RotatableLayout {
 
     private void setLocation(int w, int h) {
         int rotation = getUnifiedRotation();
-        toIndex(mHelp0_0, w, h, rotation, 1, 3, HELP_0_0_INDEX);
+        // 0_0 is for scene mode help text
+        if (mIsDisplayRound) {
+            toIndex(mHelp0_0, w, h, rotation, 1, 4, HELP_0_0_INDEX);
+        } else {
+            toIndex(mHelp0_0, w, h, rotation, 1, 3, HELP_0_0_INDEX);
+        }
+
+        // 1_0 is for filter mode help text
         toIndex(mHelp1_0, w, h, rotation, 2, 2, HELP_1_0_INDEX);
         if(TsMakeupManager.HAS_TS_MAKEUP)
             toIndex(mHelp3_0, w, h, rotation, 3, 1, HELP_3_0_INDEX);
@@ -131,7 +146,11 @@ public class MenuHelp extends RotatableLayout {
         } else {
             mHelp4_6.setVisibility(View.GONE);
         }
-        toIndex(mOk2_4, w, h, rotation, 1, 5, OK_2_4_INDEX);
+        if (mIsDisplayRound) {
+            toIndex(mOk2_4, w, h, rotation, 2, 5, OK_2_4_INDEX);
+        } else {
+            toIndex(mOk2_4, w, h, rotation, 1, 5, OK_2_4_INDEX);
+        }
         fillArrows(w, h, rotation);
     }
 
@@ -139,22 +158,50 @@ public class MenuHelp extends RotatableLayout {
         View v1 = new View(mContext);
         View v2 = new View(mContext);
         View v3 = new View(mContext);
+        // This block is for scene mode arrow
         {
-            toIndex(v1, w, h, rotation, 1, 3, -1);
-            toIndex(v2, w, h, rotation, 0, 1, -1);
-            toIndex(v3, w, h, rotation, 0, 0, -1);
-            float[] x = {v1.getX()-POINT_MARGIN, v2.getX(), v3.getX()};
-            float[] y = {v1.getY()-POINT_MARGIN, v2.getY(), v3.getY()+POINT_MARGIN};
-            mArrows.addPath(x, y);
+            if (mIsDisplayRound) {
+                // move downward by increasing y by 1
+                toIndex(v1, w, h, rotation, 1, 4, -1);
+                toIndex(v2, w, h, rotation, 0, 2, -1);
+                toIndex(v3, w, h, rotation, 0, 1, -1);
+                // move right by increase all x by 20
+                float[] x = {v1.getX()-30, v2.getX()+20, v3.getX()+20};
+                float[] y = {v1.getY()-POINT_MARGIN, v2.getY(),
+                                             v3.getY()+POINT_MARGIN};
+                mArrows.addPath(x, y);
+            } else {
+                toIndex(v1, w, h, rotation, 1, 3, -1);
+                toIndex(v2, w, h, rotation, 0, 1, -1);
+                toIndex(v3, w, h, rotation, 0, 0, -1);
+                float[] x = {v1.getX()-POINT_MARGIN, v2.getX(), v3.getX()};
+                float[] y = {v1.getY()-POINT_MARGIN, v2.getY(),
+                                                  v3.getY()+POINT_MARGIN};
+                mArrows.addPath(x, y);
+            }
         }
 
+        // This block is for filter text arrow
         {
-            toIndex(v1, w, h, rotation, 2, 2, -1);
-            toIndex(v2, w, h, rotation, 1, 1, -1);
-            toIndex(v3, w, h, rotation, 1, 0, -1);
-            float[] x = {v1.getX()-POINT_MARGIN, v2.getX(), v3.getX()};
-            float[] y = {v1.getY()-POINT_MARGIN, v2.getY(), v3.getY()+POINT_MARGIN};
-            mArrows.addPath(x, y);
+            if (mIsDisplayRound) {
+                // shift right between prev x and new x
+                toIndex(v1, w, h, rotation, 3, 2, -1);
+                toIndex(v2, w, h, rotation, 2, 1, -1);
+                toIndex(v3, w, h, rotation, 2, 0, -1);
+                float[] x = {v1.getX()-2*POINT_MARGIN,
+                             v2.getX()-POINT_MARGIN, v3.getX()-POINT_MARGIN};
+                // shift upward by 20
+                float[] y = {v1.getY()-70, v2.getY()-20, v3.getY()+30};
+                mArrows.addPath(x, y);
+            } else {
+                toIndex(v1, w, h, rotation, 2, 2, -1);
+                toIndex(v2, w, h, rotation, 1, 1, -1);
+                toIndex(v3, w, h, rotation, 1, 0, -1);
+                float[] x = {v1.getX()-POINT_MARGIN, v2.getX(), v3.getX()};
+                float[] y = {v1.getY()-POINT_MARGIN,
+                             v2.getY(), v3.getY()+POINT_MARGIN};
+                mArrows.addPath(x, y);
+            }
         }
 
         if(TsMakeupManager.HAS_TS_MAKEUP) {
@@ -170,7 +217,8 @@ public class MenuHelp extends RotatableLayout {
             toIndex(v2, w, h, rotation, 3, 5, -1);
             toIndex(v3, w, h, rotation, 4, 6, -1);
             float[] x = {v1.getX(), v2.getX(), v3.getX()};
-            float[] y = {v1.getY()+POINT_MARGIN, v2.getY(), v3.getY()-POINT_MARGIN};
+            float[] y = {v1.getY()+POINT_MARGIN, v2.getY(),
+                         v3.getY()-POINT_MARGIN};
             mArrows.addPath(x, y);
         }
     }

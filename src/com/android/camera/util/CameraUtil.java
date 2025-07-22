@@ -12,6 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 package com.android.camera.util;
@@ -81,6 +85,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 
 import com.android.camera.SettingsManager;
+import com.android.camera.SystemFeatures;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.params.StreamConfigurationMap;
@@ -483,7 +488,11 @@ public class CameraUtil {
             naturalWidth = displaySize.y;
             naturalHeight = displaySize.x;
         }
-        return naturalWidth < naturalHeight;
+        if ( SystemFeatures.getInstance().isWatchScreenRound() ) {
+           return true; // For circular watch, default should be true
+        } else { // Below logic fails if both are same
+           return naturalWidth < naturalHeight;
+        }
     }
 
     public static int getDisplayOrientation(int degrees, int cameraId) {
