@@ -15,6 +15,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 package com.android.camera;
@@ -107,6 +111,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.util.AttributeSet;
 
+import com.android.camera.SystemFeatures;
 import com.android.camera.data.Camera2ModeAdapter.OnItemClickListener;
 import com.android.camera.deepportrait.CamGLRenderObserver;
 import com.android.camera.deepportrait.CamGLRenderer;
@@ -322,6 +327,13 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final String FD_TAG = "SnapCam_FD";
 
     private static final String HFR_RATE = PersistUtil.getHFRRate();
+
+    // STATS Visualizer setting 5 options
+    private static final String BG_STATS =  "0";
+    private static final String BE_STATS =  "1";
+    private static final String HIST_STATS =  "2";
+    private static final String AWB_STATS =  "3";
+    private static final String AEC_STATS =  "4";
 
     MeteringRectangle[][] mAFRegions = new MeteringRectangle[MAX_NUM_CAM][];
     MeteringRectangle[][] mAERegions = new MeteringRectangle[MAX_NUM_CAM][];
@@ -1559,7 +1571,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private void updateStatsView(String stats_visualizer,CaptureResult result) {
         int r, g, b, index;
-        if (stats_visualizer.contains("2")) {
+        if (stats_visualizer.contains(HIST_STATS)) {
             int[] histogramStats = result.get(CaptureModule.histogramStats);
             if (histogramStats != null && mHiston) {
                     /*The first element in the array stores max hist value . Stats data begin
@@ -1572,7 +1584,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         // BG stats display
-        if (stats_visualizer.contains("0")) {
+        if (stats_visualizer.contains(BG_STATS)) {
             int[] bgRStats = null;
             int[] bgGStats = null;
             int[] bgBStats = null;
@@ -1609,7 +1621,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         // BE stats display
-        if (stats_visualizer.contains("1")) {
+        if (stats_visualizer.contains(BE_STATS)) {
             int[] beRStats = null;
             int[] beGStats = null;
             int[] beBStats = null;
@@ -1669,7 +1681,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         // AWB Info display
-        if (stats_visualizer.contains("3")) {
+        if (stats_visualizer.contains(AWB_STATS)) {
             try{
                 awbinfo_data[0] = Float.toString(mRGain);
                 awbinfo_data[1] = Float.toString(mGGain);
@@ -1679,8 +1691,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mActivity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            mUI.updateAWBInfoVisibility(View.VISIBLE);
-                            mUI.updateAwbInfoText(awbinfo_data);
+                            if ( canStatsGroupBeShown(AWB_STATS, stats_visualizer) ) {
+                                mUI.updateAWBInfoVisibility(View.VISIBLE);
+                                mUI.updateAwbInfoText(awbinfo_data);
+                            } else {
+                                mUI.updateAWBInfoVisibility(View.GONE);
+                            }
                         }
                     });
                 }
@@ -1692,7 +1708,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         // AEC Info display
-        if (stats_visualizer.contains("4")) {
+        if (stats_visualizer.contains(AEC_STATS)) {
             for (int i = 0; i < aecinfo_data.length;i++)
                 aecinfo_data[i] = "";
             try {
@@ -1724,8 +1740,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mUI.updateAECInfoVisibility(View.VISIBLE);
-                        mUI.updateAecInfoText(aecinfo_data);
+                        if ( canStatsGroupBeShown(AEC_STATS, stats_visualizer) ) {
+                            mUI.updateAECInfoVisibility(View.VISIBLE);
+                            mUI.updateAecInfoText(aecinfo_data);
+                        } else {
+                            mUI.updateAECInfoVisibility(View.GONE);
+                        }
                     }
                 });
             }
@@ -10780,16 +10800,59 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private boolean canStatsGroupBeShown(String statsID, String statsPrefValue) {
+        boolean isWatch = SystemFeatures.getInstance().isFeatureWatchEnabled();
+        if (!isWatch) return true;
+
+        boolean isBEorBGStatsOn = ( statsPrefValue.contains(BG_STATS)
+                                       || statsPrefValue.contains(BE_STATS) );
+        boolean isAECorAWBStatsOn = ( statsPrefValue.contains(AWB_STATS)
+                                       || statsPrefValue.contains(AEC_STATS) );
+        boolean isHistStatsOn = statsPrefValue.contains(HIST_STATS);
+        // Give highest priority to AEC/AWB info. Then to Hist and
+        // finally to BE/BG. This means BE/BG stats will show if rest
+        // all are not selected.
+        if ( (statsID == AWB_STATS) || (statsID == AEC_STATS) ) {
+            return true;
+        } // AEC, AWB block ends
+
+        if (statsID == HIST_STATS) { // Hist stats
+            // can be shown only if AEC, AWB are off
+            if ( isAECorAWBStatsOn ) {
+                return false;
+            } else {
+                return true;
+            }
+        } // hist stats block ends
+
+        if ( (statsID == BG_STATS) || (statsID == BE_STATS) ) {
+            // BE and BG stats can show together but not with
+            // other groups
+            if ( isHistStatsOn || isAECorAWBStatsOn ) {
+                return false;
+            } else {
+                return true;
+            }
+        } // BE & BG block ends
+
+        return false; // some invalid statsID
+    }
+
     private void applyHistogram(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
         if (value != null ) {
-            if (value.contains("2")) {
+            if (value.contains(HIST_STATS)) {
                 final byte enable = 1;
                 request.set(CaptureModule.histMode, enable);
                 mHiston = true;
-                updateGraghViewVisibility(View.VISIBLE);
-                updateGraghView();
-                return;
+                if ( !canStatsGroupBeShown(HIST_STATS, value) ) {
+                    updateGraghViewVisibility(View.GONE);
+                    return;
+                } else {
+                    updateGraghViewVisibility(View.VISIBLE);
+                    updateGraghView();
+                    return;
+                }
             }
         }
         mHiston = false;
@@ -10799,7 +10862,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyBGStats(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
         if (value != null ) {
-            if (value.contains("0")){
+            if (value.contains(BG_STATS)){
                 final byte enable = 1;
                 try{
                     request.set(CaptureModule.bgStatsMode, enable);
@@ -10808,8 +10871,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mBGStatson = false;
                 }
                 if (mBGStatson) {
-                    updateBGStatsVisibility(View.VISIBLE);
-                    updateBGStatsView();
+                    if ( !canStatsGroupBeShown(BG_STATS, value) ) {
+                        updateBGStatsVisibility(View.GONE);
+                        return;
+                    } else {
+                        updateBGStatsVisibility(View.VISIBLE);
+                        updateBGStatsView();
+                    }
                 }
                 return;
             }
@@ -10821,7 +10889,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyBEStats(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
         if (value != null ) {
-            if (value.contains("1")){
+            if (value.contains(BE_STATS)){
                 final byte enable = 1;
                 try{
                     request.set(CaptureModule.beStatsMode, enable);
@@ -10830,8 +10898,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mBEStatson = false;
                 }
                 if (mBEStatson) {
-                    updateBEStatsVisibility(View.VISIBLE);
-                    updateBEStatsView();
+                    if ( !canStatsGroupBeShown(BE_STATS, value) ) {
+                        updateBEStatsVisibility(View.GONE);
+                        return;
+                    } else {
+                        updateBEStatsVisibility(View.VISIBLE);
+                        updateBEStatsView();
+                    }
                 }
                 return;
             }

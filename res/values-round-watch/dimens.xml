@@ -36,6 +36,20 @@
     <dimen name="size_12dp">12dp</dimen>
     <dimen name="size_8dp">8dp</dimen>
 
+    <dimen name="textsize_15sp">15sp</dimen>
+
+    <dimen name="hist_stats_graphs_top_margin">150dp</dimen>
+    <dimen name="hist_stats_graphs_size">100dp</dimen>
+    <dimen name="bebg_stats_graph_width">170dp</dimen>
+    <dimen name="bebg_stats_graph_height">300dp</dimen>
+    <dimen name="margin_68dp">68dp</dimen>
+    <dimen name="bebg_stats_graph_margin_top">88dp</dimen>
+    <dimen name="bg_stats_lbl_margin_left">72dp</dimen>
+    <dimen name="bg_stats_margin_left">52dp</dimen>
+    <dimen name="be_stats_margin_left">230dp</dimen>
+    <dimen name="aec_margin_top">172dp</dimen>
+    <dimen name="awb_margin_left">150dp</dimen>
+
     <dimen name="drawable_padding_promode_param">-2dp</dimen>
 </resources>
 
