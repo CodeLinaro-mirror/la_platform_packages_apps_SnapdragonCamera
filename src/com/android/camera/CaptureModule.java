@@ -3328,6 +3328,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 removeList[CameraMode.DEFAULT.ordinal()] = false;
                 removeList[CameraMode.VIDEO.ordinal()] = false;
                 removeList[CameraMode.PRO_MODE.ordinal()] = false;
+                if (mSettingsManager.isHFRSupported()) {
+                    Log.i(TAG," HFRSupported !");
+                    removeList[CameraMode.HFR.ordinal()] = false;
+                }
                 if (physical_ids != null && physical_ids.size() == 0 &&
                         facing != CameraCharacteristics.LENS_FACING_FRONT){
                     if (mSingleRearId == -1) {
@@ -3372,7 +3376,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mSceneCameraIds.get(CameraMode.VIDEO.ordinal()).rearCameraId = defaultId;
                     mSceneCameraIds.get(CameraMode.PRO_MODE.ordinal()).rearCameraId = defaultId;
                     if (mSettingsManager.isHFRSupported()) { // filter HFR mode
-                        removeList[CameraMode.HFR.ordinal()] = false;
                         if (mSingleRearId != -1) {
                             mSceneCameraIds.get(CameraMode.HFR.ordinal()).rearCameraId = mSingleRearId;
                         } else {
