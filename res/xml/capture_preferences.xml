@@ -1087,13 +1087,19 @@
         camera:key="pref_camera2_multi_cameras_key"
         camera:title="@string/pref_camera2_multi_cameras_title" />
 
+     <ListPreference
+        camera:defaultValue="on"
+        camera:entries="@array/pref_camera2_camera2_entries"
+        camera:entryValues="@array/pref_camera2_camera2_entryvalues"
+        camera:key="pref_camera2_bitrate_cqmode_key"
+        camera:title="@string/pref_camera2_bitrate_cqmode_title" />
+
     <ListPreference
         camera:defaultValue="off"
         camera:entries="@array/pref_camera2_camera2_entries"
         camera:entryValues="@array/pref_camera2_camera2_entryvalues"
         camera:key="pref_camera2_c2pa_key"
-        camera:title="@string/pref_camera2_c2pa_title"
-        />
+        camera:title="@string/pref_camera2_c2pa_title" />
 
     <ListPreference
         camera:defaultValue="@string/pref_camera2_override_resource_default"

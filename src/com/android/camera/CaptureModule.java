@@ -85,6 +85,7 @@ import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
+import android.media.MediaCodecInfo.EncoderCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaMuxer;
@@ -12083,6 +12084,12 @@ private boolean isDevOptionSetting(){
         return ((int)bitrate > 2000) ? 2000 *1000 *1000 : (int)bitrate *1000 *1000;
     }
 
+    private void setBitrateCQMode() {
+        Log.i(TAG, "set bitrate to cq mode for apv");
+        mVideoFormat.setInteger(MediaFormat.KEY_BITRATE_MODE, EncoderCapabilities.BITRATE_MODE_CQ);
+        mVideoFormat.setInteger(MediaFormat.KEY_QUALITY, 90);
+    }
+
     private void updateProgressBar(boolean show) {
         mActivity.runOnUiThread(new Runnable() {
             @Override
@@ -13246,9 +13253,15 @@ private boolean isDevOptionSetting(){
             mMediaRecorder.setVideoEncodingBitRate(bitRate);
         } else {
             if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")) {
-                bitRate = calculateBitRate(width, height);
+                if (mSettingsManager.getValue(SettingsManager.KEY_BITRATE_CQMODE).equals("on")) {
+                    setBitrateCQMode();
+                } else {
+                    bitRate = calculateBitRate(width, height);
+                    mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
+                }
+            } else {
+                mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
             }
-            mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
         }
     }
 
@@ -13698,8 +13711,13 @@ private boolean isDevOptionSetting(){
             } else if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")) {
                 scaledBitrate = calculateBitRate(mProfile.videoFrameWidth, mProfile.videoFrameHeight);
             }
-            Log.i(TAG, "Scaled video bitrate : " + scaledBitrate);
-            mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, scaledBitrate);
+            if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")
+                    && mSettingsManager.getValue(SettingsManager.KEY_BITRATE_CQMODE).equals("on")) {
+                setBitrateCQMode();
+            } else {
+                Log.i(TAG, "Scaled video bitrate : " + scaledBitrate);
+                mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, scaledBitrate);
+            }            
         }
         if (mCaptureTimeLapse) {
             mVideoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL - 1);

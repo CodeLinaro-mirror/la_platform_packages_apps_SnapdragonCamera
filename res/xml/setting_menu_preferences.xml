@@ -471,11 +471,20 @@
             android:defaultValue="off"
             android:entries="@array/pref_camera2_camera2_entries"
             android:entryValues="@array/pref_camera2_camera2_entryvalues"
+            android:key="pref_camera2_bitrate_cqmode_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_bitrate_cqmode_title" />
+
+        <ListPreference
+            android:defaultValue="off"
+            android:entries="@array/pref_camera2_camera2_entries"
+            android:entryValues="@array/pref_camera2_camera2_entryvalues"
             android:key="pref_camera2_c2pa_key"
             android:layout="@layout/preference"
             android:summary="%s"
-            android:title="@string/pref_camera2_c2pa_title"
-            />
+            android:title="@string/pref_camera2_c2pa_title" />
+
         <ListPreference
             android:defaultValue="@string/pref_camera2_videoencoderprofile_default"
             android:entries="@array/pref_camera2_preview_profile_entry"
