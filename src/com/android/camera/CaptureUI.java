@@ -1962,7 +1962,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public boolean getZoomFixedSupport() {
-        return mZoomRatioSupport && CaptureModule.MCXMODE;
+        return mZoomRatioSupport;
     }
 
 

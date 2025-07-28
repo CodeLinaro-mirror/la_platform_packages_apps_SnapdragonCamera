@@ -157,11 +157,20 @@ public class AFView extends View implements FocusIndicator {
             rh = temp;
         }
 
+        Log.i(TAG,"rw:" + rw + ",rh:" + rh + ",mCameraBound:" + mCameraBound + ",mOriginalCameraBound:" + mOriginalCameraBound);
         if (rw * mCameraBound.width() != mCameraBound.height() * rh) {
             if (rw == rh || (rh * 288 == rw * 352) || (rh * 480 == rw * 800)) {
                 rh = rw * mCameraBound.width() / mCameraBound.height();
             } else {
-                rw = rh * mCameraBound.height() / mCameraBound.width();
+                //rw = rh * mCameraBound.height() / mCameraBound.width();
+                int tmp_w = rh * mCameraBound.height() / mCameraBound.width();
+                int tmp_h = rw * mCameraBound.width() / mCameraBound.height();
+                if(tmp_w > rw) {
+                    rw = tmp_w;
+                }
+                if(tmp_h > rh){
+                    rh = tmp_h;
+                }
             }
         }
 
@@ -186,6 +195,8 @@ public class AFView extends View implements FocusIndicator {
         dx -= (rw - mUncroppedWidth) / 2;
         int dy = (getHeight() - mUncroppedHeight) / 2;
         dy -= (rh - mUncroppedHeight) / 2;
+        Log.v(TAG,"onDraw mUncroppedWidth x height :" + mUncroppedWidth + " x " + mUncroppedHeight +
+                " rw x rh :" + rw + " x " + rh + "onDraw dx * dy :" + dx + " x " + dy);
 
         // Focus indicator is directional. Rotate the matrix and the canvas
         // so it looks correctly in all orientations.
@@ -205,6 +216,13 @@ public class AFView extends View implements FocusIndicator {
         mMatrix.mapRect(mRect);
         mRect.offset(dx, dy);
 
+        int offset = (getHeight() - mUncroppedHeight)/2;
+        if(mRect.top < offset){
+            mRect.top = offset;
+        }else if(mRect.bottom > (getHeight() - offset)){
+            mRect.bottom = getHeight() - offset;
+        }
+        Log.d(TAG,"final rect:" + mRect);
         if (mStatus == STATUS_TRACKED) {
             if (mRect != null) {
                 mPaint.setColor(Color.YELLOW);
