@@ -11786,10 +11786,7 @@ private boolean isDevOptionSetting(){
                     cleanupEmptyFile();
                     setupMediaRecorder(getMainCameraId());
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
-                    if(mHighSpeedCapture && !isVariableFPSEnabled() && mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS) {
-                        mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                                mHighSpeedFPSRange);
-                    }
+
                     if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
                         // SENSOR_PIXEL_MODE_DEFAULT
                         mVideoRecordRequestBuilder.set(CaptureRequest.SENSOR_PIXEL_MODE,
@@ -11798,6 +11795,10 @@ private boolean isDevOptionSetting(){
                     }
                 } else {
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                }
+                if(mHighSpeedCapture && !isVariableFPSEnabled() && mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS) {
+                    mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                            mHighSpeedFPSRange);
                 }
                 if(!PersistUtil.enableMediaRecorder() && CameraMode.VIDEO == getCurrenCameraMode()) {
                     mPreviewRequestBuilder[cameraId].addTarget(mVideoRecordingSurface);
