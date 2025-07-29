@@ -1,3 +1,4 @@
+ifeq ($(AUTO_CAM_AIS), false)
 LOCAL_PATH:= $(call my-dir)
 ifeq (0,1)
 include $(CLEAR_VARS)
@@ -95,3 +96,4 @@ LOCAL_HEADER_LIBRARIES := jni_headers vendor_common_inc
 LOCAL_SHARED_LIBRARIES := liblog libcutils
 LOCAL_USE_VNDK := true
 include $(BUILD_SHARED_LIBRARY)
+endif

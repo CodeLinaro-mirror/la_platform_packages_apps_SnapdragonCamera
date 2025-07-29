@@ -1,3 +1,4 @@
+ifeq ($(AUTO_CAM_AIS), false)
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
@@ -59,3 +60,4 @@ endif
 include $(BUILD_PACKAGE)
 endif
 include $(call all-makefiles-under, $(LOCAL_PATH))
+endif
