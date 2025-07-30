@@ -13894,8 +13894,9 @@ private boolean isDevOptionSetting(){
                                 bufferInfo.presentationTimeUs -= (mRecordingPausingTime * 1000L
                                         * 1000L / (long) mTimeBetweenTimeLapseFrameCaptureMs  / 30L);
                             } else {
-                                bufferInfo.presentationTimeUs -= mRecordingPausingTime*1000;
-                            }
+                                if(bufferInfo.presentationTimeUs  > mRecordingPauseTime*1000) {
+                                    bufferInfo.presentationTimeUs -= mRecordingPausingTime*1000;
+                                }                            }
                         }
                     }
                     frameNumber++;
