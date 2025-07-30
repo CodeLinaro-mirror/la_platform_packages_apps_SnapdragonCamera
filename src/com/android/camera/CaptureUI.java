@@ -4018,32 +4018,39 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mFAImageView == null) {
             mFAImageView = mRootView.findViewById(R.id.focus_assist_iv);
         }
+
+        int previewWidth = mPreviewWidth;
+        int previewHeight = mPreviewHeight;
+        //when ratio is 1:1, preview size is 1080*1080, dont match to display size
+        if(mPreviewHeight != mDisplaySize.x && mPreviewWidth != mDisplaySize.y){
+            previewWidth = mDisplaySize.x * mPreviewWidth / mPreviewHeight;
+            previewHeight = mDisplaySize.x;
+        }
         FrameLayout.LayoutParams params =
-                new FrameLayout.LayoutParams(mPreviewHeight / 2, mPreviewWidth / 2);
-        int leftMargin = mFocusPoint.x - mPreviewHeight / 2 / 2;
-        int topMargin = mFocusPoint.y - mPreviewWidth / 2 / 2;
+                new FrameLayout.LayoutParams(previewHeight / 2, previewWidth / 2);
+        int leftMargin = mFocusPoint.x - previewHeight / 2 / 2;
+        int topMargin = mFocusPoint.y - previewWidth / 2 / 2;
         int[] surfaceViewLocation = new int[2];
         if (!USE_TEXTURE_VIEW_TO_PREVIEW) {
             mSurfaceView.getLocationInWindow(surfaceViewLocation);
         } else {
             mTextureView.getLocationInWindow(surfaceViewLocation);
         }
+
         if (leftMargin < surfaceViewLocation[0]) {
             leftMargin = surfaceViewLocation[0];
-        } else if (leftMargin > (mPreviewHeight / 2 + surfaceViewLocation[0])) {
-            leftMargin = mPreviewHeight / 2 + surfaceViewLocation[0];
+        } else if (leftMargin > (previewHeight / 2 + surfaceViewLocation[0])) {
+            leftMargin = previewHeight / 2 + surfaceViewLocation[0];
         }
         if (topMargin < surfaceViewLocation[1]) {
             topMargin = surfaceViewLocation[1];
-        } else if (topMargin > (mPreviewWidth / 2 + surfaceViewLocation[1])) {
-            topMargin = mPreviewWidth / 2 + surfaceViewLocation[1];
+        } else if (topMargin > (previewWidth / 2 + surfaceViewLocation[1])) {
+            topMargin = previewWidth / 2 + surfaceViewLocation[1];
         }
         params.leftMargin = leftMargin;
         params.topMargin = topMargin;
         mFAImageView.setLayoutParams(params);
         mFAImageView.setVisibility(View.VISIBLE);
-
-        Rect displayRegion = new Rect(surfaceViewLocation[0], surfaceViewLocation[1], mPreviewHeight, mPreviewWidth);
         mFocusAssistTextView.setOrientation(mOrientation, false);
     }
 
