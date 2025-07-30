@@ -3927,7 +3927,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     Log.i(TAG," set physical id " + physicalCameraId + "for image reader stream");
                                     outputConfiguration.setPhysicalCameraId(physicalCameraId);
                                 }
-                                if(mRawImageReader[id] != null && s == mRawImageReader[id].getSurface()){
+                                if(mRawImageReader[id] != null && s == mRawImageReader[id].getSurface() && mRawImageReader[id].getWidth() < 8000 && mRawImageReader[id].getHeight() < 6000){
                                     applyCroppedRaw(outputConfiguration, getMainCameraId());
                                 }
                                 if(s == mImageReader[id].getSurface() && (mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT
@@ -4324,9 +4324,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
                     setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
-                    applyCroppedRaw(configuration, Integer.parseInt(id));
+                    if(mPhysicalRawReader[i].getWidth() < 8000 && mPhysicalRawReader[i].getHeight() < 6000) {
+                        applyCroppedRaw(configuration, Integer.parseInt(id));
+                    }
                 }else{
-                    applyCroppedRaw(configuration, getMainCameraId());
+                    if(mPhysicalRawReader[i].getWidth() < 8000 && mPhysicalRawReader[i].getHeight() < 6000) {
+                        applyCroppedRaw(configuration, getMainCameraId());
+                    }
                 }
                 if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                     configuration.addSensorPixelModeUsed(
@@ -4346,9 +4350,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!isLogicalId(id)) {
                     configuration.setPhysicalCameraId(id);
                     setStreamUseCase(Integer.parseInt(id), SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV, configuration);
-                    applyCroppedRaw(configuration, Integer.parseInt(id));
+                    if(mPhysicalRawReader[i].getWidth() < 8000 && mPhysicalRawReader[i].getHeight() < 6000) {
+                        applyCroppedRaw(configuration, Integer.parseInt(id));
+                    }
                 }else {
-                    applyCroppedRaw(configuration, getMainCameraId());
+                    if(mPhysicalRawReader[i].getWidth() < 8000 && mPhysicalRawReader[i].getHeight() < 6000) {
+                        applyCroppedRaw(configuration, getMainCameraId());
+                    }
                 }
 
                 outputConfigurations.add(configuration);
@@ -15369,8 +15377,7 @@ private boolean isDevOptionSetting(){
         try {
             Log.d(TAG,"set cropped raw for raw steam:" + cameraId);
             long useCaseId = CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_CROPPED_RAW;
-            boolean isQcfa = mPictureSize.getWidth() >= 8000 || mPictureSize.getHeight() >= 6000;
-            if(mSettingsManager.isAvailableUseCase(cameraId, useCaseId) && !isQcfa){
+            if(mSettingsManager.isAvailableUseCase(cameraId, useCaseId)){
                 configuration.setStreamUseCase(useCaseId);
             }
         } catch (IllegalArgumentException | NoSuchFieldError e) {
