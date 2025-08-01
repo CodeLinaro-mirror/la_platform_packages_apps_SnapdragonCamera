@@ -4498,8 +4498,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
             }
             mIsPreviewingVideo = true;
-            float fps = mSettingsManager.getFps(mVideoSnapshotSize);
             if(mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT || mSettingsManager.getSavePictureFormat() == SettingsManager.HEIC_TENBIT_FORMAT) {
+                float fps = mSettingsManager.getFps(mVideoSnapshotSize);
                 mHeicLiveSnapshotLimit = (int)fps *2;
                 Log.d(TAG,"mHeicLiveSnapshotLimit:" + mHeicLiveSnapshotLimit);
             }
