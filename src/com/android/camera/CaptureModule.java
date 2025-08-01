@@ -13816,21 +13816,6 @@ private boolean isDevOptionSetting(){
         MediaFormat originalFormat = null;
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
         while (notDone && !stopRec) {
-            if (!mIsRecordingVideo && !mIsPreviewingVideo ) {
-
-                if (endCounter < 5){
-                    endCounter++;
-                    //wait 100ms one time
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        Log.e(TAG,"InterruptedException ="+e);
-                    }
-                } else {
-                    mMuxerVideoStop = true;
-                    notDone = false;
-                }
-            }
             int encoderStatus = mVideoEncoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
             if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
@@ -13875,7 +13860,9 @@ private boolean isDevOptionSetting(){
                     bufferInfo.size = 0;
                 }
 
-                if (mIsRecordingVideo && mMuxerStart && bufferInfo.size != 0) {
+                //although clicked stop button, but still need to handle buffers
+                //after receive BUFFER_FLAG_END_OF_STREAM flag set mMuxerVideoStop true, then set mMuxerStart false
+                if (mMuxerStart && bufferInfo.size != 0) {
                     /**
                      * It's usually necessary to adjust the ByteBuffer values to
                      * match BufferInfo.
