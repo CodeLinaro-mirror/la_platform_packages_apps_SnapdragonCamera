@@ -13877,8 +13877,7 @@ private boolean isDevOptionSetting(){
                     bufferInfo.size = 0;
                 }
 
-                if (mIsRecordingVideo && !mRecordingPausing && mMuxerStart
-                        && bufferInfo.size != 0) {
+                if (mIsRecordingVideo && mMuxerStart && bufferInfo.size != 0) {
                     /**
                      * It's usually necessary to adjust the ByteBuffer values to
                      * match BufferInfo.
@@ -13894,7 +13893,8 @@ private boolean isDevOptionSetting(){
                                 bufferInfo.presentationTimeUs -= (mRecordingPausingTime * 1000L
                                         * 1000L / (long) mTimeBetweenTimeLapseFrameCaptureMs  / 30L);
                             } else {
-                                if(bufferInfo.presentationTimeUs  > mRecordingPauseTime*1000) {
+                                if ((PersistUtil.lookaheadEnabled() && bufferInfo.presentationTimeUs > mRecordingPauseTime * 1000) ||
+                                        !PersistUtil.lookaheadEnabled()) {
                                     bufferInfo.presentationTimeUs -= mRecordingPausingTime*1000;
                                 }                            }
                         }
