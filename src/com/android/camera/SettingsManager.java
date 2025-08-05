@@ -27,8 +27,8 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
  /*
-  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
-  * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
   * SPDX-License-Identifier: BSD-3-Clause-Clear
   */
 
@@ -166,6 +166,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_FILTER_MODE = "pref_camera2_filter_mode_key";
     public static final String KEY_COLOR_EFFECT = "pref_camera2_coloreffect_key";
     public static final String KEY_SCENE_MODE = "pref_camera2_scenemode_key";
+    public static final String KEY_LIVE_PHOTO_MODE = "pref_camera2_livephoto_key";
     public static final String KEY_SCEND_MODE_INSTRUCTIONAL = "pref_camera2_scenemode_instructional";
     public static final String KEY_REDEYE_REDUCTION = "pref_camera2_redeyereduction_key";
     public static final String KEY_FRONT_REAR_SWITCHER_VALUE = "pref_camera2_switcher_key";
@@ -4878,6 +4879,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return format;
     }
+
+    public boolean isRawForamtOff(){
+        String rawFormat = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        if(rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off") && !rawFormat.equals("0")){
+            return false;
+        }
+        return true;
+    }
+
     public boolean isHeifWriterEncoding() {
         //disable on android P
         return false;
@@ -5032,6 +5042,15 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }else{
             return false;
         }
+    }
+
+    public boolean isSelfieMirrorOn() {
+        String value = getValue(KEY_SELFIEMIRROR);
+        if (value != null &&
+                value.equalsIgnoreCase("on")) {
+            return true;
+        }
+        return false;
     }
 
     public void filterVideoDuration() {

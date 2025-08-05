@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 /*
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -66,7 +66,7 @@ public class OneUICameraControls extends RotatableLayout {
 
     private static final String TAG = "SnapCam_Controls";
 
-    private static final float TOP_PANEL_SPACE_NUM = 6f;
+    private static final float TOP_PANEL_SPACE_NUM = 7f;
     private static final float BOTTOM_PANEL_SPACE_NUM = 5f;
     private static final float PANEL_INDEX_0 = 0f;
     private static final float PANEL_INDEX_1 = 1f;
@@ -75,6 +75,7 @@ public class OneUICameraControls extends RotatableLayout {
     private static final float PANEL_INDEX_4 = 4f;
     private View mShutter,mLongShutterStop;
     private static final float PANEL_INDEX_5 = 5f;
+    private static final float PANEL_INDEX_6 = 6f;
 
     private ShutterButtonAnim mShutterAnim;
     private int mTotalProgress;
@@ -93,6 +94,8 @@ public class OneUICameraControls extends RotatableLayout {
     private View mPreview;
     private View mSceneModeSwitcher;
     private View mSceneModeHDR;
+    private View mLivePhoto;
+
     private View mFilterModeSwitcher;
     private View mMakeupSeekBar;
     private View mMakeupSeekBarLowText;
@@ -250,6 +253,8 @@ public class OneUICameraControls extends RotatableLayout {
         mPreview = findViewById(R.id.preview_thumb);
         mSceneModeSwitcher = findViewById(R.id.scene_mode_switcher);
         mSceneModeHDR = findViewById(R.id.scene_mode_hdr);
+        mLivePhoto = findViewById(R.id.live_photo);
+
         mFilterModeSwitcher = findViewById(R.id.filter_mode_switcher);
         mRemainingPhotos = (LinearLayout) findViewById(R.id.remaining_photos);
         mRemainingPhotosText = (TextView) findViewById(R.id.remaining_photos_text);
@@ -393,7 +398,8 @@ public class OneUICameraControls extends RotatableLayout {
         mViews = new View[]{
                 mSceneModeHDR, mFilterModeSwitcher, mFrontBackSwitcher,
                 mFlashButton, mVideoPhotoSize, mVideoFps, mShutter,
-                mPreview, mPauseButton, mCancelButton, mSettingsButton
+                mPreview, mPauseButton, mCancelButton, mSettingsButton,
+                mLivePhoto
         };
         mBottomLargeSize = getResources().getDimensionPixelSize(
                 R.dimen.one_ui_bottom_large);
@@ -735,10 +741,13 @@ public class OneUICameraControls extends RotatableLayout {
         } else {
             setLocation(mVideoPhotoSize, true, PANEL_INDEX_2);
             setLocation(mVideoFps, true, PANEL_INDEX_3);
-            setLocation(mFlashButton, true, PANEL_INDEX_4);
-            setLocation(mSettingsButton, true, PANEL_INDEX_5);
+            setLocation(mLivePhoto, true, PANEL_INDEX_4);
+            setLocation(mFlashButton, true, PANEL_INDEX_5);
+            setLocation(mSettingsButton, true, PANEL_INDEX_6);
             setLocation(mFrontBackSwitcher, false, 3.4f);
-            if (mIntentMode == CaptureModule.INTENT_MODE_CAPTURE) {
+            if (mIntentMode == CaptureModule.INTENT_MODE_CAPTURE ||
+                    mIntentMode == CaptureModule.INTENT_MODE_MOTION_PHOTO
+            ) {
                 setLocation(mShutter, false, PANEL_INDEX_2);
                 setLocation(mCancelButton, false, 0.5f);
             } else if (mIntentMode == CaptureModule.INTENT_MODE_VIDEO) {
@@ -905,7 +914,7 @@ public class OneUICameraControls extends RotatableLayout {
         mOrientation = orientation;
         View[] views = {
                 mSceneModeHDR, mFilterModeSwitcher, mFrontBackSwitcher,
-                mFlashButton, mSettingsButton, mPreview,
+                mFlashButton, mSettingsButton, mPreview,mLivePhoto,
                 mMute, mShutter, mVideoShutter, mMakeupSeekBarLowText, mMakeupSeekBarHighText,
                 mPauseButton, mExitBestPhotpMode
         };
