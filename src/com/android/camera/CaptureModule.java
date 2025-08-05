@@ -203,6 +203,7 @@ import qti.video.QMediaCodecCapabilities;
 import android.hardware.camera2.CameraDevice.CameraDeviceSetup;
 import android.os.Build;
 import java.util.Collections;
+import android.media.Image.Plane;
 
 public class CaptureModule implements CameraModule, PhotoController,
         MediaSaveService.Listener, ClearSightImageProcessor.Callback,
@@ -10231,8 +10232,7 @@ private boolean isDevOptionSetting(){
                     j++;
                 }
             } catch (Exception e) {
-                Log.e(TAG, " updateUpperBodyDetection byteArray2Int occur exception");
-                e.printStackTrace();
+                Log.e(TAG, " updateUpperBodyDetection byteArray2Int occur exception e="+e);
             }
         }
         Log.d(FD_TAG,FD_LOG, " updateUpperBodyDetection headNums :" + headNums);
@@ -10358,7 +10358,6 @@ private boolean isDevOptionSetting(){
                 }
             } catch (Exception e) {
                 Log.e(TAG, "  byteArray2Int occur exception e="+e);
-                e.printStackTrace();
             }
         }
         try {
@@ -17672,12 +17671,26 @@ private boolean isDevOptionSetting(){
 
     private byte[] getJpegData(Image image) {
         Log.v(TAG, "getJpegData image :" + image);
-        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-        Log.v(TAG, "getJpegData buffer :" + buffer);
-        byte[] bytes = new byte[buffer.remaining()];
-        Log.v(TAG, "getJpegData bytes :" + bytes);
-        buffer.get(bytes);
-        return bytes;
+        Plane[] planes;
+        if (image == null) {
+            return null;
+        }
+        try {
+            planes = image.getPlanes();
+            if (planes == null || planes.length == 0) {
+                Log.e(TAG, "Invalid planes array");
+                return null;
+            }
+            ByteBuffer buffer = planes[0].getBuffer();
+            Log.v(TAG, "getJpegData buffer :" + buffer);
+            byte[] bytes = new byte[buffer.remaining()];
+            Log.v(TAG, "getJpegData bytes :" + bytes);
+            buffer.get(bytes);
+            return bytes;
+        } catch (Exception e) {
+            Log.e(TAG, "image.getPlanes exception:", e);
+            return null;
+        }
     }
 
     private void updateSaveStorageState() {
