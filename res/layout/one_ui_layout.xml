@@ -15,6 +15,10 @@
      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
      See the License for the specific language governing permissions and
      limitations under the License.
+
+     Changes from Qualcomm Technologies, Inc. are provided under the following license:
+     Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+     SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <com.android.camera.ui.OneUICameraControls xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/camera_controls"
@@ -27,6 +31,11 @@
         android:id="@+id/promode_slider"
         android:layout_height="wrap_content"
         android:layout_width="wrap_content" />
+
+    <com.android.camera.ui.RotateImageView
+        android:id="@+id/live_photo"
+        style="@style/OneUIMenuButton"
+        android:src="@drawable/ic_live_off" />
 
     <com.android.camera.ui.FlashToggleButton
         android:id="@+id/flash_button"

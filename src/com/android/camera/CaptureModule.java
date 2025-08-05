@@ -16,6 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera;
 
@@ -146,11 +151,14 @@ import com.android.camera.aide.SwmfnrUtil;
 import org.codeaurora.snapcam.R;
 import org.codeaurora.snapcam.filter.ClearSightImageProcessor;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -161,6 +169,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeoutException;
@@ -208,6 +217,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     public static final int INTENT_MODE_VIDEO = 2;
     public static final int INTENT_MODE_CAPTURE_SECURE = 3;
     public static final int INTENT_MODE_STILL_IMAGE_CAMERA = 4;
+
     private static final int BACK_MODE = 0;
     private static final int FRONT_MODE = 1;
     private static final int CANCEL_TOUCH_FOCUS_DELAY = PersistUtil.getCancelTouchFocusDelay();
@@ -757,6 +767,16 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mCamerasOpened = false;
     private boolean mIsLinked = false;
     private long mCaptureStartTime;
+    private ImageReader mVideoImageReader;
+    private LinkedList<MotionPhoto> mLivePhotoImages = new LinkedList<>();
+    private int mPendingTasks = 0;
+    private static final int PRE_RECORD_FRAMES = 45;
+    private static final int POST_RECORD_FRAMES = 45;
+    private static final int TOTAL_RECORD_FRAMES = PRE_RECORD_FRAMES + POST_RECORD_FRAMES;
+    private YUVBufferQueue mYUVBufferQueue = new YUVBufferQueue(PRE_RECORD_FRAMES);
+    private YuvToVideoEncoder mYUVEncoder = new YuvToVideoEncoder();
+    private final Object mYuvLock = new Object();
+    private boolean mIsRecording = false;
     private boolean mPaused = true;
     private boolean mResumed = true;
     private boolean mIsSupportedQcfa = false;
@@ -1105,6 +1125,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                         if (uri != null) {
                             mActivity.notifyNewMedia(uri);
                         }
+                    }
+                    if(isLivePhotoOn() && mLivePhotoImages != null && mLivePhotoImages.size() > 0){
+                        MotionPhoto motionPhoto = mLivePhotoImages.getLast();
+                        motionPhoto.updateUri(uri);
                     }
                 }
             };
@@ -2471,6 +2495,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     Log.e(TAG, "finalizeOutputConfigurations with exception:" + e.toString());
                                 }
                             }
+                            if(isLivePhotoOn()){
+                                prepareMediaCodec();
+                            }
                             setCameraModeSwitcherAllowed(true);
                             if(mActivity.getAIDenoiserService() != null){
                                 Log.i(TAG,"is doing mfnr:" + mActivity.getAIDenoiserService().isDoingMfnr());
@@ -2674,13 +2701,20 @@ public class CaptureModule implements CameraModule, PhotoController,
                         list.add(mRawImageReader[id].getSurface());
                     }
 
-                    if(mRawReprocessType != 0){
-                        for(int i = 0; i < mRawCount; i++) {
+                    if(mRawReprocessType != 0) {
+                        for (int i = 0; i < mRawCount; i++) {
                             list.add(mRAWImageReader[i].getSurface());
                         }
-                        for(int i = 0; i < mYUVCount; i++){
+                        for (int i = 0; i < mYUVCount; i++) {
                             list.add(mYUVImageReader[i].getSurface());
                         }
+                    }
+                    if(getCurrenCameraMode() == CameraMode.DEFAULT && isLivePhotoOn()) {
+                        createVideoSurface();
+                        OutputConfiguration videoConfig = new OutputConfiguration(mVideoImageReader.getSurface());
+                        videoConfig.enableSurfaceSharing();
+                        list.add(mVideoImageReader.getSurface());
+                        mPreviewRequestBuilder[BAYER_ID].addTarget(mVideoImageReader.getSurface());
                     }
                     for (Surface s : list) {
                         if (s == surface) {
@@ -2799,6 +2833,236 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         return false;
     }
+
+    public boolean isLivePhotoOn(){
+        if(getCurrenCameraMode() == CameraMode.DEFAULT && mSettingsManager.getValue(SettingsManager.KEY_LIVE_PHOTO_MODE).equals("on")){
+            return true;
+        }
+        return false;
+    }
+
+    private void processRecordingTask(){
+        if (mPendingTasks <= 0) {
+            return;
+        }
+        startYUVRecording();
+    }
+
+    private void prepareMediaCodec(){
+        Log.d(TAG,"prepareMediaCodec, mVideoSize:" + mVideoSize);
+        closeVideoFileDescriptor();
+        generateVideoFilename(MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+        int rotation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
+        if(isLivePhotoOn() && mYUVEncoder != null && mVideoFilename != null) {
+            mYUVEncoder.prepare(mVideoSize, mVideoFilename, rotation);
+        }
+    }
+
+    public void onNewImage(Image image) {
+        if (image.getFormat() != ImageFormat.YUV_420_888) {
+            image.close();
+            return;
+        }
+        long timestampUs = image.getTimestamp() / 1000;
+        byte[] yuvData = getYUV10BitFromImage(image);
+        if (yuvData == null) {
+            image.close();
+            return;
+        }
+        Log.d(TAG,"onNewImage, image:" + image.getWidth() + ",height:" + image.getHeight() + ",stride:" + image.getPlanes()[0].getRowStride() + ",image size:" + yuvData.length);
+        YuvFrame frame = new YuvFrame(yuvData, timestampUs, image.getWidth(), image.getHeight());
+        Log.d(TAG,"onNewImage, mIsRecording:" + mIsRecording);
+
+        synchronized (mYuvLock) {
+            //if in recording status, need to add new image to encoder queue
+            if (mIsRecording) {
+                mYUVEncoder.encodeFrame(frame);
+            }
+            //add new image to buffer queue, the queue always only has 45 frames,
+            mYUVBufferQueue.add(frame);
+        }
+        image.close();
+    }
+
+    private byte[] getVideoData(String fileName){
+        try {
+            File file = new File(fileName);
+            byte[] bytes = new byte[(int) file.length()];
+            try (FileInputStream fis = new FileInputStream(file)) {
+                fis.read(bytes);
+            }
+            return bytes;
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to read video data", e);
+            return null;
+        }
+    }
+
+    private void yuvEncodeComplete(){
+        Log.i(TAG,"stopYUVRecording, yuvEncodeComplete" );
+        mTakingPicture[getMainCameraId()] = false;
+        if(!mIsRecording || mYUVEncoder == null || mVideoFilename == null) {
+            Log.e(TAG, "mIsRecording is false or yuvencoder is null");
+            return;
+        }
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mUI.stopSelfieFlash();
+                mUI.enableShutter(true);
+            }
+        });
+        mYUVEncoder.stop();
+        mIsRecording = false;
+        Log.i(TAG,"mVideoFilename:" + mVideoFilename);
+        byte[] videoBytes = getVideoData(mVideoFilename);
+        MotionPhoto motionPhoto = mLivePhotoImages.poll();
+        if(motionPhoto != null) {
+            byte[] bytes = motionPhoto.combineJpegVideo(videoBytes);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    updateMotionPhoto(bytes, motionPhoto.getUri(), motionPhoto.getXMP());
+                }
+            }).start();
+            if(!mIsRecording) {
+                mPendingTasks--;
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        //if more than one capture request, then handle next one
+                        processRecordingTask();
+                    }
+                }).start();
+            }
+        } else {
+            Log.w(TAG, "No motion photo available for combining!");
+        }
+        closeYUVVideoRelated();
+        if(isLivePhotoOn()) {
+            prepareMediaCodec();
+        }
+    }
+
+    public synchronized void startYUVRecording() {
+        Log.d(TAG,"startYUVRecording, mIsRecording:" + mIsRecording + ",mYUVEncoder:" + mYUVEncoder);
+        if(mIsRecording || mYUVEncoder == null){
+            return;
+        }
+        mIsRecording = true;
+        mYUVEncoder.startVideoThread();
+        try {
+            List<YuvFrame> historicalFrames;
+            synchronized (mYuvLock) {
+                historicalFrames = mYUVBufferQueue.drain();
+            }
+            for (YuvFrame frame : historicalFrames) {
+                mYUVEncoder.encodeFrame(frame);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeYUVVideoRelated(){
+        if (mCurrentVideoUri != null) {
+            mContentResolver.delete(mCurrentVideoUri, null);
+            mCurrentVideoUri = null;
+        }
+        cleanupEmptyFile();
+        if (mVideoFilename != null) {
+            File f = new File(mVideoFilename);
+            if (f.length() > 0) {
+                f.delete();
+                mVideoFilename = null;
+            }
+        }
+    }
+    private void abortYUVRecording(){
+        Log.i(TAG,"abortYUVRecording");
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mUI.enableShutter(true);
+            }
+        });
+        try {
+            if (mYUVEncoder != null) {
+                mYUVEncoder.setEncodingDone();
+                mYUVEncoder.stop();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping YUV encoder", e);
+        } finally {
+            MotionPhoto motionPhoto = mLivePhotoImages.poll();
+            if(motionPhoto != null) {
+                try {
+                    mContentResolver.delete(motionPhoto.getUri(), null, null);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error deleting motion photo URI", e);
+                }
+            }
+            closeYUVVideoRelated();
+            mIsRecording = false;
+        }
+    }
+
+    public Size getLivePhotoYUVSize() {
+        String pictureSize = mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE);
+        Size picSize = parsePictureSize(pictureSize);
+        if(4 * picSize.getHeight() == 3 * picSize.getWidth()){
+            return new Size(1280, 960);
+        }else{
+            return new Size(1920, 1080);
+        }
+    }
+
+    private void createVideoSurface() {
+        mVideoSize = getLivePhotoYUVSize();
+        Log.i(TAG, "createVideoSurface, mVideoSize:" + mVideoSize);
+        mVideoImageReader = ImageReader.newInstance(mVideoSize.getWidth(), mVideoSize.getHeight(),
+                ImageFormat.YUV_420_888, 45);
+        mVideoImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                if(mIsRecording || isLivePhotoOn()) {
+                    Image image = null;
+                    try {
+                        image = reader.acquireLatestImage();
+                        if (image != null) {
+                            onNewImage(image);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        if (image != null) {
+                            image.close();
+                        }
+                    }
+                }
+            }
+        }, mImageAvailableHandler);
+    }
+
+    private void updateMotionPhoto(byte[] bytes, Uri imageUri, String xmp){
+        Log.i(TAG,"updateMotionPhoto");
+        if (imageUri == null) {
+            return;
+        }
+        try {
+            OutputStream os = mContentResolver.openOutputStream(imageUri);
+            os.write(bytes);
+            os.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.ImageColumns.SIZE, bytes.length);
+        values.put(MediaStore.Images.ImageColumns.XMP, xmp);
+        mActivity.getMediaSaveService().updateLivePhoto(imageUri, values,null, mContentResolver);
+    }
+
+
     private int addPhysicalCaptureTarget(CaptureRequest.Builder builder) {
         int targetCount = 0;
         Set<String> jpeg_ids = mSettingsManager.getPhysicalFeatureEnableId(
@@ -4620,8 +4884,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                     } else {
                         mTakingPicture[id] = false;
                         enableShutterAndVideoOnUiThread(id);
+                        Log.d(TAG,"onShutterButtonRelease");
                     }
-                    Log.d(TAG,"onShutterButtonRelease");
                     if (mSettingsManager.isHeifWriterEncoding()) {
                         if (mHeifImage != null) {
                             try {
@@ -4924,7 +5188,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         ImageAvailableListener listener = new ImageAvailableListener(i) {
                             @Override
                             public void onImageAvailable(ImageReader reader) {
-                                if (captureWaitImageReceive()) {
+                                if (captureWaitImageReceive() && !isLivePhotoOn()) {
                                     mHandler.post(new Runnable() {
                                         @Override
                                         public void run() {
@@ -5000,6 +5264,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             if (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA) {
                                                 mIntentMode = INTENT_MODE_NORMAL;
                                             }
+                                            if(isLivePhotoOn() && !mIsRecording){
+                                                image.close();
+                                                return;
+                                            }
                                             mActivity.getMediaSaveService().addImage(bytes, title, date,
                                                     null, image.getWidth(), image.getHeight(), orientation, exif,
                                                     mOnMediaSavedListener, mContentResolver,pictureFormat);
@@ -5013,6 +5281,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             }
                                         }
                                         image.close();
+                                        if(isLivePhotoOn()) {
+                                            Log.i(TAG,"receive live snapshot image");
+                                            MotionPhoto motionPhoto = new MotionPhoto(bytes);
+                                            mLivePhotoImages.offer(motionPhoto);
+                                        }
                                     }
                                 }
                             }
@@ -5331,6 +5604,28 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    private byte[] getYUV10BitFromImage(Image image) {
+        try{
+            int height = image.getHeight();
+            int stride = image.getPlanes()[0].getRowStride();
+            ByteBuffer yBuffer = image.getPlanes()[0].getBuffer();
+            ByteBuffer vBuffer = image.getPlanes()[1].getBuffer();
+            yBuffer.rewind();
+            vBuffer.rewind();
+            int ySize = yBuffer.remaining();
+            int vSize = vBuffer.remaining();
+            byte[] nv12;
+            int byteSize = stride*height*3/2;
+            nv12 = new byte[byteSize];
+            yBuffer.get(nv12, 0, ySize);
+            vBuffer.get(nv12, ySize, vSize);
+            return nv12;
+        }catch (IllegalStateException e) {
+            return null;
+        }
+    }
+
+
     public static HeifWriter createHEIFEncoder(String path, int width, int height,
                                                int orientation, int imageCount, int quality) {
         HeifWriter heifWriter = null;
@@ -5528,8 +5823,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 setAFModeToPreview(id, mUI.getCurrentProMode() == ProMode.MANUAL_MODE ?
                         CaptureRequest.CONTROL_AF_MODE_OFF : afMode);
             }
-            mTakingPicture[id] = false;
-            enableShutterAndVideoOnUiThread(id);
+            if(!isLivePhotoOn()) {
+                mTakingPicture[id] = false;
+                enableShutterAndVideoOnUiThread(id);
+            }
         } catch (NullPointerException | IllegalStateException | CameraAccessException e) {
             Log.w(TAG, "Session is already closed");
         }
@@ -5679,6 +5976,13 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
         closePhysicalImageReaders();
+        synchronized (mYuvLock) {
+            mYUVBufferQueue.clear();
+        }
+        if (mVideoImageReader != null) {
+            mVideoImageReader.close();
+            mVideoImageReader = null;
+        }
     }
 
     private void closePhysicalImageReaders(){
@@ -6129,6 +6433,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         mPaused = true;
         mToast = null;
         mUI.onPause();
+        if(isLivePhotoOn() && mIsRecording){
+            mPendingTasks = 0;
+            abortYUVRecording();
+            mIsRecording = false;
+        }
         if (mIsRecordingVideo) {
             stopRecordingVideo(getMainCameraId());
         } else if (!mIsCloseCamera){
@@ -6236,6 +6545,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         setProModeVisible();
         closeVideoFileDescriptor();
+        synchronized (mYuvLock) {
+            mYUVBufferQueue.clear();
+        }
+        if (mVideoImageReader != null) {
+            mVideoImageReader.close();
+            mVideoImageReader = null;
+        }
         if (mIntentMode != CaptureModule.INTENT_MODE_NORMAL
                 && isExitCamera && mJpegImageData != null) {
             mActivity.setResultEx(Activity.RESULT_CANCELED, new Intent());
@@ -6729,6 +7045,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mActivity.onModuleSelected(ModuleSwitcher.PANOCAPTURE_MODULE_INDEX);
             }
         }
+        mYUVEncoder.setOnEncodingCompleteListener(new YuvToVideoEncoder.OnEncodingCompleteListener() {
+            @Override
+            public void onEncodingComplete() {
+                yuvEncodeComplete();
+            }
+        });
         mActivity.runOnUiThread(new Runnable() {
             public void run() {
                 mUI.hideGridLineView();
@@ -9241,6 +9563,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private String generateVideoFilename(int outputFileFormat) {
+        if(isLivePhotoOn()) {
+            outputFileFormat = MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
+        }
         long dateTaken = System.currentTimeMillis();
         String title = createName(dateTaken);
         String filename = title + CameraUtil.convertOutputFormatToFileExt(outputFileFormat);
@@ -10424,6 +10749,15 @@ public class CaptureModule implements CameraModule, PhotoController,
         mLongshoting = false;
         mNumFramesArrived.getAndSet(0);
         Log.d(TAG,"onShutterButtonClick");
+        if(isLivePhotoOn()) {
+            if(!mIsRecording) {
+                mPendingTasks++;
+                Log.i(TAG, "mIsRecording:" + mIsRecording + ",mPendingTasks:" + mPendingTasks);
+                if (!mIsRecording) {
+                    processRecordingTask();
+                }
+            }
+        }
         int id = getMainCameraId();
         if (mCurrentSceneMode.mode == CameraMode.HFR ||
                 mCurrentSceneMode.mode == CameraMode.VIDEO) {
@@ -12180,6 +12514,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 case SettingsManager.KEY_SCENE_MODE:
                     restartAll();
                     return;
+                case SettingsManager.KEY_LIVE_PHOTO_MODE:
+                    Log.d(TAG,"live photo mode change");
+                    if(!isLivePhotoOn() && mIsRecording){
+                        mPendingTasks = 0;
+                        abortYUVRecording();
+                    }
+                    restartSession(false);
             }
             updatePreviewLogical |= applyPreferenceToPreview(getMainCameraId(),
                     key, value);
@@ -12358,6 +12699,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(!mIsCloseCamera) {
             reinit();
         }
+        mUI.enableShutter(false);
         closeProcessors();
         closeSessions();
         if(isSurfaceChanged) {
@@ -12387,6 +12729,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (isSateNNFocusSettingOn()) {
             mUI.resetStatsNNTrackingFocus();
         }
+        mActivity.runOnUiThread(() -> {
+            mUI.enableLivePhotoOption();
+        });
         resetStateMachine();
     }
 
@@ -12394,7 +12739,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         for (int i = 0; i < MAX_NUM_CAM; i++) {
             mState[i] = STATE_PREVIEW;
         }
-        mUI.enableShutter(true);
     }
 
     public Size getOptimalPhysicalPreviewSize(Size pictureSize, Size[] prevSizes) {
@@ -13469,5 +13813,39 @@ abstract class PhysicalImageListener
 
     public void setCamId(String camId) {
         this.mCamId = camId;
+    }
+}
+
+class YUVBufferQueue {
+    private final int maxFrame;
+    private final Queue<YuvFrame> bufferQueue = new LinkedList<>();
+
+    public YUVBufferQueue(int maxFrames) {
+        this.maxFrame = maxFrames;
+    }
+
+    public void add(YuvFrame frame) {
+        synchronized (bufferQueue) {
+            bufferQueue.offer(frame);
+            while (bufferQueue.size() > maxFrame) {
+                bufferQueue.poll();
+            }
+        }
+    }
+
+    public List<YuvFrame> drain() {
+        List<YuvFrame> frames = new ArrayList<>();
+        synchronized (bufferQueue) {
+            while (!bufferQueue.isEmpty()) {
+                frames.add(bufferQueue.poll());
+            }
+        }
+        return frames;
+    }
+
+    public void clear() {
+        synchronized (bufferQueue) {
+            bufferQueue.clear();
+        }
     }
 }
