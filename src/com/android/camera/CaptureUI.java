@@ -1767,6 +1767,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             String zoomstr = mZoomEditText.getText().toString();
             changeZoomValue(mModule.getZoomValue(),zoomstr);
             updateZoomSeekBar(Float.valueOf(zoomstr));
+            setZoomTextSelect(value);
             mZoomEditText.setText("");
         });
     }
