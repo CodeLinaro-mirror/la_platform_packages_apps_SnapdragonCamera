@@ -982,6 +982,16 @@
             android:entryValues="@array/pref_camera2_oncapturebufferlost_entryvalues"
             android:layout="@layout/preference"
             android:summary="%s"/>
+
+        <ListPreference
+            android:defaultValue="@string/pref_camera2_override_resource_default"
+            android:entries="@array/pref_camera2_camera2_entries"
+            android:entryValues="@array/pref_camera2_camera2_entryvalues"
+            android:key="pref_camera2_override_resource_key"
+            android:layout="@layout/preference"
+            android:summary="%s"
+            android:title="@string/pref_camera2_override_resource_title" />
+
         <ListPreference
             android:key="pref_camera2_pdnet_toggle_key"
             android:defaultValue="@string/pref_camera2_pdnet_toggle_default"
@@ -1269,53 +1279,6 @@
             android:layout="@layout/preference"
             android:summary="%s"
             android:title="@string/pref_camera2_zsl_title" />
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     </PreferenceCategory>
 </PreferenceScreen>

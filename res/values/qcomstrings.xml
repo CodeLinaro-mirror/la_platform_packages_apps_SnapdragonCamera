@@ -346,14 +346,6 @@
     <!-- Settings screen, Select Face Detection -->
     <string name="pref_camera_facedetection_title">Face Detection</string>
 
-    <!-- Settings screen, Select Face Mask -->
-    <string name="pref_camera_facemask_title">Face Mask</string>
-
-    <!-- Settings screen, Select Upper Body Detection-->
-    <string name="pref_camera_upperbodydetection_title">Upper Body Detection</string>
-
-    <string name="pref_camera_petdetection_title">Pet Detection</string>
-
     <!-- Settings menu, Face Detection choices -->
     <string name="pref_camera_facedetection_entry_off">Off</string>
     <string name="pref_camera_facedetection_entry_on">On</string>
@@ -1269,21 +1261,29 @@
     <string name="pref_camera_zoom_entry_9x">9x</string>
     <string name="pref_camera_zoom_entry_10x">10x</string>
     <string name="pref_camera_zoom_entry_100x">100x</string>
-    <string name="pref_camera2_fd_smile_title" translatable="true">FD Smile Detection</string>
-    <string name="pref_camera2_fd_gaze_title" translatable="true">FD Gaze Detection</string>
-    <string name="pref_camera2_fd_blink_title" translatable="true">FD Blink Detection</string>
-    <string name="pref_camera2_fd_contour_visibility_title" translatable="true">Contour Visibility Detection</string>
-    <string name="pref_camera2_facial_contour_title" translatable="true">FD Facial contour</string>
+    <!-- Settings screen, Select Face Mask -->
+    <string name="pref_camera_facemask_title">Mask Detection</string>
+
+    <!-- Settings screen, Select Upper Body Detection-->
+    <string name="pref_camera_upperbodydetection_title">UpperBody Detection</string>
+
+    <string name="pref_camera_petdetection_title">Pet Detection</string>
+    <string name="pref_camera2_fd_smile_title" translatable="true">Smile Detection</string>
+    <string name="pref_camera2_fd_gaze_title" translatable="true">Gaze Detection</string>
+    <string name="pref_camera2_fd_blink_title" translatable="true">Blink Detection</string>
+    <string name="pref_camera2_fd_contour_visibility_title" translatable="true">Contour Visibility</string>
+    <string name="pref_camera2_facial_contour_title" translatable="true">Contour Detection</string>
     <string name="pref_camera2_face_points_title" translatable="true">FD Face points</string>
     <string name="pref_camera2_face_detection_mode_title" translatable="true">FD Face detection mode</string>
-    <string name="pref_camera2_fd_gender_title" translatable="true">FD Gender</string>
-    <string name="pref_camera2_fd_gender_confidence_title" translatable="true">FD Gender confidence</string>
-    <string name="pref_camera2_fd_face_expression_title" translatable="true">FD Face expression</string>
-    <string name="pref_camera2_fd_face_expression_confidence_title" translatable="true">FD Face expression confidence</string>
+    <string name="pref_camera2_fd_gender_title" translatable="true">Gender Detection</string>
+    <string name="pref_camera2_fd_gender_confidence_title" translatable="true">Gender confidence</string>
+    <string name="pref_camera2_fd_face_expression_title" translatable="true">Expression Detection</string>
+    <string name="pref_camera2_fd_face_expression_confidence_title" translatable="true">Expression confidence</string>
+    <string name="pref_camera2_fd_skin_tone_title" translatable="true">SkinTone Detection</string>
     <string name="pref_camera2_bsgc_default" translatable="false">disable</string>
     <string name="pref_camera2_bsgc_entry_enable" translatable="true">Enable</string>
     <string name="pref_camera2_bsgc_entry_disable" translatable="true">Disable</string>
-    <string name="pref_camera2_bsgc_entry_display" translatable="true">Enable&amp;Display</string>
+    <string name="pref_camera2_bsgc_entry_display" translatable="true">Display</string>
     <string name="pref_camera2_bsgc_entry_value_enable" translatable="false">enable</string>
     <string name="pref_camera2_bsgc_entry_value_disable" translatable="false">disable</string>
     <string name="pref_camera2_bsgc_entry_value_display" translatable="false">display</string>
@@ -1862,6 +1862,10 @@
     <string name="pref_camera2_preview_profile_title" translatable="true">Preview Profile</string>
     <string name="pref_camera2_capture_profile_title" translatable="true">Capture Profile</string>
     <string name="pref_camera2_performance_debug_title" translatable="true">Performance Debug</string>
+
+    <!-- OverrideResourceCostValidation  -->
+    <string name="pref_camera2_override_resource_title" translatable="true">Override Resource</string>
+    <string name="pref_camera2_override_resource_default" translatable="false">off</string>
 
     <!-- ML Video -->
     <string name="pref_camera2_ml_video_title" translatable="true">VideoRetouch</string>

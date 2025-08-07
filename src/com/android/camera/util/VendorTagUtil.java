@@ -131,6 +131,8 @@ public class VendorTagUtil {
     public static final CaptureRequest.Key<Integer> enableHDRDCGBits =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHDRDCGMode", Integer.class);
 
+    private static final CaptureRequest.Key<Byte> override_resource_cost_validation =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.overrideResourceCostValidation", byte.class);
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
     private static final int MANUAL_WB_GAINS_MODE = 2;
@@ -352,9 +354,16 @@ public class VendorTagUtil {
     }
 
     public static void enableDcgMode(CaptureRequest.Builder builder, int enable) {
-        Log.i(TAG,"set enableDcgMode: " + enable);
+        Log.i(TAG, "set enableDcgMode: " + enable);
         if (isSupported(builder, enableHDRDCGBits)) {
             builder.set(enableHDRDCGBits, enable);
+        }
+    }
+
+    public static void enableOverrideResuorce(CaptureRequest.Builder builder, byte enable) {
+        Log.i(TAG,"set enableOverrideResuorce: " + enable);
+        if (isSupported(builder, override_resource_cost_validation)) {
+            builder.set(override_resource_cost_validation, enable);
         }
     }
 }

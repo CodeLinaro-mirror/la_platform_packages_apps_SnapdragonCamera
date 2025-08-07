@@ -64,7 +64,7 @@ import android.widget.TextView;
 import android.content.Context;
 
 public class FdExpandListView  {
-    private static final String TAG = "ExpandListView";
+    private static final String TAG = "SnapCam_FdExpandListView";
     private SettingsManager mSettingsManager;
     List<String> mExpandKey = null;
     Map<String, List<String>> mExpandMap = null;
@@ -75,27 +75,37 @@ public class FdExpandListView  {
     private int mSelectGroup = -1;
     private int mSelectChild = -1;
     private int mSelectContourV = -1;
+    private String faceMask,upperBody,petDetect,fdContour,contourVisible,fdGaze,fdBlink,fdExpression,fdGender,skinTone;
 
     public FdExpandListView (Context context) {
         mContext = context;
         mSettingsManager = SettingsManager.getInstance();
         mExpandKey = new ArrayList<String>();
         mExpandMap = new HashMap<String, List<String>>();
+        faceMask = mContext.getResources().getString(R.string.pref_camera_facemask_title);
+        upperBody = mContext.getResources().getString(R.string.pref_camera_upperbodydetection_title);
+        petDetect = mContext.getResources().getString(R.string.pref_camera_petdetection_title);
+        fdContour = mContext.getResources().getString(R.string.pref_camera2_facial_contour_title);
+        contourVisible = mContext.getResources().getString(R.string.pref_camera2_fd_contour_visibility_title);
+        fdGaze = mContext.getResources().getString(R.string.pref_camera2_fd_gaze_title);
+        fdBlink = mContext.getResources().getString(R.string.pref_camera2_fd_blink_title);
+        fdExpression = mContext.getResources().getString(R.string.pref_camera2_fd_face_expression_title);
+        fdGender = mContext.getResources().getString(R.string.pref_camera2_fd_gender_title);
+        skinTone = mContext.getResources().getString(R.string.pref_camera2_fd_skin_tone_title);
     }
 
     public void initFDSettingsData() {
         mFDIndex = 0;
-        mExpandKey.add("FD Mask Detection");
-        mExpandKey.add("Upper Body Detection");
-        mExpandKey.add("Pet Detection");
-        mExpandKey.add("FD Contour Detection");
-        mExpandKey.add("FD Contour Visibility Detection");
-        mExpandKey.add("FD Gaze Detection");
-        mExpandKey.add("FD Blink Detection");
-
-        mExpandKey.add("FD Expression");
-        mExpandKey.add("FD Gender");
-        mExpandKey.add("FD Skin Tone");
+        mExpandKey.add(faceMask);
+        mExpandKey.add(upperBody);
+        mExpandKey.add(petDetect);
+        mExpandKey.add(fdContour);
+        mExpandKey.add(contourVisible);
+        mExpandKey.add(fdGaze);
+        mExpandKey.add(fdBlink);
+        mExpandKey.add(fdExpression);
+        mExpandKey.add(fdGender);
+        mExpandKey.add(skinTone);
 
         for(int i=0;i<mExpandKey.size();i++){
             String str = mExpandKey.get(i);
@@ -126,38 +136,29 @@ public class FdExpandListView  {
 
     private String getKeyStr(String str){
         String key ="";
-        switch (str){
-            case "FD Mask Detection":
-                key = mSettingsManager.KEY_FACE_MASK;
-                break;
-            case "Upper Body Detection":
-                key = mSettingsManager.KEY_UPPER_BODY_DETECTION;
-                break;
-            case "Pet Detection":
-                key = mSettingsManager.KEY_PET_DETECTION;
-                break;
-            case "FD Contour Detection":
-                key =mSettingsManager.KEY_FACIAL_CONTOUR;
-                break;
-            case "FD Contour Visibility Detection":
-                key =mSettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY;
-                break;
-            case "FD Gaze Detection":
-                key = mSettingsManager.KEY_FD_GAZE;
-                break;
-            case "FD Blink Detection":
-                key = mSettingsManager.KEY_FD_BLINK;
-                break;
-            case "FD Expression":
-                key = mSettingsManager.KEY_FD_FACE_EXPRESSION;
-                break;
-            case "FD Gender":
-                key = mSettingsManager.KEY_FD_GENDER;
-                break;
-            case "FD Skin Tone":
-                key = mSettingsManager.KEY_FD_SKIN_TONE;
-                break;
-
+        if (str == null){
+            return null;
+        }
+        if (str.equals(faceMask)){
+            key = mSettingsManager.KEY_FACE_MASK;
+        } else if (str.equals(upperBody)) {
+            key = mSettingsManager.KEY_UPPER_BODY_DETECTION;
+        }else if(str.equals(petDetect)){
+            key = mSettingsManager.KEY_PET_DETECTION;
+        }else if(str.equals(fdContour)){
+            key =mSettingsManager.KEY_FACIAL_CONTOUR;
+        }else if(str.equals(contourVisible)){
+            key =mSettingsManager.KEY_FACIAL_CONTOUR_VISIBILITY;
+        } else if (str.equals(fdGaze)) {
+            key = mSettingsManager.KEY_FD_GAZE;
+        }else if(str.equals(fdBlink)){
+            key = mSettingsManager.KEY_FD_BLINK;
+        }else if(str.equals(fdExpression)){
+            key = mSettingsManager.KEY_FD_FACE_EXPRESSION;
+        }else if (str.equals(skinTone)){
+            key = mSettingsManager.KEY_FD_SKIN_TONE;
+        }else if(str.equals(fdGender)){
+            key = mSettingsManager.KEY_FD_GENDER;
         }
         return key;
     }

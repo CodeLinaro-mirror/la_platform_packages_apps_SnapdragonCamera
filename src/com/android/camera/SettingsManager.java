@@ -384,6 +384,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_DCG_BIT_TAG = "pref_camera2_dcg_bit_tag_key";
     public static final String KEY_C2PA = "pref_camera2_c2pa_key";
 
+    public static final String KEY_OVERRIDE_RESOURCE = "pref_camera2_override_resource_key";
     private static final String TAG = "SnapCam_SettingsManager";
     private static final boolean TRACE_DEBUG = PersistUtil.getTraceDebug();
 
@@ -427,6 +428,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public Set<String> getFilteredKeys() {
         return mFilteredKeys;
     }
+    private List<Integer> mAvilablePreviewFPS;
 
     static {
         //ISO values vendor tag
@@ -3257,6 +3259,35 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return values;
     }
+
+    public Range getPreviewRange(int fps) {
+        if (mAvilablePreviewFPS == null || mAvilablePreviewFPS.isEmpty()) {
+            Log.e(TAG, "No available fps for preview,set it to [30,30]");
+            return new Range(30, 30);
+        }
+        int fps_i = -1;
+        if (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR
+                && mCaptureModule.getMainCameraId() == 1) {
+            for (int i = 0; i < mAvilablePreviewFPS.size() - 1; i += 2) {
+                if (mAvilablePreviewFPS.get(i) == 60 && mAvilablePreviewFPS.get(i + 1) == fps) {
+                    return new Range((int) mAvilablePreviewFPS.get(i), (int) mAvilablePreviewFPS.get(i + 1));
+                } else if (mAvilablePreviewFPS.get(i + 1) == fps && fps_i == -1) {
+                    fps_i = i + 1;
+                }
+            }
+        } else {
+            for (int i = 0; i < mAvilablePreviewFPS.size() - 1; i += 2) {
+                if (mAvilablePreviewFPS.get(i + 1) == fps) {
+                    return new Range((int) mAvilablePreviewFPS.get(i), (int) mAvilablePreviewFPS.get(i + 1));
+                }
+            }
+        }
+        if (fps_i == -1) {
+            return new Range((int) mAvilablePreviewFPS.get(0), (int) mAvilablePreviewFPS.get(1));
+        } else {
+            return new Range((int) mAvilablePreviewFPS.get(fps_i - 1), (int) mAvilablePreviewFPS.get(fps_i));
+        }
+    }
     public List<String> getSupportedHighFrameRate(CaptureModule.CameraMode mode,
                                                    String videoSizeStr, int id) {
         int cameraId = id;
@@ -3268,8 +3299,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         ArrayList<String> supported = new ArrayList<String>();
+        mAvilablePreviewFPS = new ArrayList<>();
         if(mode == CaptureModule.CameraMode.VIDEO || mode == CaptureModule.CameraMode.CINEMATIC) {
             supported.add("off");
+            mAvilablePreviewFPS.add(30);
+            mAvilablePreviewFPS.add(30);
         }
         ListPreference videoEncoder = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
         if (videoSizeStr == null || videoEncoder == null) return supported;
@@ -3335,8 +3369,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 }
                             }
                         }
+                    }else{
+                        mAvilablePreviewFPS.add(mSuperBufferSize[i+2]);
+                        mAvilablePreviewFPS.add(mSuperBufferSize[i+3]);
                     }
                 }
+                Log.d(TAG,"getSupportedHighFrameRate-BUFFER_mode,supported="+supported+",mAvilablePreviewFPS="+mAvilablePreviewFPS);
                 return supported;
             }
             try {
@@ -3371,6 +3409,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                         + "@fps" + r.getUpper() + " is not supported.");
                             }
                         }
+                    }else{
+                        mAvilablePreviewFPS.add((int) r.getLower());
+                        mAvilablePreviewFPS.add((int) r.getUpper());
+
                     }
                 }
             } catch (IllegalArgumentException ex) {
@@ -3409,7 +3451,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
             }
         }
-        Log.d(TAG,"getSupportedHighFrameRate-supported="+supported+",supported.size="+supported.size());
+        Log.d(TAG,"getSupportedHighFrameRate,supported="+supported+",mAvilablePreviewFPS="+mAvilablePreviewFPS);
         return supported;
     }
 

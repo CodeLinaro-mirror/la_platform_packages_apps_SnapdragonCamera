@@ -322,6 +322,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updatePreference(SettingsManager.KEY_VIDEO_DURATION);
                         updateVideoMFHDRPreference();
                         updateViullPreference();
+                        updateVIULLDefaultValue();
                         break;
                     case SettingsManager.KEY_VIDEO_ENCODER_PROFILE:
                         if (mode == CaptureModule.CameraMode.VIDEO) {
@@ -1716,12 +1717,12 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA);
                         videoAddList.add(SettingsManager.KEY_AI_CAMERA_SNAPSHOT);
                         videoAddList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
-                        videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                         videoAddList.add(SettingsManager.KEY_SENSOR_MODE_FS2_VALUE);
                         videoAddList.add(SettingsManager.KEY_VIULL);
                         videoAddList.add(SettingsManager.KEY_LOWLIGHT_BOOST);
                         videoAddList.add(SettingsManager.KEY_INSENSOR_ZOOM);
                         videoAddList.add(SettingsManager.KEY_C2PA);
+                        videoAddList.add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                     } else {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
@@ -1729,6 +1730,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         videoAddList.remove(SettingsManager.KEY_ML_VIDEO);
                     }
+                    videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                     videoAddList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     videoAddList.add(SettingsManager.KEY_TONE_MAPPING);
                     videoAddList.add(SettingsManager.KEY_SELECT_MODE);
@@ -2012,9 +2014,11 @@ public class SettingsActivity extends PreferenceActivity {
                 multiCameraPhotoList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                 multiCameraPhotoList.add(SettingsManager.KEY_PHOTO_EIS_VALUE);
                 multiCameraPhotoList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
+                multiCameraPhotoList.add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 addDeveloperOptions(developer,multiCameraPhotoList);
             } else {
                 multiCameraPhotoList.remove(SettingsManager.KEY_ZSL);
+                multiCameraPhotoList.remove(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 for (String removeKey : multiCameraPhotoList){
                     removePreference(removeKey,developer);
                 }
@@ -2024,6 +2028,7 @@ public class SettingsActivity extends PreferenceActivity {
                 multiCameraVideoList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                 multiCameraVideoList.add(SettingsManager.KEY_EIS_VALUE);
                 multiCameraVideoList.add(SettingsManager.KEY_PREVIEW_STABILIZATION);
+                multiCameraVideoList.add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                 addDeveloperOptions(developer,multiCameraVideoList);
             } else {
                 for (String removeKey : multiCameraVideoList){
@@ -2695,7 +2700,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
         String videoFps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
-        if (mode == CaptureModule.CameraMode.VIDEO && videoFps != null && !videoFps.equals("off") && !vsr.equals("1")) {
+        if (mode == CaptureModule.CameraMode.VIDEO && videoFps != null && !videoFps.equals("off") && !("1").equals(vsr)) {
             disableVIULLOption(pref);
             return;
         }
@@ -2713,6 +2718,18 @@ public class SettingsActivity extends PreferenceActivity {
         pref.setEnabled(true);
         mFirstInitViull = false;
     }
+
+    public void updateVIULLDefaultValue(){
+        ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_VIULL);
+        if (pref == null || !pref.isEnabled()) return;
+        if(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("hsr60")||
+                mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("hfr60")) {
+            pref.setValue("0");
+        }else if(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("off")){
+            pref.setValue("1");
+        }
+    }
+
     private  void updateLowLightBoostPreference(){
         ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_LOWLIGHT_BOOST);
         if (pref == null) return;

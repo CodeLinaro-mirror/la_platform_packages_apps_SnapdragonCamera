@@ -1217,6 +1217,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     long mLastResultTime = 0;
     long mLastFPSCountTime = 0;
     long mCurrentFrameCount = 0;
+    int mHeicLiveSnapshotLimit = 0;
+    int mLiveSnapshotCount = 0;
     public static List<Long> mPerformanceGapData = new ArrayList<>();
 
     /*
@@ -4477,6 +4479,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
             }
             mIsPreviewingVideo = true;
+            float fps = mSettingsManager.getFps(mVideoSnapshotSize);
+            if(mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT || mSettingsManager.getSavePictureFormat() == SettingsManager.HEIC_TENBIT_FORMAT) {
+                mHeicLiveSnapshotLimit = (int)fps *2;
+                Log.d(TAG,"mHeicLiveSnapshotLimit:" + mHeicLiveSnapshotLimit);
+            }
             if (isHighSpeedRateCapture()) {
                 createHighSpeedSession(cameraId);
             } else {
@@ -6240,6 +6247,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 warningToast("Camera is not ready yet to take a video snapshot.");
                 return;
             }
+            if((mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT || mSettingsManager.getSavePictureFormat() == SettingsManager.HEIC_TENBIT_FORMAT) && mLiveSnapshotCount >= mHeicLiveSnapshotLimit){
+                warningToast("Live snapshot counts reach to max, cant save image");
+                return;
+            }
             CaptureRequest.Builder captureBuilder = getRequestBuilder(
                     CameraDevice.TEMPLATE_VIDEO_SNAPSHOT,id,mSettingsManager.getPhysicalCameraId());
 
@@ -6322,6 +6333,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             }
             mSnapshotLatency = System.currentTimeMillis();
+            mLiveSnapshotCount ++ ;
             mCurrentSession.capture(captureBuilder.build(),
                     new CameraCaptureSession.CaptureCallback() {
 
@@ -8044,6 +8056,7 @@ private boolean isDevOptionSetting(){
         applyDepthMode(builder);
         applyITofTuningSet(builder);
         applyDcgModes(builder);
+        applyOverrideResuorceParam(builder);
         setSessionParamFromFile(builder);
     }
 
@@ -8109,6 +8122,12 @@ private boolean isDevOptionSetting(){
         int value = mSettingsManager.getDcgMode();
         Log.d(TAG,"set applyDcgModes: " + value);
         VendorTagUtil.enableDcgMode(builder, value);
+    }
+
+    private void applyOverrideResuorceParam(CaptureRequest.Builder builder){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
+        Log.i(TAG,"applyOverrideResuorceParam, value:" + value);
+        VendorTagUtil.enableOverrideResuorce(builder, (byte)(value != null && value.equals("on") ? 0x01 : 0x00));
     }
 
     private void applyeHardSwitchParam(CaptureRequest.Builder builder){
@@ -11468,7 +11487,7 @@ private boolean isDevOptionSetting(){
                 if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession -- call createCaptureSession");
                 mCameraDevice[cameraId].createCaptureSession(sessionConfig);
                 if (TRACE_DEBUG) Trace.endSection();
-            }else{
+            }else {
                 setCameraModeSwitcherAllowed(true);
             }
         } catch (Exception e) {
@@ -11532,7 +11551,7 @@ private boolean isDevOptionSetting(){
             if (TRACE_DEBUG) Trace.endSection();
         }
 
-      boolean sessionSupported = checkSessionSupported(sessionConfig);
+        boolean sessionSupported = checkSessionSupported(sessionConfig);
 
         if(sessionSupported) {
             try {
@@ -11549,6 +11568,7 @@ private boolean isDevOptionSetting(){
     private boolean checkSessionSupported(SessionConfiguration sessionConfig) {
         String cameraId = String.valueOf(getMainCameraId());
         boolean session_supported = true;
+        String overrideResource = mSettingsManager.getValue(SettingsManager.KEY_OVERRIDE_RESOURCE);
         CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
         try {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
@@ -11565,7 +11585,9 @@ private boolean isDevOptionSetting(){
         try {
             CameraDeviceSetup cameraDeviceSetup = manager.getCameraDeviceSetup(cameraId);
             if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createSession -- isSessionConfigurationSupported");
-            session_supported = cameraDeviceSetup.isSessionConfigurationSupported(sessionConfig);
+            if(overrideResource == null || overrideResource.equals("off")) {
+                session_supported = cameraDeviceSetup.isSessionConfigurationSupported(sessionConfig);
+            }
             if (TRACE_DEBUG) Trace.endSection();
             Log.i(TAG, " isSessionConfigurationSupported :" + session_supported + ",cameraid is " + cameraId);
         } catch (CameraAccessException | IllegalArgumentException e) {
@@ -12865,6 +12887,7 @@ private boolean isDevOptionSetting(){
         Log.i(TAG, "stopRecordingVideo " + cameraId);
         if (TRACE_DEBUG) Trace.beginSection("SnapCamera,stopRecordingVideo");
         mStopRecordingTime = System.currentTimeMillis();
+        mLiveSnapshotCount = 0;
         if (isSSMEnabled()) {
             updateProgressBar(false);
             if (!mSSMCaptureCompleteFlag) {
@@ -13662,7 +13685,7 @@ private boolean isDevOptionSetting(){
             mVideoFormat.setFloat(MediaFormat.KEY_CAPTURE_RATE, fps);
         }  else if (mHighSpeedCapture) {
             mHighSpeedFPSRange = new Range(mHighSpeedCaptureRate, mHighSpeedCaptureRate);
-            mHighSpeedPreviewFPSRange =  new Range(30, mHighSpeedCaptureRate);
+            mHighSpeedPreviewFPSRange =  mSettingsManager.getPreviewRange(mHighSpeedCaptureRate);
             int fps = (int) mHighSpeedFPSRange.getUpper();
             int targetRate = mHighSpeedRecordingMode ? fps : 30;
             mVideoFormat.setInteger(MediaFormat.KEY_CAPTURE_RATE, fps);
@@ -14385,7 +14408,9 @@ private boolean isDevOptionSetting(){
             mMediaRecorder.setCaptureRate(fps);
         }  else if (mHighSpeedCapture) {
             mHighSpeedFPSRange = new Range(mHighSpeedCaptureRate, mHighSpeedCaptureRate);
-            mHighSpeedPreviewFPSRange =  new Range(30, mHighSpeedCaptureRate);
+            mHighSpeedPreviewFPSRange =  mSettingsManager.getPreviewRange(mHighSpeedCaptureRate);
+            Log.d(TAG,"mHighSpeedCaptureRate="+mHighSpeedCaptureRate+",mHighSpeedPreviewFPSRange="
+                    +mHighSpeedPreviewFPSRange.getLower()+","+mHighSpeedPreviewFPSRange.getUpper());
             int fps = (int) mHighSpeedFPSRange.getUpper();
             int targetRate = mSuperSlomoCapture ? 30 : (mHighSpeedRecordingMode ? fps : 30);
             mMediaRecorder.setCaptureRate(mSuperSlomoCapture ? 30 : fps);
@@ -15298,7 +15323,8 @@ private boolean isDevOptionSetting(){
         try {
             Log.d(TAG,"set cropped raw for raw steam:" + cameraId);
             long useCaseId = CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_CROPPED_RAW;
-            if(mSettingsManager.isAvailableUseCase(cameraId, useCaseId)){
+            boolean isQcfa = mPictureSize.getWidth() >= 8000 || mPictureSize.getHeight() >= 6000;
+            if(mSettingsManager.isAvailableUseCase(cameraId, useCaseId) && !isQcfa){
                 configuration.setStreamUseCase(useCaseId);
             }
         } catch (IllegalArgumentException | NoSuchFieldError e) {
@@ -16922,6 +16948,14 @@ private boolean isDevOptionSetting(){
                 case SettingsManager.KEY_VIDEO_QUALITY:
                     updateVideoSize();
                     updateDepenencyOptionValue();
+                    continue;
+                case SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE:
+                    if(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("hsr60")||
+                            mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("hfr60")) {
+                        mSettingsManager.setValue(SettingsManager.KEY_VIULL, "0");
+                    }else if(mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE).equals("off")){
+                        mSettingsManager.setValue(SettingsManager.KEY_VIULL, "1");
+                    }
                     continue;
                 case SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL:
                     updateTimeLapseSetting();
