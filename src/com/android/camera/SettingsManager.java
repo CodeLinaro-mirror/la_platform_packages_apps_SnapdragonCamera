@@ -1196,14 +1196,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public float getFps(Size pictureSize){
-        float fps = 0f;
+        float fps = 30f;
         if(getSavePictureFormat() == HEIF_FORMAT || getSavePictureFormat() == HEIC_TENBIT_FORMAT) {
-            if (mStallDurationMap.size() > 0) {
+            if (mStallDurationMap.size() > 0 && mStallDurationMap.containsKey(pictureSize)) {
                 Long duration = mStallDurationMap.get(pictureSize);
                 fps = (float) 1000000000 / duration;
             }
         }else{
-            if (mMinDurationMap.size() > 0) {
+            if (mMinDurationMap.size() > 0 && mMinDurationMap.containsKey(pictureSize)) {
                 Long duration = mMinDurationMap.get(pictureSize);
                 fps = (float) 1000000000 / duration;
             }
