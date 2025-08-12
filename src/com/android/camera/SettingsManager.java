@@ -2433,6 +2433,12 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
                 captureProfile.print();
             }
+            //remove preview profile for skyros
+            if(PersistUtil.getModelInfo().contains("6850")){
+                if (previewProfile != null) {
+                    removePreference(mPreferenceGroup, KEY_PREVIEW_PROFILE);
+                }
+            }
         }
 
         if (physicalCamera != null) {

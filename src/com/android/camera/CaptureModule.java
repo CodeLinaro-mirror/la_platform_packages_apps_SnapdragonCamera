@@ -3898,11 +3898,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                 CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
                                         Log.v(TAG, "OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT");
                                     }
-                                    String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
-                                    Log.v(TAG, "OutputConfiguration set previewProfile :" + previewProfile);
-                                    if (previewProfile != null && !previewProfile.equals("0")) {
-                                        out.setDynamicRangeProfile(Long.parseLong(previewProfile));
-                                    }
+                                    setPreviewProfile(out);
                                     outputConfigurations.add(out);
                                 }
                             } else {
@@ -3914,12 +3910,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     mFAOutputConfiguration = mPreviewOutputConfiguration;
                                     mFASurfaceConfigured = false;
                                 }
-                                Log.v(TAG, "add mPreviewOutputConfiguration");
-                                String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
-                                Log.v(TAG, "OutputConfiguration previewProfile :" + previewProfile);
-                                if (previewProfile != null && !previewProfile.equals("0")) {
-                                    mPreviewOutputConfiguration.setDynamicRangeProfile(Long.parseLong(previewProfile));
-                                }
+                                setPreviewProfile(mPreviewOutputConfiguration);
                                 if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                                     mPreviewOutputConfiguration.addSensorPixelModeUsed(
                                             CameraMetadata.SENSOR_PIXEL_MODE_DEFAULT);
@@ -11450,10 +11441,7 @@ private boolean isDevOptionSetting(){
                    Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT and " +
                            "SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
                }
-               String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
-               if (previewProfile != null && !previewProfile.equals("0")) {
-                   videoPrevConfig.setDynamicRangeProfile(Long.parseLong(previewProfile));
-               }
+               setPreviewProfile(videoPrevConfig);
                outConfigurations.add(videoPrevConfig);
             }
             for (int i =0; i < mPhysicalMediaRecorders.length; i++) {
@@ -11513,10 +11501,7 @@ private boolean isDevOptionSetting(){
                 Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_DEFAULT and " +
                         "SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
             }
-            String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
-            if (previewProfile != null && !previewProfile.equals("0")) {
-                videoPrevConfig.setDynamicRangeProfile(Long.parseLong(previewProfile));
-            }
+            setPreviewProfile(videoPrevConfig);
             outConfigurations.add(videoPrevConfig);
         }
         getOptMode();
@@ -11553,6 +11538,26 @@ private boolean isDevOptionSetting(){
             }
         } catch (Exception e) {
             Log.e(TAG,e);
+        }
+    }
+
+    private void setPreviewProfile(OutputConfiguration configure){
+        String previewProfile = mSettingsManager.getValue(SettingsManager.KEY_PREVIEW_PROFILE);
+        Log.v(TAG, "OutputConfiguration set previewProfile :" + previewProfile);
+        if (previewProfile != null && !previewProfile.equals("0")) {
+            configure.setDynamicRangeProfile(Long.parseLong(previewProfile));
+        }else if(PersistUtil.getModelInfo().contains("6850") && getCurrenCameraMode() == CameraMode.VIDEO){
+            if (mSettingsManager.isDynamicRangeTenBitSupported()) {
+                String encoderProfile = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
+                if (encoderProfile != null) {
+                    String profile = SettingsManager.VIDEO_ENCODER_PROFILE_MAP.get(encoderProfile);
+                    Log.v(TAG, "OutputConfiguration set preview encoderProfile same as video :" +
+                            encoderProfile + ", profile :" + profile);
+                    if (!profile.equals("0")) {
+                        configure.setDynamicRangeProfile(Long.parseLong(profile));
+                    }
+                }
+            }
         }
     }
     private void setTimeStamp(List<OutputConfiguration> outConfigurations,int timestamp){
