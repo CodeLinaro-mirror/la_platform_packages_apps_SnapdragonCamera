@@ -4513,7 +4513,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mIsPreviewingVideo = true;
             if(mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT || mSettingsManager.getSavePictureFormat() == SettingsManager.HEIC_TENBIT_FORMAT) {
                 float fps = mSettingsManager.getFps(mVideoSnapshotSize);
-                mHeicLiveSnapshotLimit = (int)fps *2;
+                mHeicLiveSnapshotLimit = Math.round(fps *2);
                 Log.d(TAG,"mHeicLiveSnapshotLimit:" + mHeicLiveSnapshotLimit);
             }
             if (isHighSpeedRateCapture()) {
