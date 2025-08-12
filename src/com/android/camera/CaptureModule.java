@@ -1010,6 +1010,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mExistLensPos = true;
     private boolean mExposureCountTag = true;
     private boolean mAECCameraIdTag = true;
+    private int mAECFailedCount = 0;
+    private int mAWBFailedCount = 0;
+    private static final int FAILED_FRAME_COUNT = 3;
 
     private static final long SDCARD_SIZE_LIMIT = 4000 * 1024 * 1024L;
     private static final String sTempCropFilename = "crop-temp";
@@ -16214,6 +16217,16 @@ private boolean isDevOptionSetting(){
                 mExistAECDarkGainTag = false;
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
+            if((!mExistAWBVendorTag || !mExistAECWarmTag || !mExposureCountTag || !mAECCameraIdTag || !mExistAECDarkGainTag) && mAWBFailedCount < FAILED_FRAME_COUNT){
+                if(!mExistAWBVendorTag) mExistAWBVendorTag = true;
+                if(!mExistAECWarmTag) mExistAECWarmTag = true;
+                if(!mAECCameraIdTag) mAECCameraIdTag = true;
+                if(!mExposureCountTag) mExposureCountTag = true;
+                if(!mExistAECDarkGainTag) mExistAECDarkGainTag = true;
+                mAWBFailedCount ++;
+            }else if(mExistAWBVendorTag && mExistAECWarmTag && mExposureCountTag && mAECCameraIdTag && mExistAECDarkGainTag){
+                mAWBFailedCount = 0;
+            }
         }
     }
 
@@ -16231,6 +16244,12 @@ private boolean isDevOptionSetting(){
             } catch (IllegalArgumentException|NullPointerException e) {
                 mExistAECFrameControlTag = false;
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
+            }
+            if(!mExistAECFrameControlTag && mAECFailedCount < FAILED_FRAME_COUNT){
+                mExistAECFrameControlTag = true;
+                mAECFailedCount ++;
+            }else if(mExistAECFrameControlTag){
+                mAECFailedCount = 0;
             }
         }
     }
