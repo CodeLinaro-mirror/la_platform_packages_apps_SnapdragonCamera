@@ -12997,7 +12997,7 @@ private boolean isDevOptionSetting(){
 
                     } else {
                         Log.i(TAG,"setRepeatingRequest");
-                        mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
+                        mCurrentSession.setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(),
                                 mCaptureCallback, mCameraHandler);
                     }
                 } catch (CameraAccessException | IllegalStateException e) {
