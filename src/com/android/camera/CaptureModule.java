@@ -12630,20 +12630,22 @@ private boolean isDevOptionSetting(){
 
     private void resumeVideoRecording() {
         Log.v(TAG, "resumeVideoRecording");
-        if(!PersistUtil.enableMediaRecorder()){
-            Bundle params = new Bundle();
-            params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 0);
-            if(!mOnlyVideoEncoder) {
-                mAudioEncoder.setParameters(params);
-            }
-            mVideoEncoder.setParameters(params);
-        }
         mRecordingPausing = false;
         mRecordingStartTime = SystemClock.uptimeMillis();
         mRecordingPausingTime += mRecordingStartTime - mRecordingPauseTime;
         if (mHighSpeedCapture && !mHighSpeedRecordingMode) {
             mHighRecordingPausingTime = mRecordingPausingTime * mHighSpeedCaptureRate / 30;
             Log.d(TAG, "HFR pause time is " + mHighRecordingPausingTime);
+        }
+
+        if(!PersistUtil.enableMediaRecorder()){
+            Bundle params = new Bundle();
+            params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 0);
+            params.putLong(MediaCodec.PARAMETER_KEY_OFFSET_TIME, (int) -(mRecordingPausingTime*1000));
+            if(!mOnlyVideoEncoder) {
+                mAudioEncoder.setParameters(params);
+            }
+            mVideoEncoder.setParameters(params);
         }
 
         updateRecordingTime();
@@ -13771,6 +13773,8 @@ private boolean isDevOptionSetting(){
             Log.i(TAG + "_videoformat", "set lookahead enable.");
             mVideoFormat.setInteger("vendor.qti-ext-encoding-mode.value", 4);
         }
+        Log.i(TAG + "_videoformat", "set max b frame to 7.");
+        mVideoFormat.setInteger(MediaFormat.KEY_MAX_B_FRAMES, 7);
         mVideoEncoder = MediaCodec.createEncoderByType(encoder);
         if (PersistUtil.isProSightEnabled()) {
             try {
@@ -13881,11 +13885,7 @@ private boolean isDevOptionSetting(){
                             if (mCaptureTimeLapse) {
                                 bufferInfo.presentationTimeUs -= (mRecordingPausingTime * 1000L
                                         * 1000L / (long) mTimeBetweenTimeLapseFrameCaptureMs  / 30L);
-                            } else {
-                                if ((PersistUtil.lookaheadEnabled() && bufferInfo.presentationTimeUs > mRecordingPauseTime * 1000) ||
-                                        !PersistUtil.lookaheadEnabled()) {
-                                    bufferInfo.presentationTimeUs -= mRecordingPausingTime*1000;
-                                }                            }
+                            }
                         }
                     }
                     frameNumber++;
@@ -13957,14 +13957,14 @@ private boolean isDevOptionSetting(){
                                 @Override
                                 public void run() {
                                     stopRecordingVideo(getMainCameraId());
-                                    }
+                                }
 
                             });
                         }
                     }
                 }
                 mVideoEncoder.releaseOutputBuffer(encoderStatus, false);
-
+                Log.i(TAG + "_video", "releaseOutputBuffer status is :" + encoderStatus);
                 if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                     Log.v(TAG + "_video", "end of video stream reached");
                     mMuxerVideoStop = true;
