@@ -14657,6 +14657,7 @@ private boolean isDevOptionSetting(){
         if (mActivity.getStorageSpaceBytes() <= Storage.LOW_STORAGE_THRESHOLD_BYTES) {
             Log.i(TAG, "Not enough space or storage not ready. remaining="
                     + mActivity.getStorageSpaceBytes());
+            Toast.makeText(mActivity, "Storage space is not enough", Toast.LENGTH_SHORT).show();
             return;
         }
         if (TRACE_DEBUG) Trace.beginSection("onShutterButtonClick");
