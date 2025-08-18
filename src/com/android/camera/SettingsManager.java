@@ -702,13 +702,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isLiveshotSizeSameAsVideoSize(){
-        boolean isLiveshotSizeSameAsVideoSize = false;
-        try {
-            isLiveshotSizeSameAsVideoSize = mCharacteristics.get(mCameraId).get(CaptureModule.is_liveshot_size_same_as_video) == 1 ? true : false;
-        } catch (IllegalArgumentException | NullPointerException e) {
-            Log.e(TAG, "isLiveshotSizeSameAsVideoSize no vendorTag isLiveshotSizeSameAsVideoSize:");
-        }
-        return isLiveshotSizeSameAsVideoSize;
+        return true;
     }
 
     private Size parseSize(String value) {
