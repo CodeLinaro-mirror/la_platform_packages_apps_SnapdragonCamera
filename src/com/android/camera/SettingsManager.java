@@ -2985,7 +2985,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference videoEncoderProfilePref =
                 mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER_PROFILE);
         ListPreference videoEncoderPref = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
-        if ( videoEncoderProfilePref != null && videoEncoderPref != null ) {
+        if (videoEncoderProfilePref != null && videoEncoderPref != null ) {
             String videoEncoder = videoEncoderPref.getValue();
             Log.d(TAG, "mvhevcHLG: encoder is " + videoEncoder);
             videoEncoderProfilePref.reloadInitialEntriesAndEntryValues();
@@ -3137,7 +3137,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
-                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))
+                                || (videoEncoderNum ==  MediaRecorder.VideoEncoder.MVHEVC && type.equalsIgnoreCase("video/x-mvhevc"))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.DOLBY_VISION &&
                                 type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION))) {
                             CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
@@ -3337,8 +3337,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
-                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))
-                                || type.equalsIgnoreCase("video/apv")
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.MVHEVC && type.equalsIgnoreCase("video/x-mvhevc"))
+                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/apv"))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.DOLBY_VISION
                                 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION))) {
                             CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
@@ -4500,7 +4500,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     }
                 }
             }
-            if (!PersistUtil.enableMediaRecorder() && !PersistUtil.lookaheadEnabled()) {
+            if (!PersistUtil.lookaheadEnabled()) {
                 supported.add("apv");
             }
         }
