@@ -30,7 +30,7 @@ import android.os.Message;
 import android.util.AttributeSet;
 import com.android.camera.util.Log;
 import android.view.View;
-
+import android.hardware.camera2.CaptureResult;
 import com.android.camera.PhotoUI;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
@@ -180,21 +180,18 @@ public class FaceView extends View
     @Override
     public void showStart() {
         mColor = mFocusingColor;
-        invalidate();
     }
 
     // Ignore the parameter. No autofocus animation for face detection.
     @Override
     public void showSuccess(boolean timeout) {
         mColor = mFocusedColor;
-        invalidate();
     }
 
     // Ignore the parameter. No autofocus animation for face detection.
     @Override
     public void showFail(boolean timeout) {
         mColor = mFailColor;
-        invalidate();
     }
 
     @Override
@@ -209,7 +206,31 @@ public class FaceView extends View
     public void reset() {
 
     }
-
+    public void updateFaceColor(int focusState) {
+        switch (focusState) {
+            case CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN:
+                showStart();
+                break;
+            case CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED:
+                showSuccess(false);
+                break;
+            case CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED:
+                showFail(false);
+                break;
+            case CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED:
+                showSuccess(true);
+                break;
+            case CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN:
+                showStart();
+                break;
+            case CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED:
+                showFail(true);
+                break;
+            case CaptureResult.CONTROL_AF_STATE_INACTIVE:
+                reset();
+                break;
+        }
+    }
     public void pause() {
         mPause = true;
     }

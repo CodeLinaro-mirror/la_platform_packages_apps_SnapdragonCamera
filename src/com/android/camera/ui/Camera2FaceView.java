@@ -204,6 +204,7 @@ public class Camera2FaceView extends FaceView {
                     mStateSwitchPending = true;
                     mHandler.sendEmptyMessageDelayed(MSG_SWITCH_FACES, SWITCH_DELAY);
                 }
+                mFaces = faces;
                 return;
             }
         }
@@ -213,7 +214,7 @@ public class Camera2FaceView extends FaceView {
         }
         mFaces = faces;
         mExFaces = extendedFaces;
-        if (!mBlocked && (mFaces != null) && (mFaces.length > 0) && mCameraBound != null) {
+        if (!mBlocked && mCameraBound != null) {
             postInvalidate();
         }
     }

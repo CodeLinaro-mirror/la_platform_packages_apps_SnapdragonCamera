@@ -3981,6 +3981,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return foucusList;
     }
 
+    public void updateFaceColor(int focusState){
+        if (mFaceView != null && mFaces > 0) {
+          mFaceView.updateFaceColor(focusState);
+        }
+    }
     public void showFocusAssistText() {
         Log.d(TAG, "showFocusAssistText");
         if (mFocusAssistTextView == null) {
