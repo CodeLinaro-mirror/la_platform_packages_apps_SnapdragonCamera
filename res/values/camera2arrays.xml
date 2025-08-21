@@ -453,6 +453,7 @@
         <item>7680 x 4320</item>
         <item>@string/pref_camera_picturesize_entry_64mp</item>
         <item>@string/pref_camera_picturesize_entry_48mp</item>
+        <item>@string/pref_camera_picturesize_entry_36mp_1.3AR</item>
         <item>@string/pref_camera_picturesize_entry_36mp</item>
         <item>@string/pref_camera_picturesize_entry_32mp</item>
         <item>5824 x 4368</item>
@@ -503,6 +504,7 @@
         <item>7680x4320</item>
         <item>9248x6944</item>
         <item>8000x6000</item>
+        <item>6960x5220</item>
         <item>6928x5196</item>
         <item>6560x4928</item>
         <item>5824x4368</item>
