@@ -3988,7 +3988,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void updateFaceColor(int focusState){
         if (mFaceView != null && mFaces > 0) {
-          mFaceView.updateFaceColor(focusState);
+            mFaceView.post(() -> mFaceView.updateFaceColor(focusState));
         }
     }
     public void showFocusAssistText() {
