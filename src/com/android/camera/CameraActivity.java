@@ -23,6 +23,7 @@ package com.android.camera;
 import android.hardware.camera2.CameraAccessException;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.Trace;
 import android.view.Display;
 import android.graphics.Point;
 import android.Manifest;
@@ -155,6 +156,7 @@ public class CameraActivity extends Activity
 
     private static final String AUTO_TEST_INTENT ="com.android.camera.autotest";
 
+    private static final boolean TRACE_DEBUG = PersistUtil.getTraceDebug();
     /**
      * Request code from an activity we started that indicated that we do not
      * want to reset the view to the preview in onResume.
@@ -2115,6 +2117,7 @@ public class CameraActivity extends Activity
 
     @Override
     public void onModuleSelected(int moduleIndex) {
+        if(TRACE_DEBUG) Trace.beginSection("onModuleSelected");
         boolean cam2on = PersistUtil.getCamera2Mode();
         mForceReleaseCamera = moduleIndex == ModuleSwitcher.CAPTURE_MODULE_INDEX ||
                 (cam2on && moduleIndex == ModuleSwitcher.PHOTO_MODULE_INDEX);
@@ -2141,6 +2144,7 @@ public class CameraActivity extends Activity
         // starts up.
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.edit().putInt(CameraSettings.KEY_STARTUP_MODULE_INDEX, moduleIndex).apply();
+        if(TRACE_DEBUG) Trace.endSection();
     }
 
     /**
