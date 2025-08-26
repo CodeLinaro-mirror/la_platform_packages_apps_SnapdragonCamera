@@ -7783,7 +7783,7 @@ private boolean isDevOptionSetting(){
                         Log.d(TAG, "Time out waiting to lock camera closing.");
                         throw new RuntimeException("Time out waiting to lock camera closing");
                     }
-                    Log.i(TAG, "Closing camera: " + mCameraDevice[i].getId());
+                    Log.i(TAG, "start Closing camera: " + mCameraDevice[i].getId());
 
                     // session was closed here if intentMode is INTENT_MODE_VIDEO
                     if (mIntentMode != INTENT_MODE_VIDEO) {
@@ -7794,7 +7794,7 @@ private boolean isDevOptionSetting(){
                                 mCaptureSession[i].abortCaptures();
                                 if (TRACE_DEBUG) Trace.endSection();
                                 mFlushLatency = System.currentTimeMillis() - mFlushLatency;
-                                Log.d(TAG, "Closing camera call abortCaptures ");
+                                Log.i(TAG, "abortCaptures end");
                                 if (mActivity.getPerformenceTest() ) {
                                     mHasMapTimes.put("abortCaptures", mFlushLatency);
                                 }
@@ -7814,6 +7814,7 @@ private boolean isDevOptionSetting(){
                     }
                     if (TRACE_DEBUG) Trace.beginSection("SnapCamera,camera close");
                     mCameraDevice[i].close();
+                    Log.i(TAG, "Close camera end");
                     if (TRACE_DEBUG) Trace.endSection();
                     mCameraDevice[i] = null;
                     mCameraOpened[i] = false;

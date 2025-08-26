@@ -162,6 +162,7 @@ public class TestBase{
     public String jsonParentNm = null;
     public boolean testResult = false;
     private boolean flashInZslResult = true;
+    private boolean testFlashInZSL = false;
     private boolean longshotInZslResult = true;
     private String flashvalue = "FAIL";
     private String longshotvalue = "FAIL";
@@ -609,9 +610,11 @@ public class TestBase{
             }
         }
         if (mode == CaptureModule.CameraMode.DEFAULT) {
-
-            if (testItem("testZSL")) {
-                testZSL(cameraId, mode);
+            if(testItem("testZLongShotInZSL")){
+                testZLongShotInZSL(cameraId, mode);
+            }
+            if(testItem("testZFlashInZSL") && !cameraId.equals("1")){
+                testZFlashInZSL(cameraId, mode);
             }
             if (testItem("testEIS")) {
                 testEIS(mode);
@@ -1229,28 +1232,32 @@ public class TestBase{
         mLongShotNum = patharry.size();
     }
     public void testZSL(String cameraId,CaptureModule.CameraMode mode)throws Exception {
-        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-        String parentNm = stack[4].getMethodName();
-
-        flashInZslResult = true;
-        longshotInZslResult = true;
-        updateAndSavejson(OUTPUT_JSON, "testLongShotInZSL", parentNm, longshotvalue);
-        updateAndSavejson(OUTPUT_JSON, "testFlashInZSL", parentNm, flashvalue);
-        jsonChildNm = "testZSL";
-        jsonParentNm = parentNm;
-        checkSettingValue(SettingsManager.KEY_ZSL, SettingsManager.KEY_LONGSHOT, mode,true);
-        if (flashInZslResult) {
-            updateAndSavejson(OUTPUT_JSON, "testFlashInZSL", parentNm, testPass);
-        } else {
-            updateAndSavejson(OUTPUT_JSON, "testFlashInZSL", parentNm, testFail);
-        }
-        if (longshotInZslResult) {
-            updateAndSavejson(OUTPUT_JSON, "testLongShotInZSL", parentNm, testPass);
-        } else {
-            updateAndSavejson(OUTPUT_JSON, "testLongShotInZSL", parentNm, testFail);
+        updateJson(5,null);
+        testFlashInZSL = false;
+        checkSettingValue(SettingsManager.KEY_ZSL,null, mode,true);
+        if(testResult) updateJson(5,testPass);
+        else{
+            updateJson(5,testFail);
         }
     }
-
+    public void testZLongShotInZSL(String cameraId,CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5,null);
+        checkSettingValue(SettingsManager.KEY_ZSL, SettingsManager.KEY_LONGSHOT, mode,true);
+        if(testResult) updateJson(5,testPass);
+        else{
+            updateJson(5,testFail);
+        }
+    }
+    public void testZFlashInZSL(String cameraId,CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5,null);
+        testFlashInZSL = true;
+        checkSettingValue(SettingsManager.KEY_ZSL,null, mode,true);
+        testFlashInZSL = false;
+        if(testResult) updateJson(5,testPass);
+        else{
+            updateJson(5,testFail);
+        }
+    }
 
 
     public void testMFNR(String cameraId,CaptureModule.CameraMode mode)throws Exception {
@@ -2323,11 +2330,8 @@ public class TestBase{
                         break;
                     case SettingsManager.KEY_ZSL:
                         checkZSL();
-                        if(flashInZslResult) {
+                        if(testFlashInZSL) {
                             testFlash(cameraId, mode, false);
-                        }else{
-                            flashInZslResult = false;
-                            longshotvalue = testFail;
                         }
                         break;
                     case SettingsManager.KEY_CAPTURE_MFNR_VALUE:
