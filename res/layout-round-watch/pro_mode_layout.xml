@@ -37,6 +37,7 @@
     android:id="@+id/pro_mode_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@color/camera_control_bg_transparent"
     android:orientation="horizontal"
     android:visibility="invisible">
 
@@ -51,6 +52,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:focusable="true"
+            android:textSize="@dimen/textsize_15sp"
             android:drawableTop="@drawable/promode_exposure"
             android:drawablePadding="@dimen/drawable_padding_promode_param"
             android:gravity="center"
@@ -70,6 +72,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:focusable="true"
+            android:textSize="@dimen/textsize_15sp"
             android:drawableTop="@drawable/promode_manual"
             android:drawablePadding="@dimen/drawable_padding_promode_param"
             android:gravity="center"
@@ -89,6 +92,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:focusable="true"
+            android:textSize="@dimen/textsize_15sp"
             android:drawableTop="@drawable/promode_white_balance"
             android:drawablePadding="@dimen/drawable_padding_promode_param"
             android:gravity="center"
@@ -110,6 +114,7 @@
             android:drawableTop="@drawable/promode_iso"
             android:drawablePadding="@dimen/drawable_padding_promode_param"
             android:focusable="true"
+            android:textSize="@dimen/textsize_15sp"
             android:gravity="center"
             android:layout_gravity="center"
             android:layout_weight="1"/>

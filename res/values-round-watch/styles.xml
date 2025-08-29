@@ -28,4 +28,9 @@
         <item name="android:displayOptions">disableHome|showTitle</item>
     </style>
 
+    <style name="OneUIMenuButton">
+        <item name="android:layout_width">@dimen/oneui_menu_button_size</item>
+        <item name="android:layout_height">@dimen/oneui_menu_button_size</item>
+        <item name="android:scaleType">fitCenter</item>
+    </style>
 </resources>

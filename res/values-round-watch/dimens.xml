@@ -30,13 +30,14 @@
     <!-- This was 100dp for rectangular disply -->
     <dimen name="mode_select_layout_margin_bottom">88dp</dimen>
 
-    <dimen name="size_64dp">64dp</dimen>
+    <dimen name="size_72dp">72dp</dimen>
     <dimen name="size_32dp">32dp</dimen>
     <dimen name="size_24dp">24dp</dimen>
     <dimen name="size_12dp">12dp</dimen>
     <dimen name="size_8dp">8dp</dimen>
 
     <dimen name="textsize_15sp">15sp</dimen>
+    <dimen name="camera_mode_text_size">16sp</dimen>
 
     <dimen name="hist_stats_graphs_top_margin">150dp</dimen>
     <dimen name="hist_stats_graphs_size">100dp</dimen>
@@ -50,6 +51,8 @@
     <dimen name="aec_margin_top">172dp</dimen>
     <dimen name="awb_margin_left">150dp</dimen>
 
-    <dimen name="drawable_padding_promode_param">-2dp</dimen>
+    <dimen name="drawable_padding_promode_param">0dp</dimen>
+
+    <dimen name="oneui_menu_button_size">32dp</dimen>
 </resources>
 
