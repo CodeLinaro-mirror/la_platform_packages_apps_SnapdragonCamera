@@ -996,25 +996,47 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     private boolean mInTAF = false;
 
+    //START: 2025-09-18 BE, BG STATS UI Round watch changes
+    public static class StatsConfig {
+        public final int bgbeStatsDefaultWidth;
+        public final int bgbeStatsDefaultHeight;
+        public final int bgbeStatsDefaultScale;
+
+        public StatsConfig (int w, int h, int scale) {
+            bgbeStatsDefaultWidth = w;
+            bgbeStatsDefaultHeight = h;
+            bgbeStatsDefaultScale = scale;
+        }
+    }
+
+    private static final StatsConfig WATCH_BEBG_STATS_CONFIG =
+                                              new StatsConfig(48, 64, 3);
+    private static final StatsConfig PHONE_BEBG_STATS_CONFIG =
+                                              new StatsConfig(48, 64, 10);
     // BG stats
-    private static int BGSTATS_DATA = 64*48;
-    public static int BGSTATS_WIDTH = 480;
-    public static int BGSTATS_HEIGHT = 640;
-    public static int bg_statsdata[]   = new int[BGSTATS_DATA*10*10];
-    public static int bg_r_statsdata[] = new int[BGSTATS_DATA];
-    public static int bg_g_statsdata[] = new int[BGSTATS_DATA];
-    public static int bg_b_statsdata[] = new int[BGSTATS_DATA];
-    public static String bgstatsdata_string = new String();
-    private static int STATS_DATA_BIT_SHIFT = 6;
-    public static final int SCALE_STATS = 10;
-    // BE stats
-    private static int BESTATS_DATA = 64*48;
-    public static int BESTATS_WIDTH = 480;
-    public static int BESTATS_HEIGHT = 640;
-    public static int be_statsdata[]   = new int[BESTATS_DATA*10*10];
-    public static int be_r_statsdata[] = new int[BESTATS_DATA];
-    public static int be_g_statsdata[] = new int[BESTATS_DATA];
-    public static int be_b_statsdata[] = new int[BESTATS_DATA];
+    private int mStatsDataBitShift = 6;
+    // These are kept static as the view that uses it
+    // is created in UI xml in CameraActivity
+    public int mBGStatsWidth = 480;
+    public int mBGStatsHeight = 640;
+    public int mBGStatsScale = 10;
+    public int bg_statsdata[];
+    public int bg_r_statsdata[];
+    public int bg_g_statsdata[];
+    public int bg_b_statsdata[];
+    // public String bgstatsdata_string = new String();
+
+    public int mBEStatsWidth = 480;
+    public int mBEStatsHeight = 640;
+    public int mBEStatsScale = 10;
+    public int be_statsdata[];
+    public int be_r_statsdata[];
+    public int be_g_statsdata[];
+    public int be_b_statsdata[];
+
+    public boolean mIsDeviceWatch = false;
+    //END: 2025-09-18 BE, BG STATS UI Round watch changes
+
     private static int statsParametersUpdated = 0;
     public static final int STATS_PARAMETER_UPDATE = 5;
 
@@ -1601,20 +1623,26 @@ public class CaptureModule implements CameraModule, PhotoController,
                     System.arraycopy(bgGStats, 0, bg_g_statsdata, 0, bgGStats.length);
                     System.arraycopy(bgBStats, 0, bg_b_statsdata, 0, bgBStats.length);
 
-                    int width = BGSTATS_WIDTH / 10;
-                    int height = BGSTATS_HEIGHT / 10;
-                    for (int el = 0; el < BGSTATS_DATA; el++) {
-                        r = bg_r_statsdata[el] >> STATS_DATA_BIT_SHIFT;
-                        g = bg_g_statsdata[el] >> STATS_DATA_BIT_SHIFT;
-                        b = bg_b_statsdata[el] >> STATS_DATA_BIT_SHIFT;
+                    //START: 2025-09-18 BE, BG STATS UI Round watch changes
+                    int width = mBGStatsWidth;
+                    int height = mBGStatsHeight;
+                    int scaleStats = mBGStatsScale;
+                    int size = width * height;
 
-                        for (int hi = 0; hi < SCALE_STATS; hi++) {
-                            for (int wi = 0; wi < SCALE_STATS; wi++) {
-                                index = SCALE_STATS * (int) (el / height) + width * SCALE_STATS * hi + width * SCALE_STATS * SCALE_STATS * (el % height) + wi;
+                    for (int el = 0; el < size; el++) {
+                        r = bg_r_statsdata[el] >> mStatsDataBitShift;
+                        g = bg_g_statsdata[el] >> mStatsDataBitShift;
+                        b = bg_b_statsdata[el] >> mStatsDataBitShift;
+
+                        for (int hi = 0; hi < scaleStats; hi++) {
+                            for (int wi = 0; wi < scaleStats; wi++) {
+                                index = scaleStats * (int) (el / height) + width * scaleStats * hi +
+                                           width * scaleStats * scaleStats * (el % height) + wi;
                                 bg_statsdata[index] = Color.argb(255, r, g, b);
                             }
                         }
                     }
+                    //END: 2025-09-18 BE, BG STATS UI Round watch changes
                 }
                 updateBGStatsView();
             }
@@ -1648,21 +1676,31 @@ public class CaptureModule implements CameraModule, PhotoController,
                     System.arraycopy(beGStats, 0, be_g_statsdata, 0, beRStats.length);
                     System.arraycopy(beBStats, 0, be_b_statsdata, 0, beRStats.length);
 
-                    int width = BESTATS_WIDTH / 10;
-                    int height = BESTATS_HEIGHT / 10;
+                    //START: 2025-09-18 BE, BG STATS UI Round watch changes
+                    int width = mBEStatsWidth;
+                    int height = mBEStatsHeight;
                     int roi_x = (int)(norm_roi_x * height);
                     int roi_y = (int)(norm_roi_y * width);
                     int roi_w = (int)((norm_roi_x + norm_roi_dx) * height);
                     int roi_h = (int)((norm_roi_y + norm_roi_dy) * width);
 
-                    for (int el = 0; el < BESTATS_DATA; el++) {
-                        r = be_r_statsdata[el] >> STATS_DATA_BIT_SHIFT;
-                        g = be_g_statsdata[el] >> STATS_DATA_BIT_SHIFT;
-                        b = be_b_statsdata[el] >> STATS_DATA_BIT_SHIFT;
+                    int scaleStats = mBEStatsScale;
+                    if (DEBUG) {
+                        Log.d(TAG, "width, height, scaleStats for be = " + width +
+                                        ", " + height + ",  " + scaleStats);
+                    }
 
-                        for (int hi = 0; hi < SCALE_STATS; hi++) {
-                            for (int wi = 0; wi < SCALE_STATS; wi++) {
-                                index = SCALE_STATS * (int) (el / height) + width * SCALE_STATS * hi + width * SCALE_STATS * SCALE_STATS * (el % height) + wi;
+                    int size = width * height;
+                    for (int el = 0; el < size; el++) {
+                        r = be_r_statsdata[el] >> mStatsDataBitShift;
+                        g = be_g_statsdata[el] >> mStatsDataBitShift;
+                        b = be_b_statsdata[el] >> mStatsDataBitShift;
+
+                        for (int hi = 0; hi < scaleStats; hi++) {
+                            for (int wi = 0; wi < scaleStats; wi++) {
+                                index = scaleStats * (int) (el / height) + width * scaleStats * hi +
+                                        width * scaleStats * scaleStats * (el % height) + wi;
+                    //END: 2025-09-18 BE, BG STATS UI Round watch changes
                                 be_statsdata[index] = Color.argb(255, r, g, b);
                                 if (roi_w > 0 && roi_h > 0 &&
                                         ((el % height == roi_x && el / height >= roi_y && el / height <= roi_h)
@@ -3197,10 +3235,46 @@ public class CaptureModule implements CameraModule, PhotoController,
         return RecordLocationPreference.VALUE_ON.equals(value);
     }
 
+    //START: 2025-09-18 BE, BG STATS UI Round watch changes
+    private void allocateBGData() {
+        bg_statsdata = new int[mBGStatsWidth * mBGStatsHeight *
+                               mBGStatsScale * mBGStatsScale];
+        bg_r_statsdata = new int[mBGStatsWidth * mBGStatsHeight];
+        bg_g_statsdata = new int[mBGStatsWidth * mBGStatsHeight];
+        bg_b_statsdata = new int[mBGStatsWidth * mBGStatsHeight];
+    }
+
+    private void allocateBEData() {
+        be_statsdata = new int[mBEStatsWidth * mBEStatsHeight *
+                               mBEStatsScale * mBEStatsScale];
+        be_r_statsdata = new int[mBEStatsWidth * mBEStatsHeight];
+        be_g_statsdata = new int[mBEStatsWidth * mBEStatsHeight];
+        be_b_statsdata = new int[mBEStatsWidth * mBEStatsHeight];
+    }
+
+    private void initStatsParams() {
+        StatsConfig bebgConfig = mIsDeviceWatch ? WATCH_BEBG_STATS_CONFIG :
+                                                  PHONE_BEBG_STATS_CONFIG;
+
+        mBGStatsScale = mBEStatsScale = bebgConfig.bgbeStatsDefaultScale;
+        mBGStatsWidth = mBEStatsWidth = bebgConfig.bgbeStatsDefaultWidth;
+        mBGStatsHeight = mBEStatsHeight = bebgConfig.bgbeStatsDefaultHeight;
+        allocateBGData();
+        allocateBEData();
+        // This is important to initialize when app goes to background and
+        // opened again.
+        statsParametersUpdated = 0;
+    }
+    //END: 2025-09-18 BE, BG STATS UI Round watch changes
+
     @Override
     public void init(CameraActivity activity, View parent) {
         mActivity = activity;
         mRootView = parent;
+        //START: 2025-09-03 BE, BG STATS UI Round watch changes
+        mIsDeviceWatch = SystemFeatures.getInstance().isFeatureWatchEnabled();
+        initStatsParams();
+        //END: 2025-09-03 BE, BG STATS UI Round watch changes
         mSettingsManager = SettingsManager.getInstance();
         mSettingsManager.createCaptureModule(this);
         mSettingsManager.registerListener(this);
@@ -6366,36 +6440,35 @@ public class CaptureModule implements CameraModule, PhotoController,
             int be_height = info[3];
             int depth = info[4];
             Log.i(TAG,"updateStatsParameters, bg_width:" + bg_width + "bg_height:" + bg_height + "be_width:" +be_width + "be_height:" +be_height + "depth:" +depth);
-            if (bg_width != -1 && bg_height != -1 && bg_width != 0 && bg_height != 0){
-                BGSTATS_DATA = bg_width*bg_height;
-                BGSTATS_WIDTH = bg_width*10;
-                BGSTATS_HEIGHT = bg_height*10;
-
-                bg_statsdata = new int[BGSTATS_DATA*10*10];
-                bg_r_statsdata = new int[BGSTATS_DATA];
-                bg_g_statsdata = new int[BGSTATS_DATA];
-                bg_b_statsdata = new int[BGSTATS_DATA];
-                bgstats_view.updateViewSize();
+            if (bg_width != -1 && bg_height != -1 && bg_width != 0 && bg_height != 0) {
+                //START: 2025-09-18 BE, BG STATS UI Round watch changes
+                if ( (mBGStatsWidth != bg_width) || (mBGStatsHeight != bg_height) ) {
+                    // if one of the width or height has changed
+                    mBGStatsWidth = bg_width;
+                    mBGStatsHeight = bg_height;
+                    allocateBGData();
+                    bgstats_view.updateViewSize();
+                }
             }
             if(be_width != -1 && be_height != -1 && be_width != 0 && be_height != 0) {
-                BESTATS_DATA = be_width*be_height;
-                BESTATS_WIDTH = be_width*10;
-                BESTATS_HEIGHT = be_height*10;
-                be_statsdata   = new int[BESTATS_DATA*10*10];
-                be_r_statsdata = new int[BESTATS_DATA];
-                be_g_statsdata = new int[BESTATS_DATA];
-                be_b_statsdata = new int[BESTATS_DATA];
-                bestats_view.updateViewSize();
+                if ( (mBEStatsWidth != be_width) || (mBEStatsHeight != be_height) ) {
+                    // if one of the width or height has changed
+                    mBEStatsWidth = be_width;
+                    mBEStatsHeight = be_height;
+                    allocateBEData();
+                    bestats_view.updateViewSize();
+               }
             }
 
             if (depth != -1 && depth != 0) {
-                STATS_DATA_BIT_SHIFT = depth - 8;
+                mStatsDataBitShift = depth - 8;
                 statsParametersUpdated = STATS_PARAMETER_UPDATE;
             }
         }
         statsParametersUpdated ++;
-        Log.d(TAG,"updateStatsParameters width="+BGSTATS_WIDTH+" height="+BESTATS_HEIGHT+
-                " STATS_DATA_BIT_SHIFT="+STATS_DATA_BIT_SHIFT);
+        Log.d(TAG,"updateStatsParameters width="+mBGStatsWidth+" height="+mBEStatsHeight+
+                " mStatsDataBitShift="+mStatsDataBitShift);
+        //END: 2025-09-18 BE, BG STATS UI Round watch changes
 
     }
 
@@ -13267,18 +13340,37 @@ class Camera2BGBitMap extends View {
 
     public Camera2BGBitMap(Context context, AttributeSet attrs) {
         super(context,attrs);
-        mWidth = CaptureModule.BGSTATS_WIDTH;
-        mHeight = CaptureModule.BGSTATS_HEIGHT;
-        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
-        mCanvas.setBitmap(mBitmap);
+        //START: 2025-09-19 BE, BG STATS UI Round watch changes
+        mBitmap = null;
+        //END: 2025-09-19 BE, BG STATS UI Round watch changes
         mPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
         mPaintRect.setColor(0xFFFFFFFF);
         mPaintRect.setStyle(Paint.Style.FILL);
     }
 
+    //START: 2025-09-19 BE, BG STATS UI Round watch changes
+    private void createBitmap() {
+        if (mCaptureModule == null) {
+            Log.e(TAG, "!! FATAL error createBG Bitmap: CaptureModule is Null !!");
+            return;
+        }
+        int scale = mCaptureModule.mBGStatsScale;
+        mWidth = mCaptureModule.mBGStatsWidth * scale;
+        mHeight = mCaptureModule.mBGStatsHeight * scale;
+        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+        mCanvas.setBitmap(mBitmap);
+    }
+    //END: 2025-09-19 BE, BG STATS UI Round watch changes
+
     @Override
     protected void onDraw(Canvas canvas) {
-        if(mCaptureModule == null && !mCaptureModule.mBGStatson) {
+        //Possible NPE fix
+        if (mCaptureModule == null) {
+            Log.e(TAG, "!! FATAL : CaptureModule is Null in BG onDraw !!");
+            return;
+        }
+
+        if (!mCaptureModule.mBGStatson) {
             Log.e(TAG, "returning as BG stats is off");
             return;
         }
@@ -13286,10 +13378,12 @@ class Camera2BGBitMap extends View {
         if (mBitmap != null) {
             final Canvas cavas = mCanvas;
             cavas.drawColor(0xFFAAAAAA);
-            synchronized(CaptureModule.bg_statsdata){
-                mBitmap.setPixels(CaptureModule.bg_statsdata, 0, CaptureModule.BGSTATS_WIDTH,
-                        0, 0,CaptureModule.BGSTATS_WIDTH, CaptureModule.BGSTATS_HEIGHT);
+            //START: 2025-09-19 BE, BG STATS UI Round watch changes
+            synchronized(mCaptureModule.bg_statsdata){
+                mBitmap.setPixels(mCaptureModule.bg_statsdata, 0, mWidth,
+                        0, 0, mWidth, mHeight);
             }
+            //END: 2025-09-19 BE, BG STATS UI Round watch changes
             canvas.drawBitmap(mBitmap, 0, 0, null);
         }
     }
@@ -13309,13 +13403,28 @@ class Camera2BGBitMap extends View {
 
     public void setCaptureModuleObject(CaptureModule captureModule) {
         mCaptureModule = captureModule;
+        //START: 2025-09-19 BE, BG STATS UI Round watch changes
+        createBitmap();
+        //END: 2025-09-19 BE, BG STATS UI Round watch changes
     }
 
-    public void updateViewSize(){
-        mWidth = CaptureModule.BGSTATS_WIDTH;
-        mHeight = CaptureModule.BGSTATS_HEIGHT;
-        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
-        mCanvas.setBitmap(mBitmap);
+    public void updateViewSize() {
+        //suggested rework BEGIN
+        if (mCaptureModule == null) {
+            Log.e(TAG, "!! FATAL: CaptureModule is Null in updateViewSize of BG!!");
+            return;
+        }
+
+        int scale = mCaptureModule.mBGStatsScale;
+        int newWidth = mCaptureModule.mBGStatsWidth * scale;
+        int newHeight = mCaptureModule.mBGStatsHeight * scale;
+
+        if ( mBitmap == null || mWidth != newWidth || mHeight != newHeight ) {
+            //START: 2025-09-19 BE, BG STATS UI Round watch changes
+            createBitmap();
+            //END: 2025-09-19 BE, BG STATS UI Round watch changes
+        }
+        //suggested rework END
     }
 }
 
@@ -13332,14 +13441,27 @@ class Camera2BEBitMap extends View {
 
     public Camera2BEBitMap(Context context, AttributeSet attrs) {
         super(context,attrs);
-        mWidth = CaptureModule.BESTATS_WIDTH;
-        mHeight = CaptureModule.BESTATS_HEIGHT;
-        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
-        mCanvas.setBitmap(mBitmap);
+        //START: 2025-09-19 BE, BG STATS UI Round watch changes
+        mBitmap = null;
+        //END: 2025-09-19 BE, BG STATS UI Round watch changes
         mPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
         mPaintRect.setColor(0xFFFFFFFF);
         mPaintRect.setStyle(Paint.Style.FILL);
     }
+
+    //START: 2025-09-19 BE, BG STATS UI Round watch changes
+    private void createBitmap() {
+        if (mCaptureModule == null) {
+            Log.e(TAG, "!! FATAL createBE Bitmap: CaptureModule is Null !!");
+            return;
+        }
+        int scale = mCaptureModule.mBEStatsScale;
+        mWidth = mCaptureModule.mBEStatsWidth * scale;
+        mHeight = mCaptureModule.mBEStatsHeight * scale;
+        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+        mCanvas.setBitmap(mBitmap);
+    }
+    //END: 2025-09-19 BE, BG STATS UI Round watch changes
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -13352,7 +13474,13 @@ class Camera2BEBitMap extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if(mCaptureModule == null && !mCaptureModule.mBEStatson) {
+        // Possible NPE Fix
+        if (mCaptureModule == null) {
+            Log.e(TAG, "!! FATAL: CaptureModule is Null in BE onDraw!!");
+            return;
+        }
+
+        if (!mCaptureModule.mBEStatson) {
             Log.e(TAG, "returning as BE stats is off");
             return;
         }
@@ -13360,10 +13488,12 @@ class Camera2BEBitMap extends View {
         if (mBitmap != null) {
             final Canvas cavas = mCanvas;
             cavas.drawColor(0xFFAAAAAA);
-            synchronized(CaptureModule.be_statsdata){
-            mBitmap.setPixels(CaptureModule.be_statsdata, 0, CaptureModule.BESTATS_WIDTH,
-                    0, 0, CaptureModule.BESTATS_WIDTH, CaptureModule.BESTATS_HEIGHT);
+            //START: 2025-09-18 BE, BG STATS UI Round watch changes
+            synchronized(mCaptureModule.be_statsdata){
+                mBitmap.setPixels(mCaptureModule.be_statsdata, 0, mWidth,
+                    0, 0, mWidth, mHeight);
             }
+            //END: 2025-09-18 BE, BG STATS UI Round watch changes
             canvas.drawBitmap(mBitmap, 0, 0, null);
         }
     }
@@ -13373,13 +13503,28 @@ class Camera2BEBitMap extends View {
 
     public void setCaptureModuleObject(CaptureModule captureModule) {
         mCaptureModule = captureModule;
+        //START: 2025-09-18 BE, BG STATS UI Round watch changes
+        createBitmap();
+        //END: 2025-09-18 BE, BG STATS UI Round watch changes
     }
 
-    public void updateViewSize(){
-        mWidth = CaptureModule.BESTATS_WIDTH;
-        mHeight = CaptureModule.BESTATS_HEIGHT;
-        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
-        mCanvas.setBitmap(mBitmap);
+    public void updateViewSize() {
+        //suggested rework BEGIN
+        if (mCaptureModule == null) {
+            Log.e(TAG, "!! FATAL: CaptureModule is Null in updateViewSize of BE!!");
+            return;
+        }
+
+        int scale = mCaptureModule.mBEStatsScale;
+        int newWidth = mCaptureModule.mBEStatsWidth * scale;
+        int newHeight = mCaptureModule.mBEStatsHeight * scale;
+
+        if ( mBitmap == null || mWidth != newWidth || mHeight != newHeight ) {
+            //START: 2025-09-18 BE, BG STATS UI Round watch changes
+            createBitmap();
+            //END: 2025-09-18 BE, BG STATS UI Round watch changes
+        }
+        //suggested rework END
     }
 }
 

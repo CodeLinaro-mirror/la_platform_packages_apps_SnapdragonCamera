@@ -34,11 +34,9 @@ public class SystemFeatures {
     public void init(Context context) {
         if ( ((UiModeManager) context.getSystemService(Context.UI_MODE_SERVICE)).
                 getCurrentModeType() == Configuration.UI_MODE_TYPE_WATCH) {
-                mIsFeatureWatch = true;
+            mIsFeatureWatch = true;
+            mIsScreenRound = context.getResources().getConfiguration().isScreenRound();
         }
-        //TODO: What if a phone is made with circular display in future ?
-        mIsScreenRound = context.getResources().getConfiguration().
-                                                isScreenRound();
     }
 
     public boolean isFeatureWatchEnabled() {

@@ -40,10 +40,12 @@
 
     <dimen name="hist_stats_graphs_top_margin">150dp</dimen>
     <dimen name="hist_stats_graphs_size">100dp</dimen>
-    <dimen name="bebg_stats_graph_width">170dp</dimen>
-    <dimen name="bebg_stats_graph_height">300dp</dimen>
+    <!-- below two values are linked to the value given in code,
+         so change only if same is changed in code also. -->
+    <dimen name="bebg_stats_graph_width">144dp</dimen>
+    <dimen name="bebg_stats_graph_height">192dp</dimen>
     <dimen name="margin_68dp">68dp</dimen>
-    <dimen name="bebg_stats_graph_margin_top">88dp</dimen>
+    <dimen name="bebg_stats_graph_margin_top">96dp</dimen>
     <dimen name="bg_stats_lbl_margin_left">72dp</dimen>
     <dimen name="bg_stats_margin_left">52dp</dimen>
     <dimen name="be_stats_margin_left">230dp</dimen>
