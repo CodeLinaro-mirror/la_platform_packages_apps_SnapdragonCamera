@@ -518,9 +518,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private int mDownSampleFactor = 4;
     private DecodeImageForReview mDecodeTaskForReview = null;
 
-    private View mStatsAwbInfo;
+    private View mStatsAwbInfo,mSensorModeView;
     private TextView mStatsAwbText;
-
+    private TextView mSensorModeText;
     private TextView mZoomValueText,mZoomWText,mZoomUWText,mZoomTelText,mZoomGo;
     private EditText mZoomEditText;
     private float mUWZoom,mWZoom,mTelZoom;
@@ -936,7 +936,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mTimeLapseLabel = mRootView.findViewById(R.id.time_lapse_label);
         mPauseButton = (PauseButton) mRootView.findViewById(R.id.video_pause);
         mPauseButton.setOnPauseButtonListener(this);
-
+        mSensorModeText = mRootView.findViewById(R.id.sensor_mode_text);
+        mSensorModeView = mRootView.findViewById(R.id.sensor_mode_info);
         mStatsAwbInfo = mRootView.findViewById(R.id.stats_awb_info);
         mStatsAwbText = mRootView.findViewById(R.id.stats_awb_text);
 
@@ -962,6 +963,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mMuteButton = (RotateImageView)mRootView.findViewById(R.id.mute_button);
         mMuteButton.setVisibility(View.VISIBLE);
         setMuteButtonResource(!mModule.isAudioMute());
+
         mMuteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -2076,6 +2078,19 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+
+    public void updateSensorModeText(Integer mode) {
+        if (mSensorModeText == null) {
+            return;
+        }
+        String str = "Sensor mode: " + String.valueOf(mode);
+        if (str.contentEquals(mSensorModeText.getText())){
+            return;
+        }
+        mActivity.runOnUiThread(() -> {
+            mSensorModeText.setText(str);
+        });
+    }
     public void updateAwbInfoText(String[] info) {
         if (info == null || info.length <4)
             return;
@@ -2345,6 +2360,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         initVerticalEvBar();
         setMakeupButtonIcon();
         updateMenus();
+
         if(mModule.isTrackingFocusSettingOn()) {
             mTrackingFocusRenderer.setVisible(false);
             mTrackingFocusRenderer.setVisible(true);
@@ -2384,6 +2400,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mZoomIncrease = true;
         mInvalidAFCount = 0;
         mFaceView.initMode();
+        if(mSettingsManager.showSensorMode()){
+            mSensorModeView.setVisibility(View.VISIBLE);
+        }else{
+            mSensorModeView.setVisibility(View.INVISIBLE);
+        }
+
         if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
             mModeSelectLayout.setVisibility(View.GONE);
         }

@@ -298,6 +298,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AEC_LUX_INDEX = "pref_camera2_aec_lux_index";
     public static final String KEY_AEC_ADRC_GAIN = "pref_camera2_aec_adrc_gain";
     public static final String KEY_AEC_DARK_BOOST_GAIN = "pref_camera2_aec_dark_boost_gain";
+    public static final String KEY_SENSORMODE_VISUALIZER_ENABLE = "pref_camera2_sensor_mode_enable_key";
     public static final String KEY_STATS_VISUALIZER_ENABLE = "pref_camera2_stats_visualizer_enable_key";
     public static final String KEY_STATS_VISUALIZER_VALUE = "pref_camera2_stats_visualizer_key";
     public static final String KEY_SINGLE_PHYSICAL_CAMERA = "pref_camera2_single_physical_camera_key";
@@ -535,7 +536,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean isBLEConnected() {
         return mCaptureModule.isBLEConnected();
     }
-
+    public boolean showSensorMode(){
+        String sensormode_enable = getValue(
+                SettingsManager.KEY_SENSORMODE_VISUALIZER_ENABLE);
+        if(sensormode_enable != null && sensormode_enable.equals("1") ){
+            return true;
+        }
+        return false;
+    }
     public void setDepthMode(int mode) {
         final SharedPreferences pref = mContext.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mContext,

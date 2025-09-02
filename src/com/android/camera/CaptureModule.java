@@ -409,7 +409,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera2.statsVisualizer.StatsHeight",int.class);
     public static CaptureResult.Key<Integer> stats_bitdepth =
             new CaptureResult.Key<>("org.codeaurora.qcamera3.bayer_exposure.bitDepth",int.class);
-
+    public static CaptureResult.Key<Integer> sensormode =
+            new CaptureResult.Key<>("org.quic.camera2.properties_sensor.SensorCurrentMode", Integer.class);
     public static CaptureResult.Key<int[]> bgRStats =
 	new CaptureResult.Key<>("org.codeaurora.qcamera3.bayer_grid.r_stats", int[].class);
     public static CaptureResult.Key<int[]> bgGStats =
@@ -951,7 +952,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private Set<String> mQuadBayerPhysicalIds = new HashSet<>();
     public static boolean MCXMODE = false;
     private boolean switchedCameraId = false;
-
+    private boolean mSensorModeSupported = true;
     private int mLogicalId = -1;
     private int mSingleRearId = -1;
     private SceneModule mCurrentSceneMode;
@@ -1808,6 +1809,20 @@ public class CaptureModule implements CameraModule, PhotoController,
                     !mSettingsManager.isMultiCameraEnabled()) {
 
                 updateStatsParameters(result);
+            }
+
+            if(mSettingsManager.showSensorMode() && mSensorModeSupported ){
+                try {
+                    Integer mode = result.get(sensormode);
+                    if(mode == null){
+                        mSensorModeSupported = false;
+                    }else {
+                        mUI.updateSensorModeText(mode);
+                    }
+                }catch(Exception e){
+                    mSensorModeSupported = false;
+                    Log.d(TAG,EXCEPTION_LOG,"get sensor mode error:"+e);
+                }
             }
             String stats_visualizer = mSettingsManager.getValue(
                     SettingsManager.KEY_STATS_VISUALIZER_VALUE);
@@ -8635,6 +8650,7 @@ private boolean isDevOptionSetting(){
 
     public void onResumeBeforeSuper(boolean resumeFromRestartAll) {
         statsParametersUpdated = 0;//need to reload bg/be width&height
+        mSensorModeSupported = true;
         if(!resumeFromRestartAll){
             mIsCloseCamera = true;
         }

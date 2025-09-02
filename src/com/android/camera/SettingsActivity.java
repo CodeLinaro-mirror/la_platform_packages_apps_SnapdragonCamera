@@ -1581,6 +1581,7 @@ public class SettingsActivity extends PreferenceActivity {
                 add(SettingsManager.KEY_ANTI_BANDING_LEVEL);
                 add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                 add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
+                add(SettingsManager.KEY_SENSORMODE_VISUALIZER_ENABLE);
                 add(SettingsManager.KEY_AUTO_HDR);
                 add(SettingsManager.KEY_MANUAL_EXPOSURE);
                 add(SettingsManager.KEY_SHARPNESS_CONTROL_MODE);
@@ -1748,6 +1749,7 @@ public class SettingsActivity extends PreferenceActivity {
 
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     videoAddList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
+                    videoAddList.add(SettingsManager.KEY_SENSORMODE_VISUALIZER_ENABLE);
                     videoAddList.add(SettingsManager.KEY_INSTANT_ZOOM);
                     videoAddList.add(SettingsManager.KEY_COLOR_SPACE);
                     addDeveloperOptions(developer, videoAddList);
@@ -1790,6 +1792,7 @@ public class SettingsActivity extends PreferenceActivity {
                     cinematicList.add(SettingsManager.KEY_CINEMATIC_DEBUG);
                     cinematicList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     cinematicList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
+                    cinematicList.add(SettingsManager.KEY_SENSORMODE_VISUALIZER_ENABLE);
                     addDeveloperOptions(developer, cinematicList);
                 }
                 break;
@@ -1827,6 +1830,7 @@ public class SettingsActivity extends PreferenceActivity {
                     proModeOnlyList.add(SettingsManager.KEY_SWITCH_CAMERA);
                     proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_ENABLE);
                     proModeOnlyList.add(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
+                    proModeOnlyList.add(SettingsManager.KEY_SENSORMODE_VISUALIZER_ENABLE);
                     proModeOnlyList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     proModeOnlyList.add(SettingsManager.KEY_TONE_MAPPING);
                     proModeOnlyList.add(SettingsManager.KEY_QUAD_BAYER_SENSOR);
