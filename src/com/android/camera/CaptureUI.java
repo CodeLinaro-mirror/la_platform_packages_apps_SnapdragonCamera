@@ -2674,7 +2674,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
             mVideoPhotoSize.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_QUALITY, mVideoQualityIndex));
             enableView(mVideoPhotoSize, SettingsManager.KEY_VIDEO_QUALITY);
-            mVideoPhotoSize.setVisibility(View.VISIBLE);
+            if (!mSettingsManager.isMultiCameraEnabled()) {
+                mVideoPhotoSize.setVisibility(View.VISIBLE);
+            }
             mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -2704,7 +2706,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             });
             enableView(mVideoFps, SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
             mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
-            mVideoFps.setVisibility(View.VISIBLE);
+            if (!mSettingsManager.isMultiCameraEnabled()) {
+                mVideoFps.setVisibility(View.VISIBLE);
+            }
             mVideoFps.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -2725,7 +2729,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mPhotoQualityIndex = mSettingsManager.getPhotoSizeIndex();
             mVideoPhotoSize.setText(mSettingsManager.getDisplayValueForPhotoSize());
             enableView(mVideoPhotoSize, SettingsManager.KEY_PICTURE_SIZE);
-            mVideoPhotoSize.setVisibility(View.VISIBLE);
+            if (!mSettingsManager.isMultiCameraEnabled()) {
+                mVideoPhotoSize.setVisibility(View.VISIBLE);
+            }
             mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -2790,8 +2796,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR) {
-            mVideoPhotoSize.setVisibility(recording ? View.INVISIBLE : View.VISIBLE);
-            mVideoFps.setVisibility(recording ? View.INVISIBLE : View.VISIBLE);
+            mVideoPhotoSize.setVisibility(recording || mSettingsManager.isMultiCameraEnabled() ? View.INVISIBLE : View.VISIBLE);
+            mVideoFps.setVisibility(recording || mSettingsManager.isMultiCameraEnabled()? View.INVISIBLE : View.VISIBLE);
             if(mSettingsManager.getPerfValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE_ENABLED).equals("false")) {
                 enableFpsOption(mVideoFps, false);
             }
