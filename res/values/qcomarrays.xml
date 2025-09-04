@@ -959,6 +959,7 @@
     <string-array name="pref_camera_zoom_entries" translatable="false">
         <item>@string/pref_camera_zoom_entry_keep</item>
         <item>@string/pref_camera_zoom_entry_reset</item>
+        <item>@string/pref_camera_zoom_entry_067x</item>
         <item>@string/pref_camera_zoom_entry_1x</item>
         <item>@string/pref_camera_zoom_entry_2x</item>
         <item>@string/pref_camera_zoom_entry_3x</item>
@@ -975,6 +976,7 @@
     <string-array name="pref_camera_zoom_entryvalues" translatable="false">
         <item>-1</item>
         <item>0</item>
+        <item>0.67</item>
         <item>1</item>
         <item>2</item>
         <item>3</item>

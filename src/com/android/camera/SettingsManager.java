@@ -306,6 +306,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AFD_WARM_START_ = "pref_camera2_afd_warm_start_";
     public static final String KEY_ANT_BANDING_MODE = "pref_camera2_ant_banding_mode";
     public static final String KEY_IS_FICKER_DETECTED = "pref_camera2_is_ficker_detected";
+    public static final String KEY_LENSPOS = "pref_camera2_lenspos";
 
     public static final HashMap<String, Integer> KEY_ISO_INDEX = new HashMap<String, Integer>();
     public static final String KEY_FD_SMILE = "pref_camera2_fd_smile_key";
@@ -383,6 +384,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public static final String KEY_DCG_BIT_TAG = "pref_camera2_dcg_bit_tag_key";
     public static final String KEY_C2PA = "pref_camera2_c2pa_key";
+    public static final String KEY_BITRATE_CQMODE = "pref_camera2_bitrate_cqmode_key";
 
     public static final String KEY_OVERRIDE_RESOURCE = "pref_camera2_override_resource_key";
     private static final String TAG = "SnapCam_SettingsManager";

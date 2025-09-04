@@ -204,6 +204,7 @@ public class Camera2FaceView extends FaceView {
                     mStateSwitchPending = true;
                     mHandler.sendEmptyMessageDelayed(MSG_SWITCH_FACES, SWITCH_DELAY);
                 }
+                mFaces = faces;
                 return;
             }
         }
@@ -213,7 +214,7 @@ public class Camera2FaceView extends FaceView {
         }
         mFaces = faces;
         mExFaces = extendedFaces;
-        if (!mBlocked && (mFaces != null) && (mFaces.length > 0) && mCameraBound != null) {
+        if (!mBlocked && mCameraBound != null) {
             postInvalidate();
         }
     }
@@ -460,9 +461,10 @@ public class Camera2FaceView extends FaceView {
                 drawFaceMark(bsgcTranslateMatrix,mMatrix,pointTranslateMatrix,mPetMarkInts,canvas);
             }
             if(faceExists()) {
-                for (int i = 0; i < mFaces.length; i++) {
-                    if (mFaces[i].getScore() < 50) continue;
-                    Rect faceBound = mFaces[i].getBounds();
+                Face[] currentFaces = mFaces;
+                for (int i = 0; i < currentFaces.length; i++) {
+                    if (currentFaces[i].getScore() < 50) continue;
+                    Rect faceBound = currentFaces[i].getBounds();
                     // This is for special sensor caused, camx can`t fixed, so app fixed.
                     //faceBound.offset(-mOriginalCameraBound.left, -mOriginalCameraBound.top);
                     faceBound.offset(0, 0);
@@ -489,7 +491,7 @@ public class Camera2FaceView extends FaceView {
                     if (mExFaces != null && i < mExFaces.length && mExFaces[i] != null) {
 
                         ExtendedFace exFace = mExFaces[i];
-                        Face face = mFaces[i];
+                        Face face = currentFaces[i];
 
                         float[] point = new float[4];
                         int delta_x = faceBound.width() / 12;
@@ -520,9 +522,9 @@ public class Camera2FaceView extends FaceView {
                                 if ((mDisplayRotation == 0) ||
                                         (mDisplayRotation == 180)) {
                                     circlpoint[0] = face.getLeftEyePosition().x;
-                                    circlpoint[1] = face.getLeftEyePosition().y - delta_y / 2;
+                                    circlpoint[1] = face.getLeftEyePosition().y;
                                 }else{
-                                    circlpoint[0] = face.getLeftEyePosition().x - delta_x / 2;
+                                    circlpoint[0] = face.getLeftEyePosition().x ;
                                     circlpoint[1] = face.getLeftEyePosition().y;
                                 }
                                 bsgcTranslateMatrix.mapPoints(circlpoint);
@@ -554,9 +556,9 @@ public class Camera2FaceView extends FaceView {
                                 if ((mDisplayRotation == 0) ||
                                         (mDisplayRotation == 180)) {
                                     circlpoint[0] = face.getRightEyePosition().x;
-                                    circlpoint[1] = face.getRightEyePosition().y - delta_y / 2;
+                                    circlpoint[1] = face.getRightEyePosition().y;
                                 }else{
-                                    circlpoint[0] = face.getRightEyePosition().x - delta_x / 2;
+                                    circlpoint[0] = face.getRightEyePosition().x ;
                                     circlpoint[1] = face.getRightEyePosition().y;
                                 }
                                 bsgcTranslateMatrix.mapPoints(circlpoint);

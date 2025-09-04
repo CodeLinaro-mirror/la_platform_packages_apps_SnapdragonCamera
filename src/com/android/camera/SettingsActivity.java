@@ -153,7 +153,7 @@ public class SettingsActivity extends PreferenceActivity {
     AlertDialog mManualHDRDialog = null;
     private ArrayList<String> mSearchSettingList;
     private ArrayList<CameraCharacteristics> mCharacteristics;
-    private boolean mFirstInitViull = true;
+    private boolean mViullEnabled = true;
     private boolean mClickChanged = false;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
@@ -306,6 +306,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                         updateVideoHfrFpsPreference();
                         updateVideoEncoderProfile();
+                        updateBitrateCQModePref();
                         break;
                     case SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE:
                         if (!value.equals("off")) {
@@ -1691,6 +1692,9 @@ public class SettingsActivity extends PreferenceActivity {
                     videoAddList.addAll(videoOnlyList);
                     videoAddList.add(SettingsManager.KEY_ANTI_BANDING_LEVEL);
                     videoAddList.add(SettingsManager.KEY_EXPOSURE_METERING_MODE);
+                    if (!PersistUtil.enableMediaRecorder()) {
+                        videoAddList.add(SettingsManager.KEY_BITRATE_CQMODE);
+                    }
                     if (mode == VIDEO) {
                         videoAddList.add(SettingsManager.KEY_FD_SMILE);
                         videoAddList.add(SettingsManager.KEY_FD_GAZE);
@@ -2189,6 +2193,7 @@ public class SettingsActivity extends PreferenceActivity {
 
         updateZslPreference();
         updateVideoEncoderProfile();
+        updateBitrateCQModePref();
         updateSwitchIDInModePreference(true);
         updateTimeLapsePreference();
         updateAudioEncoderPreference();
@@ -2258,6 +2263,18 @@ public class SettingsActivity extends PreferenceActivity {
         pref.setEnabled(isWrite);
         if (!isWrite) {
             updatePreference(SettingsManager.KEY_CAMERA_SAVEPATH);
+        }
+    }
+
+    private void updateBitrateCQModePref() {
+        String encoder  = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER);
+        ListPreference btCQPref = (ListPreference)findPreference(SettingsManager.KEY_BITRATE_CQMODE);
+        if (btCQPref != null) {
+            if (("apv").equals(encoder)) {
+                btCQPref.setEnabled(true);
+            } else {
+                btCQPref.setEnabled(false);
+            }
         }
     }
 
@@ -2652,10 +2669,10 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void disableVIULLOption(ListPreference pref){
-        if(!mFirstInitViull) mSettingsManager.setPreferenceValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE, pref.getValue());
+        mSettingsManager.setPreferenceValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE, pref.getValue());
         pref.setValue("0");
         pref.setEnabled(false);
-        mFirstInitViull = false;
+        mViullEnabled = false;
     }
 
     private boolean is8KVideo(){
@@ -2712,11 +2729,11 @@ public class SettingsActivity extends PreferenceActivity {
         Log.i(TAG,"set viull original value:" + mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE));
         if(!mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE).equals("") &&
                 !mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE).equals("disable") &&
-                !mFirstInitViull) {
+                !mViullEnabled) {
             pref.setValue(mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE));
         }
         pref.setEnabled(true);
-        mFirstInitViull = false;
+        mViullEnabled = true;
     }
 
     public void updateVIULLDefaultValue(){

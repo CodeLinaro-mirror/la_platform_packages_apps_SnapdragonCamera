@@ -1250,6 +1250,7 @@
     <!-- Settings menu, Zoom choices -->
     <string name="pref_camera_zoom_entry_keep">Keep zoom when pause</string>
     <string name="pref_camera_zoom_entry_reset">Reset zoom when pause</string>
+    <string name="pref_camera_zoom_entry_067x">0.67x</string>
     <string name="pref_camera_zoom_entry_1x">1x</string>
     <string name="pref_camera_zoom_entry_2x">2x</string>
     <string name="pref_camera_zoom_entry_3x">3x</string>
@@ -1855,6 +1856,8 @@
     <string name="pref_camera2_torch_hdr_entry_disable" translatable="true">disable</string>
     <string name="pref_camera2_torch_hdr_entry_value_enable" translatable="false">1</string>
     <string name="pref_camera2_torch_hdr_entry_value_disable" translatable="false">0</string>
+
+    <string name="pref_camera2_bitrate_cqmode_title" translatable="true">Bitrate CQ mode</string>
 
     <string name="pref_camera2_c2pa_title" translatable="true">C2PA</string>
 

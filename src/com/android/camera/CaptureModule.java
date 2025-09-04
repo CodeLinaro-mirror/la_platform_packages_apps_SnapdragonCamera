@@ -85,6 +85,7 @@ import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
+import android.media.MediaCodecInfo.EncoderCapabilities;
 import android.media.MediaCodecInfo.VideoCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaMuxer;
@@ -319,6 +320,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private float[] mAecFramecontrolSensitivity = new float[3];
     private int mAntiBandingMode = -1;
     private int mIsFickerDetected = -1;
+    private int mLensPos = -1;
     private float mAecFramecontrolLuxIndex = -1.0f;
     private boolean isflashRequired;
     public static final int MAX_LOGICAL_PHYSICAL_CAMERA_COUNT = 4;
@@ -646,6 +648,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureResult.Key<>("org.quic.camera.afData.isLCRSW", Byte.class);
     private static final CaptureResult.Key<Integer> lenspos =
             new CaptureResult.Key<>("org.quic.camera.afData.lenspos", Integer.class);
+    private static final CaptureRequest.Key<Integer> lenspos_request =
+            new CaptureRequest.Key<>("org.quic.camera.afData.lenspos", Integer.class);
     public static final CaptureResult.Key<byte[]> autofocusroi =
             new CaptureResult.Key<>("org.quic.camera.afData.autofocusroi", byte[].class);
     private static final CaptureResult.Key<int[]> rsStats =
@@ -1003,6 +1007,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mExistAECDarkGainTag = true;
     private boolean mExistAntiBandingModeTag = true;
     private boolean mExistIsFickerDetected = true;
+    private boolean mExistLensPos = true;
     private boolean mExposureCountTag = true;
     private boolean mAECCameraIdTag = true;
 
@@ -1201,6 +1206,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private long mFlushLatency;
     private long mCloseCameraLatency;
 
+    private long mZoomResultLatency;
+    private long mZoomSetLatency;
     private long mSnapshotLatency;
     private long mShutterLag;
     private long mBurstStartTime = 0;
@@ -1308,7 +1315,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private int[] mClickPosition = new int[2];
     private boolean isManualAEC = false;
     private boolean mCaptureTorchTrigger = false;
-
+    private boolean mUpdateFocusState = false;
+    private boolean mNoneFace = false;
     private class SelfieThread extends Thread {
         public void run() {
             try {
@@ -1736,6 +1744,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateAECGainAndExposure(result);
                 updateAntiBandingMode(result);
                 updateIsFickerDetected(result);
+                if(PersistUtil.showQSATZoom()){
+                    long durtime = 0;
+                    if (mZoomResultLatency <=0){
+                        mZoomResultLatency = System.currentTimeMillis();
+                    }else{
+                        durtime = System.currentTimeMillis()- mZoomResultLatency;
+                        mZoomResultLatency = System.currentTimeMillis();
+                    }
+                    Log.i(TAG,"CONTROL_ZOOM_RATIO in CaptureResult is "+result.get(CaptureResult.CONTROL_ZOOM_RATIO)+"," +
+                            "duringtime ="+durtime+",FrameNumber="+mVideoFrameNumber);
+                }
+                updateLensPos(result);
                 String physical_id = mSettingsManager.getSinglePhysicalCamera();
                 Face[] faces;
                 if (physical_id != null &&
@@ -3908,7 +3928,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     Log.i(TAG," set physical id " + physicalCameraId + "for image reader stream");
                                     outputConfiguration.setPhysicalCameraId(physicalCameraId);
                                 }
-                                if(mRawImageReader[id] != null && s == mRawImageReader[id].getSurface()){
+                                if(mRawImageReader[id] != null && s == mRawImageReader[id].getSurface() && mRawImageReader[id].getWidth() < 8000 && mRawImageReader[id].getHeight() < 6000){
                                     applyCroppedRaw(outputConfiguration, getMainCameraId());
                                 }
                                 if(s == mImageReader[id].getSurface() && (mSettingsManager.getSavePictureFormat() == mSettingsManager.JPEG_R_FORMAT
@@ -4305,9 +4325,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!isLogicalId(id)){
                     configuration.setPhysicalCameraId(id);
                     setStreamUseCase(Integer.parseInt(id),SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV,configuration);
-                    applyCroppedRaw(configuration, Integer.parseInt(id));
+                    if(mPhysicalRawReader[i].getWidth() < 8000 && mPhysicalRawReader[i].getHeight() < 6000) {
+                        applyCroppedRaw(configuration, Integer.parseInt(id));
+                    }
                 }else{
-                    applyCroppedRaw(configuration, getMainCameraId());
+                    if(mPhysicalRawReader[i].getWidth() < 8000 && mPhysicalRawReader[i].getHeight() < 6000) {
+                        applyCroppedRaw(configuration, getMainCameraId());
+                    }
                 }
                 if (mSettingsManager.getQuadBayerSensorPrefEnabled()) {
                     configuration.addSensorPixelModeUsed(
@@ -4327,9 +4351,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!isLogicalId(id)) {
                     configuration.setPhysicalCameraId(id);
                     setStreamUseCase(Integer.parseInt(id), SCALER_AVAILABLE_STREAM_USE_CASES_FULL_FOV, configuration);
-                    applyCroppedRaw(configuration, Integer.parseInt(id));
+                    if(mPhysicalRawReader[i].getWidth() < 8000 && mPhysicalRawReader[i].getHeight() < 6000) {
+                        applyCroppedRaw(configuration, Integer.parseInt(id));
+                    }
                 }else {
-                    applyCroppedRaw(configuration, getMainCameraId());
+                    if(mPhysicalRawReader[i].getWidth() < 8000 && mPhysicalRawReader[i].getHeight() < 6000) {
+                        applyCroppedRaw(configuration, getMainCameraId());
+                    }
                 }
 
                 outputConfigurations.add(configuration);
@@ -4479,8 +4507,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.v(TAG, " video preview OutputConfiguration set SENSOR_PIXEL_MODE_MAXIMUM_RESOLUTION");
             }
             mIsPreviewingVideo = true;
-            float fps = mSettingsManager.getFps(mVideoSnapshotSize);
             if(mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT || mSettingsManager.getSavePictureFormat() == SettingsManager.HEIC_TENBIT_FORMAT) {
+                float fps = mSettingsManager.getFps(mVideoSnapshotSize);
                 mHeicLiveSnapshotLimit = (int)fps *2;
                 Log.d(TAG,"mHeicLiveSnapshotLimit:" + mHeicLiveSnapshotLimit);
             }
@@ -4583,17 +4611,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                 List requestList =getHighSpeedList(session,mVideoRecordRequestBuilder);
                 session.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
             } else {
-                if (!PersistUtil.enableMediaRecorder() && mIsRecordingVideo) {
-                    //Add video buffer for media codec recording to avoid only preview buffer
-                    //will cause hang in EIS. 
-                    mPreviewRequestBuilder[id].addTarget(mVideoRecordingSurface);
-                    mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
-                            .build(), mCaptureCallback, mCameraHandler);
-                    mPreviewRequestBuilder[id].removeTarget(mVideoRecordingSurface);
-                } else {
+
                     mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
                         .build(), mCaptureCallback, mCameraHandler);
-                }
+
             }
         } catch (CameraAccessException | IllegalStateException e) {
             Log.w(TAG,e);
@@ -6274,7 +6295,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             // send snapshot stream together with preview and video stream for snapshot request
             // stream is the surface for the app
             List<Surface> surfaces = new ArrayList<>();
-            if(!is8KInMulti && (PersistUtil.enableMediaRecorder() || !mRecordingPausing)) {
+            if(!is8KInMulti && (PersistUtil.enableMediaRecorder())) {
                 addPreviewSurface(captureBuilder, surfaces, id);
             }
             if(mSettingsManager.getPhysicalCameraId() != null || mSettingsManager.getPhysicalFeatureEnableId(
@@ -6330,6 +6351,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                     captureBuilder.addTarget(mFrameProcessor.getInputSurfaces().get(0));
                 } else {
                     captureBuilder.addTarget(surface);
+                }
+                if(mIsRecordingVideo){
+                    captureBuilder.addTarget(mVideoRecordingSurface);
                 }
             }
             mSnapshotLatency = System.currentTimeMillis();
@@ -7821,6 +7845,7 @@ private boolean isDevOptionSetting(){
             return;
         }
         Log.i(TAG, "lockExposure: " + id);
+
         try {
             applySettingsForLockExposure(mPreviewRequestBuilder[id], id);
             mState[id] = STATE_WAITING_AE_LOCK;
@@ -7836,8 +7861,10 @@ private boolean isDevOptionSetting(){
                 mCaptureSession[id].setRepeatingBurst(slowMoRequests, mCaptureCallback,
                         mCameraHandler);
             } else {
-                mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id].build(),
-                        mCaptureCallback, mCameraHandler);
+
+                    mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id].build(),
+                            mCaptureCallback, mCameraHandler);
+
             }
         } catch (CameraAccessException | IllegalStateException e) {
            Log.e(TAG,e);
@@ -8306,6 +8333,7 @@ private boolean isDevOptionSetting(){
             applyExposureMeteringModes(builder);
             applyHistogram(builder);
             applyAWBCCTAndAgain(builder);
+            applyLensPos(builder);
             applyBGStats(builder);
             applyBEStats(builder);
             applyWbColorTemperature(builder);
@@ -8536,7 +8564,7 @@ private boolean isDevOptionSetting(){
             }
             mIsCloseCamera = true;
         }
-        writeXMLForWarmAwb();
+        writeXMLForWarmStart();
         if (mLocationManager != null) mLocationManager.recordLocation(false);
         if (isClearSightOn()) {
             ClearSightImageProcessor.getInstance().close();
@@ -10355,8 +10383,13 @@ private boolean isDevOptionSetting(){
                 Log.d(FD_TAG,FD_LOG,"extendedFaces len="+extendedFaces.length+" faces.len="
                         +faces.length);
             }
-
             mUI.onFaceDetection(faces, extendedFaces);
+            if(faces.length >0 && mNoneFace){
+                mUpdateFocusState = true;
+                mNoneFace = false;
+            }else if(faces.length == 0){
+                mNoneFace = true;
+            }
         }
     }
 
@@ -10901,7 +10934,7 @@ private boolean isDevOptionSetting(){
 
     private void applyZoomAndUpdate() {
         long current = System.currentTimeMillis();
-        if(current - mZoomTime > 24 && mZoomHandler != null){
+        if(current - mZoomTime > PersistUtil.ZOOM_INTERVAL && mZoomHandler != null){
             mZoomHandler.sendEmptyMessage(ZoomHandler.MSG_UPDATE_ZOOM_INSTANT);
             mZoomTime = current;
         }
@@ -11768,10 +11801,7 @@ private boolean isDevOptionSetting(){
                     cleanupEmptyFile();
                     setupMediaRecorder(getMainCameraId());
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
-                    if(mHighSpeedCapture && !isVariableFPSEnabled() && mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS) {
-                        mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                                mHighSpeedFPSRange);
-                    }
+
                     if (mSettingsManager.isMaxConfigureSize(cameraId, mVideoSize)) {
                         // SENSOR_PIXEL_MODE_DEFAULT
                         mVideoRecordRequestBuilder.set(CaptureRequest.SENSOR_PIXEL_MODE,
@@ -11780,6 +11810,13 @@ private boolean isDevOptionSetting(){
                     }
                 } else {
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
+                }
+                if(mHighSpeedCapture && !isVariableFPSEnabled() && mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS) {
+                    mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                            mHighSpeedFPSRange);
+                }
+                if(!PersistUtil.enableMediaRecorder() && CameraMode.VIDEO == getCurrenCameraMode()) {
+                    mPreviewRequestBuilder[cameraId].addTarget(mVideoRecordingSurface);
                 }
             } else {
                 updateRecordState(true);
@@ -12083,6 +12120,12 @@ private boolean isDevOptionSetting(){
         return ((int)bitrate > 2000) ? 2000 *1000 *1000 : (int)bitrate *1000 *1000;
     }
 
+    private void setBitrateCQMode() {
+        Log.i(TAG, "set bitrate to cq mode for apv");
+        mVideoFormat.setInteger(MediaFormat.KEY_BITRATE_MODE, EncoderCapabilities.BITRATE_MODE_CQ);
+        mVideoFormat.setInteger(MediaFormat.KEY_QUALITY, 90);
+    }
+
     private void updateProgressBar(boolean show) {
         mActivity.runOnUiThread(new Runnable() {
             @Override
@@ -12224,6 +12267,7 @@ private boolean isDevOptionSetting(){
             applyBEStats(builder);
             applyPdnetToggle(builder);
             applyAWBCCTAndAgain(builder);
+            applyLensPos(builder);
             applyAIBlurConfigs(builder);
             applyExposure(builder);
             applyInStantZoom(builder);
@@ -12550,7 +12594,6 @@ private boolean isDevOptionSetting(){
                 mAudioEncoder.setParameters(params);
             }
             mVideoEncoder.setParameters(params);
-            mPreviewRequestBuilder[getMainCameraId()] = mVideoPreviewRequestBuilder;
         }
         mRecordingPausing = true;
         mRecordingPauseTime = SystemClock.uptimeMillis();
@@ -12593,7 +12636,6 @@ private boolean isDevOptionSetting(){
                 mAudioEncoder.setParameters(params);
             }
             mVideoEncoder.setParameters(params);
-            mPreviewRequestBuilder[getMainCameraId()] = mVideoRecordRequestBuilder;
         }
         mRecordingPausing = false;
         mRecordingStartTime = SystemClock.uptimeMillis();
@@ -12925,7 +12967,10 @@ private boolean isDevOptionSetting(){
                 mVideoRecordRequestBuilder.removeTarget(mPhysicalMediaSurfaces[i]);
             }
         }
-            mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        mVideoRecordRequestBuilder.removeTarget(mVideoRecordingSurface);
+        if(!PersistUtil.enableMediaRecorder() && CameraMode.VIDEO == getCurrenCameraMode()) {
+            mPreviewRequestBuilder[cameraId].removeTarget(mVideoRecordingSurface);
+        }
         if(mHighSpeedCapture && !isVariableFPSEnabled() && mHighSpeedCaptureRate > NORMAL_SESSION_MAX_FPS) {
             mVideoRecordRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                     mHighSpeedPreviewFPSRange);
@@ -13246,9 +13291,15 @@ private boolean isDevOptionSetting(){
             mMediaRecorder.setVideoEncodingBitRate(bitRate);
         } else {
             if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")) {
-                bitRate = calculateBitRate(width, height);
+                if (mSettingsManager.getValue(SettingsManager.KEY_BITRATE_CQMODE).equals("on")) {
+                    setBitrateCQMode();
+                } else {
+                    bitRate = calculateBitRate(width, height);
+                    mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
+                }
+            } else {
+                mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
             }
-            mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
         }
     }
 
@@ -13698,8 +13749,13 @@ private boolean isDevOptionSetting(){
             } else if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")) {
                 scaledBitrate = calculateBitRate(mProfile.videoFrameWidth, mProfile.videoFrameHeight);
             }
-            Log.i(TAG, "Scaled video bitrate : " + scaledBitrate);
-            mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, scaledBitrate);
+            if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")
+                    && mSettingsManager.getValue(SettingsManager.KEY_BITRATE_CQMODE).equals("on")) {
+                setBitrateCQMode();
+            } else {
+                Log.i(TAG, "Scaled video bitrate : " + scaledBitrate);
+                mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, scaledBitrate);
+            }            
         }
         if (mCaptureTimeLapse) {
             mVideoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL - 1);
@@ -13822,8 +13878,7 @@ private boolean isDevOptionSetting(){
                     bufferInfo.size = 0;
                 }
 
-                if (mIsRecordingVideo && !mRecordingPausing && mMuxerStart
-                        && bufferInfo.size != 0) {
+                if (mIsRecordingVideo && mMuxerStart && bufferInfo.size != 0) {
                     /**
                      * It's usually necessary to adjust the ByteBuffer values to
                      * match BufferInfo.
@@ -13839,8 +13894,10 @@ private boolean isDevOptionSetting(){
                                 bufferInfo.presentationTimeUs -= (mRecordingPausingTime * 1000L
                                         * 1000L / (long) mTimeBetweenTimeLapseFrameCaptureMs  / 30L);
                             } else {
-                                bufferInfo.presentationTimeUs -= mRecordingPausingTime*1000;
-                            }
+                                if ((PersistUtil.lookaheadEnabled() && bufferInfo.presentationTimeUs > mRecordingPauseTime * 1000) ||
+                                        !PersistUtil.lookaheadEnabled()) {
+                                    bufferInfo.presentationTimeUs -= mRecordingPausingTime*1000;
+                                }                            }
                         }
                     }
                     frameNumber++;
@@ -14844,7 +14901,6 @@ private boolean isDevOptionSetting(){
                 cropRegionForZoom(id, false);
             }
             Log.i(TAG,"applyzoomratio="+zoomValue);
-            mZoomValue = zoomValue;
             request.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomValue);
         } catch(IllegalArgumentException e) {
             Log.w(TAG, EXCEPTION_LOG," there is no vendorTag CONTROL_ZOOM_RATIO");
@@ -15323,8 +15379,7 @@ private boolean isDevOptionSetting(){
         try {
             Log.d(TAG,"set cropped raw for raw steam:" + cameraId);
             long useCaseId = CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_CROPPED_RAW;
-            boolean isQcfa = mPictureSize.getWidth() >= 8000 || mPictureSize.getHeight() >= 6000;
-            if(mSettingsManager.isAvailableUseCase(cameraId, useCaseId) && !isQcfa){
+            if(mSettingsManager.isAvailableUseCase(cameraId, useCaseId)){
                 configuration.setStreamUseCase(useCaseId);
             }
         } catch (IllegalArgumentException | NoSuchFieldError e) {
@@ -15599,7 +15654,8 @@ private boolean isDevOptionSetting(){
                 ||mPaused) {
             return;
         }
-        Log.d(TAG,"applyZoomAndUpdate, mRecordingPausing:" + mRecordingPausing+",mState[id]="+mState[id]);
+        Log.d(TAG,"applyZoomAndUpdate, mRecordingPausing:" + mRecordingPausing+",mState[id]="+mState[id]
+                +",instant="+instant+",mzoomvalue="+mZoomValue);
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         boolean isUseVideoPreview = true;
         if (mCurrentSceneMode.mode == CameraMode.HFR ) {
@@ -15643,9 +15699,8 @@ private boolean isDevOptionSetting(){
             } else {
                 CameraCaptureSession session = mCaptureSession[id];
                 if (instant){
-                    session.stopRepeating();
+                   session.stopRepeating();
                 }
-
                 synchronized (mPerformanceDebugData) {
                     mZoomTimeMap.put(System.currentTimeMillis(), mZoomValue);
                 }
@@ -15684,6 +15739,17 @@ private boolean isDevOptionSetting(){
                         captureRequest.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                                 CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL);
                         mSetAePrecaptureTriggerIdel ++;
+                    }
+                    if(PersistUtil.showQSATZoom()) {
+                        long durtime = 0;
+                        if (mZoomSetLatency <= 0) {
+                            mZoomSetLatency = System.currentTimeMillis();
+                        }else{
+                            durtime = System.currentTimeMillis() - mZoomSetLatency;
+                            mZoomSetLatency = System.currentTimeMillis();
+                        }
+                        Log.i(TAG,"setRequest-applyZoomRatio ="+captureRequest.get(CaptureRequest.CONTROL_ZOOM_RATIO)+",durtime="+durtime+
+                              ",instant="+instant);
                     }
                     if (instant) {
                         session.capture(captureRequest
@@ -15984,6 +16050,17 @@ private boolean isDevOptionSetting(){
         return result;
     }
 
+    private void applyLensPos(CaptureRequest.Builder request) {
+        final SharedPreferences pref = mActivity.getSharedPreferences(
+                ComboPreferences.getLocalSharedPreferencesName(mActivity,
+                String.valueOf(CURRENT_ID)), Context.MODE_PRIVATE);
+        int lp = pref.getInt(SettingsManager.KEY_LENSPOS, -1);
+        Log.i(TAG, "applyLenspos get saved value is " + lp);
+        if (lp != -1) {
+            request.set(lenspos_request, lp);
+        }
+    }
+
     private boolean applyAWBCCTAndAgain(CaptureRequest.Builder request) {
         boolean result = false;
         final SharedPreferences pref = mActivity.getSharedPreferences(
@@ -16086,7 +16163,7 @@ private boolean isDevOptionSetting(){
         return result;
     }
 
-    private boolean updateAWBCCTAndgains(CaptureResult captureResult) {
+    private void updateAWBCCTAndgains(CaptureResult captureResult) {
         if (captureResult != null) {
             try {
                 if (mExistAWBVendorTag) {
@@ -16138,10 +16215,9 @@ private boolean isDevOptionSetting(){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
-        return mExistAWBVendorTag && mExistAECWarmTag && mExistAECDarkGainTag;
     }
 
-    private boolean updateAECGainAndExposure(CaptureResult captureResult) {
+    private void updateAECGainAndExposure(CaptureResult captureResult) {
         boolean result = false;
         if (captureResult != null) {
             try {
@@ -16157,10 +16233,9 @@ private boolean isDevOptionSetting(){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
-        return result;
     }
 
-    private boolean updateAntiBandingMode(CaptureResult captureResult) {
+    private void updateAntiBandingMode(CaptureResult captureResult) {
         if (captureResult != null) {
             try {
                 if (mExistAntiBandingModeTag) {
@@ -16171,10 +16246,9 @@ private boolean isDevOptionSetting(){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
-        return mExistAntiBandingModeTag;
     }
 
-    private boolean updateIsFickerDetected(CaptureResult captureResult) {
+    private void updateIsFickerDetected(CaptureResult captureResult) {
         if (captureResult != null) {
             try {
                 if (mExistIsFickerDetected) {
@@ -16185,10 +16259,23 @@ private boolean isDevOptionSetting(){
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
         }
-        return mExistIsFickerDetected;
     }
 
-    public void writeXMLForWarmAwb() {
+    private void updateLensPos(CaptureResult captureResult) {
+        if (captureResult != null) {
+            try {
+                if (mExistLensPos) {
+                    mLensPos = captureResult.get(lenspos);
+                    Log.d(TAG, "get lenspos is " + mLensPos);
+                }
+            } catch (IllegalArgumentException|NullPointerException e) {
+                mExistLensPos = false;
+                Log.w(TAG,EXCEPTION_LOG, "get lenspos failed: " + e.toString());
+            }
+        }
+    }
+
+    private void writeXMLForWarmStart() {
         final SharedPreferences pref = mActivity.getSharedPreferences(
                 ComboPreferences.getLocalSharedPreferencesName(mActivity,
                         String.valueOf(CURRENT_ID)), Context.MODE_PRIVATE);
@@ -16234,6 +16321,10 @@ private boolean isDevOptionSetting(){
             if (mIsFickerDetected != -1) {
                 editor.putInt(SettingsManager.KEY_IS_FICKER_DETECTED, mIsFickerDetected);
             }
+        }
+        if (mExistLensPos) {
+            Log.d(TAG, "saving lenspos " + mLensPos);
+            editor.putInt(SettingsManager.KEY_LENSPOS, mLensPos);
         }
         editor.apply();
     }
@@ -16873,9 +16964,16 @@ private boolean isDevOptionSetting(){
                 @Override
                 public void run() {
                     mFocusStateListener.onFocusStatusUpdate(afState);
+
                 }
             });
+        }else{
+            if(mUpdateFocusState) {
+                mUI.updateFaceColor(afState);
+                mUpdateFocusState = false;
+            }
         }
+
         mLastResultAFState = resultAFState;
         mLastIsDepthFocus = mIsDepthFocus;
 
@@ -17681,7 +17779,8 @@ private boolean isDevOptionSetting(){
     }
 
     private void deleteInvalidUri() {
-        for (Uri uri : mUrisInvalid) {
+        List<Uri> copy = new ArrayList<>(mUrisInvalid);
+        for (Uri uri : copy) {
             if (uri != null) {
                 try {
                     Log.d(TAG, "deleteInvalidUri " + uri);
