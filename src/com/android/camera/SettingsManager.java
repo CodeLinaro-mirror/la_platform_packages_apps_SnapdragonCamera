@@ -1660,6 +1660,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public String getValue(String key) {
+        if(mPreferenceGroup == null){
+            return null;
+        }
         ListPreference pref = mPreferenceGroup.findPreference(key);
         if (mValuesMap == null || mValuesMap.size() == 0)  {
             if(pref != null){
