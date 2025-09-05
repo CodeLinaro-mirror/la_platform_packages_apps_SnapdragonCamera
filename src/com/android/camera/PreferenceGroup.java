@@ -27,6 +27,7 @@ import android.util.AttributeSet;
 import com.android.camera.util.Log;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A collection of <code>CameraPreference</code>s. It may contain other
@@ -72,8 +73,9 @@ public class PreferenceGroup extends CameraPreference {
         // Find a leaf preference with the given key. Currently, the base
         // type of all "leaf" preference is "ListPreference". If we add some
         // other types later, we need to change the code.
-        for (int i = 0; i < list.size(); i++) {
-            CameraPreference pref = list.get(i);
+        List<CameraPreference> copy = new ArrayList<>(list);
+        for (int i = 0; i < copy.size(); i++) {
+            CameraPreference pref = copy.get(i);
             if (pref != null && pref instanceof ListPreference) {
                 ListPreference listPref = (ListPreference) pref;
                 if(listPref.getKey().equals(key)) return listPref;
