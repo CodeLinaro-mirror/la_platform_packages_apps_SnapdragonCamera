@@ -12058,15 +12058,13 @@ private boolean isDevOptionSetting(){
 
     private void releasePhysicalRecorder() throws RuntimeException{
         if (TRACE_DEBUG) Trace.beginSection("SnapCamera,releaseMediaRecorder");
-        if (mSettingsManager.getPhysicalFeatureEnableId
-                (SettingsManager.KEY_PHYSICAL_CAMCORDER) != null) {
-            Log.d(TAG,"releasePhysicalRecorder");
-            for (MediaRecorder recorder:mPhysicalMediaRecorders){
-                if (recorder != null){
-                    recorder.reset();
-                    recorder.release();
-                    recorder = null;
-                }
+        //release physical recorder at child thread, but now setting manager is changed.
+        for (MediaRecorder recorder:mPhysicalMediaRecorders){
+            Log.i(TAG,"releasePhysicalRecorder, recorder:" + recorder);
+            if (recorder != null){
+                recorder.reset();
+                recorder.release();
+                recorder = null;
             }
         }
         if (TRACE_DEBUG) Trace.endSection();
