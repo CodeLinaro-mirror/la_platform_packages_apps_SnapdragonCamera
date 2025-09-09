@@ -2725,6 +2725,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 enableFpsOption(mVideoFps, false);
             }
         }else if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEFAULT ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE){
             mPhotoQualityIndex = mSettingsManager.getPhotoSizeIndex();
             mVideoPhotoSize.setText(mSettingsManager.getDisplayValueForPhotoSize());
