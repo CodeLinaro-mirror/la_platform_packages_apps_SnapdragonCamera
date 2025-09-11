@@ -6119,8 +6119,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void captureStillPictureForCommon(CaptureRequest.Builder captureBuilder, int id) throws CameraAccessException{
         Log.i(TAG,"captureStillPictureForCommon, captureBuilder:" + captureBuilder.toString());
         checkAndPlayShutterSound(id);
+        mCaptureStartTime = System.currentTimeMillis();
+        String result = new SimpleDateFormat(
+                mActivity.getResources().getString(R.string.image_file_name_format)).format(new Date(mCaptureStartTime));
+        PersistUtil.set("persist.vendor.camera.debugDataSnapshotTimeStamp", result);
         if (isMpoOn()) {
-            mCaptureStartTime = System.currentTimeMillis();
             mMpoSaveHandler.obtainMessage(MpoSaveHandler.MSG_CONFIGURE,
                     Long.valueOf(mCaptureStartTime)).sendToTarget();
         }
@@ -6288,7 +6291,10 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             CaptureRequest.Builder captureBuilder = getRequestBuilder(
                     CameraDevice.TEMPLATE_VIDEO_SNAPSHOT,id,mSettingsManager.getPhysicalCameraId());
-
+            mCaptureStartTime = System.currentTimeMillis();
+            String result = new SimpleDateFormat(
+                    mActivity.getResources().getString(R.string.image_file_name_format)).format(new Date(mCaptureStartTime));
+            PersistUtil.set("persist.vendor.camera.debugDataSnapshotTimeStamp", result);
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, CameraUtil.getJpegRotation(id, mOrientation));
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_SIZE, mVideoSnapshotThumbSize);
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_QUALITY, (byte)80);
@@ -6649,7 +6655,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     mMpoSaveHandler.obtainMessage(
                                             MpoSaveHandler.MSG_NEW_IMG, mCamId, 0, image).sendToTarget();
                                 } else {
-                                    mCaptureStartTime = System.currentTimeMillis();
+                                    if(mLongshotActive){
+                                        mCaptureStartTime = System.currentTimeMillis();
+                                    }
                                     mNamedImages.nameNewImage(mCaptureStartTime);
                                     NamedEntity name = mNamedImages.getNextNameEntity();
                                     String title = (name == null) ? null : name.title;
@@ -7444,7 +7452,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                             updatePerformanceDebugValue(7, Long.toString(mShutterLag));
                         }
                         Image image = reader.acquireNextImage();
-                        mCaptureStartTime = System.currentTimeMillis();
                         mNamedImages.nameNewImage(mCaptureStartTime);
                         NamedEntity name = mNamedImages.getNextNameEntity();
                         String title = (name == null) ? null : name.title;
@@ -13156,6 +13163,7 @@ private boolean isDevOptionSetting(){
     private String generateVideoFilename(int outputFileFormat) {
         long dateTaken = System.currentTimeMillis();
         String title = createName(dateTaken);
+        PersistUtil.set("persist.vendor.camera.debugDataVideoTimeStamp", title);
         String filename = title + CameraUtil.convertOutputFormatToFileExt(outputFileFormat);
         String mime = CameraUtil.convertOutputFormatToMimeType(outputFileFormat);
 
