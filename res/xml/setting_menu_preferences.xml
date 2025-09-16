@@ -505,6 +505,7 @@
             android:defaultValue="@string/pref_camera_zoom_default"
             android:title="@string/pref_camera_zoom_title"
             android:summary="%s"
+            android:layout="@layout/preference"
             android:entries="@array/pref_camera_zoom_entries"
             android:entryValues="@array/pref_camera_zoom_entryvalues" />
 
