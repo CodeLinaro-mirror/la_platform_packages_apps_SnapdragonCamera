@@ -2560,31 +2560,34 @@ public class CameraActivity extends Activity
     }
 
     protected void updateStorageHint(long storageSpace) {
-        String message = null;
-        if (storageSpace == Storage.UNAVAILABLE) {
-            message = getString(R.string.no_storage);
-        } else if (storageSpace == Storage.PREPARING) {
-            message = getString(R.string.preparing_sd);
-        } else if (storageSpace == Storage.UNKNOWN_SIZE) {
-            message = getString(R.string.access_sd_fail);
-        } else if (storageSpace <= Storage.LOW_STORAGE_THRESHOLD_BYTES) {
-            message = getString(R.string.spaceIsLow_content);
-        }
-
-        if (isFinishing()) {
-            return;
-        }
-        if (message != null) {
-            if (mStorageHint == null) {
-                mStorageHint = OnScreenHint.makeText(this, message);
-            } else {
-                mStorageHint.setText(message);
+        this.runOnUiThread(new Runnable() {
+            public void run() {
+                String message = null;
+                if (storageSpace == Storage.UNAVAILABLE) {
+                    message = getString(R.string.no_storage);
+                } else if (storageSpace == Storage.PREPARING) {
+                    message = getString(R.string.preparing_sd);
+                } else if (storageSpace == Storage.UNKNOWN_SIZE) {
+                    message = getString(R.string.access_sd_fail);
+                } else if (storageSpace <= Storage.LOW_STORAGE_THRESHOLD_BYTES) {
+                    message = getString(R.string.spaceIsLow_content);
+                }
+                if (isFinishing()) {
+                    return;
+                }
+                if (message != null) {
+                    if (mStorageHint == null) {
+                        mStorageHint = OnScreenHint.makeText(CameraActivity.this, message);
+                    } else {
+                        mStorageHint.setText(message);
+                    }
+                    mStorageHint.show();
+                } else if (mStorageHint != null) {
+                    mStorageHint.cancel();
+                    mStorageHint = null;
+                }
             }
-            mStorageHint.show();
-        } else if (mStorageHint != null) {
-            mStorageHint.cancel();
-            mStorageHint = null;
-        }
+        });
     }
 
     protected void setResultEx(int resultCode) {

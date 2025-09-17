@@ -203,6 +203,7 @@ import qti.video.QMediaCodecCapabilities;
 import android.hardware.camera2.CameraDevice.CameraDeviceSetup;
 import android.os.Build;
 import java.util.Collections;
+import android.media.Image.Plane;
 
 public class CaptureModule implements CameraModule, PhotoController,
         MediaSaveService.Listener, ClearSightImageProcessor.Callback,
@@ -1010,6 +1011,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean mExistLensPos = true;
     private boolean mExposureCountTag = true;
     private boolean mAECCameraIdTag = true;
+    private int mAECFailedCount = 0;
+    private int mAWBFailedCount = 0;
+    private static final int FAILED_FRAME_COUNT = 3;
 
     private static final long SDCARD_SIZE_LIMIT = 4000 * 1024 * 1024L;
     private static final String sTempCropFilename = "crop-temp";
@@ -4509,7 +4513,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mIsPreviewingVideo = true;
             if(mSettingsManager.getSavePictureFormat() == SettingsManager.HEIF_FORMAT || mSettingsManager.getSavePictureFormat() == SettingsManager.HEIC_TENBIT_FORMAT) {
                 float fps = mSettingsManager.getFps(mVideoSnapshotSize);
-                mHeicLiveSnapshotLimit = (int)fps *2;
+                mHeicLiveSnapshotLimit = Math.round(fps *2);
                 Log.d(TAG,"mHeicLiveSnapshotLimit:" + mHeicLiveSnapshotLimit);
             }
             if (isHighSpeedRateCapture()) {
@@ -10228,8 +10232,7 @@ private boolean isDevOptionSetting(){
                     j++;
                 }
             } catch (Exception e) {
-                Log.e(TAG, " updateUpperBodyDetection byteArray2Int occur exception");
-                e.printStackTrace();
+                Log.e(TAG, " updateUpperBodyDetection byteArray2Int occur exception e="+e);
             }
         }
         Log.d(FD_TAG,FD_LOG, " updateUpperBodyDetection headNums :" + headNums);
@@ -10355,7 +10358,6 @@ private boolean isDevOptionSetting(){
                 }
             } catch (Exception e) {
                 Log.e(TAG, "  byteArray2Int occur exception e="+e);
-                e.printStackTrace();
             }
         }
         try {
@@ -11740,12 +11742,7 @@ private boolean isDevOptionSetting(){
         mStartRecordingTime = System.currentTimeMillis();
         mRecordingPausingTime = 0;
         Log.i(TAG, "triggerVideoRecording " + cameraId);
-
-        mCameraHandler.post(new Runnable() {
-            @Override    public void run() {
-                mActivity.updateStorageSpaceAndHint();
-            }
-        });
+        mActivity.updateStorageSpaceAndHint();
         if (mActivity.getStorageSpaceBytes() <= Storage.LOW_STORAGE_THRESHOLD_BYTES) {
             Log.w(TAG, "Storage issue, ignore the start request");
             updateRecordState(true);
@@ -12995,7 +12992,7 @@ private boolean isDevOptionSetting(){
 
                     } else {
                         Log.i(TAG,"setRepeatingRequest");
-                        mCurrentSession.setRepeatingRequest(mVideoPreviewRequestBuilder.build(),
+                        mCurrentSession.setRepeatingRequest(mPreviewRequestBuilder[getMainCameraId()].build(),
                                 mCaptureCallback, mCameraHandler);
                     }
                 } catch (CameraAccessException | IllegalStateException e) {
@@ -14655,6 +14652,7 @@ private boolean isDevOptionSetting(){
         if (mActivity.getStorageSpaceBytes() <= Storage.LOW_STORAGE_THRESHOLD_BYTES) {
             Log.i(TAG, "Not enough space or storage not ready. remaining="
                     + mActivity.getStorageSpaceBytes());
+            Toast.makeText(mActivity, "Storage space is not enough", Toast.LENGTH_SHORT).show();
             return;
         }
         if (TRACE_DEBUG) Trace.beginSection("onShutterButtonClick");
@@ -16214,6 +16212,16 @@ private boolean isDevOptionSetting(){
                 mExistAECDarkGainTag = false;
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
             }
+            if((!mExistAWBVendorTag || !mExistAECWarmTag || !mExposureCountTag || !mAECCameraIdTag || !mExistAECDarkGainTag) && mAWBFailedCount < FAILED_FRAME_COUNT){
+                if(!mExistAWBVendorTag) mExistAWBVendorTag = true;
+                if(!mExistAECWarmTag) mExistAECWarmTag = true;
+                if(!mAECCameraIdTag) mAECCameraIdTag = true;
+                if(!mExposureCountTag) mExposureCountTag = true;
+                if(!mExistAECDarkGainTag) mExistAECDarkGainTag = true;
+                mAWBFailedCount ++;
+            }else if(mExistAWBVendorTag && mExistAECWarmTag && mExposureCountTag && mAECCameraIdTag && mExistAECDarkGainTag){
+                mAWBFailedCount = 0;
+            }
         }
     }
 
@@ -16231,6 +16239,12 @@ private boolean isDevOptionSetting(){
             } catch (IllegalArgumentException|NullPointerException e) {
                 mExistAECFrameControlTag = false;
                 Log.w(TAG,EXCEPTION_LOG,e.toString());
+            }
+            if(!mExistAECFrameControlTag && mAECFailedCount < FAILED_FRAME_COUNT){
+                mExistAECFrameControlTag = true;
+                mAECFailedCount ++;
+            }else if(mExistAECFrameControlTag){
+                mAECFailedCount = 0;
             }
         }
     }
@@ -17653,12 +17667,26 @@ private boolean isDevOptionSetting(){
 
     private byte[] getJpegData(Image image) {
         Log.v(TAG, "getJpegData image :" + image);
-        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-        Log.v(TAG, "getJpegData buffer :" + buffer);
-        byte[] bytes = new byte[buffer.remaining()];
-        Log.v(TAG, "getJpegData bytes :" + bytes);
-        buffer.get(bytes);
-        return bytes;
+        Plane[] planes;
+        if (image == null) {
+            return null;
+        }
+        try {
+            planes = image.getPlanes();
+            if (planes == null || planes.length == 0) {
+                Log.e(TAG, "Invalid planes array");
+                return null;
+            }
+            ByteBuffer buffer = planes[0].getBuffer();
+            Log.v(TAG, "getJpegData buffer :" + buffer);
+            byte[] bytes = new byte[buffer.remaining()];
+            Log.v(TAG, "getJpegData bytes :" + bytes);
+            buffer.get(bytes);
+            return bytes;
+        } catch (Exception e) {
+            Log.e(TAG, "image.getPlanes exception:", e);
+            return null;
+        }
     }
 
     private void updateSaveStorageState() {

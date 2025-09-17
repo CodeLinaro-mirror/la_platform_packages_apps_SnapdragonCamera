@@ -1671,6 +1671,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
     private void setZoomTextListener(){
+        mZoomLinearLayout.setOnLongClickListener(v ->{
+            showZoomBar(true);
+            return true;
+        });
         mZoomWText.setOnLongClickListener(v ->{
             showZoomBar(true);
             return true;
@@ -1767,6 +1771,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             String zoomstr = mZoomEditText.getText().toString();
             changeZoomValue(mModule.getZoomValue(),zoomstr);
             updateZoomSeekBar(Float.valueOf(zoomstr));
+            setZoomTextSelect(value);
             mZoomEditText.setText("");
         });
     }
@@ -3983,7 +3988,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void updateFaceColor(int focusState){
         if (mFaceView != null && mFaces > 0) {
-          mFaceView.updateFaceColor(focusState);
+            mFaceView.post(() -> mFaceView.updateFaceColor(focusState));
         }
     }
     public void showFocusAssistText() {

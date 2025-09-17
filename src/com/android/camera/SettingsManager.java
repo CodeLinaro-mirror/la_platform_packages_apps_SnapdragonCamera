@@ -1196,14 +1196,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public float getFps(Size pictureSize){
-        float fps = 0f;
+        float fps = 30f;
         if(getSavePictureFormat() == HEIF_FORMAT || getSavePictureFormat() == HEIC_TENBIT_FORMAT) {
-            if (mStallDurationMap.size() > 0) {
+            if (mStallDurationMap.size() > 0 && mStallDurationMap.containsKey(pictureSize)) {
                 Long duration = mStallDurationMap.get(pictureSize);
                 fps = (float) 1000000000 / duration;
             }
         }else{
-            if (mMinDurationMap.size() > 0) {
+            if (mMinDurationMap.size() > 0 && mMinDurationMap.containsKey(pictureSize)) {
                 Long duration = mMinDurationMap.get(pictureSize);
                 fps = (float) 1000000000 / duration;
             }
@@ -2985,7 +2985,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         ListPreference videoEncoderProfilePref =
                 mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER_PROFILE);
         ListPreference videoEncoderPref = mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER);
-        if ( videoEncoderProfilePref != null && videoEncoderPref != null ) {
+        if (videoEncoderProfilePref != null && videoEncoderPref != null ) {
             String videoEncoder = videoEncoderPref.getValue();
             Log.d(TAG, "mvhevcHLG: encoder is " + videoEncoder);
             videoEncoderProfilePref.reloadInitialEntriesAndEntryValues();
@@ -3137,7 +3137,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
-                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))
+                                || (videoEncoderNum ==  MediaRecorder.VideoEncoder.MVHEVC && type.equalsIgnoreCase("video/x-mvhevc"))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.DOLBY_VISION &&
                                 type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION))) {
                             CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
@@ -3337,8 +3337,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H263 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.H264 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.HEVC && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC))
-                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/x-mvhevc"))
-                                || type.equalsIgnoreCase("video/apv")
+                                || (videoEncoderNum == MediaRecorder.VideoEncoder.MVHEVC && type.equalsIgnoreCase("video/x-mvhevc"))
+                                || (videoEncoderNum == 9 && type.equalsIgnoreCase("video/apv"))
                                 || (videoEncoderNum == MediaRecorder.VideoEncoder.DOLBY_VISION
                                 && type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION))) {
                             CodecCapabilities codecCapabilities = info.getCapabilitiesForType(type);
@@ -4500,7 +4500,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                     }
                 }
             }
-            if (!PersistUtil.enableMediaRecorder() && !PersistUtil.lookaheadEnabled()) {
+            if (!PersistUtil.lookaheadEnabled()) {
                 supported.add("apv");
             }
         }
@@ -4608,7 +4608,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             result[0] = range.getLower();
             result[1] = range.getUpper();
             if(isSHDRLimited() && result[0] <0.9 && (PersistUtil.getModelInfo().contains("8750")
-                    || PersistUtil.getModelInfo().contains("8850"))){
+                    || PersistUtil.getModelInfo().contains("8850")
+                    || PersistUtil.getModelInfo().contains("8845"))){
                 result[0] = 0.9f;
             }
             Log.v(TAG, "RatioZoom min :"+ result[0] + ", zoom max :" + result[1]);

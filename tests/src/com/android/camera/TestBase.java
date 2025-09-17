@@ -1301,21 +1301,18 @@ public class TestBase{
             TextView mZoomWText = (TextView) mActivity.findViewById(R.id.zoom_w);
             TextView mZoomUWText = (TextView) mActivity.findViewById(R.id.zoom_uw);
             TextView mZoomTelText = (TextView) mActivity.findViewById(R.id.zoom_tel);
-            float uwZoom = getZoomFromText(mZoomUWText);
-            float wZoom = getZoomFromText(mZoomWText);
-            float telZoom = getZoomFromText(mZoomTelText);
             if (mode != CaptureModule.CameraMode.RTB) {
-                float selectZoom = wZoom;
+                float selectZoom = getZoomFromText(mZoomWText);;
                 for (int i=0;i<3;i++){
                     if(i ==0){
                         executeShellCommand("input tap " + mZoomTELLoc[0] + " " + mZoomTELLoc[1]);
-                        selectZoom = telZoom;
+                        selectZoom = getZoomFromText(mZoomTelText);
                     }else if(i == 1){
                         executeShellCommand("input tap " + mZoomUWLoc[0] + " " + mZoomUWLoc[1]);
-                        selectZoom = uwZoom;
+                        selectZoom = getZoomFromText(mZoomUWText);
                     }else if(i == 2){
                         executeShellCommand("input tap " + mZoomTextLoc[0] + " " + mZoomTextLoc[1]);
-                        selectZoom = wZoom;;
+                        selectZoom = getZoomFromText(mZoomWText);;;
                     }
 
                     clickShutterButton(mode);
@@ -1433,13 +1430,17 @@ public class TestBase{
             int[] barloc = new  int[2];
             mEVVerticalBar.getLocationInWindow(barloc);
             int maxbar = barloc[1] + evbar_height - 10;
+            int zbar =  barloc[1] +  evbar_height/2 - 10;
             for(int i =0;i <3 ;i++){
-                if(i == 1){
+                if(i == 0){
                     executeShellCommand("input tap "+ barloc[0]   +" "+barloc[1]);
                     ev_value = maxValue;
-                }else if(i == 2){
+                }else if(i == 1){
                     executeShellCommand("input tap "+ barloc[0]  +" "+maxbar);
                     ev_value = minValue;
+                }else if(i == 2){
+                    executeShellCommand("input tap "+ barloc[0]  +" "+zbar);
+                    ev_value = "0";
                 }
                 Thread.sleep(SMALL_WAIT_DURATION);
                 clickShutterButton(mode);
@@ -2826,6 +2827,7 @@ public class TestBase{
             Log.i(TAG," e="+e);
             return null;
         }
+
     }
     private Map<String, String> getCameraIdMapping(){
         String raw = executeShellCommand("dumpsys media.camera").replace("\n", "");

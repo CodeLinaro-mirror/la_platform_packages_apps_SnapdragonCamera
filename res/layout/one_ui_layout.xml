@@ -245,6 +245,8 @@
         android:layout_marginBottom="90dp"
         android:progressDrawable="@drawable/beautify_progressbar_style"
         android:thumb="@drawable/ic_beautify_oval"
+        android:clickable="true"
+        android:focusable="true"
         android:id="@+id/deepportrait_seekbar"/>
     <LinearLayout
         android:id="@+id/zoom_text_layout"

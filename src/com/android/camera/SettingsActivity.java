@@ -387,6 +387,9 @@ public class SettingsActivity extends PreferenceActivity {
                         mSettingsManager.updatePictureAndVideoSize();
                         updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
+                        if(PersistUtil.isFuncTestRunning() && "manual".equals(value)){
+                            updateManualHDRSetting();
+                        }
                         break;
                     case SettingsManager.KEY_QUAD_BAYER_SENSOR:
                         mSettingsManager.updatePictureAndVideoSize();

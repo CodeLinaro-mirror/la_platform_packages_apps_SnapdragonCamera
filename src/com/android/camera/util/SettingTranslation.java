@@ -64,8 +64,9 @@ public class SettingTranslation {
         VIDEO_ENCODER_TABLE.put("h265", h265);
         VIDEO_ENCODER_TABLE.put("mpeg-4-sp", MediaRecorder.VideoEncoder.MPEG_4_SP);
         VIDEO_ENCODER_TABLE.put("vp8", MediaRecorder.VideoEncoder.VP8);
-        VIDEO_ENCODER_TABLE.put("mvhevc", 9);
+        VIDEO_ENCODER_TABLE.put("mvhevc", MediaRecorder.VideoEncoder.MVHEVC);
         VIDEO_ENCODER_TABLE.put("dolby", MediaRecorder.VideoEncoder.DOLBY_VISION);
+        VIDEO_ENCODER_TABLE.put("apv", 9);
 
         AUDIO_ENCODER_TABLE.put("aac", MediaRecorder.AudioEncoder.AAC);
         AUDIO_ENCODER_TABLE.put("aac-eld", MediaRecorder.AudioEncoder.AAC_ELD);
@@ -102,9 +103,11 @@ public class SettingTranslation {
                 MediaRecorder.VideoEncoder.HEVC);
         VIDEO_ENCODER_TYPE_TABLE.put(MediaFormat.MIMETYPE_VIDEO_MPEG4,
                 MediaRecorder.VideoEncoder.MPEG_4_SP);
-        VIDEO_ENCODER_TYPE_TABLE.put("video/x-mvhevc", 9);
+        VIDEO_ENCODER_TYPE_TABLE.put("video/x-mvhevc",
+                MediaRecorder.VideoEncoder.MVHEVC);
         VIDEO_ENCODER_TYPE_TABLE.put(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION,
                 MediaRecorder.VideoEncoder.DOLBY_VISION);
+        VIDEO_ENCODER_TYPE_TABLE.put("video/apv", 9);
     }
 
     public static int getVideoEncoder(String key) {
