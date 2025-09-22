@@ -1827,6 +1827,12 @@ public class SettingsActivity extends PreferenceActivity {
                 eisPref.setValue("disable");
                 eisPref.setEnabled(false);
             } else {
+                List<String> entries = new ArrayList<String>(Arrays.asList("disable", "V3",
+                        "V3 and set when pause"));
+                List<String> entryValues = new ArrayList<String>(Arrays.asList("disable", "V3",
+                        "V3SetWhenPause"));
+                eisPref.setEntries(entries.toArray(new CharSequence[entries.size()]));
+                eisPref.setEntryValues(entryValues.toArray(new CharSequence[entryValues.size()]));
                 eisPref.setEnabled(true);
             }
             CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
