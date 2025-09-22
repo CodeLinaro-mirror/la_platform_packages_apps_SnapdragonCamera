@@ -8600,8 +8600,10 @@ private boolean isDevOptionSetting(){
         mPreviewOutputConfiguration = null;
         mOldMode = mCurrentSceneMode.mode;
         mOldCameraId = CURRENT_ID;
-        if (isExitCamera || mIsCloseCamera) {
+        if (isExitCamera) {
             stopBackgroundThread();
+        }
+        if (mIsCloseCamera) {
             closeImageReader();
         }
         mActivity.runOnUiThread(() -> {
