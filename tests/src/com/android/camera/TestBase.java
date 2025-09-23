@@ -2833,6 +2833,16 @@ public class TestBase{
         }
 
     }
+    public static String executeShellCommandInStatic(String cmd) {
+        UiAutomation uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
+        try (FileInputStream output = new FileInputStream(
+                uiAutomation.executeShellCommand(cmd).getFileDescriptor())) {
+            return new String(ByteStreams.toByteArray(output));
+        }catch (IOException e){
+            return null;
+        }
+
+    }
     private Map<String, String> getCameraIdMapping(){
         String raw = executeShellCommand("dumpsys media.camera").replace("\n", "");
         Matcher m = Pattern.compile("device@[\\d.]+/[\\w]+/(\\d+) [v\\d.()]* static.*?Facing: (Front|Back)").matcher(raw);
