@@ -23,5 +23,15 @@
          layout to replace by dimen -->
     <!-- This was 320dp for rectangular disply -->
     <dimen name="zoom_seekbar_width">380dp</dimen>
+    <dimen name="oneui_menu_button_size">44dp</dimen>
+
+    <dimen name="size_72dp">96dp</dimen>
+    <dimen name="size_32dp">42dp</dimen>
+    <dimen name="size_24dp">32dp</dimen>
+    <dimen name="size_12dp">16dp</dimen>
+    <dimen name="size_8dp">11dp</dimen>
+
+    <dimen name="textsize_15sp">20sp</dimen>
+    <dimen name="camera_mode_text_size">21sp</dimen>
 </resources>
 

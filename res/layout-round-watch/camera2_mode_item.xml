@@ -35,16 +35,15 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content">
 
-    <!-- For Circular watch, reduce item width
-         from 80dp to 64dp. These are text, so
-         height need not change -->
+    <!-- original width was 80dp, height changed to
+      wrap_content as text size specified. -->
     <TextView
         android:id="@+id/mode_text"
-        android:layout_width="@dimen/size_64dp"
-        android:layout_height="32dp"
+        android:layout_width="@dimen/size_72dp"
+        android:layout_height="wrap_content"
         android:gravity="center"
         android:layout_gravity="center"
-        android:textSize="16sp"
+        android:textSize="@dimen/camera_mode_text_size"
         android:textColor="@color/mode_text_selector"/>
 
 </FrameLayout>
