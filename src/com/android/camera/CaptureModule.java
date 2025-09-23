@@ -3060,6 +3060,9 @@ public class CaptureModule implements CameraModule, PhotoController,
 
     public boolean isBackCamera() {
         String value = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
+        if(value == null) {
+            value = mSettingsManager.mPreferences.getGlobal().getString(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
+        }
         return (value != null && value.equals("rear"));
     }
 
