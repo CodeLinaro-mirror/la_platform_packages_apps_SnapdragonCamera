@@ -172,12 +172,15 @@ public class ProMode extends View {
     }
 
     private void updateCurve() {
-        mCurveLeft = mIsDisplayRound ? mWidth / 12 : mWidth / 10;
+        // Leave more gap in round watch as curve is not in
+        // center and global gesture conflict can happen
+        mCurveLeft = mIsDisplayRound ? mWidth / 8 : mWidth / 10;
         mCurveRight = mWidth - mCurveLeft;
 
         float cx = (mCurveLeft + mCurveRight) / 2;
-        // for round display, making height as half of curve width
-        mCurveHeight = mIsDisplayRound ? (int) (cx - mCurveLeft) :
+        // for round display, making height as 70% of curve width
+        // as width is reduced
+        mCurveHeight = mIsDisplayRound ? (int) ((mCurveRight - mCurveLeft) * 0.7) :
                                                        mWidth / 7;
         // For cricular display Curve is above the pro mode layout
         mCurveY = (int) ( mIsDisplayRound ? (mHeight * 0.37) :
