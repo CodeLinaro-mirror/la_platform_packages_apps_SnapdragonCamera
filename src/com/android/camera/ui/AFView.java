@@ -146,6 +146,9 @@ public class AFView extends View implements FocusIndicator {
 
     @Override
     public void onDraw(Canvas canvas) {
+        if(mCameraBound == null || mOriginalCameraBound == null){
+            return;
+        }
         int rw, rh;
         rw = mUncroppedWidth;
         rh = mUncroppedHeight;

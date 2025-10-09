@@ -7795,10 +7795,11 @@ private boolean isDevOptionSetting(){
                             if (isAbortCapturesEnable() && mCaptureSession[i] != null) {
                                 mFlushLatency = System.currentTimeMillis();
                                 if (TRACE_DEBUG) Trace.beginSection("SnapCamera,abortCaptures");
+                                Log.i(TAG, "Closing camera call abortCaptures start ");
                                 mCaptureSession[i].abortCaptures();
                                 if (TRACE_DEBUG) Trace.endSection();
                                 mFlushLatency = System.currentTimeMillis() - mFlushLatency;
-                                Log.i(TAG, "abortCaptures end");
+                                Log.i(TAG, "Closing camera call abortCaptures end ");
                                 if (mActivity.getPerformenceTest() ) {
                                     mHasMapTimes.put("abortCaptures", mFlushLatency);
                                 }
@@ -7818,7 +7819,7 @@ private boolean isDevOptionSetting(){
                     }
                     if (TRACE_DEBUG) Trace.beginSection("SnapCamera,camera close");
                     mCameraDevice[i].close();
-                    Log.i(TAG, "Close camera end");
+                    Log.i(TAG, "Close camera end ");
                     if (TRACE_DEBUG) Trace.endSection();
                     mCameraDevice[i] = null;
                     mCameraOpened[i] = false;
@@ -8367,6 +8368,7 @@ private boolean isDevOptionSetting(){
             Log.w(TAG, "background thread has been running");
             return;
         }
+        Log.i(TAG, "startBackgroundThread start");
         mCameraThread = new HandlerThread("CameraBackground");
         mCameraThread.start();
         mImageAvailableThread = new HandlerThread("CameraImageAvailable");
@@ -8382,7 +8384,7 @@ private boolean isDevOptionSetting(){
         mMpoSaveHandler = new MpoSaveHandler(mMpoSaveThread.getLooper());
         mZoomHandler = new ZoomHandler(mCaptureCallbackThread.getLooper());
         mBackgroundThreadFlag = true;
-        Log.d(TAG, "startBackgroundThread");
+        Log.i(TAG, "startBackgroundThread done");
     }
 
     /**
@@ -8393,10 +8395,10 @@ private boolean isDevOptionSetting(){
             Log.w(TAG, "background thread has not been running");
             return;
         }
-        Log.i(TAG, "stopBackgroundThread");
         if (mCameraThread == null) {
             return;
         }
+        Log.i(TAG, "stopBackgroundThread start");
         mCameraThread.quitSafely();
         mImageAvailableThread.quitSafely();
         mCaptureCallbackThread.quitSafely();
@@ -8431,6 +8433,7 @@ private boolean isDevOptionSetting(){
             Log.e(TAG,e.toString());
         }
         mBackgroundThreadFlag = false;
+        Log.i(TAG, "stopBackgroundThread done");
     }
 
     private void openCamera(int id) {
