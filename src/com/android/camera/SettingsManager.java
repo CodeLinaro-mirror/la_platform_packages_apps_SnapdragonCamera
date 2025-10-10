@@ -3081,6 +3081,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                     == CaptureModule.CURRENT_MODE || mCameraId == CaptureModule.FRONT_ID)) {
                                 continue;
                             }
+                            if("apv".equals(str) && (PersistUtil.lookaheadEnabled() ||  PersistUtil.getModelInfo().contains("SM8845"))){
+                                continue;
+                            }
+
                             if (isCurrentVideoResolutionSupportedByEncoder(info)) {
                                 supported.add(str);
                             }
@@ -4457,6 +4461,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)
+                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_APV)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION)
                         || type.equalsIgnoreCase("video/x-mvhevc")) {
                     capabilities = info.getCapabilitiesForType(type).getVideoCapabilities();
@@ -4495,18 +4500,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 !PersistUtil.isMvhevcSupported())){
                             continue;
                         }
-                        Log.d(TAG,BIG_LOG,"type="+type+" str="+str);
+                        if("apv".equals(str) && (PersistUtil.lookaheadEnabled() ||  PersistUtil.getModelInfo().contains("SM8845"))){
+                            continue;
+                        }
                         if (isCurrentVideoResolutionSupportedByEncoder(info)) {
                             supported.add(str);
                         }
                     }
                 }
             }
-            if (!PersistUtil.lookaheadEnabled()) {
-                supported.add("apv");
-            }
         }
-        Log.d(TAG,"supported:"+supported.toString());
+        Log.i(TAG,"supported:"+supported.toString());
         return supported;
     }
 

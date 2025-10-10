@@ -4532,6 +4532,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.w(TAG, "activity may be onPause, no need to pop up error msg.");
             } else {
                 mCaptureSession[cameraId] = null;
+                mCurrentSession = null;
                 quitVideoToPhotoWithError(e.getMessage());
             }
         }
@@ -13091,7 +13092,7 @@ private boolean isDevOptionSetting(){
         }
         try {
             mVideoRecordRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             Log.w(TAG,e.toString());
         }
         try {
