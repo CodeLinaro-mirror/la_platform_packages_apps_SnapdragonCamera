@@ -3386,10 +3386,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 return supported;
             }
             try {
+                if (videoSize.getWidth() == 7680 && videoSize.getHeight() == 4320) {
+                    if (videoCapabilities.isSizeSupported(7680, 4320)) {
+                        Range<Double> frameRates = videoCapabilities.getSupportedFrameRatesFor(7680, 4320);
+                        Log.d(TAG, "8K supported fps is " + frameRates);
+                        if (frameRates.contains((double)60) && mode == CaptureModule.CameraMode.VIDEO) {
+                            supported.add("hfr60");
+                            supported.add("hsr60");
+                        }
+                    }
+                }
                 Range[] range = getSupportedHighSpeedVideoFPSRange(cameraId, videoSize);
                 String rate;
                 for (Range r : range) {
-                    // To support HFR for both preview and recording,
                     // minmal FPS needs to be equal to maximum FPS
                     if ((int) r.getUpper() == (int) r.getLower()) {
                         if (videoCapabilities != null) {
@@ -3401,8 +3410,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 if(mode == CaptureModule.CameraMode.HFR && (int)r.getUpper() < 120){
                                     break;
                                 }
-                                if(mode == CaptureModule.CameraMode.VIDEO &&
-                                        (int)r.getUpper() >= 120){
+                                if(mode == CaptureModule.CameraMode.VIDEO && (int)r.getUpper() >= 120){
                                     break;
                                 }
                                 rate = String.valueOf(r.getUpper());
@@ -3417,7 +3425,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                         + "@fps" + r.getUpper() + " is not supported.");
                             }
                         }
-                    }else{
+                    } else {
                         mAvilablePreviewFPS.add((int) r.getLower());
                         mAvilablePreviewFPS.add((int) r.getUpper());
 
