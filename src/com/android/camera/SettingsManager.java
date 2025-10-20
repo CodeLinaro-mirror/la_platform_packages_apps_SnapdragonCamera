@@ -492,6 +492,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Log.d(TAG, "SettingsManager init" + CaptureModule.CURRENT_ID);
         final int cameraId = getInitialCameraId();
         reloadCharacteristics(cameraId);
+        initSwitchKeyPreferenceValueByCameraId(cameraId);
         setLocalIdAndInitialize(cameraId);
         autoTestBroadcast(cameraId);
     }
@@ -499,6 +500,20 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public void reinit(int cameraId) {
         Log.d(TAG, "SettingsManager reinit " + cameraId);
         setLocalIdAndInitialize(cameraId);
+    }
+
+    public void initSwitchKeyPreferenceValueByCameraId(int cameraId) {
+        if (isFacingFront(cameraId)) {
+            Log.i(TAG, "Camera ID " + cameraId +
+                    " is front-facing. Setting switch key to front");
+            mPreferences.getGlobal().edit().
+                    putString(KEY_FRONT_REAR_SWITCHER_VALUE, "front").apply();
+        } else {
+            Log.i(TAG, "Camera ID " + cameraId +
+                    " is rear-facing. Setting switch key to rear");
+            mPreferences.getGlobal().edit().
+                    putString(KEY_FRONT_REAR_SWITCHER_VALUE, "rear").apply();
+        }
     }
 
     private void autoTestBroadcast(int cameraId) {
@@ -595,6 +610,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     private void setLocalIdAndInitialize(int cameraId) {
         String facing = mPreferences.getGlobal().getString(KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
+        Log.i(TAG, " facing : " + facing);
         mPreferences.setLocalId(mContext, facing, String.valueOf(CaptureModule.CURRENT_MODE));
         mCameraId = cameraId;
         CameraSettings.upgradeLocalPreferences(mPreferences.getLocal());
