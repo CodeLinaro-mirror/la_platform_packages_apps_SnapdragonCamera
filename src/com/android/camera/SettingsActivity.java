@@ -2363,7 +2363,7 @@ public class SettingsActivity extends PreferenceActivity {
                 idx = 0;
             }
             String cameraValue = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
-            if (cameraValue != null && cameraValue.equals("rear")) isBack = true;
+            if (cameraValue == null || cameraValue.equals("rear")) isBack = true;
             boolean perfEnable = false;
             if((CaptureModule.MCXMODE && isBack && !mSettingsManager.getQuadBayerSensorPrefEnabled()) ||
                     ((mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID ||
