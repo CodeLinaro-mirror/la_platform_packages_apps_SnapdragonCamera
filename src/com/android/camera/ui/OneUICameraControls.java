@@ -401,8 +401,8 @@ public class OneUICameraControls extends RotatableLayout {
                 // scene_mode_switcher icon not seen
                 setLocation(mSettingsButton, true, PANEL_INDEX_2);
                 // put capture photo and pause/resume above shutter
-                setLocationCustomBottom(mPauseButton, 2.6f, 1.0f);
-                setLocationCustomBottom(mShutter, 1.4f, 1.0f);
+                setLocationCustomBottom(mPauseButton, PANEL_INDEX_3, 1.0f);
+                setLocationCustomBottom(mShutter, 1.42f, 1.0f);
                 setLocation(mVideoShutter, false, PANEL_INDEX_2);
             }
             else {

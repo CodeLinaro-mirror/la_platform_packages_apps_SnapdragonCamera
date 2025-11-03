@@ -165,8 +165,8 @@ public class MenuHelp extends RotatableLayout {
                 toIndex(v1, w, h, rotation, 1, 4, -1);
                 toIndex(v2, w, h, rotation, 0, 2, -1);
                 toIndex(v3, w, h, rotation, 0, 1, -1);
-                // move right by increase all x by 20
-                float[] x = {v1.getX()-30, v2.getX()+20, v3.getX()+20};
+                // move right by increase all x by 70
+                float[] x = {v1.getX() - 20, v2.getX()+70, v3.getX()+70};
                 float[] y = {v1.getY()-POINT_MARGIN, v2.getY(),
                                              v3.getY()+POINT_MARGIN};
                 mArrows.addPath(x, y);
