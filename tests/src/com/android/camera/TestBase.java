@@ -639,9 +639,27 @@ public class TestBase{
 
 
     }
-
+private void setMediaRecoder(CaptureModule.CameraMode mode) {
+    try {
+        String value = executeShellCommand("getprop persist.sys.cameraapp.mediarecorder");
+        if (value != null && value.equals("false")) {
+            executeShellCommand("setprop persist.sys.cameraapp.mediarecorder true");
+            mActivityRule.finishActivity();
+            Thread.sleep(OPEN_CAMERA_DURATION);
+            mActivityRule = new ActivityTestRule<>(CameraActivity.class);
+            OpenCamera();
+            String str = getTestMode(mode);
+            int[] loc = mModeIconL.get(str);
+            executeShellCommand("input tap " + loc[0] + " " + loc[1]);
+            Thread.sleep(OPEN_CAMERA_DURATION);
+        }
+    } catch (Exception e) {
+        Log.i(TAG, "setMediaRecoder error e=" + e);
+    }
+}
     public void runVideoCase(String cameraId,CaptureModule.CameraMode mode) throws Exception {
         checkPreview(cameraId, mode);
+        setMediaRecoder(mode);
         if (!testResult) {
             return;
         }
@@ -909,7 +927,8 @@ public class TestBase{
                 updateJson(5,testFail);
             }
         }else {
-            if (mode == CaptureModule.CameraMode.PRO_MODE || mode == CaptureModule.CameraMode.DEFAULT) {
+            if (mode == CaptureModule.CameraMode.PRO_MODE || mode == CaptureModule.CameraMode.DEFAULT
+                || mode == CaptureModule.CameraMode.RTB) {
                 boolean check11 = true;
                 executeShellCommand("input tap " + mVideoPhotoSizeLoc[0] + " " + mVideoPhotoSizeLoc[1]);
                 Thread.sleep(SMALL_WAIT_DURATION);

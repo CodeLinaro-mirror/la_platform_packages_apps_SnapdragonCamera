@@ -3074,11 +3074,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public boolean isBackCamera() {
-        String value = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
-        if(value == null) {
-            value = mSettingsManager.mPreferences.getGlobal().getString(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
-        }
-        return (value != null && value.equals("rear"));
+        String value =mSettingsManager.mPreferences.getGlobal().getString(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
+        return (value == null || value.equals("rear"));
     }
 
     public boolean isBLEConnected() {
@@ -13997,7 +13994,7 @@ private boolean isDevOptionSetting(){
                     }
                 }
                 mVideoEncoder.releaseOutputBuffer(encoderStatus, false);
-                Log.i(TAG + "_video", "releaseOutputBuffer status is :" + encoderStatus);
+                Log.d(TAG + "_video", "releaseOutputBuffer status is :" + encoderStatus);
                 if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                     Log.v(TAG + "_video", "end of video stream reached");
                     mMuxerVideoStop = true;
