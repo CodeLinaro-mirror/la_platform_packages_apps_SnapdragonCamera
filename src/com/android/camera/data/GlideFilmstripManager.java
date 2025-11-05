@@ -73,7 +73,7 @@ public final class GlideFilmstripManager {
     }
 
     public static final Size MEDIASTORE_THUMB_SIZE = new Size(671, 1491);
-    public static final Size TINY_THUMB_SIZE = new Size(2048, 2048);
+    public static final Size TINY_THUMB_SIZE = new Size(500, 500);
 
     // Estimated memory bandwidth for N5 and N6 is about 500MB/s
     // 500MBs * 1000000(Bytes per MB) / 4 (RGBA pixel) / 1000 (milli per S)

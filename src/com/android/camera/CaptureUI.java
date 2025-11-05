@@ -2674,7 +2674,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
             mVideoPhotoSize.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_QUALITY, mVideoQualityIndex));
             enableView(mVideoPhotoSize, SettingsManager.KEY_VIDEO_QUALITY);
-            mVideoPhotoSize.setVisibility(View.VISIBLE);
+            if (!mSettingsManager.isMultiCameraEnabled()) {
+                mVideoPhotoSize.setVisibility(View.VISIBLE);
+            }
             mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -2700,11 +2702,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                         mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
                     }
                     mModule.restartSession(true);
+                    enableFpsOption(mVideoFps, true);
                 }
             });
             enableView(mVideoFps, SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
             mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
-            mVideoFps.setVisibility(View.VISIBLE);
+            if (!mSettingsManager.isMultiCameraEnabled()) {
+                mVideoFps.setVisibility(View.VISIBLE);
+            }
             mVideoFps.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -2717,15 +2722,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                     mModule.restartSession(true);
                 }
             });
-            if(mSettingsManager.getPerfValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE_ENABLED).equals("false")){
-                enableFpsOption(mVideoFps, false);
-            }
+            enableFpsOption(mVideoFps, true);
         }else if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.DEFAULT ||
+                mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.PRO_MODE){
             mPhotoQualityIndex = mSettingsManager.getPhotoSizeIndex();
             mVideoPhotoSize.setText(mSettingsManager.getDisplayValueForPhotoSize());
             enableView(mVideoPhotoSize, SettingsManager.KEY_PICTURE_SIZE);
-            mVideoPhotoSize.setVisibility(View.VISIBLE);
+            if (!mSettingsManager.isMultiCameraEnabled()) {
+                mVideoPhotoSize.setVisibility(View.VISIBLE);
+            }
             mVideoPhotoSize.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -2790,11 +2796,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
         if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO ||
                 mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR) {
-            mVideoPhotoSize.setVisibility(recording ? View.INVISIBLE : View.VISIBLE);
-            mVideoFps.setVisibility(recording ? View.INVISIBLE : View.VISIBLE);
-            if(mSettingsManager.getPerfValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE_ENABLED).equals("false")) {
-                enableFpsOption(mVideoFps, false);
-            }
+            mVideoPhotoSize.setVisibility(recording || mSettingsManager.isMultiCameraEnabled() ? View.INVISIBLE : View.VISIBLE);
+            mVideoFps.setVisibility(recording || mSettingsManager.isMultiCameraEnabled()? View.INVISIBLE : View.VISIBLE);
+            enableFpsOption(mVideoFps, true);
         }
     }
     private boolean showMuteButton(){
@@ -3540,13 +3544,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoButton.setEnabled(enabled);
         }
         enableFpsOption(mVideoPhotoSize, enabled);
-        if(mSettingsManager.getPerfValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE_ENABLED).equals("false")){
-            enabled = false;
-        }
         enableFpsOption(mVideoFps, enabled);
     }
 
     private void enableFpsOption(TextView v, boolean enabled){
+        if(v.getId() == mVideoFps.getId()){
+            enabled = enabled && disableFpsOption();
+        }
         if(v != null) {
             v.setEnabled(enabled);
             v.setClickable(enabled);
@@ -3556,6 +3560,26 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 v.setTextColor(Color.parseColor("#808080"));
             }
         }
+    }
+
+    private boolean disableFpsOption(){
+        CharSequence[] entries = mSettingsManager.getEntries(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        if(entries == null || (entries != null && entries.length <= 1)){
+            return false;
+        }
+
+        if (mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO) {
+            String hdrmode = mSettingsManager.getVideoHdrMode();
+            if (hdrmode.toLowerCase().contains("mfhdr")) {
+                return false;
+            }
+        }
+
+        String lapsvalue = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL);
+        if(lapsvalue != null && !lapsvalue.equals("0")){
+            return false;
+        }
+        return true;
     }
 
     private boolean handleBackKeyOnMenu() {

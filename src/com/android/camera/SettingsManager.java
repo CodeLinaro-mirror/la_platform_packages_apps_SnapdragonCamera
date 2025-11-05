@@ -213,7 +213,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_UPPER_BODY_DETECTION = "pref_camera2_upper_body_detection_key";
     public static final String KEY_PET_DETECTION = "pref_camera2_pet_detection_key";
     public static final String KEY_VIDEO_HIGH_FRAME_RATE = "pref_camera2_hfr_key";
-    public static final String KEY_VIDEO_HIGH_FRAME_RATE_ENABLED = "pref_camera2_hfr_key_enabled";
     public static final String KEY_SELFIE_FLASH = "pref_selfie_flash_key";
     public static final String KEY_SHUTTER_SOUND = "pref_camera2_shutter_sound_key";
     public static final String KEY_TOUCH_TRACK_FOCUS = "pref_camera2_touch_track_focus_key";
@@ -1660,6 +1659,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public String getValue(String key) {
+        if(mPreferenceGroup == null){
+            return null;
+        }
         ListPreference pref = mPreferenceGroup.findPreference(key);
         if (mValuesMap == null || mValuesMap.size() == 0)  {
             if(pref != null){
@@ -3079,6 +3081,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                     == CaptureModule.CURRENT_MODE || mCameraId == CaptureModule.FRONT_ID)) {
                                 continue;
                             }
+                            if("apv".equals(str) && (PersistUtil.lookaheadEnabled() ||  PersistUtil.getModelInfo().contains("SM8845"))){
+                                continue;
+                            }
+
                             if (isCurrentVideoResolutionSupportedByEncoder(info)) {
                                 supported.add(str);
                             }
@@ -4455,6 +4461,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_H263)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_HEVC)
+                        || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_APV)
                         || type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION)
                         || type.equalsIgnoreCase("video/x-mvhevc")) {
                     capabilities = info.getCapabilitiesForType(type).getVideoCapabilities();
@@ -4493,18 +4500,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 !PersistUtil.isMvhevcSupported())){
                             continue;
                         }
-                        Log.d(TAG,BIG_LOG,"type="+type+" str="+str);
+                        if("apv".equals(str) && (PersistUtil.lookaheadEnabled() ||  PersistUtil.getModelInfo().contains("SM8845"))){
+                            continue;
+                        }
                         if (isCurrentVideoResolutionSupportedByEncoder(info)) {
                             supported.add(str);
                         }
                     }
                 }
             }
-            if (!PersistUtil.lookaheadEnabled()) {
-                supported.add("apv");
-            }
         }
-        Log.d(TAG,"supported:"+supported.toString());
+        Log.i(TAG,"supported:"+supported.toString());
         return supported;
     }
 

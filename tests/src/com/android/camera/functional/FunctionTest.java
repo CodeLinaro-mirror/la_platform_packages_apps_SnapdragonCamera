@@ -60,10 +60,12 @@ import org.codeaurora.snapcam.R;
 import android.view.KeyEvent;
 import android.support.test.rule.ActivityTestRule;
 import com.android.camera.util.CameraUtil;
-
+import org.junit.FixMethodOrder;
+import org.junit.runners.MethodSorters;
 
 
 @RunWith(AndroidJUnit4.class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class FunctionTest extends TestBase  {
     private String TAG = "autoTest_FunctionTest";
     private static final String testFile = "/data/data/org.codeaurora.snapcam/files/fuctionTestParam.txt";
@@ -76,6 +78,7 @@ public class FunctionTest extends TestBase  {
         String testStr = CameraUtil.readFile(testFile);
         Log.i("autotest_initJson","initJson testStr="+testStr);
         getTestItem(testStr);
+        executeShellCommandInStatic("adb shell  am force-stop org.codeaurora.snapcam");
     }
     @AfterClass
     public static void resetTestItem(){
@@ -101,12 +104,12 @@ public class FunctionTest extends TestBase  {
 
     }
     @Test
-    public void testInPhoto() throws Exception {
-        if((functionTestMode != null && !functionTestMode.contains("testInPhoto"))
-               ||(functionTestModeDel != null && functionTestModeDel.contains("testInPhoto"))){
+    public void testIn1Photo() throws Exception {
+        if((functionTestMode != null && !functionTestMode.contains("testIn1Photo"))
+               ||(functionTestModeDel != null && functionTestModeDel.contains("testIn1Photo"))){
             return;
         }
-        Log.i(TAG, "testInPhotoModule");
+        Log.i(TAG, "testIn1Photo");
         //checkPreview("0", CaptureModule.CameraMode.DEFAULT);
         runPhotoCase("0",CaptureModule.CameraMode.DEFAULT);
     }
@@ -116,7 +119,7 @@ public class FunctionTest extends TestBase  {
                 ||(functionTestModeDel != null && functionTestModeDel.contains("testInFrontPhoto"))){
             return;
         }
-        Log.i(TAG, "testInPhotoModule");
+        Log.i(TAG, "testInFrontPhoto");
         executeShellCommand("input tap "+ mSwitchLoc[0]  +" "+mSwitchLoc[1]);
         runPhotoCase("1",CaptureModule.CameraMode.DEFAULT);
     }

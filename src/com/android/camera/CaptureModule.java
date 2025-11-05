@@ -3059,8 +3059,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public boolean isBackCamera() {
-        String value = mSettingsManager.mPreferences.getGlobal().getString(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
-        return value.equals("rear");
+        String value = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
+        if(value == null) {
+            value = mSettingsManager.mPreferences.getGlobal().getString(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, "rear");
+        }
+        return (value != null && value.equals("rear"));
     }
 
     public boolean isBLEConnected() {
@@ -4529,6 +4532,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Log.w(TAG, "activity may be onPause, no need to pop up error msg.");
             } else {
                 mCaptureSession[cameraId] = null;
+                mCurrentSession = null;
                 quitVideoToPhotoWithError(e.getMessage());
             }
         }
@@ -7783,7 +7787,7 @@ private boolean isDevOptionSetting(){
                         Log.d(TAG, "Time out waiting to lock camera closing.");
                         throw new RuntimeException("Time out waiting to lock camera closing");
                     }
-                    Log.i(TAG, "Closing camera: " + mCameraDevice[i].getId());
+                    Log.i(TAG, "start Closing camera: " + mCameraDevice[i].getId());
 
                     // session was closed here if intentMode is INTENT_MODE_VIDEO
                     if (mIntentMode != INTENT_MODE_VIDEO) {
@@ -7791,10 +7795,11 @@ private boolean isDevOptionSetting(){
                             if (isAbortCapturesEnable() && mCaptureSession[i] != null) {
                                 mFlushLatency = System.currentTimeMillis();
                                 if (TRACE_DEBUG) Trace.beginSection("SnapCamera,abortCaptures");
+                                Log.i(TAG, "Closing camera call abortCaptures start ");
                                 mCaptureSession[i].abortCaptures();
                                 if (TRACE_DEBUG) Trace.endSection();
                                 mFlushLatency = System.currentTimeMillis() - mFlushLatency;
-                                Log.d(TAG, "Closing camera call abortCaptures ");
+                                Log.i(TAG, "Closing camera call abortCaptures end ");
                                 if (mActivity.getPerformenceTest() ) {
                                     mHasMapTimes.put("abortCaptures", mFlushLatency);
                                 }
@@ -7814,6 +7819,7 @@ private boolean isDevOptionSetting(){
                     }
                     if (TRACE_DEBUG) Trace.beginSection("SnapCamera,camera close");
                     mCameraDevice[i].close();
+                    Log.i(TAG, "Close camera end ");
                     if (TRACE_DEBUG) Trace.endSection();
                     mCameraDevice[i] = null;
                     mCameraOpened[i] = false;
@@ -8362,6 +8368,7 @@ private boolean isDevOptionSetting(){
             Log.w(TAG, "background thread has been running");
             return;
         }
+        Log.i(TAG, "startBackgroundThread start");
         mCameraThread = new HandlerThread("CameraBackground");
         mCameraThread.start();
         mImageAvailableThread = new HandlerThread("CameraImageAvailable");
@@ -8377,7 +8384,7 @@ private boolean isDevOptionSetting(){
         mMpoSaveHandler = new MpoSaveHandler(mMpoSaveThread.getLooper());
         mZoomHandler = new ZoomHandler(mCaptureCallbackThread.getLooper());
         mBackgroundThreadFlag = true;
-        Log.d(TAG, "startBackgroundThread");
+        Log.i(TAG, "startBackgroundThread done");
     }
 
     /**
@@ -8388,10 +8395,10 @@ private boolean isDevOptionSetting(){
             Log.w(TAG, "background thread has not been running");
             return;
         }
-        Log.i(TAG, "stopBackgroundThread");
         if (mCameraThread == null) {
             return;
         }
+        Log.i(TAG, "stopBackgroundThread start");
         mCameraThread.quitSafely();
         mImageAvailableThread.quitSafely();
         mCaptureCallbackThread.quitSafely();
@@ -8426,6 +8433,7 @@ private boolean isDevOptionSetting(){
             Log.e(TAG,e.toString());
         }
         mBackgroundThreadFlag = false;
+        Log.i(TAG, "stopBackgroundThread done");
     }
 
     private void openCamera(int id) {
@@ -8596,8 +8604,10 @@ private boolean isDevOptionSetting(){
         mPreviewOutputConfiguration = null;
         mOldMode = mCurrentSceneMode.mode;
         mOldCameraId = CURRENT_ID;
-        if (isExitCamera || mIsCloseCamera) {
+        if (isExitCamera) {
             stopBackgroundThread();
+        }
+        if (mIsCloseCamera) {
             closeImageReader();
         }
         mActivity.runOnUiThread(() -> {
@@ -12054,15 +12064,13 @@ private boolean isDevOptionSetting(){
 
     private void releasePhysicalRecorder() throws RuntimeException{
         if (TRACE_DEBUG) Trace.beginSection("SnapCamera,releaseMediaRecorder");
-        if (mSettingsManager.getPhysicalFeatureEnableId
-                (SettingsManager.KEY_PHYSICAL_CAMCORDER) != null) {
-            Log.d(TAG,"releasePhysicalRecorder");
-            for (MediaRecorder recorder:mPhysicalMediaRecorders){
-                if (recorder != null){
-                    recorder.reset();
-                    recorder.release();
-                    recorder = null;
-                }
+        //release physical recorder at child thread, but now setting manager is changed.
+        for (MediaRecorder recorder:mPhysicalMediaRecorders){
+            Log.i(TAG,"releasePhysicalRecorder, recorder:" + recorder);
+            if (recorder != null){
+                recorder.reset();
+                recorder.release();
+                recorder = null;
             }
         }
         if (TRACE_DEBUG) Trace.endSection();
@@ -12626,20 +12634,22 @@ private boolean isDevOptionSetting(){
 
     private void resumeVideoRecording() {
         Log.v(TAG, "resumeVideoRecording");
-        if(!PersistUtil.enableMediaRecorder()){
-            Bundle params = new Bundle();
-            params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 0);
-            if(!mOnlyVideoEncoder) {
-                mAudioEncoder.setParameters(params);
-            }
-            mVideoEncoder.setParameters(params);
-        }
         mRecordingPausing = false;
         mRecordingStartTime = SystemClock.uptimeMillis();
         mRecordingPausingTime += mRecordingStartTime - mRecordingPauseTime;
         if (mHighSpeedCapture && !mHighSpeedRecordingMode) {
             mHighRecordingPausingTime = mRecordingPausingTime * mHighSpeedCaptureRate / 30;
             Log.d(TAG, "HFR pause time is " + mHighRecordingPausingTime);
+        }
+
+        if(!PersistUtil.enableMediaRecorder()){
+            Bundle params = new Bundle();
+            params.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, 0);
+            params.putLong(MediaCodec.PARAMETER_KEY_OFFSET_TIME, (int) -(mRecordingPausingTime*1000));
+            if(!mOnlyVideoEncoder) {
+                mAudioEncoder.setParameters(params);
+            }
+            mVideoEncoder.setParameters(params);
         }
 
         updateRecordingTime();
@@ -13085,7 +13095,7 @@ private boolean isDevOptionSetting(){
         }
         try {
             mVideoRecordRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             Log.w(TAG,e.toString());
         }
         try {
@@ -13767,6 +13777,8 @@ private boolean isDevOptionSetting(){
             Log.i(TAG + "_videoformat", "set lookahead enable.");
             mVideoFormat.setInteger("vendor.qti-ext-encoding-mode.value", 4);
         }
+        Log.i(TAG + "_videoformat", "set max b frame to 7.");
+        mVideoFormat.setInteger(MediaFormat.KEY_MAX_B_FRAMES, 7);
         mVideoEncoder = MediaCodec.createEncoderByType(encoder);
         if (PersistUtil.isProSightEnabled()) {
             try {
@@ -13816,21 +13828,6 @@ private boolean isDevOptionSetting(){
         MediaFormat originalFormat = null;
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
         while (notDone && !stopRec) {
-            if (!mIsRecordingVideo && !mIsPreviewingVideo ) {
-
-                if (endCounter < 5){
-                    endCounter++;
-                    //wait 100ms one time
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        Log.e(TAG,"InterruptedException ="+e);
-                    }
-                } else {
-                    mMuxerVideoStop = true;
-                    notDone = false;
-                }
-            }
             int encoderStatus = mVideoEncoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
             if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
@@ -13875,7 +13872,9 @@ private boolean isDevOptionSetting(){
                     bufferInfo.size = 0;
                 }
 
-                if (mIsRecordingVideo && mMuxerStart && bufferInfo.size != 0) {
+                //although clicked stop button, but still need to handle buffers
+                //after receive BUFFER_FLAG_END_OF_STREAM flag set mMuxerVideoStop true, then set mMuxerStart false
+                if (mMuxerStart && bufferInfo.size != 0) {
                     /**
                      * It's usually necessary to adjust the ByteBuffer values to
                      * match BufferInfo.
@@ -13890,11 +13889,7 @@ private boolean isDevOptionSetting(){
                             if (mCaptureTimeLapse) {
                                 bufferInfo.presentationTimeUs -= (mRecordingPausingTime * 1000L
                                         * 1000L / (long) mTimeBetweenTimeLapseFrameCaptureMs  / 30L);
-                            } else {
-                                if ((PersistUtil.lookaheadEnabled() && bufferInfo.presentationTimeUs > mRecordingPauseTime * 1000) ||
-                                        !PersistUtil.lookaheadEnabled()) {
-                                    bufferInfo.presentationTimeUs -= mRecordingPausingTime*1000;
-                                }                            }
+                            }
                         }
                     }
                     frameNumber++;
@@ -13966,14 +13961,14 @@ private boolean isDevOptionSetting(){
                                 @Override
                                 public void run() {
                                     stopRecordingVideo(getMainCameraId());
-                                    }
+                                }
 
                             });
                         }
                     }
                 }
                 mVideoEncoder.releaseOutputBuffer(encoderStatus, false);
-
+                Log.i(TAG + "_video", "releaseOutputBuffer status is :" + encoderStatus);
                 if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                     Log.v(TAG + "_video", "end of video stream reached");
                     mMuxerVideoStop = true;
