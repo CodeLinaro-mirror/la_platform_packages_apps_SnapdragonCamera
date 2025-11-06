@@ -3400,16 +3400,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 return supported;
             }
             try {
-                if (videoSize.getWidth() == 7680 && videoSize.getHeight() == 4320) {
-                    if (videoCapabilities.isSizeSupported(7680, 4320)) {
-                        Range<Double> frameRates = videoCapabilities.getSupportedFrameRatesFor(7680, 4320);
-                        Log.d(TAG, "8K supported fps is " + frameRates);
-                        if (frameRates.contains((double)60) && mode == CaptureModule.CameraMode.VIDEO) {
-                            supported.add("hfr60");
-                            supported.add("hsr60");
-                        }
-                    }
-                }
                 Range[] range = getSupportedHighSpeedVideoFPSRange(cameraId, videoSize);
                 String rate;
                 for (Range r : range) {
@@ -3430,10 +3420,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 rate = String.valueOf(r.getUpper());
                                 supported.add("hfr" + rate);
                                 supported.add("hsr" + rate);
-                                if (PersistUtil.isSSMEnabled() && !above1080p) {
-                                    supported.add("2x_" + rate);
-                                    supported.add("4x_" + rate);
-                                }
                             } else {
                                 Log.d(TAG, " The " + videoSize.getWidth() + "x" + videoSize.getHeight()
                                         + "@fps" + r.getUpper() + " is not supported.");
@@ -3466,14 +3452,20 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                     break;
                                 }
                                 if(mode == CaptureModule.CameraMode.VIDEO &&
-                                        mExtendedHFRSize[i + 2] >= 120){
+                                         mExtendedHFRSize[i + 2] >= 120){
                                     break;
                                 }
                                 supported.add(item);
                                 supported.add("hsr" + mExtendedHFRSize[i + 2]);
-                                if (PersistUtil.isSSMEnabled() && !above1080p) {
-                                    supported.add("2x_" + mExtendedHFRSize[i + 2]);
-                                    supported.add("4x_" + mExtendedHFRSize[i + 2]);
+                            } else {
+                                // Workaround for 8K@60fps checking if areSizeAndRateSupported return false;
+                                if (videoSize.getWidth() == 7680 && videoSize.getHeight() == 4320) {
+                                    Range<Double> frameRates = videoCapabilities.getSupportedFrameRatesFor(7680, 4320);
+                                    Log.d(TAG, " 8k supported fps " + frameRates);
+                                    if (frameRates.contains((double)60) && mode == CaptureModule.CameraMode.VIDEO) {
+                                        supported.add("hfr60");
+                                        supported.add("hsr60");
+                                    }
                                 }
                             }
                         }
@@ -4189,15 +4181,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
             switchedId = Integer.valueOf(cameravalue);
         }
         Size[] maxSizes = null;
+        Size[] maxHighResSize = null;
         if (cameraId == -1) return res;
         CaptureModule.CameraMode mode = mCaptureModule.getCurrenCameraMode();
         StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
                 CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
-        StreamConfigurationMap streamConfigurationMap = mCharacteristics.get(cameraId).get(
+        StreamConfigurationMap maxResMap = mCharacteristics.get(cameraId).get(
                 CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
-        if (streamConfigurationMap != null) {
-            maxSizes = streamConfigurationMap.getOutputSizes(MediaRecorder.class);
+        if (maxResMap != null) {
+            maxSizes = maxResMap.getOutputSizes(MediaRecorder.class);
+            maxHighResSize = maxResMap.getHighResolutionOutputSizes(ImageFormat.PRIVATE);
         }
 
         Size[] outRes = map.getOutputSizes(MediaRecorder.class);
@@ -4212,6 +4206,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
             for (Size size : maxSizes) {
                 videoSizesAll.add(size);
             }
+        }
+        if (maxHighResSize != null) {
+           for (Size size : maxHighResSize) {
+                videoSizesAll.add(size);
+           }
         }
         List<Size> videoSizes = videoSizesAll.stream().distinct().collect(Collectors.toList());
 
