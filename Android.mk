@@ -45,9 +45,9 @@ LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 # leave them out of the APK
 
 ifneq (,$(TARGET_BUILD_APPS))
-  LOCAL_JNI_SHARED_LIBRARIES := libjni_mfnrutil libjni_aidenoiserutil libjni_aidenoiserutilv2 libjni_imageutil
+  LOCAL_JNI_SHARED_LIBRARIES := libjni_imageutil
 else
-  LOCAL_REQUIRED_MODULES := libjni_mfnrutil libjni_aidenoiserutil libjni_aidenoiserutilv2 libjni_imageutil
+  LOCAL_REQUIRED_MODULES := libjni_imageutil
 endif
 
 include $(BUILD_PACKAGE)
