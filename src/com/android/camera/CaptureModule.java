@@ -3222,7 +3222,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private boolean frontIsAllowed() {
         return mCurrentSceneMode.mode == CameraMode.DEFAULT ||
                 mCurrentSceneMode.mode == CameraMode.VIDEO ||
-                mCurrentSceneMode.mode == CameraMode.HFR;
+                mCurrentSceneMode.mode == CameraMode.HFR ||
+                mCurrentSceneMode.mode == CameraMode.PRO_MODE;
     }
 
     public boolean isRefocus() {
