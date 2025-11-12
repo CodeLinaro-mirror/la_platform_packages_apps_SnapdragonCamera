@@ -1749,6 +1749,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateAECGainAndExposure(result);
                 updateAntiBandingMode(result);
                 updateIsFickerDetected(result);
+                updateSensorMode(result,false);
                 if(PersistUtil.showQSATZoom()){
                     long durtime = 0;
                     if (mZoomResultLatency <=0){
@@ -1811,19 +1812,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 updateStatsParameters(result);
             }
 
-            if(mSettingsManager.showSensorMode() && mSensorModeSupported ){
-                try {
-                    Integer mode = result.get(sensormode);
-                    if(mode == null){
-                        mSensorModeSupported = false;
-                    }else {
-                        mUI.updateSensorModeText(mode);
-                    }
-                }catch(Exception e){
-                    mSensorModeSupported = false;
-                    Log.d(TAG,EXCEPTION_LOG,"get sensor mode error:"+e);
-                }
-            }
+
             String stats_visualizer = mSettingsManager.getValue(
                     SettingsManager.KEY_STATS_VISUALIZER_VALUE);
             if (mStatsVisualizer != null && mStatsVisualEnable.equals("1")
@@ -1881,7 +1870,22 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     };
+private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
 
+    if(mSettingsManager.showSensorMode()){
+        try {
+            Integer mode = result.get(sensormode);
+            if(mode == null){
+                mSensorModeSupported = false;
+            }else {
+                mUI.updateSensorModeText(mode,isCapture);
+            }
+        }catch(Exception e){
+            mSensorModeSupported = false;
+            Log.d(TAG,EXCEPTION_LOG,"get sensor mode error:"+e);
+        }
+    }
+}
     private void updatePerformanceUIInfo(TotalCaptureResult result){
         if(mPerformanceDebugEnable != null && mPerformanceDebugEnable.equals("on")){
             if(mFirstRequestLatency != 0) {
@@ -5744,6 +5748,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                            CaptureRequest request,
                                            TotalCaptureResult result) {
                 mCaptureResult = result;
+                updateSensorMode(result,true);
                 if (mPaused) {
                     return;
                 }
@@ -5940,6 +5945,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                        TotalCaptureResult result) {
             Log.d(TAG, "onCaptureCompleted");
             getHWMFandAIDETuningParams(result);
+            updateSensorMode(result,true);
             mCaptureResult = result;
         }
 
@@ -6160,6 +6166,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                CaptureRequest request,
                                                TotalCaptureResult result) {
                     Log.i(TAG, "captureStillPictureForCommon onCaptureCompleted: " + id  + ",metadataOwnerInfo:" + result.get(CaptureModule.metadataOwnerInfo)+",result="+result);
+                    updateSensorMode(result,true);
                     mRawInputMeta = result;
                     mCaptureResult = result;
                     if (mYUV10BitWithMetadata) {
@@ -6392,6 +6399,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                        TotalCaptureResult result) {
                             Log.i(TAG, "captureVideoSnapshot onCaptureCompleted: " + id);
                             mCaptureResult = result;
+                            updateSensorMode(result,true);
                         }
 
                         @Override

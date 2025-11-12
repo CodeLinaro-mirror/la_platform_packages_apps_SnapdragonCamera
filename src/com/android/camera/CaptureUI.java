@@ -521,6 +521,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private View mStatsAwbInfo,mSensorModeView;
     private TextView mStatsAwbText;
     private TextView mSensorModeText;
+    private int mSensorModeKeepI;
+    private int mSensorModeKeepNum = 20;
+    private volatile boolean  mSensorModeKeep;
     private TextView mZoomValueText,mZoomWText,mZoomUWText,mZoomTelText,mZoomGo;
     private EditText mZoomEditText;
     private float mUWZoom,mWZoom,mTelZoom;
@@ -2079,17 +2082,29 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
 
-    public void updateSensorModeText(Integer mode) {
-        if (mSensorModeText == null) {
-            return;
-        }
-        String str = "Sensor mode: " + String.valueOf(mode);
-        if (str.contentEquals(mSensorModeText.getText())){
-            return;
-        }
-        mActivity.runOnUiThread(() -> {
-            mSensorModeText.setText(str);
-        });
+    public void updateSensorModeText(Integer mode,boolean isCapture) {
+            if (mSensorModeText == null) {
+                return;
+            }
+            String str = "Sensor mode: " + String.valueOf(mode);
+            if (str.contentEquals(mSensorModeText.getText())) {
+                return;
+            }
+            mActivity.runOnUiThread(() -> {
+                Log.d(TAG, "str=" + str + ",mSensorModeKeep=" + mSensorModeKeep +
+                        ",isCapture=" + isCapture +",mSensorModeKeepI="+mSensorModeKeepI);
+                if (isCapture) {
+                    mSensorModeText.setText(str);
+                    mSensorModeKeep = true;
+                    mSensorModeKeepI = 0;
+                } else if (!isCapture && mSensorModeKeep && mSensorModeKeepI < mSensorModeKeepNum) {
+                    mSensorModeKeepI ++;
+                } else {
+                    mSensorModeText.setText(str);
+                    mSensorModeKeepI = 0;
+                    mSensorModeKeep = false;
+                }
+            });
     }
     public void updateAwbInfoText(String[] info) {
         if (info == null || info.length <4)
