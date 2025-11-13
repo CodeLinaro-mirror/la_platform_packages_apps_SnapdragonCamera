@@ -1585,6 +1585,15 @@ public class PhotoModule
             mQueue.add(r);
         }
 
+        public NamedEntity getLastNameEntity() {
+            synchronized(mQueue) {
+                if (!mQueue.isEmpty()) {
+                    return mQueue.get(0);
+                }
+            }
+            return null;
+        }
+
         public NamedEntity getNextNameEntity() {
             synchronized(mQueue) {
                 if (!mQueue.isEmpty()) {
