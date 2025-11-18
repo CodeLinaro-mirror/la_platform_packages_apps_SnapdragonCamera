@@ -74,6 +74,7 @@
     ,
     "18":
     {"pref_camera2_coloreffect_key":"0",
+      "pref_camera2_concert_mode_key":"off",
       "pref_camera2_zsl_key":"disable",
       "pref_camera2_picture_format_key":"0",
       "pref_camera2_multi_camera_mode_key":"0",
@@ -238,7 +239,8 @@
   },
   "pref_camera2_hdr_key":
   {
-    "enable":{"pref_camera2_live_preview_key":"0"},
+    "enable":{"pref_camera2_live_preview_key":"0",
+              "pref_camera2_concert_mode_key":"off"},
     "disable":{}
   },
   "pref_camera2_live_preview_key":
@@ -293,6 +295,12 @@
          "pref_camera2_timer_key": "0"},
     "0":{}
   },
+  "pref_camera2_concert_mode_key":
+  {
+    "on":{"pref_camera2_scenemode_key": "0",
+          "pref_camera2_hdr_key": "disable" }
+  },
+
   "pref_camera2_raw_reprocess_key":
   {
     "0":{"pref_camera2_rawinfo_type_key":"off",

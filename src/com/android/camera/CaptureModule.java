@@ -12300,6 +12300,7 @@ private boolean isDevOptionSetting(){
             applyFaceDetection(builder);
             applyTouchTrackFocus(builder);
             applyToneMapping(builder);
+            applySceneMode(builder);
             applyHistogram(builder);
             applyBGStats(builder);
             applyBEStats(builder);
@@ -15825,8 +15826,9 @@ private boolean isDevOptionSetting(){
     private void applySceneMode(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
         String autoHdr = mSettingsManager.getValue(SettingsManager.KEY_AUTO_HDR);
-        if (value == null) return;
-        int mode = Integer.parseInt(value);
+        String concertMode = mSettingsManager.getValue(SettingsManager.KEY_CONCERT_MODE);
+        if (value == null && concertMode == null) return;
+        int mode = (value == null) ? PostProcessor.FILTER_NONE : Integer.parseInt(value);
         if (autoHdr != null && "enable".equals(autoHdr) && "0".equals(value)) {
                 request.set(CaptureRequest.CONTROL_SCENE_MODE, CaptureRequest.CONTROL_SCENE_MODE_HDR);
                 request.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_USE_SCENE_MODE);
@@ -15840,6 +15842,10 @@ private boolean isDevOptionSetting(){
                 && mode != SettingsManager.SCENE_MODE_DUAL_INT
                 && mode != SettingsManager.SCENE_MODE_PROMODE_INT && !mCaptureHDRTestEnable) {
             request.set(CaptureRequest.CONTROL_SCENE_MODE, mode);
+            request.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_USE_SCENE_MODE);
+        } else if ("on".equals(concertMode)) {
+            Log.i(TAG, "applyConcertMode to theatre.");
+            request.set(CaptureRequest.CONTROL_SCENE_MODE, CaptureRequest.CONTROL_SCENE_MODE_THEATRE);
             request.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_USE_SCENE_MODE);
         } else {
             request.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
