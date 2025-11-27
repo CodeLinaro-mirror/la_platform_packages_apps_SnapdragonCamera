@@ -10699,8 +10699,11 @@ private boolean isDevOptionSetting(){
                 mPictureSize = sizes.get(0);
             }
         }
-        Size[] prevSizes = mSettingsManager.getSupportedOutputSize(currentId,
-                SurfaceHolder.class);
+        Size[] prevSizes = mSettingsManager.getSupportedPreviewSize(currentId);
+        if(prevSizes == null) {
+            prevSizes = mSettingsManager.getSupportedOutputSize(currentId,
+                    SurfaceHolder.class);
+        }
         List<Size> prevSizeList = Arrays.asList(prevSizes);
         prevSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
         mSupportedMaxPictureSize = prevSizeList.get(0);
