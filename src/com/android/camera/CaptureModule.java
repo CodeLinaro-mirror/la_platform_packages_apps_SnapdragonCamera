@@ -7872,11 +7872,20 @@ public class CaptureModule implements CameraModule, PhotoController,
         if(PersistUtil.isRawReprocessQcfa()){
             mPictureSize = new Size(8000,6000);
         }
-        Size[] prevSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
-                SurfaceHolder.class);
+        Size[] prevSizes = mSettingsManager.getSupportedPreviewSize(getMainCameraId());
+        if(prevSizes == null) {
+            prevSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
+                    SurfaceHolder.class);
+        }
+        Size[] inputSizes = mSettingsManager.getInputSize(getMainCameraId());
+        if (inputSizes == null) {
+            inputSizes = Arrays.copyOf(prevSizes, prevSizes.length);
+        }
+        List<Size> inputSizeList = Arrays.asList(inputSizes);
+        inputSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
         List<Size> prevSizeList = Arrays.asList(prevSizes);
         prevSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
-        mSupportedMaxPictureSize = prevSizeList.get(0);
+        mSupportedMaxPictureSize = inputSizeList.get(0);
         Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.PRIVATE);
         List<Size> yuvSizeList = Arrays.asList(yuvSizes);
         yuvSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
@@ -7979,8 +7988,11 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (DEBUG) {
             Log.v(TAG, "updateVideoSize mVideoSize = " + mVideoSize + ", videoSize :" + videoSize);
         }
-        Size[] prevSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
-                MediaRecorder.class);
+        Size[] prevSizes = mSettingsManager.getSupportedPreviewSize(getMainCameraId());
+        if(prevSizes == null) {
+            prevSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(),
+                    MediaRecorder.class);
+        }
         mVideoPreviewSize = getOptimalVideoPreviewSize(mVideoSize, prevSizes);
         Point previewSize = PersistUtil.getCameraPreviewSize();
         if (previewSize != null) {

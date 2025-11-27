@@ -45,6 +45,7 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.params.Capability;
+import android.hardware.camera2.params.RecommendedStreamConfigurationMap;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
@@ -100,8 +101,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.lang.StringBuilder;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class SettingsManager implements ListMenu.SettingsListener {
+ public class SettingsManager implements ListMenu.SettingsListener {
     public static final int RESOURCE_TYPE_THUMBNAIL = 0;
     public static final int RESOURCE_TYPE_LARGEICON = 1;
 
@@ -2611,6 +2614,38 @@ public class SettingsManager implements ListMenu.SettingsListener {
         StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
                 CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         return map.getOutputSizes(format);
+    }
+
+    public Size[] getSupportedPreviewSize(int cameraId){
+        if (cameraId > mCharacteristics.size())return null;
+        RecommendedStreamConfigurationMap configs = mCharacteristics.get(cameraId).getRecommendedStreamConfigurationMap(
+                RecommendedStreamConfigurationMap.USECASE_PREVIEW);
+        if(configs != null) {
+            Set<Size> recommendedSizes = configs.getOutputSizes(ImageFormat.PRIVATE);
+            if (recommendedSizes != null && recommendedSizes.size() != 0) {
+                for(Size previewSize : recommendedSizes) {
+                    Log.d(TAG, "recommend preview size:" + previewSize.toString());
+                }
+                return recommendedSizes.toArray(new Size[0]);
+            }
+        }
+        return null;
+    }
+
+    public Size[] getInputSize(int cameraId){
+        if (cameraId > mCharacteristics.size())return null;
+        RecommendedStreamConfigurationMap configs = mCharacteristics.get(cameraId).getRecommendedStreamConfigurationMap(
+                RecommendedStreamConfigurationMap.USECASE_ZSL);
+        if(configs != null) {
+            Set<Size> recommendedSizes = configs.getInputSizes(ImageFormat.PRIVATE);
+            if (recommendedSizes != null && recommendedSizes.size() != 0) {
+                for(Size size : recommendedSizes) {
+                    Log.d(TAG, "recommend input size:" + size.toString());
+                }
+                return recommendedSizes.toArray(new Size[0]);
+            }
+        }
+        return null;
     }
 
     public Size[] getSupportedOutputSize(int cameraId, Class cl) {
