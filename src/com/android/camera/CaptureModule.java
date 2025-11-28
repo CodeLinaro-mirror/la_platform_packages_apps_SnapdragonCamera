@@ -13325,6 +13325,9 @@ private boolean isDevOptionSetting(){
                 }
             }
         }
+        if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")){
+            bitRate = calculateBitRate(width, height);
+        }
         Log.d(TAG, "updateBitrate video bitrate: "+ bitRate);
         if (PersistUtil.enableMediaRecorder() && mMediaRecorder != null) {
             mMediaRecorder.setVideoEncodingBitRate(bitRate);
@@ -13333,7 +13336,6 @@ private boolean isDevOptionSetting(){
                 if (mSettingsManager.getValue(SettingsManager.KEY_BITRATE_CQMODE).equals("on")) {
                     setBitrateCQMode();
                 } else {
-                    bitRate = calculateBitRate(width, height);
                     mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
                 }
             } else {
@@ -14466,6 +14468,10 @@ private boolean isDevOptionSetting(){
         mMediaRecorder.setVideoFrameRate(mProfile.videoFrameRate);
         if (!mHighSpeedCapture) {
             updateBitrateForNonHFR(videoEncoder, mProfile.videoBitRate, videoHeight, videoWidth);
+        }
+        if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")){
+            int bitRate = calculateBitRate(videoWidth, videoHeight);
+            mMediaRecorder.setVideoEncodingBitRate(bitRate);
         }
         mMediaRecorder.setVideoSize(mProfile.videoFrameWidth, mProfile.videoFrameHeight);
         mMediaRecorder.setVideoEncoder(videoEncoder);
