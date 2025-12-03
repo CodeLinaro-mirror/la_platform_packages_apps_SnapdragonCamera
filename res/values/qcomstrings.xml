@@ -1531,7 +1531,7 @@
     <string name="pref_camera2_format_entry_value_raw10" translatable="false">37</string>
     <string name="pref_camera2_format_entry_value_ycbcr_p010" translatable="false">54</string>
     <string name="pref_camera2_format_entry_value_jpeg" translatable="false">256</string>
-
+    <string name="pref_camera2_sensormode_visualizer_title" translatable="true">SensorMode Visualizer</string>
     <string name="pref_camera2_stats_visualizer_title" translatable="true">Stats Visualizer</string>
     <string name="pref_camera2_stats_visualizer_default" translatable="false"></string>
     <string name="pref_camera2_stats_visualizer_entry_bg_stats" translatable="false">BG Stats</string>

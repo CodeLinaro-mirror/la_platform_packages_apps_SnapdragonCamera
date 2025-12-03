@@ -256,6 +256,8 @@ public class PersistUtil {
     private static Method getBooleanMethod = null;
     private static Method getStringMethod = null;
 
+    private static Method setStringMethod = null;
+
     private static int getInt(final String key, final int def) {
         try {
             if (getIntMethod == null) {
@@ -295,6 +297,20 @@ public class PersistUtil {
             Log.e("Persist", "SystemProperties error: " + e.toString());
             return def;
         }
+    }
+
+    public static boolean set(final String key, final String value) {
+        try {
+            if (setStringMethod == null) {
+                setStringMethod = Class.forName("android.os.SystemProperties")
+                        .getMethod("set", String.class, String.class);
+            }
+            setStringMethod.invoke(null, key, value);
+            return true;
+        } catch (Exception e) {
+            Log.e("Persist", "SystemProperties error: " + e.toString());
+        }
+        return false;
     }
 
     public static int getZoomFrameValue() {return  PERSIST_ZOOM_FRAME_VALUE; }

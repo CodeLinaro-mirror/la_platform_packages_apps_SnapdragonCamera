@@ -828,7 +828,12 @@
         camera:title="@string/pref_camera2_switcher_title"
         camera:entries="@array/pref_camera2_switcher_entries"
         camera:entryValues="@array/pref_camera2_switcher_entryvalues" />
-
+    <ListPreference
+        camera:key="pref_camera2_sensor_mode_enable_key"
+        camera:defaultValue="@string/pref_camera2_stats_visualizer_enable_default"
+        camera:title="@string/pref_camera2_sensormode_visualizer_title"
+        camera:entries="@array/pref_camera2_stats_visualizer_enable_entries"
+        camera:entryValues="@array/pref_camera2_stats_visualizer_enable_entryvalues" />
     <ListPreference
         camera:key="pref_camera2_stats_visualizer_enable_key"
         camera:defaultValue="@string/pref_camera2_stats_visualizer_enable_default"

@@ -406,7 +406,25 @@
                 android:textColor="#ffff00"
                 android:background="#60000000" />
         </LinearLayout>
+        <RelativeLayout
+            android:id="@+id/sensor_mode_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="200dip"
+            android:layout_gravity="right"
+            android:layout_marginRight="10dip"
+            android:orientation="vertical"
+            android:visibility="gone">
 
+            <TextView
+                android:id="@+id/sensor_mode_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#ffff00"
+                android:background="#60000000"
+                android:textSize="13sp"
+                android:gravity="right" />
+        </RelativeLayout>
         <RelativeLayout
             android:id="@+id/stats_nn_result_info"
             android:layout_width="wrap_content"

@@ -78,7 +78,7 @@ public class FunctionTest extends TestBase  {
         String testStr = CameraUtil.readFile(testFile);
         Log.i("autotest_initJson","initJson testStr="+testStr);
         getTestItem(testStr);
-        executeShellCommandInStatic("adb shell  am force-stop org.codeaurora.snapcam");
+       // executeShellCommandInStatic("adb shell  am force-stop org.codeaurora.snapcam");
     }
     @AfterClass
     public static void resetTestItem(){
