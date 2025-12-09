@@ -2722,14 +2722,10 @@ public class SettingsActivity extends PreferenceActivity {
             disableVIULLOption(pref);
             return;
         }
-        String videoFps = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
-        String vsr = mSettingsManager.getValue(SettingsManager.KEY_VSR);
-        if (mode == CaptureModule.CameraMode.VIDEO && videoFps != null && !videoFps.equals("off") && !("1").equals(vsr)) {
-            disableVIULLOption(pref);
-            return;
-        }
 
-        if(mode == CaptureModule.CameraMode.VIDEO && is8KVideo()){
+        String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        int videoSize = CameraUtil.getSize(videoSizeStr);
+        if(mode == CaptureModule.CameraMode.VIDEO && ((videoSize >= 3840*2160 && PersistUtil.getModelInfo().contains("6850")) || videoSize == 7680*4320)){
             disableVIULLOption(pref);
             return;
         }

@@ -8097,11 +8097,16 @@ private boolean isDevOptionSetting(){
                 || mCurrentSceneMode.mode == CameraMode.HFR
                 || mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             if (!mSettingsManager.isMultiCameraEnabled()) {
-                applyVIULL(builder);
                 applyVSR(builder);
                 applyEISHorizonLevelEnable(builder);
             }
             applyEIS(builder);
+        }
+        if (mCurrentSceneMode.mode == CameraMode.DEFAULT
+                || mCurrentSceneMode.mode == CameraMode.VIDEO) {
+            if (!mSettingsManager.isMultiCameraEnabled()) {
+                applyVIULL(builder);
+            }
         }
         if (mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             applyEnableCinematic(builder);
