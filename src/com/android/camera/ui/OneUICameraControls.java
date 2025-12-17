@@ -679,9 +679,7 @@ public class OneUICameraControls extends RotatableLayout {
         mManualText.setSelected(false);
         mWhiteBalanceText.setSelected(false);
         mIsoText.setSelected(false);
-        if ( mIsDisplayRound ) {
-            mModeSelectLayout.setVisibility(VISIBLE);
-        }
+        updateVisbilityPosOnProModeChange(ProMode.NO_MODE);
     }
 
     private void setProModeParameters() {
