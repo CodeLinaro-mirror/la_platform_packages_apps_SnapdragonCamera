@@ -35,13 +35,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.TextView;
+
+import com.android.camera.util.PersistUtil;
+
 import org.codeaurora.snapcam.R;
 
 import java.util.List;
 
 public class Camera2ModeAdapter extends RecyclerView.Adapter<Camera2ModeAdapter.ViewHolder> {
     private List<String> mModeList;
-    private int mSelectedPos = 3;
+    private int mSelectedPos = PersistUtil.getModelInfo().contains("6850") ? 2 : 3;
     private OnItemClickListener mOnItemClickListener;
 
     public Camera2ModeAdapter(List<String> list) {

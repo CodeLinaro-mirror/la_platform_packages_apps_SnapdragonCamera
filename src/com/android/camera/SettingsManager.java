@@ -1062,7 +1062,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isStatsNNSupported() {
-        boolean supportted = true;
+        boolean supportted = false;
         try {
             supportted = (mCharacteristics.get(mCameraId).get(CaptureModule.is_statsnn_supported) == 1);
         } catch (IllegalArgumentException | NullPointerException e) {
@@ -2084,7 +2084,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if(!isSupportedSuperBuffer(mCameraId) || CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.HFR){
             removePreference(mPreferenceGroup, KEY_HFR_BUFFER_MODE);
         }
-        if (forceAUX != null && !mHasMultiCamera) {
+        if (forceAUX != null && (!mHasMultiCamera || PersistUtil.getModelInfo().contains("6850"))) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
             mFilteredKeys.add(forceAUX.getKey());
         }
@@ -3033,7 +3033,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                             apv_profiles_string.add("HEVCProfileMain10HDR10");
                             Log.d(TAG, " Ten bit HDR10 Supported");
                         }
-                        if (profiles.contains(DynamicRangeProfiles.HDR10_PLUS)) {
+                        if (profiles.contains(DynamicRangeProfiles.HDR10_PLUS) && !PersistUtil.getModelInfo().contains("6850")) {
                             h265_profiles_string.add("HEVCProfileMain10HDR10Plus");
                             apv_profiles_string.add("HEVCProfileMain10HDR10Plus");
                             Log.d(TAG, " Ten bit HDR10_PLUS Supported");
@@ -4536,7 +4536,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 !PersistUtil.isMvhevcSupported())){
                             continue;
                         }
-                        if("apv".equals(str) && (PersistUtil.lookaheadEnabled() ||  PersistUtil.getModelInfo().contains("SM8845"))){
+                        if("apv".equals(str) && (PersistUtil.lookaheadEnabled() ||  PersistUtil.getModelInfo().contains("SM8845") || PersistUtil.getModelInfo().contains("6850"))){
                             continue;
                         }
                         if (isCurrentVideoResolutionSupportedByEncoder(info)) {
