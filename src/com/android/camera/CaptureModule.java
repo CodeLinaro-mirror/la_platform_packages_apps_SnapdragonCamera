@@ -4540,7 +4540,7 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
             } else {
                 mCaptureSession[cameraId] = null;
                 mCurrentSession = null;
-                quitVideoToPhotoWithError(e.getMessage());
+                showError(e.getMessage());
             }
         }
         mCurrentSessionClosed = false;
@@ -11277,7 +11277,7 @@ private boolean isDevOptionSetting(){
                 }
             }
             if(!PersistUtil.enableMediaRecorder() && !mOnlyVideoEncoder && !waitForAudioPrepare()){
-                quitVideoToPhotoWithError("media codec prepare failed");
+                showError("createSessionForVideo-onConfigured-waitForAudioPrepare fail");
                 return;
             }
             setCameraModeSwitcherAllowed(true);
@@ -14566,9 +14566,13 @@ private boolean isDevOptionSetting(){
             releaseMediaRecorder();
             mCaptureSession[getMainCameraId()] = null;
             mCurrentSession = null;
-            quitVideoToPhotoWithError(e.getMessage());
+            showError(e.getMessage());
             return false;
         }
+    }
+    private void showError(String str){
+        warningToast(str);
+        setCameraModeSwitcherAllowed(true);
     }
 
     private void setVideoOutputFile(Bundle myExtras) {
