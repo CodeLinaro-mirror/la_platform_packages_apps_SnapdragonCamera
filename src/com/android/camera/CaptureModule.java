@@ -6123,9 +6123,8 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
         Log.i(TAG,"captureStillPictureForCommon, captureBuilder:" + captureBuilder.toString());
         checkAndPlayShutterSound(id);
         mCaptureStartTime = System.currentTimeMillis();
-        String result = new SimpleDateFormat(
-                mActivity.getResources().getString(R.string.image_file_name_format)).format(new Date(mCaptureStartTime));
-        PersistUtil.set("persist.vendor.camera.debugDataSnapshotTimeStamp", result);
+        mNamedImages.nameNewImage(mCaptureStartTime);
+        PersistUtil.set("persist.vendor.camera.debugDataSnapshotTimeStamp", mNamedImages.getLastNameEntity().title);
         if (isMpoOn()) {
             mMpoSaveHandler.obtainMessage(MpoSaveHandler.MSG_CONFIGURE,
                     Long.valueOf(mCaptureStartTime)).sendToTarget();
@@ -6296,9 +6295,8 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
             CaptureRequest.Builder captureBuilder = getRequestBuilder(
                     CameraDevice.TEMPLATE_VIDEO_SNAPSHOT,id,mSettingsManager.getPhysicalCameraId());
             mCaptureStartTime = System.currentTimeMillis();
-            String result = new SimpleDateFormat(
-                    mActivity.getResources().getString(R.string.image_file_name_format)).format(new Date(mCaptureStartTime));
-            PersistUtil.set("persist.vendor.camera.debugDataSnapshotTimeStamp", result);
+            mNamedImages.nameNewImage(mCaptureStartTime);
+            PersistUtil.set("persist.vendor.camera.debugDataSnapshotTimeStamp", mNamedImages.getLastNameEntity().title);
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, CameraUtil.getJpegRotation(id, mOrientation));
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_SIZE, mVideoSnapshotThumbSize);
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_QUALITY, (byte)80);
@@ -6660,10 +6658,10 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
                                     mMpoSaveHandler.obtainMessage(
                                             MpoSaveHandler.MSG_NEW_IMG, mCamId, 0, image).sendToTarget();
                                 } else {
-                                    if(mLongshotActive){
+                                    if(mNamedImages.getLastNameEntity() == null){
                                         mCaptureStartTime = System.currentTimeMillis();
+                                        mNamedImages.nameNewImage(mCaptureStartTime);
                                     }
-                                    mNamedImages.nameNewImage(mCaptureStartTime);
                                     NamedEntity name = mNamedImages.getNextNameEntity();
                                     String title = (name == null) ? null : name.title;
                                     if(image.getFormat() == ImageFormat.YCBCR_P010) {
