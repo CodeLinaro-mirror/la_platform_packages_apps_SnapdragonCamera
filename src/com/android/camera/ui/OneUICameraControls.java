@@ -387,7 +387,7 @@ public class OneUICameraControls extends RotatableLayout {
         int rotation = getUnifiedRotation();
         setLocation(mFilterModeSwitcher, true, PANEL_INDEX_1);
         if ( mIsDisplayRound ) {
-            setLocationCustomBottom(mSceneModeSwitcher, 1.0f, 4.0f);
+            setLocationCustomBottom(mSceneModeSwitcher, 1.0f, 4.4f);
         } else {
             setLocation(mSceneModeSwitcher, true, PANEL_INDEX_0);
         }

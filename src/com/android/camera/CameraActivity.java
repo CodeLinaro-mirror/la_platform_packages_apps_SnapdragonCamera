@@ -24,6 +24,7 @@ import android.hardware.camera2.CameraAccessException;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.Trace;
+import android.provider.Settings;
 import android.view.Display;
 import android.graphics.Point;
 import android.Manifest;
@@ -266,6 +267,8 @@ public class CameraActivity extends Activity
 
     private WakeLock mWakeLock;
     private static final int REFOCUS_ACTIVITY_CODE = 1;
+    private static final int REVERSAL_ROTATION_DEGREE = 180;
+    private static final int FULL_ROTATION_DEGREES = 360;
 
     private class MyOrientationEventListener
             extends OrientationEventListener {
@@ -280,6 +283,12 @@ public class CameraActivity extends Activity
             // the correct orientation.
             if (orientation == ORIENTATION_UNKNOWN) {
                 return;
+            }
+            int leftyMode = Settings.System.getInt(getContentResolver(),
+                "offload_lefty_mode", 0);
+            //leftyMode % 2 != 0 means leftyMode enabled.
+            if (leftyMode % 2 != 0) {
+                orientation = (orientation + REVERSAL_ROTATION_DEGREE) % FULL_ROTATION_DEGREES;
             }
             mLastRawOrientation = orientation;
             mCurrentModule.onOrientationChanged(orientation);
