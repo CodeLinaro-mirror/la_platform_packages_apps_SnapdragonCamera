@@ -4540,7 +4540,7 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
             } else {
                 mCaptureSession[cameraId] = null;
                 mCurrentSession = null;
-                quitVideoToPhotoWithError(e.getMessage());
+                showError(e.getMessage());
             }
         }
         mCurrentSessionClosed = false;
@@ -6123,9 +6123,8 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
         Log.i(TAG,"captureStillPictureForCommon, captureBuilder:" + captureBuilder.toString());
         checkAndPlayShutterSound(id);
         mCaptureStartTime = System.currentTimeMillis();
-        String result = new SimpleDateFormat(
-                mActivity.getResources().getString(R.string.image_file_name_format)).format(new Date(mCaptureStartTime));
-        PersistUtil.set("persist.vendor.camera.debugDataSnapshotTimeStamp", result);
+        mNamedImages.nameNewImage(mCaptureStartTime);
+        PersistUtil.set("persist.vendor.camera.debugDataSnapshotTimeStamp", mNamedImages.getLastNameEntity().title);
         if (isMpoOn()) {
             mMpoSaveHandler.obtainMessage(MpoSaveHandler.MSG_CONFIGURE,
                     Long.valueOf(mCaptureStartTime)).sendToTarget();
@@ -6296,9 +6295,8 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
             CaptureRequest.Builder captureBuilder = getRequestBuilder(
                     CameraDevice.TEMPLATE_VIDEO_SNAPSHOT,id,mSettingsManager.getPhysicalCameraId());
             mCaptureStartTime = System.currentTimeMillis();
-            String result = new SimpleDateFormat(
-                    mActivity.getResources().getString(R.string.image_file_name_format)).format(new Date(mCaptureStartTime));
-            PersistUtil.set("persist.vendor.camera.debugDataSnapshotTimeStamp", result);
+            mNamedImages.nameNewImage(mCaptureStartTime);
+            PersistUtil.set("persist.vendor.camera.debugDataSnapshotTimeStamp", mNamedImages.getLastNameEntity().title);
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, CameraUtil.getJpegRotation(id, mOrientation));
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_SIZE, mVideoSnapshotThumbSize);
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_QUALITY, (byte)80);
@@ -6660,10 +6658,10 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
                                     mMpoSaveHandler.obtainMessage(
                                             MpoSaveHandler.MSG_NEW_IMG, mCamId, 0, image).sendToTarget();
                                 } else {
-                                    if(mLongshotActive){
+                                    if(mNamedImages.getLastNameEntity() == null){
                                         mCaptureStartTime = System.currentTimeMillis();
+                                        mNamedImages.nameNewImage(mCaptureStartTime);
                                     }
-                                    mNamedImages.nameNewImage(mCaptureStartTime);
                                     NamedEntity name = mNamedImages.getNextNameEntity();
                                     String title = (name == null) ? null : name.title;
                                     if(image.getFormat() == ImageFormat.YCBCR_P010) {
@@ -10701,8 +10699,11 @@ private boolean isDevOptionSetting(){
                 mPictureSize = sizes.get(0);
             }
         }
-        Size[] prevSizes = mSettingsManager.getSupportedOutputSize(currentId,
-                SurfaceHolder.class);
+        Size[] prevSizes = mSettingsManager.getSupportedPreviewSize(currentId);
+        if(prevSizes == null) {
+            prevSizes = mSettingsManager.getSupportedOutputSize(currentId,
+                    SurfaceHolder.class);
+        }
         List<Size> prevSizeList = Arrays.asList(prevSizes);
         prevSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
         mSupportedMaxPictureSize = prevSizeList.get(0);
@@ -11279,7 +11280,7 @@ private boolean isDevOptionSetting(){
                 }
             }
             if(!PersistUtil.enableMediaRecorder() && !mOnlyVideoEncoder && !waitForAudioPrepare()){
-                quitVideoToPhotoWithError("media codec prepare failed");
+                showError("createSessionForVideo-onConfigured-waitForAudioPrepare fail");
                 return;
             }
             setCameraModeSwitcherAllowed(true);
@@ -12300,6 +12301,7 @@ private boolean isDevOptionSetting(){
             applyFaceDetection(builder);
             applyTouchTrackFocus(builder);
             applyToneMapping(builder);
+            applySceneMode(builder);
             applyHistogram(builder);
             applyBGStats(builder);
             applyBEStats(builder);
@@ -13327,6 +13329,9 @@ private boolean isDevOptionSetting(){
                 }
             }
         }
+        if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")){
+            bitRate = calculateBitRate(width, height);
+        }
         Log.d(TAG, "updateBitrate video bitrate: "+ bitRate);
         if (PersistUtil.enableMediaRecorder() && mMediaRecorder != null) {
             mMediaRecorder.setVideoEncodingBitRate(bitRate);
@@ -13335,7 +13340,6 @@ private boolean isDevOptionSetting(){
                 if (mSettingsManager.getValue(SettingsManager.KEY_BITRATE_CQMODE).equals("on")) {
                     setBitrateCQMode();
                 } else {
-                    bitRate = calculateBitRate(width, height);
                     mVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
                 }
             } else {
@@ -14469,6 +14473,10 @@ private boolean isDevOptionSetting(){
         if (!mHighSpeedCapture) {
             updateBitrateForNonHFR(videoEncoder, mProfile.videoBitRate, videoHeight, videoWidth);
         }
+        if (mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ENCODER).equals("apv")){
+            int bitRate = calculateBitRate(videoWidth, videoHeight);
+            mMediaRecorder.setVideoEncodingBitRate(bitRate);
+        }
         mMediaRecorder.setVideoSize(mProfile.videoFrameWidth, mProfile.videoFrameHeight);
         mMediaRecorder.setVideoEncoder(videoEncoder);
         Log.d(TAG," mMediaRecorder.setVideoEncoder=" + videoEncoder);
@@ -14567,9 +14575,13 @@ private boolean isDevOptionSetting(){
             releaseMediaRecorder();
             mCaptureSession[getMainCameraId()] = null;
             mCurrentSession = null;
-            quitVideoToPhotoWithError(e.getMessage());
+            showError(e.getMessage());
             return false;
         }
+    }
+    private void showError(String str){
+        warningToast(str);
+        setCameraModeSwitcherAllowed(true);
     }
 
     private void setVideoOutputFile(Bundle myExtras) {
@@ -15825,8 +15837,9 @@ private boolean isDevOptionSetting(){
     private void applySceneMode(CaptureRequest.Builder request) {
         String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
         String autoHdr = mSettingsManager.getValue(SettingsManager.KEY_AUTO_HDR);
-        if (value == null) return;
-        int mode = Integer.parseInt(value);
+        String concertMode = mSettingsManager.getValue(SettingsManager.KEY_CONCERT_MODE);
+        if (value == null && concertMode == null) return;
+        int mode = (value == null) ? PostProcessor.FILTER_NONE : Integer.parseInt(value);
         if (autoHdr != null && "enable".equals(autoHdr) && "0".equals(value)) {
                 request.set(CaptureRequest.CONTROL_SCENE_MODE, CaptureRequest.CONTROL_SCENE_MODE_HDR);
                 request.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_USE_SCENE_MODE);
@@ -15840,6 +15853,10 @@ private boolean isDevOptionSetting(){
                 && mode != SettingsManager.SCENE_MODE_DUAL_INT
                 && mode != SettingsManager.SCENE_MODE_PROMODE_INT && !mCaptureHDRTestEnable) {
             request.set(CaptureRequest.CONTROL_SCENE_MODE, mode);
+            request.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_USE_SCENE_MODE);
+        } else if ("on".equals(concertMode)) {
+            Log.i(TAG, "applyConcertMode to theatre.");
+            request.set(CaptureRequest.CONTROL_SCENE_MODE, CaptureRequest.CONTROL_SCENE_MODE_THEATRE);
             request.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_USE_SCENE_MODE);
         } else {
             request.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);

@@ -1741,9 +1741,11 @@ public class SettingsActivity extends PreferenceActivity {
                     if(!PersistUtil.getModelInfo().contains("6850")) {
                         videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                     }
+                    videoAddList.add(SettingsManager.KEY_CONCERT_MODE);
                     videoAddList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
-                    videoAddList.add(SettingsManager.KEY_TONE_MAPPING);
+                    videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                     videoAddList.add(SettingsManager.KEY_SELECT_MODE);
+                    videoAddList.add(SettingsManager.KEY_TONE_MAPPING);
                     if (isStatsNN) {
                         videoAddList.add(SettingsManager.KEY_STATSNN_CONTROL);
                     }

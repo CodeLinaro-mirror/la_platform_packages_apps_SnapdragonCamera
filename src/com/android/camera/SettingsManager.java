@@ -53,6 +53,7 @@ import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.hardware.camera2.params.MandatoryStreamCombination;
 import android.hardware.camera2.params.MandatoryStreamCombination.MandatoryStreamInformation;
 import android.hardware.camera2.params.MultiResolutionStreamConfigurationMap;
+import android.hardware.camera2.params.RecommendedStreamConfigurationMap;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
@@ -384,6 +385,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public static final String KEY_DCG_BIT_TAG = "pref_camera2_dcg_bit_tag_key";
     public static final String KEY_C2PA = "pref_camera2_c2pa_key";
+    public static final String KEY_CONCERT_MODE = "pref_camera2_concert_mode_key";
     public static final String KEY_BITRATE_CQMODE = "pref_camera2_bitrate_cqmode_key";
 
     public static final String KEY_OVERRIDE_RESOURCE = "pref_camera2_override_resource_key";
@@ -4092,6 +4094,19 @@ public class SettingsManager implements ListMenu.SettingsListener {
         StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
                 CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         return map.getOutputSizes(format);
+    }
+
+    public Size[] getSupportedPreviewSize(int cameraId){
+        if (cameraId > mCharacteristics.size())return null;
+        RecommendedStreamConfigurationMap configs = mCharacteristics.get(cameraId).getRecommendedStreamConfigurationMap(
+                RecommendedStreamConfigurationMap.USECASE_PREVIEW);
+        if(configs != null) {
+            Set<Size> recommendedSizes = configs.getOutputSizes(ImageFormat.PRIVATE);
+            if (recommendedSizes != null && recommendedSizes.size() != 0) {
+                return recommendedSizes.toArray(new Size[0]);
+            }
+        }
+        return null;
     }
 
     public Size[] getSupportedOutputSize(int cameraId, Class cl) {
