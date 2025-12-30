@@ -4659,7 +4659,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             result[1] = range.getUpper();
             if(isSHDRLimited() && result[0] <0.9 && (PersistUtil.getModelInfo().contains("8750")
                     || PersistUtil.getModelInfo().contains("8850")
-                    || PersistUtil.getModelInfo().contains("8845"))){
+                    || PersistUtil.getModelInfo().contains("8845")
+                    || PersistUtil.getModelInfo().contains("SM8847"))){
                 result[0] = 0.9f;
             }
             Log.v(TAG, "RatioZoom min :"+ result[0] + ", zoom max :" + result[1]);
