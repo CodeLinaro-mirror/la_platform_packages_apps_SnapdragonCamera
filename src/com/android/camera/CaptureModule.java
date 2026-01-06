@@ -8168,9 +8168,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mUI.clearFocus();
             }
             mUI.hideUIwhileRecording();
-            if (mSettingsManager.getPhysicalCameraId() != null){
-                cleanupEmptyFile();
-                setUpMediaRecorder(getMainCameraId());
+            if (mSettingsManager.getPhysicalCameraId() != null) {
                 setUpPhysicalMediaRecorder();
                 Set<String> physicalId = mSettingsManager.getPhysicalCameraId();
                 Set<String> physicalRecorderId = mSettingsManager.getPhysicalFeatureEnableId(
@@ -8192,8 +8190,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
             } else {
                 if (PersistUtil.enableMediaRecorder()) {
-                    cleanupEmptyFile();
-                    setUpMediaRecorder(getMainCameraId());
                     mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                     String hvx_shdr = mSettingsManager.getValue(SettingsManager.KEY_HVX_SHDR);
                     if("3".equals(hvx_shdr)){
@@ -9286,10 +9282,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mFrameProcessor.onOpen(getFrameProcFilterId(), mPreviewSize);
         }
         if (mIntentMode != INTENT_MODE_VIDEO && !mPaused) {
-            if (!PersistUtil.enableMediaRecorder()) {
-                releaseAudioFocus();
-                createSessions();
-            }
+            createSessions();
         }
         mHandler.post(new Runnable() {
             @Override
