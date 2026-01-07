@@ -2866,7 +2866,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
             }
         }
-        if (!changeEIS) {
+        if (!changeEIS || !mSettingsManager.isVideoEisSupported()) {
             if (eisPref != null) {
                 eisPref.setValue("disable");
                 eisPref.setEnabled(false);
