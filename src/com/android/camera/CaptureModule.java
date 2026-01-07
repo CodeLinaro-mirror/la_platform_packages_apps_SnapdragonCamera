@@ -15060,7 +15060,7 @@ private boolean isDevOptionSetting(){
                 mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             key = SettingsManager.KEY_EIS_VALUE;
         }
-        String value = mSettingsManager.getValue(key);
+        String value = mSettingsManager.isVideoEisSupported() ? mSettingsManager.getValue(key) : "disable";
 
         Log.d(TAG,  "applyEIS key: " + key + ", value: " + value);
         boolean previewStabilizationOn = false;

@@ -1072,6 +1072,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return supportted;
     }
 
+    public boolean isVideoEisSupported(){
+        if(PersistUtil.getModelInfo().contains("6850") && mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR){
+            return false;
+        }else{
+            return true;
+        }
+    }
+
     public int[] getHdrMaxResolution() {
         int[] maxHdrSize = null;
         try {
