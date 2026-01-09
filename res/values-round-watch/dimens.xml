@@ -56,5 +56,8 @@
     <dimen name="drawable_padding_promode_param">0dp</dimen>
 
     <dimen name="oneui_menu_button_size">32dp</dimen>
+
+    <dimen name="scene_mode_label_margin_top">130dp</dimen>
+    <dimen name="scene_mode_label_margin_right">30dp</dimen>
 </resources>
 
