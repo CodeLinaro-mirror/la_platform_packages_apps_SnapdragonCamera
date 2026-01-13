@@ -665,6 +665,7 @@ public class OneUICameraControls extends RotatableLayout {
         }
         int w = v.getMeasuredWidth();
         int h = v.getMeasuredHeight();
+
         if (top) {
             v.setY((mTop - h) / 2);
         } else {
@@ -677,6 +678,9 @@ public class OneUICameraControls extends RotatableLayout {
             bW = mWidth / BOTTOM_PANEL_SPACE_NUM;
         }
         float x_position = bW * idx + (bW - w) / 2;
+        if(mVideoFps.equals(v)){
+            x_position += 25;
+        }
         v.setX(x_position);
         if (v == mShutter) {
             mShutterAnimRect = new RectF();
