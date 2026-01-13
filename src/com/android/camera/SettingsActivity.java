@@ -1568,9 +1568,8 @@ public class SettingsActivity extends PreferenceActivity {
                 for (String key: SettingsManager.KEY_PHYSICAL_VIDEO_SIZE)
                     add(key);
                 add(SettingsManager.KEY_AUDIO_RECORDING_MODE);
-                if(!PersistUtil.getModelInfo().contains("6850")) {
-                    add(SettingsManager.KEY_FRC_MODE);
-                }
+                add(SettingsManager.KEY_FRC_MODE);
+                add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                 add(SettingsManager.KEY_ML_VIDEO);
                 add(SettingsManager.KEY_HDR10P_STATS_KEY);
                 add(SettingsManager.KEY_AI_CAMERA_HSR);
@@ -1627,7 +1626,7 @@ public class SettingsActivity extends PreferenceActivity {
         }
         boolean isStatsNN = mSettingsManager.isStatsNNSupported();
         if (!isStatsNN) {
-            removePreference(SettingsManager.KEY_STATSNN_CONTROL, developer);
+            removePreference(SettingsManager.KEY_STATSNN_CONTROL, photoPre);
         }
         if(!mSettingsManager.isCctModeSupported()){
             removePreference(SettingsManager.KEY_MANUAL_WB, photoPre);
@@ -1667,7 +1666,6 @@ public class SettingsActivity extends PreferenceActivity {
                     removePreference(SettingsManager.KEY_CINEMATIC_DEBUG, developer);
                     removePreference(SettingsManager.KEY_STATSNN_CONTROL_FOR_CINEMATIC, developer);
                     removePreference(SettingsManager.KEY_AUDIO_BLE, developer);
-                    removePreference(SettingsManager.KEY_AI_CAMERA_BLURMODE, developer);
                     for (String removeKey : videoOnlyList) {
                         removePreference(removeKey, developer);
                     }
@@ -1682,10 +1680,6 @@ public class SettingsActivity extends PreferenceActivity {
                         removePreference(SettingsManager.KEY_MULTIRESREPROCESS_OUTPUT, developer);
                     } else {
                         updateMultiResolutionRealted();
-                    }
-                    if(PersistUtil.getModelInfo().contains("6850")) {
-                        removePreference(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE, developer);
-                        removePreference(SettingsManager.KEY_PHOTO_EIS_VALUE, developer);
                     }
                 }
                 if(!mSettingsManager.isFlashAvailable()){
@@ -1714,10 +1708,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.add(SettingsManager.KEY_FD_FL_SETTING);
                         videoAddList.add(SettingsManager.KEY_FD_FACIAL_SETTING);
-                        if(!PersistUtil.getModelInfo().contains("6850")) {
-                            videoAddList.add(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE);
-                            videoAddList.add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
-                        }
+                        videoAddList.add(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE);
                         videoAddList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                         videoAddList.add(SettingsManager.KEY_PHYSICAL_CAMERA);
                         videoAddList.add(SettingsManager.KEY_MANUAL_HDR);
@@ -1742,6 +1733,7 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_OVERRIDE_RESOURCE);
                     } else {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
+                        videoAddList.remove(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                         videoAddList.remove(SettingsManager.KEY_VARIABLE_FPS);
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         videoAddList.remove(SettingsManager.KEY_ML_VIDEO);
