@@ -4914,7 +4914,11 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
             case TYPE_DEFAULT:// default
                 removeList[CameraMode.DEFAULT.ordinal()] = false;
                 removeList[CameraMode.VIDEO.ordinal()] = false;
-                removeList[CameraMode.CINEMATIC.ordinal()] = false;
+                if(PersistUtil.getModelInfo().contains("6850")){
+                    removeList[CameraMode.CINEMATIC.ordinal()] = true;
+                }else{
+                    removeList[CameraMode.CINEMATIC.ordinal()] = false;
+                }
                 removeList[CameraMode.PRO_MODE.ordinal()] = false;
                 if (DEPTH_CAM_ID != null) {
                     removeList[CameraMode.DEPTH.ordinal()] = false;
@@ -8097,11 +8101,16 @@ private boolean isDevOptionSetting(){
                 || mCurrentSceneMode.mode == CameraMode.HFR
                 || mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             if (!mSettingsManager.isMultiCameraEnabled()) {
-                applyVIULL(builder);
                 applyVSR(builder);
                 applyEISHorizonLevelEnable(builder);
             }
             applyEIS(builder);
+        }
+        if (mCurrentSceneMode.mode == CameraMode.DEFAULT
+                || mCurrentSceneMode.mode == CameraMode.VIDEO) {
+            if (!mSettingsManager.isMultiCameraEnabled()) {
+                applyVIULL(builder);
+            }
         }
         if (mCurrentSceneMode.mode == CameraMode.CINEMATIC) {
             applyEnableCinematic(builder);
