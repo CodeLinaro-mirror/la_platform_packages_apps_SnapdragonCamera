@@ -184,4 +184,7 @@
 
     <dimen name="one_ui_bottom_large">75dp</dimen>
     <dimen name="one_ui_bottom_small">55dp</dimen>
+
+    <dimen name="scene_mode_label_margin_top">90dp</dimen>
+    <dimen name="scene_mode_label_margin_right">20dp</dimen>
 </resources>
