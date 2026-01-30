@@ -432,7 +432,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public Set<String> getFilteredKeys() {
         return mFilteredKeys;
     }
-    private List<Integer> mAvilablePreviewFPS;
+    private Map<String,List<Integer>>mAvilablePreviewFPSForSize;
 
     static {
         //ISO values vendor tag
@@ -1062,14 +1062,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isStatsNNSupported() {
-        boolean supportted = true;
-        try {
-            supportted = (mCharacteristics.get(mCameraId).get(CaptureModule.is_statsnn_supported) == 1);
-        } catch (IllegalArgumentException | NullPointerException e) {
-            Log.w(TAG, EXCEPTION_LOG,"isStatsNNSupported is_statsnn_supported no vendor tag");
+        // Default to false for model 6850, true for others, dont need to read any vendor tag
+        return !PersistUtil.getModelInfo().contains("6850");
+    }
+
+    public boolean isVideoEisSupported(){
+        if(PersistUtil.getModelInfo().contains("6850") && mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR){
+            return false;
+        }else{
+            return true;
         }
-        Log.d(TAG, "isStatsNNSupported supportted :" + supportted);
-        return supportted;
     }
 
     public boolean isVideoEisSupported(){
@@ -2092,7 +2094,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if(!isSupportedSuperBuffer(mCameraId) || CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.HFR){
             removePreference(mPreferenceGroup, KEY_HFR_BUFFER_MODE);
         }
-        if (forceAUX != null && !mHasMultiCamera) {
+        if (forceAUX != null && (!mHasMultiCamera || PersistUtil.getModelInfo().contains("6850"))) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
             mFilteredKeys.add(forceAUX.getKey());
         }
@@ -3041,7 +3043,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                             apv_profiles_string.add("HEVCProfileMain10HDR10");
                             Log.d(TAG, " Ten bit HDR10 Supported");
                         }
-                        if (profiles.contains(DynamicRangeProfiles.HDR10_PLUS)) {
+                        if (profiles.contains(DynamicRangeProfiles.HDR10_PLUS) && !PersistUtil.getModelInfo().contains("6850")) {
                             h265_profiles_string.add("HEVCProfileMain10HDR10Plus");
                             apv_profiles_string.add("HEVCProfileMain10HDR10Plus");
                             Log.d(TAG, " Ten bit HDR10_PLUS Supported");
@@ -3293,9 +3295,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public Range getPreviewRange(int fps) {
+        String videoSizeString = getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        if(mAvilablePreviewFPSForSize == null){
+            return new Range(30, fps);
+        }
+        List<Integer> mAvilablePreviewFPS = mAvilablePreviewFPSForSize.get(videoSizeString);
         if (mAvilablePreviewFPS == null || mAvilablePreviewFPS.isEmpty()) {
             Log.e(TAG, "No available fps for preview,set it to [30,30]");
-            return new Range(30, 30);
+            return new Range(30, fps);
         }
         int fps_i = -1;
         if (mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR
@@ -3309,8 +3316,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         } else {
             for (int i = 0; i < mAvilablePreviewFPS.size() - 1; i += 2) {
-                if (mAvilablePreviewFPS.get(i + 1) == fps) {
+                if (mAvilablePreviewFPS.get(i) == 30 && mAvilablePreviewFPS.get(i + 1) == fps) {
                     return new Range((int) mAvilablePreviewFPS.get(i), (int) mAvilablePreviewFPS.get(i + 1));
+                }else if (mAvilablePreviewFPS.get(i + 1) == fps && fps_i == -1) {
+                    fps_i = i + 1;
                 }
             }
         }
@@ -3331,7 +3340,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         ArrayList<String> supported = new ArrayList<String>();
-        mAvilablePreviewFPS = new ArrayList<>();
+        List<Integer>  mAvilablePreviewFPS = new ArrayList<>();
+
+
         if(mode == CaptureModule.CameraMode.VIDEO || mode == CaptureModule.CameraMode.CINEMATIC) {
             supported.add("off");
             mAvilablePreviewFPS.add(30);
@@ -3479,11 +3490,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 }
                             }
                         }
+                        mAvilablePreviewFPS.add( mExtendedHFRSize[i + 2]);
+                        mAvilablePreviewFPS.add(mExtendedHFRSize[i + 2]);
                     }
                 }
             }
         }
-        Log.d(TAG,"getSupportedHighFrameRate,supported="+supported+",mAvilablePreviewFPS="+mAvilablePreviewFPS);
+        if(mAvilablePreviewFPSForSize != null){
+            mAvilablePreviewFPSForSize.put(videoSizeStr,mAvilablePreviewFPS);
+        }
+        Log.d(TAG,"getSupportedHighFrameRate,supported="+supported+",mAvilablePreviewFPS="+mAvilablePreviewFPS+",videosize="+videoSizeStr);
         return supported;
     }
 
@@ -4193,6 +4209,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public List<String> getSupportedVideoSize(int cameraId) {
         if (cameraId > mCharacteristics.size())return null;
+        mAvilablePreviewFPSForSize = new HashMap<>();
         List<String> res = new ArrayList<>();
         List<Size> videoSizesAll = new ArrayList<>();
         Size videoSize = getVideoSize();
@@ -4236,7 +4253,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
            }
         }
         List<Size> videoSizes = videoSizesAll.stream().distinct().collect(Collectors.toList());
-
         boolean isHeifEnabled = isHeifHALEncoding();
         String eisValue = getValue(SettingsManager.KEY_EIS_VALUE);
         boolean isEISV3Enabled = "V3".equals(eisValue);
@@ -4544,7 +4560,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 !PersistUtil.isMvhevcSupported())){
                             continue;
                         }
-                        if("apv".equals(str) && (PersistUtil.lookaheadEnabled() ||  PersistUtil.getModelInfo().contains("SM8845"))){
+                        if("apv".equals(str) && (PersistUtil.lookaheadEnabled() ||  PersistUtil.getModelInfo().contains("SM8845") || PersistUtil.getModelInfo().contains("6850"))){
                             continue;
                         }
                         if (isCurrentVideoResolutionSupportedByEncoder(info)) {
@@ -4659,7 +4675,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             result[1] = range.getUpper();
             if(isSHDRLimited() && result[0] <0.9 && (PersistUtil.getModelInfo().contains("8750")
                     || PersistUtil.getModelInfo().contains("8850")
-                    || PersistUtil.getModelInfo().contains("8845"))){
+                    || PersistUtil.getModelInfo().contains("8845")
+                    || PersistUtil.getModelInfo().contains("SM8847"))){
                 result[0] = 0.9f;
             }
             Log.v(TAG, "RatioZoom min :"+ result[0] + ", zoom max :" + result[1]);

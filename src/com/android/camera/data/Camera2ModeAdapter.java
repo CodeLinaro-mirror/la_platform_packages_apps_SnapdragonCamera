@@ -35,13 +35,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.TextView;
+
+import com.android.camera.util.PersistUtil;
+
 import org.codeaurora.snapcam.R;
 
 import java.util.List;
 
 public class Camera2ModeAdapter extends RecyclerView.Adapter<Camera2ModeAdapter.ViewHolder> {
+    // Mode positions in the list
+    private static final int DEFAULT_MODE_POSITION_6850 = 2;  // Video mode for 6850 (no Cinematic)
+    private static final int DEFAULT_MODE_POSITION_STANDARD = 3;  // Default mode for other devices
+
     private List<String> mModeList;
-    private int mSelectedPos = 3;
+    private int mSelectedPos = PersistUtil.getModelInfo().contains("6850")
+            ? DEFAULT_MODE_POSITION_6850
+            : DEFAULT_MODE_POSITION_STANDARD;
     private OnItemClickListener mOnItemClickListener;
 
     public Camera2ModeAdapter(List<String> list) {
