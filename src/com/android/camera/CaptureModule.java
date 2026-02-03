@@ -4827,13 +4827,6 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
             isFirstDefault = setUpLocalMode(i, characteristics, removeList,
                     isFirstDefault, cameraId);
         }
-        if (mCurrentSceneMode == null) {
-            int index = mIntentMode == INTENT_MODE_VIDEO ?
-                    CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
-
-            mCurrentModeIndex =  mNextModeIndex = index;
-            mCurrentSceneMode = mSceneCameraIds.get(index);
-        }
         for (int i = 0; i < removeList.length; i++) {
             if (!removeList[i]) {
                 continue;
@@ -4842,6 +4835,15 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
                 if (sceneModule.mode.ordinal() == i) {
                     mSceneCameraIds.remove(sceneModule);
                     break;
+                }
+            }
+        }
+        if (mCurrentSceneMode == null) {
+            for(int i = 0; i < mSceneCameraIds.size(); i ++){
+                if( (mIntentMode == INTENT_MODE_VIDEO && mSceneCameraIds.get(i).mode == CameraMode.VIDEO) ||
+                        mSceneCameraIds.get(i).mode == CameraMode.DEFAULT){
+                    mCurrentModeIndex =  mNextModeIndex = i;
+                    mCurrentSceneMode = mSceneCameraIds.get(i);
                 }
             }
         }
@@ -4974,12 +4976,6 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
                         removeList[CameraMode.HFR.ordinal()] = false;
                     }
                     mSceneCameraIds.get(CameraMode.HFR.ordinal()).rearCameraId = mSingleRearId;
-                    if (mCurrentSceneMode == null) {
-                        int index = mIntentMode == INTENT_MODE_VIDEO ?
-                                CameraMode.VIDEO.ordinal() : CameraMode.DEFAULT.ordinal();
-                        mCurrentModeIndex = mNextModeIndex = index;
-                        mCurrentSceneMode = mSceneCameraIds.get(index);
-                    }
                 }
                 break;
             case TYPE_RTB:// RTB
