@@ -2017,6 +2017,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mZoomSeekBar != null) {
             mZoomSeekBar.setVisibility(View.GONE);
         }
+        if(mZoomEditLayout != null){
+            mZoomEditLayout.setVisibility(View.GONE);
+        }
+
         if(hideGesture) {
             mGestures.setZoomEnabled(false);
         }else{
