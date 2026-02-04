@@ -282,10 +282,17 @@ public class ZoomBarView extends View {
         float selecteDiff = -1;
         for (int i = 0; i < dialCount; i++) {
             selecteDiff = -1;
-            if (zoomRatioRange[0] - outZoomValue[i] > 0.1) {
+            angle = each_angle * i + startAngle;
+            if (zoomRatioRange[0] > outZoomValue[i] && zoomRatioRange[0] < outZoomValue[i+1]) {
+                float angle2 = each_angle * (i + 1) + startAngle;
+                float diffangle = angle2 - angle;
+                float sRadius = radius - outerLineHeight / 4f;
+                drawUWDial(angle, diffangle, outZoomValue[i], outZoomValue[i + 1], sRadius, canvas,selecteDiff);
+                continue;
+            }else if(zoomRatioRange[0] > outZoomValue[i]){
                 continue;
             }
-            angle = each_angle * i + startAngle;
+
             float[] startP = getPointFromAngleAndRadius(angle, radius);
             float[] endP = getPointFromAngleAndRadius(angle, radius - outerLineHeight);
             canvas.drawLine(startP[0], startP[1], endP[0], endP[1], outerLinePaint);
@@ -328,17 +335,23 @@ public class ZoomBarView extends View {
             angle = each_angle * i + startAngle;
             String text = zoomDf.format(startZoom);
             startZoom = Float.valueOf(text);
-            if (i % step == 0) {
+            if (i % step == 0 || startZoom == zoomRatioRange[0]) {
                 startP = getPointFromAngleAndRadius(angle, radius);
                 endP = getPointFromAngleAndRadius(angle, radius - innerLineHeight);
                 float[] textP = getPointFromAngleAndRadius(angle, radius - innerLineHeight - zoomTextLen);
-                if (num < innerDial ||(num == innerDial && dialCount <= 10)) {
-                    canvas.drawLine(startP[0], startP[1], endP[0], endP[1], innerLinePaint);
+                if (num < innerDial ||(num == innerDial && dialCount <= 10) ) {
+                    if(startZoom == zoomRatioRange[0]){
+                        canvas.drawLine(startP[0], startP[1], endP[0], endP[1], outerLinePaint);
+                    }else {
+                        canvas.drawLine(startP[0], startP[1], endP[0], endP[1], innerLinePaint);
+                    }
                 }
-                if (num == innerDial / 2) {
+                if (num == innerDial / 2 || startZoom == zoomRatioRange[0]) {
                     canvas.drawText(text, textP[0], textP[1], textPaint);
                 }
-                num++;
+                if(startZoom != zoomRatioRange[0]){
+                    num++;
+                }
             }
             float diff = Math.abs(angle - selectedLineAngle);
             if ((diff < each_angle && selecteDiff == -1) || (selecteDiff >= 0 && diff < selecteDiff)){
