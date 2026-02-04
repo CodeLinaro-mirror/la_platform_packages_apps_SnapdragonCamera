@@ -13438,8 +13438,11 @@ private boolean isDevOptionSetting(){
     private void setupRecordingCommonSettings(int cameraId) {
         enableVideoButton(false);
         String videoSize = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        if(videoSize == null){
+            Toast.makeText(mActivity, "No Supported Size for this mode", Toast.LENGTH_SHORT).show();
+            return;
+        }
         int size = CameraSettings.VIDEO_QUALITY_TABLE.get(videoSize);
-
         Intent intent = mActivity.getIntent();
         if (intent.hasExtra(MediaStore.EXTRA_VIDEO_QUALITY)) {
             int extraVideoQuality =
