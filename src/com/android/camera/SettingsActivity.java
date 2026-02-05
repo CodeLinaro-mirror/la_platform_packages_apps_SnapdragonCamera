@@ -155,7 +155,7 @@ public class SettingsActivity extends PreferenceActivity {
     private ArrayList<CameraCharacteristics> mCharacteristics;
     private boolean mViullEnabled = true;
     private boolean mClickChanged = false;
-
+    private boolean mAICameraAutoChanged = false;
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
             = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
@@ -1947,20 +1947,6 @@ public class SettingsActivity extends PreferenceActivity {
         String selectMode = mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         ListPreference aiCamera = (ListPreference)findPreference(SettingsManager.KEY_AI_CAMERA);
         Log.d(TAG,"isAICameraOn:" + mSettingsManager.isAICameraOn() + ",selectMode: " + selectMode);
-        if(aiCamera != null) {
-            aiCamera.setEnabled(true);
-        }
-        if ( mode == VIDEO  && mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID){
-            if(aiCamera != null) {
-                if(mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") || is8KVideo()) {
-                    aiCamera.setValue("0");
-                    aiCamera.setEnabled(false);
-                }else if(mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("single_rear_aibokeh")){
-                    aiCamera.setValue("2");
-                    aiCamera.setEnabled(false);
-                }
-            }
-        }
         if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") && mode == VIDEO  &&
                 mSettingsManager.getCurrentCameraId() == CaptureModule.FRONT_ID){
             aiCameraList.add(SettingsManager.KEY_AI_CAMERA);
@@ -1971,7 +1957,34 @@ public class SettingsActivity extends PreferenceActivity {
             aiCameraList.add(SettingsManager.KEY_SELECT_MODE);
             addDeveloperOptions(developer,aiCameraList);
         }
+        if(aiCamera != null) {
+            aiCamera.setEnabled(true);
+        }else {
+            return;
+        }
+        if ( mode == VIDEO  && mSettingsManager.getCurrentCameraId() != CaptureModule.FRONT_ID) {
+            if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("rtb") || is8KVideo()) {
+                aiCamera.setValue("0");
+                aiCamera.setEnabled(false);
+                mAICameraAutoChanged = true;
+            } else if (mSettingsManager.getPerfValue(SettingsManager.KEY_SELECT_MODE).equals("single_rear_aibokeh")) {
+                aiCamera.setValue("2");
+                aiCamera.setEnabled(false);
+                mAICameraAutoChanged = true;
+            }
+
+            if(mAICameraAutoChanged && aiCamera.isEnabled()){
+                String value = aiCamera.getValue();
+                String defaultValue = getString(R.string.pref_camera2_ai_camera_mode_entry_value_on);
+                if(value != null && value.equals("0") && defaultValue != null && !defaultValue.equals("0")){
+                    aiCamera.setValue(defaultValue);
+                }
+                mAICameraAutoChanged = false;
+            }
+        }
     }
+
+
     private void clearKeyValue(String key){
         String value = mSettingsManager.getValue(key);
         if(value != null && !value.equals("")){
@@ -2126,6 +2139,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateStoragePreference();
         initializePhysicalPreferences();
         updatePhysicalPreferences();
+        mAICameraAutoChanged = false;
         updateAICameraPerf();
         updateVideoHfrFpsPreference();
         updateEISPreference();
