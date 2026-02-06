@@ -126,7 +126,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final int SCENE_MODE_AUTO_INT = 0;
     public static final int SCENE_MODE_NIGHT_INT = 5;
     public static final int SCENE_MODE_HDR_INT = 18;
-    public static final String KEY_VIULL_ORIGINAL_VALUE = "pref_viull_original_value";
     private static final int EXCEPTION_LOG = PersistUtil.CAMERA2_DEBUG_EXCEPTION;
     private static final int BIG_LOG = PersistUtil.CAMERA2_DEBUG_BIGLOG;
     // Custom-Scenemodes start from 100
@@ -419,6 +418,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private Map<String, Set<String>> mQuadBayerIds = new HashMap<>();
     private boolean isPreferenceEnable = false;
     private String checkey;
+    private boolean mViullChanged = false;
 
     private static Map<String, Set<String>> VIDEO_ENCODER_PROFILE_TABLE = new HashMap<>();
     public static final HashMap<String, String> VIDEO_ENCODER_PROFILE_MAP = new HashMap<String, String>();
@@ -1732,6 +1732,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
             result = true;
         }
         return result;
+    }
+
+    public void setViullChange(boolean isChanged) {
+        mViullChanged = isChanged;
+    }
+
+    public boolean getViullChanged(){
+        return mViullChanged;
     }
 
     public void setProModeSliderValueForAutTest(String key, String value) {
