@@ -2,6 +2,11 @@
  * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 package com.android.camera;
 
 import com.android.camera.util.CameraUtil;
@@ -116,7 +121,7 @@ public class TestBase{
     public static final int FLASH_STATE_FIRED = 3;
     public int[] mShutterLoc = new  int[2];
     public int[] mFlashLoc = new  int[2];
-
+    public int[] mLivePhotoLoc = new  int[2];
     public int[] mVideoPhotoSizeLoc = new  int[2];
 
     public int[] mVideoFpsLoc = new  int[2];
@@ -229,6 +234,7 @@ public class TestBase{
         View mHdr = mActivity.findViewById(R.id.scene_mode_hdr);
         View mSwitch = mActivity.findViewById(R.id.front_back_switcher);
         View mVideoShutter = mActivity.findViewById(R.id.video_button);
+        View mLivePhoto = mActivity.findViewById(R.id.live_photo);
 
         // View mModeItem = mActivity.findViewById(R.id.camera2_mode_item);
         View mSettingsButton = mActivity.findViewById(R.id.settings);
@@ -258,6 +264,8 @@ public class TestBase{
         mIconLoc.put("VideoPhotoSize",mVideoPhotoSizeLoc);
         mVideoFpsLoc = getViewLoction(mVideoFps);
         mIconLoc.put("VideoFps",mVideoFpsLoc);
+        mLivePhotoLoc = getViewLoction(mLivePhoto);
+        mIconLoc.put("LivePhoto",mLivePhotoLoc);
 
         int[] backicon = new int[]{20,100};
         mThumLoc.put("BackIcon",backicon);
@@ -557,6 +565,13 @@ public class TestBase{
         }
         if (testItem("testResolutionInPrev")) {
             testResolutionInPrev(cameraId, mode);
+        }
+        if (testItem("testLivePhoto")) {
+            if (isOpenFromIntent && mCaptureModule.getPaused()) {
+                openCameraByIntent(mImageIntent);
+                Thread.sleep(OPEN_CAMERA_DURATION);
+            }
+            testLivePhoto(mode);
         }
         if (testItem("testLongShot")) {
             testLongShot(cameraId,mode);
@@ -1174,6 +1189,26 @@ private void setMediaRecoder(CaptureModule.CameraMode mode) {
             pressDone();
         }
         if(check1 && check2) {
+            updateJson(5,testPass);
+        }else{
+            updateJson(5,testFail);
+        }
+    }
+
+    public void testLivePhoto(CaptureModule.CameraMode mode)throws Exception {
+        updateJson(5,null);
+        if (mode != CameraMode.DEFAULT) {
+            View live_photo = mActivity.findViewById(R.id.live_photo);
+            if(live_photo.getVisibility() != View.VISIBLE){
+                testResult = true;
+                mSupported = false;
+            }else{
+                testFail = getFailStr("live photo .getVisibility",live_photo.getVisibility(),"INVISIBLE");
+            }
+        }else {
+            testSnapshot(mode);
+        }
+        if(testResult){
             updateJson(5,testPass);
         }else{
             updateJson(5,testFail);

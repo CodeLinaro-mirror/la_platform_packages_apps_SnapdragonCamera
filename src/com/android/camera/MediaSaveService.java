@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera;
 
@@ -249,6 +254,13 @@ public class MediaSaveService extends Service {
     }
 
     public void updateVideo(Uri uri, ContentValues values,
+                            OnMediaSavedListener l, ContentResolver resolver) {
+        // We don't set a queue limit for video saving because the file
+        // is already in the storage. Only updating the database.
+        new VideoUpdateTask(uri, values, l, resolver).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+
+    public void updateLivePhoto(Uri uri, ContentValues values,
                             OnMediaSavedListener l, ContentResolver resolver) {
         // We don't set a queue limit for video saving because the file
         // is already in the storage. Only updating the database.
