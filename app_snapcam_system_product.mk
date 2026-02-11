@@ -1,2 +1,6 @@
 PRODUCT_PACKAGES += \
-    SnapdragonCamera
+    SnapdragonCamera \
+    libjni_mfnrutil \
+    libjni_aidenoiserutilv2 \
+    libjni_aidenoiserutil
+
