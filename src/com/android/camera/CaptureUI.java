@@ -16,6 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera;
 
@@ -149,6 +154,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private ProgressBar mProgressBar;
     private boolean mZoomRatioSupport = false;
 
+    private int[] mLivePhotoIcon = {R.drawable.ic_live_off, R.drawable.ic_live};
+    private int mLivePhotoindex;
+
     private SurfaceHolder.Callback callbackMono = new SurfaceHolder.Callback() {
         // SurfaceHolder callbacks
         @Override
@@ -253,6 +261,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     private View mFilterModeSwitcher;
     private View mSceneModeSwitcher;
+
+    private ImageView mLivePhoto;
     private View mFrontBackSwitcher;
     private ImageView mMakeupButton;
     private SeekBar mMakeupSeekBar;
@@ -462,6 +472,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mExitBestMode = (ImageView) mRootView.findViewById(R.id.exit_best_mode);
         mFilterModeSwitcher = mRootView.findViewById(R.id.filter_mode_switcher);
         mSceneModeSwitcher = mRootView.findViewById(R.id.scene_mode_switcher);
+        mLivePhoto = (ImageView)mRootView.findViewById(R.id.live_photo);
         mFrontBackSwitcher = mRootView.findViewById(R.id.front_back_switcher);
         mMakeupButton = (ImageView) mRootView.findViewById(R.id.ts_makeup_switcher);
         mMakeupSeekBarLayout = mRootView.findViewById(R.id.makeup_seekbar_layout);
@@ -548,6 +559,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         initFilterModeButton();
         initSceneModeButton();
+        initLivePhotoMode();
         initCameraSwitcher();
         initFlashButton();
         updateMenus();
@@ -1174,6 +1186,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public void reInitUI() {
         initSceneModeButton();
+        initLivePhotoMode();
         initFilterModeButton();
         initFlashButton();
         initZoomSeekBar();
@@ -1443,6 +1456,51 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         }
     }
 
+    public void enableLivePhotoOption(){
+        if (mSettingsManager.isMultiCameraEnabled() || !livePhotoSupported() || mModule.isLongShotSettingEnabled() ||
+                mSettingsManager.getSavePictureFormat() != mSettingsManager.JPEG_FORMAT ||
+                !mSettingsManager.isRawForamtOff() || mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_CAPTURE ||
+                mSettingsManager.isZSLInAppEnabled() || mSettingsManager.isSelfieMirrorOn()){
+            mLivePhoto.setEnabled(false);
+            mSettingsManager.setValue(SettingsManager.KEY_LIVE_PHOTO_MODE, "off");
+            mLivePhotoindex = mSettingsManager.getValueIndex(SettingsManager.KEY_LIVE_PHOTO_MODE);
+            mLivePhoto.setImageResource(mLivePhotoIcon[mLivePhotoindex]);
+        } else {
+            mLivePhoto.setEnabled(true);
+
+        }
+    }
+    private boolean livePhotoSupported(){
+        String value = mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE);
+        int indexX = value.indexOf('x');
+        int width = Integer.parseInt(value.substring(0, indexX));
+        int height = Integer.parseInt(value.substring(indexX + 1));
+        if(4 * height == 3 * width || 16 * height == 9 * width){
+            return true;
+        }
+        return false;
+    }
+
+    public void initLivePhotoMode() {
+        mLivePhoto.setVisibility(View.INVISIBLE);
+        if(mModule.getCurrenCameraMode() != CaptureModule.CameraMode.DEFAULT) return;
+        mLivePhoto.setVisibility(View.VISIBLE);
+        mLivePhotoindex = mSettingsManager.getValueIndex(SettingsManager.KEY_LIVE_PHOTO_MODE);
+        mLivePhoto.setImageResource(mLivePhotoIcon[mLivePhotoindex]);
+        mLivePhoto.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(!mModule.getCameraModeSwitcherAllowed()){
+                    return;
+                }
+                mLivePhotoindex = (mLivePhotoindex + 1) % mLivePhotoIcon.length;
+                mSettingsManager.setValueIndex(SettingsManager.KEY_LIVE_PHOTO_MODE, mLivePhotoindex);
+                mLivePhoto.setImageResource(mLivePhotoIcon[mLivePhotoindex]);
+            }
+        });
+        enableLivePhotoOption();
+    }
+
     private void initFilterModeButton() {
         mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         String value = mSettingsManager.getValue(SettingsManager.KEY_COLOR_EFFECT);
@@ -1670,6 +1728,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFrontBackSwitcher.setVisibility(View.INVISIBLE);
         mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         mSceneModeSwitcher.setVisibility(View.INVISIBLE);
+        mLivePhoto.setVisibility(View.INVISIBLE);
         mSettingsIcon.setVisibility(View.INVISIBLE);
         String value = mSettingsManager.getValue(SettingsManager.KEY_MAKEUP);
         if(value != null && value.equals("0")) {
@@ -2000,6 +2059,7 @@ public void updateFlashValue(){
         }
         if (mFrontBackSwitcher != null) mFrontBackSwitcher.setEnabled(status);
         if (mSceneModeSwitcher != null) mSceneModeSwitcher.setEnabled(status);
+        if (mLivePhoto != null) mLivePhoto.setEnabled(status);
         if (mFilterModeSwitcher != null) mFilterModeSwitcher.setEnabled(status);
         if (mMakeupButton != null) mMakeupButton.setVisibility(View.GONE);
         if (mShutterButton != null) mShutterButton.setEnabled(status);
