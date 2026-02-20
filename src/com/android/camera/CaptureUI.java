@@ -2815,10 +2815,31 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                         mSettingsManager.setValueIndex(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex);
                         mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
                     }
+                    String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+                    int videoSize = CameraUtil.getSize(videoSizeStr);
+                    if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO) {
+                        if (((videoSize >= 3840 * 2160 && PersistUtil.getModelInfo().contains("6850")) || videoSize == 7680 * 4320)) {
+                            mSettingsManager.setValue(SettingsManager.KEY_VIULL, "0");
+                            mSettingsManager.setViullChange(true);
+                        } else {
+                            if (mSettingsManager.getValue(SettingsManager.KEY_VIULL).equals("0") && mSettingsManager.getViullChanged()) {
+                                mSettingsManager.setValue(SettingsManager.KEY_VIULL,  "1");
+                                mSettingsManager.setViullChange(false);
+                            }
+                        }
+                    }
+
                     mModule.restartSession(true);
                     enableFpsOption(mVideoFps, true);
                 }
             });
+            if(mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO) {
+                String videoSizeStr = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+                int videoSize = CameraUtil.getSize(videoSizeStr);
+                if (((videoSize >= 3840 * 2160 && PersistUtil.getModelInfo().contains("6850")) || videoSize == 7680 * 4320)) {
+                    mSettingsManager.setViullChange(true);
+                }
+            }
             enableView(mVideoFps, SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
             mVideoFps.setText(mSettingsManager.getDisplayValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE, mVideoFpsIndex));
             if (!mSettingsManager.isMultiCameraEnabled()) {
