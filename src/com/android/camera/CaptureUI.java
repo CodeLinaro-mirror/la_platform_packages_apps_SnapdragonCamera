@@ -3631,6 +3631,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 @Override
                 public void run() {
                     mShutterButton.setEnabled(enabled);
+                    Log.d(TAG,"enable ShutterButton ="+enabled);
                 }
             });
         }
