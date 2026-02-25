@@ -2643,6 +2643,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 outputConfigurations = new ArrayList<OutputConfiguration>();
                 if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createsession--getalllist");
                 if (mSettingsManager.getPhysicalCameraId() != null) {
+                    mUI.buildPhysicalSurfaces();
                     List<OutputConfiguration> physicalOutput =
                             getPhysicalOutputConfiguration();
                     outputConfigurations.addAll(physicalOutput);
@@ -2664,6 +2665,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                         int i=1;
                         for (String physical : mSettingsManager.getPhysicalCameraId()){
                             Log.d(TAG,"add surface physical id="+physical);
+                            mActivity.runOnUiThread(new Runnable() {
+                                public void run() {
+                                    mUI.hideSurfaceView();
+                                }
+                            });
                             OutputConfiguration outputConfiguration =
                                     new OutputConfiguration(previewSurfaces.get(i));
                             outputConfiguration.setPhysicalCameraId(physical);
@@ -8768,6 +8774,12 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
         setTag(mVideoPreviewRequestBuilder, "" + cameraId + "-" + getCurrenCameraMode().name());
         if (mSettingsManager.getPhysicalCameraId() != null) {
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
+                    mUI.hideSurfaceView();
+                }
+            });
+            mUI.buildPhysicalSurfaces();
             List<Surface> previewSurfaces = mUI.getPhysicalSurfaces();
             if(mSettingsManager.isLogicalEnable()){
                 mVideoPreviewRequestBuilder.addTarget(previewSurfaces.get(0));
