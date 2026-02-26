@@ -2469,6 +2469,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         List<Surface> list = new LinkedList<Surface>();
         mState[id] = STATE_PREVIEW;
         mControlAFMode = CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
+        mPreviewOutputConfiguration = null;
         try {
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilder[id] = getRequestBuilder(id, 0);
@@ -2486,13 +2487,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                             Log.i(TAG, "capturesession - onConfigured "+ id);
                             mCurrentSessionClosed = false;
                             if(mPreviewOutputConfiguration != null) {
-                                mPreviewOutputConfiguration.addSurface(getPreviewSurfaceForSession(id));
-                                try {
-                                    List<OutputConfiguration> finalizeOutputConfigs = new ArrayList<>();
-                                    finalizeOutputConfigs.add(mPreviewOutputConfiguration);
-                                    cameraCaptureSession.finalizeOutputConfigurations(finalizeOutputConfigs);
-                                } catch (Exception e) {
-                                    Log.e(TAG, "finalizeOutputConfigurations with exception:" + e.toString());
+                                Surface previewSur = getPreviewSurfaceForSession(id);
+                                waitForPreviewSurfaceReady();
+                                if (mSurfaceReady && previewSur.isValid()) {
+                                    mPreviewOutputConfiguration.addSurface(previewSur);
+                                    try {
+                                        List<OutputConfiguration> finalizeOutputConfigs = new ArrayList<>();
+                                        finalizeOutputConfigs.add(mPreviewOutputConfiguration);
+                                        cameraCaptureSession.finalizeOutputConfigurations(finalizeOutputConfigs);
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "finalizeOutputConfigurations with exception:" + e.toString());
+                                    }
                                 }
                             }
                             if(isLivePhotoOn()){
@@ -2720,7 +2725,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         OutputConfiguration videoConfig = new OutputConfiguration(mVideoImageReader.getSurface());
                         videoConfig.enableSurfaceSharing();
                         list.add(mVideoImageReader.getSurface());
-                        mPreviewRequestBuilder[BAYER_ID].addTarget(mVideoImageReader.getSurface());
+                        mPreviewRequestBuilder[id].addTarget(mVideoImageReader.getSurface());
                     }
                     for (Surface s : list) {
                         if (s == surface) {
