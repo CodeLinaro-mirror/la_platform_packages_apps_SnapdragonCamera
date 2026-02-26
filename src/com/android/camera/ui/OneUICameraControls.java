@@ -16,6 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera.ui;
 
@@ -46,13 +51,15 @@ public class OneUICameraControls extends RotatableLayout {
 
     private static final String TAG = "CAM_Controls";
 
-    private static final float TOP_PANEL_SPACE_NUM = 4f;
+    private static final float TOP_PANEL_SPACE_NUM = 5f;
     private static final float BOTTOM_PANEL_SPACE_NUM = 5f;
     private static final float PANEL_INDEX_0 = 0f;
     private static final float PANEL_INDEX_1 = 1f;
     private static final float PANEL_INDEX_2 = 2f;
     private static final float PANEL_INDEX_3 = 3f;
     private static final float PANEL_INDEX_4 = 4f;
+    private static final float PANEL_INDEX_5 = 5f;
+
     private View mShutter;
     private View mVideoShutter;
     private View mExitBestPhotpMode;
@@ -63,6 +70,7 @@ public class OneUICameraControls extends RotatableLayout {
     private View mTsMakeupSwitcher;
     private View mPreview;
     private View mSceneModeSwitcher;
+    private View mLivePhoto;
     private View mFilterModeSwitcher;
     private View mMakeupSeekBar;
     private View mMakeupSeekBarLowText;
@@ -162,6 +170,8 @@ public class OneUICameraControls extends RotatableLayout {
         mMute = findViewById(R.id.mute_button);
         mPreview = findViewById(R.id.preview_thumb);
         mSceneModeSwitcher = findViewById(R.id.scene_mode_switcher);
+        mLivePhoto = findViewById(R.id.live_photo);
+
         mFilterModeSwitcher = findViewById(R.id.filter_mode_switcher);
         mRemainingPhotos = (LinearLayout) findViewById(R.id.remaining_photos);
         mRemainingPhotosText = (TextView) findViewById(R.id.remaining_photos_text);
@@ -236,7 +246,7 @@ public class OneUICameraControls extends RotatableLayout {
         mViews = new View[]{
                 mSceneModeSwitcher, mFilterModeSwitcher, mFrontBackSwitcher,
                 mFlashButton, mShutter,
-                mPreview, mPauseButton, mCancelButton, mSettingsButton
+                mPreview, mPauseButton, mCancelButton, mSettingsButton, mLivePhoto
         };
         mBottomLargeSize = getResources().getDimensionPixelSize(
                 R.dimen.one_ui_bottom_large);
@@ -351,7 +361,8 @@ public class OneUICameraControls extends RotatableLayout {
             setLocation(mExitBestPhotpMode ,false, PANEL_INDEX_4);
         } else {
             setLocation(mFlashButton, true, PANEL_INDEX_2);
-            setLocation(mSettingsButton,true, PANEL_INDEX_3);
+            setLocation(mLivePhoto, true, PANEL_INDEX_3);
+            setLocation(mSettingsButton,true, PANEL_INDEX_4);
             setLocation(mFrontBackSwitcher, false, 3.15f);
             if (mIntentMode == CaptureModule.INTENT_MODE_CAPTURE) {
                 setLocation(mShutter, false, PANEL_INDEX_2);
@@ -519,7 +530,7 @@ public class OneUICameraControls extends RotatableLayout {
         mOrientation = orientation;
         View[] views = {
                 mSceneModeSwitcher, mFilterModeSwitcher, mFrontBackSwitcher,
-                mFlashButton, mSettingsButton, mPreview,
+                mFlashButton, mSettingsButton, mPreview,mLivePhoto,
                 mMute, mShutter, mVideoShutter, mMakeupSeekBarLowText, mMakeupSeekBarHighText,
                 mPauseButton, mExitBestPhotpMode
         };

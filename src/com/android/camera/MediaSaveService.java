@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 package com.android.camera;
 
@@ -222,6 +227,13 @@ public class MediaSaveService extends Service {
         // We don't set a queue limit for video saving because the file
         // is already in the storage. Only updating the database.
         new VideoSaveTask(path, duration, values, l, resolver).execute();
+    }
+
+    public void updateLivePhoto(Uri uri, ContentValues values,
+                            OnMediaSavedListener l, ContentResolver resolver) {
+        // We don't set a queue limit for video saving because the file
+        // is already in the storage. Only updating the database.
+        new VideoUpdateTask(uri, values, l, resolver).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     public void setListener(Listener l) {
@@ -675,6 +687,41 @@ public class MediaSaveService extends Service {
         @Override
         protected void onPostExecute(Uri uri) {
             if (listener != null) listener.onMediaSaved(uri);
+        }
+    }
+
+    private class VideoUpdateTask extends AsyncTask <Void, Void, Void> {
+        private final Uri uri;
+        private final ContentValues values;
+        private final OnMediaSavedListener listener;
+        private final ContentResolver resolver;
+
+        public VideoUpdateTask(Uri u, ContentValues values, OnMediaSavedListener l,
+                               ContentResolver r) {
+            this.uri = u;
+            this.values = new ContentValues(values);
+            this.listener = l;
+            this.resolver = r;
+        }
+
+        @Override
+        protected Void doInBackground(Void... v) {
+            try {
+                resolver.update(uri, values, null, null);
+            } catch (Exception e) {
+                // We failed to update the database.
+                Log.e(TAG, "failed to update video to media store", e);
+            } finally {
+                Log.v(TAG, "Current video URI: " + uri);
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Void v) {
+            if (listener != null) {
+                listener.onMediaSaved(uri);
+            }
         }
     }
 }
