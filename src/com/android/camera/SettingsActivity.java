@@ -59,7 +59,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.graphics.ColorSpace;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -87,7 +86,6 @@ import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
@@ -98,9 +96,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.text.InputType;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.SearchView;
 import android.text.TextWatcher;
 import android.text.Editable;
 import android.widget.ImageView;
@@ -119,7 +115,6 @@ import java.util.Set;
 
 import static com.android.camera.CaptureModule.CameraMode.DEFAULT;
 import static com.android.camera.CaptureModule.CameraMode.DEPTH;
-import static com.android.camera.CaptureModule.CameraMode.HFR;
 import static com.android.camera.CaptureModule.CameraMode.RTB;
 import static com.android.camera.CaptureModule.CameraMode.SAT;
 import static com.android.camera.CaptureModule.CameraMode.VIDEO;
@@ -153,7 +148,6 @@ public class SettingsActivity extends PreferenceActivity {
     AlertDialog mManualHDRDialog = null;
     private ArrayList<String> mSearchSettingList;
     private ArrayList<CameraCharacteristics> mCharacteristics;
-    private boolean mViullEnabled = true;
     private boolean mClickChanged = false;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener
@@ -2684,10 +2678,14 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     private void disableVIULLOption(ListPreference pref){
-        mSettingsManager.setPreferenceValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE, pref.getValue());
-        pref.setValue("0");
-        pref.setEnabled(false);
-        mViullEnabled = false;
+        if(pref != null){
+            pref.setValue("0");
+            pref.setEnabled(false);
+        }else{
+            //if dont enable develop options, viull pref is null, still need to change value to false
+            mSettingsManager.setValue(SettingsManager.KEY_VIULL, "0");
+        }
+        mSettingsManager.setViullChange(true);
     }
 
     private boolean is8KVideo(){
@@ -2710,7 +2708,6 @@ public class SettingsActivity extends PreferenceActivity {
     }
     private void updateViullPreference() {
         ListPreference pref = (ListPreference) findPreference(SettingsManager.KEY_VIULL);
-        if (pref == null) return;
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         String selectMode = mSettingsManager.getValue(mSettingsManager.KEY_SELECT_MODE);
         if (selectMode.equals("rtb") && mode == CaptureModule.CameraMode.VIDEO) {
@@ -2737,14 +2734,15 @@ public class SettingsActivity extends PreferenceActivity {
             disableVIULLOption(pref);
             return;
         }
-        Log.i(TAG,"set viull original value:" + mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE));
-        if(!mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE).equals("") &&
-                !mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE).equals("disable") &&
-                !mViullEnabled) {
-            pref.setValue(mSettingsManager.getPerfValue(SettingsManager.KEY_VIULL_ORIGINAL_VALUE));
+        if(mSettingsManager.getViullChanged()) {
+            String value = mSettingsManager.getValue(SettingsManager.KEY_VIULL);
+            if(value != null && value.equals("0") ){
+                mSettingsManager.setValue(SettingsManager.KEY_VIULL, "1");
+            }
+            mSettingsManager.setViullChange(false);
         }
+        if (pref == null) return;
         pref.setEnabled(true);
-        mViullEnabled = true;
     }
 
     public void updateVIULLDefaultValue(){
