@@ -5119,6 +5119,7 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
                         mSceneCameraIds.get(i).mode == CameraMode.DEFAULT){
                     mCurrentModeIndex =  mNextModeIndex = i;
                     mCurrentSceneMode = mSceneCameraIds.get(i);
+                    break;
                 }
             }
         }
