@@ -3890,7 +3890,7 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
                         OutputConfiguration videoConfig = new OutputConfiguration(mVideoImageReader.getSurface());
                         videoConfig.enableSurfaceSharing();
                         list.add(mVideoImageReader.getSurface());
-                        mPreviewRequestBuilder[BAYER_ID].addTarget(mVideoImageReader.getSurface());
+                        mPreviewRequestBuilder[id].addTarget(mVideoImageReader.getSurface());
                     }
                     for (Surface s : list) {
                         if (s == surface) {
