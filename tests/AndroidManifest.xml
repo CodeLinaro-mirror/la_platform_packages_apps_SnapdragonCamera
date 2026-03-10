@@ -9,7 +9,7 @@
     package="org.codeaurora.snapcam.tests">
     <uses-sdk
         android:minSdkVersion="30"
-        android:targetSdkVersion="35" />
+        android:targetSdkVersion="36" />
     <application>
         <uses-library android:name="android.test.runner" />
     </application>
