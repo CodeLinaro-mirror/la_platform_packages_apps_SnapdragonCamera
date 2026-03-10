@@ -24,7 +24,7 @@
     package="com.android.camera.tests">
     <uses-sdk
         android:minSdkVersion="30"
-        android:targetSdkVersion="33" />
+        android:targetSdkVersion="36" />
     <application>
         <uses-library android:name="android.test.runner" />
     </application>
