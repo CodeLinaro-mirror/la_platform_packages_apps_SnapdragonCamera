@@ -1296,6 +1296,7 @@ public class CameraActivity extends Activity
             android.util.Log.w(TAG, "Unknown new media with MIME type:"
                     + mimeType + ", uri:" + uri);
         }
+        updateThumbnail(true);
     }
 
     private void removeData(int dataID) {
