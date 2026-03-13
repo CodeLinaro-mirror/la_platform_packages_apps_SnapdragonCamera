@@ -77,6 +77,8 @@ import android.widget.EditText;
 import android.text.InputType;
 
 import org.codeaurora.snapcam.R;
+
+import com.android.camera.aide.SwmfnrUtil;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.CaptureModule.CameraMode;
 import com.android.camera.ui.RotateTextToast;
@@ -157,6 +159,7 @@ public class SettingsActivity extends PreferenceActivity {
                 }
                 updateEISPreference();
                 updateMfnrPreference();
+                updateLongShotPreference();
             } else if (key.equals(SettingsManager.KEY_SAVERAW) ||
                     key.equals(SettingsManager.KEY_AUTO_HDR) ||
                     key.equals(SettingsManager.KEY_QCFA) ||
@@ -1853,6 +1856,11 @@ public class SettingsActivity extends PreferenceActivity {
             } else {
                 if (longShot != null) longShot.setEnabled(true);
             }
+        }
+        String value = mSettingsManager.getValue(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
+        if(value != null &&  !value.equals("disable")&& Integer.parseInt(value) == 1 && mSettingsManager.isSWMFNRSupport() && SwmfnrUtil.isSwmfnrSupported()){
+            mSettingsManager.setValue(SettingsManager.KEY_LONGSHOT, "off");
+            if (longShot != null) longShot.setEnabled(false);
         }
     }
 
