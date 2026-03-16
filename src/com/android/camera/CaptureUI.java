@@ -3156,7 +3156,8 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void showUIafterRecording() {
         mCameraControls.setVideoMode(false);
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
-        if (!DEV_LEVEL_ALL && mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC) {
+        if ((!DEV_LEVEL_ALL && mModule.getCurrenCameraMode() == CaptureModule.CameraMode.CINEMATIC) ||
+                ( mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR && !mSettingsManager.isFrontIDHFRSupported())) {
             mFrontBackSwitcher.setVisibility(View.INVISIBLE);
         }
         mSettingsIcon.setVisibility(View.VISIBLE);
@@ -3227,7 +3228,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 break;
         }
         String value = mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE);
-        if (value == null) {
+        if (value == null || ( mModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR && !mSettingsManager.isFrontIDHFRSupported())) {
             mFrontBackSwitcher.setVisibility(View.INVISIBLE);
         }
         if(mModule.mMFNREnable && mModule.getMainCameraId() ==  android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT){
