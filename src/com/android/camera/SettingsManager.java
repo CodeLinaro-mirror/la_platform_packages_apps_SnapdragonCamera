@@ -63,6 +63,7 @@ import android.media.MediaFormat;
 import android.media.EncoderProfiles;
 import android.media.MediaRecorder;
 import android.media.CamcorderProfile;
+import android.os.Build;
 import android.os.Trace;
 import android.preference.PreferenceManager;
 import android.util.ArraySet;
@@ -2353,6 +2354,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (filterUnsupportedOptions(pictureFormat,
                     getSupportedPictureFormat(cameraId))){
                 mFilteredKeys.add(pictureFormat.getKey());
+            }
+            if (getPerfValue(KEY_PICTURE_FORMAT).equals("disable")) {
+                if (Build.VERSION.MEDIA_PERFORMANCE_CLASS >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                    setValue(KEY_PICTURE_FORMAT, "3");
+                } else {
+                    setValue(KEY_PICTURE_FORMAT, "0");
+                }
             }
         }
 
