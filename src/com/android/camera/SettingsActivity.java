@@ -212,7 +212,7 @@ public class SettingsActivity extends PreferenceActivity {
 
     public void updateMfnrPreference(){
         ListPreference mfnrPref = (ListPreference) findPreference(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
-        ListPreference selectModePref = (ListPreference)findPreference(SettingsManager.KEY_SELECT_MODE);
+        String selectMode =  mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
         String saveRaw = mSettingsManager.getValue(SettingsManager.KEY_SAVERAW);
         String autoHdr = mSettingsManager.getValue(SettingsManager.KEY_AUTO_HDR);
@@ -220,6 +220,8 @@ public class SettingsActivity extends PreferenceActivity {
         Size pictureSize = parsePictureSize(mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE));
         if (mfnrPref != null && mSettingsManager.isSWMFNRSupport()) {
             if((scene != null && Integer.parseInt(scene) == SettingsManager.SCENE_MODE_HDR_INT) ||
+                    (CaptureModule.MCXMODE && selectMode != null &&
+                            (selectMode.equals("sat") || selectMode.equals("default"))) ||
                     (saveRaw != null  && saveRaw.equals("enable")) ||
                     (autoHdr != null  && autoHdr.equals("enable")) ||
                     (qcfa != null && qcfa.equals("enable")) ||
