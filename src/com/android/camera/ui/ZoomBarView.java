@@ -54,6 +54,7 @@ public class ZoomBarView extends View {
     private boolean zoomEnabled,mTouched;
     DecimalFormat zoomDf = new DecimalFormat("#.##");
     private long moveTime;
+    float selectZoom = -1f;
 
     public void setZoomEnable(boolean enabled){
         zoomEnabled = enabled;
@@ -280,8 +281,8 @@ public class ZoomBarView extends View {
         Log.d(TAG, "sweepAngle= " + sweepAngle + ",startAngle=" + startAngle + ",dialCount=" + dialCount);
         float each_angle = sweepAngle / ((dialCount - 1) * 1f);
         float selecteDiff = -1;
+
         for (int i = 0; i < dialCount; i++) {
-            selecteDiff = -1;
             angle = each_angle * i + startAngle;
             if (zoomRatioRange[0] > outZoomValue[i] && zoomRatioRange[0] < outZoomValue[i+1]) {
                 float angle2 = each_angle * (i + 1) + startAngle;
@@ -300,15 +301,15 @@ public class ZoomBarView extends View {
             String text = String.valueOf(outZoomValue[i]);
             canvas.drawText(text, textP[0], textP[1], textPaint);
             float diff = Math.abs(angle - selectedLineAngle);
-            if (diff < moveAnglePre) {
-
+            if (diff < moveAnglePre && (selecteDiff == -1 || (diff < selecteDiff))) {
                 if (isTouchChange) {
                     Log.d(TAG, "current zoom is " + text +
                             ",startP[0]=" + startP[0] + ",endP[0]=" + endP[0] +
                             ",outZoomValue[i]=" + outZoomValue[i] + ",mCurrentZoom=" + mCurrentZoom
-                            +",moveAnglePre="+moveAnglePre+",angle="+angle);
-                    mListener.onZoomValueChanged(outZoomValue[i]);
-                    mCurrentZoom = outZoomValue[i];
+                            +",moveAnglePre="+moveAnglePre+",angle="+angle+"diff="+diff+",selecteDiff="+selecteDiff);
+                   // mListener.onZoomValueChanged(outZoomValue[i]);
+                   // mCurrentZoom = outZoomValue[i];
+                    selectZoom = outZoomValue[i];
                     selecteDiff = diff;
                 }
             }
@@ -319,6 +320,12 @@ public class ZoomBarView extends View {
                 drawUWDial(angle, diffangle, outZoomValue[i], outZoomValue[i + 1], sRadius, canvas,selecteDiff);
             }
         }
+        if (isTouchChange && selectZoom != -1 && mCurrentZoom != selectZoom ) {
+            Log.d(TAG,"set zoom  selectZoom ="+selectZoom);
+              mListener.onZoomValueChanged(selectZoom);
+              mCurrentZoom = selectZoom;
+        }
+
     }
 
     private void drawUWDial(float startAngle, float sweepAngle, float startZoom, float endZoom, float radius, Canvas canvas,float selecteDiff){
@@ -354,14 +361,17 @@ public class ZoomBarView extends View {
                 }
             }
             float diff = Math.abs(angle - selectedLineAngle);
-            if ((diff < each_angle && selecteDiff == -1) || (selecteDiff >= 0 && diff < selecteDiff)){
+            if (diff < each_angle && (selecteDiff == -1 || diff < selecteDiff)){
                 if (isTouchChange) {
                     Log.d(TAG,"mCurrentZoom="+mCurrentZoom+",angle="+angle+",each_angle="
-                            +each_angle+",selecteDiff="+selecteDiff+",startZoom="+startZoom);
-                    mListener.onZoomValueChanged(startZoom);
-                    mCurrentZoom = startZoom;
+                            +each_angle+",startZoom="+startZoom+
+                            ",zoomMoveValue="+zoomMoveValue+",diff="+diff+",selecteDiff="+selecteDiff
+                    +",selectedLineAngle="+selectedLineAngle+",i="+i);
+                   // mListener.onZoomValueChanged(startZoom);
+                   // mCurrentZoom = startZoom;
+                    selectZoom = startZoom;
+                    selecteDiff = diff;
                 }
-                selecteDiff = diff;
             }
             startZoom = startZoom + zoomMoveValue;
 
