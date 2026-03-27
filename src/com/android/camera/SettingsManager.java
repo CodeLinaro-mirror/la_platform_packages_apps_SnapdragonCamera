@@ -4691,7 +4691,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
             ret.add(String.valueOf(SettingsManager.HEIF_FORMAT));
         }
         if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB && isDynamicRangeTenBitSupported()) {
-            ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
+            String torchHDRValue = getValue(KEY_TORCH_HDR_VALUE);
+            if(!isLimitedHDR() && !isSHDRLimited() && torchHDRValue != null && torchHDRValue.equals("0")) {
+                ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
+            }
         }
         return ret;
     }
