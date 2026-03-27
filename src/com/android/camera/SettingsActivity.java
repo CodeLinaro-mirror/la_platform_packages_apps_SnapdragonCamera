@@ -368,6 +368,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updateHdrRefOp();
                         updateQuadBayerPreference();
                         updateQLLPreference();
+                        updatePictureFormatPreference();
                         mSettingsManager.updatePictureAndVideoSize();
                         updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
@@ -433,6 +434,8 @@ public class SettingsActivity extends PreferenceActivity {
                         break;
                     case SettingsManager.KEY_PHYSICAL_JPEG_R_CALLBACK:
                         recreate();
+                    case SettingsManager.KEY_TORCH_HDR_VALUE:
+                        updatePictureFormatPreference();
                         break;
 
                 }
@@ -1241,6 +1244,7 @@ public class SettingsActivity extends PreferenceActivity {
                 editor.putBoolean(title, isChecked);
                 editor.commit();
                 updateHdrRefOp();
+                updatePictureFormatPreference();
                 mSettingsManager.updatePictureAndVideoSize();
                 updatePreference(SettingsManager.KEY_PICTURE_SIZE);
                 if(title.equals("SHDR")) {
@@ -2942,6 +2946,8 @@ private void setSearchView(AutoCompleteTextView autoCompTextView,ImageView searc
         } else {
             pictureFormatPref.setEnabled(true);
         }
+        mSettingsManager.filterPictureFormat();
+        updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
     }
 
     private void updateLongShotPreference() {
