@@ -3010,7 +3010,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isFrontIDHFRSupported() {
         boolean result = true;
-        if (-1 == CaptureModule.FRONT_ID) {
+        if (-1 == CaptureModule.FRONT_ID || PersistUtil.getModelInfo().contains("6850")) {
             result = false;
         } else {
             ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
