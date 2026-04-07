@@ -1631,6 +1631,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 singlePhysicalCamera.setEntries(singlePhysicalEntries);
                 singlePhysicalCamera.setEntryValues(singlePhysicalValues);
                 initPhysicalSizePreference(mCharacteristics.get(cameraId).getPhysicalCameraIds());
+                if(mCharacteristics.get(cameraId).getPhysicalCameraIds().size() < CaptureModule.PHYSICAL_CAMERA_COUNT) {
+                    for (int i = CaptureModule.PHYSICAL_CAMERA_COUNT -1 ; i > mCharacteristics.get(cameraId).getPhysicalCameraIds().size() -1 ; i --) {
+                        removePreference(mPreferenceGroup, SettingsManager.KEY_PHYSICAL_SIZE[i]);
+                    }
+                    for (int i = CaptureModule.PHYSICAL_CAMERA_COUNT -1 ; i > mCharacteristics.get(cameraId).getPhysicalCameraIds().size() -1 ; i --) {
+                        removePreference(mPreferenceGroup, SettingsManager.KEY_PHYSICAL_VIDEO_SIZE[i]);
+                    }
+                }
             }
         }
     }
