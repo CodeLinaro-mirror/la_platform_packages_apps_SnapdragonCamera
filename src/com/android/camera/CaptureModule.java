@@ -730,6 +730,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     float tone = 0.0f;
     float detail_enhancement = 0.0f;
     private Object mAideLock = new Object();
+    private CameraUtil.IntegerLock mLockNums = new CameraUtil.IntegerLock(0);
     private boolean mMnfrCreated = false;
     float mGain;
     float mAideAdrcGain = 100;
@@ -1128,6 +1129,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     }
                     if(isLivePhotoOn() && mLivePhotoImages != null && mLivePhotoImages.size() > 0){
                         MotionPhoto motionPhoto = mLivePhotoImages.getLast();
+                        mLockNums.incrementAndGet(1);
                         motionPhoto.updateUri(uri);
                     }
                 }
@@ -2860,13 +2862,12 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void prepareMediaCodec(){
-        Log.d(TAG,"prepareMediaCodec, mVideoSize:" + mVideoSize);
-        closeVideoFileDescriptor();
         generateVideoFilename(MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         int rotation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
         if(isLivePhotoOn() && mYUVEncoder != null && mVideoFilename != null) {
             mYUVEncoder.prepare(mVideoSize, mVideoFilename, rotation);
         }
+        Log.d(TAG,"prepareMediaCodec, mVideoSize:" + mVideoSize + ",mVideoFilename:" + mVideoFilename);
     }
 
     public void onNewImage(Image image) {
@@ -2910,7 +2911,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void yuvEncodeComplete(){
-        Log.i(TAG,"stopYUVRecording, yuvEncodeComplete" );
+        Log.i(TAG,"stopYUVRecording, yuvEncodeComplete, mIsRecording:" + mIsRecording + ",mYUVEncoder:" + mYUVEncoder + ",mVideoFilename:" + mVideoFilename);
         mTakingPicture[getMainCameraId()] = false;
         if(!mIsRecording || mYUVEncoder == null || mVideoFilename == null) {
             Log.e(TAG, "mIsRecording is false or yuvencoder is null");
@@ -2921,6 +2922,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             public void run() {
                 mUI.stopSelfieFlash();
                 mUI.enableShutter(true);
+                mUI.setFlashVisibility(true);
             }
         });
         mYUVEncoder.stop();
@@ -2928,29 +2930,37 @@ public class CaptureModule implements CameraModule, PhotoController,
         Log.i(TAG,"mVideoFilename:" + mVideoFilename);
         byte[] videoBytes = getVideoData(mVideoFilename);
         MotionPhoto motionPhoto = mLivePhotoImages.poll();
-        if(motionPhoto != null) {
-            byte[] bytes = motionPhoto.combineJpegVideo(videoBytes);
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    updateMotionPhoto(bytes, motionPhoto.getUri(), motionPhoto.getXMP());
-                }
-            }).start();
-            if(!mIsRecording) {
-                mPendingTasks--;
+        if(motionPhoto == null) {
+            mLockNums.waitUntilIs(1);
+            motionPhoto = mLivePhotoImages.poll();
+        }
+        if(videoBytes != null) {
+            if (motionPhoto != null) {
+                MotionPhoto finialPhoto = motionPhoto;
+                byte[] bytes = finialPhoto.combineJpegVideo(videoBytes);
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        //if more than one capture request, then handle next one
-                        processRecordingTask();
+                        updateMotionPhoto(bytes, finialPhoto.getUri(), finialPhoto.getXMP());
                     }
                 }).start();
+                if (!mIsRecording) {
+                    mPendingTasks--;
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            //if more than one capture request, then handle next one
+                            processRecordingTask();
+                        }
+                    }).start();
+                }
+            } else {
+                Log.w(TAG, "No motion photo available for combining!");
             }
-        } else {
-            Log.w(TAG, "No motion photo available for combining!");
         }
         closeYUVVideoRelated();
         if(isLivePhotoOn()) {
+            mLockNums.set(0);
             prepareMediaCodec();
         }
     }
@@ -2976,17 +2986,11 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void closeYUVVideoRelated(){
-        if (mCurrentVideoUri != null) {
-            mContentResolver.delete(mCurrentVideoUri, null);
-            mCurrentVideoUri = null;
-        }
-        cleanupEmptyFile();
+        Log.i(TAG,"closeYUVVideoRelated, mVideoFilename:" + mVideoFilename);
         if (mVideoFilename != null) {
             File f = new File(mVideoFilename);
-            if (f.length() > 0) {
-                f.delete();
-                mVideoFilename = null;
-            }
+            f.delete();
+            mVideoFilename = null;
         }
     }
     private void abortYUVRecording(){
@@ -3013,6 +3017,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     Log.e(TAG, "Error deleting motion photo URI", e);
                 }
             }
+            mLockNums.set(0);
             closeYUVVideoRelated();
             mIsRecording = false;
         }
@@ -3065,7 +3070,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             os.write(bytes);
             os.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            Log.i(TAG,"updateMotionPhoto, image failed");
+            return;
         }
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.ImageColumns.SIZE, bytes.length);
@@ -5275,10 +5281,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             if (mIntentMode == INTENT_MODE_STILL_IMAGE_CAMERA) {
                                                 mIntentMode = INTENT_MODE_NORMAL;
                                             }
-                                            if(isLivePhotoOn() && !mIsRecording){
-                                                image.close();
-                                                return;
-                                            }
+
                                             mActivity.getMediaSaveService().addImage(bytes, title, date,
                                                     null, image.getWidth(), image.getHeight(), orientation, exif,
                                                     mOnMediaSavedListener, mContentResolver,pictureFormat);
@@ -8172,17 +8175,48 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void limitPreviewFPS() {
         try {
             List<CaptureRequest> burstList = new ArrayList<>();
+            int fps = mSettingsManager.getVideoPreviewFPS(mVideoSize,
+                    mSettingsManager.getVideoFPS());
+            Log.d(TAG,"limit preview fps:" + PersistUtil.getPreviewFps() + ",fps" + fps + ",mHighSpeedCaptureRate:" + mHighSpeedCaptureRate);
             if(mIsRecordingVideo) {
-                burstList.add(mVideoRecordRequestBuilder.build());
-                mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
-                burstList.add(mVideoRecordRequestBuilder.build());
+                if((fps == 30 && mHighSpeedCaptureRate == 60) || (fps == 15 && mHighSpeedCaptureRate == 0)) {
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                }else if(fps == 15 && mHighSpeedCaptureRate == 60){
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                }else if(fps == 45){
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                    mVideoRecordRequestBuilder.removeTarget(mVideoPreviewSurface);
+                    burstList.add(mVideoRecordRequestBuilder.build());
+                }
                 mCurrentSession.setRepeatingBurst(burstList, mCaptureCallback, mCameraHandler);
                 mVideoRecordRequestBuilder.addTarget(mVideoPreviewSurface);
             }else{
                 mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].addTarget(mVideoRecordingSurface);
-                burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
-                mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoPreviewSurface);
-                burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                if((fps == 30 && mHighSpeedCaptureRate == 60) || (fps == 15 && mHighSpeedCaptureRate == 0)) {
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoPreviewSurface);
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                }else if(fps == 15 && mHighSpeedCaptureRate == 60){
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoPreviewSurface);
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                }else if(fps == 45){
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                    mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoPreviewSurface);
+                    burstList.add(mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].build());
+                }
                 mCurrentSession.setRepeatingBurst(burstList, mCaptureCallback, mCameraHandler);
                 mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].removeTarget(mVideoRecordingSurface);
                 mPreviewRequestBuilder[mCurrentSceneMode.getCurrentId()].addTarget(mVideoPreviewSurface);
@@ -8232,7 +8266,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
 
-                    if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                         if (PersistUtil.enableMediaRecorder())  {
                             mVideoRecordRequestBuilder.addTarget(mVideoRecordingSurface);
                         }
@@ -8475,7 +8509,7 @@ public class CaptureModule implements CameraModule, PhotoController,
 
             int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                     mSettingsManager.getVideoFPS());
-            if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+            if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                 limitPreviewFPS();
             } else {
                 if (isHighSpeedRateCapture()) {
@@ -9159,7 +9193,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 mMediaRecorder.pause();
                 int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                             mSettingsManager.getVideoFPS());
-                if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                     limitPreviewFPS();
                 }
             } else {
@@ -10774,6 +10808,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                     processRecordingTask();
                 }
             }
+            mActivity.runOnUiThread(new Runnable() {
+                public void run() {
+                    mUI.setFlashVisibility(false);
+                }
+            });
         }
         int id = getMainCameraId();
         if (mCurrentSceneMode.mode == CameraMode.HFR ||
@@ -11569,7 +11608,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 } else {
                     int previewFPS = mSettingsManager.getVideoPreviewFPS(mVideoSize,
                         mSettingsManager.getVideoFPS());
-                    if (previewFPS == 30 && mHighSpeedCaptureRate == 60) {
+                    if ((previewFPS != 60 && mHighSpeedCaptureRate == 60) || (mHighSpeedCaptureRate == 0 && previewFPS == 15)) {
                         if (mUI.getZoomFixedSupport()) {
                            applyZoomRatio(mVideoRecordRequestBuilder, mZoomValue, id);
                         } else {

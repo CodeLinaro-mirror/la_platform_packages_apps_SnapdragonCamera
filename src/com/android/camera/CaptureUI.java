@@ -2176,6 +2176,15 @@ public void updateFlashValue(){
         }
     }
 
+    public void setFlashVisibility(boolean visibility){
+        if(visibility){
+            mFlashButton.setVisibility(View.VISIBLE);
+            mFlashButton.setEnabled(true);
+        }else{
+            mFlashButton.setVisibility(View.GONE);
+        }
+    }
+
     public void toggleProgressBar(boolean show) {
         mProgressBar.setVisibility(show ? View.VISIBLE : View.GONE);
     }
