@@ -233,9 +233,9 @@ public class MultiSettingsActivity extends PreferenceActivity {
                 mConcurrentEntryValues[i] = cameraId;
             }
             mConcurrentCameraIdCombinations = manager.getConcurrentCameraIds();
-//            Set<String> id1 = new ArraySet<>();
-//            id1.add("0");
-//            id1.add("1");
+            Set<String> id1 = new ArraySet<>();
+            id1.add("0");
+            id1.add("1");
 //            Set<String> id2 = new ArraySet<>();
 //            id2.add("0");
 //            id2.add("1");
@@ -245,8 +245,8 @@ public class MultiSettingsActivity extends PreferenceActivity {
 //            id3.add("1");
 //            id3.add("2");
 //            id3.add("3");
-//            mConcurrentCameraIdCombinations = new ArraySet<>();
-//            mConcurrentCameraIdCombinations.add(id1);
+            mConcurrentCameraIdCombinations = new ArraySet<>();
+            mConcurrentCameraIdCombinations.add(id1);
 //            mConcurrentCameraIdCombinations.add(id2);
 //            mConcurrentCameraIdCombinations.add(id3);
             Log.d(TAG,"mConcurrentCameraIdCombinations="+mConcurrentCameraIdCombinations.toString());

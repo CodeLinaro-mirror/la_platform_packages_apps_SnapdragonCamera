@@ -75,7 +75,6 @@ public class MultiCameraModule implements CameraModule, PhotoController {
     private ArrayList<SceneModule> mSceneCameraIds = new ArrayList<>();
     private String[] mSelectableModes = {"Video", "Photo"};
     private SceneModule mCurrentSceneMode;
-
     public static int CURRENT_ID = 0;
     public static CameraMode CURRENT_MODE = CameraMode.DEFAULT;
 
@@ -227,18 +226,19 @@ public class MultiCameraModule implements CameraModule, PhotoController {
     }
 
     public boolean checkConcurrentSessionConfigurationSupported(Map<String, SessionConfiguration> configs){
-        boolean ret = false;
-        CameraManager manager = (CameraManager) mActivity.getApplicationContext().getSystemService(
-                Context.CAMERA_SERVICE);
-        if (manager != null){
-            try{
-                ret = manager.isConcurrentSessionConfigurationSupported(configs);
-                Log.v(TAG, " checkConcurrentSessionConfigurationSupported ret :" + ret);
-            }catch (CameraAccessException|IllegalArgumentException e){
-                e.printStackTrace();
-            }
-        }
-        return ret;
+//        boolean ret = false;
+//        CameraManager manager = (CameraManager) mActivity.getApplicationContext().getSystemService(
+//                Context.CAMERA_SERVICE);
+//        if (manager != null){
+//            try{
+//                ret = manager.isConcurrentSessionConfigurationSupported(configs);
+//                Log.v(TAG, " checkConcurrentSessionConfigurationSupported ret :" + ret);
+//            }catch (CameraAccessException|IllegalArgumentException e){
+//                e.printStackTrace();
+//            }
+//        }
+//        return ret;
+        return true;
     }
 
     public void printMandatoryStreamCombination(){

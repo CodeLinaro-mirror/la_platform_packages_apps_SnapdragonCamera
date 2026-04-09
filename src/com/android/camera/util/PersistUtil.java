@@ -440,6 +440,12 @@ public class PersistUtil {
         return getBoolean("persist.sys.cameraapp.concurrentsession", false);
     }
 
+    public static String getBackPreviewSize() {
+        return get("persist.sys.cameraapp.backpreviewsize", "");
+    }
+    public static String getFrontPreviewSize() {
+        return get("persist.sys.cameraapp.frontpreviewsize", "");
+    }
     public static boolean isFDRENDERINGSUPPORTED() {return PERSIST_FD_RENDERING_SUPPORTED; }
 
     public static boolean isCameraFDSupported() {return PERSIST_CAM_FD_SUPPORTED; }

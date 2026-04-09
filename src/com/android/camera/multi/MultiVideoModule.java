@@ -77,6 +77,7 @@ import com.android.camera.SoundClips;
 import com.android.camera.Storage;
 import com.android.camera.Thumbnail;
 import com.android.camera.util.CameraUtil;
+import com.android.camera.util.PersistUtil;
 import com.android.camera.util.SettingTranslation;
 import com.android.camera.ui.RotateTextToast;
 
@@ -184,7 +185,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
      * camera.
      */
     private Semaphore mCameraOpenCloseLock = new Semaphore(3);
-
+    private ImageReader[] mYUVImageReader = new ImageReader[MAX_NUM_CAM];
     public MultiVideoModule(CameraActivity activity, MultiCameraUI ui, MultiCameraModule module) {
         mActivity = activity;
         mMultiCameraUI = ui;
@@ -298,6 +299,10 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                 if (null != mImageReaders[i]) {
                     mImageReaders[i].close();
                     mImageReaders[i] = null;
+                }
+                if (null != mYUVImageReader[i]) {
+                    mYUVImageReader[i].close();
+                    mYUVImageReader[i] = null;
                 }
             }
         } catch (InterruptedException e) {
@@ -542,7 +547,8 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                         Log.d(TAG,"prepareCaptureSessions id="+id);
                         mConcurrentConfigurations.put(String.valueOf(id),sessionConfiguration);
                         Message message = Message.obtain();
-                        message.what = OPEN_CAMERA;
+                        message.arg1 = id;
+                        message.what = CREATE_SESSION;
                         sendMessage(message);
                     } else {
                         mCameraHandler.sendMessageDelayed(msg, 200);
@@ -550,13 +556,7 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                     }
                     break;
                 case OPEN_CAMERA:
-                    if (mCameraListIndex == mCameraIDList.size()) {
-                        mCameraListIndex = 0;
-                        Message message = Message.obtain();
-                        message.what = CREATE_SESSION;
-                        sendMessage(message);
-                        Log.d(TAG,"CREATE_SESSION");
-                    } else {
+                    if (mCameraListIndex < mCameraIDList.size()) {
                         String cameraId = mCameraIDList.get(mCameraListIndex);
                         openCameraInSequence(cameraId);
                         mCameraListIndex ++;
@@ -566,21 +566,18 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                     break;
                 case CREATE_SESSION:
                     if (mConcurrentConfigurations != null) {
+                        int cameraId = mCameraIDList.indexOf(String.valueOf(msg.arg1));
                         boolean createSession = true;
                         if (mCameraIDList != null){
-                            for (String cameraId : mCameraIDList){
-                                createSession = createSession &&
-                                        mConcurrentConfigurations.containsKey(cameraId);
-                            }
+                            createSession = createSession &&
+                                    mConcurrentConfigurations.containsKey(Integer.toString(cameraId));
                         }
                         boolean supported =
                                 mMultiCameraModule.checkConcurrentSessionConfigurationSupported(mConcurrentConfigurations);
                         if (createSession && supported) {
                             try{
-                                for (String cameraId : mCameraIDList){
-                                    mCameraDevices[Integer.valueOf(cameraId)].createCaptureSession(
-                                            mConcurrentConfigurations.get(cameraId));
-                                }
+                                mCameraDevices[cameraId].createCaptureSession(
+                                        mConcurrentConfigurations.get(Integer.toString(cameraId)));
                             } catch (CameraAccessException e){
                                 e.printStackTrace();
                             }
@@ -733,7 +730,8 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                     prepareCaptureSessions(id,surface);
             mConcurrentConfigurations.put(String.valueOf(id),sessionConfiguration);
             Message message = Message.obtain();
-            message.what = OPEN_CAMERA;
+            message.arg1 = id;
+            message.what = CREATE_SESSION;
             if (mCameraHandler != null) {
                 mCameraHandler.sendMessage(message);
             }
@@ -753,9 +751,21 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilders[id]
                     = mCameraDevices[id].createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            mPreviewRequestBuilders[id].addTarget(surface);
             mPreviewRequestBuilders[id].setTag(id);
-
+            Size yuvSize = null;
+            if(id == 0 && PersistUtil.getBackPreviewSize().contains("x")){
+                yuvSize = parsePictureSize(PersistUtil.getBackPreviewSize());
+            }else if(id == 1 && PersistUtil.getFrontPreviewSize().contains("x")){
+                yuvSize = parsePictureSize(PersistUtil.getFrontPreviewSize());
+            }
+            if(yuvSize != null) {
+                mYUVImageReader[id] = ImageReader.newInstance(yuvSize.getWidth(), yuvSize.getHeight(),
+                        ImageFormat.YUV_420_888, 2);
+                mYUVImageReader[id].setOnImageAvailableListener(mOnImageAvailableListener, mMultiCameraModule.getMyCameraHandler());
+                mPreviewRequestBuilders[id].addTarget(mYUVImageReader[id].getSurface());
+            }else {
+                mPreviewRequestBuilders[id].addTarget(surface);
+            }
             CameraCaptureSession.StateCallback stateCallback =
                     new CameraCaptureSession.StateCallback() {
                         @Override
@@ -763,6 +773,14 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
                             // The camera is already closed
                             if (null == mCameraDevices[id]) {
                                 return;
+                            }
+                            if (mCameraListIndex < mCameraIDList.size()) {
+                                Message message = Message.obtain();
+                                message.what = OPEN_CAMERA;
+                                mCameraHandler.sendMessage(message);
+                                Log.d(TAG, "send open camera message again");
+                            }else if(mCameraListIndex == mCameraIDList.size()){
+                                mCameraListIndex = 0;
                             }
                             Log.v(TAG, " CameraCaptureSession onConfigured id :" + id);
                             // When the session is ready, we start displaying the preview.
@@ -803,8 +821,11 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
             }
 
             List<OutputConfiguration> outConfigurations = new ArrayList<>(1);
-            outConfigurations.add(new OutputConfiguration(surface));
-
+            if(yuvSize != null && null != mYUVImageReader[id]) {
+                outConfigurations.add(new OutputConfiguration(mYUVImageReader[id].getSurface()));
+            }else {
+                outConfigurations.add(new OutputConfiguration(surface));
+            }
              sessionConfiguration = new SessionConfiguration(
                     SessionConfiguration.SESSION_REGULAR, outConfigurations,
                     new HandlerExecutor(mCameraHandler), stateCallback);
@@ -926,7 +947,10 @@ public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            Log.v(TAG, "onImageAvailable ...");
+            Log.v(TAG, "onImageAvailable ..." + reader.getImageFormat());
+            if(reader.getImageFormat() == ImageFormat.YUV_420_888){
+                return;
+            }
             Image image = reader.acquireNextImage();
             long imageTime = System.currentTimeMillis();
             mNamedImages.nameNewImage(imageTime);

@@ -298,7 +298,7 @@ public class MultiCaptureModule implements MultiCamera {
                                 prepareSessionConfiguration(id,surface);
                         mConcurrentConfigurations.put(String.valueOf(id),sessionConfiguration);
                         Message message = Message.obtain();
-                        message.what = OPEN_CAMERA;
+                        message.what = CREATE_SESSION;
                         sendMessage(message);
                     } else {
                         mCameraHandler.sendMessageDelayed(msg, 200);
@@ -306,13 +306,7 @@ public class MultiCaptureModule implements MultiCamera {
                     }
                     break;
                 case OPEN_CAMERA:
-                    if (mCameraListIndex == mCameraIDList.size()) {
-                        mCameraListIndex = 0;
-                        Message message = Message.obtain();
-                        message.what = CREATE_SESSION;
-                        sendMessage(message);
-                        Log.d(TAG, "CREATE_SESSION");
-                    } else {
+                    if (mCameraListIndex < mCameraIDList.size()) {
                         String cameraId = mCameraIDList.get(mCameraListIndex);
                         openCameraInSequence(cameraId);
                         mCameraListIndex ++;
@@ -322,23 +316,20 @@ public class MultiCaptureModule implements MultiCamera {
                     break;
                 case CREATE_SESSION:
                     if (mConcurrentConfigurations != null) {
+                        int cameraId = mCameraListIndex - 1;
                         boolean createSession = true;
                         if (mCameraIDList != null){
-                            for (String cameraId : mCameraIDList){
-                                createSession = createSession &&
-                                        mConcurrentConfigurations.containsKey(cameraId);
-                            }
+                            createSession = createSession &&
+                                    mConcurrentConfigurations.containsKey(Integer.toString(cameraId));
                         }
                         boolean supported =
                                 mMultiCameraModule.checkConcurrentSessionConfigurationSupported(mConcurrentConfigurations);
-                        Log.v(TAG, " CREATE_SESSION createSession :" + createSession + " supported :" + supported);
+                        Log.v(TAG, " CREATE_SESSION createSession :" + createSession + " supported :" + supported + ",cameraId:" + cameraId);
                         if (createSession && supported) {
                             try{
-                                for (String cameraId : mCameraIDList){
-                                    mCameraDevices[Integer.valueOf(cameraId)].createCaptureSession(
-                                            mConcurrentConfigurations.get(cameraId));
-                                    Log.v(TAG, " CREATE_SESSION call createCaptureSession cameraId :" + cameraId);
-                                }
+                                Log.v(TAG, " CREATE_SESSION call createCaptureSession cameraId :" + cameraId);
+                                mCameraDevices[cameraId].createCaptureSession(
+                                        mConcurrentConfigurations.get(Integer.toString(cameraId)));
                             } catch (CameraAccessException e){
                                 e.printStackTrace();
                             }
@@ -419,7 +410,7 @@ public class MultiCaptureModule implements MultiCamera {
                     prepareSessionConfiguration(id,surface);
             mConcurrentConfigurations.put(String.valueOf(id),sessionConfiguration);
             Message message = Message.obtain();
-            message.what = OPEN_CAMERA;
+            message.what = CREATE_SESSION;
             if (mCameraHandler != null) {
                 mCameraHandler.sendMessage(message);
             }
@@ -435,6 +426,7 @@ public class MultiCaptureModule implements MultiCamera {
     private SessionConfiguration prepareSessionConfiguration(final int id, Surface surface) {
         SessionConfiguration sessionConfiguration = null;
         try {
+            Log.v(TAG, "prepareSessionConfiguration id :" + id + ",surface:" + surface);
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilders[id]
                     = mCameraDevices[id].createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
@@ -447,6 +439,14 @@ public class MultiCaptureModule implements MultiCamera {
                             // The camera is already closed
                             if (null == mCameraDevices[id]) {
                                 return;
+                            }
+                            if (mCameraListIndex < mCameraIDList.size()) {
+                                Message message = Message.obtain();
+                                message.what = OPEN_CAMERA;
+                                mCameraHandler.sendMessage(message);
+                                Log.d(TAG, "send open camera message again");
+                            }else if(mCameraListIndex == mCameraIDList.size()){
+                                mCameraListIndex = 0;
                             }
                             Log.v(TAG, " CameraCaptureSession onConfigured id :" + id);
                             // When the session is ready, we start displaying the preview.
