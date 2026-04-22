@@ -353,6 +353,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final String FD_TAG = "SnapCam_FD";
     private static final String HFR_RATE = PersistUtil.getHFRRate();
 
+    private static final long CAMERA_THREAD_JOIN_TIMEOUT_MS = 3000;
+
     private static long tapUpFrameNumber = 0;
 
     MeteringRectangle[][] mAFRegions = new MeteringRectangle[MAX_NUM_CAM][];
@@ -8722,14 +8724,35 @@ private boolean isDevOptionSetting(){
         mImageAvailableThread.quitSafely();
         mCaptureCallbackThread.quitSafely();
         mMpoSaveThread.quitSafely();
-
-        try {
-            mCameraThread.join();
-            mCameraThread = null;
-            mCameraHandler = null;
-        } catch (InterruptedException e) {
-            Log.e(TAG,e.toString());
+        final HandlerThread thread = mCameraThread;
+        mCameraThread = null;
+        mCameraHandler = null;
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            final HandlerThread t = thread;
+            new Thread(() -> {
+                t.quitSafely();
+                try {
+                    t.join(CAMERA_THREAD_JOIN_TIMEOUT_MS);
+                    Log.i(TAG, "mCameraThread.join() end");
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                if (t.isAlive()) {
+                    Log.e(TAG, "mCameraThread join timeout  in stopper");
+                    t.quit();
+                    try { t.join(200); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                }
+            }, "CameraThreadStopper").start();
+        }else {
+            thread.quitSafely();
+            try {
+                thread.join(CAMERA_THREAD_JOIN_TIMEOUT_MS);
+                Log.i(TAG, "mCameraThread.join() end");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
+
         try {
             mImageAvailableThread.join();
             mImageAvailableThread = null;
