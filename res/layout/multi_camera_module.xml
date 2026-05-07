@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+    SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center">
+
+    <GridLayout
+        android:layout_centerInParent="true"
+        android:layout_gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/mdp_preivew_frame"
+        android:rowCount="2"
+        android:columnCount="2">
+        <SurfaceView
+            android:id="@+id/main_preview_content"
+            android:layout_rowSpan="1"
+            android:layout_columnSpan="1"
+            android:layout_gravity="center"
+            android:clickable="true"/>
+        <SurfaceView
+            android:id="@+id/first_preview_content"
+            android:layout_rowSpan="1"
+            android:layout_columnSpan="1"
+            android:layout_gravity="center"
+            android:clickable="true"/>
+        <SurfaceView
+            android:id="@+id/second_preview_content"
+            android:layout_rowSpan="1"
+            android:layout_columnSpan="1"
+            android:layout_gravity="center"
+            android:clickable="true"/>
+        <SurfaceView
+            android:id="@+id/third_preview_content"
+            android:layout_rowSpan="1"
+            android:layout_columnSpan="1"
+            android:layout_gravity="center"
+            android:clickable="true"/>
+    </GridLayout>
+
+    <com.android.camera.ui.RenderOverlay
+        android:id="@+id/render_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.android.camera.ui.Camera2FaceView
+            android:id="@+id/face_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <com.android.camera.ui.RotateLayout
+            android:id="@+id/multi_recording_time_rect"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
+            android:visibility="gone"
+            android:layout_marginLeft="24dp"
+            android:layout_marginTop="80dp">
+            <include
+                android:id="@+id/labels"
+                layout="@layout/viewfinder_labels_video"/>
+        </com.android.camera.ui.RotateLayout>
+    </FrameLayout>
+
+    <include
+        style="@style/CameraControls"
+        layout="@layout/one_ui_layout"
+        android:layout_gravity="center" />
+
+</merge>

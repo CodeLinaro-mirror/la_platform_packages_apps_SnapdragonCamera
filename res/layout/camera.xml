@@ -12,6 +12,10 @@
      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
      See the License for the specific language governing permissions and
      limitations under the License.
+
+     Changes from Qualcomm Technologies, Inc. are provided under the following license:
+     Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+     SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/camera_root_frame"
@@ -34,6 +38,11 @@
     </com.android.camera.ui.CameraRootView>
     <com.android.camera.ui.CameraRootView
         android:id="@+id/camera_capture_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+    </com.android.camera.ui.CameraRootView>
+    <com.android.camera.ui.CameraRootView
+        android:id="@+id/multi_camera_root"
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
     </com.android.camera.ui.CameraRootView>

@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
 
 package com.android.camera.ui;
 
@@ -54,7 +59,8 @@ public class ModuleSwitcher extends RotateImageView
     public static final int LIGHTCYCLE_MODULE_INDEX = 3;
     public static final int GCAM_MODULE_INDEX = 4;
     public static final int CAPTURE_MODULE_INDEX = 5;
-    public static final int PANOCAPTURE_MODULE_INDEX = 6;
+    public static final int MULTIE_CAMERA_MODULE_INDEX = 6;
+    public static final int PANOCAPTURE_MODULE_INDEX = 7;
 
     private boolean mTouchEnabled = true;
     private boolean mIsVisible = true;

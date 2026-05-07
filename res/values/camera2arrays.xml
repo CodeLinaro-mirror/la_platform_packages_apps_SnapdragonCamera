@@ -26,6 +26,11 @@
      OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
      IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
+<!--
+    Changes from Qualcomm Technologies, Inc. are provided under the following license:
+    Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+    SPDX-License-Identifier: BSD-3-Clause-Clear
+ -->
 
 <resources>
     <string-array name="pref_camera2_camera2_entries" translatable="true">
@@ -58,6 +63,17 @@
         <item>bayer</item>
         <item>mono</item>
         <item>front</item>
+    </string-array>
+
+    <string-array name="pref_camera2_concurrent_camera_default">
+    </string-array>
+
+    <string-array name="pref_camera2_concurrent_camera_entries" translatable="false">
+        <item>@string/pref_camera2_concurrent_camera_entries_defualt</item>
+    </string-array>
+
+    <string-array name="pref_camera2_concurrent_camera_entryvalues" translatable="false">
+        <item>@string/pref_camera2_concurrent_camera_entry_value_defualt</item>
     </string-array>
 
     <string-array name="pref_camera2_makeup_entries" translatable="true">
@@ -1017,6 +1033,16 @@ for time lapse recording -->
     <string-array name="pref_camera2_touch_track_focus_entryvalues" translatable="false">
         <item>@string/pref_camera2_touch_track_focus_value_on</item>
         <item>@string/pref_camera2_touch_track_focus_value_off</item>
+    </string-array>
+
+    <string-array name="pref_camera2_multi_cameras_entries" translatable="true">
+        <item>@string/pref_camera2_multi_cameras_entry_on</item>
+        <item>@string/pref_camera2_multi_cameras_entry_off</item>
+    </string-array>
+
+    <string-array name="pref_camera2_multi_cameras_entryvalues" translatable="false">
+        <item>@string/pref_camera2_multi_cameras_value_on</item>
+        <item>@string/pref_camera2_multi_cameras_value_off</item>
     </string-array>
 
     <string-array name="pref_camera2_instant_aec_entryvalues" translatable="false">
