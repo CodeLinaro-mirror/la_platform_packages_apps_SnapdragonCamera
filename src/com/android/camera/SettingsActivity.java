@@ -370,6 +370,7 @@ public class SettingsActivity extends PreferenceActivity {
                         break;
                     case SettingsManager.KEY_INSENSOR_ZOOM:
                         updateVideoMFHDRPreference();
+                        updatePictureFormatPreference();
                     case SettingsManager.KEY_PHOTO_EIS_VALUE:
                     case SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK:
                         updatePreviewStabilizationPreference();

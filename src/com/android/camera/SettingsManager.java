@@ -4976,7 +4976,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB && isDynamicRangeTenBitSupported()) {
             String torchHDRValue = getValue(KEY_TORCH_HDR_VALUE);
-            if(!isLimitedHDR() && !isSHDRLimited() &&  torchHDRValue.equals("0")) {
+            String inSensorZoom = getValue(KEY_INSENSOR_ZOOM);
+            if(!isLimitedHDR() && !isSHDRLimited() &&  torchHDRValue.equals("0") && (inSensorZoom == null || inSensorZoom.equals("0"))) {
                 ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
             }
             if (supportHeic == 1) {
