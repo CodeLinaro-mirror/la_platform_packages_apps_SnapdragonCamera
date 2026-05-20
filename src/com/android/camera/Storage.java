@@ -19,7 +19,6 @@ package com.android.camera;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
@@ -27,11 +26,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.DngCreator;
-import android.hardware.camera2.TotalCaptureResult;
 import android.location.Location;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -69,7 +64,6 @@ public class Storage {
     public static final long PREPARING = -2L;
     public static final long UNKNOWN_SIZE = -3L;
     public static final long LOW_STORAGE_THRESHOLD_BYTES = 60 * 1024 * 1024;
-    public static Uri sImageBaseUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
     private static boolean sSaveSDCard = false;
 
@@ -79,13 +73,6 @@ public class Storage {
 
     public static void setSaveSDCard(boolean saveSDCard) {
         sSaveSDCard = saveSDCard;
-    }
-
-    public static Uri getImageBaseUri() {
-        if (sSaveSDCard && SDCard.sSdcardImageBaseUri != null) {
-            return SDCard.sSdcardImageBaseUri;
-        }
-        return sImageBaseUri;
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -133,28 +120,6 @@ public class Storage {
         }
     }
 
-    private static void writeFile(Uri uri, ExifInterface exif, byte[] jpeg, String mimeType, ContentResolver resolver)
-            throws IOException {
-        Log.d(TAG, "writeFile uri " + uri);
-        if (uri == null) {
-            return;
-        }
-        OutputStream os = resolver.openOutputStream(uri);
-        if (exif != null && (mimeType == null || mimeType.equalsIgnoreCase("jpeg"))) {
-            exif.writeExif(jpeg, os);
-        } else {
-            os.write(jpeg);
-        }
-        os.close();
-
-        if (ApiHelper.isAndroidROrHigher()) {
-            ContentValues publishValues = new ContentValues();
-            publishValues.put(Images.Media.IS_PENDING, 0);
-            resolver.update(uri, publishValues, null, null);
-            Log.i(TAG, "Image with uri: " + uri + " was published to the MediaStore");
-        }
-    }
-
     // Save the image with a given mimeType and add it the MediaStore.
     public static Uri addImage(ContentResolver resolver, String title, long date,
             Location location, int orientation, ExifInterface exif, byte[] jpeg, int width,
@@ -171,129 +136,38 @@ public class Storage {
                 size, path, width, height, mimeType);
     }
 
-    public static Uri addImageToMediaStore(ContentResolver resolver, String title, long date,
-                                           Location location, int orientation, ExifInterface exif, byte[] jpeg,
-                                           String path, int width, int height, String mimeType) {
-        // Insert into MediaStore.
-        ContentValues values = getContentValuesForData(title, date, location, orientation, exif, 0,
-                path, width, height, mimeType, true);
-
-        Uri uri = null;
-        try {
-            Uri baseUri = getImageBaseUri();
-            uri = resolver.insert(baseUri, values);
-            if (jpeg != null) {
-                Log.i(TAG,"writeFile exif="+exif+",uri="+uri+",value ="+values);
-                writeFile(uri, exif, jpeg, mimeType, resolver);
-            }
-        } catch (Throwable th)  {
-            // This can happen when the external volume is already mounted, but
-            // MediaScanner has not notify MediaProvider to add that volume.
-            // The picture is still safe and MediaScanner will find it and
-            // insert it into MediaProvider. The only problem is that the user
-            // cannot click the thumbnail to review the picture.
-            Log.e(TAG, "Failed to write MediaStore " + uri, th.fillInStackTrace());
-            if (uri != null) {
-                resolver.delete(uri, null, null);
-            }
-            return null;
-        }
-        return uri;
-    }
-
-    public static void writeDngFile(Image image, Uri uri, ContentResolver resolver,
-                                    CameraCharacteristics mCharacteristics, TotalCaptureResult mCaptureResult) {
-        OutputStream os = null;
-        try {
-            DngCreator dngCreator = new DngCreator(mCharacteristics, mCaptureResult);
-            os = resolver.openOutputStream(uri);
-            try{
-                dngCreator.writeImage(os, image);
-            } catch (AssertionError ae) {
-                Log.d(TAG,"writeImage error-ae="+ae);
-            }
-            dngCreator.close();
-        }catch (IOException e) {
-            Log.e(TAG, "IO Exception while saving RAW image to a file", e);
-        } catch (Exception e) {
-            Log.e(TAG, "Misc Exception while saving RAW image to a file", e);
-        } catch (AssertionError e) {
-            Log.e(TAG, "Misc Assertion while saving RAW image to a file", e);
-        } finally {
-            image.close();
-            closeOutput(os);
-        }
-    }
-    private static void closeOutput(OutputStream outputStream) {
-        if (null != outputStream) {
-            try {
-                outputStream.close();
-            } catch (IOException e) {
-                Log.e(TAG, "IOException at outputStream close ", e);
-            }
-        }
-    }
-    public static Uri addDng(ContentResolver resolver, String title, long date,
-                             Location location, int orientation, ExifInterface exif, Image image, int width,
-                             int height, String mimeType, String path, CameraCharacteristics mCharacteristics, TotalCaptureResult mCaptureResult) {
-        Uri uri = addImageToMediaStore(resolver, title, date, location, orientation, exif, null,
-                path, width, height, mimeType);
-        if (uri != null) {
-            writeDngFile(image, uri, resolver, mCharacteristics, mCaptureResult);
-        } else {
-            Log.e(TAG, "addDng uri is null");
-            return null;
-        }
-
-        ContentValues publishValues = new ContentValues();
-        if (ApiHelper.isAndroidROrHigher()) {
-            publishValues.put(Images.Media.IS_PENDING, 0);
-        }
-        resolver.update(uri, publishValues, null, null);
-        Log.i(TAG, "Image with uri: " + uri + " was published to the MediaStore");
-
-        return uri;
-    }
-
     // Get a ContentValues object for the given photo data
     public static ContentValues getContentValuesForData(String title,
-                                                        long date, Location location, int orientation, ExifInterface exif, int jpegLength,
-                                                        String path, int width, int height, String mimeType, boolean isPending) {
+            long date, Location location, int orientation, ExifInterface exif, int jpegLength,
+            String path, int width, int height, String mimeType) {
         // Insert into MediaStore.
-        ContentValues values = new ContentValues(11);
+        ContentValues values = new ContentValues(9);
         values.put(ImageColumns.TITLE, title);
-        String suffix = "";
         if (mimeType.equalsIgnoreCase("jpeg") ||
-                mimeType.equalsIgnoreCase("image/jpeg") ||
+            mimeType.equalsIgnoreCase("image/jpeg") ||
                 mimeType.equalsIgnoreCase("heic") ||
-                mimeType == null) {
+            mimeType == null) {
 
             if (mimeType.equalsIgnoreCase("heic")){
-                values.put(ImageColumns.MIME_TYPE, "image/heic");
-                suffix = ".heic";
+                values.put(ImageColumns.DISPLAY_NAME, title + ".heic");
             } else if(mimeType.equalsIgnoreCase("heics")){
-                values.put(ImageColumns.MIME_TYPE, "image/heics");
-                suffix = ".heics";
+                values.put(ImageColumns.DISPLAY_NAME, title + ".heics");
             } else {
-                values.put(ImageColumns.MIME_TYPE, "image/jpeg");
-                suffix = ".jpg";
+                values.put(ImageColumns.DISPLAY_NAME, title + ".jpg");
             }
 
-        } else if (mimeType.equalsIgnoreCase("raw")) {
-            values.put(ImageColumns.MIME_TYPE, "image/jpeg");
-            suffix = ".raw";
-        } else if (mimeType.equalsIgnoreCase("yuv")) {
-            values.put(ImageColumns.MIME_TYPE, "image/jpeg");
-            suffix = ".yuv";
-        } else if (mimeType.equalsIgnoreCase("dng")) {
-            values.put(ImageColumns.MIME_TYPE, "image/x-adobe-dng");
-            suffix = ".dng";
+        } else {
+            values.put(ImageColumns.DISPLAY_NAME, title + ".raw");
         }
-        values.put(ImageColumns.DISPLAY_NAME, title + suffix);
-        Log.i(TAG, "getContentValuesForData title = " + title + ", path = " + path + ", suffix = " + suffix);
         values.put(ImageColumns.DATE_TAKEN, date);
+        if (mimeType.equalsIgnoreCase("heic")) {
+            values.put(ImageColumns.MIME_TYPE, "image/heif");
+        } else {
+            values.put(ImageColumns.MIME_TYPE, "image/jpeg");
+        }
         // Clockwise rotation in degrees. 0, 90, 180, or 270.
         values.put(ImageColumns.ORIENTATION, orientation);
+        values.put(ImageColumns.DATA, path);
         values.put(ImageColumns.SIZE, jpegLength);
 
         setImageSize(values, width, height);
@@ -308,14 +182,6 @@ public class Storage {
                 values.put(Images.Media.LONGITUDE, latlng[1]);
             }
         }
-        if (ApiHelper.isAndroidROrHigher()) {
-            String relativePath = "DCIM/Camera";
-            if (suffix.equals(".dng") || suffix.equals(".raw") || suffix.equals(".yuv")) {
-                relativePath = "DCIM/Camera/raw";
-            }
-            values.put(ImageColumns.RELATIVE_PATH, relativePath);
-            values.put(ImageColumns.IS_PENDING, isPending ? 1 : 0);
-        }
         return values;
     }
 
@@ -326,7 +192,7 @@ public class Storage {
         // Insert into MediaStore.
         ContentValues values =
                 getContentValuesForData(title, date, location, orientation, exif, jpegLength, path,
-                        width, height, mimeType, false);
+                        width, height, mimeType);
 
          return insertImage(resolver, values);
     }
@@ -337,18 +203,23 @@ public class Storage {
         // Insert into MediaStore.
         ContentValues values =
                 getContentValuesForData(title, date, location, orientation, null, jpegLength,
-                        path, width, height, mimeType, false);
+                        path, width, height, mimeType);
 
         return insertImage(resolver, values);
     }
 
-    public static Uri addRawImage(ContentResolver resolver, String title, long date, Location location,
-                                  int orientation, ExifInterface exif, byte[] data, int width, int height,
+    public static long addRawImage(String title, byte[] data,
                                   String mimeType) {
         String path = generateFilepath(title, mimeType);
-
-        return addImageToMediaStore(resolver, title, date, location, orientation, exif, data,
-                path, width, height, mimeType);
+        int size = writeFile(path, data, null, mimeType);
+        // Try to get the real image size after add exif.
+        File f = new File(path);
+        if (f.exists() && f.isFile()) {
+            size = (int) f.length();
+        }
+        addImage(CameraApp.sInstance.getContentResolver(), title, System.currentTimeMillis(), null, 0,
+                size, path, 0, 0, mimeType);
+        return size;
     }
 
     public static Uri addHeifImage(ContentResolver resolver, String title, long date,
@@ -382,7 +253,7 @@ public class Storage {
 
         ContentValues values =
                 getContentValuesForData(title, date, location, orientation, null, jpegLength, path,
-                        width, height, mimeType, false);
+                        width, height, mimeType);
 
         // Update the MediaStore
         int rowsModified = resolver.update(imageUri, values, null, null);
