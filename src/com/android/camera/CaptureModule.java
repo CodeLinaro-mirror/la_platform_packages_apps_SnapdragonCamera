@@ -5212,12 +5212,16 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
                     mLogicalId = camereIdIndex;
                     LOGICAL_ID = mLogicalId;
                     Log.d(TAG,"mLogicalId:" + camereIdIndex);
-                    removeList[CameraMode.RTB.ordinal()] = false;
-                    if (mSceneCameraIds.get(CameraMode.RTB.ordinal()).rearCameraId >= 0) {
-                        break;
+                    if(mSettingsManager.isStillBokehSupported(camereIdIndex)){
+                        removeList[CameraMode.RTB.ordinal()] = false;
+                        if (mSceneCameraIds.get(CameraMode.RTB.ordinal()).rearCameraId >= 0) {
+                            break;
+                        }
+                        Log.d(TAG,"RTB rear Id:" + camereIdIndex);
+                        mSceneCameraIds.get(CameraMode.RTB.ordinal()).rearCameraId = camereIdIndex;
+                    }else {
+                        removeList[CameraMode.RTB.ordinal()] = true;
                     }
-                    Log.d(TAG,"RTB rear Id:" + camereIdIndex);
-                    mSceneCameraIds.get(CameraMode.RTB.ordinal()).rearCameraId = camereIdIndex;
                 }
                 if (physical_ids != null && physical_ids.size() == 0 &&
                         facing == CameraCharacteristics.LENS_FACING_FRONT && CaptureModule.FRONT_ID != -1) {
