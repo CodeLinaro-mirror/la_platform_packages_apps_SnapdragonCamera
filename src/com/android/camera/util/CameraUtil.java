@@ -38,6 +38,7 @@ import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
 import android.hardware.camera2.CameraCharacteristics;
 import android.location.Location;
+import android.media.ExifInterface;
 import android.media.MediaMuxer;
 import android.media.MediaRecorder;
 import android.net.Uri;
@@ -1024,6 +1025,19 @@ public class CameraUtil {
 
         Log.d(TAG, "getFinalCropRect - final rect: " + finalRect.toString());
         return finalRect;
+    }
+
+    public static int getOrientation(ExifInterface exif) {
+        switch (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, 0)) {
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                return 90;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                return 270;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                return 180;
+            default:
+                return 0;
+        }
     }
 
     public static int getJpegRotation(int cameraId, int orientation) {

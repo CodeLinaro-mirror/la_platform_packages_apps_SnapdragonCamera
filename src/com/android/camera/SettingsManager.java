@@ -211,7 +211,6 @@ import java.util.stream.Stream;
     public static final String KEY_SHADING_CORRECTION = "pref_camera2_shading_correction_key";
     public static final String KEY_EXTENDED_MAX_ZOOM = "pref_camera2_extended_max_zoom_key";
     public static final String KEY_SWPDPC = "pref_camera2_swpdpc_key";
-    public static final String KEY_SAVERAW = "pref_camera2_saveraw_key";
     public static final String KEY_ZOOM = "pref_camera2_zoom_key";
     public static final String KEY_SHARPNESS_CONTROL_MODE = "pref_camera2_sharpness_control_key";
     public static final String KEY_AF_MODE = "pref_camera2_afmode_key";
@@ -3284,6 +3283,18 @@ import java.util.stream.Stream;
             return false;
         }
         return true;
+    }
+
+    public int getRawFormat(){
+        int format = ImageFormat.RAW10;
+        String rawFormat = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
+        if(rawFormatType == 16){
+            format = ImageFormat.RAW_SENSOR;
+        }else if(rawFormatType == 10){
+            format = ImageFormat.RAW10;
+        }
+        return format;
     }
 
     public boolean isHeifWriterEncoding() {

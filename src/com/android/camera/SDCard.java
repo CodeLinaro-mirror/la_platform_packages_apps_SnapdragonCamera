@@ -32,10 +32,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.storage.StorageVolume;
 import android.os.storage.StorageManager;
+import android.provider.MediaStore;
 import android.util.Log;
 
 import java.io.File;
@@ -52,6 +54,7 @@ public class SDCard {
     private String mPath = null;
     private String mRawpath = null;
     private static SDCard sSDCard;
+    public static Uri sSdcardImageBaseUri = null;
 
     public boolean isWriteable() {
         if (mVolume == null) return false;
@@ -123,6 +126,12 @@ public class SDCard {
         List<StorageVolume> volumes = mStorageManager.getStorageVolumes();
         mVolume = (volumes.size() > VOLUME_SDCARD_INDEX) ?
                 volumes.get(VOLUME_SDCARD_INDEX) : null;
+        if (mVolume != null) {
+            String mediaStoreVolumeName = mVolume.getMediaStoreVolumeName();
+            sSdcardImageBaseUri = MediaStore.Images.Media.getContentUri(mediaStoreVolumeName);
+        } else {
+            sSdcardImageBaseUri = null;
+        }
         mPath = null;
         mRawpath = null;
     }
