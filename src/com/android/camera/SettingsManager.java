@@ -3651,6 +3651,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
+    public boolean is8KVideoSize(){
+        String videoSizeString = getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        if (videoSizeString != null) {
+            Size videoSize = parseSize(videoSizeString);
+            if(videoSize.getWidth() == 7680 && videoSize.getHeight() == 4320){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public int[] getsupportedDcgModes() {
         try {
             int[] modes = mCharacteristics.get(getCurrentCameraId())
@@ -4977,7 +4988,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB && isDynamicRangeTenBitSupported()) {
             String torchHDRValue = getValue(KEY_TORCH_HDR_VALUE);
             String inSensorZoom = getValue(KEY_INSENSOR_ZOOM);
-            if(!isLimitedHDR() && !isSHDRLimited() &&  torchHDRValue.equals("0") && (inSensorZoom == null || inSensorZoom.equals("0"))) {
+            boolean is8KVideo = CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO && is8KVideoSize();
+            if(!isLimitedHDR() && !isSHDRLimited() &&  torchHDRValue.equals("0") && (inSensorZoom == null || inSensorZoom.equals("0")) && !is8KVideo) {
                 ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
             }
             if (supportHeic == 1) {

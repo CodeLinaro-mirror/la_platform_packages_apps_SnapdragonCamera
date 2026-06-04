@@ -294,6 +294,7 @@ public class SettingsActivity extends PreferenceActivity {
                         updateVideoFlipPreference();
                         updateViullPreference();
                         updateVSRPreference();
+                        updatePictureFormatPreference();
                         break;
                     case SettingsManager.KEY_VIDEO_ENCODER:
                         mSettingsManager.updatePictureAndVideoSize();
