@@ -4717,7 +4717,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
             }
             if (range == null) {
-                return null;
+                for (Capability cap : extendedSceneModeCaps) {
+                    if (CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB && cap.getMode() == CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS) {
+                        range = cap.getZoomRatioRange();
+                    }
+                }
+                if(range == null){
+                    return null;
+                }
             }
             result[0] = range.getLower();
             result[1] = range.getUpper();
@@ -5034,24 +5041,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return orderList;
     }
-
-    public boolean isStillBokehSupported(int cameraId) {
-        if (cameraId < 0 || cameraId >= mCharacteristics.size()) return false;
-        try {
-            Capability[] caps = mCharacteristics.get(cameraId).get(
-                    CameraCharacteristics.CONTROL_AVAILABLE_EXTENDED_SCENE_MODE_CAPABILITIES);
-            if (caps == null) return false;
-            for (Capability cap : caps) {
-                if (cap.getMode() == CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_STILL_CAPTURE) {
-                    return true;
-                }
-            }
-        } catch (IllegalArgumentException | NoSuchFieldError e) {
-            Log.w(TAG, "isStillBokehSupported: " + e);
-        }
-        return false;
-    }
-
     public boolean isAIBokehMode(){
         boolean isAICameraEnabled = Integer.parseInt(getAICameraValue()) == 2;
         final SharedPreferences pref = mContext.getSharedPreferences(
