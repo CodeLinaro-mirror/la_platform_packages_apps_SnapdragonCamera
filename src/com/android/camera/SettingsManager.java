@@ -1069,7 +1069,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isVideoEisSupported(){
-        if(PersistUtil.getModelInfo().contains("6850") && mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR){
+        if((PersistUtil.getModelInfo().contains("6850") || PersistUtil.getModelInfo().contains("4875")) &&
+                mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR){
             return false;
         }else{
             return true;
@@ -2981,7 +2982,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isFrontIDHFRSupported() {
         boolean result = true;
-        if (-1 == CaptureModule.FRONT_ID || PersistUtil.getModelInfo().contains("6850")) {
+        if (-1 == CaptureModule.FRONT_ID || PersistUtil.getModelInfo().contains("6850") || PersistUtil.getModelInfo().contains("4875")) {
             result = false;
         } else {
             ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
