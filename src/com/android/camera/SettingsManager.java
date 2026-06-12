@@ -413,7 +413,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private Set<String> mFilteredKeys;
     private int[] mExtendedHFRSize;//An array of pairs (fps, maxW, maxH)
     private int[] mSuperBufferSize;
-    HashMap<Size, Long> mMinDurationMap = new HashMap<Size, Long>();
     HashMap<Size, Long> mStallDurationMap = new HashMap<Size, Long>();
 
     private ArrayList<String> mPrepNameKeys;
@@ -994,7 +993,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         initializeValueMap();
         filterChromaflashPictureSizeOptions();
         filterHeifSizeOptions();
-        mMinDurationMap = getMinDurationMap(cameraId);
         mStallDurationMap = getStallDurationMap(cameraId);
         filterHFROptions();
         filterVideoEncoderProfileOptions();
@@ -1170,26 +1168,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return sizes;
     }
-
-    public HashMap<Size, Long> getMinDurationMap(int cameraId) {
-        HashMap<Size, Long> minDurationMap = new HashMap<Size, Long>();
-        List<Key<StreamConfigurationMap>> key = new ArrayList<>();
-        key.add(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
-        key.add(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-        for(Key<StreamConfigurationMap> keyName: key){
-            StreamConfigurationMap config = mCharacteristics.get(cameraId).get(keyName);
-            if (config != null) {
-                for (android.util.Size size : getAvailableSizesForFormat(cameraId, ImageFormat.JPEG, keyName)) {
-                    long minFrameDuration = config.getOutputMinFrameDuration(ImageFormat.JPEG, size);
-                    if (minFrameDuration != 0) {
-                        minDurationMap.put(new Size(size.getWidth(), size.getHeight()), minFrameDuration);
-                    }
-                }
-            }
-        }
-        return minDurationMap;
-    }
-
     public HashMap<Size, Long> getStallDurationMap(int cameraId) {
         HashMap<Size, Long> stallDurationMap = new HashMap<Size, Long>();
         List<Key<StreamConfigurationMap>> key = new ArrayList<>();
@@ -1199,8 +1177,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
             StreamConfigurationMap config = mCharacteristics.get(cameraId).get(keyName);
             Log.d(TAG," keyName:" + keyName + ",config:" + config);
             if (config != null) {
-                for (android.util.Size size : getAvailableSizesForFormat(cameraId, ImageFormat.HEIC, keyName)) {
-                    long stallDuration = config.getOutputStallDuration(ImageFormat.HEIC, size);
+                for (android.util.Size size : getAvailableSizesForFormat(cameraId, getPictureFormat(), keyName)) {
+                    long stallDuration = config.getOutputStallDuration(getPictureFormat(), size);
                     Log.d(TAG," size:" + size + ",stallDuration:" + stallDuration);
                     if (stallDuration != 0) {
                         stallDurationMap.put(new Size(size.getWidth(), size.getHeight()), stallDuration);
@@ -1213,16 +1191,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public float getFps(Size pictureSize){
         float fps = 30f;
-        if(getSavePictureFormat() == HEIF_FORMAT || getSavePictureFormat() == HEIC_TENBIT_FORMAT) {
-            if (mStallDurationMap.size() > 0 && mStallDurationMap.containsKey(pictureSize)) {
-                Long duration = mStallDurationMap.get(pictureSize);
-                fps = (float) 1000000000 / duration;
-            }
-        }else{
-            if (mMinDurationMap.size() > 0 && mMinDurationMap.containsKey(pictureSize)) {
-                Long duration = mMinDurationMap.get(pictureSize);
-                fps = (float) 1000000000 / duration;
-            }
+        if (!mStallDurationMap.isEmpty() && mStallDurationMap.containsKey(pictureSize)) {
+            Long duration = mStallDurationMap.get(pictureSize);
+            if(duration != null ) fps = (float) 1000000000 / duration;
         }
         return fps;
     }
@@ -3652,6 +3623,17 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return modes;
     }
 
+    public boolean is8KVideoSize(){
+        String videoSizeString = getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        if (videoSizeString != null) {
+            Size videoSize = parseSize(videoSizeString);
+            if(videoSize.getWidth() == 7680 && videoSize.getHeight() == 4320){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public int[] getsupportedDcgModes() {
         try {
             int[] modes = mCharacteristics.get(getCurrentCameraId())
@@ -4926,6 +4908,20 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (value == null) return 0;
         return Integer.valueOf(value);
     }
+
+    private int getPictureFormat(){
+        switch (getSavePictureFormat()){
+            case SettingsManager.JPEG_FORMAT:
+                return ImageFormat.JPEG;
+            case SettingsManager.HEIF_FORMAT:
+            case SettingsManager.HEIC_TENBIT_FORMAT:
+                return ImageFormat.HEIC;
+            case SettingsManager.JPEG_R_FORMAT:
+                return ImageFormat.JPEG_R;
+        }
+        return ImageFormat.JPEG;
+    }
+
     public int getRawFormat(){
         int format = 0;
         String rawFormat = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
@@ -4984,7 +4980,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         if(CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.RTB && isDynamicRangeTenBitSupported()) {
             String torchHDRValue = getValue(KEY_TORCH_HDR_VALUE);
-            if(!isLimitedHDR() && !isSHDRLimited() &&  torchHDRValue.equals("0")) {
+            String inSensorZoom = getValue(KEY_INSENSOR_ZOOM);
+            boolean is8KVideo = CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.VIDEO && is8KVideoSize();
+            if(!isLimitedHDR() && !isSHDRLimited() &&  torchHDRValue.equals("0") && (inSensorZoom == null || inSensorZoom.equals("0")) && !is8KVideo) {
                 ret.add(String.valueOf(SettingsManager.JPEG_R_FORMAT));
             }
             if (supportHeic == 1) {
@@ -5043,6 +5041,24 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
         return orderList;
     }
+
+    public boolean isStillBokehSupported(int cameraId) {
+        if (cameraId < 0 || cameraId >= mCharacteristics.size()) return false;
+        try {
+            Capability[] caps = mCharacteristics.get(cameraId).get(
+                    CameraCharacteristics.CONTROL_AVAILABLE_EXTENDED_SCENE_MODE_CAPABILITIES);
+            if (caps == null) return false;
+            for (Capability cap : caps) {
+                if (cap.getMode() == CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_STILL_CAPTURE) {
+                    return true;
+                }
+            }
+        } catch (IllegalArgumentException | NoSuchFieldError e) {
+            Log.w(TAG, "isStillBokehSupported: " + e);
+        }
+        return false;
+    }
+
     public boolean isAIBokehMode(){
         boolean isAICameraEnabled = Integer.parseInt(getAICameraValue()) == 2;
         final SharedPreferences pref = mContext.getSharedPreferences(

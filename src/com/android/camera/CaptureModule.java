@@ -5214,12 +5214,16 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
                     mLogicalId = camereIdIndex;
                     LOGICAL_ID = mLogicalId;
                     Log.d(TAG,"mLogicalId:" + camereIdIndex);
-                    removeList[CameraMode.RTB.ordinal()] = false;
-                    if (mSceneCameraIds.get(CameraMode.RTB.ordinal()).rearCameraId >= 0) {
-                        break;
+                    if(mSettingsManager.isStillBokehSupported(camereIdIndex)){
+                        removeList[CameraMode.RTB.ordinal()] = false;
+                        if (mSceneCameraIds.get(CameraMode.RTB.ordinal()).rearCameraId >= 0) {
+                            break;
+                        }
+                        Log.d(TAG,"RTB rear Id:" + camereIdIndex);
+                        mSceneCameraIds.get(CameraMode.RTB.ordinal()).rearCameraId = camereIdIndex;
+                    }else {
+                        removeList[CameraMode.RTB.ordinal()] = true;
                     }
-                    Log.d(TAG,"RTB rear Id:" + camereIdIndex);
-                    mSceneCameraIds.get(CameraMode.RTB.ordinal()).rearCameraId = camereIdIndex;
                 }
                 if (physical_ids != null && physical_ids.size() == 0 &&
                         facing == CameraCharacteristics.LENS_FACING_FRONT && CaptureModule.FRONT_ID != -1) {
@@ -6503,7 +6507,7 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
                     } else {
                         mTakingPicture[id] = false;
                         enableShutterAndVideoOnUiThread(id);
-                        Log.d(TAG,"onShutterButtonRelease");
+                        Log.i(TAG,"onShutterButtonRelease");
                     }
                     if (mSettingsManager.isHeifWriterEncoding()) {
                         if (mHeifImage != null) {
@@ -6895,8 +6899,8 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
                                     mHandler.post(new Runnable() {
                                         @Override
                                         public void run() {
-                                            Log.d(TAG, "image available for cam enable shutter button " );
                                             mUI.enableShutter(true);
+                                            Log.i(TAG, "onImageAvailable - onShutterButtonRelease" );
                                         }
                                     });
                                 }
@@ -7856,6 +7860,7 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
             if(!isLivePhotoOn()) {
                 mTakingPicture[id] = false;
                 enableShutterAndVideoOnUiThread(id);
+
             }
         } catch (NullPointerException | IllegalStateException | CameraAccessException | IllegalArgumentException e) {
             Log.w(TAG, "Session is already closed or session had been changed");
@@ -7902,8 +7907,8 @@ private boolean isDevOptionSetting(){
                 public void run() {
                     mUI.stopSelfieFlash();
                     if (!captureWaitImageReceive()) {
-
                         mUI.enableShutter(true);
+                        Log.i(TAG,"onShutterButtonRelease");
                     }
                     if (mDeepPortraitMode) {
                         mUI.enableVideo(false);
