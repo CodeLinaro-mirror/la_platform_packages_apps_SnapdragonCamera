@@ -45,6 +45,7 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.params.Capability;
+import android.hardware.camera2.params.RecommendedStreamConfigurationMap;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
@@ -100,8 +101,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.lang.StringBuilder;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class SettingsManager implements ListMenu.SettingsListener {
+ public class SettingsManager implements ListMenu.SettingsListener {
     public static final int RESOURCE_TYPE_THUMBNAIL = 0;
     public static final int RESOURCE_TYPE_LARGEICON = 1;
 
@@ -208,7 +211,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_SHADING_CORRECTION = "pref_camera2_shading_correction_key";
     public static final String KEY_EXTENDED_MAX_ZOOM = "pref_camera2_extended_max_zoom_key";
     public static final String KEY_SWPDPC = "pref_camera2_swpdpc_key";
-    public static final String KEY_SAVERAW = "pref_camera2_saveraw_key";
     public static final String KEY_ZOOM = "pref_camera2_zoom_key";
     public static final String KEY_SHARPNESS_CONTROL_MODE = "pref_camera2_sharpness_control_key";
     public static final String KEY_AF_MODE = "pref_camera2_afmode_key";
@@ -2613,6 +2615,38 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return map.getOutputSizes(format);
     }
 
+    public Size[] getSupportedPreviewSize(int cameraId){
+        if (cameraId > mCharacteristics.size())return null;
+        RecommendedStreamConfigurationMap configs = mCharacteristics.get(cameraId).getRecommendedStreamConfigurationMap(
+                RecommendedStreamConfigurationMap.USECASE_PREVIEW);
+        if(configs != null) {
+            Set<Size> recommendedSizes = configs.getOutputSizes(ImageFormat.PRIVATE);
+            if (recommendedSizes != null && recommendedSizes.size() != 0) {
+                for(Size previewSize : recommendedSizes) {
+                    Log.d(TAG, "recommend preview size:" + previewSize.toString());
+                }
+                return recommendedSizes.toArray(new Size[0]);
+            }
+        }
+        return null;
+    }
+
+    public Size[] getInputSize(int cameraId){
+        if (cameraId > mCharacteristics.size())return null;
+        RecommendedStreamConfigurationMap configs = mCharacteristics.get(cameraId).getRecommendedStreamConfigurationMap(
+                RecommendedStreamConfigurationMap.USECASE_ZSL);
+        if(configs != null) {
+            Set<Size> recommendedSizes = configs.getInputSizes(ImageFormat.PRIVATE);
+            if (recommendedSizes != null && recommendedSizes.size() != 0) {
+                for(Size size : recommendedSizes) {
+                    Log.d(TAG, "recommend input size:" + size.toString());
+                }
+                return recommendedSizes.toArray(new Size[0]);
+            }
+        }
+        return null;
+    }
+
     public Size[] getSupportedOutputSize(int cameraId, Class cl) {
         if (cameraId > mCharacteristics.size())return null;
         StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
@@ -3249,6 +3283,18 @@ public class SettingsManager implements ListMenu.SettingsListener {
             return false;
         }
         return true;
+    }
+
+    public int getRawFormat(){
+        int format = ImageFormat.RAW10;
+        String rawFormat = getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+        int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
+        if(rawFormatType == 16){
+            format = ImageFormat.RAW_SENSOR;
+        }else if(rawFormatType == 10){
+            format = ImageFormat.RAW10;
+        }
+        return format;
     }
 
     public boolean isHeifWriterEncoding() {

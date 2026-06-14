@@ -160,7 +160,7 @@ public class SettingsActivity extends PreferenceActivity {
                 updateEISPreference();
                 updateMfnrPreference();
                 updateLongShotPreference();
-            } else if (key.equals(SettingsManager.KEY_SAVERAW) ||
+            } else if (key.equals(SettingsManager.KEY_RAW_FORMAT_TYPE) ||
                     key.equals(SettingsManager.KEY_AUTO_HDR) ||
                     key.equals(SettingsManager.KEY_QCFA) ||
                     key.equals(SettingsManager.KEY_PICTURE_SIZE)) {
@@ -214,7 +214,7 @@ public class SettingsActivity extends PreferenceActivity {
         ListPreference mfnrPref = (ListPreference) findPreference(SettingsManager.KEY_CAPTURE_MFNR_VALUE);
         String selectMode =  mSettingsManager.getValue(SettingsManager.KEY_SELECT_MODE);
         String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
-        String saveRaw = mSettingsManager.getValue(SettingsManager.KEY_SAVERAW);
+        String saveRaw = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
         String autoHdr = mSettingsManager.getValue(SettingsManager.KEY_AUTO_HDR);
         String qcfa = mSettingsManager.getValue(SettingsManager.KEY_QCFA);
         Size pictureSize = parsePictureSize(mSettingsManager.getValue(SettingsManager.KEY_PICTURE_SIZE));
@@ -222,7 +222,7 @@ public class SettingsActivity extends PreferenceActivity {
             if((scene != null && Integer.parseInt(scene) == SettingsManager.SCENE_MODE_HDR_INT) ||
                     (CaptureModule.MCXMODE && selectMode != null &&
                             (selectMode.equals("sat") || selectMode.equals("default"))) ||
-                    (saveRaw != null  && saveRaw.equals("enable")) ||
+                    (saveRaw != null  && !saveRaw.equals("0")) ||
                     (autoHdr != null  && autoHdr.equals("enable")) ||
                     (qcfa != null && qcfa.equals("enable")) ||
                     !isMfnrSupported4Size(pictureSize)){
@@ -306,6 +306,10 @@ public class SettingsActivity extends PreferenceActivity {
                 if(pref.getKey().equals(SettingsManager.KEY_HVX_MFHDR)){
                     updateEISPreference();
                     updateHVXMFHDRDependcyPreference();
+                }
+                if(pref.getKey().equals(SettingsManager.KEY_RAW_FORMAT_TYPE)) {
+                    updateRawInfoPref();
+                    updateVideoMFHDRPreference();
                 }
             }
         }
@@ -1183,7 +1187,6 @@ public class SettingsActivity extends PreferenceActivity {
         if(!PersistUtil.isRawReprocessEnable() && developer != null){
             removePreference(SettingsManager.KEY_RAW_REPROCESS_TYPE, developer);
             removePreference(SettingsManager.KEY_RAWINFO_TYPE, developer);
-            removePreference(SettingsManager.KEY_RAW_FORMAT_TYPE, developer);
         }
 
         if(!PersistUtil.isRawCbInfoSupported()&& developer != null){
@@ -1452,6 +1455,7 @@ public class SettingsActivity extends PreferenceActivity {
         initializePhysicalPreferences();
         updatePhysicalPreferences();
         updateVideoHfrFpsPreference();
+        updateRawInfoPref();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
         if (map == null) return;
@@ -1492,9 +1496,9 @@ public class SettingsActivity extends PreferenceActivity {
         // when get RAW10 size is null, disable the KEY_SAVERAW
         int cameraId = mSettingsManager.getCurrentCameraId();
         Size[] rawSize = mSettingsManager.getSupportedOutputSize(cameraId,
-                ImageFormat.RAW10);
-        if (rawSize == null) {
-            Preference p = findPreference(SettingsManager.KEY_SAVERAW);
+                mSettingsManager.getRawFormat());
+        if (rawSize == null && mSettingsManager.getRawFormat() > 0 ) {
+            Preference p = findPreference(SettingsManager.KEY_RAW_FORMAT_TYPE);
             if (p != null) {
                 p.setEnabled(false);
             }
@@ -1665,6 +1669,39 @@ public class SettingsActivity extends PreferenceActivity {
         } else {
             pref.setValue("0");
             pref.setEnabled(false);
+        }
+    }
+
+    private void updateRawInfoPref(){
+        String reprocessType = mSettingsManager.getValue(SettingsManager.KEY_RAW_REPROCESS_TYPE);
+        ListPreference rawInfoPref = (ListPreference)findPreference(SettingsManager.KEY_RAWINFO_TYPE);
+        if(reprocessType != null && !reprocessType.equals("disable") && !reprocessType.equals("off") && Integer.valueOf(reprocessType) != 0){
+            String rawFormat = mSettingsManager.getValue(SettingsManager.KEY_RAW_FORMAT_TYPE);
+            int rawFormatType = (rawFormat != null && !rawFormat.equals("disable")&& !rawFormat.equals("off")) ? Integer.parseInt(rawFormat) : 0;
+            if(rawFormatType == 10){
+                if (rawInfoPref != null) {
+                    rawInfoPref.setValue("0");
+                    rawInfoPref.setEnabled(false);
+                }
+            } else if(rawFormatType == 16){
+                List<String> key = new ArrayList<String>(Arrays.asList("mipiraw", "BPS Ideal raw" ));
+                List<String> value = new ArrayList<String>(Arrays.asList( "0", "2"));
+                if (rawInfoPref != null) {
+                    rawInfoPref.setEntries(key.toArray(new CharSequence[key.size()]));
+                    rawInfoPref.setEntryValues(value.toArray(new CharSequence[value.size()]));
+                    int idx = rawInfoPref.findIndexOfValue(rawInfoPref.getValue());;
+                    if (idx < 0 ) {
+                        idx = 0;
+                    }
+                    rawInfoPref.setValueIndex(idx);
+                    rawInfoPref.setEnabled(true);
+                }
+            }
+        }else{
+            if (rawInfoPref != null) {
+                rawInfoPref.setValue("0");
+                rawInfoPref.setEnabled(false);
+            }
         }
     }
 
