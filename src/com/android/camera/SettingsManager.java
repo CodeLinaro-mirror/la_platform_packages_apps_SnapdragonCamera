@@ -1069,8 +1069,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isVideoEisSupported(){
-        if((PersistUtil.getModelInfo().contains("6850") || PersistUtil.getModelInfo().contains("4875")) &&
-                mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR){
+        if(PersistUtil.getModelInfo().contains("6850") && mCaptureModule.getCurrenCameraMode() == CaptureModule.CameraMode.HFR){
             return false;
         }else{
             return true;
@@ -2982,7 +2981,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     public boolean isFrontIDHFRSupported() {
         boolean result = true;
-        if (-1 == CaptureModule.FRONT_ID || PersistUtil.getModelInfo().contains("6850") || PersistUtil.getModelInfo().contains("4875")) {
+        if (-1 == CaptureModule.FRONT_ID || PersistUtil.getModelInfo().contains("6850")) {
             result = false;
         } else {
             ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
@@ -4717,14 +4716,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
                 }
             }
             if (range == null) {
-                for (Capability cap : extendedSceneModeCaps) {
-                    if (CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB && cap.getMode() == CameraMetadata.CONTROL_EXTENDED_SCENE_MODE_BOKEH_CONTINUOUS) {
-                        range = cap.getZoomRatioRange();
-                    }
-                }
-                if(range == null){
-                    return null;
-                }
+                return null;
             }
             result[0] = range.getLower();
             result[1] = range.getUpper();
