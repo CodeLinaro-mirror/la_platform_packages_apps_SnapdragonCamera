@@ -5018,7 +5018,7 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
         if (mCurrentSceneMode.mode == CameraMode.RTB || (isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())) {
             float[] zoomRatioRange = mSettingsManager.getSupportedBokenRatioZoomRange(
                     getMainCameraId());
-            if (zoomRatioRange != null && zoomRatioRange[0] == zoomRatioRange[1]) {
+            if (zoomRatioRange != null) {
                 mZoomValue = zoomRatioRange[0];
             }
         }else{
