@@ -400,7 +400,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         KEY_HDR_MODES_ORDER.put("QHDR", 3);
         KEY_HDR_MODES_ORDER.put("HVX_SHDR", 4);
         KEY_HDR_MODES_ORDER.put("HVX_MFHDR", 5);
-        KEY_HDR_MODES_ORDER.put("DCG", 4);
         VIDEO_ENCODER_PROFILE_MAP.put("off", "0");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10", "2");
         VIDEO_ENCODER_PROFILE_MAP.put("HEVCProfileMain10HDR10", "4");
