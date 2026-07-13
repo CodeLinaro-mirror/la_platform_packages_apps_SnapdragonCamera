@@ -168,8 +168,15 @@ public class Camera2FaceView extends FaceView {
             int rw, rh;
             rw = mUncroppedWidth;
             rh = mUncroppedHeight;
-            if (((rh > rw) && ((mDisplayOrientation == 0) || (mDisplayOrientation == 180)))
-                    || ((rw > rh) && ((mDisplayOrientation == 90) || (mDisplayOrientation == 270)))) {
+            int layoutOrientation = mDisplayOrientation;
+            if ((mDisplayOrientation == 0 || mDisplayOrientation == 180)
+                    && mUncroppedHeight > mUncroppedWidth
+                    && mCameraBound != null
+                    && mCameraBound.width() > mCameraBound.height()) {
+                layoutOrientation = 90;
+            }
+            if (((rh > rw) && ((layoutOrientation == 0) || (layoutOrientation == 180)))
+                    || ((rw > rh) && ((layoutOrientation == 90) || (layoutOrientation == 270)))) {
                 int temp = rw;
                 rw = rh;
                 rh = temp;
