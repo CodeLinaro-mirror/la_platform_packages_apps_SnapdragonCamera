@@ -2070,7 +2070,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if(!isSupportedSuperBuffer(mCameraId) || CaptureModule.CURRENT_MODE != CaptureModule.CameraMode.HFR){
             removePreference(mPreferenceGroup, KEY_HFR_BUFFER_MODE);
         }
-        if (forceAUX != null && (!mHasMultiCamera || PersistUtil.getModelInfo().contains("6850"))) {
+        if (forceAUX != null && (!mHasMultiCamera ||
+                PersistUtil.getModelInfo().contains("6850") ||
+                PersistUtil.getModelInfo().contains("776") ||
+                PersistUtil.getModelInfo().contains("777"))) {
             removePreference(mPreferenceGroup, KEY_FORCE_AUX);
             mFilteredKeys.add(forceAUX.getKey());
         }
