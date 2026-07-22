@@ -102,6 +102,7 @@
 
     <com.android.camera.ui.RotateImageView
         android:id="@+id/front_back_switcher"
+        android:contentDescription="front back switcher"
         android:layout_width="@dimen/one_ui_bottom_small"
         android:layout_height="@dimen/one_ui_bottom_small"
         android:focusable="true"
