@@ -2571,7 +2571,14 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     private boolean isSupportFrontCamera(CaptureModule.CameraMode mode) {
-        return mode != CaptureModule.CameraMode.PRO_MODE && mode != CaptureModule.CameraMode.DEPTH;
+        if (mode == CaptureModule.CameraMode.PRO_MODE || mode == CaptureModule.CameraMode.DEPTH ||
+                mode == CaptureModule.CameraMode.CINEMATIC) {
+            return false;
+        }
+        if (mode == CaptureModule.CameraMode.HFR) {
+            return mSettingsManager.isFrontIDHFRSupported();
+        }
+        return true;
     }
 
     public void initFlashButton() {
