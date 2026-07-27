@@ -80,6 +80,7 @@ LOCAL_SHARED_LIBRARIES := liblog libcutils
 LOCAL_USE_VNDK := true
 include $(BUILD_SHARED_LIBRARY)
 
+ifneq ($(strip $(USE_CAMERA_STUB)),true)
 include $(CLEAR_VARS)
 LOCAL_LDFLAGS   := -llog
 LOCAL_VENDOR_MODULE := true
@@ -94,3 +95,4 @@ LOCAL_CFLAGS    += -ffast-math -O3 -funroll-loops
 LOCAL_NOSANITIZE := cfi flag
 LOCAL_USE_VNDK := true
 include $(BUILD_SHARED_LIBRARY)
+endif #!USE_CAMERA_STUB
