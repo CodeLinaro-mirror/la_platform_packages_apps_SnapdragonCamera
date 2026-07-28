@@ -1628,21 +1628,20 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mZoomWText.setText(mWzoomText+"x");
             mZoomTelText.setSelected(false);
             mZoomTelText.setText(mTELzoomText+"x");
-        }else if(zoomFomat < mTelZoom || mModule.getCurrenCameraMode() == CaptureModule.CameraMode.RTB
-                || (mModule.isRTBModeInSelectMode() && !mSettingsManager.isAICameraOn())){
-            mZoomUWText.setSelected(false);
-            mZoomWText.setSelected(true);
-            mZoomWText.setText(zoom_text+"x");
-            mZoomTelText.setSelected(false);
-            mZoomUWText.setText(mUWzoomText+"x");
-            mZoomTelText.setText(mTELzoomText+"x");
-        }else {
+        }else if(zoomFomat >= mTelZoom && mZoomTelText.getVisibility() == View.VISIBLE){
             mZoomUWText.setSelected(false);
             mZoomWText.setSelected(false);
             mZoomTelText.setSelected(true);
             mZoomTelText.setText(zoom_text+"x");
             mZoomUWText.setText(mUWzoomText+"x");
             mZoomWText.setText(mWzoomText+"x");
+        }else{
+            mZoomUWText.setSelected(false);
+            mZoomWText.setSelected(true);
+            mZoomWText.setText(zoom_text+"x");
+            mZoomTelText.setSelected(false);
+            mZoomUWText.setText(mUWzoomText+"x");
+            mZoomTelText.setText(mTELzoomText+"x");
         }
     }
     private String getZoomText(){
