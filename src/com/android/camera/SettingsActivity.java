@@ -1683,7 +1683,8 @@ public class SettingsActivity extends PreferenceActivity {
                     } else {
                         updateMultiResolutionRealted();
                     }
-                    if(PersistUtil.getModelInfo().contains("6850")) {
+                    if(PersistUtil.getModelInfo().contains("6850") || PersistUtil.getModelInfo().contains("776")
+                            || PersistUtil.getModelInfo().contains("777")) {
                         removePreference(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE, developer);
                         removePreference(SettingsManager.KEY_PHOTO_EIS_VALUE, developer);
                     }
@@ -1714,7 +1715,8 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.add(SettingsManager.KEY_FD_SETTING);
                         videoAddList.add(SettingsManager.KEY_FD_FL_SETTING);
                         videoAddList.add(SettingsManager.KEY_FD_FACIAL_SETTING);
-                        if(!PersistUtil.getModelInfo().contains("6850")) {
+                        if(!PersistUtil.getModelInfo().contains("6850") || PersistUtil.getModelInfo().contains("776")
+                                || PersistUtil.getModelInfo().contains("777")) {
                             videoAddList.add(SettingsManager.KEY_EIS_HORIZON_LEVEL_ENABLE);
                             videoAddList.add(SettingsManager.KEY_AI_CAMERA_BLURMODE);
                         }
@@ -1746,10 +1748,15 @@ public class SettingsActivity extends PreferenceActivity {
                         videoAddList.remove(SettingsManager.KEY_VIDEO_FLIP);
                         videoAddList.remove(SettingsManager.KEY_ML_VIDEO);
                     }
-                    if(!PersistUtil.getModelInfo().contains("6850")) {
+                    if (!PersistUtil.getModelInfo().contains("6850")) {
                         videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                     }
-                    videoAddList.add(SettingsManager.KEY_CONCERT_MODE);
+                    if (!PersistUtil.getModelInfo().contains("776") &&
+                            !PersistUtil.getModelInfo().contains("777")) {
+                        videoAddList.add(SettingsManager.KEY_CONCERT_MODE);
+                    } else {
+                        removePreference(SettingsManager.KEY_FRC_MODE, videoPre);
+                    }
                     videoAddList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                     videoAddList.add(SettingsManager.KEY_PREVIEW_PROFILE);
                     videoAddList.add(SettingsManager.KEY_SELECT_MODE);
@@ -1777,7 +1784,7 @@ public class SettingsActivity extends PreferenceActivity {
                         PreferenceGroup general = (PreferenceGroup)findPreference("general");
                         general.removePreference(p1);
                     }
-                }else {
+                } else {
                     removePreference(SettingsManager.KEY_HFR_BUFFER_MODE, videoPre);
                     if(!mSettingsManager.isFlashAvailable()){
                         removePreference(SettingsManager.KEY_CAMERA_MANUALFLASH, videoPre);
