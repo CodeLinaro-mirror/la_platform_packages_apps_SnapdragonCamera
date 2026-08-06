@@ -359,7 +359,7 @@ public class Camera2FaceView extends FaceView {
 
             int extendFaceSize = 0;
             extendFaceSize = mExFaces == null? 0 : mExFaces.length;
-            if (mFacialContourEnable || mFacePointsEnable) {
+            if (mFacialContourEnable || mFacePointsEnable && faceExists()) {
                 if (extendFaceSize != 0 && mExFaces[0] != null) {
                     int[] data = null;
                     int[] visibility = null;
