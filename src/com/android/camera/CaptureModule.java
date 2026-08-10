@@ -5194,9 +5194,11 @@ private void updateSensorMode(TotalCaptureResult result,boolean isCapture){
             case TYPE_DEFAULT:// default
                 removeList[CameraMode.DEFAULT.ordinal()] = false;
                 removeList[CameraMode.VIDEO.ordinal()] = false;
-                if(PersistUtil.getModelInfo().contains("6850")){
+                if (PersistUtil.getModelInfo().contains("6850") ||
+                        PersistUtil.getModelInfo().contains("776") ||
+                        PersistUtil.getModelInfo().contains("777")){
                     removeList[CameraMode.CINEMATIC.ordinal()] = true;
-                }else{
+                } else {
                     removeList[CameraMode.CINEMATIC.ordinal()] = false;
                 }
                 removeList[CameraMode.PRO_MODE.ordinal()] = false;

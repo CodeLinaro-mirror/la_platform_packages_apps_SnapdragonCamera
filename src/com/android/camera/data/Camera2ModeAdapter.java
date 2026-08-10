@@ -48,7 +48,9 @@ public class Camera2ModeAdapter extends RecyclerView.Adapter<Camera2ModeAdapter.
     private static final int DEFAULT_MODE_POSITION_STANDARD = 3;  // Default mode for other devices
 
     private List<String> mModeList;
-    private int mSelectedPos = PersistUtil.getModelInfo().contains("6850")
+    private int mSelectedPos = (PersistUtil.getModelInfo().contains("6850")
+            || PersistUtil.getModelInfo().contains("776")
+            || PersistUtil.getModelInfo().contains("777"))
             ? DEFAULT_MODE_POSITION_6850
             : DEFAULT_MODE_POSITION_STANDARD;
     private OnItemClickListener mOnItemClickListener;
