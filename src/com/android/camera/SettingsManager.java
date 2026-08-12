@@ -617,13 +617,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public void createCaptureModule(CaptureModule captureModule){
-        if(mCaptureModule == null) {
+        if (mCaptureModule != captureModule) {
             mCaptureModule = captureModule;
         }
     }
 
-    public void destroyCaptureModule(){
-        if (mCaptureModule != null) {
+    public void destroyCaptureModule(CaptureModule captureModule){
+        if (mCaptureModule != null && captureModule == mCaptureModule) {
             mCaptureModule = null;
         }
     }
