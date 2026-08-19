@@ -3093,7 +3093,9 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                     == CaptureModule.CURRENT_MODE || mCameraId == CaptureModule.FRONT_ID)) {
                                 continue;
                             }
-                            if("apv".equals(str) && (PersistUtil.lookaheadEnabled() ||  PersistUtil.getModelInfo().contains("SM8845"))){
+                            if("apv".equals(str) && (PersistUtil.lookaheadEnabled()
+                                    || PersistUtil.getModelInfo().contains("SM4875")
+                                    || PersistUtil.getModelInfo().contains("SM8845"))){
                                 continue;
                             }
 
@@ -4557,7 +4559,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 !PersistUtil.isMvhevcSupported())){
                             continue;
                         }
-                        if("apv".equals(str) && (PersistUtil.lookaheadEnabled() ||  PersistUtil.getModelInfo().contains("SM8845") || PersistUtil.getModelInfo().contains("6850"))){
+                        if("apv".equals(str) && (PersistUtil.lookaheadEnabled() ||
+                                PersistUtil.getModelInfo().contains("SM8845") ||
+                                PersistUtil.getModelInfo().contains("SM4875") ||
+                                PersistUtil.getModelInfo().contains("6850"))){
                             continue;
                         }
                         if (isCurrentVideoResolutionSupportedByEncoder(info)) {
