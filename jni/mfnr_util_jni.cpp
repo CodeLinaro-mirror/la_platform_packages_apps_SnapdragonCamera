@@ -300,36 +300,43 @@ jint JNICALL Java_com_android_camera_aide_SwmfnrUtil_nativeMfnrDestroy(
     return qrcp::MfnrDestroy(sessionId, m_funPtrs);
 }
 
-char mfnr_lib_name[1024] = { "/vendor/lib64/libmmcamera_mfnr.so" };
-char mfnr_4threads_lib_name[1024] = { "/vendor/lib64/libmmcamera_mfnr_t4.so" };
+#if defined(__LP64__)
+static const char mfnr_lib_name[] = "/vendor/lib64/libmmcamera_mfnr.so";
+static const char mfnr_4threads_lib_name[] = "/vendor/lib64/libmmcamera_mfnr_t4.so";
+#else
+static const char mfnr_lib_name[] = "/vendor/lib/libmmcamera_mfnr.so";
+static const char mfnr_4threads_lib_name[] = "/vendor/lib/libmmcamera_mfnr_t4.so";
+#endif
 
 CamxResult LoadMFNRlib(uint8_t nCoresLib, void* fPtr)
 {
     qrcpdefs::mfnrLib* pMfnrLibPtr = (qrcpdefs::mfnrLib*)fPtr;
 
 #ifndef _MSC_VER
+    const char* libName = NULL;
 
     if ((qrcpdefs::NcoreLibrary)nCoresLib == qrcpdefs::NcoreLibrary::EIGHT_CORES)
-        pMfnrLibPtr->ptr = dlopen(mfnr_lib_name, RTLD_NOW | RTLD_LOCAL);
+        libName = mfnr_lib_name;
     else if ((qrcpdefs::NcoreLibrary)nCoresLib == qrcpdefs::NcoreLibrary::FOUR_CORES)
-        pMfnrLibPtr->ptr = dlopen(mfnr_4threads_lib_name, RTLD_NOW | RTLD_LOCAL);
+        libName = mfnr_4threads_lib_name;
     else
     {
         printf("\n Invalid MFNR library to open");
         return CamxResultEFailed;
     }
+    pMfnrLibPtr->ptr = dlopen(libName, RTLD_NOW | RTLD_LOCAL);
 
     if (!pMfnrLibPtr->ptr)
     {
         const char* log = dlerror();
 
         if (log != NULL) {
-            printf("Error during dlopen() of %s\n", mfnr_lib_name);
+            printf("Error during dlopen() of %s: %s\n", libName, log);
         }
         return CamxResultEFailed;
     }
 
-    printf("\n Library Open Success: %s", mfnr_lib_name);
+    printf("\n Library Open Success: %s", libName);
 
     *(void **)&(pMfnrLibPtr->Mfnry303) = dlsym(pMfnrLibPtr->ptr, "Mfnry303");
     if (!pMfnrLibPtr->Mfnry303)

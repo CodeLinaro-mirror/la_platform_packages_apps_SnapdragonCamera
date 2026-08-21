@@ -162,16 +162,24 @@ jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEngineDestroy
     return AIDenoiserEngine_Destroy(handle);
 }
 
+#if defined(__LP64__)
+static const char aidenoiserv2_lib_name[] = "/vendor/lib64/libaidenoiserv2.so";
+static const char aidenoiser_lib_name[] = "/vendor/lib64/libaidenoiser.so";
+#else
+static const char aidenoiserv2_lib_name[] = "/vendor/lib/libaidenoiserv2.so";
+static const char aidenoiser_lib_name[] = "/vendor/lib/libaidenoiser.so";
+#endif
+
 jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserLoadJni(JNIEnv* env, jobject thiz)
 {
     static void     *dlHandle  = NULL;
 
-    dlHandle = dlopen("/vendor/lib64/libaidenoiserv2.so", RTLD_NOW);
+    dlHandle = dlopen(aidenoiserv2_lib_name, RTLD_NOW);
     if(dlHandle != NULL){
         printf("load aidenoiserv2 is successful");
         return 2;
     } else{
-        dlHandle = dlopen("/vendor/lib64/libaidenoiser.so", RTLD_NOW);
+        dlHandle = dlopen(aidenoiser_lib_name, RTLD_NOW);
         printf("load aidenoiser is successful");
         return 1;
     }
