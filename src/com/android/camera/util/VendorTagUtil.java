@@ -108,7 +108,8 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableVideoRetouch", byte.class);
     private static final CaptureRequest.Key<Integer> EIS_MODE =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EISMode", Integer.class);
-
+    public static final CaptureRequest.Key<Integer> enableHDRDCGBits =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.EnableHDRDCGMode", Integer.class);
 
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
@@ -351,6 +352,13 @@ public class VendorTagUtil {
     public static void setEISModeForSessionParameter(CaptureRequest.Builder builder, int mode) {
         if (isSupported(builder, EIS_MODE)) {
             builder.set(EIS_MODE, mode);
+        }
+    }
+
+    public static void enableDcgMode(CaptureRequest.Builder builder, int enable) {
+        Log.i(TAG,"set enableDcgMode: " + enable);
+        if (isSupported(builder, enableHDRDCGBits)) {
+            builder.set(enableHDRDCGBits, enable);
         }
     }
 }
