@@ -4545,6 +4545,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         CURRENT_ID = mCurrentSceneMode.getNextCameraId(CURRENT_MODE);
         CURRENT_MODE = mCurrentSceneMode.mode;
         mSettingsManager.init();
+        updateSettingDependencyId();
         mPostProcessor = new PostProcessor(mActivity, this);
         if(mPostProcessor.isJniAPISupported()) {
             mPostProcessor.nativeEnablePerfLock();
