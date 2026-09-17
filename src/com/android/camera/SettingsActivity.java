@@ -279,6 +279,9 @@ public class SettingsActivity extends PreferenceActivity {
                 if (pref.getKey().equals(SettingsManager.KEY_MULTI_CAMERA_MODE)){
                     recreate();
                 }
+                if (pref.getKey().equals(SettingsManager.KEY_APK_BOKEH)){
+                    recreate();
+                }
 
                 if(pref.getKey().equals(SettingsManager.KEY_VIDEO_QUALITY) ||
                    pref.getKey().equals(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE) ||
@@ -1258,7 +1261,10 @@ public class SettingsActivity extends PreferenceActivity {
                 removePreference(SettingsManager.KEY_TOUCH_TRACK_FOCUS, photoPre);
                 if (mDeveloperMenuEnabled) {
                     ArrayList<String> RTBList;
-                    if (mSettingsManager.isMultiCameraEnabled()){
+                    if(mSettingsManager.isAPKBokehEnabled()){
+                        RTBList = new ArrayList<>(multiCameraPhotoList);
+                        RTBList.add(SettingsManager.KEY_APK_BOKEH);
+                    }else if (mSettingsManager.isMultiCameraEnabled()){
                         RTBList = new ArrayList<>(multiCameraPhotoList);
                         RTBList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                         RTBList.add(SettingsManager.KEY_SWPDPC);
@@ -1267,6 +1273,7 @@ public class SettingsActivity extends PreferenceActivity {
                         RTBList.add(SettingsManager.KEY_MULTI_CAMERA_MODE);
                         RTBList.add(SettingsManager.KEY_EXTENDED_MAX_ZOOM);
                         RTBList.add(SettingsManager.KEY_INSENSOR_ZOOM);
+                        RTBList.add(SettingsManager.KEY_APK_BOKEH);
                     }
                     addDeveloperOptions(developer, RTBList);
                 }
@@ -1788,6 +1795,11 @@ public class SettingsActivity extends PreferenceActivity {
                 SettingsManager.KEY_FACE_DETECTION);
         if (pref != null) {
             pref.setEnabled(true);
+        }
+        if(mSettingsManager.isAPKBokehEnabled()){
+            pref.setEnabled(false);
+            pref.setChecked(false);
+            return;
         }
         CaptureModule.CameraMode mode = (CaptureModule.CameraMode) getIntent().getSerializableExtra(CAMERA_MODULE);
         if (mode == CaptureModule.CameraMode.HFR) {

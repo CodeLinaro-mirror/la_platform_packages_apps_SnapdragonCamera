@@ -48,6 +48,27 @@
             android:layout_gravity="center"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:id="@+id/bokeh_preview"
+            android:rowCount="2"
+            android:columnCount="1"
+            android:orientation="horizontal">
+        <SurfaceView
+            android:layout_rowWeight="1"
+            android:layout_columnWeight="1"
+            android:layout_gravity="center"
+            android:id="@+id/bokeh_preview_physical_0"
+            android:visibility="gone"/>
+        <SurfaceView
+            android:layout_rowWeight="1"
+            android:layout_columnWeight="1"
+            android:layout_gravity="center"
+            android:id="@+id/bokeh_preview_physical_1"
+            android:visibility="gone"/>
+        </GridLayout>
+        <GridLayout
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:id="@+id/grid_preview"
             android:rowCount="2"
             android:columnCount="2"

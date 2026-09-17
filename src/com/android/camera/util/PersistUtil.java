@@ -82,6 +82,8 @@ public class PersistUtil {
             getInt("persist.sys.camera.longshot.shotnum", 60);
     private static final String PERSIST_CAMERA_PREVIEW_SIZE =
             get("persist.sys.camera.preview.size", "");
+    public static final String PERSIST_APK_BOKEH_PREVIEW_SIZE =
+            get("persist.sys.apk.boken.preview.size", "");
     private static final String PERSIST_CAMERA_VIDEO_SNAPSHOTSIZE =
             get("persist.sys.camera.video.snapshotsize", "");
     private static final String PERSIST_CAMERA_VIDEO_SIZE =
@@ -142,6 +144,7 @@ public class PersistUtil {
             getBoolean("persist.sys.camera.video.eis",false);
     private static final int PERSIST_BURST_PREVIEW_REQUEST_NUMS =
             getInt("persist.sys.camera.burst.preview.nums", 1);
+
     private static final boolean PERSIST_SSM_ENABLE =
             getBoolean("persist.sys.camera.ssm.enable", false);
     private static final boolean PERSIST_FD_RENDERING_SUPPORTED =
@@ -195,6 +198,18 @@ public class PersistUtil {
         Point result = null;
         if (PERSIST_CAMERA_PREVIEW_SIZE != null) {
             String[] sourceStrArray = PERSIST_CAMERA_PREVIEW_SIZE.split("x");
+            if (sourceStrArray != null && sourceStrArray.length >= 2) {
+                result = new Point();
+                result.x = Integer.parseInt(sourceStrArray[0]);
+                result.y = Integer.parseInt(sourceStrArray[1]);
+            }
+        }
+        return result;
+    }
+    public static Point getPreviewSize(String key){
+        Point result = null;
+        if (key != null) {
+            String[] sourceStrArray = key.split("x");
             if (sourceStrArray != null && sourceStrArray.length >= 2) {
                 result = new Point();
                 result.x = Integer.parseInt(sourceStrArray[0]);

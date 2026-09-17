@@ -42,6 +42,7 @@ import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.hardware.HardwareBuffer;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -317,6 +318,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final int STREAM_CONFIG_SSM = 0xF080;
     private int mCaptureCompleteCount = 0;
     private boolean mSSMCaptureCompleteFlag = false;
+    private ImageReader[] mBokehReader = new ImageReader[4];
 
     public static final boolean DEBUG =
             (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_LOG) ||
@@ -2663,7 +2665,9 @@ public class CaptureModule implements CameraModule, PhotoController,
                 List<OutputConfiguration> outputConfigurations = null;
                 outputConfigurations = new ArrayList<OutputConfiguration>();
                 if (TRACE_DEBUG) Trace.beginSection("SnapCamera,createsession--getalllist");
-                if (mSettingsManager.getPhysicalCameraId() != null) {
+                if(mSettingsManager.isAPKBokehEnabled()){
+                    outputConfigurations = createAPKBokehStream(id);
+                }   else if (mSettingsManager.getPhysicalCameraId() != null) {
                     mUI.buildPhysicalSurfaces();
                     List<OutputConfiguration> physicalOutput =
                             getPhysicalOutputConfiguration();
@@ -2847,6 +2851,121 @@ public class CaptureModule implements CameraModule, PhotoController,
             e.printStackTrace();
         }
         if (TRACE_DEBUG) Trace.endSection();
+    }
+    private List<OutputConfiguration>  createAPKBokehStream(int id){
+        Size snapshotSize_0 = mSettingsManager.getMaxSize(0,ImageFormat.YUV_420_888);
+        Size snapshotSize_2 = mSettingsManager.getMaxSize(2,ImageFormat.YUV_420_888);
+        Log.i(TAG,"snapshotSize_0="+snapshotSize_0.getWidth()+"*"+snapshotSize_0.getHeight()
+                +",snapshotSize_2="+snapshotSize_2.getWidth()+"*"+snapshotSize_2.getHeight()
+                +",mpreviewsize is "+mPreviewSize.getWidth()+","+mPreviewSize.getHeight());
+        mBokehReader[0] =
+        ImageReader.newInstance(
+                mPreviewSize.getWidth(),
+                mPreviewSize.getHeight(),
+                ImageFormat.YUV_420_888,
+                4,
+                HardwareBuffer.USAGE_CPU_READ_OFTEN
+                        | HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
+        mBokehReader[0].setOnImageAvailableListener(reader -> {
+            if(mPaused){
+                return;
+            }
+            Image image = reader.acquireLatestImage();
+            if (image == null) {
+                return;
+            }
+            try {
+                Bitmap bitmap = CameraUtil.yuv420ToBitmap(image);
+                mUI.drawBitmapToSurface(bitmap,90,0);
+            } finally {
+                image.close();
+            }
+        }, mImageAvailableHandler);
+
+        mBokehReader[1] =
+                ImageReader.newInstance(
+                        mPreviewSize.getWidth(),
+                        mPreviewSize.getHeight(),
+                        ImageFormat.YUV_420_888,
+                        4,
+                        HardwareBuffer.USAGE_CPU_READ_OFTEN
+                                | HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
+        mBokehReader[1].setOnImageAvailableListener(reader -> {
+            if(mPaused){
+                return;
+            }
+            Image image = reader.acquireLatestImage();
+            if (image == null) {
+                return;
+            }
+            try {
+                Bitmap bitmap = CameraUtil.yuv420ToBitmap(image);
+                //bitmap =  CameraUtil.rotateBitmap(bitmap, 90);
+                // CameraUtil.dumpBitmapToFile(mActivity,bitmap,"yuvbitmap");
+               mUI.drawBitmapToSurface(bitmap,90,2);
+            } finally {
+                image.close();
+            }
+        }, mImageAvailableHandler);
+
+        mBokehReader[2] =
+        ImageReader.newInstance(
+                snapshotSize_0.getWidth(),
+                snapshotSize_0.getHeight(),
+                ImageFormat.YUV_420_888,
+                4,
+                HardwareBuffer.USAGE_CPU_READ_OFTEN);
+
+        mBokehReader[3] =
+                ImageReader.newInstance(
+                        snapshotSize_2.getWidth(),
+                        snapshotSize_2.getHeight(),
+                        ImageFormat.YUV_420_888,
+                        4,
+                        HardwareBuffer.USAGE_CPU_READ_OFTEN);
+        List<OutputConfiguration> outputConfigurations = new ArrayList<>();
+        String camid = "0";
+        for(int i=0;i<4;i++){
+            OutputConfiguration configuration = new OutputConfiguration(
+                    mBokehReader[i].getSurface());
+            if(i == 1 || i == 3){
+                camid = "2";
+            }else{
+                camid = "0";
+            }
+            configuration.setPhysicalCameraId(camid);
+            outputConfigurations.add(configuration);
+
+        }
+        mPreviewRequestBuilder[id].addTarget(mBokehReader[0].getSurface());
+        mPreviewRequestBuilder[id].addTarget(mBokehReader[1].getSurface());
+
+        PhysicalImageListener yuvListener_0 = getYUVListener("0");
+        PhysicalImageListener yuvListener_2 = getYUVListener("2");
+        mBokehReader[2].setOnImageAvailableListener(yuvListener_0, mImageAvailableHandler);
+        mBokehReader[3].setOnImageAvailableListener(yuvListener_2, mImageAvailableHandler);
+        return outputConfigurations;
+
+    }
+    private PhysicalImageListener getYUVListener(String camId){
+        PhysicalImageListener yuvListener = new PhysicalImageListener() {
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                String id = this.mCamId;
+                Log.d(TAG, "new yuv image from physical camera " + id);
+                Image image = reader.acquireNextImage();
+                byte[] yuv = getYUVFromImage(image);
+                mNamedImages.nameNewImage(System.currentTimeMillis());
+                NamedEntity name = mNamedImages.getNextNameEntity();
+                String title = (name == null) ? null : name.title;
+                title = title + "_phy_" + id;
+                long date = (name == null) ? -1 : name.date;
+                mActivity.getMediaSaveService().addRawImage(yuv, title, "yuv");
+                image.close();
+            }
+        };
+        yuvListener.setCamId(camId);
+        return yuvListener;
     }
     private boolean needWaitSurface(){
         if((mSettingsManager.getPhysicalCameraId() != null ||
@@ -4208,13 +4327,13 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (valueFS2 != null) {
                 fs2Value = Integer.parseInt(valueFS2);
             }
-            if (!mSettingsManager.isMultiCameraEnabled()) {
+            if (!mSettingsManager.isMultiCameraEnabled() && !mSettingsManager.isAPKBokehEnabled()) {
                 if (!(mIsSupportedQcfa || isDeepZoom() || (fs2Value ==1)) && mSettingsManager.getSinglePhysicalCamera() == null) {
                     Log.i(TAG,"add preview surface for capture request");
                     addPreviewSurface(captureBuilder, null, id);
                 }
             }
-            if(mRawReprocessType != 0 && !PersistUtil.isRawReprocessQcfa()){
+            if(mRawReprocessType != 0 && !PersistUtil.isRawReprocessQcfa() && !mSettingsManager.isAPKBokehEnabled()){
                 addPreviewSurface(captureBuilder, null, id);
             }
             if (mUI.getCurrentProMode() == ProMode.MANUAL_MODE) {
@@ -4246,7 +4365,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else if(id == getMainCameraId() && mPostProcessor.isFilterOn()) { // Case of post filtering
                 captureStillPictureForFilter(captureBuilder, id);
             } else {
-                if (mSettingsManager.isMultiCameraEnabled()) {
+                if(mSettingsManager.isAPKBokehEnabled()){
+                    captureBuilder.addTarget(mBokehReader[2].getSurface());
+                    captureBuilder.addTarget(mBokehReader[3].getSurface());
+
+
+                }else if (mSettingsManager.isMultiCameraEnabled()) {
                     int count = addPhysicalCaptureTarget(captureBuilder);
                     if (mSettingsManager.isLogicalFeatureEnable(
                             SettingsManager.KEY_PHYSICAL_JPEG_CALLBACK)){
@@ -5922,7 +6046,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (mUI.getCurrentProMode() != ProMode.MANUAL_MODE) {
                 CaptureRequest.Builder builder = getRequestBuilder(id, 0);
                 setTag(builder, "" + id + "-" + getCurrenCameraMode().name());
-                addPreviewSurface(builder, null, id);
+                if(mSettingsManager.isAPKBokehEnabled()){
+                    builder.addTarget(mBokehReader[0].getSurface());
+                }else {
+                    addPreviewSurface(builder, null, id);
+                }
                 applySettingsForUnlockFocus(builder, id);
                 if(mLockAFAE == LOCK_AF_AE_STATE_LOCK_DONE) {
                     applySettingsForLockExposure(builder, id);
@@ -6678,6 +6806,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
 
         mUI.hidePhysicalSurfaces();
+        mUI.hideBokehPhysicalSurfaces();
         mPreviewOutputConfiguration = null;
         mZoomValue = 1f;
         mUI.updateZoomSeekBar(1.0f);
@@ -7009,7 +7138,15 @@ public class CaptureModule implements CameraModule, PhotoController,
         mPreviewSize = new Size(width, height);
         if (mCurrentSceneMode.mode == CameraMode.VIDEO || mCurrentSceneMode.mode == CameraMode.HFR) {
             mUI.setPreviewSize(mVideoPreviewSize.getWidth(), mVideoPreviewSize.getHeight());
-        } else if (!mDeepPortraitMode) {
+        } else if(mSettingsManager.isAPKBokehEnabled()){
+            previewSize = PersistUtil.getPreviewSize(PersistUtil.PERSIST_APK_BOKEH_PREVIEW_SIZE);
+            if (previewSize != null){
+                mPreviewSize = new Size(previewSize.x, previewSize.y);
+            }else {
+                mPreviewSize = new Size(1280, 720);
+            }
+            mUI.intAPKBokehSurface(mPreviewSize);
+        }else  if (!mDeepPortraitMode) {
             mUI.setPreviewSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         }
     }
@@ -12980,6 +13117,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         Point[] points = new Point[prevSizes.length];
         DisplayMetrics dm = mActivity.getResources().getDisplayMetrics();
         double targetRatio = (double) pictureSize.getWidth() / pictureSize.getHeight();
+
         int index = 0;
         int point_max[]  = new int[]{dm.heightPixels/2,dm.widthPixels/2};
         int max_size = -1;
@@ -12990,7 +13128,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (max_size != -1){
                 int size = s.getWidth() * s.getHeight();
                 if (s.getWidth() == s.getHeight()){
-                    if (s.getWidth() > Math.max(point_max[0],point_max[1]))
+                    if (s.getWidth() > Math.min(point_max[0],point_max[1]))
                         continue;
                 } else if (size > max_size || size == 0 || s.getHeight() > point_max[1]) {
                     continue;
@@ -14050,7 +14188,7 @@ class MFNRDrawer extends View {
 
 abstract class PhysicalImageListener
         implements ImageReader.OnImageAvailableListener{
-    private String mCamId;
+    public String mCamId;
 
     public void setCamId(String camId) {
         this.mCamId = camId;

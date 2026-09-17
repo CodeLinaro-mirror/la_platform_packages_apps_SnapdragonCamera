@@ -146,6 +146,20 @@
        "pref_camera2_video_quality_key":"720x480",
        "pref_camera2_longshot_key":"off"}
   },
+  "pref_camera2_apk_bokeh_stream_key":
+  {
+    "enable":
+    {"pref_camera2_facedetection_key":"off",
+      "pref_camera2_recordlocation_key":"off",
+      "pref_camera2_picture_format_key":"0",
+      "pref_camera2_picturesize_key":"4000x3000",
+      "pref_camera2_jpegquality_key":"100",
+      "pref_camera2_exposure_key":"0",
+      "pref_camera2_whitebalance_key": "1",
+      "pref_camera2_flashmode_key":"off",
+      "pref_camera2_multi_camera_mode_key":"0"
+    }
+  },
   "pref_camera2_selfiemirror_key":
   {
     "on":{"pref_camera2_longshot_key":"off"},
@@ -252,6 +266,7 @@
          "pref_camera2_flashmode_key":"off",
          "pref_camera2_longshot_key":"off",
          "pref_camera2_hdr_key": "disable",
+         "pref_camera2_apk_bokeh_stream_key": "disable",
          "pref_camera2_scenemode_key": "0",
          "pref_camera2_timer_key": "0"},
     "0":{}
