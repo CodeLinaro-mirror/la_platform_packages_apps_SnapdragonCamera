@@ -2850,16 +2850,23 @@ public class SettingsManager implements ListMenu.SettingsListener {
             if (mode == CaptureModule.CameraMode.HFR || mode == CaptureModule.CameraMode.VIDEO ||
                     mode == CaptureModule.CameraMode.CINEMATIC) {
                 ListPreference videoQuality = mPreferenceGroup.findPreference(KEY_VIDEO_QUALITY);
+                String videoSizeStr = (videoQuality != null) ? videoQuality.getValue() :
+                        getValue(KEY_VIDEO_QUALITY);
                 hfrPref.reloadInitialEntriesAndEntryValues();
                 mIsHFRSupported = !filterUnsupportedOptions(hfrPref,
-                        getSupportedHighFrameRate(mode, videoQuality.getValue(), mCameraId));
+                        getSupportedHighFrameRate(mode, videoSizeStr, mCameraId));
                 if (!mIsHFRSupported) {
                     mFilteredKeys.add(hfrPref.getKey());
                 } else {
                     mFilteredKeys.remove(hfrPref.getKey());
                 }
             }else {
-                mIsHFRSupported = true;//init this value for other mode
+                // Determine real sensor capability even outside HFR/VIDEO/CINEMATIC mode
+                // (e.g. at app launch in Photo mode), instead of assuming HFR is supported.
+                String videoSizeStr = getValue(KEY_VIDEO_QUALITY);
+                List<String> hfrRates = getSupportedHighFrameRate(
+                        CaptureModule.CameraMode.HFR, videoSizeStr, mCameraId);
+                mIsHFRSupported = hfrRates != null && !hfrRates.isEmpty();
             }
         }
     }
