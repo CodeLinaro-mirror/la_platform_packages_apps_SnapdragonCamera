@@ -21,7 +21,7 @@
 
 package com.android.camera;
 import com.android.camera.functional.FunctionTest;
-import android.support.test.runner.AndroidJUnitRunner;;
+import android.support.test.runner.AndroidJUnitRunner;
 import android.os.Bundle;
 
 public class CameraTestRunner  extends AndroidJUnitRunner {

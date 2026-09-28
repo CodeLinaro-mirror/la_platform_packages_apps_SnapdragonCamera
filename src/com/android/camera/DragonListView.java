@@ -27,7 +27,11 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
+/*
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 package com.android.camera;
 
 import android.content.Context;
@@ -149,6 +153,8 @@ public class DragonListView extends ListView {
      */
     private ImageView mDragPhotoView;
 
+    private Context mContext;
+
     public DragonListView(Context context) {
         super(context);
     }
@@ -161,6 +167,9 @@ public class DragonListView extends ListView {
         super(context, attrs, defStyleAttr);
     }
 
+    public void setContext(Context context){
+        mContext = context;
+    }
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
         // get the Action of the first finger point
@@ -288,7 +297,7 @@ public class DragonListView extends ListView {
      */
     private void createDragPhotoView() {
         // Get the current window manager
-        mWindowManager = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
+        mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         // Create layout parameters
         mWindowLayoutParams = new WindowManager.LayoutParams();
         mWindowLayoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
@@ -307,7 +316,7 @@ public class DragonListView extends ListView {
         mWindowLayoutParams.x = mDownX + mRawOffsetX - mItemOffsetX;
         mWindowLayoutParams.y = adjustDragY(mDownY + mRawOffsetY - mItemOffsetY);
 
-        mDragPhotoView = new ImageView(getContext());
+        mDragPhotoView = new ImageView(mContext);
         mDragPhotoView.setImageBitmap(mDragPhotoBitmap);
         mWindowManager.addView(mDragPhotoView, mWindowLayoutParams);
     }
