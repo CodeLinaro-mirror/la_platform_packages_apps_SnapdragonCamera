@@ -237,7 +237,7 @@ import java.util.stream.Stream;
     public static final String KEY_MANUAL_WB_R_GAIN = "pref_camera2_manual_wb_r_gain";
     public static final String KEY_MANUAL_WB_G_GAIN = "pref_camera2_manual_wb_g_gain";
     public static final String KEY_MANUAL_WB_B_GAIN = "pref_camera2_manual_wb_b_gain";
-
+    public static final String KEY_APK_BOKEH = "pref_camera2_apk_bokeh_stream_key";
     public static final String KEY_QCFA = "pref_camera2_qcfa_key";
     public static final String KEY_EIS_VALUE = "pref_camera2_eis_key";
     public static final String KEY_FOVC_VALUE = "pref_camera2_fovc_key";
@@ -643,7 +643,6 @@ import java.util.stream.Stream;
         }
         return isFDRenderingInUI;
     }
-
     public boolean isSwMctfSupported() {
         boolean supportted = false;
         try {
@@ -930,6 +929,10 @@ import java.util.stream.Stream;
         return mCharacteristics.get(mCameraId).getPhysicalCameraIds();
     }
 
+     public boolean isAPKBokehEnabled(){
+         String value = getValue(SettingsManager.KEY_APK_BOKEH);
+         return value != null && value.equals("enable") && CaptureModule.CURRENT_MODE == CaptureModule.CameraMode.RTB;
+     }
     public boolean isMultiCameraEnabled(){
         String enable = getValue(SettingsManager.KEY_MULTI_CAMERA_MODE);
         return "1".equals(enable);
@@ -2189,7 +2192,7 @@ import java.util.stream.Stream;
 
     public boolean isZoomSupported(int id) {
         return mCharacteristics.get(id).get(CameraCharacteristics
-                .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) > 1f;
+                .SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) > 1f && !isAPKBokehEnabled();
     }
 
     public boolean isAIDESupport() {
@@ -2539,6 +2542,36 @@ import java.util.stream.Stream;
             }
         }
         return true;
+    }
+    public Size getMaxSize(int cameraId,int format){
+        if (cameraId > mCharacteristics.size()) return null;
+        StreamConfigurationMap map = mCharacteristics.get(cameraId).get(
+                CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+        Size maxSize = null;
+        if (map != null) {
+            Size[] sizes = map.getOutputSizes(format);
+            Size[] highResolutionSizes = map.getHighResolutionOutputSizes(format);
+            if (sizes != null && sizes.length > 0) {
+                for (Size size : sizes) {
+                    if (maxSize == null
+                            || (long) size.getWidth() * size.getHeight()
+                            > (long) maxSize.getWidth() * maxSize.getHeight()) {
+                        maxSize = size;
+                    }
+                }
+            }
+            if (highResolutionSizes != null && highResolutionSizes.length > 0) {
+                    for (Size size : highResolutionSizes) {
+                        if (maxSize == null
+                                || (long) size.getWidth() * size.getHeight()
+                                > (long) maxSize.getWidth() * maxSize.getHeight()) {
+                            maxSize = size;
+                        }
+                    }
+            }
+        }
+        return maxSize;
     }
 
     private List<String> getSupportedPictureSize(int cameraId) {

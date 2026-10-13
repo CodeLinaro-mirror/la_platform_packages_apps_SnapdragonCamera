@@ -28,10 +28,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
@@ -39,10 +41,12 @@ import android.hardware.Camera.Size;
 import android.hardware.camera2.CameraCharacteristics;
 import android.location.Location;
 import android.media.ExifInterface;
+import android.media.Image;
 import android.media.MediaMuxer;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.telephony.TelephonyManager;
@@ -67,9 +71,14 @@ import com.android.camera.ui.RotateTextToast;
 import com.android.camera.util.IntentHelper;
 import org.codeaurora.snapcam.R;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.Date;
@@ -162,6 +171,7 @@ public class CameraUtil {
     public static final String KEY_SAVE = "save";
     public static final String KEY_DELETE = "delete";
     public static final String KEY_DELETE_ALL = "delete_all";
+
 
     public static boolean isSupported(String value, List<String> supported) {
         return supported == null ? false : supported.indexOf(value) >= 0;
@@ -1528,6 +1538,143 @@ public class CameraUtil {
         }
         return null;
     }
+    public static Bitmap rotateBitmap(Bitmap source, int degrees) {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(degrees);
+
+        Bitmap rotated = Bitmap.createBitmap(
+                source,
+                0,
+                0,
+                source.getWidth(),
+                source.getHeight(),
+                matrix,
+                true);
+
+        if (rotated != source) {
+            source.recycle();
+        }
+
+        return rotated;
+    }
+    private static boolean makeDirectory(String filePath){
+        try {
+            File file = new File(filePath);
+            File parent = file.getParentFile();
+            if (parent != null && !parent.exists()) {
+                if (!parent.mkdirs()) {
+                    Log.i(TAG, "create dir fail: " + parent.getAbsolutePath());
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            Log.i(TAG, "create dir exception: " +e);
+            return false;
+        }
+        Log.i(TAG, "create dir sucess1111: " +filePath);
+        return true;
+    }
+
+    public static void dumpBitmapToFile(Context context,Bitmap bitmap, String fileName) {
+        File dumpDir = new File(
+                context.getExternalFilesDir(Environment.DIRECTORY_PICTURES),
+                "snapcam/dumpfile");
+        if (!dumpDir.exists() && !dumpDir.mkdirs()) {
+            Log.e(TAG, "create dump dir failed: "
+                    + dumpDir.getAbsolutePath());
+        } else {
+            Log.i(TAG, "dump dir: " + dumpDir.getAbsolutePath());
+        }
+        File file = new File(
+                dumpDir,fileName+".png");
+        try (FileOutputStream outputStream =
+                     new FileOutputStream(file)) {
+            boolean result = bitmap.compress(
+                    Bitmap.CompressFormat.PNG,
+                    100,
+                    outputStream);
+            outputStream.flush();
+        } catch (FileNotFoundException e) {
+            Log.d(TAG,"dumpBitmapToFile failed e="+e);
+        } catch (IOException e) {
+            Log.d(TAG,"dumpBitmapToFile failed e="+e);
+        }
+        Log.d(TAG,"dumpBitmapToFile Saved: " + file);
+    }
+
+    public  static Bitmap yuv420ToBitmap(Image image) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        Image.Plane[] planes = image.getPlanes();
+
+        byte[] nv21 = new byte[width * height * 3 / 2];
+
+        // -------------------------
+        // Copy Y plane
+        // -------------------------
+        ByteBuffer yBuffer = planes[0].getBuffer().duplicate();
+
+        int yRowStride = planes[0].getRowStride();
+        int yPixelStride = planes[0].getPixelStride();
+
+        int offset = 0;
+
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                int index = row * yRowStride + col * yPixelStride;
+                nv21[offset++] = yBuffer.get(index);
+            }
+        }
+
+        // -------------------------
+        // Copy U/V planes to NV21
+        // NV21 layout: Y + VU VU VU...
+        // -------------------------
+        ByteBuffer uBuffer = planes[1].getBuffer().duplicate();
+        ByteBuffer vBuffer = planes[2].getBuffer().duplicate();
+
+        int uRowStride = planes[1].getRowStride();
+        int uPixelStride = planes[1].getPixelStride();
+
+        int vRowStride = planes[2].getRowStride();
+        int vPixelStride = planes[2].getPixelStride();
+
+        int chromaWidth = width / 2;
+        int chromaHeight = height / 2;
+
+        for (int row = 0; row < chromaHeight; row++) {
+            for (int col = 0; col < chromaWidth; col++) {
+                int uIndex = row * uRowStride + col * uPixelStride;
+                int vIndex = row * vRowStride + col * vPixelStride;
+
+                // NV21 is VU oreder
+                nv21[offset++] = vBuffer.get(vIndex);
+                nv21[offset++] = uBuffer.get(uIndex);
+            }
+        }
+        YuvImage yuvImage = new YuvImage(
+                nv21,
+                ImageFormat.NV21,
+                width,
+                height,
+                null);
+
+        ByteArrayOutputStream outputStream =
+                new ByteArrayOutputStream();
+
+        yuvImage.compressToJpeg(
+                new Rect(0, 0, width, height),
+                90,
+                outputStream);
+
+        byte[] jpegData = outputStream.toByteArray();
+
+        return BitmapFactory.decodeByteArray(
+                jpegData,
+                0,
+                jpegData.length);
+    }
     public static class IntegerLock {
         private int value;
 
@@ -1561,4 +1708,6 @@ public class CameraUtil {
             }
         }
     }
+
+
 }
