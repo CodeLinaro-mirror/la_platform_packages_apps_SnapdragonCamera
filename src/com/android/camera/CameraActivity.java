@@ -315,12 +315,13 @@ public class CameraActivity extends Activity
     };
 
     private AIDenoiserService mAIDenoiserService;
+    private boolean mAideServiceBound;
     private ServiceConnection mAideConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className, IBinder b) {
             Log.i(TAG,"aide service connected");
             mAIDenoiserService = ((AIDenoiserService.LocalBinder) b).getService();
-            if(isSwMfnrEnabled()){
+            if (!mPaused && requiresAIDenoiserService()) {
                 mCurrentModule.onResumeAfterSuper();
             }
         }
@@ -1369,15 +1370,28 @@ public class CameraActivity extends Activity
     }
 
     private void bindAIDenoiserService() {
+        if (mAideServiceBound) {
+            return;
+        }
         Log.i(TAG,"bindAIDenoiserService");
         Intent intent = new Intent(this, AIDenoiserService.class);
-        this.bindService(intent, mAideConnection, Context.BIND_AUTO_CREATE);
+        mAideServiceBound = bindService(intent, mAideConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void unbindAIDenoiserService() {
-        if (mAideConnection != null && mAIDenoiserService != null) {
+        if (mAideServiceBound) {
             unbindService(mAideConnection);
+            mAideServiceBound = false;
+            mAIDenoiserService = null;
         }
+    }
+
+    private boolean requiresAIDenoiserService() {
+        if (!(mCurrentModule instanceof CaptureModule)) {
+            return false;
+        }
+        CaptureModule captureModule = (CaptureModule) mCurrentModule;
+        return captureModule.isSwMfnrEnabled() || captureModule.isAIDE2Enabled();
     }
 
     @Override
@@ -1728,7 +1742,7 @@ public class CameraActivity extends Activity
         if (mAutoTestEnabled) {
             registerAutoTestReceiver();
         }
-        bindAIDenoiserService();
+        // AIDenoiserService is only needed by the SW-MFNR capture path.
     }
 
     private void setRotationAnimation() {
@@ -1890,8 +1904,13 @@ public class CameraActivity extends Activity
         mCurrentModule.onResumeBeforeSuper();
         super.onResume();
         mPaused = false;
-        Log.i(TAG,"swmfnr enable:" + isSwMfnrEnabled() + ",aideservice" + mAIDenoiserService);
-        if(!isSwMfnrEnabled() || mAIDenoiserService != null){
+        boolean requiresAideService = requiresAIDenoiserService();
+        if (requiresAideService) {
+            bindAIDenoiserService();
+        }
+        Log.i(TAG, "AIDE service required:" + requiresAideService
+                + ",aideservice" + mAIDenoiserService);
+        if (!requiresAideService || mAIDenoiserService != null) {
             //change onResumeAfterSuper to aide service connected
             mCurrentModule.onResumeAfterSuper();
         }
