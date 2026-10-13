@@ -6785,8 +6785,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (mSettingsManager.getSinglePhysicalCamera() != null) {
             mUI.hideFlashButton();
         }
-        if(mIsCloseCamera) {
-            openCamera(getMainCameraId());
+        if (mIsCloseCamera && mCameraHandler != null) {
+            Message msg = mCameraHandler.obtainMessage(OPEN_CAMERA, getMainCameraId(), 0);
+            mCameraHandler.sendMessage(msg);
         }
         String scene = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
         if (Integer.parseInt(scene) != SettingsManager.SCENE_MODE_UBIFOCUS_INT) {
