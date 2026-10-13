@@ -262,6 +262,8 @@ public class CameraActivity extends Activity
     // Keep track of data request here to avoid creating useless UpdateThumbnailTask.
     private boolean mDataRequested;
     private Cursor mCursor;
+    private AsyncTask<Void, Void, Cursor> mMediaCursorQueryTask;
+    private boolean mSDcardMountedReceiverRegistered;
 
     private boolean mAutoTestEnabled = false;
 
@@ -379,6 +381,36 @@ public class CameraActivity extends Activity
         filter.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
         filter.addDataScheme("file");
         registerReceiver(mSDcardMountedReceiver, filter);
+        mSDcardMountedReceiverRegistered = true;
+    }
+
+    private void loadInitialMediaCursorAsync() {
+        mMediaCursorQueryTask = new AsyncTask<Void, Void, Cursor>() {
+            @Override
+            protected Cursor doInBackground(Void... params) {
+                return getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        null, null, null, null);
+            }
+
+            @Override
+            protected void onPostExecute(Cursor cursor) {
+                if (isFinishing() || isDestroyed()) {
+                    if (cursor != null) {
+                        cursor.close();
+                    }
+                    return;
+                }
+                mCursor = cursor;
+            }
+
+            @Override
+            protected void onCancelled(Cursor cursor) {
+                if (cursor != null) {
+                    cursor.close();
+                }
+            }
+        };
+        mMediaCursorQueryTask.execute();
     }
 
     private class MainHandler extends Handler {
@@ -1545,8 +1577,7 @@ public class CameraActivity extends Activity
             return;
         }
 
-        mCursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                null, null, null, null);
+        loadInitialMediaCursorAsync();
         GcamHelper.init(getContentResolver());
 
         getWindow().requestFeature(Window.FEATURE_ACTION_BAR);
@@ -1931,11 +1962,17 @@ public class CameraActivity extends Activity
             mWakeLock.release();
             Log.d(TAG, "wake lock release");
         }
-        if (mCursor != null) {
+        if (mMediaCursorQueryTask != null) {
+            mMediaCursorQueryTask.cancel(true);
+            mMediaCursorQueryTask = null;
+        }
+        if (mSDcardMountedReceiverRegistered) {
             unregisterReceiver(mSDcardMountedReceiver);
-
+            mSDcardMountedReceiverRegistered = false;
+        }
+        if (mCursor != null) {
             mCursor.close();
-            mCursor=null;
+            mCursor = null;
         }
         if (mAutoTestEnabled) {
             unregisterReceiver(mAutoTestReceiver);
