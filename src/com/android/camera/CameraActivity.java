@@ -262,6 +262,8 @@ public class CameraActivity extends Activity
     // Keep track of data request here to avoid creating useless UpdateThumbnailTask.
     private boolean mDataRequested;
     private Cursor mCursor;
+    private AsyncTask<Void, Void, Cursor> mMediaCursorQueryTask;
+    private boolean mSDcardMountedReceiverRegistered;
 
     private boolean mAutoTestEnabled = false;
 
@@ -313,12 +315,13 @@ public class CameraActivity extends Activity
     };
 
     private AIDenoiserService mAIDenoiserService;
+    private boolean mAideServiceBound;
     private ServiceConnection mAideConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className, IBinder b) {
             Log.i(TAG,"aide service connected");
             mAIDenoiserService = ((AIDenoiserService.LocalBinder) b).getService();
-            if(isSwMfnrEnabled()){
+            if (!mPaused && requiresAIDenoiserService()) {
                 mCurrentModule.onResumeAfterSuper();
             }
         }
@@ -379,6 +382,36 @@ public class CameraActivity extends Activity
         filter.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
         filter.addDataScheme("file");
         registerReceiver(mSDcardMountedReceiver, filter);
+        mSDcardMountedReceiverRegistered = true;
+    }
+
+    private void loadInitialMediaCursorAsync() {
+        mMediaCursorQueryTask = new AsyncTask<Void, Void, Cursor>() {
+            @Override
+            protected Cursor doInBackground(Void... params) {
+                return getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        null, null, null, null);
+            }
+
+            @Override
+            protected void onPostExecute(Cursor cursor) {
+                if (isFinishing() || isDestroyed()) {
+                    if (cursor != null) {
+                        cursor.close();
+                    }
+                    return;
+                }
+                mCursor = cursor;
+            }
+
+            @Override
+            protected void onCancelled(Cursor cursor) {
+                if (cursor != null) {
+                    cursor.close();
+                }
+            }
+        };
+        mMediaCursorQueryTask.execute();
     }
 
     private class MainHandler extends Handler {
@@ -1337,15 +1370,28 @@ public class CameraActivity extends Activity
     }
 
     private void bindAIDenoiserService() {
+        if (mAideServiceBound) {
+            return;
+        }
         Log.i(TAG,"bindAIDenoiserService");
         Intent intent = new Intent(this, AIDenoiserService.class);
-        this.bindService(intent, mAideConnection, Context.BIND_AUTO_CREATE);
+        mAideServiceBound = bindService(intent, mAideConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void unbindAIDenoiserService() {
-        if (mAideConnection != null && mAIDenoiserService != null) {
+        if (mAideServiceBound) {
             unbindService(mAideConnection);
+            mAideServiceBound = false;
+            mAIDenoiserService = null;
         }
+    }
+
+    private boolean requiresAIDenoiserService() {
+        if (!(mCurrentModule instanceof CaptureModule)) {
+            return false;
+        }
+        CaptureModule captureModule = (CaptureModule) mCurrentModule;
+        return captureModule.isSwMfnrEnabled() || captureModule.isAIDE2Enabled();
     }
 
     @Override
@@ -1545,8 +1591,7 @@ public class CameraActivity extends Activity
             return;
         }
 
-        mCursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                null, null, null, null);
+        loadInitialMediaCursorAsync();
         GcamHelper.init(getContentResolver());
 
         getWindow().requestFeature(Window.FEATURE_ACTION_BAR);
@@ -1697,7 +1742,7 @@ public class CameraActivity extends Activity
         if (mAutoTestEnabled) {
             registerAutoTestReceiver();
         }
-        bindAIDenoiserService();
+        // AIDenoiserService is only needed by the SW-MFNR capture path.
     }
 
     private void setRotationAnimation() {
@@ -1859,8 +1904,13 @@ public class CameraActivity extends Activity
         mCurrentModule.onResumeBeforeSuper();
         super.onResume();
         mPaused = false;
-        Log.i(TAG,"swmfnr enable:" + isSwMfnrEnabled() + ",aideservice" + mAIDenoiserService);
-        if(!isSwMfnrEnabled() || mAIDenoiserService != null){
+        boolean requiresAideService = requiresAIDenoiserService();
+        if (requiresAideService) {
+            bindAIDenoiserService();
+        }
+        Log.i(TAG, "AIDE service required:" + requiresAideService
+                + ",aideservice" + mAIDenoiserService);
+        if (!requiresAideService || mAIDenoiserService != null) {
             //change onResumeAfterSuper to aide service connected
             mCurrentModule.onResumeAfterSuper();
         }
@@ -1931,11 +1981,17 @@ public class CameraActivity extends Activity
             mWakeLock.release();
             Log.d(TAG, "wake lock release");
         }
-        if (mCursor != null) {
+        if (mMediaCursorQueryTask != null) {
+            mMediaCursorQueryTask.cancel(true);
+            mMediaCursorQueryTask = null;
+        }
+        if (mSDcardMountedReceiverRegistered) {
             unregisterReceiver(mSDcardMountedReceiver);
-
+            mSDcardMountedReceiverRegistered = false;
+        }
+        if (mCursor != null) {
             mCursor.close();
-            mCursor=null;
+            mCursor = null;
         }
         if (mAutoTestEnabled) {
             unregisterReceiver(mAutoTestReceiver);
