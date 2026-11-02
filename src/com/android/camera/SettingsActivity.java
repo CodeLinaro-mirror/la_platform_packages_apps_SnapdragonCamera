@@ -3004,7 +3004,10 @@ public class SettingsActivity extends PreferenceActivity {
             String t2t = mLocalSharedPref.getString(SettingsManager.KEY_TOUCH_TRACK_FOCUS, "on");
             SwitchPreference t2TFocus = (SwitchPreference) findPreference(
                     SettingsManager.KEY_TOUCH_TRACK_FOCUS);
-            if (t2t.equals("on") || fromRestore) {
+            // t2TFocus is null when touch-to-track is not supported on the current camera (see
+            // isT2TSupported()/filterPreferences(), which removes this preference in that case) or when
+            // the current camera is the front camera. Guard rather than crash in that case.
+            if (t2TFocus != null && (t2t.equals("on") || fromRestore)) {
                 t2TFocus.setChecked(true);
             }
         }
