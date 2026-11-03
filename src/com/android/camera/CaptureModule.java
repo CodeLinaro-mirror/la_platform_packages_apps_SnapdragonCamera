@@ -233,6 +233,8 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final int OPEN_CAMERA = 0;
     private static final int CANCEL_TOUCH_FOCUS = 1;
     private static final int MAX_NUM_CAM = 16;
+    private static final int MAX_DCG_RAW_NUM = 2;
+
     private static final int CONTOUR_POINTS_COUNT = 89;
     private String DEPTH_CAM_ID;
     private static final MeteringRectangle[] ZERO_WEIGHT_3A_REGION = new MeteringRectangle[]{
@@ -1046,6 +1048,8 @@ public class CaptureModule implements CameraModule, PhotoController,
      * An {@link ImageReader} that handles still image capture.
      */
     private ImageReader[] mImageReader = new ImageReader[MAX_NUM_CAM];
+    private ImageReader[] mDcgRaw = new ImageReader[MAX_DCG_RAW_NUM];
+
     private ImageReader[] mRawImageReader = new ImageReader[MAX_NUM_CAM];
     private ImageReader[] mYUV10bitImageReader = new ImageReader[MAX_NUM_CAM];
     private Size[] mPhysicalSizes = new Size[PHYSICAL_CAMERA_COUNT];
@@ -3500,6 +3504,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (mYUV10bit || mYUV10BitWithMetadata) {
                         list.add(mYUV10bitImageReader[id].getSurface());
                     }
+                    if(mSettingsManager.isDCGEnable() && mSettingsManager.getDcgMode() > 0) {
+                        for(ImageReader reader: mDcgRaw){
+                            list.add(reader.getSurface());
+                        }
+                        list.remove(mImageReader[id].getSurface());
+                    }
 
                     for (Surface s : list) {
                         if (s == surface) {
@@ -5173,7 +5183,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         mYUV10bitImageReader[id] != null) {
                                     captureBuilder.addTarget(mYUV10bitImageReader[id].getSurface());
                                 }
-                                if (mImageReader[id] != null && !isAIDE2Enabled()) {
+                                if (mImageReader[id] != null && !isAIDE2Enabled() && !mSettingsManager.isDCGEnable() ) {
                                     captureBuilder.addTarget(mImageReader[id].getSurface());
                                 }
                             }
@@ -5191,6 +5201,12 @@ public class CaptureModule implements CameraModule, PhotoController,
                             Log.i(TAG, " add raw image for first capture request- "+mRAWImageReader[0].getSurface());
                             captureBuilder.addTarget(mRAWImageReader[0].getSurface());
                         }
+                        if(mSettingsManager.isDCGEnable() && mSettingsManager.getDcgMode() > 0) {
+                            for(ImageReader reader: mDcgRaw) {
+                                captureBuilder.addTarget(reader.getSurface());
+                            }
+                        }
+
                         if (isAIDE2Enabled()) {
                             mCaptureRequestNum = 0;
                             Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
@@ -5730,104 +5746,114 @@ public class CaptureModule implements CameraModule, PhotoController,
                     mHasMapTimes.put("buttonClick->capture", mSnapshotLatency - mStartedTime);
                 }
             }
-            mCaptureSession[id].capture(captureBuilder.build(), new CameraCaptureSession.CaptureCallback() {
-                @Override
-                public void onCaptureStarted (CameraCaptureSession session,
-                                              CaptureRequest request,
-                                              long timestamp,
-                                              long frameNumber){
-                    mShutterLag = System.currentTimeMillis() - mSnapshotLatency;
+            if(mSettingsManager.isDCGEnable() && mSettingsManager.getDcgMode() > 0) {
+                for (int i = 0; i < 7; i++) {
+                    sendCaptureRequest(captureBuilder, id);
                 }
+            }else{
+                sendCaptureRequest(captureBuilder, id);
+            }
+        }
+    }
 
-                @Override
-                public void onCaptureCompleted(CameraCaptureSession session,
-                                               CaptureRequest request,
-                                               TotalCaptureResult result) {
-                    Log.i(TAG, "captureStillPictureForCommon onCaptureCompleted: " + id  + ",metadataOwnerInfo:" + result.get(CaptureModule.metadataOwnerInfo)+",result="+result);
-                    mRawInputMeta = result;
-                    mCaptureResult = result;
-                    if (mYUV10BitWithMetadata) {
-                        List<String> metaDataLists = new ArrayList<String>();
-                        long sensorTimeStamp = result.get(CaptureResult.SENSOR_TIMESTAMP).longValue();
-                        Log.v(TAG, " Save metaData title :" + sensorTimeStamp);
+    private void sendCaptureRequest(CaptureRequest.Builder captureBuilder, int id) throws CameraAccessException{
+        mCaptureSession[id].capture(captureBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+            @Override
+            public void onCaptureStarted(CameraCaptureSession session,
+                                         CaptureRequest request,
+                                         long timestamp,
+                                         long frameNumber) {
+                mShutterLag = System.currentTimeMillis() - mSnapshotLatency;
+            }
 
-                        List<CaptureResult.Key<?>> keys = result.getKeys();
-                        // Move to CameraMetadata#toString
-                        for (CaptureResult.Key<?> key : keys) {
-                            metaDataLists.add ("Key:");
-                            metaDataLists.add (String.format("%s\n", key.getName()));
-                            metaDataLists.add ("value:");
-                            metaDataLists.add (String.format("%s\n", String.format("%s\n",
-                                    metadataValueToString(result.get(key)))));
-                        }
+            @Override
+            public void onCaptureCompleted(CameraCaptureSession session,
+                                           CaptureRequest request,
+                                           TotalCaptureResult result) {
+                Log.i(TAG, "captureStillPictureForCommon onCaptureCompleted: " + id + ",metadataOwnerInfo:" + result.get(CaptureModule.metadataOwnerInfo) + ",result=" + result);
+                mRawInputMeta = result;
+                mCaptureResult = result;
+                if (mYUV10BitWithMetadata) {
+                    List<String> metaDataLists = new ArrayList<String>();
+                    long sensorTimeStamp = result.get(CaptureResult.SENSOR_TIMESTAMP).longValue();
+                    Log.v(TAG, " Save metaData title :" + sensorTimeStamp);
 
-                        // Save YUV10bit metaData
-                        String filePath = AutoTestUtil.createFile(mActivity,
-                                String.valueOf(sensorTimeStamp));
-                        AutoTestUtil.writeFileContent(filePath, metaDataLists);
+                    List<CaptureResult.Key<?>> keys = result.getKeys();
+                    // Move to CameraMetadata#toString
+                    for (CaptureResult.Key<?> key : keys) {
+                        metaDataLists.add("Key:");
+                        metaDataLists.add(String.format("%s\n", key.getName()));
+                        metaDataLists.add("value:");
+                        metaDataLists.add(String.format("%s\n", String.format("%s\n",
+                                metadataValueToString(result.get(key)))));
                     }
-                }
 
-                @Override
-                public void onCaptureFailed(CameraCaptureSession session,
-                                            CaptureRequest request,
-                                            CaptureFailure result) {
-                    Log.i(TAG, "captureStillPictureForCommon onCaptureFailed: " + id);
+                    // Save YUV10bit metaData
+                    String filePath = AutoTestUtil.createFile(mActivity,
+                            String.valueOf(sensorTimeStamp));
+                    AutoTestUtil.writeFileContent(filePath, metaDataLists);
+                }
+            }
+
+            @Override
+            public void onCaptureFailed(CameraCaptureSession session,
+                                        CaptureRequest request,
+                                        CaptureFailure result) {
+                Log.i(TAG, "captureStillPictureForCommon onCaptureFailed: " + id);
+                mTakingPicture[id] = false;
+            }
+
+            @Override
+            public void onCaptureBufferLost(CameraCaptureSession session,
+                                            CaptureRequest request, Surface target,
+                                            long frameNumber) {
+                Log.i(TAG, "captureStillPictureForCommon onCaptureBufferLost: frameNumber is "
+                        + frameNumber);
+                if (!mPaused && isOnCaptureBufferLostHintOn()) {
+                    showToast("Capture failed: buffer lost!");
+                }
+            }
+
+            @Override
+            public void onCaptureSequenceCompleted(CameraCaptureSession session, int
+                    sequenceId, long frameNumber) {
+                Log.i(TAG, "captureStillPictureForCommon onCaptureSequenceCompleted: " + id);
+                if (mActivity.getPerformenceTest()) {
+                    mHasMapTimes.put("capture->onCaptureSequenceCompleted", System.currentTimeMillis() - mStartSnapShotTime);
+                    mHasMapTimes.put("Total", System.currentTimeMillis() - mStartedTime);
+                }
+                if (mUI.getCurrentProMode() != ProMode.MANUAL_MODE) {
+                    unlockFocus(id);
+                } else {
                     mTakingPicture[id] = false;
+                    enableShutterAndVideoOnUiThread(id);
                 }
-
-                @Override
-                public void onCaptureBufferLost(CameraCaptureSession session,
-                                                CaptureRequest request, Surface target,
-                                                long frameNumber) {
-                    Log.i(TAG, "captureStillPictureForCommon onCaptureBufferLost: frameNumber is "
-                            + frameNumber);
-                    if (!mPaused && isOnCaptureBufferLostHintOn()) {
-                        showToast("Capture failed: buffer lost!");
-                    }
-                }
-
-                @Override
-                public void onCaptureSequenceCompleted(CameraCaptureSession session, int
-                        sequenceId, long frameNumber) {
-                    Log.i(TAG, "captureStillPictureForCommon onCaptureSequenceCompleted: " + id);
-                    if(mActivity.getPerformenceTest()){
-                        mHasMapTimes.put("capture->onCaptureSequenceCompleted",System.currentTimeMillis() - mStartSnapShotTime);
-                        mHasMapTimes.put("Total",System.currentTimeMillis() - mStartedTime);
-                    }
-                    if (mUI.getCurrentProMode() != ProMode.MANUAL_MODE) {
-                        unlockFocus(id);
-                    } else {
-                        mTakingPicture[id] = false;
-                        enableShutterAndVideoOnUiThread(id);
-                    }
-                    Log.d(TAG,"onShutterButtonRelease");
-                    if (mSettingsManager.isHeifWriterEncoding()) {
-                        if (mHeifImage != null) {
+                Log.d(TAG, "onShutterButtonRelease");
+                if (mSettingsManager.isHeifWriterEncoding()) {
+                    if (mHeifImage != null) {
+                        try {
+                            mHeifImage.getWriter().stop(3000);
+                            mHeifImage.getWriter().close();
+                            mActivity.getMediaSaveService().addHEIFImage(mHeifImage.getPath(),
+                                    mHeifImage.getTitle(), mHeifImage.getDate(), null, mPictureSize.getWidth(), mPictureSize.getHeight(),
+                                    mHeifImage.getOrientation(), null, mContentResolver, mOnMediaSavedListener, mHeifImage.getQuality(), "heic");
+                        } catch (Exception e) {
+                            Log.e(TAG, e.toString());
+                        } finally {
                             try {
-                                mHeifImage.getWriter().stop(3000);
-                                mHeifImage.getWriter().close();
-                                mActivity.getMediaSaveService().addHEIFImage(mHeifImage.getPath(),
-                                        mHeifImage.getTitle(),mHeifImage.getDate(),null,mPictureSize.getWidth(),mPictureSize.getHeight(),
-                                        mHeifImage.getOrientation(),null,mContentResolver,mOnMediaSavedListener,mHeifImage.getQuality(),"heic");
+                                mHeifOutput.removeSurface(mHeifImage.getInputSurface());
+                                mCaptureSession[id].updateOutputConfiguration(mHeifOutput);
+                                mHeifImage = null;
+                            } catch (CameraAccessException e) {
+                                Log.e(TAG, e.toString());
                             } catch (Exception e) {
-                                Log.e(TAG,e.toString());
-                            } finally {
-                                try{
-                                    mHeifOutput.removeSurface(mHeifImage.getInputSurface());
-                                    mCaptureSession[id].updateOutputConfiguration(mHeifOutput);
-                                    mHeifImage = null;
-                                } catch (CameraAccessException e) {
-                                    Log.e(TAG,e.toString());
-                                } catch (Exception e) {
-                                    Log.e(TAG,e.toString());
-                                }
+                                Log.e(TAG, e.toString());
                             }
                         }
                     }
                 }
-            }, mCaptureCallbackHandler);
-        }
+            }
+        }, mCaptureCallbackHandler);
     }
 
     private static String metadataValueToString(Object object) {
@@ -6400,6 +6426,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mRawImageReader[i] = ImageReader.newInstance(mSupportedRawPictureSize.getWidth(),
                                     mSupportedRawPictureSize.getHeight(), mSettingsManager.getRawFormat(), MAX_IMAGEREADERS);
                             mRawImageReader[i].setOnImageAvailableListener(listener, mImageAvailableHandler);
+                        }
+                        if(mSettingsManager.isDCGEnable() && mSettingsManager.getDcgMode() > 0) {
+                            Size dcgRawSize = getDcgRawSize(i);
+                            for(int x = 0; x < MAX_DCG_RAW_NUM ; x ++) {
+                                mDcgRaw[x] = ImageReader.newInstance(dcgRawSize.getWidth(),
+                                        dcgRawSize.getHeight(), ImageFormat.RAW10, MAX_IMAGEREADERS);
+                                mDcgRaw[x].setOnImageAvailableListener(listener, mImageAvailableHandler);
+                            }
                         }
                         if (mYUV10bit || mYUV10BitWithMetadata) {
                             Size[] yuvSizes = mSettingsManager.getSupportedOutputSize(getMainCameraId(), ImageFormat.YCBCR_P010);
@@ -9829,6 +9863,17 @@ public class CaptureModule implements CameraModule, PhotoController,
         return yuvSizeList.get(0);
     }
 
+    private Size getDcgRawSize(int id){
+        Size[] rawSizes = mSettingsManager.getSupportedOutputSize(id, ImageFormat.RAW10);
+        List<Size> rawSizeList = Arrays.asList(rawSizes);
+        rawSizeList.sort((o1,o2) -> o2.getWidth()*o2.getHeight() - o1.getWidth()*o1.getHeight());
+        for(Size rawSize : rawSizeList){
+            if(rawSize.getWidth() * mPictureSize.getHeight() == mPictureSize.getWidth() * rawSize.getHeight()){
+                return rawSize;
+            }
+        }
+        return rawSizeList.get(0);
+    }
     private Size getMaxRawSize(){
         Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
         List<Size> allRawSize = new ArrayList<>();
@@ -14046,14 +14091,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                 int[] modes = new int [3];
                 int value = 0;
                 for (int i = 0; i < modeLists.length; i ++) {
-                    modes[i] = SettingsManager.KEY_HDR_MODES_ORDER.get(modeLists[i]);
-                    Log.d(TAG,"applyManualHDR-modeLists[i]="+modeLists[i]+",modes[i]="+modes[i]);
-                    if(modeLists[i].equals("MFHDR")) {
-                        value |= 2;
-                    } else if (modeLists[i].equals("SHDR")) {
-                        value |= 1;
-                    } else if (modeLists[i].equals("QHDR")) {
-                        value |= 4;
+                    if(SettingsManager.KEY_HDR_MODES_ORDER.get(modeLists[i]) != null) {
+                        modes[i] = SettingsManager.KEY_HDR_MODES_ORDER.get(modeLists[i]);
+                        Log.d(TAG, "applyManualHDR-modeLists[i]=" + modeLists[i] + ",modes[i]=" + modes[i]);
+                        if (modeLists[i].equals("MFHDR")) {
+                            value |= 2;
+                        } else if (modeLists[i].equals("SHDR")) {
+                            value |= 1;
+                        } else if (modeLists[i].equals("QHDR")) {
+                            value |= 4;
+                        }
                     }
                 }
                 VendorTagUtil.setHDRModes(request, value);
