@@ -1039,11 +1039,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             return;
 
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
+        mFrontBackSwitcher.setContentDescription("now camera is," + value);
         mFrontBackSwitcher.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mModule.writeXMLForWarmAwb();
                 switchFrontBackCamera();
+                mFrontBackSwitcher.setContentDescription("now camera is," + mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE));
             }
         });
     }
